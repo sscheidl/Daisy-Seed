@@ -82,9 +82,8 @@ DSP-Verhalten; analoge Eigenschaften und die reale Audiowiedergabe bleiben unget
 
 ## GitHub
 
-Die Repository-Erstellung wurde versucht. Die verbundene Integration verweigert
-`createRepository` mit „Resource not accessible by integration“. Das Ziel bleibt
-das dedizierte private `sscheidl/Daisy-Seed`; kein anderes Projekt wurde verwendet.
-Solange es nicht angelegt/freigegeben ist, sind Push, Pull Request und ein
-GitHub-gehostetes Actions-Artefakt nicht möglich. Der Workflow ist vorbereitet,
-aber noch nicht auf GitHub ausgeführt.
+Das dedizierte private Repository ist `sscheidl/Daisy-Seed`. Nach der manuellen
+Einrichtung und Freigabe ist der Zugriff verfügbar. Der Firmwarebranch basiert auf
+dem vorhandenen initialen `main`-Commit; kein anderes Projekt wurde verwendet.
+Der Workflow erstellt nach erfolgreichen Prüfungen ein GitHub-Actions-Artefakt
+mit BIN, ELF und Prüfsumme. Die Prüfungsergebnisse des lokalen Builds stehen oben.
