@@ -2,12 +2,16 @@
 #include "spsc_queue.h"
 #include "toy_piano.h"
 #include "usbd_core.h"
+#include "version.h"
 #include <atomic>
 
 // libDaisy's USB device state for the external port (J7 on the carrier).
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
 
 namespace {
+// Identifies a flashed image: `strings ToyPiano-v*.bin | grep TOYPIANO`.
+// scripts/check-firmware.py compares it with src/version.h.
+const char kFirmwareId[] = "TOYPIANO-FW-VERSION=" TOY_PIANO_VERSION;
 daisy::desktop_devkit::Hardware hw;
 toy_piano::ToyPiano piano;
 toy_piano::PotFilter attack_pot, decay_pot;
@@ -94,6 +98,7 @@ void ServiceUsbMidi() {
 }
 
 int main() {
+    asm volatile("" : : "r"(kFirmwareId)); // Keep the version string in the image.
     hw.Init();
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(toy_piano::kBlockSize);

@@ -1,9 +1,11 @@
 #include "spsc_queue.h"
 #include "toy_piano.h"
+#include "version.h"
 #include <array>
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -350,6 +352,15 @@ void TestNoAliasedHarmonic() {
     }
 }
 
+void TestVersion() {
+    const std::string version = kVersion;
+    assert(version == TOY_PIANO_VERSION);
+    const auto dot = version.find('.');
+    assert(dot != std::string::npos && dot > 0 && dot + 1 < version.size());
+    for(std::size_t i = 0; i < version.size(); ++i)
+        assert(i == dot || (version[i] >= '0' && version[i] <= '9'));
+}
+
 void TestSpscQueue() {
     SpscQueue<int, 4> queue;
     int value = 0;
@@ -395,6 +406,7 @@ int main() {
     TestMidiRetriggerPhaseContinuity();
     TestNoAliasedHarmonic();
     TestSpscQueue();
+    TestVersion();
     std::cout << "PASS: keys, log ranges/filter, AD timing/retrigger, polyphony, "
                  "MIDI pitch/velocity/allocation, limiter, aliasing, queue\n";
 }

@@ -1,4 +1,4 @@
-# Daisy Seed — Toy Piano v0.1
+# Daisy Seed — Toy Piano v0.2
 
 Spielbare C++-Firmware für das **Electro-Smith Seed3 Desktop Development Kit**:
 16 unabhängige Toy-Piano-Stimmen, Taster-LEDs, zwei Regler für die AD-Hüllkurve und
@@ -59,11 +59,14 @@ export PATH="$PWD/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin:$PATH"
 
 make -j4
 make test
-python3 scripts/check-firmware.py build/ToyPiano-v0.1.bin
+python3 scripts/check-firmware.py
 ```
 
 `make` baut fehlende Bibliotheken automatisch. Ergebnis:
-**`build/ToyPiano-v0.1.bin`**, dazu ELF, HEX und Linker-Map.
+**`build/ToyPiano-v0.2.bin`**, dazu ELF, HEX und Linker-Map.
+Die Version steht nur in [`src/version.h`](src/version.h); sie bestimmt den Dateinamen und
+ist als `TOYPIANO-FW-VERSION=…` im Image eingebettet (`strings build/*.bin | grep TOYPIANO`).
+Änderungen je Version stehen im [Changelog](CHANGELOG.md).
 Die Bibliotheken sind offizielle Git-Submodule mit festgelegten Commits;
 bitte kein `git submodule update --remote` für einen reproduzierbaren Build verwenden.
 Weitere Informationen: [Build und Abhängigkeiten](docs/BUILD.md).

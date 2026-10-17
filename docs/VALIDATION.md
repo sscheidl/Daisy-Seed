@@ -1,4 +1,4 @@
-# Prüfbericht — Toy Piano v0.1
+# Prüfbericht — Toy Piano v0.2
 
 Stand: 16.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 
@@ -8,9 +8,9 @@ Stand: 16.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 | --- | --- |
 | Offizielle Desktop-API und Hardwaretabellen | `Hardware`, Button-/LED-Indizes, VR1/VR2 und Bootloader-Auswahl abgeglichen |
 | Echter ARM-Cross-Compile | Erfolgreich mit xPack GCC 13.2.1, Cortex-M7 Hard Float |
-| BOOT_SRAM-BIN | 125.396 Bytes; Stack `0x20020000`, Reset-Vektor `0x24000749` |
+| BOOT_SRAM-BIN | 125.428 Bytes, Version 0.2 eingebettet; Stack `0x20020000`, Reset-Vektor `0x24000749` |
 | ELF | ELF32, ARM, EABI5, Hard Float; Startadresse im SRAM |
-| Speicherbudget | SRAM 125.396 / 491.520 Bytes; DTCM 116.208 / 131.072 Bytes (88,7 %, davon 37 KB `MidiUsbHandler`); DMA-RAM 18.084 / 32.768 Bytes |
+| Speicherbudget | SRAM 125.428 / 491.520 Bytes; DTCM 116.208 / 131.072 Bytes (88,7 %, davon 37 KB `MidiUsbHandler`); DMA-RAM 18.084 / 32.768 Bytes |
 | Alle 16 MIDI-Zuordnungen | Exakt gegen die angeforderte Tabelle geprüft, einschließlich doppeltem C5 |
 | Alle 16 tatsächlichen Oszillatorfrequenzen | Host-Audiorender: Nulldurchgangszählung über eine Sekunde, Abweichung < 1,1 Hz |
 | AD-Hüllkurven | Min./Mitte/Max. für Attack × Decay: samplegenaue Laufzeit, monotoner Verlauf, exakter Endwert null |
@@ -25,16 +25,17 @@ Stand: 16.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 | Begrenzer | Monoton, ungerade, immer unter 0,8 (auch für 1e12), Kleinsignalverstärkung innerhalb 0,5 %, bei 32 Stimmen nie darüber, Stille exakt 0 |
 | Aliasing | Zweite Harmonische vorhanden bei Note 100, bei Note 127 (2f über Nyquist) abgeschaltet: Spiegelanteil < 1 % |
 | Lockfreie Warteschlange | Reihenfolge, voll/leer, Umlauf; 300.000 Elemente zwischen zwei Threads; ThreadSanitizer sauber, Gegenprobe mit relaxed-Ordnung meldet ein Data Race |
+| Versionierung | `make -s version` = `src/version.h`; Versionswechsel ohne `make clean` ändert Dateiname und Image-Eintrag; Skript lehnt falschen Dateinamen und manipulierte Version ab; Rückbau liefert bitgleiches Image |
 | Mutationsprüfung der Tests | Sieben gezielte Defekte im DSP (Aliasing-Schutz, Stimmenklau, gleiche Note, Limiter, Velocity, Hüllkurven-Reset, Phasen-Reset) werden jeweils von einem Test erkannt |
 
 Prüfsumme der geprüften Firmware:
 
 ```text
-5f2df8f9a160b87ab652f4a8a8ed48f114e25c3e8b424f1896196cc6e5899e22  ToyPiano-v0.1.bin
+6de9be19ea5673b579edbc8b62734d80b4d064327435c204b0b7ae70023fdcd7  ToyPiano-v0.2.bin
 ```
 
 Host-Tests: `make test`. Binärprüfung:
-`python3 scripts/check-firmware.py build/ToyPiano-v0.1.bin`.
+`python3 scripts/check-firmware.py` (prüft zusätzlich Dateiname, eingebettete Version und `src/version.h`).
 Sanitizer-Aufrufe (ASan/UBSan und TSan):
 
 ```bash
@@ -84,7 +85,7 @@ BOOT_SRAM-Linkerskript. Eigener DSP-Code kompiliert im Host-Test mit
 
 ## Hardwaretest (Betreiber, gemeldet)
 
-Für v0.1 (Tasten) am Kit gemeldet und nicht von der Cloud-Prüfung erfasst:
+Für die Tastenfunktionen (v0.1) am Kit gemeldet und nicht von der Cloud-Prüfung erfasst:
 Flashen über J7, alle 16 Tasten, AD-Hüllkurve, Polyphonie, schnelles Spielen,
 LED-Zuordnung, gleiche Tonhöhe von S8/S9, Drehrichtung von VR1/VR2, kein Knacken.
 

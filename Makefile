@@ -1,5 +1,8 @@
 .DEFAULT_GOAL := all
-TARGET = ToyPiano-v0.1
+# The version lives in src/version.h only; it names the output files.
+VERSION := $(shell sed -n 's/.*TOY_PIANO_VERSION "\(.*\)".*/\1/p' src/version.h | head -n 1)
+$(if $(VERSION),,$(error Could not read the version from src/version.h))
+TARGET = ToyPiano-v$(VERSION)
 DEBUG = 0
 OPT = -O3
 APP_TYPE = BOOT_SRAM
@@ -12,7 +15,9 @@ BOOT_BIN = $(SYSTEM_FILES_DIR)/dsy_bootloader_v6_4-extdfu-2000ms.bin
 
 include $(SYSTEM_FILES_DIR)/Makefile
 
-.PHONY: libs test
+.PHONY: libs test version
+version:
+	@echo $(VERSION)
 libs:
 	$(MAKE) -C $(LIBDAISY_DIR)
 	$(MAKE) -C $(DAISYSP_DIR)
