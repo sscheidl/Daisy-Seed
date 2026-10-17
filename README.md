@@ -85,10 +85,12 @@ and a shared effect chain have not been implemented.
 * [Sources and comparison limits](docs/REFERENCES.md): Rings/Elements, Daisy
   ports, Iridium Resonator, GR-1, Iridium Particle, Clouds, Beads, and reverb references.
 
-Toy Piano v0.2 has passed the reported functional hardware checks. The next
-steps are a small original physical modeling prototype and then a bounded
-granular prototype. Effect
-variants can share DSP components once those components actually exist. Resonator
+The operator accepted the Toy Piano v0.2 release BIN after reporting “all tests
+green” on October 17, 2026. The [validation report](instruments/toy-piano/docs/VALIDATION.md)
+still lists hardware measurements and detailed MIDI cases without recorded
+results. The next steps are a small original physical modeling prototype and
+then a bounded granular prototype. Effect variants can share DSP components
+once those components actually exist. Resonator
 models belong to the physical modeling project. Clouds/Nimbus reverb and the
 possible Slöer stereo reverb port are separate lines of work in the reverb area.
 The user observed an FV-1 marked “2211” in an opened Slöer pedal; the specific
