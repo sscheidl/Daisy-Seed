@@ -15,7 +15,10 @@ BOOT_BIN = $(SYSTEM_FILES_DIR)/dsy_bootloader_v6_4-extdfu-2000ms.bin
 
 include $(SYSTEM_FILES_DIR)/Makefile
 
-.PHONY: libs test test-sanitize test-thread version
+.PHONY: libs test test-sanitize test-thread test-release version
+test-release:
+	python3 -m unittest discover -s tests -p test_release_guard.py -v
+
 version:
 	@echo $(VERSION)
 libs:

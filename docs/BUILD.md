@@ -78,4 +78,28 @@ Die Version („major.minor“) steht ausschließlich in `src/version.h`. Daraus
 `scripts/check-firmware.py` prüft, dass Dateiname, eingebettete Version und `src/version.h`
 übereinstimmen. Zum Erhöhen die Zahl in `src/version.h` ändern, `CHANGELOG.md` ergänzen und
 neu bauen; ein `make clean` ist nicht nötig, alte Dateien anderer Versionen bleiben aber in
-`build/` liegen, bis `make clean` läuft. Git-Tags werden nicht automatisch gesetzt.
+`build/` liegen, bis `make clean` läuft. Git-Tags werden nicht von `make` gesetzt, das
+übernimmt der Release-Workflow.
+
+## Release
+
+Der Workflow `.github/workflows/release.yml` baut die Firmware aus `main`, führt alle Host-Tests
+und die Binärprüfung aus und legt ein GitHub-Release `v<version>` mit BIN, ELF und `SHA256SUMS`
+an. Der Release-Text besteht aus dem Abschnitt der Version im `CHANGELOG.md` und den Angaben zur
+BIN (Größe, Prüfsumme, Commit). Ein vorhandenes Release oder ein vorhandener Tag wird nie
+überschrieben; dann bricht der Workflow ab.
+
+Der Schutz prüft die vollständige paginierte Release-Liste einschließlich Entwürfen,
+nicht nur veröffentlichte Releases. API-Fehler brechen den Ablauf ab. Lokale Prüfung:
+`make test-release` (temporäres Git-Repository, simulierte API, keine Veröffentlichung).
+
+1. Version in `src/version.h` erhöhen, Abschnitt im `CHANGELOG.md` ergänzen, per PR nach `main`.
+2. *Actions → Release → Run workflow* (Branch `main`). Der Workflow startet auch von selbst, wenn
+   ein Push auf `main` `src/version.h` ändert.
+3. Standardmäßig entsteht ein **Entwurf** (Haken „publish“ nicht gesetzt). BIN herunterladen,
+   flashen und testen, dann den Entwurf auf der Releases-Seite **veröffentlichen**. Erst dabei
+   legt GitHub den Tag `v<version>` auf den gebauten Commit. Mit gesetztem Haken „publish“
+   wird sofort veröffentlicht.
+
+Für den Release-Schritt hat der Workflow Schreibrechte auf den Inhalt (`contents: write`),
+sonst nur Leserechte.
