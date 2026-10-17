@@ -83,5 +83,6 @@ Effektvarianten verwenden später nachweislich gemeinsame DSP-Bausteine, sobald
 diese existieren. Bis dahin bleiben Planung und implementierte Firmware klar getrennt.
 Resonatoren gehören zum Physical-Modeling-Projekt. Im Reverb-Bereich werden die
 Clouds-/Nimbus-Reverb-Experimente und das Slöer-Stereo-Reverb als Portierungsziel
-getrennt verfolgt. Die Zuordnung des Slöer zu einem bestimmten Effektchip ist offen.
+getrennt verfolgt. Am geöffneten Nutzergerät wurde ein FV-1 mit Zusatzmarkierung
+„2211“ identifiziert; die konkrete Slöer-Algorithmusgrundlage bleibt offen.
 Die Reverb-Arbeit kann unabhängig von den Instrumentprojekten weitergeführt werden.

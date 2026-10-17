@@ -26,11 +26,21 @@ prüfen. Leistungsangaben aus fremden Projekten sind keine eigenen Messwerte.
 Es ist die zweite gewünschte Arbeitsrichtung. Es wird nicht mit dem Slö oder einem
 beliebigen FV-1-Reverb gleichgesetzt.
 
-**Offen:** interner DSP-Chip, konkrete Algorithmus-/Quellgrundlage, Version und ein
-bereits existierender nutzbarer Port. Die vorliegende FV-1-Forschung weist für Slöer
-weder ein Originalprogramm noch den Chip nach. Eine tatsächliche Portierung bleibt
-bis zur Klärung dieser Grundlage offen. Eine eigenständige klangliche Annäherung
-müsste als solche getrennt vom Originalport beschrieben werden.
+**Nutzerseitige Hardware-Sichtprüfung, 17.10.2026:** Im geöffneten eigenen Slöer
+wurde ein **Spin Semiconductor FV-1** im bekannten Gehäuse identifiziert.
+Unter der Chipbezeichnung steht die Zusatzmarkierung **„2211“**.
+Dies ist eine Beobachtung am Nutzergerät, keine hier unabhängig durchgeführte
+Sichtprüfung und keine Aussage über sämtliche Slöer-Hardwarestände.
+Die Bedeutung von „2211“ ist nicht nachgewiesen; daraus werden weder Revision
+noch Herstellungsdatum abgeleitet.
+
+**Offen:** konkrete Algorithmus-/Quellgrundlage, Programmversion und ein bereits
+existierender nutzbarer Port. Die frühere FV-1-Forschung enthielt noch keinen
+Chipnachweis zum Slöer; die neue Sichtprüfung ergänzt diesen Hardwarestand.
+Ein FV-1-Nachweis allein identifiziert jedoch nicht das laufende Effektprogramm,
+die Taktung oder den vollständigen Stereo-Signalweg. Eine tatsächliche Portierung
+bleibt bis zur Klärung der Algorithmusgrundlage offen. Eine eigenständige klangliche
+Annäherung müsste als solche getrennt vom Originalport beschrieben werden.
 
 ## 3. Vorhandene FV-1-Portierungsgrundlagen
 
@@ -39,8 +49,8 @@ Vorhandene eigene Grundlage:
 Dort sind plattformneutrale C++17-Referenzen für Plate und Hall dokumentiert;
 sie sind keine Slöer-Implementierung und keine bitgenaue FV-1-Emulation.
 
-Diese Referenzen können die Entwicklung eines nativen Daisy-Reverbs unterstützen,
-beweisen aber keine technische Verwandtschaft zum Slöer.
+Diese Referenzen sind durch den nun beobachteten FV-1 eine passende technische
+Grundlage für die Portierungsarbeit, identifizieren aber nicht den Slöer-Algorithmus.
 Für eine Portierung müssen Abtastrate, Delayzeiten, Modulation, Parameterabbildung
 und Signalpegel ausdrücklich definiert werden. Anschließend Host-Vergleich,
 ARM-Build und manuelle Hardwareprüfung. Forschungsdaten bleiben im Quellrepository;
