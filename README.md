@@ -12,7 +12,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI; ARM and host tests pass; keys, AD envelope, polyphony, fast repeats, and MIDI with Studio One reported working on hardware |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Project outline and reference comparison; original engine planned |
 | [Granular](instruments/granular/) | `instruments/granular/` | Project outline and reference comparison; original engine planned |
-| [Reverb](effects/reverb/) | `effects/reverb/` | Clouds/Nimbus reverb experiments and a possible Slöer stereo reverb port |
+| [Ambient Reverb v0.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb imported from the FV-1 research project; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 
 The repository remains **`sscheidl/Daisy-Seed`**. Project directories share one Git
@@ -29,7 +29,7 @@ Daisy-Seed/
 │   ├── physical-modeling/  # project plan
 │   └── granular/           # project plan
 ├── effects/
-│   ├── reverb/             # Clouds/Nimbus and Slöer stereo reverb
+│   ├── reverb/             # buildable original Ambient Reverb
 │   └── granular/           # effect plan
 ├── common/desktop.mk      # shared official Seed3 Desktop build settings
 ├── docs/                  # hardware, build, flashing, and references
@@ -62,6 +62,9 @@ make PROJECT=toy-piano -j4
 make PROJECT=toy-piano test
 make PROJECT=toy-piano test-sanitize
 make PROJECT=toy-piano test-thread
+make PROJECT=reverb-fx -j4
+make PROJECT=reverb-fx test
+make PROJECT=reverb-fx test-sanitize
 make test-release
 ```
 
@@ -71,6 +74,7 @@ its directory with `make -C instruments/toy-piano`. Its image is
 `instruments/toy-piano/src/version.h`; `make -s version` prints it. Builds for
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
+The reverb image is `effects/reverb/build/AmbientReverb-v0.1.bin`.
 
 Each implemented project is currently a separate firmware image. Switching
 instruments requires flashing the corresponding BIN; runtime instrument switching
@@ -88,11 +92,12 @@ and a shared effect chain have not been implemented.
 The operator accepted the Toy Piano v0.2 release BIN after reporting “all tests
 green” on October 17, 2026. The [validation report](instruments/toy-piano/docs/VALIDATION.md)
 still lists hardware measurements and detailed MIDI cases without recorded
-results. The next steps are a small original physical modeling prototype and
-then a bounded granular prototype. Effect variants can share DSP components
-once those components actually exist. Resonator
-models belong to the physical modeling project. Clouds/Nimbus reverb and the
-possible Slöer stereo reverb port are separate lines of work in the reverb area.
+results. The next steps are a manual test of Ambient Reverb on the kit, a small
+original physical modeling prototype, and then a bounded granular prototype.
+Effect variants can share DSP components once those components actually exist.
+Resonator models belong to the physical modeling project. The original Ambient
+Reverb is separate from the planned Clouds/Nimbus study and a possible direct
+Slöer port.
 The user observed an FV-1 marked “2211” in an opened Slöer pedal; the specific
 Slöer algorithm is still unknown. Reverb work can proceed independently of the
 instrument projects.

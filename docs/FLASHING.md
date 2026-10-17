@@ -1,7 +1,8 @@
 # Flashing over USB
 
 These are local hardware steps. No device was flashed from cloud.
-Commands below run at the **repository root**, selecting `PROJECT=toy-piano`.
+Commands below run at the **repository root**. The examples select `PROJECT=toy-piano`;
+substitute `PROJECT=reverb-fx` for Ambient Reverb.
 Each project has its own BIN; the last flashed application runs on the kit.
 Runtime switching between instruments is not implemented.
 
@@ -54,6 +55,11 @@ Do not repeat `program-boot` for ordinary firmware updates.
    bootloader loads it into SRAM at `0x24000000` for execution.
 4. The application starts after flashing; press RESET if necessary. The bootloader
    remains installed for the next update.
+
+For the first Ambient Reverb test, select
+`effects/reverb/build/AmbientReverb-v0.1.bin` in the Web Programmer, or use
+`make PROJECT=reverb-fx program-dfu` with the same J7 connection and bootloader
+sequence. See the [reverb controls and test steps](../effects/reverb/README.md).
 
 ## If the device is missing
 
