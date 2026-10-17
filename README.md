@@ -1,7 +1,8 @@
 # Daisy Seed — Toy Piano v0.1
 
 Spielbare C++-Firmware für das **Electro-Smith Seed3 Desktop Development Kit**:
-16 unabhängige Toy-Piano-Stimmen, Taster-LEDs und zwei Regler für die AD-Hüllkurve.
+16 unabhängige Toy-Piano-Stimmen, Taster-LEDs, zwei Regler für die AD-Hüllkurve und
+**USB-MIDI** (z. B. für Studio One).
 48 kHz, mono auf beiden Stereoausgängen und am Kopfhörerausgang.
 
 ## Spielen
@@ -29,13 +30,16 @@ denselben Ton, besitzen aber eigene Stimmen. Die Noten stehen in
 * Jeder Druck startet die eigene AD-Hüllkurve. Loslassen unterbricht sie nicht.
   Halten erzeugt keinen Sustain und keine Wiederholungen.
 * D1–D16 zeigen die entprellten Tastenzustände an, unabhängig vom Ausklingen.
-* VR3–VR8, Kippschalter, MIDI, SD, CV/Gates und Audioeingänge haben keine musikalische Funktion.
+* **USB-MIDI** über J7: Das Kit spielt eingehende Noten (16 freie Stimmen, Velocity) und sendet
+  die Tasten S1–S16 als Noten auf Kanal 1. Details in [docs/MIDI.md](docs/MIDI.md).
+* VR3–VR8, Kippschalter, DIN-MIDI, SD, CV/Gates und Audioeingänge haben keine musikalische Funktion.
   **RV1** ist der separate analoge Kopfhörer-Lautstärkeregler, nicht VR1.
 
 Der Klang besteht aus einem Sinus mit 12 % zweiter Harmonischer. Ein erneuter
 Anschlag setzt weder Oszillatorphase noch aktuellen Hüllkurvenpegel abrupt zurück.
-Die feste Pegelskalierung schützt auch bei 16 gleichphasigen Stimmen vor digitalem
-Clipping; einzelne Noten sind dadurch vergleichsweise leise.
+Die feste Pegelskalierung und ein weicher Begrenzer (immer unter 0,8) schützen auch bei
+vielen gleichzeitigen Stimmen vor digitalem Clipping; einzelne Noten sind dadurch
+vergleichsweise leise.
 
 ## Bauen
 
@@ -95,10 +99,15 @@ In diesem Cloud-Auftrag wurde keine Hardware geflasht.
    Klang endet, LED bleibt bis zum Loslassen an.
 6. Beide Audioausgänge vergleichen, schnelle Wiederholungen und Potidrehungen testen.
    Auf Knacken, Störgeräusche, falsche LEDs und Aussetzer achten.
+7. **USB-MIDI:** Kit über J7 am Computer lassen. Ein MIDI-Monitor (oder Studio One) soll das
+   Gerät „Daisy Seed External“ zeigen und beim Drücken von S1–S16 Note On/Off auf Kanal 1
+   anzeigen. Umgekehrt Noten (auch Halbtöne, unterschiedliche Velocity) an das Gerät senden,
+   dazu 16 und mehr Noten gleichzeitig. Anschließend das Kit ohne USB-Verbindung spielen
+   (Netzteil/Ladegerät): nichts darf hängen. Siehe [docs/MIDI.md](docs/MIDI.md).
 
 ## Prüfstatus
 
-Ein echter ARM-Cross-Compile sowie Host-Tests wurden in der Cloud ausgeführt.
+Ein echter ARM-Cross-Compile sowie Host-Tests (einschließlich ASan/UBSan/TSan) wurden in der Cloud ausgeführt.
 Die Binärdatei hat eine geprüfte BOOT_SRAM-Vektortabelle.
 [Prüfbericht](docs/VALIDATION.md) trennt die Softwareprüfungen von noch offenen
 Hardwaretests. Die tatsächliche Audioqualität, ADC-Stabilität und Callback-Laufzeit
@@ -110,9 +119,10 @@ BIN, ELF und SHA-256 als Build-Artefakt bereit. Der lokale Build benötigt kein 
 ## Aufbau und Referenzen
 
 * `src/main.cpp`: offizielle Desktop-Hardware, Flankenerkennung, Audio und LED-Mailbox.
-* `src/toy_piano.*`: unabhängige Stimmen, AD-Hüllkurven und interpolierte Sinustabelle.
+* `src/toy_piano.*`: Tasten- und MIDI-Stimmen, AD-Hüllkurven, Begrenzer, interpolierte Sinustabelle.
+* `src/spsc_queue.h`: lockfreie Warteschlange zwischen Hauptschleife und Audiocallback.
 * `src/config.h`: Noten, Zeiten, Klang und Pegel.
 * `tests/`: Host-Tests ohne zusätzliches Testframework.
 * [Hardwaredetails und offizielle Quellen](docs/HARDWARE.md).
 
-Keine Samples, Effekte, MIDI-Steuerung, Presets, Display- oder Netzwerkfunktionen.
+Keine Samples, Effekte, Presets, Display- oder Netzwerkfunktionen; MIDI nur als Noten über USB.

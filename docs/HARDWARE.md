@@ -36,8 +36,25 @@ LED-Daten gehen über eine lockfreie 32-Bit-Mailbox ins Hauptprogramm.
 vorherige Übertragung warten kann. Er wird daher ausschließlich außerhalb des
 Audiocallbacks und höchstens alle 10 ms bei einer Zustandsänderung aufgerufen.
 
-`Hardware::Init()` initialisiert auch unbenutzte Board-Peripherie wie MIDI/CV.
-Die Anwendung startet keine MIDI-Verarbeitung und erzeugt keine CV/Gate-Signale.
+`Hardware::Init()` initialisiert auch unbenutzte Board-Peripherie wie DIN-MIDI/CV.
+Die Anwendung startet keine DIN-MIDI-Verarbeitung und erzeugt keine CV/Gate-Signale.
+
+## USB-MIDI
+
+`MidiUsbHandler` mit `MidiUsbTransport::Config::EXTERNAL` verwendet den Daisy-USB-Port,
+der am Desktop-Träger J7 herausgeführt ist (derselbe wie im offiziellen Template für den
+Serial-Logger, Produktname „Daisy Seed External“). Eingehende Pakete werden im USB-Interrupt
+zu `MidiEvent`s geparst. `ServiceUsbMidi()` holt sie im Hauptprogramm ab und reicht NoteOn
+über eine lockfreie Warteschlange an den Audiocallback weiter. Tasten-Flanken gehen den
+umgekehrten Weg, weil `SendMessage()` blockieren kann (bis zu drei Wiederholungen mit
+je 100 µs) und deshalb nie im Audiocallback laufen darf.
+
+libDaisys Sendefunktion prüft nicht, ob ein Host das Gerät eingerichtet hat. Die Firmware
+sendet deshalb nur bei `hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED` und verwirft sonst
+die Tastenereignisse. Dieser Zustand stammt aus dem festgelegten libDaisy-Commit.
+
+`MidiHandler` enthält eine FIFO von 256 `MidiEvent`s (ca. 37 KB). Das DTCM ist damit zu
+88,7 % belegt (116.208 von 131.072 Bytes), für den Stack bleiben etwa 14,8 KB.
 
 ## Offizielle Quellen
 

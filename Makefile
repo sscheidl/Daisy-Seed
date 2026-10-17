@@ -26,5 +26,5 @@ $(DAISYSP_DIR)/build/libdaisysp.a:
 HOST_CXX ?= g++
 test:
 	mkdir -p build/host
-	$(HOST_CXX) -std=c++17 -O2 -Wall -Wextra -Werror -Isrc -IDaisySP/Source -IlibDaisy/src tests/test_toy_piano.cpp src/toy_piano.cpp -o build/host/test_toy_piano
+	$(HOST_CXX) -std=c++17 -O2 -Wall -Wextra -Werror -pthread -Isrc -IDaisySP/Source -IlibDaisy/src tests/test_toy_piano.cpp src/toy_piano.cpp -o build/host/test_toy_piano
 	./build/host/test_toy_piano

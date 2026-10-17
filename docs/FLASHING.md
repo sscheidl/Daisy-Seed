@@ -59,6 +59,13 @@ Bei späteren Firmwareupdates nicht erneut `program-boot` ausführen.
 4. Nach erfolgreichem Flashen startet die Firmware; gegebenenfalls RESET drücken.
    Der Bootloader bleibt für weitere Versionen installiert.
 
+## Mit USB-MIDI-Firmware
+
+Läuft die Toy-Piano-Firmware, meldet sich J7 als MIDI-Gerät „Daisy Seed External“.
+Das Flashen bleibt unverändert: RESET, danach BOOT innerhalb der Bootloader-Wartezeit,
+dann erscheint wie zuvor das DFU-Gerät. Nach dem Flashen muss ein geöffnetes Programm
+(z. B. Studio One) das MIDI-Gerät eventuell neu verbinden, siehe [MIDI.md](MIDI.md).
+
 ## Wenn das Gerät nicht erscheint
 
 Zuerst Datenkabel, Anschluss und den zum Schritt gehörenden BOOT/RESET-Ablauf
