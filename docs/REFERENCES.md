@@ -14,7 +14,7 @@ here. DaisySP remains the pinned library already included in this repository.
 | [DaisyExamples](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27) | `259ed82c7d4c0d7699f695945e6e111b7dc7cb27` |
 | [DaisySP, already included as a submodule](https://github.com/daisyaudio/DaisySP/tree/2c72eaf9eac5fc0dca1919d65d606da907832618) | `2c72eaf9eac5fc0dca1919d65d606da907832618` |
 | [Our research reports, Custom-Firmware](https://github.com/sscheidl/Custom-Firmware/tree/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9) | `3e041b5b9ce98eb687316ffb3c4ba19492ec74e9` |
-| [Our FV-1 research and C++ references](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/d1ef0525d072091d9d4da46f1821d45e930a2745) | `d1ef0525d072091d9d4da46f1821d45e930a2745` |
+| [FV-1 research and independent Ambient Reverb](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/eb7fe38e165b2a997e8128ebc2b7a7a228bfcb65) | `eb7fe38e165b2a997e8128ebc2b7a7a228bfcb65` |
 
 The DaisySP review covered headers, attribution comments, and license. For the
 original projects, the linked DSP interfaces and project README were read. The
@@ -72,17 +72,21 @@ as a second development and possible porting target.
 | [Nimbus Reverb, Patch](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Nimbus/dsp/fx/reverb.h) / [Field](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/field/Nimbus/dsp/fx/reverb.h) | Reverb header and MIT notices reviewed; Daisy ports exist | Starting point for Desktop Kit experiments; this section has not been built here |
 | Walrus Audio Slöer | On October 17, 2026, the user identified a Spin Semiconductor FV-1 marked “2211” in an opened pedal; no independent visual inspection here | FV-1 observed in that device. Meaning of the marking, effect program, clocking, full stereo path, and portable algorithm source remain unknown |
 | [FV-1 porting strategy](https://github.com/sscheidl/fv-1-DSP-xtractor/blob/d1ef0525d072091d9d4da46f1821d45e930a2745/docs/FV1_DAISY_PORTING.md) and [source catalog](https://github.com/sscheidl/fv-1-DSP-xtractor/blob/d1ef0525d072091d9d4da46f1821d45e930a2745/docs/FV1_SOURCE_CATALOG.md) | Existing C++17 Plate/Hall references and reports reviewed; no port performed here | FV-1 research, explicitly not a Slöer implementation. The historical source did not confirm the chip; the new observation does not identify the algorithm |
+| [Independent Ambient Reverb](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/eb7fe38e165b2a997e8128ebc2b7a7a228bfcb65/ambient) | Original MIT-licensed stereo DSP and [Seed3 example](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/eb7fe38e165b2a997e8128ebc2b7a7a228bfcb65/examples/seed3-ambient), imported into [reverb-fx](../effects/reverb/) | Host tests and ARM build pass here; no board run or Slöer sound match has been established |
 
 Reverb is tracked separately from the granular effect. CloudSeed is not the
-user's selected Clouds/Nimbus reference. A direct Slöer port and an original
-sonic approximation must be described as different work.
+user's selected Clouds/Nimbus reference. The imported Ambient Reverb is an
+original design inspired by Slöer features, not a direct Slöer port. The
+specific Slöer algorithm and any actual sound match remain unverified.
 
 ## Reuse and open checks
 
 The reviewed Mutable STM32 DSP headers carry MIT license text; DaisySP documents
 its MIT licensing and attribution. Any later code reuse must account for the
 specific files, dependencies, copyright notices, and naming rules. No
-additional engines or assets have been copied here. Manufacturer binaries,
+manufacturer engines or assets have been copied here. The independent
+MIT-licensed Ambient Reverb code and its license have been imported.
+Manufacturer binaries,
 disassemblies, and reconstructed manufacturer functions will not be imported.
 
 **Open:** detailed code comparison, sample-rate and block-size adaptation for

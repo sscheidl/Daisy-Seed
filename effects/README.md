@@ -5,11 +5,11 @@ Dev Kit:
 
 | Effect | Project ID | Status |
 | --- | --- | --- |
-| [Reverb](reverb/) | `reverb-fx` | Clouds/Nimbus experiments and a possible Slöer stereo reverb port |
+| [Ambient Reverb](reverb/) | `reverb-fx` | Buildable original stereo reverb; hardware test pending. Clouds/Nimbus remains a separate study |
 | [Granular / Freeze](granular/) | `granular-fx` | Planned |
 
-When implemented, each effect will have its own source, tests, README, and build
-directory. DSP actually shared by an instrument and effect can then move to
-`common/` instead of maintaining two engine copies. There is currently no
-effect firmware or combined effect chain. Resonators remain models and
+Ambient Reverb has its own source, host tests, README, and build directory.
+Other effects will get the same structure when implemented. DSP actually shared
+by an instrument and effect can then move to `common/` instead of maintaining
+two engine copies. There is no combined effect chain. Resonators remain models and
 excitation variants within [Physical Modeling](../instruments/physical-modeling/).

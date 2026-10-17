@@ -13,6 +13,7 @@ implementation status. Each project owns its sources, tests and output directory
 | Tested ARM toolchain | xPack GNU Arm Embedded GCC `13.2.1-1.1`, GCC `13.2.1 20231009` |
 | Language / CPU | GNU++17, Cortex-M7, Thumb, FPv5-D16, hard float |
 | Toy Piano | BOOT_SRAM, `-O3`, 48 kHz / 48 samples |
+| Ambient Reverb | BOOT_SRAM, `-O3`, 48 kHz / 32 samples; 1,114,112 bytes of external SDRAM reserved |
 
 This libDaisy version includes Desktop Dev Kit and Seed3 codec support. Older
 DaisyExamples dependency pins are not automatically suitable. Fetch libDaisy's
@@ -40,13 +41,18 @@ make PROJECT=toy-piano -j4
 make PROJECT=toy-piano test
 make PROJECT=toy-piano test-sanitize
 make PROJECT=toy-piano test-thread
+make PROJECT=reverb-fx -j4
+make PROJECT=reverb-fx test
+make PROJECT=reverb-fx test-sanitize
 make test-release
 python3 scripts/check-firmware.py
+python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.1.bin
 ```
 
 Toy Piano is the default when PROJECT is omitted. `make -C instruments/toy-piano`
 builds the same firmware. Output is in `instruments/toy-piano/build/`; the former
-root `build/` location is no longer used. Planned or unknown projects are rejected
+root `build/` location is no longer used. Ambient Reverb builds into
+`effects/reverb/build/`. Planned or unknown projects are rejected
 rather than silently building a different instrument.
 
 `make all-projects` and `make test-projects` process every implemented project in
@@ -69,12 +75,15 @@ Generated files and toolchains are excluded from Git.
 `make test` runs DSP tests and the production callback with fake GPIO/ADC and
 libDaisy's unchanged DigitalControl debouncer. It does not replace hardware tests.
 `make test-sanitize` runs ASan/UBSan with `-fno-sanitize-recover=all`;
-`make test-thread` runs ThreadSanitizer on the MIDI queue tests.
+`make PROJECT=toy-piano test-thread` runs ThreadSanitizer on the MIDI queue tests.
+The reverb's host and sanitizer tests cover its DSP; its board controls and
+callback timing still require a hardware check.
 Shared release-preflight tests remain in root `tests/`; `make test-release` uses
 a temporary Git repository and a fake API without creating releases.
 
-The CI matrix currently builds only Toy Piano, deriving the BIN name from its
-version. It uploads BIN, ELF and SHA256SUMS. Private-repository downloads require
+The CI matrix builds Toy Piano and Ambient Reverb, deriving each BIN name from
+its project version. It uploads BIN, ELF and SHA256SUMS for both.
+Private-repository downloads require
 an authorized GitHub login.
 
 ## Adding another implemented project
@@ -108,3 +117,4 @@ abort the workflow.
 Only the release job requests `contents: write`; normal CI is read-only.
 The existing v0.2 name is retained for Toy Piano. Other instruments need their
 own version/tag conventions before their first release.
+Ambient Reverb v0.1 is a CI artifact, not a published GitHub Release.
