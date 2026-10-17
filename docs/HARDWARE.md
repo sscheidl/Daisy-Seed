@@ -1,70 +1,60 @@
 # Seed3 Desktop Development Kit
 
-Ziel ist ausdrücklich das **Seed3 Desktop Dev Kit**, kein Pod/Field/Patch und kein
-unbeschaltetes Seed-Board. Die Anwendung verwendet ausschließlich
-`daisy::desktop_devkit::Hardware` aus dem festgelegten libDaisy-Commit.
-GPIOs werden in der Anwendung nicht selbst zugeordnet.
+This project explicitly targets the **Seed3 Desktop Dev Kit**, not Pod, Field,
+Patch, or an unconnected Seed board. It uses only `daisy::desktop_devkit::Hardware`
+from the pinned libDaisy revision. The application does not assign GPIO pins itself.
 
-## Geprüfte API und Zuordnungen
+## Verified API and mapping
 
-| Funktion | Offizielle Hardwareklasse | Offizielle Verdrahtung (nur Referenz) |
+| Function | Official hardware API | Official wiring (reference only) |
 | --- | --- | --- |
-| 16 Taster | `button[0..15]`, `UpdateAllControls()` | 2 verkettete Shiftregister, Clock D8, Latch D9, Daten D10 |
+| 16 buttons | `button[0..15]`, `UpdateAllControls()` | Two chained shift registers; clock D8, latch D9, data D10 |
 | 16 LEDs | `SetLed(0..15, brightness)`, `UpdateLeds()` | PCA9685, I²C1, SCL D11, SDA D12 |
-| 8 Potis | `pot[0..7].Value()` | 8:1-Mux: ADC D15, Auswahl D24/D25/D26 |
-| Stereoausgänge | `seed.StartAudio()` | J3 links, J4 rechts, J5 Kopfhörer |
-| Audioformat | 48 kHz, 48 Samples pro Block | Seed3/TAC5242, durch libDaisy initialisiert |
+| 8 knobs | `pot[0..7].Value()` | 8:1 mux: ADC D15, selection D24/D25/D26 |
+| Stereo outputs | `seed.StartAudio()` | J3 left, J4 right, J5 headphones |
+| Audio format | 48 kHz, 48 samples/block | Seed3/TAC5242, initialized by libDaisy |
 
-`Hardware::UpdateAllControls()` kehrt intern die Shiftregister-Indizes um:
-`button[i].Debounce(button_sr.State(15 - i))`. Anwendungscode darf diese Reihenfolge
-**nicht nochmals umkehren**. Index 0 entspricht S1/D1, Index 15 entspricht S16/D16.
-Die LED-Hardwareklasse berücksichtigt die invertierte Helligkeit bereits selbst.
-VR1/VR2 entsprechen Mux-Kanälen und Pot-Indizes 0/1.
+`Hardware::UpdateAllControls()` reverses shift-register indices internally:
+`button[i].Debounce(button_sr.State(15 - i))`. Application code must **not reverse
+them again**. Index 0 is S1/D1; index 15 is S16/D16. The LED hardware class handles
+inverted brightness. VR1/VR2 are mux channels and knob indices 0/1.
 
-Die DigitalControl-Entprellung arbeitet mit einer 8-Bit-Historie und liefert ihre
-Flanken nach sieben stabilen Abtastwerten. Bei 1 kHz ergibt das ungefähr 7–8 ms.
-Die Firmware hält den entprellten LED-Zustand zwischen Druck- und Loslassflanke.
-Dadurch flackert eine LED nicht bei einem einzelnen abweichenden Rohwert.
-Eine weitere Druckflanke wird bei bereits gesetztem Haltezustand ignoriert:
-DigitalControl kann nach einem kurzen Kontaktaussetzer eine neue Druckflanke
-melden, ohne zuvor eine Loslassflanke geliefert zu haben.
+DigitalControl uses an 8-bit debounce history and reports edges after seven stable
+samples, approximately 7–8 ms at 1 kHz. The firmware holds each LED's debounced state
+between press and release edges. A second press edge while already held is ignored:
+DigitalControl can report another rising edge after a short contact dropout without
+first reporting a release edge.
 
-Die AnalogControls in `Hardware::Init()` sind für 1 kHz konfiguriert.
-Deshalb verwendet die Firmware 48 Samples bei 48 kHz und ruft einmal pro Block
-`UpdateAllControls()` auf. Bei der Standard-Slew von 2 ms ergibt AnalogControl
-einen Koeffizienten von 1,0 und glättet selbst nicht. Der ADC verwendet 32-faches
-Oversampling; der eigene PotFilter übernimmt 20 ms Glättung und 0,1 % Hysterese.
-Die äußersten 0,3 % werden auf die Zeit-Endwerte abgebildet.
+`Hardware::Init()` configures AnalogControls for 1 kHz. The application uses
+48-sample blocks at 48 kHz and calls `UpdateAllControls()` once per block. With the
+default 2 ms slew, AnalogControl has a coefficient of 1.0 and does not smooth the
+signal itself. The ADC uses 32× oversampling. PotFilter adds 20 ms smoothing and
+0.1% hysteresis; the outermost 0.3% maps to the time endpoints.
 
-LED-Daten gehen über eine lockfreie 32-Bit-Mailbox ins Hauptprogramm.
-`UpdateLeds()` verwendet den offiziellen DMA-Treiber, dessen Buffer-Swap auf eine
-vorherige Übertragung warten kann. Er wird daher ausschließlich außerhalb des
-Audiocallbacks und höchstens alle 10 ms bei einer Zustandsänderung aufgerufen.
-Ein sehr kurzer entprellter Tastendruck kann vollständig zwischen zwei LED-Abfragen
-liegen: Dann erklingt der Ton, ohne dass die LED sichtbar aufleuchtet.
+LED data reaches the main loop through a lock-free 32-bit mailbox. `UpdateLeds()`
+uses the official DMA driver, whose buffer swap may wait for a previous transfer.
+It runs only outside the audio callback, at most every 10 ms and only when the
+state changes. A very short debounced press can fall entirely between LED polls:
+the note sounds without a visible LED flash.
 
-Bekannte Grenze des unveränderten libDaisy-Treibers: Ein sofort fehlgeschlagener
-`TransmitDma()`-Start kann den nächsten Buffer-Swap dauerhaft warten lassen.
-Dann können die LEDs einfrieren; die höher priorisierte Audiowiedergabe läuft weiter.
-Dieses Verhalten ist am eigenen Board noch nicht beobachtet oder gemessen worden.
+Known limitation of the unmodified libDaisy driver: an immediately failed
+`TransmitDma()` start can make the next buffer swap wait indefinitely. LEDs may
+freeze while higher-priority audio continues. This has not been observed or
+measured on the actual board in the recorded Toy Piano validation.
 
-`Hardware::Init()` initialisiert auch unbenutzte Board-Peripherie wie MIDI/CV.
-Die Anwendung startet keine MIDI-Verarbeitung und erzeugt keine CV/Gate-Signale.
+`Hardware::Init()` also initializes unused peripherals such as MIDI/CV.
+The application does not process MIDI or generate CV/gate signals.
 
-## Offizielle Quellen
+## Official sources
 
-Geprüft am 16.10.2026:
+Checked on 16 October 2026:
 
-* [Hardware und Schaltplan](https://github.com/daisyaudio/Seed3-DevKit-Desktop),
-  Stand `987297fb7c9a8c58721ef40abf6d6eedd1fcda2a`.
-* [Produktdokumentation](https://docs.daisy.audio/product/Seed3-Desktop-Dev-Kit/).
-* [libDaisy](https://github.com/daisyaudio/libDaisy),
-  `f715e4875b2d28445d0c11a0a17f064a248f69d0`.
-* [Desktop-Hardwareklasse](https://github.com/daisyaudio/libDaisy/blob/f715e4875b2d28445d0c11a0a17f064a248f69d0/src/desktop_devkit.cpp).
-* [Offizielles Desktop-Template](https://github.com/daisyaudio/libDaisy/tree/f715e4875b2d28445d0c11a0a17f064a248f69d0/examples/devkits/Desktop-DevKit-UI-Template).
-* [DaisySP](https://github.com/daisyaudio/DaisySP),
-  `2c72eaf9eac5fc0dca1919d65d606da907832618`.
+* [Hardware and schematic](https://github.com/daisyaudio/Seed3-DevKit-Desktop), revision `987297fb7c9a8c58721ef40abf6d6eedd1fcda2a`.
+* [Product documentation](https://docs.daisy.audio/product/Seed3-Desktop-Dev-Kit/).
+* [libDaisy](https://github.com/daisyaudio/libDaisy), `f715e4875b2d28445d0c11a0a17f064a248f69d0`.
+* [Desktop hardware class](https://github.com/daisyaudio/libDaisy/blob/f715e4875b2d28445d0c11a0a17f064a248f69d0/src/desktop_devkit.cpp).
+* [Official Desktop template](https://github.com/daisyaudio/libDaisy/tree/f715e4875b2d28445d0c11a0a17f064a248f69d0/examples/devkits/Desktop-DevKit-UI-Template).
+* [DaisySP](https://github.com/daisyaudio/DaisySP), `2c72eaf9eac5fc0dca1919d65d606da907832618`.
 
-Die Zuordnung ist gegen API und offizielle Hardwaretabellen geprüft.
-Die tatsächliche Bestückung und Funktion des eigenen Boards muss beim ersten
-Hardwaretest bestätigt werden.
+Mappings were checked against the API and official hardware tables. Actual board
+assembly and operation must be confirmed during hardware testing.
