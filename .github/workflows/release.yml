@@ -50,16 +50,10 @@ jobs:
           version="$(make -s version)"
           test -n "$version" || { echo "::error::Could not read the version from src/version.h"; exit 1; }
           echo "value=$version" >> "$GITHUB_OUTPUT"
-          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
-            echo "::error::Tag v$version already exists. Raise the version in src/version.h first."
-            exit 1
-          fi
-          if gh release view "v$version" >/dev/null 2>&1; then
-            echo "::error::Release v$version already exists (possibly a draft). Delete it or raise the version."
-            exit 1
-          fi
+          bash scripts/check-release-available.sh "$version"
       - name: Test on host
         run: |
+          make test-release
           make test
           make test-sanitize
           make test-thread

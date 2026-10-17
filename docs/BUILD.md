@@ -89,6 +89,10 @@ an. Der Release-Text besteht aus dem Abschnitt der Version im `CHANGELOG.md` und
 BIN (Größe, Prüfsumme, Commit). Ein vorhandenes Release oder ein vorhandener Tag wird nie
 überschrieben; dann bricht der Workflow ab.
 
+Der Schutz prüft die vollständige paginierte Release-Liste einschließlich Entwürfen,
+nicht nur veröffentlichte Releases. API-Fehler brechen den Ablauf ab. Lokale Prüfung:
+`make test-release` (temporäres Git-Repository, simulierte API, keine Veröffentlichung).
+
 1. Version in `src/version.h` erhöhen, Abschnitt im `CHANGELOG.md` ergänzen, per PR nach `main`.
 2. *Actions → Release → Run workflow* (Branch `main`). Der Workflow startet auch von selbst, wenn
    ein Push auf `main` `src/version.h` ändert.
