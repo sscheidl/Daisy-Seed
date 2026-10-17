@@ -17,6 +17,8 @@ jobs:
           echo "$GITHUB_WORKSPACE/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin" >> "$GITHUB_PATH"
       - name: Test DSP on host
         run: make test
+      - name: Test DSP and callback with ASan and UBSan
+        run: make test-sanitize
       - name: Cross-compile firmware
         run: make -j4
       - name: Check firmware image

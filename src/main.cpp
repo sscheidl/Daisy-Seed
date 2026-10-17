@@ -13,7 +13,7 @@ static_assert(daisy::desktop_devkit::kNumLeds == toy_piano::kNumKeys);
 
 void AudioCallback(daisy::AudioHandle::InputBuffer,
                    daisy::AudioHandle::OutputBuffer out, size_t size) {
-    hw.UpdateAllControls(); // Shift registers + official debouncing + ADC filters.
+    hw.UpdateAllControls(); // Shift registers + official debouncing + ADC values.
     const float attack = attack_pot.Process(hw.pot[0].Value());
     const float decay = decay_pot.Process(hw.pot[1].Value());
     // Only convert times on a new note, then latch them for that one shot.
@@ -21,7 +21,8 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     uint32_t triggers = 0;
     for(size_t key = 0; key < toy_piano::kNumKeys; ++key) {
         const uint32_t bit = 1u << key;
-        if(hw.button[key].RisingEdge()) {
+        // DigitalControl may report another rise after a brief contact dropout.
+        if(hw.button[key].RisingEdge() && !(held & bit)) {
             triggers |= bit;
             held |= bit;
         }
@@ -51,7 +52,7 @@ int main() {
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(toy_piano::kBlockSize);
     piano.Init(hw.seed.AudioSampleRate());
-    // Let the mux ADC and existing AnalogControl smoothing settle before use.
+    // Let the mux ADC settle and populate AnalogControl values before use.
     for(unsigned i = 0; i < 100; ++i) {
         for(auto& pot : hw.pot)
             pot.Process();

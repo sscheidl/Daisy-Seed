@@ -36,6 +36,7 @@ bash scripts/install-toolchain.sh
 export PATH="$PWD/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin:$PATH"
 make -j4
 make test
+make test-sanitize
 python3 scripts/check-firmware.py build/ToyPiano-v0.1.bin
 ```
 
@@ -60,13 +61,8 @@ Der GitHub-Actions-Workflow lädt nach erfolgreichem Build die BIN, ELF und
 Prüfsumme als Artefakt hoch. In einem privaten Repository ist dafür eine
 GitHub-Anmeldung mit Zugriff auf das Repository nötig.
 
-## GitHub-Einrichtung bei fehlenden Erstellungsrechten
-
-Falls die verbundene App `createRepository` nicht ausführen darf:
-
-1. Auf GitHub unter dem eigenen Account ein **privates**, leeres Repository
-   `Daisy-Seed` anlegen (ohne README/License/.gitignore).
-2. Der verbundenen GitHub-App Zugriff auf dieses Repository geben.
-3. Die vorbereiteten Branches aus diesem Projekt pushen und einen PR öffnen.
-
-Es dürfen dafür keine anderen vorhandenen Projekte als Ersatz verwendet werden.
+`make test` prüft DSP und den echten Anwendungscallback mit simulierten
+Hardwareeingängen und der unveränderten DigitalControl-Entprellung aus libDaisy.
+`make test-sanitize` führt beide Tests mit AddressSanitizer und UndefinedBehaviorSanitizer
+aus. `-fno-sanitize-recover=all` macht jeden erkannten Fehler zum Testfehler.
+Die GPIO-/ADC-Stubs ersetzen keinen Hardwaretest.

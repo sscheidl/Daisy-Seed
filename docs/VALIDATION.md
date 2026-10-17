@@ -1,6 +1,6 @@
 # Prüfbericht — Toy Piano v0.1
 
-Stand: 16.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
+Stand: 17.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 
 ## Tatsächlich ausgeführt
 
@@ -8,36 +8,44 @@ Stand: 16.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 | --- | --- |
 | Offizielle Desktop-API und Hardwaretabellen | `Hardware`, Button-/LED-Indizes, VR1/VR2 und Bootloader-Auswahl abgeglichen |
 | Echter ARM-Cross-Compile | Erfolgreich mit xPack GCC 13.2.1, Cortex-M7 Hard Float |
-| BOOT_SRAM-BIN | 106.308 Bytes; Stack `0x20020000`, Reset-Vektor `0x24000691` |
+| BOOT_SRAM-BIN | 106.388 Bytes; Stack `0x20020000`, Reset-Vektor `0x24000691` |
 | ELF | ELF32, ARM, EABI5, Hard Float; Startadresse im SRAM |
-| Speicherbudget | SRAM 106.308 / 491.520 Bytes; DTCM 62.812 / 131.072 Bytes; DMA-RAM 17.096 / 32.768 Bytes |
+| Speicherbudget | SRAM 106.388 / 491.520 Bytes; DTCM 62.812 / 131.072 Bytes; DMA-RAM 17.096 / 32.768 Bytes |
 | Alle 16 MIDI-Zuordnungen | Exakt gegen die angeforderte Tabelle geprüft, einschließlich doppeltem C5 |
 | Alle 16 tatsächlichen Oszillatorfrequenzen | Host-Audiorender: Nulldurchgangszählung über eine Sekunde, Abweichung < 1,1 Hz |
 | AD-Hüllkurven | Min./Mitte/Max. für Attack × Decay: samplegenaue Laufzeit, monotoner Verlauf, exakter Endwert null |
 | Retrigger | Pegel bleibt beim Trigger erhalten; erneuter Attack während Attack und Decay geprüft |
 | Zeitkennlinien | Endwerte, geometrische Mitte und monotoner Verlauf über 1001 Positionen geprüft |
 | Poti-Rauschfilter | ±0,05 % simuliertes Rauschen unterdrückt, beide Endanschläge erreichbar |
+| Callback/Entprellung | Echter Callback mit gepinntem DigitalControl: Kontaktaussetzer von 1–6 ms an jeder der 16 Tasten lösen keinen Doppelanschlag aus; nach bestätigtem Loslassen funktioniert der nächste Anschlag |
+| Callback/LED-Mailbox | Einschaltanschlag nach sieben Abtastungen, alle 16 Bits gleichzeitig, LED-Maske bleibt nach AD-Ende gesetzt, Stereo identisch; keine LED-Übertragung im Callback |
 | 16 unabhängige Stimmen | Polyphoner Render gegen Summe von 16 Einzelinstanzen verglichen, einschließlich Retrigger einer C5-Taste |
 | Pegel | Test-Peak 0,279373; keine nichtendlichen Werte; mathematische Obergrenze 0,8 |
-| Speicher-/Zugriffsfehler im DSP | Derselbe Host-Test mit AddressSanitizer + UndefinedBehaviorSanitizer bestanden |
+| Speicher-/Zugriffsfehler | DSP- und Callback-Test mit AddressSanitizer + UndefinedBehaviorSanitizer bestanden, Fehlerbehandlung mit `-fno-sanitize-recover=all` |
 
 Prüfsumme der geprüften Firmware:
 
 ```text
-995ccc4f8a7fc60c8b5ea224810cadd275175ea014186b4829b1d6ecbbbcc2a6  ToyPiano-v0.1.bin
+a37bddb180ea530e58d2f3c5b4c061c3d5660bae900c8ef93a92e6101346ffe0  ToyPiano-v0.1.bin
 ```
 
 Host-Tests: `make test`. Binärprüfung:
 `python3 scripts/check-firmware.py build/ToyPiano-v0.1.bin`.
-Sanitizer-Aufruf:
+Sanitizer-Aufruf (auch im CI-Workflow enthalten):
 
 ```bash
-g++ -std=c++17 -O1 -g -Wall -Wextra -Werror \
-    -fsanitize=address,undefined -fno-omit-frame-pointer \
-    -Isrc -IDaisySP/Source tests/test_toy_piano.cpp src/toy_piano.cpp \
-    -o build/host/test_sanitized
-./build/host/test_sanitized
+make test-sanitize
 ```
+
+Der Callback-Test verwendet den unveränderten Anwendungscode und libDaisys echte
+DigitalControl-Klasse. GPIO/ADC, Systemzeit und Audio-/LED-Hardware sind Host-Stubs.
+Mit der ursprünglichen Bedingung aus `9e0a975` scheitert der Test am zusätzlichen
+Hüllkurvenanstieg nach einem Kontaktaussetzer. Mit der Haltezustandsprüfung besteht er.
+Die Tests bilden weder reale Schaltermechanik noch die LED-DMA-Hardware ab.
+
+Die Nulldurchgangsprüfung ist ein grober Frequenztest, kein Präzisions-Stimmungstest.
+Die Binärprüfung kontrolliert Größe, Stack- und Reset-Vektor und garantiert keinen
+erfolgreichen Start auf Hardware.
 
 ## Echtzeitprüfung am Quelltext
 
@@ -79,11 +87,5 @@ BOOT_SRAM-Linkerskript. Eigener DSP-Code kompiliert im Host-Test mit
 
 Die genaue Testfolge steht in der README. Keine bekannten Fehler im geprüften
 DSP-Verhalten; analoge Eigenschaften und die reale Audiowiedergabe bleiben ungetestet.
-
-## GitHub
-
-Das dedizierte private Repository ist `sscheidl/Daisy-Seed`. Nach der manuellen
-Einrichtung und Freigabe ist der Zugriff verfügbar. Der Firmwarebranch basiert auf
-dem vorhandenen initialen `main`-Commit; kein anderes Projekt wurde verwendet.
-Der Workflow erstellt nach erfolgreichen Prüfungen ein GitHub-Actions-Artefakt
-mit BIN, ELF und Prüfsumme. Die Prüfungsergebnisse des lokalen Builds stehen oben.
+Weitere bekannte Grenzen (sehr kurze LED-Anzeigen, mögliche Blockade bei einem
+LED-DMA-Startfehler) stehen in [HARDWARE.md](HARDWARE.md).

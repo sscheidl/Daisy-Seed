@@ -23,11 +23,13 @@ denselben Ton, besitzen aber eigene Stimmen. Die Noten stehen in
 
 * **VR1:** Attack von 2 bis 300 ms, links kurz, rechts lang.
 * **VR2:** Decay von 50 bis 3000 ms, links kurz, rechts lang.
-* Beide Zeitkennlinien sind logarithmisch, mit ADC-Glättung und zusätzlichem Rauschfilter.
+* Beide Zeitkennlinien sind logarithmisch. Der ADC verwendet 32-faches Oversampling;
+  der eigene PotFilter glättet über 20 ms und ergänzt Hysterese.
   Neue Einstellungen gelten für den nächsten Anschlag. Bereits laufende Hüllkurven
   behalten ihre Zeiten, damit keine Parametersprünge entstehen.
 * Jeder Druck startet die eigene AD-Hüllkurve. Loslassen unterbricht sie nicht.
   Halten erzeugt keinen Sustain und keine Wiederholungen.
+  Eine beim Einschalten gehaltene Taste löst nach etwa 7 ms ab Audiostart einen Ton aus.
 * D1–D16 zeigen die entprellten Tastenzustände an, unabhängig vom Ausklingen.
 * VR3–VR8, Kippschalter, MIDI, SD, CV/Gates und Audioeingänge haben keine musikalische Funktion.
   **RV1** ist der separate analoge Kopfhörer-Lautstärkeregler, nicht VR1.
@@ -36,6 +38,8 @@ Der Klang besteht aus einem Sinus mit 12 % zweiter Harmonischer. Ein erneuter
 Anschlag setzt weder Oszillatorphase noch aktuellen Hüllkurvenpegel abrupt zurück.
 Die feste Pegelskalierung schützt auch bei 16 gleichphasigen Stimmen vor digitalem
 Clipping; einzelne Noten sind dadurch vergleichsweise leise.
+S8 und S9 haben unabhängige Oszillatorphasen: Beim gemeinsamen Spielen können
+sich Grundtöne abhängig vom Anschlagzeitpunkt teilweise auslöschen.
 
 ## Bauen
 
