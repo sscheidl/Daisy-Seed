@@ -1,6 +1,8 @@
 # Shared Seed3 Desktop Dev Kit build settings; include from a project Makefile.
 # Each project supplies TARGET and its own CPP_SOURCES and tests.
-DAISY_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+# Projects live two levels below the repository (instruments/<id>, effects/<id>).
+# Relative paths also avoid injecting spaces from a local Playground path into flags.
+DAISY_ROOT := ../..
 DEBUG = 0
 OPT = -O3
 APP_TYPE = BOOT_SRAM
