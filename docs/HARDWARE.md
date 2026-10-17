@@ -48,8 +48,36 @@ Bekannte Grenze des unveränderten libDaisy-Treibers: Ein sofort fehlgeschlagene
 Dann können die LEDs einfrieren; die höher priorisierte Audiowiedergabe läuft weiter.
 Dieses Verhalten ist am eigenen Board noch nicht beobachtet oder gemessen worden.
 
-`Hardware::Init()` initialisiert auch unbenutzte Board-Peripherie wie MIDI/CV.
-Die Anwendung startet keine MIDI-Verarbeitung und erzeugt keine CV/Gate-Signale.
+`Hardware::Init()` initialisiert auch unbenutzte Board-Peripherie wie DIN-MIDI/CV.
+Die Anwendung startet keine DIN-MIDI-Verarbeitung und erzeugt keine CV/Gate-Signale.
+
+## USB-MIDI
+
+`MidiUsbHandler` mit `MidiUsbTransport::Config::EXTERNAL` verwendet den Daisy-USB-Port,
+der am Desktop-Träger J7 herausgeführt ist (derselbe wie im offiziellen Template für den
+Serial-Logger, Produktname „Daisy Seed External“). Eingehende Pakete werden im USB-Interrupt
+zu `MidiEvent`s geparst. `ServiceUsbMidi()` holt sie im Hauptprogramm ab und reicht NoteOn
+über eine lockfreie Warteschlange an den Audiocallback weiter. Gesendet wird ebenfalls in der
+Hauptschleife, weil `SendMessage()` blockieren kann (bis zu drei Wiederholungen mit je 100 µs)
+und nie im Audiocallback laufen darf. Dafür gibt es keine Ereigniswarteschlange: Die Hauptschleife
+vergleicht den entprellten Tastenzustand (dieselbe Maske wie für die LEDs) mit dem, was dem
+Host zuletzt gemeldet wurde, und sendet alle Änderungen, höchstens 8 je Paket, als eine USB-
+Übertragung. Ein Note Off kann so nicht verloren gehen, weil keine Ereignisse existieren, die
+verworfen werden könnten; Tasten, die nur zwischen zwei Aufrufen gedrückt und losgelassen
+wurden, werden nicht gemeldet.
+
+libDaisys Sendefunktion prüft nicht, ob ein Host das Gerät eingerichtet hat. Die Firmware
+sendet deshalb nur bei `hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED` und verwirft sonst
+die Tastenänderungen. Dieser Zustand stammt aus dem festgelegten libDaisy-Commit.
+
+Bekannte Grenzen von libDaisys USB-Sendepfad: Eine Übertragung, die der Host noch nicht
+abgeholt hat (er hat den Eingang nicht geöffnet oder pollt nicht), lässt die nächste nach
+drei Wiederholungen ohne Fehlermeldung ausfallen. Ein USB-Reset genau während einer
+Übertragung (Kabel ziehen oder Neuaufzählung) ist ein theoretisches Zeitfenster zwischen
+Statusprüfung und Senden. Die Hauptschleife sendet höchstens einmal je Millisekunde.
+
+`MidiHandler` enthält eine FIFO von 256 `MidiEvent`s (ca. 37 KB). Das DTCM ist damit zu
+88,6 % belegt (116.072 von 131.072 Bytes), für den Stack bleiben etwa 14,9 KB.
 
 ## Offizielle Quellen
 

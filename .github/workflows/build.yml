@@ -19,17 +19,22 @@ jobs:
         run: make test
       - name: Test DSP and callback with ASan and UBSan
         run: make test-sanitize
+      - name: Test lock-free MIDI queues with ThreadSanitizer
+        run: make test-thread
       - name: Cross-compile firmware
         run: make -j4
+      - name: Read version
+        id: version
+        run: echo "value=$(make -s version)" >> "$GITHUB_OUTPUT"
       - name: Check firmware image
-        run: python3 scripts/check-firmware.py build/ToyPiano-v0.1.bin
+        run: python3 scripts/check-firmware.py
       - name: Generate checksum
-        run: cd build && sha256sum ToyPiano-v0.1.bin > SHA256SUMS
+        run: cd build && sha256sum ToyPiano-v${{ steps.version.outputs.value }}.bin > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: ToyPiano-v0.1-${{ github.sha }}
+          name: ToyPiano-v${{ steps.version.outputs.value }}-${{ github.sha }}
           path: |
-            build/ToyPiano-v0.1.bin
-            build/ToyPiano-v0.1.elf
+            build/ToyPiano-v${{ steps.version.outputs.value }}.bin
+            build/ToyPiano-v${{ steps.version.outputs.value }}.elf
             build/SHA256SUMS
           if-no-files-found: error

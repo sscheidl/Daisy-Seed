@@ -47,7 +47,7 @@ Bei späteren Firmwareupdates nicht erneut `program-boot` ausführen.
    danach langsam: der Daisy-Bootloader wartet auf die Anwendung.
    Dieser Ablauf unterscheidet sich vom oben beschriebenen ROM-DFU-Modus.
 3. Im [Daisy Web Programmer](https://flash.daisy.audio/) verbinden,
-   unter „Custom“ **`build/ToyPiano-v0.1.bin`** auswählen und programmieren.
+   unter „Custom“ **`build/ToyPiano-v0.2.bin`** auswählen und programmieren.
    Alternativ lokal im Projektverzeichnis:
 
    ```bash
@@ -58,6 +58,13 @@ Bei späteren Firmwareupdates nicht erneut `program-boot` ausführen.
    Der Daisy-Bootloader lädt sie zum Ausführen ins SRAM (`0x24000000`).
 4. Nach erfolgreichem Flashen startet die Firmware; gegebenenfalls RESET drücken.
    Der Bootloader bleibt für weitere Versionen installiert.
+
+## Mit USB-MIDI-Firmware
+
+Läuft die Toy-Piano-Firmware, meldet sich J7 als MIDI-Gerät „Daisy Seed External“.
+Das Flashen bleibt unverändert: RESET, danach BOOT innerhalb der Bootloader-Wartezeit,
+dann erscheint wie zuvor das DFU-Gerät. Nach dem Flashen muss ein geöffnetes Programm
+(z. B. Studio One) das MIDI-Gerät eventuell neu verbinden, siehe [MIDI.md](MIDI.md).
 
 ## Wenn das Gerät nicht erscheint
 

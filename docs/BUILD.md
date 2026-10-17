@@ -37,7 +37,7 @@ export PATH="$PWD/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin:$PATH"
 make -j4
 make test
 make test-sanitize
-python3 scripts/check-firmware.py build/ToyPiano-v0.1.bin
+python3 scripts/check-firmware.py
 ```
 
 `make libs` baut beide Bibliotheken explizit, beispielsweise nach einer bewusst
@@ -66,3 +66,16 @@ Hardwareeingängen und der unveränderten DigitalControl-Entprellung aus libDais
 `make test-sanitize` führt beide Tests mit AddressSanitizer und UndefinedBehaviorSanitizer
 aus. `-fno-sanitize-recover=all` macht jeden erkannten Fehler zum Testfehler.
 Die GPIO-/ADC-Stubs ersetzen keinen Hardwaretest.
+
+## Version
+
+Die Version („major.minor“) steht ausschließlich in `src/version.h`. Daraus entstehen:
+
+* der Dateiname `build/ToyPiano-v<version>.bin` (Makefile, `make -s version` gibt sie aus),
+* die Zeichenkette `TOYPIANO-FW-VERSION=<version>` im Image,
+* der Name des GitHub-Actions-Artefakts.
+
+`scripts/check-firmware.py` prüft, dass Dateiname, eingebettete Version und `src/version.h`
+übereinstimmen. Zum Erhöhen die Zahl in `src/version.h` ändern, `CHANGELOG.md` ergänzen und
+neu bauen; ein `make clean` ist nicht nötig, alte Dateien anderer Versionen bleiben aber in
+`build/` liegen, bis `make clean` läuft. Git-Tags werden nicht automatisch gesetzt.
