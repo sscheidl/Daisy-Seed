@@ -1,6 +1,9 @@
 # Flashen über USB
 
 Es wurde kein Gerät aus der Cloud geflasht. Diese Schritte werden lokal am Kit ausgeführt.
+Die Beispiele gelten im **Repository-Hauptverzeichnis** für `PROJECT=toy-piano`.
+Jedes künftige Instrument/jeder Effekt erhält eine eigene BIN; zunächst läuft jeweils
+die zuletzt geflashte Firmware, ohne Instrumentenwechsel zur Laufzeit.
 
 ## Zwei USB-C-Anschlüsse
 
@@ -25,10 +28,10 @@ hier verwendete Ablauf.
    Dies startet den eingebauten STM32-ROM-Bootloader.
 3. In Chrome/Edge den [Daisy Web Programmer](https://flash.daisy.audio/) öffnen.
    Bootloader **v6.x (external)** auswählen und installieren.
-   Alternativ, mit lokal installiertem `dfu-util`, im Projektverzeichnis:
+   Alternativ, mit lokal installiertem `dfu-util`, im Repository-Hauptverzeichnis:
 
    ```bash
-   make program-boot
+   make PROJECT=toy-piano program-boot
    ```
 
    Das Makefile wählt wie das offizielle Desktop-Template gezielt
@@ -47,11 +50,11 @@ Bei späteren Firmwareupdates nicht erneut `program-boot` ausführen.
    danach langsam: der Daisy-Bootloader wartet auf die Anwendung.
    Dieser Ablauf unterscheidet sich vom oben beschriebenen ROM-DFU-Modus.
 3. Im [Daisy Web Programmer](https://flash.daisy.audio/) verbinden,
-   unter „Custom“ **`build/ToyPiano-v0.1.bin`** auswählen und programmieren.
-   Alternativ lokal im Projektverzeichnis:
+   unter „Custom“ **`instruments/toy-piano/build/ToyPiano-v0.1.bin`** auswählen und programmieren.
+   Alternativ lokal im Repository-Hauptverzeichnis:
 
    ```bash
-   make program-dfu
+   make PROJECT=toy-piano program-dfu
    ```
 
    Das offizielle Makefile schreibt die Anwendung nach QSPI `0x90040000`.

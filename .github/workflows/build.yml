@@ -5,6 +5,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        project: [toy-piano]
     steps:
       - uses: actions/checkout@v4
       - name: Fetch pinned dependencies
@@ -16,20 +19,20 @@ jobs:
           bash scripts/install-toolchain.sh
           echo "$GITHUB_WORKSPACE/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin" >> "$GITHUB_PATH"
       - name: Test DSP on host
-        run: make test
+        run: make PROJECT=${{ matrix.project }} test
       - name: Test DSP and callback with ASan and UBSan
-        run: make test-sanitize
+        run: make PROJECT=${{ matrix.project }} test-sanitize
       - name: Cross-compile firmware
-        run: make -j4
+        run: make PROJECT=${{ matrix.project }} -j4
       - name: Check firmware image
-        run: python3 scripts/check-firmware.py build/ToyPiano-v0.1.bin
+        run: python3 scripts/check-firmware.py instruments/${{ matrix.project }}/build/ToyPiano-v0.1.bin
       - name: Generate checksum
-        run: cd build && sha256sum ToyPiano-v0.1.bin > SHA256SUMS
+        run: cd instruments/${{ matrix.project }}/build && sha256sum ToyPiano-v0.1.bin > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: ToyPiano-v0.1-${{ github.sha }}
+          name: ${{ matrix.project }}-${{ github.sha }}
           path: |
-            build/ToyPiano-v0.1.bin
-            build/ToyPiano-v0.1.elf
-            build/SHA256SUMS
+            instruments/${{ matrix.project }}/build/ToyPiano-v0.1.bin
+            instruments/${{ matrix.project }}/build/ToyPiano-v0.1.elf
+            instruments/${{ matrix.project }}/build/SHA256SUMS
           if-no-files-found: error

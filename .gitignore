@@ -1,3 +1,5 @@
 /build/
+/instruments/*/build/
+/effects/*/build/
 /.tools/
 *.wav

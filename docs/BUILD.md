@@ -1,4 +1,9 @@
-# Reproduzierbarer Build
+# Reproduzierbare Projekt-Builds
+
+Alle Befehle gelten im Repository-Hauptverzeichnis. `projects.mk` enthält Projekt-IDs,
+Pfade und Implementierungsstatus. Firmwarequellen, Tests und Ausgabe liegen im
+jeweiligen Projekt. `common/desktop.mk` bündelt den offiziellen Board-Build;
+die Bibliotheken werden nur einmal unter `libDaisy/` und `DaisySP/` verwaltet.
 
 ## Festgelegte Abhängigkeiten
 
@@ -34,14 +39,25 @@ git submodule update --init libDaisy DaisySP
 git -C libDaisy submodule update --init --recursive --jobs 4
 bash scripts/install-toolchain.sh
 export PATH="$PWD/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin:$PATH"
-make -j4
-make test
-make test-sanitize
-python3 scripts/check-firmware.py build/ToyPiano-v0.1.bin
+make list
+make PROJECT=toy-piano -j4
+make PROJECT=toy-piano test
+make PROJECT=toy-piano test-sanitize
+python3 scripts/check-firmware.py instruments/toy-piano/build/ToyPiano-v0.1.bin
 ```
 
+Ohne `PROJECT=` wird weiterhin Toy Piano ausgewählt. Der Direktaufruf
+`make -C instruments/toy-piano` baut dasselbe Projekt. Die BIN liegt jetzt unter
+`instruments/toy-piano/build/`; der frühere Root-Pfad `build/ToyPiano-v0.1.bin`
+wird nicht mehr erzeugt oder verwendet.
+
+`make all-projects` beziehungsweise `make test-projects` bearbeiten alle Einträge
+aus `BUILDABLE_PROJECTS`. Physical Modeling, Granular und Effektgerüste haben noch
+keinen Build. Ein expliziter Aufruf eines geplanten oder unbekannten Projekts
+bricht verständlich ab. `make list` ist der schnelle Statusüberblick.
+
 `make libs` baut beide Bibliotheken explizit, beispielsweise nach einer bewusst
-geänderten Abhängigkeit. `make clean` entfernt nur den Anwendungsbuild.
+geänderten Abhängigkeit. `make PROJECT=toy-piano clean` entfernt nur dessen Build.
 Nach Toolchain- oder Compilerflag-Änderungen auch die Bibliotheken sauber neu bauen:
 
 ```bash
@@ -55,6 +71,20 @@ Die offiziellen Makefiles bauen die Bibliotheken als Archive. Trotz deren große
 Modulauswahl gelangen nur benötigte Funktionen in die gelinkte Anwendung
 (`--gc-sections`). Die Anwendung nutzt DaisySPs `mtof()` und eigene kleine,
 host-testbare AD- und Sinustabellen-Logik. Ein UI-Framework ist nicht erforderlich.
+
+## Ein weiteres Projekt implementieren
+
+1. Im vorhandenen Projektbereich `src/`, `tests/` und später einen Prüfbericht unter
+   `docs/` ergänzen. `Makefile` setzt einen eindeutigen `TARGET`, eigene Quellen und
+   `.DEFAULT_GOAL := all` und bindet `../../common/desktop.mk` ein.
+2. Erst nach einem echten erfolgreichen ARM-Build den Eintrag in `projects.mk`
+   auf `buildable` setzen und in `BUILDABLE_PROJECTS` aufnehmen.
+3. CI um den konkreten Projektpfad und Dateinamen ergänzen; Host-Tests, RAM-/CPU-
+   Grenzen und manuelle Hardwaretests dokumentieren.
+
+Die aktuelle CI-Matrix enthält nur Toy Piano. Ihr BIN-Dateiname und Pfad sind dafür
+ausdrücklich angegeben; bei weiteren Projekten müssen diese Metadaten ergänzt
+werden. Die Matrix behauptet keine Builds der noch geplanten Engines.
 
 Generierte Dateien und die Toolchain bleiben aus Git ausgeschlossen.
 Der GitHub-Actions-Workflow lädt nach erfolgreichem Build die BIN, ELF und

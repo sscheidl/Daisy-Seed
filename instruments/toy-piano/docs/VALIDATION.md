@@ -2,6 +2,11 @@
 
 Stand: 17.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 
+Projektpfad: `instruments/toy-piano/`. Nach der Umstrukturierung erneut über den
+Root-Dispatcher und den Projekt-Makefile gebaut/getestet: Die BIN ist bytegleich
+mit dem Stand vor dem Verzeichnisumzug (106.388 Bytes, Prüfsumme unten).
+DSP und Callback wurden beim Umzug nicht verändert.
+
 ## Tatsächlich ausgeführt
 
 | Prüfung | Ergebnis |
@@ -29,12 +34,13 @@ Prüfsumme der geprüften Firmware:
 a37bddb180ea530e58d2f3c5b4c061c3d5660bae900c8ef93a92e6101346ffe0  ToyPiano-v0.1.bin
 ```
 
-Host-Tests: `make test`. Binärprüfung:
-`python3 scripts/check-firmware.py build/ToyPiano-v0.1.bin`.
+Host-Tests: `make PROJECT=toy-piano test`. Binärprüfung:
+`python3 scripts/check-firmware.py instruments/toy-piano/build/ToyPiano-v0.1.bin`
+(im Repository-Hauptverzeichnis).
 Sanitizer-Aufruf (auch im CI-Workflow enthalten):
 
 ```bash
-make test-sanitize
+make PROJECT=toy-piano test-sanitize
 ```
 
 Der Callback-Test verwendet den unveränderten Anwendungscode und libDaisys echte
@@ -88,4 +94,4 @@ BOOT_SRAM-Linkerskript. Eigener DSP-Code kompiliert im Host-Test mit
 Die genaue Testfolge steht in der README. Keine bekannten Fehler im geprüften
 DSP-Verhalten; analoge Eigenschaften und die reale Audiowiedergabe bleiben ungetestet.
 Weitere bekannte Grenzen (sehr kurze LED-Anzeigen, mögliche Blockade bei einem
-LED-DMA-Startfehler) stehen in [HARDWARE.md](HARDWARE.md).
+LED-DMA-Startfehler) stehen in [HARDWARE.md](../../../docs/HARDWARE.md).

@@ -1,7 +1,7 @@
 # Seed3 Desktop Development Kit
 
 Ziel ist ausdrücklich das **Seed3 Desktop Dev Kit**, kein Pod/Field/Patch und kein
-unbeschaltetes Seed-Board. Die Anwendung verwendet ausschließlich
+unbeschaltetes Seed-Board. Die vorhandene Toy-Piano-Anwendung verwendet ausschließlich
 `daisy::desktop_devkit::Hardware` aus dem festgelegten libDaisy-Commit.
 GPIOs werden in der Anwendung nicht selbst zugeordnet.
 
@@ -20,6 +20,12 @@ GPIOs werden in der Anwendung nicht selbst zugeordnet.
 **nicht nochmals umkehren**. Index 0 entspricht S1/D1, Index 15 entspricht S16/D16.
 Die LED-Hardwareklasse berücksichtigt die invertierte Helligkeit bereits selbst.
 VR1/VR2 entsprechen Mux-Kanälen und Pot-Indizes 0/1.
+
+## Vorhandene Referenzanwendung: Toy Piano
+
+Die nachfolgenden Kontrollraten, Filter und LED-Regeln beschreiben das
+[Toy Piano](../instruments/toy-piano/). Neue Projekte legen ihre Bedienung und
+zeitlichen Budgets separat fest; GPIOs bleiben in der offiziellen Hardwareklasse.
 
 Die DigitalControl-Entprellung arbeitet mit einer 8-Bit-Historie und liefert ihre
 Flanken nach sieben stabilen Abtastwerten. Bei 1 kHz ergibt das ungefähr 7–8 ms.
