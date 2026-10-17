@@ -1,13 +1,13 @@
-## Änderung
+## Change
 
-Betroffene Projekt-ID(s) und Verzeichnisse:
+Affected project IDs and directories:
 
-Problem und resultierendes Verhalten:
+Problem and resulting behavior:
 
-## Validierung
+## Validation
 
-Ausgeführte Host-Tests, Sanitizer und ARM-Builds mit Projekt-ID:
+Host tests, sanitizers, and ARM builds run (include project ID):
 
-Firmware-Artefakt, Prüfbericht und offene Hardwaretests:
+Firmware artifact, validation report, and outstanding hardware tests:
 
-Gemeinsame Build-/Bibliotheksänderungen: Auswirkungen auf andere Projekte:
+Impact of shared build or library changes on other projects:

@@ -1,40 +1,44 @@
-# Granular — Instrumentprojekt
+# Granular — Instrument Project
 
-**Stand: Projektgerüst / Entwurf, keine Firmware und kein Hardwaretest.**
-Projekt-ID: `granular`. Ziel: eine eigenständige, begrenzte Granular-Engine für
-das Seed3 Desktop Dev Kit, mit GR-1 als wichtigem musikalischem Bedienvorbild.
+**Status: project outline only; no firmware build or hardware test.**
+Project ID: `granular`. The goal is an original, bounded granular engine for the
+Seed3 Desktop Dev Kit, with GR-1 as an important reference for musical control.
 
-## Referenzen und Vergleich
+## References and comparison
 
-* **GR-1:** vorhandene Hardware sowie getrennte Forschungsberichte zu Grainplanung,
-  Sampleposition und Bedienung. Erkenntnisse sind Referenzen, keine eigene Engine.
-* **Iridium Particle:** zweite Forschungsreferenz für Granularorganisation und
-  Parameterrollen; keine Herstellerfunktionen oder Koeffizienten übernehmen.
-* **DaisySP GranularPlayer:** bereits verfügbarer Ausgangspunkt für kontrollierte
-  Versuche mit unabhängigem Tempo und Pitch. Kein vollständiges GR-1-Modell.
-* **Clouds → Nimbus:** öffentliches Original und vorhandene Daisy-Patch-/Field-Ports.
-  Die Audioeingangs-/Freeze-Ausrichtung ist besonders für die spätere Effektvariante interessant.
-* **Beads:** als mögliche Bedeutung von „Beats“ aufgenommen. Öffentliches Original
-  vorhanden; der Autor nennt fehlende Verifikation auf dem Modul. Keine zugesagte Daisy-Portierung.
+* **GR-1:** Existing hardware and separate research reports on grain scheduling,
+  sample position, and controls. These findings are references, not an engine.
+* **Iridium Particle:** A second research reference for granular organization
+  and parameter roles. No manufacturer functions or coefficients will be copied.
+* **DaisySP GranularPlayer:** Available for controlled experiments with
+  independent speed and pitch; not a complete GR-1 model.
+* **Clouds → Nimbus:** Public original and existing Daisy Patch/Field ports.
+  Their audio input and freeze workflow is especially relevant to the later
+  effect variant.
+* **Beads:** A possible interpretation of the earlier name “Beats.” Its source
+  is public, but the author notes missing validation on the module. No Daisy
+  port is assumed.
 
-Commitfeste Links und Grenzen: [Quellenübersicht](../../docs/REFERENCES.md).
+Pinned source links and limitations are in the
+[reference survey](../../docs/REFERENCES.md).
 
-## Eigener nächster Meilenstein
+## Next milestone
 
-1. Kleinen synthetischen Samplepuffer und eine einzelne testbare Grain-Lesestimme
-   mit eigenem Fenster, Position und Pitch erstellen.
-2. Scheduler mit fest vorreserviertem Pool und definiertem Überlastverhalten ergänzen.
-   Poolgröße und maximale Dichte erst nach Messungen festlegen.
-3. Basisposition, effektive Scanposition und einzelne Grain-Lesepositionen getrennt
-   führen. Spätere Ansichts-/Zoomzustände dürfen die musikalische Position nicht ersetzen.
-4. Endliche Ausgabe, Buffergrenzen, Samplewechsel und CPU-/Speichergrenzen testen;
-   danach manuellen Hardwaretest vorbereiten.
+1. Create a small synthetic sample buffer and one testable grain reader with
+   its own window, position, and pitch.
+2. Add a scheduler with a fixed, preallocated pool and defined overload
+   behavior. Set pool size and maximum density only after measurement.
+3. Track base position, effective scan position, and individual grain read
+   positions separately. A later waveform viewport must not replace musical
+   sample position.
+4. Test finite output, buffer bounds, sample changes, and CPU/memory limits;
+   then prepare a manual hardware test.
 
-Dateizugriffe und Speicherallokation gehören nicht in den Audiocallback. Der M7
-besitzt kein NEON; Leistungswerte der Referenzgeräte sind nicht übertragbar.
-Eigene erzeugte Testdaten zuerst; Sampleverwaltung, Visualisierung und höhere
-Polyphonie folgen in separaten Schritten. Eine Tulip-Anbindung ist hier nicht implementiert.
+File access and allocation do not belong in the audio callback. The Cortex-M7
+has no NEON; performance figures from reference devices do not apply. Start
+with generated test data, then add sample management, visualization, and higher
+polyphony in separate steps. Tulip integration has not been implemented here.
 
-Der [Granular-Effekt](../../effects/granular/) soll später denselben nachweislich
-gemeinsamen DSP-Kern mit einem Live-/Freeze-Eingang verwenden.
-Bis zur Implementierung weist `make PROJECT=granular` den Build ausdrücklich ab.
+The later [granular effect](../../effects/granular/) should reuse the same
+proven DSP core with live input and freeze. Until implementation,
+`make PROJECT=granular` fails explicitly.

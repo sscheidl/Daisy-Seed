@@ -1,15 +1,15 @@
-# Effektprojekte
+# Effect Projects
 
-Eigene Projektbereiche für Audioeingangs-Anwendungen auf dem Seed3 Desktop Dev Kit:
+Separate project directories for audio input applications on the Seed3 Desktop
+Dev Kit:
 
-| Effekt | Projekt-ID | Stand |
+| Effect | Project ID | Status |
 | --- | --- | --- |
-| [Reverb](reverb/) | `reverb-fx` | Clouds-/Nimbus-Reverb und Slöer-Stereo-Reverb als Portierungsziel |
-| [Granular / Freeze](granular/) | `granular-fx` | geplant |
+| [Reverb](reverb/) | `reverb-fx` | Clouds/Nimbus experiments and a possible Slöer stereo reverb port |
+| [Granular / Freeze](granular/) | `granular-fx` | Planned |
 
-Jeder Effekt bekommt bei seiner Implementierung eigene Quellen, Tests, README
-und ein eigenes Buildverzeichnis. DSP, den Instrument und Effekt tatsächlich
-gemeinsam nutzen, wird dann nach `common/` ausgelagert; keine zweite Engine-Kopie.
-Derzeit existieren keine Effekt-Firmware und keine zusammenstellbare Effektkette.
-Resonatoren bleiben als Modelle und Anregungsvarianten beim
-[Physical Modeling](../instruments/physical-modeling/).
+When implemented, each effect will have its own source, tests, README, and build
+directory. DSP actually shared by an instrument and effect can then move to
+`common/` instead of maintaining two engine copies. There is currently no
+effect firmware or combined effect chain. Resonators remain models and
+excitation variants within [Physical Modeling](../instruments/physical-modeling/).

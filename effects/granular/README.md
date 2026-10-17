@@ -1,12 +1,12 @@
-# Granular / Freeze — Effektprojekt
+# Granular / Freeze — Effect Project
 
-**Stand: geplant, kein Build.** Projekt-ID: `granular-fx`.
+**Status: planned; no build.** Project ID: `granular-fx`.
 
-Spätere Live-/Freeze-Variante des [Granular-Instruments](../../instruments/granular/).
-Clouds/Nimbus und Beads dienen als ergänzende Vergleichsreferenzen. Zunächst müssen
-Aufnahme-/Lesepuffer, Freeze-Verhalten, Dry/Wet und begrenztes Feedback sauber
-definiert werden. Anschließend kann derselbe Granular-Kern wie im Instrument
-mit einer eigenen Audioeingangs-Anwendung verbunden werden.
+A future live input/freeze variant of the [granular instrument](../../instruments/granular/).
+Clouds/Nimbus and Beads provide additional references. Input recording and read
+buffers, freeze behavior, dry/wet mix, and bounded feedback need explicit
+definitions before the instrument's granular core is connected to an audio
+input application.
 
-Quellen und Vergleich: [Referenzen](../../docs/REFERENCES.md).
-`make PROJECT=granular-fx` meldet den noch fehlenden Implementierungsstand.
+See the [reference survey](../../docs/REFERENCES.md) for sources and limits.
+`make PROJECT=granular-fx` currently reports that the project has no implementation.

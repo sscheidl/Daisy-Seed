@@ -82,14 +82,14 @@ jobs:
             echo
             echo "## Binary"
             echo
-            echo "* \`ToyPiano-v$VERSION.bin\`, $size Bytes"
+            echo "* \`ToyPiano-v$VERSION.bin\`, $size bytes"
             echo "* SHA-256: \`$sha\`"
-            echo "* Gebaut aus Commit \`$GITHUB_SHA\` mit der festgelegten Toolchain (xPack GCC 13.2.1-1.1)."
-            echo "* Flashen: siehe [docs/FLASHING.md](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/docs/FLASHING.md)."
+            echo "* Built from commit \`$GITHUB_SHA\` with the pinned toolchain (xPack GCC 13.2.1-1.1)."
+            echo "* Flashing instructions: [docs/FLASHING.md](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/docs/FLASHING.md)."
           } >> release-notes.md
           {
             echo "### Release v$VERSION"
-            echo "* \`ToyPiano-v$VERSION.bin\`: $size Bytes, SHA-256 \`$sha\`"
+            echo "* \`ToyPiano-v$VERSION.bin\`: $size bytes, SHA-256 \`$sha\`"
             echo "* Publish: $PUBLISH"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Create the release

@@ -1,66 +1,62 @@
-# Reverb — Clouds/Nimbus und Slöer
+# Reverb — Clouds/Nimbus and Slöer
 
-**Stand: Projektplanung, noch keine Reverb-Firmware in Daisy-Seed.**
-Projekt-ID: `reverb-fx`.
+**Status: project plan; no reverb firmware in Daisy-Seed yet.**
+Project ID: `reverb-fx`.
 
-## 1. Clouds-/Nimbus-Reverb-Experimente
+## 1. Clouds/Nimbus reverb experiments
 
-**Vom Nutzer bestätigt:** Gemeint ist der Reverb aus Mutable Instruments
-**Clouds** beziehungsweise dessen Daisy-Port **Nimbus**. Diese Sektion soll auf
-dem Seed3 Desktop Dev Kit ausprobiert und eigenständig weiterentwickelt werden.
-Grundlagen sind der öffentliche
-[Clouds-Reverb](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/clouds/dsp/fx/reverb.h)
-und der vorhandene
-[Nimbus-Reverb](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Nimbus/dsp/fx/reverb.h).
-CloudSeed ist ein anderes Projekt und hier nicht die gewählte Grundlage.
+**Confirmed by the user:** The intended starting point is the reverb section of
+Mutable Instruments **Clouds** and its Daisy port **Nimbus**. The plan is to test
+it on the Seed3 Desktop Dev Kit and then develop it further independently. The
+public [Clouds reverb](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/clouds/dsp/fx/reverb.h)
+and existing [Nimbus reverb](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Nimbus/dsp/fx/reverb.h)
+are the references. CloudSeed is a different project and is not the selected
+basis here.
 
-Nächste Arbeit: Reverb aus der Granular-Gesamtanwendung abgrenzen, Abhängigkeiten,
-Board-Build und Speicherplatzierung prüfen,
-dann Audioeingang, Dry/Wet, begrenzten Ausgangspegel und wenige Parameter anbinden.
-Anschließend Impulsantwort, Stabilität, RAM und Callback-Laufzeit am eigenen Kit
-prüfen. Leistungsangaben aus fremden Projekten sind keine eigenen Messwerte.
+The next task is to isolate the reverb from the full granular application and
+check dependencies, the board build, and memory placement. Then connect audio
+input, dry/wet mix, bounded output level, and a few controls. Measure impulse
+response, stability, RAM use, and callback runtime on the actual kit. Performance
+figures from other projects are not measurements of this one.
 
-## 2. Walrus Audio Slöer — Stereo-Reverb als Portierungsziel
+## 2. Walrus Audio Slöer — possible stereo reverb port
 
-**Vom Nutzer bestätigt:** Gemeint ist das **Walrus Audio Slöer Stereo-Reverb-Pedal**.
-Es ist die zweite gewünschte Arbeitsrichtung. Es wird nicht mit dem Slö oder einem
-beliebigen FV-1-Reverb gleichgesetzt.
+**Confirmed by the user:** The target is the **Walrus Audio Slöer Stereo Reverb**
+pedal, a second line of work. It must not be conflated with the Slö or an
+arbitrary FV-1 reverb.
 
-**Nutzerseitige Hardware-Sichtprüfung, 17.10.2026:** Im geöffneten eigenen Slöer
-wurde ein **Spin Semiconductor FV-1** im bekannten Gehäuse identifiziert.
-Unter der Chipbezeichnung steht die Zusatzmarkierung **„2211“**.
-Dies ist eine Beobachtung am Nutzergerät, keine hier unabhängig durchgeführte
-Sichtprüfung und keine Aussage über sämtliche Slöer-Hardwarestände.
-Die Bedeutung von „2211“ ist nicht nachgewiesen; daraus werden weder Revision
-noch Herstellungsdatum abgeleitet.
+**User hardware observation, October 17, 2026:** The user identified a **Spin
+Semiconductor FV-1** in an opened Slöer pedal, with the additional marking
+**“2211”** below the chip name. This is a report about that device, not an
+independent inspection or a claim about every Slöer revision. The meaning of
+“2211” has not been established; neither a revision nor a manufacturing date
+can be inferred from it.
 
-**Offen:** konkrete Algorithmus-/Quellgrundlage, Programmversion und ein bereits
-existierender nutzbarer Port. Die frühere FV-1-Forschung enthielt noch keinen
-Chipnachweis zum Slöer; die neue Sichtprüfung ergänzt diesen Hardwarestand.
-Ein FV-1-Nachweis allein identifiziert jedoch nicht das laufende Effektprogramm,
-die Taktung oder den vollständigen Stereo-Signalweg. Eine tatsächliche Portierung
-bleibt bis zur Klärung der Algorithmusgrundlage offen. Eine eigenständige klangliche
-Annäherung müsste als solche getrennt vom Originalport beschrieben werden.
+**Open:** the specific algorithm and source, program version, and whether a
+usable port exists. Earlier FV-1 research did not confirm the Slöer's chip; the
+user observation adds that hardware evidence. The FV-1 identification alone
+does not establish the effect program, clocking, or complete stereo signal
+path. A direct port depends on identifying the algorithm. An original sonic
+approximation would need to be identified separately from a port.
 
-## 3. Vorhandene FV-1-Portierungsgrundlagen
+## 3. Existing FV-1 porting research
 
-Vorhandene eigene Grundlage:
-[fv-1-DSP-xtractor](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/d1ef0525d072091d9d4da46f1821d45e930a2745).
-Dort sind plattformneutrale C++17-Referenzen für Plate und Hall dokumentiert;
-sie sind keine Slöer-Implementierung und keine bitgenaue FV-1-Emulation.
+The existing [fv-1-DSP-xtractor research](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/d1ef0525d072091d9d4da46f1821d45e930a2745)
+documents platform-neutral C++17 Plate and Hall references. These are neither
+Slöer implementations nor bit-exact FV-1 emulations. The observed FV-1 makes
+this work relevant to the technical porting study, but it does not reveal the
+Slöer algorithm.
 
-Diese Referenzen sind durch den nun beobachteten FV-1 eine passende technische
-Grundlage für die Portierungsarbeit, identifizieren aber nicht den Slöer-Algorithmus.
-Für eine Portierung müssen Abtastrate, Delayzeiten, Modulation, Parameterabbildung
-und Signalpegel ausdrücklich definiert werden. Anschließend Host-Vergleich,
-ARM-Build und manuelle Hardwareprüfung. Forschungsdaten bleiben im Quellrepository;
-hier wird ein eigener integrierbarer Firmwarepfad aufgebaut.
+A port needs explicit sample rate, delay times, modulation, parameter mapping,
+and signal levels, followed by host comparison, an ARM build, and a manual
+hardware test. Research data remain in their source repository; this project
+will develop its own integrated firmware path.
 
-## Gemeinsamer Projektstand
+## Current project status
 
-Noch keine der Arbeitsrichtungen ist in dieses Repository importiert oder als
-Firmware implementiert. `make PROJECT=reverb-fx` meldet deshalb den Planungsstand.
-Clouds/Nimbus und Slöer sollen zunächst getrennt untersucht werden; eine gemeinsame
-Effektkette oder ein Wechsel zwischen Engines zur Laufzeit ist nicht implementiert.
+Neither line of work has been imported or implemented as firmware here.
+`make PROJECT=reverb-fx` therefore reports the planning status. Clouds/Nimbus
+and Slöer will be investigated separately; a shared effect chain or runtime
+engine switch has not been implemented.
 
-Quellenstände und Prüfgrenzen: [Referenzübersicht](../../docs/REFERENCES.md).
+Pinned sources and validation limits: [reference survey](../../docs/REFERENCES.md).
