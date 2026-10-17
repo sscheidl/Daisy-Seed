@@ -1,38 +1,41 @@
-# Physical Modeling — Instrumentprojekt
+# Physical Modeling — Instrument Project
 
-**Stand: Projektgerüst / Entwurf, keine Firmware und kein Hardwaretest.**
-Projekt-ID: `physical-modeling`. Ziel: ein eigenständig entwickeltes Instrument
-für das Seed3 Desktop Dev Kit mit kontrollierter Anregung und einem Resonator.
-Ein dauernd selbstmodulierendes Verhalten ist noch keine festgelegte Anforderung.
+**Status: project outline only; no firmware build or hardware test.**
+Project ID: `physical-modeling`. The goal is an original instrument for the
+Seed3 Desktop Dev Kit with controlled excitation and a resonant body. Continuous
+self-modulation is not yet a requirement.
 
-## Referenzen und Vergleich
+## References and comparison
 
-* **Rings → Torus:** Original-Rings bietet mehrere Resonatormodelle; Torus ist ein
-  vorhandener Daisy-Patch-Port. DSP und Board-Bedienung müssen getrennt betrachtet
-  werden: Patch-Regler, Encoder und Audioanschlüsse passen nicht direkt zum Desktop-Kit.
-* **Elements:** zweite Originalreferenz für die Trennung zwischen Anregung und
-  resonierendem Körper. Eine vollständige Elements-Portierung ist nicht beschlossen.
-* **DaisySP ModalVoice / Resonator:** bereits in unserer gepinnten Bibliothek;
-  laut Quellkommentaren aus **Plaits**, keine vollständige Rings-/Elements-Engine.
-* **Iridium Resonator:** zusätzliche Konzept-/Forschungsreferenz für Resonator-
-  und Bedienungsentwurf. Kein Hersteller-DSP wird in dieses Projekt übernommen.
+* **Rings → Torus:** The original Rings offers several resonator models; Torus
+  is an existing Daisy Patch port. Its DSP and board controls must be considered
+  separately: Patch controls, encoders, and audio connectors do not map directly
+  to the Desktop Kit.
+* **Elements:** A second original reference for separating excitation from the
+  resonant body. A complete Elements port has not been selected.
+* **DaisySP ModalVoice / Resonator:** Already in the pinned library. Source
+  comments trace these components to **Plaits**; they are not a full Rings or
+  Elements engine.
+* **Iridium Resonator:** An additional research reference for resonator and
+  control design. No manufacturer DSP is being incorporated here.
 
-Commitfeste Links, Lizenz- und Vergleichsgrenzen: [Quellenübersicht](../../docs/REFERENCES.md).
+Pinned source links, licenses, and comparison limits are in the
+[reference survey](../../docs/REFERENCES.md).
 
-## Eigener nächster Meilenstein
+## Next milestone
 
-1. Original, Daisy-Port und vorhandene DaisySP-Bausteine anhand derselben Kategorien
-   vergleichen: Anregung, Resonanzstruktur, Dämpfung, Pitch, Speicher und Blockverarbeitung.
-2. Eine eigene monophone Minimalstimme mit Impuls-/Rauschanregung und begrenzter
-   Modalbank implementieren; Pitch, Klangstruktur, Helligkeit und Ausklingzeit regeln.
-3. Host-Tests für endliche Werte, Stabilität, Ausklang und Parametergrenzen;
-   anschließend echten ARM-Build und manuelle Audioprüfung vorbereiten.
+1. Compare the originals, Daisy port, and DaisySP components using the same
+   categories: excitation, resonance structure, damping, pitch, memory, and
+   block processing.
+2. Implement an original minimal monophonic voice with impulse/noise excitation
+   and a bounded modal bank. Expose pitch, structure, brightness, and decay.
+3. Test finite output, stability, decay, and parameter limits on the host; then
+   prepare an ARM build and manual listening test.
 
-Polyphonie und Modulation folgen erst nach Messung der Laufzeit und des
-Speicherverbrauchs am Seed3. Keine zugesagte Stimmenzahl oder Klanggleichheit.
-Ein externes Audiosignal als Anregung eines Resonanzkörpers bleibt eine Variante
-dieses Physical-Modeling-Projekts; dafür wird kein separates Effektprojekt geführt.
+Polyphony and modulation follow measured runtime and memory use on Seed3. No
+voice count or sound match is promised. Exciting a resonant body from external
+audio remains a variant of this project, without a separate resonator effect.
 
-Bis dahin weist `make PROJECT=physical-modeling` den Build ausdrücklich ab.
-Bei der Implementierung: eigener `src/`-, `tests/`- und `docs/`-Bereich,
-Makefile mit `../../common/desktop.mk`, Eintrag in `BUILDABLE_PROJECTS` und CI ergänzen.
+Until implementation, `make PROJECT=physical-modeling` fails explicitly. The
+future implementation needs its own `src/`, `tests/`, `docs/`, and Makefile using
+`../../common/desktop.mk`, plus entries in `BUILDABLE_PROJECTS` and CI.

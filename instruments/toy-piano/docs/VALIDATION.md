@@ -99,8 +99,10 @@ Studio One plays the kit and key presses arrive in Studio One. Initially a keybo
 entry was missing from track inputs; deleting/recreating it with a new name fixed
 the setup. The reported cause was DAW configuration rather than firmware.
 
-The final release BIN still needs acceptance on the device: it includes the
-held-key correction and bundled key-state transmission.
+On October 17, 2026, the operator reported “all tests green” for the final
+v0.2 release BIN, which includes the held-key correction and bundled key-state
+transmission, and approved publication. The report did not provide a case-by-case
+measurement log for the checks below.
 
 ## Remaining hardware checks
 

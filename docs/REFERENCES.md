@@ -1,91 +1,91 @@
-# Quellen für die nächsten Instrumente und Effekte
+# Sources for Future Instruments and Effects
 
-Stand: 17.10.2026. Diese Übersicht ist ein erster Abgleich öffentlicher Original-
-und Daisy-Quellen sowie vorhandener eigener Forschungsberichte. Sie ist keine
-Klangvergleichsmessung und kein Nachweis, dass die Ports auf unserem Desktop-Kit laufen.
-Zusätzliche Originalengines und DaisyExamples-Ports wurden weder importiert noch
-gebaut oder ausgeführt. DaisySP bleibt die bereits vorhandene gepinnte Bibliothek.
+As of October 17, 2026, this is an initial survey of public original and Daisy
+sources alongside existing research reports. It is neither a measured sound
+comparison nor proof that the ports run on our Desktop Kit. The additional
+original engines and DaisyExamples ports have not been imported, built, or run
+here. DaisySP remains the pinned library already included in this repository.
 
-## Festgehaltene Quellenstände
+## Pinned source revisions
 
-| Quelle | Geprüfter Commit |
+| Source | Reviewed commit |
 | --- | --- |
 | [Mutable Instruments / pichenettes/eurorack](https://github.com/pichenettes/eurorack/tree/f4cfa7697095a28d292bff758beb51deb49b5a86) | `f4cfa7697095a28d292bff758beb51deb49b5a86` |
 | [DaisyExamples](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27) | `259ed82c7d4c0d7699f695945e6e111b7dc7cb27` |
-| [DaisySP, bereits als Submodul eingebunden](https://github.com/daisyaudio/DaisySP/tree/2c72eaf9eac5fc0dca1919d65d606da907832618) | `2c72eaf9eac5fc0dca1919d65d606da907832618` |
-| [Eigene Forschungsberichte, Custom-Firmware](https://github.com/sscheidl/Custom-Firmware/tree/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9) | `3e041b5b9ce98eb687316ffb3c4ba19492ec74e9` |
-| [Eigene FV-1-Forschung und C++-Referenzen](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/d1ef0525d072091d9d4da46f1821d45e930a2745) | `d1ef0525d072091d9d4da46f1821d45e930a2745` |
+| [DaisySP, already included as a submodule](https://github.com/daisyaudio/DaisySP/tree/2c72eaf9eac5fc0dca1919d65d606da907832618) | `2c72eaf9eac5fc0dca1919d65d606da907832618` |
+| [Our research reports, Custom-Firmware](https://github.com/sscheidl/Custom-Firmware/tree/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9) | `3e041b5b9ce98eb687316ffb3c4ba19492ec74e9` |
+| [Our FV-1 research and C++ references](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/d1ef0525d072091d9d4da46f1821d45e930a2745) | `d1ef0525d072091d9d4da46f1821d45e930a2745` |
 
-Bei DaisySP wurden Header, Herkunftskommentare und Lizenz geprüft. Bei den
-Originalen wurden die unten verlinkten DSP-Schnittstellen und die Projekt-README
-gelesen, bei Torus/Nimbus die READMEs sowie ergänzend Torus-Makefile und Resonator-Header.
-Die Forschungsberichte wurden ausschließlich lesend als Textreferenzen konsultiert.
+The DaisySP review covered headers, attribution comments, and license. For the
+original projects, the linked DSP interfaces and project README were read. The
+Torus/Nimbus review also covered their READMEs, the Torus Makefile, and a
+resonator header. Research reports were consulted only as text references.
 
-## Physical Modeling / Resonator
+## Physical modeling / resonator
 
-| Quelle | Belegter Ansatz | Bedeutung für unser Projekt |
+| Source | Documented approach | Relevance here |
 | --- | --- | --- |
-| [Rings Part](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/rings/dsp/part.h) | Modellwahl umfasst Modal-, Saiten- und weitere Resonatormodelle; blockweise Verarbeitung von Eingang, Ausgang und Aux | Vollständigere Originalreferenz für Modell-/Stimmenorganisation |
-| [Elements Part](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/elements/dsp/part.h) | Eigene Performance-/Patchdaten; getrennte Blow-/Strike-Eingänge und Main/Aux-Ausgänge | Zweite Referenz für Anregung und resonierenden Körper |
-| [Torus](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Torus) | README bezeichnet es als Rings-Port für **Daisy Patch**; eigenes DSP und stmlib im Build | Mit Rings vergleichbare Portstruktur, aber keine direkte Desktop-Firmware |
-| [DaisySP ModalVoice](https://github.com/daisyaudio/DaisySP/blob/2c72eaf9eac5fc0dca1919d65d606da907832618/Source/PhysicalModeling/modalvoice.h) / [Resonator](https://github.com/daisyaudio/DaisySP/blob/2c72eaf9eac5fc0dca1919d65d606da907832618/Source/PhysicalModeling/resonator.h) | Aus **Plaits** portierte Bausteine, laut Herkunftskommentaren; ModalVoice beschreibt Click → Tiefpass → Resonator | Kleiner bereits verfügbarer Versuchspfad, kein vollständiges Rings/Elements |
-| [Offizielles Seed-Resonator-Beispiel](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/seed/DSP/resonator) | Demonstriert den Resonator mit zufälligen Parametern | API-/Integrationsbeispiel, kein fertiges Instrument für unser Kit |
-| [Eigene Iridium-Resonator-Studie](https://github.com/sscheidl/Custom-Firmware/blob/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9/analysis/synthesizers/waldorf-iridium/04_resonator/README.md) | Forschungsbericht über Resonatororganisation und Parameter; kein offener Herstellerquellcode | Dritte Konzeptreferenz; keine Herstellerimplementierung als Bibliothek |
+| [Rings Part](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/rings/dsp/part.h) | Model selection includes modal, string, and other resonator models; processes input, output, and auxiliary audio in blocks | Original reference for fuller model and voice organization |
+| [Elements Part](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/elements/dsp/part.h) | Separate performance and patch data, blow and strike inputs, and main/aux outputs | Second reference for excitation and resonant body |
+| [Torus](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Torus) | Its README calls it a Rings port for **Daisy Patch**; its build includes its own DSP and stmlib | Comparable port structure, not a Desktop Kit firmware |
+| [DaisySP ModalVoice](https://github.com/daisyaudio/DaisySP/blob/2c72eaf9eac5fc0dca1919d65d606da907832618/Source/PhysicalModeling/modalvoice.h) / [Resonator](https://github.com/daisyaudio/DaisySP/blob/2c72eaf9eac5fc0dca1919d65d606da907832618/Source/PhysicalModeling/resonator.h) | Source comments trace components to **Plaits**; ModalVoice describes click → low-pass → resonator | Small, available experiment path, not complete Rings/Elements |
+| [Official Seed resonator example](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/seed/DSP/resonator) | Demonstrates the resonator with random parameters | API and integration example, not a complete instrument for this kit |
+| [Our Iridium Resonator study](https://github.com/sscheidl/Custom-Firmware/blob/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9/analysis/synthesizers/waldorf-iridium/04_resonator/README.md) | Research report on resonator organization and parameters; no open manufacturer source | Third conceptual reference, not a manufacturer library |
 
-**Entscheidungsvorschlag:** zuerst eigene einfache Anregung und begrenzte Modalbank,
-dann anhand identischer Testsignale mit kleinen DaisySP-Versuchen vergleichen.
-Rings/Torus und Elements bleiben ausführlichere Referenzen. Klanggleichheit ist kein
-Abnahmekriterium; Laufzeit, Speicher und musikalisch brauchbare Parameter sind es.
+**Proposed decision:** Start with an original simple excitation and bounded
+modal bank, then compare with small DaisySP experiments using identical test
+signals. Rings/Torus and Elements remain broader references. Matching their
+sound is not an acceptance criterion; runtime, memory, and useful controls are.
 
-## Granular / Freeze
+## Granular / freeze
 
-| Quelle | Belegter Ansatz | Bedeutung für unser Projekt |
+| Source | Documented approach | Relevance here |
 | --- | --- | --- |
-| [GR-1-Forschungsstand](https://github.com/sscheidl/Custom-Firmware/blob/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9/analysis/synthesizers/gr-1/README.md) | Eigene Berichte zu GR-1-DSP und Bedienung; kein freigegebener Hersteller-DSP-Baustein | Musikalisches Vorbild; eigener Scheduler und eigener Samplepfad |
-| [GR-1-/Iridium-Vergleich](https://github.com/sscheidl/Custom-Firmware/blob/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9/analysis/comparative/gr1-iridium-granular/README.md) | Vergleich von Grainorganisation, Ressourcen und UI-Rollen | Begrenzter Pool; Basis-, Scan- und Grainposition getrennt halten |
-| [Iridium Particle](https://github.com/sscheidl/Custom-Firmware/blob/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9/analysis/synthesizers/waldorf-iridium/05_particle/README.md) | Eigene Forschungsreferenz, keine hardwaregeprüfte eigene Engine | Ergänzende Konzepte für Organisation und Parameter |
-| [DaisySP GranularPlayer](https://github.com/daisyaudio/DaisySP/blob/2c72eaf9eac5fc0dca1919d65d606da907832618/Source/Sampling/granularplayer.h) | Samplepuffer und Größe bei Init; Tempo, Transposition in Cent und Grainzeit in ms bei Process | Direkt verfügbarer Vergleichsbaustein für kleine Versuche |
-| [Clouds GranularProcessor](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/clouds/dsp/granular_processor.h) | Vorgegebene Speicherpuffer, blockweiser Audioeingang/-ausgang, mehrere Betriebsarten | Öffentliches Original für den Audioeffekt-/Freeze-Vergleich |
-| [Nimbus Patch](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Nimbus) / [Field](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/field/Nimbus) | READMEs benennen Clouds-Ports; Patch-/Field-spezifische Bedienung | Vorhandene Daisy-Referenzen; Desktop-Anpassung bleibt Arbeit |
-| [Beads GranularProcessor](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/beads/dsp/granular_processor.h) | Öffentliches Original mit Delay-/Granular-Verarbeitung | Zusatzreferenz; keine hier nachgewiesene Daisy-Portierung |
+| [GR-1 research](https://github.com/sscheidl/Custom-Firmware/blob/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9/analysis/synthesizers/gr-1/README.md) | Our reports on GR-1 DSP and controls; no licensed manufacturer DSP component | Musical reference for an original scheduler and sample path |
+| [GR-1 / Iridium comparison](https://github.com/sscheidl/Custom-Firmware/blob/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9/analysis/comparative/gr1-iridium-granular/README.md) | Comparison of grain organization, resources, and UI roles | Bounded pool; keep base, scan, and grain read positions separate |
+| [Iridium Particle](https://github.com/sscheidl/Custom-Firmware/blob/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9/analysis/synthesizers/waldorf-iridium/05_particle/README.md) | Research reference, not a hardware-tested engine of our own | Additional organizational and parameter concepts |
+| [DaisySP GranularPlayer](https://github.com/daisyaudio/DaisySP/blob/2c72eaf9eac5fc0dca1919d65d606da907832618/Source/Sampling/granularplayer.h) | Init takes a sample buffer and size; Process takes speed, pitch in cents, and grain time in ms | Available component for small comparison experiments |
+| [Clouds GranularProcessor](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/clouds/dsp/granular_processor.h) | Supplied memory buffers, block-based audio input/output, and several modes | Public original for audio effect and freeze comparison |
+| [Nimbus Patch](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Nimbus) / [Field](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/field/Nimbus) | READMEs identify Clouds ports with Patch/Field-specific controls | Existing Daisy references requiring Desktop Kit adaptation |
+| [Beads GranularProcessor](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/beads/dsp/granular_processor.h) | Public original with delay and granular processing | Additional reference; no Daisy port verified here |
 
-Mit „Beats“ ist **vermutlich Beads** gemeint; diese Namenszuordnung ist eine Annahme.
-Der Original-[README-Hinweis](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/README.md)
-zu Beads lautet sinngemäß: Desktop-Build möglich, Build und Betrieb auf dem Modul
-nicht verifiziert. Öffentlich verfügbar bedeutet deshalb nicht hardwarevalidiert.
+“Beats” **may have meant Beads**; this identification is an assumption. The
+original [README](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/README.md)
+indicates that a desktop build is possible but the build and operation on the
+module were unverified. Public availability is not hardware validation.
 
-Die historischen Forschungs-PRs sind [GR-1 #17](https://github.com/sscheidl/Custom-Firmware/pull/17),
-[Vergleich #18](https://github.com/sscheidl/Custom-Firmware/pull/18) und
-[Iridium-GUI #19](https://github.com/sscheidl/Custom-Firmware/pull/19).
-Für diese Planung gilt der oben fixierte aktuelle main-Stand; frühe Aussagen über
-damals noch offene PRs sind keine aktuellen Integrationsaussagen.
+The historical research PRs are [GR-1 #17](https://github.com/sscheidl/Custom-Firmware/pull/17),
+[comparison #18](https://github.com/sscheidl/Custom-Firmware/pull/18), and
+[Iridium GUI #19](https://github.com/sscheidl/Custom-Firmware/pull/19).
+This plan uses the pinned current `main` revision above. Earlier statements
+about then-open PRs are not current integration claims.
 
 ## Reverb
 
-**Vom Nutzer konkretisiert:** Der neue [Reverb-Bereich](../effects/reverb/) widmet
-sich der Reverb-Sektion von **Clouds/Nimbus** und dem **Walrus Audio Slöer
-Stereo-Reverb** als zweitem gewünschten Entwicklungs-/Portierungsziel.
+**Clarified by the user:** The [reverb area](../effects/reverb/) covers the
+reverb section of **Clouds/Nimbus** and the **Walrus Audio Slöer Stereo Reverb**
+as a second development and possible porting target.
 
-| Grundlage | Geprüfter Stand | Verwendung / Grenze |
+| Source | Reviewed status | Use and limitations |
 | --- | --- | --- |
-| [Clouds Reverb](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/clouds/dsp/fx/reverb.h) | Öffentlicher Originalpfad im oben fixierten Mutable-Stand | Reverb getrennt von der Granular-Anwendung untersuchen |
-| [Nimbus Reverb, Patch](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Nimbus/dsp/fx/reverb.h) / [Field](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/field/Nimbus/dsp/fx/reverb.h) | Reverb-Header und MIT-Hinweise gelesen; vorhandene Daisy-Ports | Ausgangspunkt für Desktop-Kit-Experimente; noch kein eigener Build dieser Sektion |
-| Walrus Audio Slöer | Nutzer hat am 17.10.2026 im geöffneten eigenen Gerät einen Spin Semiconductor FV-1 mit Zusatzmarkierung „2211“ identifiziert; keine unabhängige Sichtprüfung hier | FV-1 am Nutzergerät beobachtet. Bedeutung der Zusatzmarkierung, Programm, Taktung, vollständiger Stereo-Signalweg und portierbare Algorithmusgrundlage offen |
-| [FV-1-Portierungsstrategie](https://github.com/sscheidl/fv-1-DSP-xtractor/blob/d1ef0525d072091d9d4da46f1821d45e930a2745/docs/FV1_DAISY_PORTING.md) und [Quellenkatalog](https://github.com/sscheidl/fv-1-DSP-xtractor/blob/d1ef0525d072091d9d4da46f1821d45e930a2745/docs/FV1_SOURCE_CATALOG.md) | Vorhandene C++17-Plate-/Hall-Referenzen; Berichte gelesen, hier keine Portierung ausgeführt | Eigene FV-1-Grundlage; ausdrücklich keine Slöer-Implementierung. Im historischen Quellenstand fehlte der Chipnachweis; die neue Nutzerbeobachtung ergänzt ihn, ohne den Algorithmus nachzuweisen |
+| [Clouds Reverb](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/clouds/dsp/fx/reverb.h) | Public original path in the pinned Mutable revision | Study the reverb separately from the granular application |
+| [Nimbus Reverb, Patch](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Nimbus/dsp/fx/reverb.h) / [Field](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/field/Nimbus/dsp/fx/reverb.h) | Reverb header and MIT notices reviewed; Daisy ports exist | Starting point for Desktop Kit experiments; this section has not been built here |
+| Walrus Audio Slöer | On October 17, 2026, the user identified a Spin Semiconductor FV-1 marked “2211” in an opened pedal; no independent visual inspection here | FV-1 observed in that device. Meaning of the marking, effect program, clocking, full stereo path, and portable algorithm source remain unknown |
+| [FV-1 porting strategy](https://github.com/sscheidl/fv-1-DSP-xtractor/blob/d1ef0525d072091d9d4da46f1821d45e930a2745/docs/FV1_DAISY_PORTING.md) and [source catalog](https://github.com/sscheidl/fv-1-DSP-xtractor/blob/d1ef0525d072091d9d4da46f1821d45e930a2745/docs/FV1_SOURCE_CATALOG.md) | Existing C++17 Plate/Hall references and reports reviewed; no port performed here | FV-1 research, explicitly not a Slöer implementation. The historical source did not confirm the chip; the new observation does not identify the algorithm |
 
-Die Reverb-Arbeit ist damit vom Granular-Effekt abgegrenzt. CloudSeed ist nicht
-die vom Nutzer gewählte Cloud-Reverb-Grundlage. Eine echte Slöer-Portierung und
-eine eigene klangliche Annäherung müssen getrennt bezeichnet werden.
+Reverb is tracked separately from the granular effect. CloudSeed is not the
+user's selected Clouds/Nimbus reference. A direct Slöer port and an original
+sonic approximation must be described as different work.
 
-## Übernahme und offene Prüfungen
+## Reuse and open checks
 
-Die gelesenen Mutable-STM32-DSP-Header tragen MIT-Lizenztexte; DaisySP weist seine
-MIT-Lizenzen und Herkunft aus. Eine spätere Übernahme muss die konkreten Dateien,
-Abhängigkeiten, Copyright-Hinweise und Namensregeln berücksichtigen. Noch wurden
-keine dieser zusätzlichen Engines oder Assets kopiert. Herstellerbinaries,
-Disassemblate und rekonstruierte Herstellerfunktionen werden nicht übernommen.
+The reviewed Mutable STM32 DSP headers carry MIT license text; DaisySP documents
+its MIT licensing and attribution. Any later code reuse must account for the
+specific files, dependencies, copyright notices, and naming rules. No
+additional engines or assets have been copied here. Manufacturer binaries,
+disassemblies, and reconstructed manufacturer functions will not be imported.
 
-**Offen:** detaillierter Codevergleich, Rate-/Blockanpassung der Ports an Seed3,
-Speicher-/CPU-Messungen, Klangvergleich mit identischen Testsignalen und die
-endgültige Wahl eigener Algorithmen. Ein Cortex-M7 besitzt kein NEON; fremde
-Stimmen-/Grainzahlen sind keine Daisy-Leistungszusagen.
+**Open:** detailed code comparison, sample-rate and block-size adaptation for
+Seed3, CPU/memory measurements, sound comparison with identical test signals,
+and final algorithm selection. A Cortex-M7 has no NEON; other devices' voice
+and grain counts are not Daisy performance guarantees.
