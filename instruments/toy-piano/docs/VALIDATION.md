@@ -81,17 +81,29 @@ Dateideskriptoren. Das SRAM-Ausführungsmodell stammt aus dem offiziellen
 BOOT_SRAM-Linkerskript. Eigener DSP-Code kompiliert im Host-Test mit
 `-Wall -Wextra -Werror`.
 
-## Noch am Gerät zu prüfen
+## Erster Hardwaretest — Nutzerbericht
 
-* Externer Bootloader vorhanden und Flash über den Träger-USB-Port erfolgreich.
-* Physisch jede Taste S1–S16 mit LED D1–D16, keine verdrehte Reihenfolge am eigenen Board.
+Am **17.10.2026** meldet der Nutzer nach seinem Gerätetest:
+„test ist positiv. A/D hüllkurve und alle 16 Tasten spielen“.
+
+Damit sind auf dem Nutzergerät **Tonwiedergabe über alle 16 Tasten** und die
+grundsätzliche Funktion der **Attack-/Decay-Hüllkurve** positiv bestätigt.
+Dies ist ein manueller Funktionstest, keine Messung der Hüllkurvenzeiten,
+Poti-Endwerte oder Callback-Laufzeit. Die Rückmeldung enthält keinen separaten
+Nachweis für LED-Zuordnung, Stereoausgänge oder 16 gleichzeitig aktive Stimmen.
+USB-MIDI ist weiterhin nicht implementiert.
+
+## Verbleibende Hardwareprüfungen
+
+* Verwendeten Flash-/Bootloader-Ablauf bei Bedarf getrennt protokollieren.
+* LED D1–D16 jeweils der zugehörigen Taste S1–S16 zuordnen.
 * Tasterprellen, Mehrfachdrücke und schnelle Wiederanschläge bei realen Schaltern.
 * VR1/VR2: Drehrichtung, reale ADC-Endwerte, Störgeräusche und subjektiv passende Zeitverläufe.
-* Stereo-/Kopfhörerausgabe, Stimmung, Klang, Lautstärke und Klickarmut.
+* Stereo-/Kopfhörerausgabe, genaue Stimmung, Lautstärke und Klickarmut gezielt vergleichen.
 * 16-Stimmen-Betrieb unter gleichzeitiger Bedienung ohne Aussetzer;
   tatsächliche Callback-Laufzeit und CPU-Reserve.
 
-Die genaue Testfolge steht in der README. Keine bekannten Fehler im geprüften
-DSP-Verhalten; analoge Eigenschaften und die reale Audiowiedergabe bleiben ungetestet.
+Die genaue Testfolge steht in der README. Der erste reale Spieltest ist positiv;
+die oben genannten Detailprüfungen und Messungen stehen noch aus.
 Weitere bekannte Grenzen (sehr kurze LED-Anzeigen, mögliche Blockade bei einem
 LED-DMA-Startfehler) stehen in [HARDWARE.md](../../../docs/HARDWARE.md).

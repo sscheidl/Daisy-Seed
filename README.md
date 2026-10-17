@@ -9,7 +9,7 @@ Firmware-Build. Bibliotheken, Toolchain und Board-Buildkonfiguration werden gete
 
 | Projekt | Bereich auf GitHub und lokal | Stand |
 | --- | --- | --- |
-| [Toy Piano v0.1](instruments/toy-piano/) | `instruments/toy-piano/` | Spielbare Firmware; ARM-Build und Host-Tests bestanden, Gerätetest offen |
+| [Toy Piano v0.1](instruments/toy-piano/) | `instruments/toy-piano/` | ARM-/Host-Tests bestanden; erster Nutzer-Hardwaretest positiv: 16 Tasten und AD-Hüllkurve |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Projektgerüst und Referenzvergleich; eigene Engine geplant |
 | [Granular](instruments/granular/) | `instruments/granular/` | Projektgerüst und Referenzvergleich; eigene Engine geplant |
 | [Reverb](effects/reverb/) | `effects/reverb/` | Clouds-/Nimbus-Reverb-Experimente und Slöer-Stereo-Reverb als Portierungsziel |

@@ -95,11 +95,15 @@ In diesem Cloud-Auftrag wurde keine Hardware geflasht.
 
 ## Prüfstatus
 
+**Erster Hardwaretest positiv (Nutzerbericht vom 17.10.2026):** Alle 16 Tasten
+spielen, und die Attack-/Decay-Hüllkurve funktioniert auf dem Gerät.
+
 Ein echter ARM-Cross-Compile sowie Host-Tests wurden in der Cloud ausgeführt.
 Die Binärdatei hat eine geprüfte BOOT_SRAM-Vektortabelle.
-[Prüfbericht](docs/VALIDATION.md) trennt die Softwareprüfungen von noch offenen
-Hardwaretests. Die tatsächliche Audioqualität, ADC-Stabilität und Callback-Laufzeit
-am Seed3 wurden mangels angeschlossener Hardware nicht gemessen.
+[Prüfbericht](docs/VALIDATION.md) trennt Softwareprüfungen, den ersten Nutzer-
+Hardwaretest und verbleibende Gerätetests. LED-Zuordnung, gleichzeitiger
+16-Stimmen-Betrieb, Poti-Endwerte und Callback-Laufzeit sind noch nicht bestätigt
+beziehungsweise gemessen. USB-MIDI ist in dieser Version nicht implementiert.
 
 Der GitHub-Actions-Workflow baut und testet das Projekt nach dem Push und stellt
 BIN, ELF und SHA-256 als Build-Artefakt bereit. Der lokale Build benötigt kein GitHub Actions.
