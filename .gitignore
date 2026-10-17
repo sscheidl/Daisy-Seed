@@ -1,4 +1,6 @@
 /build/
+/instruments/*/build/
+/effects/*/build/
 /.tools/
 *.wav
 /diagnostics/firmware/build/

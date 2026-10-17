@@ -1,64 +1,64 @@
 # Flashing over USB
 
-These steps are performed manually on the kit. Automated builds do not flash hardware.
+These are local hardware steps. No device was flashed from cloud.
+Commands below run at the **repository root**, selecting `PROJECT=toy-piano`.
+Each project has its own BIN; the last flashed application runs on the kit.
+Runtime switching between instruments is not implemented.
 
-## Two USB-C ports
+## Two USB-C connectors
 
-* **Seed3 module:** STM32 ROM DFU mode and one-time Daisy bootloader installation.
-* **Desktop carrier, J7 (above the Seed3):** power, normal operation, and firmware
+* **Seed3 module:** used for STM32 ROM DFU and the one-time Daisy bootloader installation.
+* **Desktop carrier J7, above the Seed3:** power, normal operation and application
   updates through the **external** Daisy bootloader.
 
-Use a USB data cable and connect to the port specified for each step.
+Use a USB data cable. These are separate USB connections; move the cable to the
+connector required by the procedure.
 
 ## One time: install the external bootloader
 
-**Skip this if a suitable external v6.x bootloader is already installed.**
-Toy Piano is a BOOT_SRAM application and does not replace the bootloader. Direct
-application installation through ROM DFU is not the procedure used here.
+**Skip this if an appropriate external v6.x bootloader is already installed.**
+The application is BOOT_SRAM firmware; it does not replace the bootloader and is
+not installed directly through STM32 ROM DFU in this workflow.
 
-1. Connect the computer to the USB-C port **on the Seed3 module**.
-2. Hold **BOOT**, press and release RESET, then release BOOT to enter STM32 ROM DFU.
-3. Open the [Daisy Web Programmer](https://flash.daisy.audio/) in Chrome/Edge,
-   select bootloader **v6.x (external)**, and install it. Alternatively, with
-   `dfu-util` installed, run from the project root:
+1. Connect the computer to the USB-C connector **on the Seed3 module**.
+2. Hold BOOT, press and release RESET, then release BOOT. This enters STM32 ROM DFU.
+3. Open the [Daisy Web Programmer](https://flash.daisy.audio/) in Chrome/Edge and
+   install **v6.x (external)**. Alternatively, with `dfu-util` installed:
 
    ```bash
-   make program-boot
+   make PROJECT=toy-piano program-boot
    ```
 
-   The Makefile selects `libDaisy/core/dsy_bootloader_v6_4-extdfu-2000ms.bin`, like
-   the official Desktop template. This separate command writes the bootloader;
-   a normal `make` does not run it.
+   The shared Makefile selects
+   `libDaisy/core/dsy_bootloader_v6_4-extdfu-2000ms.bin`, as in the official template.
+   This explicit command writes the bootloader; ordinary `make` does not.
 4. Move the cable to **J7 on the Desktop carrier**.
 
-Only install a bootloader when it is missing or the wrong variant. Do not repeat
-`program-boot` for routine application updates.
+Only install a bootloader when the existing one is missing or unsuitable.
+Do not repeat `program-boot` for ordinary firmware updates.
 
-## Routine updates: flash Toy Piano
+## Each update: flash Toy Piano
 
 1. Connect and power the kit through **J7 on the Desktop carrier**.
-2. Press and release **RESET**, then press **BOOT** within approximately two
-   seconds. The USR LED blinks quickly, then pulses slowly: the Daisy bootloader
-   is waiting for the application. This differs from the ROM DFU sequence above.
-3. Connect in the [Daisy Web Programmer](https://flash.daisy.audio/), choose
-   **Custom**, and upload **`build/ToyPiano-v0.1.bin`**. Alternatively, run:
+2. Press/release RESET, then press BOOT during the approximately two-second window.
+   The USR LED first flashes quickly, then pulses slowly while waiting for firmware.
+   This differs from the ROM-DFU sequence above.
+3. Connect with the [Daisy Web Programmer](https://flash.daisy.audio/), choose Custom
+   and select **`instruments/toy-piano/build/ToyPiano-v0.2.bin`**. Alternatively:
 
    ```bash
-   make program-dfu
+   make PROJECT=toy-piano program-dfu
    ```
 
-   The official Makefile writes the application into QSPI at `0x90040000`.
-   The bootloader loads it into SRAM at `0x24000000` for execution.
-4. The firmware starts after flashing; press RESET if needed. The bootloader
-   remains installed for later updates.
+   The official Makefile writes the application to QSPI at `0x90040000`. The Daisy
+   bootloader loads it into SRAM at `0x24000000` for execution.
+4. The application starts after flashing; press RESET if necessary. The bootloader
+   remains installed for the next update.
 
-Flashing Toy Piano replaces the diagnostic application. Flash `DaisyDiagnostic.bin`
-again to return to diagnostics; only one of these applications runs at a time.
+## If the device is missing
 
-## If the device does not appear
-
-Check the data cable, port, and BOOT/RESET sequence. Routine updates require the
-external bootloader through J7. WebUSB requires a supported browser and USB access
-permissions. Linux may need udev rules; Windows may need the official Daisy/Zadig
-driver setup. See the [official help](https://docs.daisy.audio/tutorials/daisy-web-programmer/)
-and [Desktop kit instructions](https://github.com/daisyaudio/Seed3-DevKit-Desktop#4-install-the-daisy-bootloader-one-time).
+Check the data cable, connector and correct BOOT/RESET sequence first. Updates
+require the external bootloader to enumerate through J7. WebUSB needs a supported
+browser and USB permissions. Linux may need udev rules; Windows may need the
+Daisy/Zadig driver setup. See the [official guide](https://docs.daisy.audio/tutorials/daisy-web-programmer/)
+and [Desktop Kit instructions](https://github.com/daisyaudio/Seed3-DevKit-Desktop#4-install-the-daisy-bootloader-one-time).
