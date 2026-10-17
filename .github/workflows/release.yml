@@ -16,7 +16,7 @@ on:
         default: false
   push:
     branches: [main]
-    paths: [src/version.h]
+    paths: [instruments/toy-piano/src/version.h]
 permissions:
   contents: read
 concurrency:
@@ -32,6 +32,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.publish && 'true' || 'false' }}
+      PROJECT_DIR: instruments/toy-piano
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,32 +48,32 @@ jobs:
       - name: Read version and refuse to overwrite a release
         id: version
         run: |
-          version="$(make -s version)"
+          version="$(make -s PROJECT=toy-piano version)"
           test -n "$version" || { echo "::error::Could not read the version from src/version.h"; exit 1; }
           echo "value=$version" >> "$GITHUB_OUTPUT"
           bash scripts/check-release-available.sh "$version"
       - name: Test on host
         run: |
           make test-release
-          make test
-          make test-sanitize
-          make test-thread
+          make PROJECT=toy-piano test
+          make PROJECT=toy-piano test-sanitize
+          make PROJECT=toy-piano test-thread
       - name: Build and check the firmware image
         run: |
-          make -j4
+          make PROJECT=toy-piano -j4
           python3 scripts/check-firmware.py
       - name: Release notes and checksum
         env:
           VERSION: ${{ steps.version.outputs.value }}
         run: |
-          bin="build/ToyPiano-v$VERSION.bin"
-          (cd build && sha256sum "ToyPiano-v$VERSION.bin" > SHA256SUMS)
-          sha="$(cut -d' ' -f1 build/SHA256SUMS)"
+          bin="$PROJECT_DIR/build/ToyPiano-v$VERSION.bin"
+          (cd "$PROJECT_DIR/build" && sha256sum "ToyPiano-v$VERSION.bin" > SHA256SUMS)
+          sha="$(cut -d' ' -f1 "$PROJECT_DIR/build/SHA256SUMS")"
           size="$(stat -c %s "$bin")"
           # Section "## <version> ..." of the changelog, up to the next "## ".
-          awk -v v="$VERSION" '$0 == "## " v || index($0, "## " v " ") == 1 { p = 1; next } /^## / { p = 0 } p' CHANGELOG.md > release-notes.md
+          awk -v v="$VERSION" '$0 == "## " v || index($0, "## " v " ") == 1 { p = 1; next } /^## / { p = 0 } p' "$PROJECT_DIR/CHANGELOG.md" > release-notes.md
           # Relative links to repository files do not work on the release page.
-          sed -i -E "s#\]\(([A-Za-z][^):]*\.md)#](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/\1#g" release-notes.md
+          sed -i -E "s#\]\(([A-Za-z][^):]*\.md)#](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/$PROJECT_DIR/\1#g" release-notes.md
           if ! grep -q '[^[:space:]]' release-notes.md; then
             echo "::error::CHANGELOG.md has no section for version $VERSION."
             exit 1
@@ -100,6 +101,6 @@ jobs:
             args+=(--draft)
           fi
           gh release create "v$VERSION" "${args[@]}" \
-            "build/ToyPiano-v$VERSION.bin" \
-            "build/ToyPiano-v$VERSION.elf" \
-            "build/SHA256SUMS"
+            "$PROJECT_DIR/build/ToyPiano-v$VERSION.bin" \
+            "$PROJECT_DIR/build/ToyPiano-v$VERSION.elf" \
+            "$PROJECT_DIR/build/SHA256SUMS"

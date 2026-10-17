@@ -1,49 +1,26 @@
 .DEFAULT_GOAL := all
-# The version lives in src/version.h only; it names the output files.
-VERSION := $(shell sed -n 's/.*TOY_PIANO_VERSION "\(.*\)".*/\1/p' src/version.h | head -n 1)
-$(if $(VERSION),,$(error Could not read the version from src/version.h))
-TARGET = ToyPiano-v$(VERSION)
-DEBUG = 0
-OPT = -O3
-APP_TYPE = BOOT_SRAM
-CPP_STANDARD = -std=gnu++17
-CPP_SOURCES = src/main.cpp src/toy_piano.cpp
-LIBDAISY_DIR = libDaisy
-DAISYSP_DIR = DaisySP
-SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core
-BOOT_BIN = $(SYSTEM_FILES_DIR)/dsy_bootloader_v6_4-extdfu-2000ms.bin
+include projects.mk
+PROJECT ?= toy-piano
 
-include $(SYSTEM_FILES_DIR)/Makefile
+PROJECT_ACTIONS := all clean libs test test-sanitize test-thread version program-dfu program-boot
+.PHONY: help list all-projects test-projects test-release $(PROJECT_ACTIONS)
 
-.PHONY: libs test test-sanitize test-thread test-release version
 test-release:
 	python3 -m unittest discover -s tests -p test_release_guard.py -v
 
-version:
-	@echo $(VERSION)
-libs:
-	$(MAKE) -C $(LIBDAISY_DIR)
-	$(MAKE) -C $(DAISYSP_DIR)
+help:
+	@printf '%s\n' 'make [PROJECT=toy-piano] [all|test|test-sanitize|clean|libs]' 'make list                    Project directories and status' 'make all-projects            Build every implemented project' 'make test-projects           Test every implemented project' 'make PROJECT=<id> program-dfu  Explicit hardware flash (never automatic)'
 
-$(BUILD_DIR)/$(TARGET).elf: $(LIBDAISY_DIR)/build/libdaisy.a $(DAISYSP_DIR)/build/libdaisysp.a
-$(LIBDAISY_DIR)/build/libdaisy.a:
-	$(MAKE) -C $(LIBDAISY_DIR)
-$(DAISYSP_DIR)/build/libdaisysp.a:
-	$(MAKE) -C $(DAISYSP_DIR)
+list:
+	@$(foreach p,$(PROJECTS),printf '%-20s %-12s %s\n' '$(p)' '$(PROJECT_STATUS_$(p))' '$(PROJECT_DIR_$(p))';)
 
-HOST_CXX ?= g++
-HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -pthread
-HOST_INCLUDES = -Isrc -IDaisySP/Source -IlibDaisy/src
-test:
-	mkdir -p build/host
-	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_toy_piano.cpp src/toy_piano.cpp -o build/host/test_toy_piano
-	./build/host/test_toy_piano
-	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) tests/test_callback.cpp src/toy_piano.cpp -o build/host/test_callback
-	./build/host/test_callback
+$(PROJECT_ACTIONS):
+	$(if $(PROJECT_DIR_$(PROJECT)),,$(error Unknown PROJECT '$(PROJECT)'; run make list))
+	$(if $(filter $(PROJECT),$(BUILDABLE_PROJECTS)),,$(error PROJECT '$(PROJECT)' is planned and has no firmware yet))
+	$(MAKE) -C $(PROJECT_DIR_$(PROJECT)) $@
 
-test-sanitize:
-	$(MAKE) test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
+all-projects:
+	$(foreach p,$(BUILDABLE_PROJECTS),$(MAKE) PROJECT=$(p) all &&) true
 
-# The SPSC queues between main loop and audio callback are the only threaded code.
-test-thread:
-	$(MAKE) test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread -fsanitize=thread"
+test-projects:
+	$(foreach p,$(BUILDABLE_PROJECTS),$(MAKE) PROJECT=$(p) test &&) true

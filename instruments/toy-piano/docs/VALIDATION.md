@@ -2,6 +2,10 @@
 
 Stand: 17.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 
+Projektpfad: `instruments/toy-piano/`. Nach der Übernahme von v0.2 in die Projektstruktur
+bleibt die BIN bytegleich (126.012 Bytes, Prüfsumme unten). DSP, Callback und deren
+Tests wurden unverändert aus dem aktuellen `main` übernommen.
+
 ## Tatsächlich ausgeführt
 
 | Prüfung | Ergebnis |
@@ -37,13 +41,13 @@ Prüfsumme der geprüften Firmware:
 22950050583241cc77fb29380681ac3077bb4475990000e33a4d4f8b5d61d2cd  ToyPiano-v0.2.bin
 ```
 
-Host-Tests: `make test`. Binärprüfung:
+Host-Tests: `make PROJECT=toy-piano test`. Binärprüfung:
 `python3 scripts/check-firmware.py` (prüft zusätzlich Dateiname, eingebettete Version und `src/version.h`).
 Sanitizer-Aufrufe (auch im CI-Workflow enthalten):
 
 ```bash
-make test-sanitize
-make test-thread
+make PROJECT=toy-piano test-sanitize
+make PROJECT=toy-piano test-thread
 ```
 
 Der Callback-Test verwendet den unveränderten Anwendungscode und libDaisys echte
@@ -115,7 +119,7 @@ Geräteeinrichtung in Studio One, nicht die Firmware.
 * Stereo-/Kopfhörerausgabe im Vergleich, Lautstärke durch den Begrenzer bei Akkorden.
 
 Die genaue Testfolge steht in der README. Keine bekannten Fehler im geprüften
-DSP-Verhalten; analoge Eigenschaften, die reale Audiowiedergabe und die reale USB-Anbindung
-bleiben ungetestet.
+DSP-Verhalten; zusätzliche Messungen der analogen Eigenschaften und Laufzeit bleiben offen.
+Die gemeldeten Hardware-Funktionstests sind im Abschnitt oben aufgeführt.
 Weitere bekannte Grenzen (sehr kurze LED-Anzeigen, mögliche Blockade bei einem
-LED-DMA-Startfehler) stehen in [HARDWARE.md](HARDWARE.md).
+LED-DMA-Startfehler) stehen in [HARDWARE.md](../../../docs/HARDWARE.md).

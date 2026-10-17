@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Sanity-check the BOOT_SRAM image: vector table and embedded version (does not replace a hardware test).
 
-Usage: check-firmware.py [image.bin]   (default: build/ToyPiano-v<version>.bin)
+Usage: check-firmware.py [image.bin]
+Default: instruments/toy-piano/build/ToyPiano-v<version>.bin
 """
 import pathlib
 import re
@@ -9,11 +10,12 @@ import struct
 import sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
-match = re.search(r'TOY_PIANO_VERSION\s+"([^"]+)"', (root / 'src' / 'version.h').read_text())
+project = root / 'instruments' / 'toy-piano'
+match = re.search(r'TOY_PIANO_VERSION\s+"([^"]+)"', (project / 'src' / 'version.h').read_text())
 assert match, "Could not read the version from src/version.h"
 version = match.group(1)
 
-path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else root / 'build' / f'ToyPiano-v{version}.bin'
+path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else project / 'build' / f'ToyPiano-v{version}.bin'
 assert path.name == f'ToyPiano-v{version}.bin', f"File name {path.name} does not match version {version}"
 image = path.read_bytes()
 assert 8 <= len(image) <= 480 * 1024, "Image exceeds official BOOT_SRAM linker region"

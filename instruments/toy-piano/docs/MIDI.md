@@ -21,7 +21,7 @@ USB-Port bleibt ungenutzt.
 Die Tasten klingen **immer lokal**, unabhängig vom USB-Senden. Eingehende MIDI-Noten
 werden **nicht** wieder als MIDI ausgegeben.
 
-## Studio One (nicht am Gerät geprüft)
+## Studio One (grundsätzlich am Gerät getestet; Details siehe Prüfbericht)
 
 1. Kit über J7 verbinden und starten. Studio One neu starten, falls das Gerät erst
    danach angeschlossen wurde.
