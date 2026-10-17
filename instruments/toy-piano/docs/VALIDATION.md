@@ -1,125 +1,116 @@
-# Prüfbericht — Toy Piano v0.2
+# Validation — Toy Piano v0.2
 
-Stand: 17.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
+Date: 2026-10-17. Software checks ran on Linux x86_64 without an attached Daisy.
+Operator-reported hardware checks are listed separately below.
 
-Projektpfad: `instruments/toy-piano/`. Nach der Übernahme von v0.2 in die Projektstruktur
-bleibt die BIN bytegleich (126.012 Bytes, Prüfsumme unten). DSP, Callback und deren
-Tests wurden unverändert aus dem aktuellen `main` übernommen.
+Project: `instruments/toy-piano/`. The project-layout build remains byte-identical
+at 126,012 bytes. DSP, callback, version header, queue and their tests were taken
+unchanged from current main. Documentation translation changes no firmware.
 
-## Tatsächlich ausgeführt
+## Executed software checks
 
-| Prüfung | Ergebnis |
+| Check | Result |
 | --- | --- |
-| Offizielle Desktop-API und Hardwaretabellen | `Hardware`, Button-/LED-Indizes, VR1/VR2 und Bootloader-Auswahl abgeglichen |
-| Echter ARM-Cross-Compile | Erfolgreich mit xPack GCC 13.2.1, Cortex-M7 Hard Float |
-| BOOT_SRAM-BIN | 126.012 Bytes, Version 0.2 eingebettet; Stack `0x20020000`, Reset-Vektor `0x24000749` |
-| ELF | ELF32, ARM, EABI5, Hard Float; Startadresse im SRAM |
-| Speicherbudget | SRAM 126.012 / 491.520 Bytes; DTCM 116.072 / 131.072 Bytes (88,6 %, davon 37 KB `MidiUsbHandler`); DMA-RAM 18.084 / 32.768 Bytes |
-| Alle 16 MIDI-Zuordnungen | Exakt gegen die angeforderte Tabelle geprüft, einschließlich doppeltem C5 |
-| Alle 16 tatsächlichen Oszillatorfrequenzen | Host-Audiorender: Nulldurchgangszählung über eine Sekunde, Abweichung < 1,1 Hz |
-| AD-Hüllkurven | Min./Mitte/Max. für Attack × Decay: samplegenaue Laufzeit, monotoner Verlauf, exakter Endwert null |
-| Retrigger | Pegel bleibt beim Trigger erhalten; erneuter Attack während Attack und Decay geprüft |
-| Zeitkennlinien | Endwerte, geometrische Mitte und monotoner Verlauf über 1001 Positionen geprüft |
-| Poti-Rauschfilter | ±0,05 % simuliertes Rauschen unterdrückt, beide Endanschläge erreichbar |
-| Callback/Entprellung | Echter Callback mit gepinntem DigitalControl: Kontaktaussetzer von 1–6 ms an jeder der 16 Tasten lösen keinen Doppelanschlag aus; nach bestätigtem Loslassen funktioniert der nächste Anschlag |
-| Callback/USB-MIDI | Echter Callback und echte Hauptschleifenfunktion gegen Host-Attrappen: Tasten senden `90/80 nn` (Velocity 100, Kanal 1) gebündelt in Tastenreihenfolge (Akkord = ein Paket, höchstens 8 je Paket, Rest beim nächsten Aufruf), nichts ohne eingerichteten USB-Host, kein zweites Note On bei Kontaktaussetzern, auch bei 80 Tastenwechseln ohne Hauptschleifen-Aufruf bleiben Note On und Off konsistent; Empfang nur für Note On mit Velocity > 0 auf jedem Kanal, höchstens 16 Noten je Block in Reihenfolge, Überlauf der Warteschlange ohne Folgen, keine Rückspiegelung empfangener Noten |
-| Callback/LED-Mailbox | Einschaltanschlag nach sieben Abtastungen, alle 16 Bits gleichzeitig, LED-Maske bleibt nach AD-Ende gesetzt, Stereo identisch; keine LED-Übertragung im Callback |
-| 16 unabhängige Stimmen | Polyphoner Render gegen Summe von 16 Einzelinstanzen verglichen, einschließlich Retrigger einer C5-Taste |
-| Pegel (Tasten) | Test-Peak 0,279373; keine nichtendlichen Werte; lineare Obergrenze 0,8 |
-| Speicher-/Zugriffsfehler | DSP- und Callback-Test mit AddressSanitizer + UndefinedBehaviorSanitizer bestanden, Fehlerbehandlung mit `-fno-sanitize-recover=all` |
-| MIDI-Stimmen | Tonhöhe (Nulldurchgänge, Noten 24–108), lineare Velocity, ungültige Noten/Velocity ignoriert, Zuordnung der 16 Stimmen, Klau der ältesten, Neustart derselben Note auf derselben Stimme, Pegel- und Phasenstetigkeit beim Klau/Retrigger |
-| Tasten und MIDI gleichzeitig | Summe aus Tasten- und MIDI-Instanz stimmt mit gemeinsamer Instanz überein (lineare Unabhängigkeit) |
-| Begrenzer | Monoton, ungerade, immer unter 0,8 (auch für 1e12), Kleinsignalverstärkung innerhalb 0,5 %, bei 32 Stimmen nie darüber, Stille exakt 0 |
-| Aliasing | Zweite Harmonische vorhanden bei Note 100, bei Note 127 (2f über Nyquist) abgeschaltet: Spiegelanteil < 1 % |
-| Lockfreie Warteschlange | Reihenfolge, voll/leer, Umlauf; 300.000 Elemente zwischen zwei Threads; ThreadSanitizer sauber, Gegenprobe mit relaxed-Ordnung meldet ein Data Race |
-| Versionierung | `make -s version` = `src/version.h`; Versionswechsel ohne `make clean` ändert Dateiname und Image-Eintrag; Skript lehnt falschen Dateinamen und manipulierte Version ab; Rückbau liefert bitgleiches Image |
-| Mutationsprüfung der Tests | Sieben gezielte Defekte im DSP (Aliasing-Schutz, Stimmenklau, gleiche Note, Limiter, Velocity, Hüllkurven-Reset, Phasen-Reset) werden jeweils von einem Test erkannt |
+| Official Desktop API/wiring | Hardware class, button/LED order, VR1/VR2 and bootloader selection checked |
+| Real ARM cross-compile | Passed with xPack GCC 13.2.1, Cortex-M7 hard float |
+| BOOT_SRAM BIN | 126,012 bytes, embedded version 0.2; stack `0x20020000`, reset `0x24000749` |
+| ELF | ELF32 ARM EABI5, hard float, SRAM entry point |
+| Memory budget | SRAM 126,012 / 491,520 bytes; DTCM 116,072 / 131,072 (88.6%, including about 37 KB MidiUsbHandler); DMA RAM 18,084 / 32,768 |
+| 16 key mappings | Exact requested table, including duplicate C5 |
+| Rendered key pitches | One-second zero-crossing estimate, error under 1.1 Hz |
+| AD envelopes | Minimum/middle/maximum attack × decay: sample-count timing, monotonic stages, exact idle zero |
+| Retrigger | Preserved level at trigger; retrigger during attack and decay |
+| Time mapping | Endpoints, geometric midpoint and monotonicity across 1,001 positions |
+| Pot filter | Simulated ±0.05% noise suppressed; both endpoints reachable |
+| Callback/debounce | Real callback plus pinned DigitalControl: 1–6 ms dropouts on every key do not retrigger; qualified release/repress does |
+| Callback/MIDI | Real callback and main-loop service against hardware fakes: channel-1 key Note On/Off, velocity 100, ordered bundles of at most eight messages, no send without configured host, no extra Note On on dropouts, consistent output after 80 key changes without main-loop service |
+| Callback/MIDI input | Only positive-velocity Note On, all channels; at most 16 notes per block in order; input queue overflow bounded; received notes not echoed |
+| LED mailbox / stereo | Startup qualification after seven samples; all 16 bits; held LEDs survive envelope completion; identical output channels; no LED transfer in audio |
+| Key polyphony | Polyphonic output compared against 16 independent single-key instances, including C5 retrigger |
+| Key level | Render peak 0.279373; finite values; linear worst-case bound 0.8 |
+| ASan / UBSan | DSP/callback tests passed with `-fno-sanitize-recover=all` |
+| MIDI voices | Pitches 24–108, linear velocity, invalid input ignored, 16-voice allocation, oldest-voice stealing, same-note reuse, envelope/phase continuity |
+| Keys plus MIDI | Sum of independent key/MIDI instances matches combined processing |
+| Limiter | Monotonic, odd, below 0.8 even at 1e12; small-signal gain within 0.5%; 32 voices remain below ceiling; exact silent zero |
+| Aliasing | Second harmonic present at note 100; disabled at note 127, whose second harmonic exceeds Nyquist; mirror component below 1% |
+| SPSC queue | FIFO/full/empty/wrap, 300,000 elements across two threads; TSan clean; relaxed-order mutation detected |
+| Versioning | Make version matches header; changing version without cleaning changes name/marker; checker rejects wrong name or marker; restoring version restores identical image |
+| Mutation checks | Seven DSP defects each caught: alias guard, voice stealing, same-note reuse, limiting, velocity, envelope reset, phase reset |
+| Release preflight | Eight tests cover existing tags, draft/published releases, later API pages, similar versions, API failure and invalid versions |
 
-Prüfsumme der geprüften Firmware:
+Firmware checksum:
 
 ```text
 22950050583241cc77fb29380681ac3077bb4475990000e33a4d4f8b5d61d2cd  ToyPiano-v0.2.bin
 ```
 
-Host-Tests: `make PROJECT=toy-piano test`. Binärprüfung:
-`python3 scripts/check-firmware.py` (prüft zusätzlich Dateiname, eingebettete Version und `src/version.h`).
-Sanitizer-Aufrufe (auch im CI-Workflow enthalten):
+From the repository root:
 
 ```bash
+make PROJECT=toy-piano test
 make PROJECT=toy-piano test-sanitize
 make PROJECT=toy-piano test-thread
+make test-release
+python3 scripts/check-firmware.py
 ```
 
-Der Callback-Test verwendet den unveränderten Anwendungscode und libDaisys echte
-DigitalControl-Klasse. GPIO/ADC, Systemzeit und Audio-/LED-Hardware sind Host-Stubs.
-Mit der ursprünglichen Bedingung aus `9e0a975` scheitert der Test am zusätzlichen
-Hüllkurvenanstieg nach einem Kontaktaussetzer. Mit der Haltezustandsprüfung besteht er.
-Die Tests bilden weder reale Schaltermechanik noch die LED-DMA-Hardware ab.
+The callback test uses production application code and the real pinned debouncer,
+with fake GPIO/ADC, time and audio/LED/USB hardware. The original condition from
+9e0a975 fails the dropout regression; the held-state guard passes. These tests do
+not simulate physical switch mechanics or DMA hardware. The zero-crossing check
+is coarse, not a precision tuning measurement. The firmware check validates size,
+vector table, name and embedded version; it does not guarantee startup on a board.
 
-Die Nulldurchgangsprüfung ist ein grober Frequenztest, kein Präzisions-Stimmungstest.
-Die Binärprüfung kontrolliert Größe, Stack- und Reset-Vektor und garantiert keinen
-erfolgreichen Start auf Hardware.
+## Real-time source review
 
-## Echtzeitprüfung am Quelltext
+Audio uses fixed loop bounds and static storage. It does no allocation, file I/O,
+logging or LED/USB transmission. Shift-register clock delays are short and bounded.
+Sine tables and note frequencies are initialized before audio starts. At most two
+log-time conversions occur for a block of key/MIDI strikes. At most 16 incoming
+notes are consumed per block. Receive happens in USB interrupt; event consumption
+and transmission happen in main.
 
-Der Audiocallback besitzt feste Schleifengrenzen und statischen Speicher.
-Keine Allokation, Dateizugriffe, Konsolenausgabe oder LED-I²C-Übertragung im Callback.
-Die offizielle Shiftregisterabfrage enthält lediglich die kurzen, fest begrenzten
-GPIO-Taktwartezeiten des Hardwaretreibers. Die LED-Funktion mit potenziell
-wartendem Buffer-Swap läuft im Hauptprogramm.
+Key output reconciles debounced state rather than queuing edges. Limiter square
+root/division compile to hardware instructions (disassembly reviewed), not libm
+calls. Phase/envelope level are continuous at retrigger; releasing only changes
+LED state. Left/right samples are identical. The note-127 harmonic transition
+exception is documented in [MIDI.md](MIDI.md).
 
-Sinustabellen und Tonfrequenzen werden vor Audiostart berechnet. Pro Sample gibt
-es nur aktive Stimmen, interpolierte Tabellenzugriffe und einfache AD-Arithmetik.
-Zwei logarithmische Zeitumrechnungen erfolgen höchstens einmal pro Block bei einem
-Anschlag (Taste oder MIDI), auch wenn alle 16 Tasten gleichzeitig anschlagen.
-Empfangene MIDI-Noten kommen über eine lockfreie Warteschlange (höchstens 16 pro Block). USB-Empfang
-läuft im USB-Interrupt, Senden und Parsen im Hauptprogramm. Gesendet wird aus dem
-entprellten Tastenzustand (kein Ereignisspeicher, der überlaufen könnte). Im Audiocallback gibt es
-nur Aufrufe der Steuer- und DSP-Funktionen; Wurzel und Division im Begrenzer sind
-Hardwarebefehle (Disassembly geprüft, kein libm-Aufruf). Oszillatorphasen und
-Hüllkurvenpegel bleiben beim Retrigger kontinuierlich. Loslassflanken verändern
-nur die LED-Maske. Links und rechts erhalten denselben berechneten Samplewert.
+This is source/disassembly review, not measured worst-case CPU time. The earlier
+instruction-based estimate is about 100–130 cycles per active voice, up to roughly
+40% of a 1 ms block at 480 MHz with 32 voices. It is an estimate, not a guarantee.
 
-Das ist eine Codeprüfung, keine Messung von CPU-Auslastung oder Worst-Case-Laufzeit
-auf dem Seed3. Grobe Schätzung aus dem Maschinencode: etwa 100–130 Zyklen je aktiver
-Stimme, bei allen 32 Stimmen also bis etwa 40 % des 1-ms-Blockbudgets bei 480 MHz. Ein fehlender Hardwaretest wird durch Host-Tests nicht ersetzt.
+## Build warnings
 
-## Build-Warnungen
+Unchanged upstream startup/Makefiles and Newlib emit warnings for unimplemented
+nosys file-descriptor functions, an RWX SRAM load segment and the startup
+FPU/interrupt attribute combination. Linking and BIN generation succeed. The app
+does not use file descriptors; SRAM execution follows the official linker script.
+Host DSP/callback builds use `-Wall -Wextra -Werror`.
 
-Die unveränderten offiziellen Makefiles/Startup-Dateien und Newlib erzeugen mit
-dieser Toolchain Warnungen zu unimplementierten `nosys`-Dateideskriptorfunktionen,
-einem RWX-SRAM-Ladesegment sowie beim Startup zur FPU/Interrupt-Attributkombination.
-Der Link und die Binärerzeugung sind erfolgreich. Die Anwendung nutzt keine
-Dateideskriptoren. Das SRAM-Ausführungsmodell stammt aus dem offiziellen
-BOOT_SRAM-Linkerskript. Eigener DSP-Code kompiliert im Host-Test mit
-`-Wall -Wextra -Werror`.
+## Hardware checks reported by the operator
 
-## Hardwaretest (Betreiber, gemeldet)
+For v0.1 keys: flashing through J7, all 16 keys, AD envelope, polyphony, fast playing,
+LED mapping, equal S8/S9 pitch, VR1/VR2 direction and no clicks were reported.
+These were not cloud-operated tests.
 
-Für die Tastenfunktionen (v0.1) am Kit gemeldet und nicht von der Cloud-Prüfung erfasst:
-Flashen über J7, alle 16 Tasten, AD-Hüllkurve, Polyphonie, schnelles Spielen,
-LED-Zuordnung, gleiche Tonhöhe von S8/S9, Drehrichtung von VR1/VR2, kein Knacken.
+For v0.2 USB-MIDI with Studio One: the device appears as Daisy Seed External;
+Studio One plays the kit and key presses arrive in Studio One. Initially a keyboard
+entry was missing from track inputs; deleting/recreating it with a new name fixed
+the setup. The reported cause was DAW configuration rather than firmware.
 
-Für v0.2 (USB-MIDI) am Kit mit Studio One gemeldet: Das Kit erscheint als „Daisy Seed External“,
-Studio One spielt das Board (Empfang), und die Tasten S1–S16 kommen als MIDI in Studio One an
-(Senden). Zunächst fehlte das Keyboard in der Eingangsliste der Spur; nach dem Löschen und
-Neuanlegen des Geräts unter neuem Namen in Studio One funktionierte es. Ursache war die
-Geräteeinrichtung in Studio One, nicht die Firmware.
+The final release BIN still needs acceptance on the device: it includes the
+held-key correction and bundled key-state transmission.
 
-## Noch am Gerät zu prüfen
+## Remaining hardware checks
 
-* **USB-MIDI:** Empfang mit Halbtönen, unterschiedlicher Velocity, 16 und mehr Noten gleichzeitig;
-  Akkorde beim Senden (ein Paket mit mehreren Noten; kommen alle Note On/Off an?); Verhalten der Tasten ohne
-  USB-Verbindung (Netzteil/Ladegerät); erneutes Verbinden im laufenden Betrieb.
-* **Callback-Laufzeit und CPU-Reserve** mit 16 Tasten und 16 MIDI-Stimmen gleichzeitig,
-  Aussetzer und Knacken bei MIDI-Bursts.
-* **Stack-Reserve:** Das DTCM ist zu 88,6 % belegt; es bleiben etwa 14,9 KB für den Stack.
-* Tasterprellen bei realen Schaltern. Kontaktaussetzer von 1–6 ms bei gehaltener Taste sind im
-  Callback-Test abgedeckt, auch für die MIDI-Ausgabe (ein Druck sendet genau ein Note On).
-* Stereo-/Kopfhörerausgabe im Vergleich, Lautstärke durch den Begrenzer bei Akkorden.
+* MIDI semitones/velocity/16+ incoming notes together; outgoing chords and all
+  Note On/Off messages; power-only operation; reconnect while running.
+* Measured callback load with 16 keys plus 16 MIDI voices, including MIDI bursts.
+* Stack high-water mark: nominal remaining DTCM is about 14.9 KB, not measured headroom.
+* Real switch bounce; the synthetic 1–6 ms dropout regression covers MIDI output too.
+* Stereo/headphone comparison and limiter loudness on chords.
 
-Die genaue Testfolge steht in der README. Keine bekannten Fehler im geprüften
-DSP-Verhalten; zusätzliche Messungen der analogen Eigenschaften und Laufzeit bleiben offen.
-Die gemeldeten Hardware-Funktionstests sind im Abschnitt oben aufgeführt.
-Weitere bekannte Grenzen (sehr kurze LED-Anzeigen, mögliche Blockade bei einem
-LED-DMA-Startfehler) stehen in [HARDWARE.md](../../../docs/HARDWARE.md).
+The reported functional tests are positive; remaining analog and timing measurements
+are listed above. Known LED timing/DMA and USB-send limitations are documented in
+[HARDWARE.md](../../../docs/HARDWARE.md).

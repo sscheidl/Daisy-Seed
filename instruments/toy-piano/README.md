@@ -1,19 +1,17 @@
 # Toy Piano v0.2
 
-Projekt-ID: `toy-piano` · [Alle Instrumente und Effekte](../../README.md)
+Project ID: `toy-piano` · [All instruments and effects](../../README.md)
 
-Spielbare C++-Firmware für das **Electro-Smith Seed3 Desktop Development Kit**:
-16 unabhängige Toy-Piano-Stimmen, Taster-LEDs, zwei Regler für die AD-Hüllkurve und
-**USB-MIDI** (z. B. für Studio One).
-48 kHz, mono auf beiden Stereoausgängen und am Kopfhörerausgang.
+Playable C++ firmware for the **Electro-Smith Seed3 Desktop Development Kit**:
+16 independent key voices, button LEDs, two AD envelope controls and **USB-MIDI**.
+Audio runs at 48 kHz, with the same mono signal on both outputs and headphones.
 
-Die **Daisy Seed3 Hardware Diagnostic Suite** ist ein eigenstaendiges Projekt:
+The hardware diagnostic suite is maintained separately in
 [sscheidl/Daisy-Seed3-Desktop-Diagnostics](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics).
-Firmware, Windows-EXE, Tests und Dokumentation der Diagnose werden dort gepflegt.
 
-## Spielen
+## Playing
 
-| Taster | Ton | MIDI-Note | Taster | Ton | MIDI-Note |
+| Button | Note | MIDI note | Button | Note | MIDI note |
 | --- | --- | --- | --- | --- | --- |
 | S1 | C4 | 60 | S9 | C5 | 72 |
 | S2 | D4 | 62 | S10 | D5 | 74 |
@@ -21,123 +19,89 @@ Firmware, Windows-EXE, Tests und Dokumentation der Diagnose werden dort gepflegt
 | S4 | F4 | 65 | S12 | F5 | 77 |
 | S5 | G4 | 67 | S13 | G5 | 79 |
 | S6 | A4 | 69 | S14 | A5 | 81 |
-| S7 | B4 (deutsch: H4) | 71 | S15 | B5 (deutsch: H5) | 83 |
+| S7 | B4 | 71 | S15 | B5 | 83 |
 | S8 | C5 | 72 | S16 | C6 | 84 |
 
-Die erste Zeile am Gerät ist S1–S8, die zweite S9–S16. S8 und S9 spielen bewusst
-denselben Ton, besitzen aber eigene Stimmen. Die Noten stehen in
-[`src/config.h`](src/config.h) und können dort geändert werden.
+S1–S8 form the first row; S9–S16 form the second. S8 and S9 intentionally play
+C5 using independent voices. Edit [src/config.h](src/config.h) to change the mapping.
 
-* **VR1:** Attack von 2 bis 300 ms, links kurz, rechts lang.
-* **VR2:** Decay von 50 bis 3000 ms, links kurz, rechts lang.
-* Beide Zeitkennlinien sind logarithmisch. Der ADC verwendet 32-faches Oversampling;
-  der eigene PotFilter glättet über 20 ms und ergänzt Hysterese.
-  Neue Einstellungen gelten für den nächsten Anschlag. Bereits laufende Hüllkurven
-  behalten ihre Zeiten, damit keine Parametersprünge entstehen.
-* Jeder Druck startet die eigene AD-Hüllkurve. Loslassen unterbricht sie nicht.
-  Halten erzeugt keinen Sustain und keine Wiederholungen.
-  Eine beim Einschalten gehaltene Taste löst nach etwa 7 ms ab Audiostart einen Ton aus.
-* D1–D16 zeigen die entprellten Tastenzustände an, unabhängig vom Ausklingen.
-* **USB-MIDI** über J7: Das Kit spielt eingehende Noten (16 freie Stimmen, Velocity) und sendet
-  die Tasten S1–S16 als Noten auf Kanal 1. Details in [docs/MIDI.md](docs/MIDI.md).
-* VR3–VR8, Kippschalter, DIN-MIDI, SD, CV/Gates und Audioeingänge haben keine musikalische Funktion.
-  **RV1** ist der separate analoge Kopfhörer-Lautstärkeregler, nicht VR1.
+* **VR1:** attack, 2–300 ms; left is shorter.
+* **VR2:** decay, 50–3000 ms; left is shorter.
+* Both mappings are logarithmic. The ADC uses 32× oversampling; PotFilter adds
+  20 ms smoothing and hysteresis. Changes apply to the next strike. Active
+  envelopes retain their times to avoid parameter jumps.
+* Each press triggers a one-shot AD envelope. Releasing does not interrupt it;
+  holding provides neither sustain nor repeat. A key held at startup triggers
+  about 7 ms after audio starts.
+* LEDs D1–D16 follow the debounced keys independently of the envelope.
+* **USB-MIDI over J7:** incoming notes use 16 additional voices with velocity;
+  S1–S16 transmit notes on channel 1. See [USB-MIDI](docs/MIDI.md).
+* VR3–VR8, toggle switches, DIN MIDI, SD, CV/gates and audio inputs have no musical
+  function. **RV1** is the separate analog headphone volume control, not VR1.
 
-Der Klang besteht aus einem Sinus mit 12 % zweiter Harmonischer. Ein erneuter
-Anschlag setzt weder Oszillatorphase noch aktuellen Hüllkurvenpegel abrupt zurück.
-Die feste Pegelskalierung und ein weicher Begrenzer (immer unter 0,8) schützen auch bei
-vielen gleichzeitigen Stimmen vor digitalem Clipping; einzelne Noten sind dadurch
-vergleichsweise leise.
-S8 und S9 haben unabhängige Oszillatorphasen: Beim gemeinsamen Spielen können
-sich Grundtöne abhängig vom Anschlagzeitpunkt teilweise auslöschen.
+The sound is a sine with a quiet second harmonic (12%). Retriggering preserves
+phase and envelope level. Fixed scaling and a soft limiter below 0.8 protect
+against digital clipping; single notes are relatively quiet. S8/S9 have separate
+phases, so their fundamentals can partially cancel when played together.
 
-## Bauen
+## Building
 
-Benötigt: Git, GNU Make, ARM-GCC einschließlich Newlib und C++-Bibliothek;
-für die optionalen Tests zusätzlich g++, für die Binärprüfung Python 3.
+Set up the libraries and toolchain as described in [BUILD.md](../../docs/BUILD.md).
+From the repository root:
 
 ```bash
-git clone https://github.com/sscheidl/Daisy-Seed.git
-cd Daisy-Seed
-git submodule update --init libDaisy DaisySP
-git -C libDaisy submodule update --init --recursive --jobs 4
-
-# Linux x86_64: festgelegte Toolchain lokal installieren, ohne sudo
-bash scripts/install-toolchain.sh
-export PATH="$PWD/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin:$PATH"
-
-make -j4
-make test
-make test-sanitize
-make test-thread
+make PROJECT=toy-piano -j4
+make PROJECT=toy-piano test
+make PROJECT=toy-piano test-sanitize
+make PROJECT=toy-piano test-thread
+make test-release
 python3 scripts/check-firmware.py
 ```
 
-`make` baut fehlende Bibliotheken automatisch. Ergebnis:
-**`instruments/toy-piano/build/ToyPiano-v0.2.bin`**, dazu ELF, HEX und Linker-Map.
-Die Version steht nur in [`src/version.h`](src/version.h); sie bestimmt den Dateinamen und
-ist als `TOYPIANO-FW-VERSION=…` im Image eingebettet (`strings instruments/toy-piano/build/*.bin | grep TOYPIANO`).
-Änderungen je Version stehen im [Changelog](CHANGELOG.md).
-Die Bibliotheken sind offizielle Git-Submodule mit festgelegten Commits;
-bitte kein `git submodule update --remote` für einen reproduzierbaren Build verwenden.
-Weitere Informationen: [Build und Abhängigkeiten](../../docs/BUILD.md).
+Output: **`instruments/toy-piano/build/ToyPiano-v0.2.bin`**, plus ELF, HEX and map.
+Direct builds also work with `make -C instruments/toy-piano`.
+The version lives only in [src/version.h](src/version.h); it determines the file
+name and embedded `TOYPIANO-FW-VERSION=…` marker. See the [changelog](CHANGELOG.md).
+Keep the pinned submodules; do not use `git submodule update --remote` for a
+reproducible build. CI provides BIN, ELF and SHA-256 as a downloadable artifact.
 
-## Flashen
+## Flashing
 
-Die Anwendung verwendet wie das offizielle Desktop-Template **`APP_TYPE=BOOT_SRAM`**.
-Sie benötigt den externen Daisy-USB-DFU-Bootloader. Die beiden USB-C-Anschlüsse
-haben unterschiedliche Aufgaben:
+Like the official Desktop template, the application uses **`APP_TYPE=BOOT_SRAM`**
+and the external Daisy DFU bootloader:
 
-1. **Nur bei fehlendem/falschem Bootloader:** einmalige Installation über den
-   USB-C-Anschluss **direkt am Seed3-Modul**.
-2. **Firmware-Updates und normaler Betrieb:** USB-C-Anschluss **J7 am Desktop-Träger**.
-   RESET drücken, danach BOOT innerhalb der zweisekündigen Bootloader-Wartezeit.
-   Im [Daisy Web Programmer](https://flash.daisy.audio/) die `.bin` unter
-   „Custom“ auswählen und programmieren.
+1. Only if the appropriate bootloader is missing: install it once through the
+   USB-C connector **on the Seed3 module**.
+2. For normal use and firmware updates: use **J7 on the Desktop carrier**. Press
+   RESET, then BOOT during the approximately two-second bootloader window. Select
+   the BIN under Custom in the [Daisy Web Programmer](https://flash.daisy.audio/).
 
-Die vollständigen getrennten Schritte stehen in [FLASHING.md](../../docs/FLASHING.md).
-Ein bereits passender Bootloader muss nicht neu installiert werden.
-In diesem Cloud-Auftrag wurde keine Hardware geflasht.
+See [FLASHING.md](../../docs/FLASHING.md) for the separate procedures. An installed,
+appropriate bootloader does not need reinstalling. No hardware was flashed from cloud.
 
-## Erster Hardwaretest
+## Manual hardware checks
 
-1. Kopfhörer an J5 oder einen Verstärker an die Line-Ausgänge anschließen.
-   Lautstärke zunächst niedrig einstellen. Träger über J7 versorgen und Firmware flashen.
-2. VR1 und VR2 nach links drehen. S1 bis S16 einzeln drücken:
-   aufsteigende Töne und jeweils die zugehörige LED erwarten. S8/S9 müssen gleich hoch sein.
-3. VR2 nach rechts drehen, kurz anschlagen und loslassen:
-   LED erlischt nach der Entprellung, Klang klingt weiter aus.
-4. VR1 nach rechts drehen und neu anschlagen: deutlich langsamerer Anschwellvorgang.
-5. Mehrere Tasten gleichzeitig spielen; S8/S9 auch nacheinander anschlagen.
-   Stimmen sollen unabhängig ausklingen. Eine Taste länger als 3,3 s halten:
-   Klang endet, LED bleibt bis zum Loslassen an.
-6. Beide Audioausgänge vergleichen, schnelle Wiederholungen und Potidrehungen testen.
-   Auf Knacken, Störgeräusche, falsche LEDs und Aussetzer achten.
-7. **USB-MIDI:** Kit über J7 am Computer lassen. Ein MIDI-Monitor (oder Studio One) soll das
-   Gerät „Daisy Seed External“ zeigen und beim Drücken von S1–S16 Note On/Off auf Kanal 1
-   anzeigen. Umgekehrt Noten (auch Halbtöne, unterschiedliche Velocity) an das Gerät senden,
-   dazu 16 und mehr Noten gleichzeitig. Anschließend das Kit ohne USB-Verbindung spielen
-   (Netzteil/Ladegerät): nichts darf hängen. Siehe [docs/MIDI.md](docs/MIDI.md).
+1. Connect headphones to J5 or a line-level amplifier/interface to the outputs.
+   Start at low volume, power through J7 and flash the firmware.
+2. Turn VR1/VR2 left; test each key and matching LED. S8/S9 should have equal pitch.
+3. Turn VR2 right, strike briefly, then release: the LED goes off while sound decays.
+4. Turn VR1 right and strike again: the onset should be noticeably slower.
+5. Play chords and S8/S9 separately. Hold a key longer than 3.3 seconds: sound ends,
+   but its LED remains on until release.
+6. Compare outputs; test quick repetitions and knob movement for clicks/dropouts.
+7. Test USB-MIDI in both directions, simultaneous key changes, semitones, velocity
+   and more than 16 incoming notes. Also test power-only operation without a USB
+   host and reconnection. Details: [MIDI.md](docs/MIDI.md).
 
-## Prüfstatus
+## Validation status
 
-Ein echter ARM-Cross-Compile sowie Host-Tests (einschließlich ASan/UBSan/TSan) wurden in der Cloud ausgeführt.
-Die Binärdatei hat eine geprüfte BOOT_SRAM-Vektortabelle.
-[Prüfbericht](docs/VALIDATION.md) trennt die Softwareprüfungen von noch offenen
-Hardwaretests. Die gemeldeten Gerätetests bestätigen Tasten, AD-Hüllkurve, Polyphonie,
-schnelles Spielen sowie USB-MIDI mit Studio One. ADC-Endwerte und Callback-Laufzeit
-sind weiterhin nicht am Gerät gemessen.
+ARM cross-compilation and host tests including ASan, UBSan and TSan passed.
+The [validation report](docs/VALIDATION.md) separates software checks from reported
+hardware tests. The operator reports successful keys, AD, polyphony, fast playing
+and basic bidirectional USB-MIDI with Studio One. ADC endpoints and callback time
+remain unmeasured. The final release BIN still needs its manual acceptance test.
 
-Der GitHub-Actions-Workflow baut und testet das Projekt nach dem Push und stellt
-BIN, ELF und SHA-256 als Build-Artefakt bereit. Der lokale Build benötigt kein GitHub Actions.
-
-## Aufbau und Referenzen
-
-* `src/main.cpp`: offizielle Desktop-Hardware, Flankenerkennung, Audio und LED-Mailbox.
-* `src/toy_piano.*`: Tasten- und MIDI-Stimmen, AD-Hüllkurven, Begrenzer, interpolierte Sinustabelle.
-* `src/spsc_queue.h`: lockfreie Warteschlange zwischen Hauptschleife und Audiocallback.
-* `src/config.h`: Noten, Zeiten, Klang und Pegel.
-* `tests/`: Host-Tests ohne zusätzliches Testframework.
-* [Hardwaredetails und offizielle Quellen](../../docs/HARDWARE.md).
-
-Keine Samples, Effekte, Presets, Display- oder Netzwerkfunktionen; MIDI nur als Noten über USB.
+Sources: `src/main.cpp` handles hardware, MIDI and LEDs; `src/toy_piano.*` implements
+key/MIDI voices, envelopes, limiting and the sine table; `src/spsc_queue.h` provides
+the lock-free queue. See [hardware details](../../docs/HARDWARE.md).
+No samples, effects, presets, display or networking; MIDI carries notes over USB only.

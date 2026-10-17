@@ -1,104 +1,92 @@
 # Seed3 Desktop Development Kit
 
-Ziel ist ausdrücklich das **Seed3 Desktop Dev Kit**, kein Pod/Field/Patch und kein
-unbeschaltetes Seed-Board. Die vorhandene Toy-Piano-Anwendung verwendet ausschließlich
-`daisy::desktop_devkit::Hardware` aus dem festgelegten libDaisy-Commit.
-GPIOs werden in der Anwendung nicht selbst zugeordnet.
+The target is the **Seed3 Desktop Dev Kit**, not Pod, Field, Patch or a bare Seed.
+Toy Piano uses `daisy::desktop_devkit::Hardware` from the pinned libDaisy commit;
+application code does not invent GPIO mappings.
 
-## Geprüfte API und Zuordnungen
+## Verified API and mapping
 
-| Funktion | Offizielle Hardwareklasse | Offizielle Verdrahtung (nur Referenz) |
+| Function | Official class API | Official wiring (reference only) |
 | --- | --- | --- |
-| 16 Taster | `button[0..15]`, `UpdateAllControls()` | 2 verkettete Shiftregister, Clock D8, Latch D9, Daten D10 |
-| 16 LEDs | `SetLed(0..15, brightness)`, `UpdateLeds()` | PCA9685, I²C1, SCL D11, SDA D12 |
-| 8 Potis | `pot[0..7].Value()` | 8:1-Mux: ADC D15, Auswahl D24/D25/D26 |
-| Stereoausgänge | `seed.StartAudio()` | J3 links, J4 rechts, J5 Kopfhörer |
-| Audioformat | 48 kHz, 48 Samples pro Block | Seed3/TAC5242, durch libDaisy initialisiert |
+| 16 buttons | `button[0..15]`, `UpdateAllControls()` | Two chained shift registers; clock D8, latch D9, data D10 |
+| 16 LEDs | `SetLed(0..15, brightness)`, `UpdateLeds()` | PCA9685, I2C1, SCL D11, SDA D12 |
+| 8 pots | `pot[0..7].Value()` | 8:1 mux: ADC D15, select D24/D25/D26 |
+| Stereo output | `seed.StartAudio()` | J3 left, J4 right, J5 headphones |
+| Audio | 48 kHz, 48 samples/block | Seed3/TAC5242 initialized by libDaisy |
 
-`Hardware::UpdateAllControls()` kehrt intern die Shiftregister-Indizes um:
-`button[i].Debounce(button_sr.State(15 - i))`. Anwendungscode darf diese Reihenfolge
-**nicht nochmals umkehren**. Index 0 entspricht S1/D1, Index 15 entspricht S16/D16.
-Die LED-Hardwareklasse berücksichtigt die invertierte Helligkeit bereits selbst.
-VR1/VR2 entsprechen Mux-Kanälen und Pot-Indizes 0/1.
+UpdateAllControls reverses shift-register indices internally with
+`button[i].Debounce(button_sr.State(15 - i))`. Do not reverse them again:
+index 0 is S1/D1, index 15 is S16/D16. The LED class already handles brightness
+inversion. VR1/VR2 are mux/pot indices 0/1.
 
-## Vorhandene Referenzanwendung: Toy Piano
+## Existing reference application: Toy Piano
 
-Die nachfolgenden Kontrollraten, Filter und LED-Regeln beschreiben das
-[Toy Piano](../instruments/toy-piano/). Neue Projekte legen ihre Bedienung und
-zeitlichen Budgets separat fest; GPIOs bleiben in der offiziellen Hardwareklasse.
+The following control rates, filters and LED behavior describe
+[Toy Piano](../instruments/toy-piano/). New projects define their own interaction
+and timing budgets while retaining the official board abstraction.
 
-Die DigitalControl-Entprellung arbeitet mit einer 8-Bit-Historie und liefert ihre
-Flanken nach sieben stabilen Abtastwerten. Bei 1 kHz ergibt das ungefähr 7–8 ms.
-Die Firmware hält den entprellten LED-Zustand zwischen Druck- und Loslassflanke.
-Dadurch flackert eine LED nicht bei einem einzelnen abweichenden Rohwert.
-Eine weitere Druckflanke wird bei bereits gesetztem Haltezustand ignoriert:
-DigitalControl kann nach einem kurzen Kontaktaussetzer eine neue Druckflanke
-melden, ohne zuvor eine Loslassflanke geliefert zu haben.
+DigitalControl maintains eight bits of history, qualifying edges after seven
+stable samples (about 7–8 ms at 1 kHz). The application latches held state between
+press/release edges. Extra rising edges after a short contact dropout are ignored
+while held; a single bad raw sample does not flicker the LED or retrigger a note.
 
-Die AnalogControls in `Hardware::Init()` sind für 1 kHz konfiguriert.
-Deshalb verwendet die Firmware 48 Samples bei 48 kHz und ruft einmal pro Block
-`UpdateAllControls()` auf. Bei der Standard-Slew von 2 ms ergibt AnalogControl
-einen Koeffizienten von 1,0 und glättet selbst nicht. Der ADC verwendet 32-faches
-Oversampling; der eigene PotFilter übernimmt 20 ms Glättung und 0,1 % Hysterese.
-Die äußersten 0,3 % werden auf die Zeit-Endwerte abgebildet.
+AnalogControl is configured for 1 kHz. At the default 2 ms slew its coefficient is
+1.0, so it adds no smoothing itself. The ADC uses 32× oversampling; PotFilter adds
+20 ms smoothing and 0.1% hysteresis, mapping the outermost 0.3% to exact endpoints.
 
-LED-Daten gehen über eine lockfreie 32-Bit-Mailbox ins Hauptprogramm.
-`UpdateLeds()` verwendet den offiziellen DMA-Treiber, dessen Buffer-Swap auf eine
-vorherige Übertragung warten kann. Er wird daher ausschließlich außerhalb des
-Audiocallbacks und höchstens alle 10 ms bei einer Zustandsänderung aufgerufen.
-Ein sehr kurzer entprellter Tastendruck kann vollständig zwischen zwei LED-Abfragen
-liegen: Dann erklingt der Ton, ohne dass die LED sichtbar aufleuchtet.
+LED state crosses a lock-free 32-bit mailbox to the main loop. The official DMA
+buffer swap can wait for a previous transfer, so UpdateLeds stays outside audio
+and runs at most every 10 ms, only on changes. A very brief qualified press may
+fall entirely between LED services and sound without a visible LED pulse.
 
-Bekannte Grenze des unveränderten libDaisy-Treibers: Ein sofort fehlgeschlagener
-`TransmitDma()`-Start kann den nächsten Buffer-Swap dauerhaft warten lassen.
-Dann können die LEDs einfrieren; die höher priorisierte Audiowiedergabe läuft weiter.
-Dieses Verhalten ist am eigenen Board noch nicht beobachtet oder gemessen worden.
+Known unmodified libDaisy limitation: an immediately failed TransmitDma start can
+leave the next buffer swap waiting indefinitely. LEDs then freeze, while the
+higher-priority audio callback continues. This has not been observed or measured
+on the operator's board.
 
-`Hardware::Init()` initialisiert auch unbenutzte Board-Peripherie wie DIN-MIDI/CV.
-Die Anwendung startet keine DIN-MIDI-Verarbeitung und erzeugt keine CV/Gate-Signale.
+Hardware::Init also configures unused DIN MIDI/CV peripherals. Toy Piano does not
+process DIN MIDI or generate CV/gate output.
 
 ## USB-MIDI
 
-`MidiUsbHandler` mit `MidiUsbTransport::Config::EXTERNAL` verwendet den Daisy-USB-Port,
-der am Desktop-Träger J7 herausgeführt ist (derselbe wie im offiziellen Template für den
-Serial-Logger, Produktname „Daisy Seed External“). Eingehende Pakete werden im USB-Interrupt
-zu `MidiEvent`s geparst. `ServiceUsbMidi()` holt sie im Hauptprogramm ab und reicht NoteOn
-über eine lockfreie Warteschlange an den Audiocallback weiter. Gesendet wird ebenfalls in der
-Hauptschleife, weil `SendMessage()` blockieren kann (bis zu drei Wiederholungen mit je 100 µs)
-und nie im Audiocallback laufen darf. Dafür gibt es keine Ereigniswarteschlange: Die Hauptschleife
-vergleicht den entprellten Tastenzustand (dieselbe Maske wie für die LEDs) mit dem, was dem
-Host zuletzt gemeldet wurde, und sendet alle Änderungen, höchstens 8 je Paket, als eine USB-
-Übertragung. Ein Note Off kann so nicht verloren gehen, weil keine Ereignisse existieren, die
-verworfen werden könnten; Tasten, die nur zwischen zwei Aufrufen gedrückt und losgelassen
-wurden, werden nicht gemeldet.
+MidiUsbHandler with MidiUsbTransport::Config::EXTERNAL uses the peripheral routed
+to carrier J7, also used by the template's serial logger. The product name is
+Daisy Seed External. Incoming USB packets are parsed into MidiEvents in the USB
+interrupt; ServiceUsbMidi consumes them in main and passes Note Ons to audio
+through a lock-free queue. Transmit also runs in main: SendMessage may block for
+up to three retries of 100 microseconds and must not run in the audio callback.
 
-libDaisys Sendefunktion prüft nicht, ob ein Host das Gerät eingerichtet hat. Die Firmware
-sendet deshalb nur bei `hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED` und verwirft sonst
-die Tastenänderungen. Dieser Zustand stammt aus dem festgelegten libDaisy-Commit.
+Output compares the current debounced key mask with the last reported host state,
+bundling up to eight changes per transfer. There is no output event queue that
+could overflow and discard releases. A complete press/release between services
+is not reported; USB transport failure remains a separate limitation.
 
-Bekannte Grenzen von libDaisys USB-Sendepfad: Eine Übertragung, die der Host noch nicht
-abgeholt hat (er hat den Eingang nicht geöffnet oder pollt nicht), lässt die nächste nach
-drei Wiederholungen ohne Fehlermeldung ausfallen. Ein USB-Reset genau während einer
-Übertragung (Kabel ziehen oder Neuaufzählung) ist ein theoretisches Zeitfenster zwischen
-Statusprüfung und Senden. Die Hauptschleife sendet höchstens einmal je Millisekunde.
+libDaisy does not check whether a host configured the device before sending.
+The app checks `hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED` and otherwise
+discards output state changes. This field comes from the pinned middleware.
 
-`MidiHandler` enthält eine FIFO von 256 `MidiEvent`s (ca. 37 KB). Das DTCM ist damit zu
-88,6 % belegt (116.072 von 131.072 Bytes), für den Stack bleiben etwa 14,9 KB.
+If the host has not collected a previous transfer, the next transfer may fail
+silently after retries. SendMessage exposes no result. A reset/unplug during a
+transfer is also a theoretical window between the state check and send. The main
+loop attempts at most one send per millisecond.
 
-## Offizielle Quellen
+MidiHandler's FIFO holds 256 MidiEvents (about 37 KB). DTCM use is 116,072 of
+131,072 bytes (88.6%), leaving about 14.9 KB nominally for the stack. Stack headroom
+and callback time still require measurements on hardware.
 
-Geprüft am 16.10.2026:
+## Official references
 
-* [Hardware und Schaltplan](https://github.com/daisyaudio/Seed3-DevKit-Desktop),
-  Stand `987297fb7c9a8c58721ef40abf6d6eedd1fcda2a`.
-* [Produktdokumentation](https://docs.daisy.audio/product/Seed3-Desktop-Dev-Kit/).
-* [libDaisy](https://github.com/daisyaudio/libDaisy),
+Mapping/API baseline checked on 2026-10-16:
+
+* [Hardware](https://github.com/daisyaudio/Seed3-DevKit-Desktop), commit
+  `987297fb7c9a8c58721ef40abf6d6eedd1fcda2a`.
+* [Product documentation](https://docs.daisy.audio/product/Seed3-Desktop-Dev-Kit/).
+* [libDaisy](https://github.com/daisyaudio/libDaisy), commit
   `f715e4875b2d28445d0c11a0a17f064a248f69d0`.
-* [Desktop-Hardwareklasse](https://github.com/daisyaudio/libDaisy/blob/f715e4875b2d28445d0c11a0a17f064a248f69d0/src/desktop_devkit.cpp).
-* [Offizielles Desktop-Template](https://github.com/daisyaudio/libDaisy/tree/f715e4875b2d28445d0c11a0a17f064a248f69d0/examples/devkits/Desktop-DevKit-UI-Template).
-* [DaisySP](https://github.com/daisyaudio/DaisySP),
+* [Desktop hardware class](https://github.com/daisyaudio/libDaisy/blob/f715e4875b2d28445d0c11a0a17f064a248f69d0/src/desktop_devkit.cpp).
+* [Desktop template](https://github.com/daisyaudio/libDaisy/tree/f715e4875b2d28445d0c11a0a17f064a248f69d0/examples/devkits/Desktop-DevKit-UI-Template).
+* [DaisySP](https://github.com/daisyaudio/DaisySP), commit
   `2c72eaf9eac5fc0dca1919d65d606da907832618`.
 
-Die Zuordnung ist gegen API und offizielle Hardwaretabellen geprüft.
-Die tatsächliche Bestückung und Funktion des eigenen Boards muss beim ersten
-Hardwaretest bestätigt werden.
+API/wiring checks and operator-reported functional tests are distinct; see the
+[validation report](../instruments/toy-piano/docs/VALIDATION.md) for their scope.

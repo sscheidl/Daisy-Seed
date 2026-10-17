@@ -1,55 +1,57 @@
 # USB-MIDI
 
-Das Kit meldet sich am Computer über **J7 (Desktop-Träger)** als USB-MIDI-Gerät
-**„Daisy Seed External“** (Class-compliant, kein Treiber nötig). Es ist derselbe
-Anschluss, über den das Kit Strom bekommt und geflasht wird. Der Seed3-eigene
-USB-Port bleibt ungenutzt.
+Through **J7 on the Desktop carrier**, the kit enumerates as the class-compliant
+USB-MIDI device **Daisy Seed External**. This is the same connector used for power
+and firmware updates. The USB connector on the Seed3 module is unused by the app.
 
-## Verhalten
+## Behavior
 
-| Richtung | Verhalten |
+| Direction | Behavior |
 | --- | --- |
-| **Empfang** | Note On auf **jedem Kanal**, Noten 0–127. Jede Note klingt in ihrer echten Tonhöhe, die Velocity (1–127) skaliert die Lautstärke **linear**. |
-| | Es gibt **16 MIDI-Stimmen**, getrennt von den 16 Tastenstimmen. Ist jede belegt, übernimmt die älteste Stimme die neue Note (ohne Knacken, Pegel und Phase laufen stetig weiter; einzige Ausnahme ist ein Wechsel von oder zu Note 127, weil dort die zweite Harmonische abgeschaltet wird, ein Sprung von höchstens 0,7 % des Maximalpegels). Wird eine noch klingende Note erneut gespielt, startet sie auf derselben Stimme neu. |
-| | Attack und Decay kommen wie bei den Tasten von VR1/VR2 zum Zeitpunkt des Anschlags. |
-| | **Note Off, Sustainpedal, CC, Pitch Bend, Program Change** werden ignoriert. Jede Note ist ein One-Shot-AD ohne Sustain, wie bei den Tasten. |
-| **Senden** | S1–S16 senden ihre Note (Tabelle in der [README](../README.md)) auf **Kanal 1**: Note On mit Velocity 100 beim entprellten Druck, Note Off beim Loslassen. |
-| | Mehrere Tastenänderungen derselben Millisekunde gehen gebündelt in einem USB-Paket raus (höchstens 8, der Rest folgt eine Millisekunde später). Es gibt keine Warteschlange, die Note Offs verlieren könnte. Wird die Taste nur zwischen zwei Hauptschleifen-Durchläufen gedrückt und losgelassen (unter 1 ms, durch die Entprellung nicht möglich), entsteht keine Meldung. |
-| | S8 und S9 senden dieselbe Note 72. Halten beide, sieht die DAW zwei Note On und beim Loslassen zwei Note Off. |
-| | Gesendet wird nur, wenn der Computer das Gerät fertig eingerichtet hat. Ohne USB-Verbindung werden Tasten nur lokal gespielt. |
+| Input | Note On on any channel, notes 0–127. Frequency follows the note; velocity 1–127 scales amplitude linearly. |
+| Input voices | 16 MIDI voices independent of the 16 key voices. A full pool steals the oldest voice; repeating a still-active note retriggers its existing voice. |
+| Envelope | VR1/VR2 set attack/decay at the strike. Note Off, sustain, CC, pitch bend and program changes are ignored: these are one-shot AD notes. |
+| Output | S1–S16 send Note On on channel 1 with velocity 100 at debounced press, and Note Off at release. |
+| Bundling | Up to eight simultaneous key changes per transfer; the remainder follows at the next main-loop service, normally 1 ms later. There is no output event queue. |
+| Duplicate C5 | S8/S9 both send note 72: holding both produces two Note Ons, releasing them produces two Note Offs. |
+| Connection | Transmission requires a configured USB host. Keys always play locally; received MIDI is not echoed. |
 
-Die Tasten klingen **immer lokal**, unabhängig vom USB-Senden. Eingehende MIDI-Noten
-werden **nicht** wieder als MIDI ausgegeben.
+Envelope level and phase are preserved during stealing/retriggering. One documented
+exception remains: switching to or from **note 127** changes the second-harmonic
+weight immediately, because that harmonic is disabled there. The possible step
+is at most about 0.0054, roughly 0.7% of the maximum output level. Smoothing this
+transition is deferred; v0.2's DSP remains unchanged.
 
-## Studio One (grundsätzlich am Gerät getestet; Details siehe Prüfbericht)
+Key changes are reconciled with the last state reported to the host. A complete
+press/release between two services would not be reported, but with normal 1 ms
+service this is shorter than the debounce qualification. USB transport failures
+are a separate limitation; see [HARDWARE.md](../../../docs/HARDWARE.md).
 
-1. Kit über J7 verbinden und starten. Studio One neu starten, falls das Gerät erst
-   danach angeschlossen wurde.
-2. **Optionen → Externe Geräte → Hinzufügen…**
-   * **Neuer Controller/Keyboard:** Empfangen von *Daisy Seed External*. Damit lassen sich
-     die 16 Tasten aufnehmen.
-   * **Neues Instrument:** Senden an *Daisy Seed External*. Damit spielt eine
-     Instrumentenspur das Board. Die Audioausgabe bleibt an den Klinkenbuchsen des Kits.
-3. Audio kommt nicht über USB. J3/J4 (oder J5) wie bisher mit Interface oder Kopfhörer verbinden.
+## Studio One
 
-**Keyboard fehlt in der Eingangsliste der Spur:** Wurde das Gerät in Studio One angelegt, steht
-aber nicht zur Auswahl (und „Alle Eingänge“ bringt nichts), öffnet Studio One den Eingang nicht.
-Im Test half es, das Keyboard unter *Externe Geräte* zu löschen und mit neuem Namen neu
-anzulegen. Zur Kontrolle ohne Studio One einen MIDI-Monitor auf „Daisy Seed External“
-öffnen (Studio One dabei schließen, ein Port kann nur von einem Programm geöffnet werden).
+Basic operation in both directions has been reported on hardware. For setup:
 
-**Doppelte Töne vermeiden:** Sendet eine Spur an das Board und ist gleichzeitig das
-Keyboard als Eingang aktiv und die Spur auf Monitor, laufen die Tasten durch die DAW
-zurück zum Board. Dann klingt jeder Anschlag zweimal (lokal und verzögert).
-Für reines Aufnehmen die Spur nicht an das Board senden lassen, oder den Monitor ausschalten.
+1. Connect J7 and start the kit. Restart Studio One if the kit was connected later.
+2. Open Options → External Devices → Add.
+   * New Keyboard/controller: receive from **Daisy Seed External** to record keys.
+   * New Instrument: send to **Daisy Seed External** to play the board.
+3. Audio still comes from J3/J4 or J5, **not over USB**.
 
-## Grenzen
+If the keyboard exists under External Devices but is absent from a track's input
+list, Studio One may not have opened it. In the reported test, deleting and
+recreating the keyboard with a new name fixed this. For independent diagnosis,
+close Studio One and open a MIDI monitor; applications may compete for a port.
 
-* Neue Noten werden im Millisekundenraster übernommen (Audioblock, 1 ms) und im
-  Hauptprogramm abgeholt. Das ist für Spielen unkritisch, aber keine Sample-genaue Zeitauflösung.
-* Pro Audioblock werden höchstens 16 empfangene MIDI-Noten gestartet, die Warteschlange fasst 64.
-  Mehr gleichzeitige Noten in einer Millisekunde gehen verloren.
-* Die USB-Seriell-Ausgabe des Templates (`Logger`) wird nicht verwendet. Der Port ist
-  ein reines MIDI-Gerät.
-* Firmware-Updates ändern sich nicht: RESET, danach BOOT in der Bootloader-Wartezeit. Der
-  Bootloader läuft vor der Anwendung und meldet sich selbst als DFU-Gerät.
+To avoid doubled notes through DAW monitoring, do not route the kit's transmitted
+keys straight back to the kit while also hearing its local sound. Disable the
+return route or monitoring when only recording key presses.
+
+## Limits and remaining tests
+
+* Notes reach DSP at block boundaries (48 samples / 1 ms), not at sample-accurate timestamps.
+* At most 16 incoming notes are started per block; the queue holds 64. Excess input
+  can be dropped. This is not a sustained-note MIDI synthesizer.
+* The port is MIDI-only; the template's serial Logger is not used concurrently.
+* Updates still use RESET then BOOT; the bootloader enumerates as DFU before the app.
+* Test semitones, velocity, 16+ simultaneous incoming notes, outgoing chords,
+  power-only use, reconnection and full-load callback time on hardware.

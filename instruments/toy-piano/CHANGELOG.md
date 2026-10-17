@@ -1,28 +1,27 @@
 # Changelog
 
-Die Version steht in [`src/version.h`](src/version.h).
+The version is defined in [src/version.h](src/version.h).
 
 ## 0.2 — 2026-10-17
 
-* **USB-MIDI** über J7 („Daisy Seed External“): Empfang von Note On (Noten 0–127, Velocity,
-  16 freie Stimmen mit Stimmenklau) und Senden der Tasten S1–S16 auf Kanal 1.
-  Siehe [docs/MIDI.md](docs/MIDI.md). Die Tasten werden aus dem entprellten Zustand gebündelt
-  gesendet (höchstens 8 Meldungen je USB-Paket), es gibt keine Ereigniswarteschlange, die ein
-  Note Off verlieren könnte.
-* Weicher Begrenzer, damit 32 Stimmen unter dem Ausgangspegel-Limit bleiben; zweite
-  Harmonische oberhalb von 12 kHz abgeschaltet (kein Aliasing).
-* Versionierung: Version nur in `src/version.h`, Dateiname und eingebettete Kennung
-  folgen daraus, `scripts/check-firmware.py` prüft sie.
-* Enthält die Korrektur gegen erneutes Auslösen nach Kontaktaussetzern bei gehaltener Taste.
-  Ein Tastendruck sendet damit auch nur ein Note On.
-* Neu geprüft: ThreadSanitizer (`make test-thread`, auch in der CI) für die Warteschlangen,
-  Tests für MIDI, Begrenzer und Aliasing sowie USB-MIDI im Callback-Test.
-* Am Kit mit Studio One getestet: Empfang (Studio One spielt das Board) und Senden (Tasten
-  als MIDI in Studio One). Noch offen: Halbtöne/Velocity/16+ Noten gleichzeitig, Akkorde beim
-  Senden, Betrieb ohne USB-Verbindung, CPU-Last (siehe [Prüfbericht](docs/VALIDATION.md)).
+* **USB-MIDI** over J7 ("Daisy Seed External"): receive Note On for notes 0–127
+  with velocity and 16 independently allocated MIDI voices, stealing the oldest
+  voice when full. Transmit S1–S16 on channel 1. See [MIDI.md](docs/MIDI.md).
+  Debounced key changes are bundled into USB messages, at most eight per transfer;
+  there is no event queue that could drop Note Offs.
+* Soft limiting keeps 32 active voices below the output ceiling. The second
+  harmonic is disabled for fundamentals above 12 kHz to avoid aliasing.
+* Versioning: `src/version.h` controls the output name and embedded version marker.
+  The firmware checker validates both.
+* Includes the fix preventing held-key retriggers after short contact dropouts;
+  one physical press also sends only one Note On.
+* Added MIDI, limiter and aliasing tests, plus ThreadSanitizer checks for queues.
+* Reported hardware test with Studio One: incoming notes play the board and key
+  presses reach the DAW. Still to test: semitones/velocity/16+ notes together,
+  outgoing chords, operation without a USB host and measured CPU load.
 
 ## 0.1 — 2026-10-16
 
-* 16 unabhängige Toy-Piano-Stimmen (Sinus mit zweiter Harmonischer), One-Shot-AD-Hüllkurve
-  mit VR1 (Attack 2–300 ms) und VR2 (Decay 50–3000 ms), LEDs D1–D16 zeigen die Tasten.
-* Am Kit getestet: Tasten, Hüllkurve, Polyphonie, schnelles Spielen.
+* 16 independent sine/second-harmonic voices, one-shot AD with VR1 attack
+  (2–300 ms) and VR2 decay (50–3000 ms), LEDs D1–D16 following keys.
+* Operator reports successful keys, envelopes, polyphony and fast playing.

@@ -1,38 +1,34 @@
-# Reproduzierbare Projekt-Builds
+# Reproducible project builds
 
-Alle Befehle gelten im Repository-Hauptverzeichnis. `projects.mk` enthält Projekt-IDs,
-Pfade und Implementierungsstatus. Firmwarequellen, Tests und Ausgabe liegen im
-jeweiligen Projekt. `common/desktop.mk` bündelt den offiziellen Board-Build;
-die Bibliotheken werden nur einmal unter `libDaisy/` und `DaisySP/` verwaltet.
+Run commands from the repository root. `projects.mk` lists project IDs, paths and
+implementation status. Each project owns its sources, tests and output directory;
+`common/desktop.mk` provides the official board build. Dependencies are shared.
 
-## Festgelegte Abhängigkeiten
+## Pinned dependencies
 
-| Bestandteil | Commit / Version |
+| Component | Commit / version |
 | --- | --- |
 | libDaisy | `f715e4875b2d28445d0c11a0a17f064a248f69d0` |
 | DaisySP | `2c72eaf9eac5fc0dca1919d65d606da907832618` |
-| ARM-Toolchain (getestet) | xPack GNU Arm Embedded GCC `13.2.1-1.1`, GCC `13.2.1 20231009` |
-| Sprache / CPU | GNU++17, Cortex-M7, Thumb, FPv5-D16, Hard Float |
-| Anwendung | `APP_TYPE=BOOT_SRAM`, `-O3`, 48 kHz / 48 Samples |
+| Tested ARM toolchain | xPack GNU Arm Embedded GCC `13.2.1-1.1`, GCC `13.2.1 20231009` |
+| Language / CPU | GNU++17, Cortex-M7, Thumb, FPv5-D16, hard float |
+| Toy Piano | BOOT_SRAM, `-O3`, 48 kHz / 48 samples |
 
-libDaisy enthält die benötigte `desktop_devkit::Hardware`-API und die
-Seed3-Codec-Unterstützung. Ältere Bibliotheksstände aus DaisyExamples sind hierfür
-nicht automatisch geeignet. libDaisys eigene Submodule werden rekursiv auf ihre
-festgelegten Commits gesetzt. DaisySP-LGPL wird für dieses Projekt nicht benötigt.
+This libDaisy version includes Desktop Dev Kit and Seed3 codec support. Older
+DaisyExamples dependency pins are not automatically suitable. Fetch libDaisy's
+own submodules recursively at their pinned commits. DaisySP-LGPL is not required.
 
-Das lokale Installationsskript lädt das Linux-x86_64-Archiv aus dem xPack-Release
-`v13.2.1-1.1` und prüft dessen veröffentlichten SHA-256:
+The Linux x86_64 installer downloads xPack `v13.2.1-1.1`, verifies the published
+SHA-256 below and installs only into `.tools/`, without sudo:
 
 ```text
 1252a8cafe9237de27a765376697230368eec21db44dc3f1edeb8d838dabd530
 ```
 
-Es installiert ausschließlich in `.tools/`. Für andere Plattformen eine passende
-ARM-Toolchain gemäß [offizieller Anleitung](https://docs.daisy.audio/tutorials/cpp-dev-env/)
-installieren und `arm-none-eabi-gcc`, `g++`, `ar`, `objcopy` und `size` in PATH bereitstellen.
-Der dokumentierte Cloud-Build wurde mit der oben festgelegten Version durchgeführt.
+For other platforms follow the [official setup](https://docs.daisy.audio/tutorials/cpp-dev-env/)
+and provide `arm-none-eabi-gcc`, `g++`, `ar`, `objcopy` and `size` in PATH.
 
-## Befehle
+## Commands
 
 ```bash
 git submodule update --init libDaisy DaisySP
@@ -48,81 +44,67 @@ make test-release
 python3 scripts/check-firmware.py
 ```
 
-Ohne `PROJECT=` wird weiterhin Toy Piano ausgewählt. Der Direktaufruf
-`make -C instruments/toy-piano` baut dasselbe Projekt. Die BIN liegt jetzt unter
-`instruments/toy-piano/build/`; der frühere Root-Pfad `build/ToyPiano-v0.1.bin`
-wird nicht mehr erzeugt oder verwendet.
+Toy Piano is the default when PROJECT is omitted. `make -C instruments/toy-piano`
+builds the same firmware. Output is in `instruments/toy-piano/build/`; the former
+root `build/` location is no longer used. Planned or unknown projects are rejected
+rather than silently building a different instrument.
 
-`make all-projects` beziehungsweise `make test-projects` bearbeiten alle Einträge
-aus `BUILDABLE_PROJECTS`. Physical Modeling, Granular und Effektgerüste haben noch
-keinen Build. Ein expliziter Aufruf eines geplanten oder unbekannten Projekts
-bricht verständlich ab. `make list` ist der schnelle Statusüberblick.
-
-`make libs` baut beide Bibliotheken explizit, beispielsweise nach einer bewusst
-geänderten Abhängigkeit. `make PROJECT=toy-piano clean` entfernt nur dessen Build.
-Nach Toolchain- oder Compilerflag-Änderungen auch die Bibliotheken sauber neu bauen:
+`make all-projects` and `make test-projects` process every implemented project in
+`BUILDABLE_PROJECTS`. `make libs` explicitly rebuilds shared archives. After a
+compiler/toolchain change, clean both the selected project and libraries:
 
 ```bash
-make clean
+make PROJECT=toy-piano clean
 make -C libDaisy clean
 make -C DaisySP clean
-make -j4
+make PROJECT=toy-piano -j4
 ```
 
-Die offiziellen Makefiles bauen die Bibliotheken als Archive. Trotz deren großer
-Modulauswahl gelangen nur benötigte Funktionen in die gelinkte Anwendung
-(`--gc-sections`). Die Anwendung nutzt DaisySPs `mtof()` und eigene kleine,
-host-testbare AD- und Sinustabellen-Logik. Ein UI-Framework ist nicht erforderlich.
+The official Makefiles build static archives and link only needed sections with
+`--gc-sections`. Toy Piano uses DaisySP's `mtof()` with its own AD and sine-table DSP.
+Generated files and toolchains are excluded from Git.
 
-## Ein weiteres Projekt implementieren
+## Tests and CI
 
-1. Im vorhandenen Projektbereich `src/`, `tests/` und später einen Prüfbericht unter
-   `docs/` ergänzen. `Makefile` setzt einen eindeutigen `TARGET`, eigene Quellen und
-   `.DEFAULT_GOAL := all` und bindet `../../common/desktop.mk` ein.
-2. Erst nach einem echten erfolgreichen ARM-Build den Eintrag in `projects.mk`
-   auf `buildable` setzen und in `BUILDABLE_PROJECTS` aufnehmen.
-3. CI um den konkreten Projektpfad und Dateinamen ergänzen; Host-Tests, RAM-/CPU-
-   Grenzen und manuelle Hardwaretests dokumentieren.
+`make test` runs DSP tests and the production callback with fake GPIO/ADC and
+libDaisy's unchanged DigitalControl debouncer. It does not replace hardware tests.
+`make test-sanitize` runs ASan/UBSan with `-fno-sanitize-recover=all`;
+`make test-thread` runs ThreadSanitizer on the MIDI queue tests.
+Shared release-preflight tests remain in root `tests/`; `make test-release` uses
+a temporary Git repository and a fake API without creating releases.
 
-Die aktuelle CI-Matrix enthält nur Toy Piano. Ihr Pfad und der aus der Projektversion
-abgeleitete BIN-Dateiname sind dafür angegeben; bei weiteren Projekten müssen diese Metadaten ergänzt
-werden. Die Matrix behauptet keine Builds der noch geplanten Engines.
+The CI matrix currently builds only Toy Piano, deriving the BIN name from its
+version. It uploads BIN, ELF and SHA256SUMS. Private-repository downloads require
+an authorized GitHub login.
 
-Generierte Dateien und die Toolchain bleiben aus Git ausgeschlossen.
-Der GitHub-Actions-Workflow lädt nach erfolgreichem Build die BIN, ELF und
-Prüfsumme als Artefakt hoch. In einem privaten Repository ist dafür eine
-GitHub-Anmeldung mit Zugriff auf das Repository nötig.
+## Adding another implemented project
 
-`make test` prüft DSP und den echten Anwendungscallback mit simulierten
-Hardwareeingängen und der unveränderten DigitalControl-Entprellung aus libDaisy.
-`make test-sanitize` führt beide Tests mit AddressSanitizer und UndefinedBehaviorSanitizer
-aus. `-fno-sanitize-recover=all` macht jeden erkannten Fehler zum Testfehler.
-Die GPIO-/ADC-Stubs ersetzen keinen Hardwaretest.
+1. Add sources, tests and a project validation report. Set a unique TARGET and
+   `.DEFAULT_GOAL := all`; include `../../common/desktop.mk` from its Makefile.
+2. Only after a real ARM build, mark it buildable and add it to BUILDABLE_PROJECTS.
+3. Add its path and artifact naming to CI; document budgets and manual hardware tests.
 
-`make PROJECT=toy-piano test-thread` prüft die MIDI-Warteschlange mit ThreadSanitizer.
-Die gemeinsamen Release-Schutztests liegen unter `tests/` und laufen separat mit
-`make test-release` (temporäres Git-Repository und simulierte API).
+## Version and release
 
-## Version und Release
+Toy Piano's sole version source is `instruments/toy-piano/src/version.h`.
+It determines `instruments/toy-piano/build/ToyPiano-v<version>.bin`, the embedded
+`TOYPIANO-FW-VERSION=<version>` marker and CI artifact name.
+`make -s PROJECT=toy-piano version` prints it. The firmware checker verifies the
+name, vector table and embedded version against that same header.
 
-Die Toy-Piano-Version steht ausschließlich in `instruments/toy-piano/src/version.h`.
-Sie bestimmt den Dateinamen `instruments/toy-piano/build/ToyPiano-v<version>.bin`,
-die eingebettete Kennung `TOYPIANO-FW-VERSION=<version>` und den CI-Artefaktnamen.
-`make -s PROJECT=toy-piano version` gibt die Version aus. Die Binärprüfung liest
-dieselbe Versionsdatei und prüft Dateiname und Image-Kennung.
+The Release workflow builds Toy Piano from main, runs tests, then creates
+`v<version>` with BIN, ELF and SHA256SUMS. Notes come from
+`instruments/toy-piano/CHANGELOG.md`. Existing tags and the complete paginated
+release list, including drafts, are checked first. Existing versions or API errors
+abort the workflow.
 
-Der Release-Workflow `.github/workflows/release.yml` baut Toy Piano aus `main` und
-erzeugt `v<version>` mit BIN, ELF und `SHA256SUMS`. Er liest die Änderungen aus
-`instruments/toy-piano/CHANGELOG.md`. Tags und alle Releases einschließlich Entwürfen
-werden vorab geprüft; eine vorhandene Version wird abgewiesen. API-Fehler brechen ab.
+1. Update the project version and changelog for a new release.
+2. After merge, a change to that version header triggers the workflow. It can also
+   be started manually under Actions → Release → Run workflow on main.
+3. By default it creates a **draft** (`publish=false`). Test its BIN on the device
+   before publishing the draft. Publication creates the tag on the built commit.
+   `publish=true` publishes immediately.
 
-1. Für eine neue Version die Projekt-Versionsdatei und den Projekt-Changelog ändern.
-2. Nach dem Merge startet der Workflow bei Änderungen der Versionsdatei automatisch;
-   alternativ *Actions → Release → Run workflow* auf `main`.
-3. Standardmäßig bleibt das Release ein **Entwurf** (`publish=false`). Die BIN am
-   Gerät testen und erst danach den Entwurf veröffentlichen. Dabei erzeugt GitHub
-   den Tag auf dem tatsächlich gebauten Commit. `publish=true` veröffentlicht sofort.
-
-Nur der Release-Job fordert `contents: write` an; normale Builds haben Leserechte.
-Der vorhandene Name `v0.2` bleibt für Toy Piano erhalten. Für weitere Instrumente
-müssen vor deren erstem Release eigene Versions-/Tagregeln ergänzt werden.
+Only the release job requests `contents: write`; normal CI is read-only.
+The existing v0.2 name is retained for Toy Piano. Other instruments need their
+own version/tag conventions before their first release.
