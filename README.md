@@ -5,7 +5,7 @@ Spielbare C++-Firmware für das **Electro-Smith Seed3 Desktop Development Kit**:
 48 kHz, mono auf beiden Stereoausgängen und am Kopfhörerausgang.
 
 Die **Daisy Seed3 Hardware Diagnostic Suite** ist ein eigenstaendiges Projekt:
-[sscheidl/Daisy-Seed3-Diagnostics](https://github.com/sscheidl/Daisy-Seed3-Diagnostics).
+[sscheidl/Daisy-Seed3-Desktop-Diagnostics](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics).
 Firmware, Windows-EXE, Tests und Dokumentation der Diagnose werden dort gepflegt.
 
 ## Spielen
