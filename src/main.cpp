@@ -18,11 +18,10 @@ toy_piano::PotFilter attack_pot, decay_pot;
 std::atomic<uint32_t> led_mask{0};
 daisy::MidiUsbHandler usb_midi;
 struct NoteIn { uint8_t note, velocity; };
-struct KeyOut { uint8_t key; bool pressed; };
 // Main loop -> audio callback: notes received over USB.
 toy_piano::SpscQueue<NoteIn, toy_piano::kMidiQueueSize> midi_in;
-// Audio callback -> main loop: key edges to send over USB. Tx() can block briefly.
-toy_piano::SpscQueue<KeyOut, toy_piano::kMidiQueueSize> midi_out;
+// Keys the host has been told are down. Main loop only.
+uint32_t sent_mask = 0;
 static_assert(std::atomic<uint32_t>::is_always_lock_free, "LED mailbox must be lock-free");
 static_assert(daisy::desktop_devkit::kNumButtons == toy_piano::kNumKeys);
 static_assert(daisy::desktop_devkit::kNumLeds == toy_piano::kNumKeys);
@@ -41,12 +40,9 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
         if(hw.button[key].RisingEdge() && !(held & bit)) {
             triggers |= bit;
             held |= bit;
-            midi_out.Push({static_cast<uint8_t>(key), true});
         }
-        if(hw.button[key].FallingEdge()) {
+        if(hw.button[key].FallingEdge())
             held &= ~bit; // No release event is sent to the envelope.
-            midi_out.Push({static_cast<uint8_t>(key), false});
-        }
     }
     // Note-offs are ignored on purpose: every note is a one-shot AD envelope.
     NoteIn notes[toy_piano::kMaxMidiPerBlock];
@@ -72,6 +68,32 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     }
 }
 
+// Sends the key changes since the last call as one USB transfer. It compares the
+// debounced key state with what the host was told, so a note-off cannot get lost
+// in a queue. Changes beyond the packet limit follow on the next call.
+void SendKeyChanges(uint32_t mask, bool connected) {
+    uint32_t changed = mask ^ sent_mask;
+    if(!changed)
+        return;
+    if(!connected) { // Nobody listens: keys stay local.
+        sent_mask = mask;
+        return;
+    }
+    uint8_t message[3 * toy_piano::kMaxKeyMessagesPerPacket];
+    size_t size = 0;
+    for(size_t key = 0; key < toy_piano::kNumKeys && size < sizeof(message); ++key) {
+        const uint32_t bit = 1u << key;
+        if(!(changed & bit))
+            continue;
+        const bool pressed = (mask & bit) != 0;
+        message[size++] = static_cast<uint8_t>((pressed ? 0x90 : 0x80) | toy_piano::kMidiOutChannel);
+        message[size++] = toy_piano::kMidiNotes[key];
+        message[size++] = pressed ? toy_piano::kMidiOutVelocity : uint8_t{0};
+        sent_mask ^= bit;
+    }
+    usb_midi.SendMessage(message, size);
+}
+
 // Main loop only: USB parsing happens in the USB interrupt, but sending blocks.
 void ServiceUsbMidi() {
     usb_midi.Listen(); // Restarts reception after an overflow.
@@ -85,16 +107,7 @@ void ServiceUsbMidi() {
     }
     // Without an enumerated host the transmit path has no endpoint to use.
     const bool connected = hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED;
-    KeyOut key_event;
-    while(midi_out.Pop(key_event)) {
-        if(!connected)
-            continue;
-        uint8_t message[3] = {
-            static_cast<uint8_t>((key_event.pressed ? 0x90 : 0x80) | toy_piano::kMidiOutChannel),
-            toy_piano::kMidiNotes[key_event.key],
-            key_event.pressed ? toy_piano::kMidiOutVelocity : uint8_t{0}};
-        usb_midi.SendMessage(message, 3);
-    }
+    SendKeyChanges(led_mask.load(std::memory_order_relaxed), connected);
 }
 }
 

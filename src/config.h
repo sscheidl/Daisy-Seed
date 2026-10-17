@@ -27,7 +27,8 @@ constexpr float kMaxHarmonicIncrement = 0.25f;
 // USB MIDI. Keys are sent on channel 1 with a fixed velocity; any channel is received.
 constexpr uint8_t kMidiOutChannel = 0;
 constexpr uint8_t kMidiOutVelocity = 100;
-constexpr std::size_t kMidiQueueSize = 64;     // Power of two.
+constexpr std::size_t kMidiQueueSize = 64;     // Incoming notes; power of two.
 constexpr std::size_t kMaxMidiPerBlock = 16;   // Bounds callback work.
+constexpr std::size_t kMaxKeyMessagesPerPacket = 8; // Key changes sent per USB transfer.
 constexpr uint32_t kLedIntervalMs = 10; // At most 100 I2C updates/second.
 }

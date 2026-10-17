@@ -6,7 +6,9 @@ Die Version steht in [`src/version.h`](src/version.h).
 
 * **USB-MIDI** über J7 („Daisy Seed External“): Empfang von Note On (Noten 0–127, Velocity,
   16 freie Stimmen mit Stimmenklau) und Senden der Tasten S1–S16 auf Kanal 1.
-  Siehe [docs/MIDI.md](docs/MIDI.md).
+  Siehe [docs/MIDI.md](docs/MIDI.md). Die Tasten werden aus dem entprellten Zustand gebündelt
+  gesendet (höchstens 8 Meldungen je USB-Paket), es gibt keine Ereigniswarteschlange, die ein
+  Note Off verlieren könnte.
 * Weicher Begrenzer, damit 32 Stimmen unter dem Ausgangspegel-Limit bleiben; zweite
   Harmonische oberhalb von 12 kHz abgeschaltet (kein Aliasing).
 * Versionierung: Version nur in `src/version.h`, Dateiname und eingebettete Kennung

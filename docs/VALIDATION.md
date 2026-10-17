@@ -8,9 +8,9 @@ Stand: 17.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 | --- | --- |
 | Offizielle Desktop-API und Hardwaretabellen | `Hardware`, Button-/LED-Indizes, VR1/VR2 und Bootloader-Auswahl abgeglichen |
 | Echter ARM-Cross-Compile | Erfolgreich mit xPack GCC 13.2.1, Cortex-M7 Hard Float |
-| BOOT_SRAM-BIN | 125.428 Bytes, Version 0.2 eingebettet; Stack `0x20020000`, Reset-Vektor `0x24000749` |
+| BOOT_SRAM-BIN | 126.012 Bytes, Version 0.2 eingebettet; Stack `0x20020000`, Reset-Vektor `0x24000749` |
 | ELF | ELF32, ARM, EABI5, Hard Float; Startadresse im SRAM |
-| Speicherbudget | SRAM 125.428 / 491.520 Bytes; DTCM 116.208 / 131.072 Bytes (88,7 %, davon 37 KB `MidiUsbHandler`); DMA-RAM 18.084 / 32.768 Bytes |
+| Speicherbudget | SRAM 126.012 / 491.520 Bytes; DTCM 116.072 / 131.072 Bytes (88,6 %, davon 37 KB `MidiUsbHandler`); DMA-RAM 18.084 / 32.768 Bytes |
 | Alle 16 MIDI-Zuordnungen | Exakt gegen die angeforderte Tabelle geprüft, einschließlich doppeltem C5 |
 | Alle 16 tatsächlichen Oszillatorfrequenzen | Host-Audiorender: Nulldurchgangszählung über eine Sekunde, Abweichung < 1,1 Hz |
 | AD-Hüllkurven | Min./Mitte/Max. für Attack × Decay: samplegenaue Laufzeit, monotoner Verlauf, exakter Endwert null |
@@ -18,7 +18,7 @@ Stand: 17.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 | Zeitkennlinien | Endwerte, geometrische Mitte und monotoner Verlauf über 1001 Positionen geprüft |
 | Poti-Rauschfilter | ±0,05 % simuliertes Rauschen unterdrückt, beide Endanschläge erreichbar |
 | Callback/Entprellung | Echter Callback mit gepinntem DigitalControl: Kontaktaussetzer von 1–6 ms an jeder der 16 Tasten lösen keinen Doppelanschlag aus; nach bestätigtem Loslassen funktioniert der nächste Anschlag |
-| Callback/USB-MIDI | Echter Callback und echte Hauptschleifenfunktion gegen Host-Attrappen: Tasten senden `90/80 nn` (Velocity 100, Kanal 1) in Tastenreihenfolge, nichts ohne eingerichteten USB-Host, kein zweites Note On bei Kontaktaussetzern; Empfang nur für Note On mit Velocity > 0 auf jedem Kanal, höchstens 16 Noten je Block in Reihenfolge, Überlauf der Warteschlange ohne Folgen, keine Rückspiegelung empfangener Noten |
+| Callback/USB-MIDI | Echter Callback und echte Hauptschleifenfunktion gegen Host-Attrappen: Tasten senden `90/80 nn` (Velocity 100, Kanal 1) gebündelt in Tastenreihenfolge (Akkord = ein Paket, höchstens 8 je Paket, Rest beim nächsten Aufruf), nichts ohne eingerichteten USB-Host, kein zweites Note On bei Kontaktaussetzern, auch bei 80 Tastenwechseln ohne Hauptschleifen-Aufruf bleiben Note On und Off konsistent; Empfang nur für Note On mit Velocity > 0 auf jedem Kanal, höchstens 16 Noten je Block in Reihenfolge, Überlauf der Warteschlange ohne Folgen, keine Rückspiegelung empfangener Noten |
 | Callback/LED-Mailbox | Einschaltanschlag nach sieben Abtastungen, alle 16 Bits gleichzeitig, LED-Maske bleibt nach AD-Ende gesetzt, Stereo identisch; keine LED-Übertragung im Callback |
 | 16 unabhängige Stimmen | Polyphoner Render gegen Summe von 16 Einzelinstanzen verglichen, einschließlich Retrigger einer C5-Taste |
 | Pegel (Tasten) | Test-Peak 0,279373; keine nichtendlichen Werte; lineare Obergrenze 0,8 |
@@ -34,7 +34,7 @@ Stand: 17.10.2026, Linux x86_64, Cloud-Umgebung ohne angeschlossenes Daisy-Kit.
 Prüfsumme der geprüften Firmware:
 
 ```text
-5a4efcc26a675cd266b4876e29dfee658f6a6e2575b656f5847580cf59eaf13a  ToyPiano-v0.2.bin
+22950050583241cc77fb29380681ac3077bb4475990000e33a4d4f8b5d61d2cd  ToyPiano-v0.2.bin
 ```
 
 Host-Tests: `make test`. Binärprüfung:
@@ -68,8 +68,9 @@ Sinustabellen und Tonfrequenzen werden vor Audiostart berechnet. Pro Sample gibt
 es nur aktive Stimmen, interpolierte Tabellenzugriffe und einfache AD-Arithmetik.
 Zwei logarithmische Zeitumrechnungen erfolgen höchstens einmal pro Block bei einem
 Anschlag (Taste oder MIDI), auch wenn alle 16 Tasten gleichzeitig anschlagen.
-MIDI-Noten kommen über eine lockfreie Warteschlange (höchstens 16 pro Block). USB-Empfang
-läuft im USB-Interrupt, Senden und Parsen im Hauptprogramm. Im Audiocallback gibt es
+Empfangene MIDI-Noten kommen über eine lockfreie Warteschlange (höchstens 16 pro Block). USB-Empfang
+läuft im USB-Interrupt, Senden und Parsen im Hauptprogramm. Gesendet wird aus dem
+entprellten Tastenzustand (kein Ereignisspeicher, der überlaufen könnte). Im Audiocallback gibt es
 nur Aufrufe der Steuer- und DSP-Funktionen; Wurzel und Division im Begrenzer sind
 Hardwarebefehle (Disassembly geprüft, kein libm-Aufruf). Oszillatorphasen und
 Hüllkurvenpegel bleiben beim Retrigger kontinuierlich. Loslassflanken verändern
@@ -104,11 +105,11 @@ Geräteeinrichtung in Studio One, nicht die Firmware.
 ## Noch am Gerät zu prüfen
 
 * **USB-MIDI:** Empfang mit Halbtönen, unterschiedlicher Velocity, 16 und mehr Noten gleichzeitig;
-  Akkorde beim Senden (mehrere Tasten in derselben Millisekunde); Verhalten der Tasten ohne
+  Akkorde beim Senden (ein Paket mit mehreren Noten; kommen alle Note On/Off an?); Verhalten der Tasten ohne
   USB-Verbindung (Netzteil/Ladegerät); erneutes Verbinden im laufenden Betrieb.
 * **Callback-Laufzeit und CPU-Reserve** mit 16 Tasten und 16 MIDI-Stimmen gleichzeitig,
   Aussetzer und Knacken bei MIDI-Bursts.
-* **Stack-Reserve:** Das DTCM ist zu 88,7 % belegt; es bleiben etwa 14,8 KB für den Stack.
+* **Stack-Reserve:** Das DTCM ist zu 88,6 % belegt; es bleiben etwa 14,9 KB für den Stack.
 * Tasterprellen bei realen Schaltern. Kontaktaussetzer von 1–6 ms bei gehaltener Taste sind im
   Callback-Test abgedeckt, auch für die MIDI-Ausgabe (ein Druck sendet genau ein Note On).
 * Stereo-/Kopfhörerausgabe im Vergleich, Lautstärke durch den Begrenzer bei Akkorden.

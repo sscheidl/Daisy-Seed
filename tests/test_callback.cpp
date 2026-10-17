@@ -31,15 +31,11 @@ daisy::MidiEvent Event(daisy::MidiMessageType type, uint8_t note, uint8_t veloci
     event.data[1] = velocity;
     return event;
 }
-void DrainKeyEvents() {
-    KeyOut event;
-    while(midi_out.Pop(event)) {}
-}
 void TestUsbMidi() {
-    // Only the key edges below may produce MIDI: start from silence and an empty queue.
+    // Only the key changes below may produce MIDI: start from silence.
     hw.pressed.fill(false);
     Tick(8);
-    DrainKeyEvents();
+    ServiceUsbMidi();
     usb_midi.sent.clear();
 
     // Host has not configured the device: key events are discarded, nothing is sent.
@@ -53,17 +49,17 @@ void TestUsbMidi() {
     ServiceUsbMidi();
     assert(usb_midi.sent.empty());
 
-    // Configured: note-on with velocity 100 in key order, note-off on release.
+    // Configured: note-on with velocity 100 in key order in one packet, note-off on release.
     hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
     hw.pressed[0] = hw.pressed[15] = true;
     Tick(10);
     ServiceUsbMidi();
-    assert((usb_midi.sent == std::vector<Message>{{0x90, 60, 100}, {0x90, 84, 100}}));
+    assert((usb_midi.sent == std::vector<Message>{{0x90, 60, 100, 0x90, 84, 100}}));
     hw.pressed[0] = hw.pressed[15] = false;
     Tick(8);
     ServiceUsbMidi();
-    assert(usb_midi.sent.size() == 4);
-    assert((usb_midi.sent[2] == Message{0x80, 60, 0}) && (usb_midi.sent[3] == Message{0x80, 84, 0}));
+    assert(usb_midi.sent.size() == 2);
+    assert((usb_midi.sent[1] == Message{0x80, 60, 0, 0x80, 84, 0}));
 
     // A contact dropout while held sends neither a second note-on nor a note-off.
     usb_midi.sent.clear();
@@ -82,7 +78,60 @@ void TestUsbMidi() {
     ServiceUsbMidi();
     assert(usb_midi.sent.size() == 2 && usb_midi.sent[1] == (Message{0x80, 69, 0}));
 
+    // A chord goes out as one transfer; an idle service call sends nothing.
+    usb_midi.sent.clear();
+    hw.pressed[1] = hw.pressed[2] = hw.pressed[3] = true;
+    Tick(10);
+    ServiceUsbMidi();
+    ServiceUsbMidi();
+    assert((usb_midi.sent == std::vector<Message>{{0x90, 62, 100, 0x90, 64, 100, 0x90, 65, 100}}));
+    hw.pressed.fill(false);
+    Tick(8);
+    ServiceUsbMidi();
+    assert(usb_midi.sent.size() == 2 && usb_midi.sent[1].size() == 9);
+
+    // The main loop may be late: nothing is lost or left hanging. Presses and
+    // releases that happen entirely between two service calls are never reported;
+    // what is down at the next call is, and its release follows.
+    usb_midi.sent.clear();
+    for(unsigned round = 0; round < 80; ++round) {
+        hw.pressed[round % toy_piano::kNumKeys] = true;
+        Tick(10);
+        hw.pressed[round % toy_piano::kNumKeys] = false;
+        Tick(8);
+    }
+    hw.pressed[3] = true;
+    Tick(10);
+    ServiceUsbMidi();
+    assert((usb_midi.sent == std::vector<Message>{{0x90, 65, 100}}));
+    hw.pressed[3] = false;
+    Tick(8);
+    ServiceUsbMidi();
+    assert(usb_midi.sent.size() == 2 && (usb_midi.sent[1] == Message{0x80, 65, 0}));
+
+    // More changes than fit in one packet: the rest follows on the next calls.
+    usb_midi.sent.clear();
+    hw.pressed.fill(true);
+    Tick(10);
+    ServiceUsbMidi();
+    assert(usb_midi.sent.size() == 1 && usb_midi.sent[0].size() == 3 * toy_piano::kMaxKeyMessagesPerPacket);
+    assert(usb_midi.sent[0][1] == 60 && usb_midi.sent[0][22] == 72);
+    ServiceUsbMidi();
+    assert(usb_midi.sent.size() == 2 && usb_midi.sent[1][1] == 72 && usb_midi.sent[1][22] == 84);
+    ServiceUsbMidi();
+    assert(usb_midi.sent.size() == 2);
+    hw.pressed.fill(false);
+    Tick(8);
+    ServiceUsbMidi();
+    ServiceUsbMidi();
+    ServiceUsbMidi();
+    assert(usb_midi.sent.size() == 4);
+    for(const Message& packet : {usb_midi.sent[2], usb_midi.sent[3]})
+        for(std::size_t i = 0; i < packet.size(); i += 3)
+            assert(packet[i] == 0x80 && packet[i + 2] == 0);
+
     // The pool starts from silence: let the key voices ring out first.
+    usb_midi.sent.clear();
     Tick(3300);
     for(std::size_t i = 0; i < toy_piano::kNumMidiVoices; ++i)
         assert(piano.MidiVoiceNote(i) == -1);
