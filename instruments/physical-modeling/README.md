@@ -30,8 +30,8 @@ Commitfeste Links, Lizenz- und Vergleichsgrenzen: [Quellenübersicht](../../docs
 
 Polyphonie und Modulation folgen erst nach Messung der Laufzeit und des
 Speicherverbrauchs am Seed3. Keine zugesagte Stimmenzahl oder Klanggleichheit.
-Nutzbare gemeinsame DSP-Teile können später auch den
-[Resonator-Effekt](../../effects/resonator/) versorgen.
+Ein externes Audiosignal als Anregung eines Resonanzkörpers bleibt eine Variante
+dieses Physical-Modeling-Projekts; dafür wird kein separates Effektprojekt geführt.
 
 Bis dahin weist `make PROJECT=physical-modeling` den Build ausdrücklich ab.
 Bei der Implementierung: eigener `src/`-, `tests/`- und `docs/`-Bereich,

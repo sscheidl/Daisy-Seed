@@ -12,7 +12,7 @@ Firmware-Build. Bibliotheken, Toolchain und Board-Buildkonfiguration werden gete
 | [Toy Piano v0.1](instruments/toy-piano/) | `instruments/toy-piano/` | Spielbare Firmware; ARM-Build und Host-Tests bestanden, Gerätetest offen |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Projektgerüst und Referenzvergleich; eigene Engine geplant |
 | [Granular](instruments/granular/) | `instruments/granular/` | Projektgerüst und Referenzvergleich; eigene Engine geplant |
-| [Resonator-Effekt](effects/resonator/) | `effects/resonator/` | Geplante Audioeingangs-Anwendung der Physical-Modeling-Arbeit |
+| [Reverb](effects/reverb/) | `effects/reverb/` | Clouds-/Nimbus-Reverb-Experimente und Slöer-Stereo-Reverb als Portierungsziel |
 | [Granular-Effekt](effects/granular/) | `effects/granular/` | Geplante Live-/Freeze-Anwendung der Granular-Arbeit |
 
 Das Repository bleibt **`sscheidl/Daisy-Seed`**. Die Projektbereiche besitzen eigene
@@ -29,7 +29,7 @@ Daisy-Seed/
 │   ├── physical-modeling/  # eigener Projektplan
 │   └── granular/           # eigener Projektplan
 ├── effects/
-│   ├── resonator/          # Effektplan
+│   ├── reverb/             # Clouds/Nimbus und Slöer-Stereo-Reverb
 │   └── granular/           # Effektplan
 ├── common/desktop.mk      # gemeinsamer offizieller Seed3-Desktop-Build
 ├── docs/                  # Hardware, Build, Flashen und Quellenübersicht
@@ -75,9 +75,13 @@ oder eine gemeinsame Effektkette ist noch nicht implementiert.
 * [Toy Piano: Bedienung und Hardwaretest](instruments/toy-piano/README.md),
   [Prüfbericht](instruments/toy-piano/docs/VALIDATION.md).
 * [Quellenübersicht und Vergleichsgrenzen](docs/REFERENCES.md): Rings/Elements,
-  vorhandene Daisy-Ports, Iridium-Resonator, GR-1, Iridium Particle, Clouds und Beads.
+  vorhandene Daisy-Ports, Iridium-Resonator, GR-1, Iridium Particle, Clouds, Beads und Reverb-Grundlagen.
 
 Reihenfolge: Toy Piano am Gerät prüfen; dann einen kleinen eigenen
 Physical-Modeling-Prototyp entwickeln; anschließend einen begrenzten Granular-Prototyp.
 Effektvarianten verwenden später nachweislich gemeinsame DSP-Bausteine, sobald
 diese existieren. Bis dahin bleiben Planung und implementierte Firmware klar getrennt.
+Resonatoren gehören zum Physical-Modeling-Projekt. Im Reverb-Bereich werden die
+Clouds-/Nimbus-Reverb-Experimente und das Slöer-Stereo-Reverb als Portierungsziel
+getrennt verfolgt. Die Zuordnung des Slöer zu einem bestimmten Effektchip ist offen.
+Die Reverb-Arbeit kann unabhängig von den Instrumentprojekten weitergeführt werden.

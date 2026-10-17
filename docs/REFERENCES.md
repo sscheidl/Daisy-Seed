@@ -14,6 +14,7 @@ gebaut oder ausgeführt. DaisySP bleibt die bereits vorhandene gepinnte Biblioth
 | [DaisyExamples](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27) | `259ed82c7d4c0d7699f695945e6e111b7dc7cb27` |
 | [DaisySP, bereits als Submodul eingebunden](https://github.com/daisyaudio/DaisySP/tree/2c72eaf9eac5fc0dca1919d65d606da907832618) | `2c72eaf9eac5fc0dca1919d65d606da907832618` |
 | [Eigene Forschungsberichte, Custom-Firmware](https://github.com/sscheidl/Custom-Firmware/tree/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9) | `3e041b5b9ce98eb687316ffb3c4ba19492ec74e9` |
+| [Eigene FV-1-Forschung und C++-Referenzen](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/d1ef0525d072091d9d4da46f1821d45e930a2745) | `d1ef0525d072091d9d4da46f1821d45e930a2745` |
 
 Bei DaisySP wurden Header, Herkunftskommentare und Lizenz geprüft. Bei den
 Originalen wurden die unten verlinkten DSP-Schnittstellen und die Projekt-README
@@ -58,6 +59,23 @@ Die historischen Forschungs-PRs sind [GR-1 #17](https://github.com/sscheidl/Cust
 [Iridium-GUI #19](https://github.com/sscheidl/Custom-Firmware/pull/19).
 Für diese Planung gilt der oben fixierte aktuelle main-Stand; frühe Aussagen über
 damals noch offene PRs sind keine aktuellen Integrationsaussagen.
+
+## Reverb
+
+**Vom Nutzer konkretisiert:** Der neue [Reverb-Bereich](../effects/reverb/) widmet
+sich der Reverb-Sektion von **Clouds/Nimbus** und dem **Walrus Audio Slöer
+Stereo-Reverb** als zweitem gewünschten Entwicklungs-/Portierungsziel.
+
+| Grundlage | Geprüfter Stand | Verwendung / Grenze |
+| --- | --- | --- |
+| [Clouds Reverb](https://github.com/pichenettes/eurorack/blob/f4cfa7697095a28d292bff758beb51deb49b5a86/clouds/dsp/fx/reverb.h) | Öffentlicher Originalpfad im oben fixierten Mutable-Stand | Reverb getrennt von der Granular-Anwendung untersuchen |
+| [Nimbus Reverb, Patch](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Nimbus/dsp/fx/reverb.h) / [Field](https://github.com/daisyaudio/DaisyExamples/blob/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/field/Nimbus/dsp/fx/reverb.h) | Reverb-Header und MIT-Hinweise gelesen; vorhandene Daisy-Ports | Ausgangspunkt für Desktop-Kit-Experimente; noch kein eigener Build dieser Sektion |
+| Walrus Audio Slöer | Modell und Stereo-Pedal vom Nutzer bestätigt; technische Quellenlage nicht nachgewiesen | Chip, Originalprogramm und portierbare Algorithmusgrundlage offen; keine FV-1-Zuordnung behaupten |
+| [FV-1-Portierungsstrategie](https://github.com/sscheidl/fv-1-DSP-xtractor/blob/d1ef0525d072091d9d4da46f1821d45e930a2745/docs/FV1_DAISY_PORTING.md) und [Quellenkatalog](https://github.com/sscheidl/fv-1-DSP-xtractor/blob/d1ef0525d072091d9d4da46f1821d45e930a2745/docs/FV1_SOURCE_CATALOG.md) | Vorhandene C++17-Plate-/Hall-Referenzen; Berichte gelesen, hier keine Portierung ausgeführt | Eigene FV-1-Grundlage; ausdrücklich keine Slöer-Implementierung. Der Quellenkatalog weist für Slöer weder Programm noch Chip nach |
+
+Die Reverb-Arbeit ist damit vom Granular-Effekt abgegrenzt. CloudSeed ist nicht
+die vom Nutzer gewählte Cloud-Reverb-Grundlage. Eine echte Slöer-Portierung und
+eine eigene klangliche Annäherung müssen getrennt bezeichnet werden.
 
 ## Übernahme und offene Prüfungen
 
