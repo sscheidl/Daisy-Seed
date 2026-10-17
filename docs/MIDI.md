@@ -31,6 +31,12 @@ werden **nicht** wieder als MIDI ausgegeben.
      Instrumentenspur das Board. Die Audioausgabe bleibt an den Klinkenbuchsen des Kits.
 3. Audio kommt nicht über USB. J3/J4 (oder J5) wie bisher mit Interface oder Kopfhörer verbinden.
 
+**Keyboard fehlt in der Eingangsliste der Spur:** Wurde das Gerät in Studio One angelegt, steht
+aber nicht zur Auswahl (und „Alle Eingänge“ bringt nichts), öffnet Studio One den Eingang nicht.
+Im Test half es, das Keyboard unter *Externe Geräte* zu löschen und mit neuem Namen neu
+anzulegen. Zur Kontrolle ohne Studio One einen MIDI-Monitor auf „Daisy Seed External“
+öffnen (Studio One dabei schließen, ein Port kann nur von einem Programm geöffnet werden).
+
 **Doppelte Töne vermeiden:** Sendet eine Spur an das Board und ist gleichzeitig das
 Keyboard als Eingang aktiv und die Spur auf Monitor, laufen die Tasten durch die DAW
 zurück zum Board. Dann klingt jeder Anschlag zweimal (lokal und verzögert).

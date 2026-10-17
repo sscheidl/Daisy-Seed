@@ -12,7 +12,9 @@ Die Version steht in [`src/version.h`](src/version.h).
 * Versionierung: Version nur in `src/version.h`, Dateiname und eingebettete Kennung
   folgen daraus, `scripts/check-firmware.py` prüft sie.
 * Neu geprüft: ThreadSanitizer für die Warteschlange, Tests für MIDI, Begrenzer und Aliasing.
-* Noch nicht am Gerät getestet (siehe [Prüfbericht](docs/VALIDATION.md)).
+* Am Kit mit Studio One getestet: Empfang (Studio One spielt das Board) und Senden (Tasten
+  als MIDI in Studio One). Noch offen: Halbtöne/Velocity/16+ Noten gleichzeitig, Akkorde beim
+  Senden, Betrieb ohne USB-Verbindung, CPU-Last (siehe [Prüfbericht](docs/VALIDATION.md)).
 
 ## 0.1 — 2026-10-16
 

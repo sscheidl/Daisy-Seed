@@ -89,12 +89,17 @@ Für die Tastenfunktionen (v0.1) am Kit gemeldet und nicht von der Cloud-Prüfun
 Flashen über J7, alle 16 Tasten, AD-Hüllkurve, Polyphonie, schnelles Spielen,
 LED-Zuordnung, gleiche Tonhöhe von S8/S9, Drehrichtung von VR1/VR2, kein Knacken.
 
+Für v0.2 (USB-MIDI) am Kit mit Studio One gemeldet: Das Kit erscheint als „Daisy Seed External“,
+Studio One spielt das Board (Empfang), und die Tasten S1–S16 kommen als MIDI in Studio One an
+(Senden). Zunächst fehlte das Keyboard in der Eingangsliste der Spur; nach dem Löschen und
+Neuanlegen des Geräts unter neuem Namen in Studio One funktionierte es. Ursache war die
+Geräteeinrichtung in Studio One, nicht die Firmware.
+
 ## Noch am Gerät zu prüfen
 
-* **USB-MIDI:** Gerät „Daisy Seed External“ erscheint; Tasten senden Note On/Off auf Kanal 1;
-  Empfang mit Halbtönen, Velocity, 16 und mehr Noten gleichzeitig; Verhalten der Tasten ohne
-  USB-Verbindung (Netzteil/Ladegerät); erneutes Verbinden im laufenden Betrieb; Studio-One-Ablauf
-  nach [MIDI.md](MIDI.md).
+* **USB-MIDI:** Empfang mit Halbtönen, unterschiedlicher Velocity, 16 und mehr Noten gleichzeitig;
+  Akkorde beim Senden (mehrere Tasten in derselben Millisekunde); Verhalten der Tasten ohne
+  USB-Verbindung (Netzteil/Ladegerät); erneutes Verbinden im laufenden Betrieb.
 * **Callback-Laufzeit und CPU-Reserve** mit 16 Tasten und 16 MIDI-Stimmen gleichzeitig,
   Aussetzer und Knacken bei MIDI-Bursts.
 * **Stack-Reserve:** Das DTCM ist zu 88,7 % belegt; es bleiben etwa 14,8 KB für den Stack.
