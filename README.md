@@ -4,6 +4,9 @@ Spielbare C++-Firmware für das **Electro-Smith Seed3 Desktop Development Kit**:
 16 unabhängige Toy-Piano-Stimmen, Taster-LEDs und zwei Regler für die AD-Hüllkurve.
 48 kHz, mono auf beiden Stereoausgängen und am Kopfhörerausgang.
 
+Außerdem im Repository: die [Hardware-Diagnose](diagnostics/README.md)
+(eigene Firmware + Windows-Anwendung) unter `diagnostics/`.
+
 ## Spielen
 
 | Taster | Ton | MIDI-Note | Taster | Ton | MIDI-Note |
