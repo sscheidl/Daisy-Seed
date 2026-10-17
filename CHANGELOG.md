@@ -11,7 +11,10 @@ Die Version steht in [`src/version.h`](src/version.h).
   Harmonische oberhalb von 12 kHz abgeschaltet (kein Aliasing).
 * Versionierung: Version nur in `src/version.h`, Dateiname und eingebettete Kennung
   folgen daraus, `scripts/check-firmware.py` prüft sie.
-* Neu geprüft: ThreadSanitizer für die Warteschlange, Tests für MIDI, Begrenzer und Aliasing.
+* Enthält die Korrektur gegen erneutes Auslösen nach Kontaktaussetzern bei gehaltener Taste.
+  Ein Tastendruck sendet damit auch nur ein Note On.
+* Neu geprüft: ThreadSanitizer (`make test-thread`, auch in der CI) für die Warteschlangen,
+  Tests für MIDI, Begrenzer und Aliasing sowie USB-MIDI im Callback-Test.
 * Am Kit mit Studio One getestet: Empfang (Studio One spielt das Board) und Senden (Tasten
   als MIDI in Studio One). Noch offen: Halbtöne/Velocity/16+ Noten gleichzeitig, Akkorde beim
   Senden, Betrieb ohne USB-Verbindung, CPU-Last (siehe [Prüfbericht](docs/VALIDATION.md)).

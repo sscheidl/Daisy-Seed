@@ -5,6 +5,10 @@ Spielbare C++-Firmware für das **Electro-Smith Seed3 Desktop Development Kit**:
 **USB-MIDI** (z. B. für Studio One).
 48 kHz, mono auf beiden Stereoausgängen und am Kopfhörerausgang.
 
+Die **Daisy Seed3 Hardware Diagnostic Suite** ist ein eigenstaendiges Projekt:
+[sscheidl/Daisy-Seed3-Desktop-Diagnostics](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics).
+Firmware, Windows-EXE, Tests und Dokumentation der Diagnose werden dort gepflegt.
+
 ## Spielen
 
 | Taster | Ton | MIDI-Note | Taster | Ton | MIDI-Note |
@@ -24,11 +28,13 @@ denselben Ton, besitzen aber eigene Stimmen. Die Noten stehen in
 
 * **VR1:** Attack von 2 bis 300 ms, links kurz, rechts lang.
 * **VR2:** Decay von 50 bis 3000 ms, links kurz, rechts lang.
-* Beide Zeitkennlinien sind logarithmisch, mit ADC-Glättung und zusätzlichem Rauschfilter.
+* Beide Zeitkennlinien sind logarithmisch. Der ADC verwendet 32-faches Oversampling;
+  der eigene PotFilter glättet über 20 ms und ergänzt Hysterese.
   Neue Einstellungen gelten für den nächsten Anschlag. Bereits laufende Hüllkurven
   behalten ihre Zeiten, damit keine Parametersprünge entstehen.
 * Jeder Druck startet die eigene AD-Hüllkurve. Loslassen unterbricht sie nicht.
   Halten erzeugt keinen Sustain und keine Wiederholungen.
+  Eine beim Einschalten gehaltene Taste löst nach etwa 7 ms ab Audiostart einen Ton aus.
 * D1–D16 zeigen die entprellten Tastenzustände an, unabhängig vom Ausklingen.
 * **USB-MIDI** über J7: Das Kit spielt eingehende Noten (16 freie Stimmen, Velocity) und sendet
   die Tasten S1–S16 als Noten auf Kanal 1. Details in [docs/MIDI.md](docs/MIDI.md).
@@ -40,6 +46,8 @@ Anschlag setzt weder Oszillatorphase noch aktuellen Hüllkurvenpegel abrupt zur�
 Die feste Pegelskalierung und ein weicher Begrenzer (immer unter 0,8) schützen auch bei
 vielen gleichzeitigen Stimmen vor digitalem Clipping; einzelne Noten sind dadurch
 vergleichsweise leise.
+S8 und S9 haben unabhängige Oszillatorphasen: Beim gemeinsamen Spielen können
+sich Grundtöne abhängig vom Anschlagzeitpunkt teilweise auslöschen.
 
 ## Bauen
 
@@ -49,7 +57,6 @@ für die optionalen Tests zusätzlich g++, für die Binärprüfung Python 3.
 ```bash
 git clone https://github.com/sscheidl/Daisy-Seed.git
 cd Daisy-Seed
-git switch feat/toy-piano-v0.1
 git submodule update --init libDaisy DaisySP
 git -C libDaisy submodule update --init --recursive --jobs 4
 

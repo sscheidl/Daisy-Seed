@@ -25,16 +25,28 @@ Die DigitalControl-Entprellung arbeitet mit einer 8-Bit-Historie und liefert ihr
 Flanken nach sieben stabilen Abtastwerten. Bei 1 kHz ergibt das ungefähr 7–8 ms.
 Die Firmware hält den entprellten LED-Zustand zwischen Druck- und Loslassflanke.
 Dadurch flackert eine LED nicht bei einem einzelnen abweichenden Rohwert.
+Eine weitere Druckflanke wird bei bereits gesetztem Haltezustand ignoriert:
+DigitalControl kann nach einem kurzen Kontaktaussetzer eine neue Druckflanke
+melden, ohne zuvor eine Loslassflanke geliefert zu haben.
 
-Die Potentiometerfilter in `Hardware::Init()` sind für 1 kHz konfiguriert.
+Die AnalogControls in `Hardware::Init()` sind für 1 kHz konfiguriert.
 Deshalb verwendet die Firmware 48 Samples bei 48 kHz und ruft einmal pro Block
-`UpdateAllControls()` auf. Hinzu kommen 20 ms Glättung und 0,1 % Hysterese.
+`UpdateAllControls()` auf. Bei der Standard-Slew von 2 ms ergibt AnalogControl
+einen Koeffizienten von 1,0 und glättet selbst nicht. Der ADC verwendet 32-faches
+Oversampling; der eigene PotFilter übernimmt 20 ms Glättung und 0,1 % Hysterese.
 Die äußersten 0,3 % werden auf die Zeit-Endwerte abgebildet.
 
 LED-Daten gehen über eine lockfreie 32-Bit-Mailbox ins Hauptprogramm.
 `UpdateLeds()` verwendet den offiziellen DMA-Treiber, dessen Buffer-Swap auf eine
 vorherige Übertragung warten kann. Er wird daher ausschließlich außerhalb des
 Audiocallbacks und höchstens alle 10 ms bei einer Zustandsänderung aufgerufen.
+Ein sehr kurzer entprellter Tastendruck kann vollständig zwischen zwei LED-Abfragen
+liegen: Dann erklingt der Ton, ohne dass die LED sichtbar aufleuchtet.
+
+Bekannte Grenze des unveränderten libDaisy-Treibers: Ein sofort fehlgeschlagener
+`TransmitDma()`-Start kann den nächsten Buffer-Swap dauerhaft warten lassen.
+Dann können die LEDs einfrieren; die höher priorisierte Audiowiedergabe läuft weiter.
+Dieses Verhalten ist am eigenen Board noch nicht beobachtet oder gemessen worden.
 
 `Hardware::Init()` initialisiert auch unbenutzte Board-Peripherie wie DIN-MIDI/CV.
 Die Anwendung startet keine DIN-MIDI-Verarbeitung und erzeugt keine CV/Gate-Signale.

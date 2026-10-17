@@ -15,7 +15,7 @@ BOOT_BIN = $(SYSTEM_FILES_DIR)/dsy_bootloader_v6_4-extdfu-2000ms.bin
 
 include $(SYSTEM_FILES_DIR)/Makefile
 
-.PHONY: libs test version
+.PHONY: libs test test-sanitize test-thread version
 version:
 	@echo $(VERSION)
 libs:
@@ -29,7 +29,18 @@ $(DAISYSP_DIR)/build/libdaisysp.a:
 	$(MAKE) -C $(DAISYSP_DIR)
 
 HOST_CXX ?= g++
+HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -pthread
+HOST_INCLUDES = -Isrc -IDaisySP/Source -IlibDaisy/src
 test:
 	mkdir -p build/host
-	$(HOST_CXX) -std=c++17 -O2 -Wall -Wextra -Werror -pthread -Isrc -IDaisySP/Source -IlibDaisy/src tests/test_toy_piano.cpp src/toy_piano.cpp -o build/host/test_toy_piano
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_toy_piano.cpp src/toy_piano.cpp -o build/host/test_toy_piano
 	./build/host/test_toy_piano
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) tests/test_callback.cpp src/toy_piano.cpp -o build/host/test_callback
+	./build/host/test_callback
+
+test-sanitize:
+	$(MAKE) test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
+
+# The SPSC queues between main loop and audio callback are the only threaded code.
+test-thread:
+	$(MAKE) test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread -fsanitize=thread"
