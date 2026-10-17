@@ -1,11 +1,15 @@
 .DEFAULT_GOAL := all
-TARGET = ToyPiano-v0.1
+VERSION := $(shell sed -n 's/.*TOY_PIANO_VERSION "\(.*\)".*/\1/p' src/version.h | head -n 1)
+$(if $(VERSION),,$(error Could not read the version from src/version.h))
+TARGET = ToyPiano-v$(VERSION)
 CPP_SOURCES = src/main.cpp src/toy_piano.cpp
 include ../../common/desktop.mk
 
-.PHONY: test test-sanitize
+.PHONY: test test-sanitize test-thread version
+version:
+	@echo $(VERSION)
 HOST_CXX ?= g++
-HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror
+HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -pthread
 HOST_INCLUDES = -Isrc -I$(DAISYSP_DIR)/Source -I$(LIBDAISY_DIR)/src
 test:
 	mkdir -p build/host
@@ -15,4 +19,7 @@ test:
 	./build/host/test_callback
 
 test-sanitize:
-	$(MAKE) test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
+	$(MAKE) test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
+
+test-thread:
+	$(MAKE) test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread -fsanitize=thread"

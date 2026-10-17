@@ -9,7 +9,7 @@ Firmware-Build. Bibliotheken, Toolchain und Board-Buildkonfiguration werden gete
 
 | Projekt | Bereich auf GitHub und lokal | Stand |
 | --- | --- | --- |
-| [Toy Piano v0.1](instruments/toy-piano/) | `instruments/toy-piano/` | ARM-/Host-Tests bestanden; erster Nutzer-Hardwaretest positiv: 16 Tasten und AD-Hüllkurve |
+| [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB-MIDI; ARM-/Host-Tests bestanden; Tasten, AD, Polyphonie, schnelle Folgen und MIDI mit Studio One gemeldet |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Projektgerüst und Referenzvergleich; eigene Engine geplant |
 | [Granular](instruments/granular/) | `instruments/granular/` | Projektgerüst und Referenzvergleich; eigene Engine geplant |
 | [Reverb](effects/reverb/) | `effects/reverb/` | Clouds-/Nimbus-Reverb-Experimente und Slöer-Stereo-Reverb als Portierungsziel |
@@ -43,6 +43,10 @@ In dieser Cloud liegt die Struktur unter `/workspace/Daisy-Seed`.
 Ein Clone oder Pull im eigenen Playground erzeugt dieselben Unterordner.
 Ein Desktop-Verzeichnis außerhalb dieses Workspace wird aus der Cloud nicht verändert.
 
+Die Hardware-Diagnose ist separat in
+[Daisy-Seed3-Desktop-Diagnostics](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics)
+untergebracht.
+
 ## Bauen und testen
 
 ```bash
@@ -57,11 +61,14 @@ make list
 make PROJECT=toy-piano -j4
 make PROJECT=toy-piano test
 make PROJECT=toy-piano test-sanitize
+make PROJECT=toy-piano test-thread
+make test-release
 ```
 
 Ohne `PROJECT=` bleibt Toy Piano der Standard. Direkter Projekteinstieg:
 `make -C instruments/toy-piano`. Das Ergebnis liegt unter
-**`instruments/toy-piano/build/ToyPiano-v0.1.bin`**. Geplante Projekte werden bei
+**`instruments/toy-piano/build/ToyPiano-v0.2.bin`**. Die Version steht im Projekt
+unter `src/version.h`; `make -s version` gibt sie aus. Geplante Projekte werden bei
 einem Buildversuch ausdrücklich abgewiesen; es wird keine Ersatzfirmware gebaut.
 `make all-projects` und `make test-projects` bearbeiten alle implementierten Projekte.
 
@@ -73,7 +80,8 @@ oder eine gemeinsame Effektkette ist noch nicht implementiert.
 
 * [Build und Toolchain](docs/BUILD.md), [Hardware](docs/HARDWARE.md), [Flashen](docs/FLASHING.md).
 * [Toy Piano: Bedienung und Hardwaretest](instruments/toy-piano/README.md),
-  [Prüfbericht](instruments/toy-piano/docs/VALIDATION.md).
+  [USB-MIDI](instruments/toy-piano/docs/MIDI.md),
+  [Changelog](instruments/toy-piano/CHANGELOG.md), [Prüfbericht](instruments/toy-piano/docs/VALIDATION.md).
 * [Quellenübersicht und Vergleichsgrenzen](docs/REFERENCES.md): Rings/Elements,
   vorhandene Daisy-Ports, Iridium-Resonator, GR-1, Iridium Particle, Clouds, Beads und Reverb-Grundlagen.
 

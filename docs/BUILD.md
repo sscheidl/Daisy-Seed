@@ -43,7 +43,9 @@ make list
 make PROJECT=toy-piano -j4
 make PROJECT=toy-piano test
 make PROJECT=toy-piano test-sanitize
-python3 scripts/check-firmware.py instruments/toy-piano/build/ToyPiano-v0.1.bin
+make PROJECT=toy-piano test-thread
+make test-release
+python3 scripts/check-firmware.py
 ```
 
 Ohne `PROJECT=` wird weiterhin Toy Piano ausgewählt. Der Direktaufruf
@@ -82,8 +84,8 @@ host-testbare AD- und Sinustabellen-Logik. Ein UI-Framework ist nicht erforderli
 3. CI um den konkreten Projektpfad und Dateinamen ergänzen; Host-Tests, RAM-/CPU-
    Grenzen und manuelle Hardwaretests dokumentieren.
 
-Die aktuelle CI-Matrix enthält nur Toy Piano. Ihr BIN-Dateiname und Pfad sind dafür
-ausdrücklich angegeben; bei weiteren Projekten müssen diese Metadaten ergänzt
+Die aktuelle CI-Matrix enthält nur Toy Piano. Ihr Pfad und der aus der Projektversion
+abgeleitete BIN-Dateiname sind dafür angegeben; bei weiteren Projekten müssen diese Metadaten ergänzt
 werden. Die Matrix behauptet keine Builds der noch geplanten Engines.
 
 Generierte Dateien und die Toolchain bleiben aus Git ausgeschlossen.
@@ -96,3 +98,31 @@ Hardwareeingängen und der unveränderten DigitalControl-Entprellung aus libDais
 `make test-sanitize` führt beide Tests mit AddressSanitizer und UndefinedBehaviorSanitizer
 aus. `-fno-sanitize-recover=all` macht jeden erkannten Fehler zum Testfehler.
 Die GPIO-/ADC-Stubs ersetzen keinen Hardwaretest.
+
+`make PROJECT=toy-piano test-thread` prüft die MIDI-Warteschlange mit ThreadSanitizer.
+Die gemeinsamen Release-Schutztests liegen unter `tests/` und laufen separat mit
+`make test-release` (temporäres Git-Repository und simulierte API).
+
+## Version und Release
+
+Die Toy-Piano-Version steht ausschließlich in `instruments/toy-piano/src/version.h`.
+Sie bestimmt den Dateinamen `instruments/toy-piano/build/ToyPiano-v<version>.bin`,
+die eingebettete Kennung `TOYPIANO-FW-VERSION=<version>` und den CI-Artefaktnamen.
+`make -s PROJECT=toy-piano version` gibt die Version aus. Die Binärprüfung liest
+dieselbe Versionsdatei und prüft Dateiname und Image-Kennung.
+
+Der Release-Workflow `.github/workflows/release.yml` baut Toy Piano aus `main` und
+erzeugt `v<version>` mit BIN, ELF und `SHA256SUMS`. Er liest die Änderungen aus
+`instruments/toy-piano/CHANGELOG.md`. Tags und alle Releases einschließlich Entwürfen
+werden vorab geprüft; eine vorhandene Version wird abgewiesen. API-Fehler brechen ab.
+
+1. Für eine neue Version die Projekt-Versionsdatei und den Projekt-Changelog ändern.
+2. Nach dem Merge startet der Workflow bei Änderungen der Versionsdatei automatisch;
+   alternativ *Actions → Release → Run workflow* auf `main`.
+3. Standardmäßig bleibt das Release ein **Entwurf** (`publish=false`). Die BIN am
+   Gerät testen und erst danach den Entwurf veröffentlichen. Dabei erzeugt GitHub
+   den Tag auf dem tatsächlich gebauten Commit. `publish=true` veröffentlicht sofort.
+
+Nur der Release-Job fordert `contents: write` an; normale Builds haben Leserechte.
+Der vorhandene Name `v0.2` bleibt für Toy Piano erhalten. Für weitere Instrumente
+müssen vor deren erstem Release eigene Versions-/Tagregeln ergänzt werden.

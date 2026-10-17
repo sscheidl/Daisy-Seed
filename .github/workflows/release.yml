@@ -1,0 +1,106 @@
+name: Release
+# Builds the firmware from the selected commit and creates the GitHub release
+# "v<version>" (version from src/version.h) with BIN, ELF and checksum attached.
+# The git tag is created by GitHub when the release is published, on the commit built here.
+#
+# * Run it by hand: Actions -> Release -> Run workflow (branch main).
+# * It also runs when a push to main changes src/version.h.
+# * By default the release stays a DRAFT. Review the BIN (flash and test it), then
+#   publish the draft on the Releases page, or run the workflow with "publish" ticked.
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish immediately (creates the tag). Unticked: draft only."
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: [instruments/toy-piano/src/version.h]
+permissions:
+  contents: read
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  release:
+    # Releases come from main only.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # create the release and its tag
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.publish && 'true' || 'false' }}
+      PROJECT_DIR: instruments/toy-piano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # tags are needed to detect an existing release tag
+      - name: Fetch pinned dependencies
+        run: |
+          git submodule update --init libDaisy DaisySP
+          git -C libDaisy submodule update --init --recursive --jobs 4
+      - name: Install pinned ARM toolchain
+        run: |
+          bash scripts/install-toolchain.sh
+          echo "$GITHUB_WORKSPACE/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin" >> "$GITHUB_PATH"
+      - name: Read version and refuse to overwrite a release
+        id: version
+        run: |
+          version="$(make -s PROJECT=toy-piano version)"
+          test -n "$version" || { echo "::error::Could not read the version from src/version.h"; exit 1; }
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          bash scripts/check-release-available.sh "$version"
+      - name: Test on host
+        run: |
+          make test-release
+          make PROJECT=toy-piano test
+          make PROJECT=toy-piano test-sanitize
+          make PROJECT=toy-piano test-thread
+      - name: Build and check the firmware image
+        run: |
+          make PROJECT=toy-piano -j4
+          python3 scripts/check-firmware.py
+      - name: Release notes and checksum
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          bin="$PROJECT_DIR/build/ToyPiano-v$VERSION.bin"
+          (cd "$PROJECT_DIR/build" && sha256sum "ToyPiano-v$VERSION.bin" > SHA256SUMS)
+          sha="$(cut -d' ' -f1 "$PROJECT_DIR/build/SHA256SUMS")"
+          size="$(stat -c %s "$bin")"
+          # Section "## <version> ..." of the changelog, up to the next "## ".
+          awk -v v="$VERSION" '$0 == "## " v || index($0, "## " v " ") == 1 { p = 1; next } /^## / { p = 0 } p' "$PROJECT_DIR/CHANGELOG.md" > release-notes.md
+          # Relative links to repository files do not work on the release page.
+          sed -i -E "s#\]\(([A-Za-z][^):]*\.md)#](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/$PROJECT_DIR/\1#g" release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::CHANGELOG.md has no section for version $VERSION."
+            exit 1
+          fi
+          {
+            echo
+            echo "## Binary"
+            echo
+            echo "* \`ToyPiano-v$VERSION.bin\`, $size Bytes"
+            echo "* SHA-256: \`$sha\`"
+            echo "* Gebaut aus Commit \`$GITHUB_SHA\` mit der festgelegten Toolchain (xPack GCC 13.2.1-1.1)."
+            echo "* Flashen: siehe [docs/FLASHING.md](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/docs/FLASHING.md)."
+          } >> release-notes.md
+          {
+            echo "### Release v$VERSION"
+            echo "* \`ToyPiano-v$VERSION.bin\`: $size Bytes, SHA-256 \`$sha\`"
+            echo "* Publish: $PUBLISH"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Create the release
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          args=(--target "$GITHUB_SHA" --title "Toy Piano v$VERSION" --notes-file release-notes.md)
+          if [ "$PUBLISH" != "true" ]; then
+            args+=(--draft)
+          fi
+          gh release create "v$VERSION" "${args[@]}" \
+            "$PROJECT_DIR/build/ToyPiano-v$VERSION.bin" \
+            "$PROJECT_DIR/build/ToyPiano-v$VERSION.elf" \
+            "$PROJECT_DIR/build/SHA256SUMS"

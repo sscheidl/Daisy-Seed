@@ -50,7 +50,7 @@ Bei späteren Firmwareupdates nicht erneut `program-boot` ausführen.
    danach langsam: der Daisy-Bootloader wartet auf die Anwendung.
    Dieser Ablauf unterscheidet sich vom oben beschriebenen ROM-DFU-Modus.
 3. Im [Daisy Web Programmer](https://flash.daisy.audio/) verbinden,
-   unter „Custom“ **`instruments/toy-piano/build/ToyPiano-v0.1.bin`** auswählen und programmieren.
+   unter „Custom“ **`instruments/toy-piano/build/ToyPiano-v0.2.bin`** auswählen und programmieren.
    Alternativ lokal im Repository-Hauptverzeichnis:
 
    ```bash

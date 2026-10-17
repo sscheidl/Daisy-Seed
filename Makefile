@@ -2,8 +2,11 @@
 include projects.mk
 PROJECT ?= toy-piano
 
-PROJECT_ACTIONS := all clean libs test test-sanitize program-dfu program-boot
-.PHONY: help list all-projects test-projects $(PROJECT_ACTIONS)
+PROJECT_ACTIONS := all clean libs test test-sanitize test-thread version program-dfu program-boot
+.PHONY: help list all-projects test-projects test-release $(PROJECT_ACTIONS)
+
+test-release:
+	python3 -m unittest discover -s tests -p test_release_guard.py -v
 
 help:
 	@printf '%s\n' 'make [PROJECT=toy-piano] [all|test|test-sanitize|clean|libs]' 'make list                    Project directories and status' 'make all-projects            Build every implemented project' 'make test-projects           Test every implemented project' 'make PROJECT=<id> program-dfu  Explicit hardware flash (never automatic)'
