@@ -9,7 +9,7 @@ Date: 2026-10-19. Hardware validation: **PENDING — USER TEST**.
 | 2 controls | PASS | production callback + pinned DigitalControl with targeted hardware fake; 16 keys/LEDs, switches, pot endpoints/jitter/ownership |
 | 3 reverb/output | PASS | six wet paths, model 6 polarity routing, 30-second impulse tail, maximum parameters, strict output bound |
 | 4 MIDI | PASS | notes 0..127, velocity, CC20..33, bend, 300-event FIFO backpressure, parser fragments/running status/recovery |
-| 5 integration/CI | IN PROGRESS | corrected local ARM/host/sanitizer tests pass; corrected CI, TSan and artifact verification pending |
+| 5 integration/CI | PASS | corrected local/CI ARM, host, ASan/UBSan, ThreadSanitizer, release preflight, all-project regressions and downloaded artifact verification |
 
 ## Executed software validation
 
@@ -61,10 +61,30 @@ bounds, wet-only tail waveform continuity and synthetic pot noise. Production
 callback tests cover switch/MIDI ownership and the real CpuLoadMeter with a fake
 clock. The optional Python CPU decoder passes three offline protocol tests.
 
-Updated GitHub Actions, ThreadSanitizer and release-preflight results will be
-recorded after the corrected branch runs; [PR #13](https://github.com/sscheidl/Daisy-Seed/pull/13)
-remains the existing review destination. Generated files stay under the ignored
-project build directory and are not committed.
+Verified corrected implementation: `03eee48dc5ee409abbf517a98e254fed868332ce`.
+[Successful CI run](https://github.com/sscheidl/Daisy-Seed/actions/runs/39322262313),
+[verified BIN/ELF/MAP/SHA256SUMS artifact](https://github.com/sscheidl/Daisy-Seed/actions/runs/39322262313/artifacts/12221160675),
+[existing PR #13](https://github.com/sscheidl/Daisy-Seed/pull/13).
+The downloaded corrected BIN is byte-identical to the local Windows ARM build;
+its checksum, embedded version, vectors, ELF load segments and static reserves
+were checked again locally. Documentation-only follow-ups do not change this image.
+
+All three CI matrix jobs pass. The corrected run actually executed:
+
+* `make test-release` (release guard regression suite).
+* Host and ASan/UBSan tests for Toy Piano, Ambient Reverb and Physical Modeling;
+  Physical Modeling also includes float-cast-overflow, review regressions and
+  the offline Python decoder suite.
+* `make PROJECT=toy-piano test-thread` and
+  `make PROJECT=physical-modeling test-thread`; the latter covers both ordered
+  MIDI queue payloads and coherent multi-field CPU snapshots with 100000 events.
+* ARM builds for all three projects, including `make all-projects`.
+* `make test-projects`, image/vector/version and physical ELF/load-region checks.
+* BIN, ELF, MAP and SHA256SUMS upload; final artifact download and revalidation.
+
+Existing Toy Piano/Reverb sources and both library gitlinks are unchanged.
+Local generated files are under the ignored project `build/`; the downloaded
+corrected copy is `build/ci-03eee48/`. Generated files are not committed.
 
 | Region | Used bytes | Capacity | Static reserve |
 | --- | ---: | ---: | ---: |
@@ -97,4 +117,4 @@ Use HARDWARE_TEST.md. No attached hardware was accessed or flashed. Optional NRP
 aftertouch assignment, MPE and DIN MIDI are not part of this implementation.
 
 
-**SOFTWARE VALIDATION IN PROGRESS — HARDWARE TEST PENDING**
+**SOFTWARE READY — HARDWARE TEST PENDING**
