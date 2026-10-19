@@ -67,6 +67,8 @@ Use the **existing external Daisy bootloader**, following
 Flash only the application BIN. A working compatible bootloader needs no
 reinstallation. No flash or hardware access was performed during development.
 Hardware/audio listening/real CPU load: **PENDING — USER TEST**.
+CPU average/peak and deadline misses can now be requested over USB MIDI; the
+[hardware test guide](docs/HARDWARE_TEST.md) includes a CSV measurement helper.
 
 ## Provenance and limits
 

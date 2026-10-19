@@ -13,6 +13,7 @@ $(BUILD_DIR)/%.o: %.cc Makefile | $(BUILD_DIR)
 	$(CXX) -c $(CPPFLAGS) $(CPP_STANDARD) $< -o $@
 
 HOST_CXX ?= g++
+HOST_PYTHON ?= python3
 HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -pthread
 HOST_INCLUDES = -DTEST -D_USE_MATH_DEFINES -Isrc -Itorus -Ithird_party -Wno-unused-local-typedefs -Wno-unused-parameter
 .PHONY: test test-sanitize test-thread version
@@ -26,9 +27,12 @@ test:
 	./build/host/test_callback
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) -I../../libDaisy/src tests/test_parser.cpp src/midi_parser.cpp -o build/host/test_parser
 	./build/host/test_parser
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_review.cpp src/physical_modeling.cpp $(DSP_SOURCES) -o build/host/test_review
+	./build/host/test_review
+	$(HOST_PYTHON) -m unittest discover -s tests -p test_cpu_probe.py -v
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -pthread -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all -fno-omit-frame-pointer"
 test-thread:
 	mkdir -p build/host
-	$(HOST_CXX) -std=c++17 -O1 -g -pthread -fsanitize=thread -Isrc tests/test_queue.cpp -o build/host/test_queue
+	$(HOST_CXX) -std=c++17 -O1 -g -pthread -fsanitize=thread $(HOST_INCLUDES) -Itests/fakes -I../../libDaisy/src tests/test_queue.cpp -o build/host/test_queue
 	./build/host/test_queue

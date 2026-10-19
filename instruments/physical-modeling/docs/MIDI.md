@@ -39,3 +39,38 @@ mapping is implemented. Incomplete NRPN messages are ignored as unsupported CCs.
 Malformed data bytes/statuses are rejected after the libDaisy MIDI parser.
 Notes at pitch extremes retain Torus' original frequency/delay and antialiasing
 limits; the MIDI note range is accepted without extending engine buffers.
+
+
+## CPU diagnostics (channel 16 only)
+
+These diagnostics leave CC20–33 unchanged. Send **CC119=1** on MIDI channel 16
+for a snapshot, or **CC119=2** to reset the meter and obtain the first new measured
+block. Other values/channels do not request diagnostics. Rapid overlapping
+requests are coalesced while a reply is pending; request at most once per second.
+The reply contains twenty ordinary channel-16 CC messages, ordered CC100..119:
+
+| CC | Value |
+| --- | --- |
+| 100 | Protocol version 1 / frame start |
+| 101,102,103 | Smoothed average callback load, three base-128 digits, low digit first |
+| 104,105,106 | Peak callback load, same encoding |
+| 107..111 | Callback count since reset, five base-128 digits |
+| 112..116 | Number of callbacks exceeding 1 ms, five base-128 digits |
+| 117 | Current model, 0..5 |
+| 118 | Voice count, fixed 4 |
+| 119 | Value 64 / frame complete (never itself a request) |
+
+For every multi-byte field: integer = sum(value[i] << (7*i)). Load integers are
+in .01 percentage-point units: divide by 100 for percent (10000 = 100% = 1 ms).
+Average/peak fields support up to 20971.51%; they do not clamp overloads to 100%.
+Counters are uint32 values. A complete frame is 60 raw MIDI bytes; partial or
+out-of-order frames must be discarded. Musical messages are never echoed.
+Only a requested diagnostic reply transmits; no USB transmit happens in audio.
+See ARCHITECTURE for measurement scope, smoothing and reset semantics.
+
+`tools/cpu_probe.py` decodes real device replies and writes UTC CSV records.
+The optional `--benchmark` sends worst-parameter four-note chord bursts to all
+six models, resetting statistics per model after 50 ms settling. It does not
+measure the model-transition peak; use normal monitoring while switching for
+that separate test. The benchmark finishes with CC33=0 to silence sustained FM;
+restore CC33=127 afterwards. It does not enable eight voices. See HARDWARE_TEST.

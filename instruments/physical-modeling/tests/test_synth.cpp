@@ -34,6 +34,14 @@ static void Parameters() {
     for(float x : {0.0f,1.0f,-1.0f,1e30f,-1e30f,std::numeric_limits<float>::infinity(),std::numeric_limits<float>::quiet_NaN()})
         assert(std::isfinite(Output(x,1)) && std::fabs(Output(x,1))<.8f);
     ParameterManager p;
+    assert(std::fabs(.9f*p.Target(Diffusion)-.625f)<1e-6f);
+    ChordSelector chords;
+    assert(chords.Process(0)==0 && chords.Process(.059f)==0);
+    assert(chords.Process(.061f)==1);
+    for(unsigned i=0;i<100;++i) assert(chords.Process(i&1 ? .049f:.051f)==1);
+    assert(chords.Process(.039f)==0);
+    for(unsigned i=0;i<=10;++i) assert(chords.Process(float(i)/10)==int(i));
+    assert(chords.Process(2)==10 && chords.Process(-1)==0);
     float value = 0; PotFilter pot;
     assert(pot.Process(.5f,value));
     for(unsigned i=0;i<200;++i) assert(!pot.Process(.5001f,value));

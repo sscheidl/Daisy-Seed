@@ -30,7 +30,7 @@ class ParameterManager {
         target_.fill(0.5f);
         target_[Excitation] = 0.8f; target_[Wet] = 0.25f;
         target_[Model] = 0; target_[Polyphony] = 1;
-        target_[Diffusion] = 0.625f; target_[InputGain] = 0.4f; target_[Master] = 1;
+        target_[Diffusion] = 0.625f / 0.9f; target_[InputGain] = 0.4f; target_[Master] = 1;
         current_ = target_;
     }
     void Set(unsigned id, float value) { if(id < Count && id != Polyphony) target_[id] = Unit(value); }
@@ -53,6 +53,18 @@ class ParameterManager {
     std::array<float, Count> target_{}, current_{};
     std::array<PotFilter, 8> pots_{};
     float bend_ = 0, bend_target_ = 0;
+};
+// Original Torus CV scaler: nearest of 11 chords with +/-0.1 chord hysteresis.
+class ChordSelector {
+  public:
+    int Process(float structure) {
+        const float chord = Unit(structure) * 10.0f;
+        const float hysteresis = chord > chord_ ? -0.1f : 0.1f;
+        chord_ = std::clamp(int(chord + hysteresis + 0.5f), 0, 10);
+        return chord_;
+    }
+  private:
+    int chord_ = 0;
 };
 class ModelSwitch {
   public:

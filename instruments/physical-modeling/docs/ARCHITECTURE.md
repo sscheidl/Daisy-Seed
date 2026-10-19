@@ -3,7 +3,8 @@
 ## Ownership and signal flow
 
 Main loop: USB Listen/PopEvent, bounded batches of 64; retry one pending event
-when the 256-entry SPSC queue is full. No MIDI echo or transmit path. LED mailbox
+when the 256-entry SPSC queue is full. No musical MIDI echo. CPU telemetry is
+transmitted only in response to an explicit diagnostic request in the main loop. LED mailbox
 is a lock-free uint32_t; LED transfers happen only after changes and at most at
 100 Hz. USB framing/running status uses the pinned libDaisy parser with a local compatibility fix.
 `src/midi_parser.cpp` provides the same Parse/Reset symbols before archive linking;
@@ -48,7 +49,9 @@ smoothed sum of transpose and pitch bend. That offset affects all sounding
 voices without retriggering. Modal, sympathetic, inharmonic, FM, quantized chord,
 and string/reverb routines remain upstream DSP. The BRYAN_CHORDS table from the
 pinned Daisy port is retained. At four voices Western Chords uses the original
-two-string intervals. Modal resolution remains the original 64/polyphony-4.
+two-string intervals. Chord selection uses the original Torus nearest-integer
+rule on Structure*10 with +/-0.1 chord hysteresis. Modal resolution remains the
+original 64/polyphony-4.
 
 The upstream maximum buffer length stays 48. Rendering uses valid 12-sample
 sub-blocks; interpolators use the actual size. Part LFO increments are adjusted
@@ -62,25 +65,34 @@ velocity drives its internal amplitude/brightness envelopes and its oscillator
 baseline at maximum damping. No finished-output volume substitution is used.
 Existing resonator states decay naturally. A zero-excitation strike adds no energy.
 
-A model change fades to zero over 192 samples (4 ms), configures the original
-resonators at zero gain, and fades in over 192 samples. Notes arriving during
-fade-out stay queued. The dry and wet outputs share the fade, so changing model
-6's right-channel polarity cannot abruptly invert a full-level reverb tail.
-The global reverb state is retained across switches.
+A model change fades the dry signal and reverb send to zero over 192 samples
+(4 ms), configures the original resonators at zero dry gain, and fades them in
+over 192 samples. Notes arriving during fade-out stay queued. The wet return
+is never multiplied by this model fade. The single global reverb keeps running
+and its existing tail continues across every model transition.
 
 ## Global reverb and output
 
 Part no longer owns a Reverb instance or initializes a second buffer. Model 6
 retains its dispersion, special damping curve, stereo cross-routing by Position,
-and final right-channel polarity. Polarity is applied after the global mix:
-applying it before the reverb's L+R input would cancel a centered stereo signal.
+and right-channel polarity on its dry output. That inversion follows the split
+into dry and reverb-send paths; it never inverts the global wet return. Applying
+it before the reverb's L+R input would cancel a centered stereo signal.
+
+The original model-6 links from synthesis Damping/Brightness to reverb amount,
+time and lowpass are **intentionally removed**: the global reverb has independent
+Decay, Dry/Wet and Reverb Damping/Diffusion/Input Gain controls in every model.
+This is the agreed instrument design, not an unimplemented coupling. The special
+string damping/dispersion and dry stereo routing remain. At Position=.5 model 6
+has opposite-polarity dry channels, so mono summing cancels the dry signal.
 
 One unchanged-topology Torus 16-bit FxEngine reserves 32768 uint16_t words
 (65536 bytes). amount=1 returns wet only. External linear mixing has exact dry
 and wet endpoints, with no duplicate dry component. Reverb runs even at dry=1
 so its state remains continuous. Feedback time=0.35+0.63*Decay; diffusion=0.9*x;
-input gain=0.5*x; lp=0.05+0.9*(1-Damping). Defaults: normalized decay=.5,
-damping=.5, diffusion=.625, input gain=.4, wet=.25. The diffusion setter is a
+input gain=0.5*x; lp=0.05+0.9*(1-ReverbDamping). Defaults: normalized decay=.5,
+reverb damping=.5, diffusion=.625/.9 (approximately .694444), input gain=.4, wet=.25.
+Thus the default actual diffusion coefficient is the original .625. The setter is a
 normalized musical control; actual coefficient is bounded at .9. No fabricated
 RT60/seconds mapping is claimed. All feedback coefficients stay below unity.
 
@@ -102,3 +114,26 @@ state remain in DTCM. The ELF checker verifies ARM hard-float ABI, every load
 segment, BIN/ELF equivalence, BOOT_SRAM regions and at least 8 KiB DTCM reserve.
 Compiler .su files provide static stack frame estimates; real IRQ nesting and
 CPU deadline margin remain hardware tests. See VALIDATION for measured sizes.
+
+
+## CPU measurement
+
+The official pinned `daisy::CpuLoadMeter` measures controls, MIDI consumption and
+DSP in the audio callback against the actual timer frequency and 48/48000-second
+block budget. Its average is the library's 1 Hz smoothed average, not an arithmetic
+mean. Peak and callback count are since startup or explicit reset; a separate
+elapsed-tick comparison counts callbacks exceeding the 1 ms deadline. Values over
+100% are retained. The uint32 timer difference supports wraparound; counters
+saturate at UINT32_MAX. Timings exclude request handling before meter start,
+snapshot publication after meter end, USB serialization and the audio driver's
+work outside this user callback. Interrupt preemption during the interval is
+included in elapsed time. This measures callback budget, not whole-system CPU.
+
+One atomic command mailbox sends a request/reset from main to audio. Only audio
+accesses meter state. A second SPSC queue publishes a coherent CpuSnapshot after
+the measured block; main never reads concurrently written floats. At most one
+request is outstanding. Snapshot formatting and USB SendMessage stay in main,
+and sending requires an enumerated external host. No unsolicited telemetry is
+sent. Ordinary MIDI channel messages are used for reliable framing with the
+pinned USB transport; the protocol is in MIDI.md. Host fake timer tests validate
+the mechanism only. Actual board readings remain NOT MEASURED until user testing.

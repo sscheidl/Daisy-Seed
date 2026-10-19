@@ -4,7 +4,7 @@ namespace physical_modeling {
 void Synth::Init() {
     torus::InitResources();
     part_.Init(); reverb_.Init(reverb_buffer_);
-    write_ = read_ = overflow_ = 0; fade_ = 1; fading_out_ = false;
+    write_ = read_ = overflow_ = 0; fade_ = 1; fading_out_ = false; chord_ = ChordSelector{};
 }
 bool Synth::NoteOn(unsigned note, unsigned velocity) {
     if(note > 127 || velocity > 127 || velocity == 0) return false;
@@ -34,10 +34,10 @@ void Synth::Render(float* left, float* right) {
     state.internal_exciter = true;
     state.tonic = 0;
     state.fm = parameters.PitchOffset();
-    state.chord = std::min(10, int(patch.structure * 11));
+    state.chord = chord_.Process(patch.structure);
     float input[kQuantum]{};
     part_.Process(state, patch, input, left, right, kQuantum);
-    float wet_left[kQuantum], wet_right[kQuantum], fades[kQuantum];
+    float wet_left[kQuantum], wet_right[kQuantum];
     // set_time is a feedback coefficient, not seconds. Keep strictly below unity.
     reverb_.set_time(0.35f + 0.63f * parameters.Get(Decay));
     reverb_.set_lp(0.05f + 0.9f * (1.0f - parameters.Get(ReverbDamping)));
@@ -46,14 +46,16 @@ void Synth::Render(float* left, float* right) {
     reverb_.set_amount(1.0f); // Wet-only; external crossfade includes dry exactly once.
     for(size_t i = 0; i < kQuantum; ++i) {
         fade_ = fading_out_ ? std::max(0.0f, fade_ - 1.0f/192.0f) : std::min(1.0f, fade_ + 1.0f/192.0f);
-        fades[i] = fade_;
-        wet_left[i] = left[i] * fade_; wet_right[i] = right[i] * fade_;
+        left[i] *= fade_; right[i] *= fade_;
+        // Feed the reverb before model 6's dry polarity inversion: its L+R
+        // input would otherwise cancel at Position=.5. Wet polarity is global.
+        wet_left[i] = left[i]; wet_right[i] = right[i];
     }
     reverb_.Process(wet_left, wet_right, kQuantum);
     for(size_t i = 0; i < kQuantum; ++i) {
-        left[i] = Output(fades[i] * Mix(left[i], wet_left[i], parameters.Get(Wet)), parameters.Get(Master));
-        const float mixed_right = Mix(right[i], wet_right[i], parameters.Get(Wet));
-        right[i] = Output(fades[i] * (ModelIndex() == 5 ? -mixed_right : mixed_right), parameters.Get(Master));
+        left[i] = Output(Mix(left[i], wet_left[i], parameters.Get(Wet)), parameters.Get(Master));
+        const float dry_right = ModelIndex() == 5 ? -right[i] : right[i];
+        right[i] = Output(Mix(dry_right, wet_right[i], parameters.Get(Wet)), parameters.Get(Master));
     }
 }
 void Synth::Process(float* left, float* right, size_t size) {

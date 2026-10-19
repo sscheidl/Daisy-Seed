@@ -11,6 +11,9 @@
 namespace daisy {
 struct System {
     inline static uint32_t now = 0;
+    inline static uint32_t ticks = 0;
+    static uint32_t GetTick() { return ticks; }
+    static uint32_t GetTickFreq() { return 1000000; }
     static uint32_t GetNow() { return now; }
     static void Delay(uint32_t ms) { now += ms; }
 };
@@ -79,11 +82,13 @@ struct Hardware {
     std::array<DigitalControl, kNumButtons> button{};
     std::array<bool, kNumButtons> pressed{};
     unsigned led_transfers = 0;
+    unsigned control_ticks = 0;
     void Init() {
         for(auto& b : button)
             b.Init(true);
     }
     void UpdateAllControls() {
+        System::ticks += control_ticks;
         for(std::size_t i = 0; i < kNumButtons; ++i)
             button[i].Debounce(!pressed[i]); // Active-low switch, as on the kit.
     }

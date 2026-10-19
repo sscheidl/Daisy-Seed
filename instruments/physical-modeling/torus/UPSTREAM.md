@@ -27,8 +27,10 @@ Local changes:
 * Part: four independent keyboard strikes and velocities, direct MIDI pitch,
   fixed four voices, 12-sample LFO step, one shared global reverb instead of
   Part's model-local instance; original resonator and string equations retained.
-* Model 6: stereo cross-routing and damping retained; move right polarity to
-  after global reverb to prevent mono-send cancellation.
+* Model 6: stereo cross-routing and string damping retained; right polarity
+  affects only dry, after splitting off the non-inverted global reverb send.
+  Wet polarity/tails are independent of the current model. Original synthesis
+  Damping/Brightness-to-reverb parameter coupling is intentionally removed.
 * FMVoice: velocity envelope/oscillator baseline; initialize feedback sample;
   use a defined signed-64 intermediate for modular float-to-phase conversion;
   clamp the carrier below Nyquist at extreme MIDI + transpose pitches.

@@ -4,9 +4,11 @@
 #include <cassert>
 #include <cstdio>
 using namespace physical_modeling;
+extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }
 int main() {
     hw.Init();
     std::fill_n(synth_storage, sizeof(synth_storage), static_cast<unsigned char>(0xff));
+    cpu_meter.Init(48000,48);
     InitializeSynth(); // Exercise actual startup from uninitialized NOLOAD memory.
     for(auto& pot:hw.pot) pot.value=.5f;
     float left[48],right[48]; float* output[]={left,right};
@@ -45,5 +47,41 @@ int main() {
     const auto count=synth->TriggerCount();
     midi.incoming.push_back({daisy::NoteOn,0,{60,0}});
     ServiceMidi(); tick(2); assert(synth->TriggerCount()==count);
+    // CC28 must persist with both physical switches untouched; a switch change
+    // takes over only after its normal debounce window.
+    midi.incoming.push_back({daisy::ControlChange,0,{28,0}});
+    ServiceMidi(); tick(100); assert(synth->ModelIndex()==0);
+    hw.tog_sw17.value=false; hw.tog_sw18.value=0;
+    tick(40); assert(synth->ModelIndex()==1);
+    // Real libDaisy CpuLoadMeter, deterministic fake timer: .25 ms then 1.5 ms.
+    hUsbDeviceHS.dev_state=USBD_STATE_CONFIGURED;
+    auto request=[&](uint8_t value) { midi.incoming.push_back({daisy::ControlChange,15,{119,value}}); ServiceMidi(); };
+    hw.control_ticks=250; request(2); tick(1);
+    assert(midi.sent.empty()); // Audio IRQ never transmits.
+    ServiceCpuTelemetry(); assert(midi.sent.size()==1);
+    auto read=[&](unsigned cc,unsigned digits) {
+        uint32_t value=0; const auto& packet=midi.sent.back(); assert(packet.size()==60);
+        for(unsigned i=0;i<digits;++i) {
+            const unsigned off=3*(cc-100+i);
+            assert(packet[off]==0xbf && packet[off+1]==cc+i && packet[off+2]<128);
+            value |= uint32_t(packet[off+2])<<(7*i);
+        }
+        return value;
+    };
+    assert(read(100,1)==1 && read(101,3)==2500 && read(104,3)==2500);
+    assert(read(107,5)==1 && read(112,5)==0 && read(117,1)==1 && read(118,1)==4 && read(119,1)==64);
+    hw.control_ticks=1500; request(1); tick(1); ServiceCpuTelemetry();
+    assert(read(104,3)==15000 && read(107,5)==2 && read(112,5)==1);
+    assert(read(101,3)>2500 && read(101,3)<15000); // Actual smoothed meter average.
+    hw.control_ticks=1000; request(2); tick(1); ServiceCpuTelemetry();
+    assert(read(104,3)==10000 && read(107,5)==1 && read(112,5)==0);
+    daisy::System::ticks=UINT32_MAX-100; hw.control_ticks=250;
+    request(2); tick(1); ServiceCpuTelemetry(); assert(read(104,3)==2500); // Timer wrap.
+    const auto replies=midi.sent.size();
+    midi.incoming.push_back({daisy::ControlChange,0,{119,1}}); // Wrong channel.
+    request(64); tick(1); ServiceCpuTelemetry(); assert(midi.sent.size()==replies);
+    hUsbDeviceHS.dev_state=0; request(1); tick(1); ServiceCpuTelemetry();
+    assert(midi.sent.size()==replies && !cpu_reply_pending); // Offline: no TX/blocking.
+    puts("PASS CPU average/peak, reset, overruns, timer wrap, coherent MIDI telemetry outside audio and offline guard");
     puts("PASS production callback: all keys/LEDs, switches, USB CC/bend, 300-event backpressure, no MIDI echo");
 }

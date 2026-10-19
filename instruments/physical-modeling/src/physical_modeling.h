@@ -24,5 +24,6 @@ class Synth {
     uint32_t write_ = 0, read_ = 0, overflow_ = 0;
     float fade_ = 1;
     bool fading_out_ = false;
+    ChordSelector chord_{};
 };
 }
