@@ -10,7 +10,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | Project | Directory | Status |
 | --- | --- | --- |
 | [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI; ARM and host tests pass; keys, AD envelope, polyphony, fast repeats, and MIDI with Studio One reported working on hardware |
-| [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Project outline and reference comparison; original engine planned |
+| [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings instrument, six models, global stereo reverb and USB MIDI; software validation in project docs |
 | [Granular](instruments/granular/) | `instruments/granular/` | Project outline and reference comparison; original engine planned |
 | [Ambient Reverb v0.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb imported from the FV-1 research project; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
@@ -26,7 +26,7 @@ or nested Git repositories are unnecessary.
 Daisy-Seed/
 ├── instruments/
 │   ├── toy-piano/          # Makefile, README, src, tests, docs, generated build
-│   ├── physical-modeling/  # project plan
+│   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
 │   └── granular/           # project plan
 ├── effects/
 │   ├── reverb/             # buildable original Ambient Reverb
@@ -92,8 +92,7 @@ and a shared effect chain have not been implemented.
 The operator accepted the Toy Piano v0.2 release BIN after reporting “all tests
 green” on October 17, 2026. The [validation report](instruments/toy-piano/docs/VALIDATION.md)
 still lists hardware measurements and detailed MIDI cases without recorded
-results. The next steps are a manual test of Ambient Reverb on the kit, a small
-original physical modeling prototype, and then a bounded granular prototype.
+results. The next steps are a manual test of Ambient Reverb on the kit, hardware validation of the Torus physical modeling instrument, and then a bounded granular prototype.
 Effect variants can share DSP components once those components actually exist.
 Resonator models belong to the physical modeling project. The original Ambient
 Reverb is separate from the planned Clouds/Nimbus study and a possible direct

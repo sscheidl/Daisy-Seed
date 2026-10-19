@@ -32,10 +32,11 @@ resonator header. Research reports were consulted only as text references.
 | [Official Seed resonator example](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/seed/DSP/resonator) | Demonstrates the resonator with random parameters | API and integration example, not a complete instrument for this kit |
 | [Our Iridium Resonator study](https://github.com/sscheidl/Custom-Firmware/blob/3e041b5b9ce98eb687316ffb3c4ba19492ec74e9/analysis/synthesizers/waldorf-iridium/04_resonator/README.md) | Research report on resonator organization and parameters; no open manufacturer source | Third conceptual reference, not a manufacturer library |
 
-**Proposed decision:** Start with an original simple excitation and bounded
-modal bank, then compare with small DaisySP experiments using identical test
-signals. Rings/Torus and Elements remain broader references. Matching their
-sound is not an acceptance criterion; runtime, memory, and useful controls are.
+**Implemented decision (v0.1.0):** The physical modeling project now vendors the
+pinned Torus Part DSP and matching stmlib to provide six models and four voices.
+See [project provenance](../instruments/physical-modeling/torus/UPSTREAM.md) and
+[validation](../instruments/physical-modeling/docs/VALIDATION.md). Elements and
+DaisySP remain references; no additional engine is incorporated.
 
 ## Granular / freeze
 

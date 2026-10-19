@@ -20,7 +20,7 @@ $(PROJECT_ACTIONS):
 	$(MAKE) -C $(PROJECT_DIR_$(PROJECT)) $@
 
 all-projects:
-	$(foreach p,$(BUILDABLE_PROJECTS),$(MAKE) PROJECT=$(p) all &&) true
+	$(foreach p,$(BUILDABLE_PROJECTS),"$(MAKE)" PROJECT=$(p) all &&) true
 
 test-projects:
-	$(foreach p,$(BUILDABLE_PROJECTS),$(MAKE) PROJECT=$(p) test &&) true
+	$(foreach p,$(BUILDABLE_PROJECTS),"$(MAKE)" PROJECT=$(p) test &&) true
