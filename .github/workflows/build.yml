@@ -14,6 +14,9 @@ jobs:
           - project: reverb-fx
             directory: effects/reverb
             image: AmbientReverb
+          - project: physical-modeling
+            directory: instruments/physical-modeling
+            image: PhysicalModeling
     steps:
       - uses: actions/checkout@v4
       - name: Fetch pinned dependencies
@@ -31,15 +34,23 @@ jobs:
       - name: Test DSP and callback with ASan and UBSan
         run: make PROJECT=${{ matrix.project }} test-sanitize
       - name: Test lock-free MIDI queues with ThreadSanitizer
-        if: matrix.project == 'toy-piano'
+        if: matrix.project == 'toy-piano' || matrix.project == 'physical-modeling'
         run: make PROJECT=${{ matrix.project }} test-thread
       - name: Cross-compile firmware
         run: make PROJECT=${{ matrix.project }} -j4
+      - name: Check complete project catalogue
+        if: matrix.project == 'physical-modeling'
+        run: |
+          make all-projects
+          make test-projects
       - name: Read version
         id: version
         run: echo "value=$(make -s PROJECT=${{ matrix.project }} version)" >> "$GITHUB_OUTPUT"
       - name: Check firmware image
         run: python3 scripts/check-firmware.py ${{ matrix.directory }}/build/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
+      - name: Check ARM ELF and static memory reserves
+        if: matrix.project == 'physical-modeling'
+        run: python3 scripts/check-physical-elf.py ${{ matrix.directory }}/build/PhysicalModeling-v${{ steps.version.outputs.value }}.elf
       - name: Generate checksum
         run: cd ${{ matrix.directory }}/build && sha256sum ${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin > SHA256SUMS
       - uses: actions/upload-artifact@v4
@@ -48,5 +59,6 @@ jobs:
           path: |
             ${{ matrix.directory }}/build/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
             ${{ matrix.directory }}/build/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
+            ${{ matrix.directory }}/build/${{ matrix.image }}-v${{ steps.version.outputs.value }}.map
             ${{ matrix.directory }}/build/SHA256SUMS
           if-no-files-found: error
