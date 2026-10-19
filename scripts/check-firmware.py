@@ -18,7 +18,14 @@ assert match, "Could not read the version from src/version.h"
 version = match.group(1)
 
 path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else project / 'build' / f'ToyPiano-v{version}.bin'
-if path.name.startswith('PhysicalModeling-v'):
+if path.name.startswith('NebulaeOnDaisy-v'):
+    granular = root / 'instruments' / 'granular'
+    match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Nebulae version"
+    version = match.group(1)
+    expected_name = f'NebulaeOnDaisy-v{version}.bin'
+    marker = rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('PhysicalModeling-v'):
     physical = root / 'instruments' / 'physical-modeling'
     match = re.search(r'PHYSICAL_MODELING_VERSION\s+"([^"]+)"', (physical / 'src' / 'version.h').read_text())
     assert match, "Could not read the Physical Modeling version"

@@ -61,6 +61,12 @@ For the first Ambient Reverb test, select
 `make PROJECT=reverb-fx program-dfu` with the same J7 connection and bootloader
 sequence. See the [reverb controls and test steps](../effects/reverb/README.md).
 
+For Nebulae on Daisy v0.1.0, use the same **carrier J7 / external bootloader**
+application sequence with `instruments/granular/build/NebulaeOnDaisy-v0.1.0.bin`,
+or explicitly run `make PROJECT=granular program-dfu`. No bootloader update is
+needed for an already compatible external v6.x installation. This implementation
+did not flash a device. Follow its [short smoke plan](../instruments/granular/docs/HARDWARE_TEST_PLAN.md).
+
 ## If the device is missing
 
 Check the data cable, connector and correct BOOT/RESET sequence first. Updates
