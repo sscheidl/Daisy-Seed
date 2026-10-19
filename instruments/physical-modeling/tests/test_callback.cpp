@@ -5,7 +5,9 @@
 #include <cstdio>
 using namespace physical_modeling;
 int main() {
-    hw.Init(); synth = new(synth_storage) Synth{}; synth->Init();
+    hw.Init();
+    std::fill_n(synth_storage, sizeof(synth_storage), static_cast<unsigned char>(0xff));
+    InitializeSynth(); // Exercise actual startup from uninitialized NOLOAD memory.
     for(auto& pot:hw.pot) pot.value=.5f;
     float left[48],right[48]; float* output[]={left,right};
     auto tick=[&](unsigned count) {

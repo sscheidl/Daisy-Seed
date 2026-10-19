@@ -47,7 +47,11 @@ Verified implementation: commit `ccb8e19b90e6d7db3d9f31a3dd52b60f024fe45a`.
 [CI run](https://github.com/sscheidl/Daisy-Seed/actions/runs/39314050298),
 [downloaded and verified firmware artifact](https://github.com/sscheidl/Daisy-Seed/actions/runs/39314050298/artifacts/12216784191),
 [pull request](https://github.com/sscheidl/Daisy-Seed/pull/13).
-Subsequent documentation-only commits do not change the firmware.
+Subsequent documentation and explicit SDRAM-initialization changes retain the
+byte-identical verified firmware. The startup regression poisons NOLOAD backing
+storage before executing the production initialization path. The compiler already
+zero-initializes the value-initialized Synth; the explicit clear makes the upstream
+DSP static-storage assumption visible and remains optimized to the same image.
 
 Firmware `PhysicalModeling-v0.1.0.bin`: **134612 bytes**.
 SHA-256 (identical local Windows and Linux CI binaries):

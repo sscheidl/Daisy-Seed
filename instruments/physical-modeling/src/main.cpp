@@ -20,6 +20,14 @@ uint32_t held = 0;
 static_assert(std::atomic<uint32_t>::is_always_lock_free);
 static_assert(daisy::desktop_devkit::kNumButtons == kNotes.size());
 
+void InitializeSynth() {
+    // .sdram_bss is NOLOAD and is not cleared by the BOOT_SRAM startup.
+    // Upstream DSP constructors assume zero-backed static storage.
+    std::fill_n(synth_storage, sizeof(synth_storage), static_cast<unsigned char>(0));
+    synth = new(synth_storage) Synth{};
+    synth->Init();
+}
+
 void AudioCallback(daisy::AudioHandle::InputBuffer,
                    daisy::AudioHandle::OutputBuffer out, size_t size) {
     hw.UpdateAllControls();
@@ -80,8 +88,7 @@ void ServiceLeds() {
 int main() {
     asm volatile("" : : "r"(kFirmwareId));
     hw.Init();
-    synth = new(synth_storage) Synth{};
-    synth->Init();
+    InitializeSynth();
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(kBlockSize);
     for(unsigned i = 0; i < 100; ++i) {

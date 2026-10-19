@@ -16,7 +16,8 @@ Audio IRQ: official controls at 1 kHz, 16 key edges, pot movement detection,
 stable switch combination, at most 32 MIDI events, four 12-sample DSP quanta.
 Only the audio IRQ mutates parameters and DSP. No locks, heap allocation, USB
 operations, file access, logging or LED DMA occurs there. The placement new in
-startup constructs preallocated SDRAM storage after Hardware::Init; it does not
+startup explicitly clears the NOLOAD SDRAM backing storage, then constructs the DSP
+after Hardware::Init. A poisoned-storage regression exercises this path; it does not
 allocate heap memory. All loops have fixed bounds. The MIDI queue is the tested
 Toy Piano SPSC implementation, copied under this project's namespace.
 
