@@ -3,6 +3,8 @@
 Four-voice Mutable Instruments Rings / Torus instrument for the **Electro-Smith
 Seed3 Desktop Development Kit**. Native C++17, pinned libDaisy, 48 kHz stereo.
 No external audio input or extra synthesis/reverb engine is used.
+Software status: **SOFTWARE READY — HARDWARE TEST PENDING**; see
+[executed validation and artifact](docs/VALIDATION.md).
 
 ## Models and controls
 
