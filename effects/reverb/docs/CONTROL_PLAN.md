@@ -4,6 +4,9 @@
 October 20, 2026, against `sscheidl/Daisy-Seed` main at `abc5a71` and the
 [Walrus Audio Slöer digital manual](https://cdn.shopify.com/s/files/1/0906/8480/files/Sloer_Digital_Manual.pdf?v=1689191307)
 (7-page PDF, SHA-256 `6c773b95e83fdcc2237f7a8005b3b94c99284cb1780defba77ea0d1d3d18962d`).
+The [Thomann listing and front-panel photo](https://www.thomann.de/de/walrus_audio_sloeer_ambient_reverb_black.htm)
+confirm the black pedal's physical layout: four top knobs, a Width switch,
+X and Stretch faders, a Mode knob, and Bypass and Sustain footswitches.
 The manual documents the pedal's controls, not its internal DSP algorithm.
 The firmware is an original Ambient Reverb and no sonic equivalence is claimed.
 The [current v0.1 controls](../README.md#what-it-does) remain authoritative until
