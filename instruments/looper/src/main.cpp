@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-// Looper v0.1 for the Daisy Seed3 Desktop Dev Kit, libDaisy commit in the
-// repository README. Engine core only: no SD card, MIDI, effects or Slice/Skip.
+// Looper for the Daisy Seed3 Desktop Dev Kit, libDaisy commit in the repository
+// README. Engine with loop modes and Slice/Skip; no SD card, MIDI or effects.
 #include "looper_engine.h"
 #include "version.h"
 const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
@@ -18,15 +18,20 @@ static_assert(LOOPER_BUFFER_FRAMES <= looper::kMaxFrames, "buffer exceeds the en
 
 namespace keys {
 enum : unsigned { Record = 0, Play = 1, Undo = 2, Reverse = 3, Erase = 4, LoopMode = 5, Seam = 6 };
+// S9..S12 select Sound on Sound, Replace, Frippertronics, Resample directly.
+constexpr unsigned kFirstMode = 8, kModes = 4;
 }
 namespace knobs {
-enum : unsigned { Varispeed = 0, Inertia = 1 };
+enum : unsigned {
+    Varispeed = 0, Inertia = 1, Slope = 2, Start = 3, Size = 4, Slice = 5, Skip = 6, Decay = 7
+};
 }
 namespace ui {
 enum : uint32_t {
     Recording = 1, RecordPending = 2, Playing = 4, CanUndo = 8, CanRedo = 16, Reversed = 32,
-    HasLoop = 64, Replace = 128, Crossfade = 256
+    HasLoop = 64, Crossfade = 128
 };
+constexpr unsigned kModeShift = 8;  // two bits of loop mode above the flags
 }
 
 static desktop_devkit::Hardware hw;
@@ -40,6 +45,7 @@ static looper::Engine engine;
 static uint32_t downMask = 0;
 static std::atomic<uint32_t> uiState{0}, maximumCycles{0}, overruns{0};
 static uint32_t budgetCycles = 0;
+static float settled[knobs::Decay + 1] = {-1, -1, -1, -1, -1, -1, -1, -1};
 
 // Knob 0: -24..+36 semitones, rounded to whole semitones; unity at 40 %.
 static float VarispeedFromKnob(float k) {
@@ -47,11 +53,20 @@ static float VarispeedFromKnob(float k) {
     return std::round(looper::kMinSemitones + (looper::kMaxSemitones - looper::kMinSemitones) * k);
 }
 
+// Ignores pot noise below 0.2 % so the window and slices do not jitter;
+// the exact endpoints always pass.
+static float Settled(unsigned knob) {
+    const float v = hw.pot[knob].Value();
+    if (std::abs(v - settled[knob]) > .002f || v <= 0.f || v >= 1.f)
+        settled[knob] = v;
+    return settled[knob];
+}
+
 // The engine is owned by the audio callback; controls are read there too.
 static void Controls() {
     hw.UpdateAllControls();
     uint32_t presses = 0;
-    for (unsigned i = 0; i < 8; ++i) {
+    for (unsigned i = 0; i < 16; ++i) {
         const uint32_t bit = 1u << i;
         if (hw.button[i].FallingEdge())
             downMask &= ~bit;
@@ -75,18 +90,26 @@ static void Controls() {
     if (presses & (1u << keys::Erase))
         engine.Erase();
     if (presses & (1u << keys::LoopMode))
-        engine.SetLoopMode(engine.GetLoopMode() == looper::LoopMode::SoundOnSound
-                               ? looper::LoopMode::Replace
-                               : looper::LoopMode::SoundOnSound);
+        engine.SetLoopMode(looper::LoopMode((unsigned(engine.GetLoopMode()) + 1) % keys::kModes));
+    for (unsigned m = 0; m < keys::kModes; ++m)
+        if (presses & (1u << (keys::kFirstMode + m)))
+            engine.SetLoopMode(looper::LoopMode(m));
     if (presses & (1u << keys::Seam))
         engine.SetSeamMode(engine.GetSeamMode() == looper::SeamMode::Window
                                ? looper::SeamMode::Crossfade
                                : looper::SeamMode::Window);
     engine.SetVarispeed(VarispeedFromKnob(hw.pot[knobs::Varispeed].Value()));
     engine.SetInertia(hw.pot[knobs::Inertia].Value());
+    engine.SetInertialSlope(Settled(knobs::Slope));
+    engine.SetStart(Settled(knobs::Start));
+    engine.SetSize(Settled(knobs::Size));
+    engine.SetSlice(Settled(knobs::Slice));
+    engine.SetSkip(Settled(knobs::Skip));
+    engine.SetFrippertronicsDecay(Settled(knobs::Decay));
 
     uint32_t state = 0;
-    if (engine.GetState() == looper::State::Recording || engine.Overdubbing())
+    if (engine.GetState() == looper::State::Recording || engine.Overdubbing() ||
+        engine.Resampling())
         state |= ui::Recording;
     if (engine.RecordPending())
         state |= ui::RecordPending;
@@ -100,8 +123,7 @@ static void Controls() {
         state |= ui::Reversed;
     if (engine.Length() > 0)
         state |= ui::HasLoop;
-    if (engine.GetLoopMode() == looper::LoopMode::Replace)
-        state |= ui::Replace;
+    state |= uint32_t(engine.GetLoopMode()) << ui::kModeShift;
     if (engine.GetSeamMode() == looper::SeamMode::Crossfade)
         state |= ui::Crossfade;
     uiState.store(state, std::memory_order_relaxed);
@@ -150,7 +172,6 @@ int main() {
     std::uninitialized_fill_n(b, LOOPER_BUFFER_FRAMES, looper::Frame{});
     if (!engine.Init(hw.seed.AudioSampleRate(), a, b, LOOPER_BUFFER_FRAMES))
         Halt();
-    engine.SetInertialSlope(.5f);
     budgetCycles = (SystemCoreClock / 48000u) * 48u;
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CYCCNT = 0;
@@ -172,7 +193,8 @@ int main() {
         hw.SetLed(keys::Undo, (s & ui::CanRedo) ? .15f : ((s & ui::CanUndo) ? .5f : 0.f));
         hw.SetLed(keys::Reverse, (s & ui::Reversed) ? .5f : 0.f);
         hw.SetLed(keys::Erase, (s & ui::HasLoop) ? .15f : 0.f);
-        hw.SetLed(keys::LoopMode, (s & ui::Replace) ? .5f : 0.f);
+        for (unsigned m = 0; m < keys::kModes; ++m)
+            hw.SetLed(keys::kFirstMode + m, ((s >> ui::kModeShift) & 3u) == m ? .5f : 0.f);
         hw.SetLed(keys::Seam, (s & ui::Crossfade) ? .5f : 0.f);
         hw.SetLed(15, (frame & (1u << 30)) ? 1.f : 0.f);
         hw.UpdateLeds();

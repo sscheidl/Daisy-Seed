@@ -7,12 +7,18 @@
 namespace looper {
 namespace {
 
-constexpr float kGlideCoefficient = 0.001f;   // one-pole per sample, about 21 ms
-constexpr float kGlideJumpSemitones = 4.f;    // larger target changes are immediate
-constexpr float kIncrementCoefficient = 0.1f; // head increment smoothing per sample
+constexpr float kGlideCoefficient = 0.001f;    // one-pole per sample, about 21 ms
+constexpr float kGlideJumpSemitones = 4.f;     // larger target changes are immediate
+constexpr float kIncrementCoefficient = 0.1f;  // head increment smoothing per sample
+constexpr float kRetentionCoefficient = 0.005f;  // Frippertronics k smoothing, about 4 ms
 constexpr float kInertiaOff = 0.03f;
 constexpr float kSlopeDeadBand = 0.05f;
 constexpr float kKnobDeadBand = 0.003f;
+constexpr float kSliceActive = 0.02f;
+constexpr float kSkipActive = 0.01f;
+constexpr float kRepeatChance = 0.6f;
+constexpr float kOffsetChance = 0.5f;
+constexpr float kPitchChance = 0.25f;
 
 Frame Mix(Frame a, Frame b, float t) {
     return {a.left + (b.left - a.left) * t, a.right + (b.right - a.right) * t};
@@ -24,6 +30,16 @@ float KnobDeadBand(float x) {
         return 0.f;
     return x > 1.f - kKnobDeadBand ? 1.f : x;
 }
+float Knob(float x) { return x == x ? Clamp(x, 0.f, 1.f) : 0.f; }
+// Transparent below 0.95, soft knee towards 1.0 above.
+float SoftLimit(float x) {
+    const float a = std::fabs(x);
+    if (a <= .95f)
+        return x;
+    const float e = a - .95f;
+    return std::copysign(.95f + .05f * e / (.05f + e), x);
+}
+Frame SoftLimit(Frame f) { return {SoftLimit(f.left), SoftLimit(f.right)}; }
 // Linear gain over the first and last kSeamFrames of a span; exactly 0 at both ends.
 float EdgeGain(uint32_t index, uint32_t span) {
     float g = 1.f;
@@ -82,15 +98,20 @@ void Engine::ProcessSample(float inLeft, float inRight, float& outLeft, float& o
         WritePostRoll(inLeft, inRight);
         UpdateRamps();
         if (pendingOp_ != Op::None && opGain_ <= 0.f && !overdub_ && recGain_ <= 0.f &&
-            postRoll_ >= postRollLength_)
+            postRoll_ >= postRollLength_ &&
+            (capture_ == Capture::Off || capture_ == Capture::Waiting))
             ExecuteOperation();
-        if (recordRequest_ && CanStartOverdub())
-            StartOverdub();
+        if (recordRequest_ && CanStartLayer())
+            StartLayer();
         if (state_ == State::Looping) {
+            if (segmentDirty_)
+                UpdateSegmentation();
             if (windowDirty_ && !jumping_)
                 ApplyWindow();
+            AdvanceSlices();
             UpdateSeamLatches();
             AdvanceHead(inLeft, inRight, outLeft, outRight);
+            CaptureSample(outLeft + inLeft, outRight + inRight);  // what is heard
         }
     }
     previousInLeft_ = inLeft;
@@ -111,12 +132,16 @@ void Engine::PressRecord() {
         FinishFirstTake();
         break;
     case State::Looping:
-        if (overdub_)
+        if (capture_ == Capture::Recording)
+            StopCapture();
+        else if (capture_ != Capture::Off)
+            break;  // post-roll and commit finish by themselves
+        else if (overdub_)
             overdub_ = false;
         else if (recordRequest_)
             recordRequest_ = false;
-        else if (CanStartOverdub())
-            StartOverdub();
+        else if (CanStartLayer())
+            StartLayer();
         else
             recordRequest_ = true;  // started as soon as the engine is idle
         break;
@@ -126,12 +151,12 @@ void Engine::PressRecord() {
 void Engine::SetPlaying(bool playing) { playing_ = playing; }
 
 void Engine::Undo() {
-    if (ready_ && canUndo_ && state_ != State::Recording)
+    if (ready_ && CanUndo() && state_ != State::Recording)
         RequestOperation(Op::Undo);
 }
 
 void Engine::Redo() {
-    if (ready_ && canRedo_ && state_ != State::Recording)
+    if (ready_ && CanRedo() && state_ != State::Recording)
         RequestOperation(Op::Redo);
 }
 
@@ -150,12 +175,14 @@ void Engine::Erase() {
 void Engine::RequestOperation(Op op) {
     overdub_ = false;  // punch out first; the operation waits for the fade
     recordRequest_ = false;
+    capture_ = Capture::Off;  // an unfinished resample is abandoned
     pendingOp_ = op;
 }
 
 bool Engine::Busy() const {
     return state_ == State::Recording || overdub_ || recGain_ > 0.f || recordRequest_ ||
-           pendingOp_ != Op::None || postRoll_ < postRollLength_ || syncPending_;
+           pendingOp_ != Op::None || postRoll_ < postRollLength_ || syncPending_ ||
+           capture_ != Capture::Off;
 }
 
 bool Engine::LoadLoop(const Frame* source, uint32_t frames) {
@@ -169,13 +196,7 @@ bool Engine::LoadLoop(const Frame* source, uint32_t frames) {
     canUndo_ = true;  // the previous state stays in the other buffer
     canRedo_ = false;
     mirror_ = false;
-    state_ = State::Looping;
-    ComputeWindow(windowStart_, windowSize_);
-    windowDirty_ = false;
-    edgeMode_ = seamRequest_;
-    tailMode_ = DesiredTailMode();
-    jumping_ = false;
-    ResetHead(0);
+    EnterLoop(0);
     opGain_ = 0.f;  // fade the new material in
     return true;
 }
@@ -186,7 +207,7 @@ void Engine::SetVarispeed(float semitones) {
 }
 
 void Engine::SetInertia(float amount) {
-    amount = amount == amount ? Clamp(amount, 0.f, 1.f) : 0.f;
+    amount = Knob(amount);
     if (amount != inertia_) {
         inertia_ = amount;
         UpdateCoefficients();
@@ -216,6 +237,21 @@ void Engine::SetSize(float size) {
         windowDirty_ = true;
     }
 }
+
+void Engine::SetFrippertronicsDecay(float decay) {
+    decay_ = Knob(decay);
+    retentionTarget_ = kMaxRetention * (1.f - decay_);
+}
+
+void Engine::SetSlice(float slice) {
+    slice = Knob(slice);
+    if (slice != slice_) {
+        slice_ = slice;
+        segmentDirty_ = true;
+    }
+}
+
+void Engine::SetSkip(float skip) { skip_ = Knob(skip); }
 
 void Engine::UpdateCoefficients() {
     float s = 2.f * slope_ - 1.f;
@@ -268,14 +304,19 @@ void Engine::UpdateSpeed() {
     speed_ += (target - speed_) * (target > speed_ ? coefficientUp_ : coefficientDown_);
     if (std::fabs(target - speed_) < 1e-6f)
         speed_ = target;
-    const float limited = Clamp(speed_, 0.f, kMaxSpeed);
+    if (glideLeft_ > 0) {  // linear slice pitch glide
+        pitch_ += pitchStep_;
+        if (--glideLeft_ == 0)
+            pitch_ = pitchTarget_;
+    }
+    const float limited = Clamp(speed_ * pitch_, 0.f, kMaxSpeed);
     increment_ += (limited - increment_) * kIncrementCoefficient;
     if (std::fabs(limited - increment_) < 1e-6f)
         increment_ = limited;
 }
 
 void Engine::UpdateRamps() {
-    const int wanted = reverseRequest_ ? -1 : 1;
+    const int wanted = reverseRequest_ != sliceReverse_ ? -1 : 1;
     if (wanted != direction_) {
         directionGain_ -= 1.f / float(kReverseRampFrames);
         if (directionGain_ <= 0.f) {
@@ -293,6 +334,9 @@ void Engine::UpdateRamps() {
         recGain_ = std::min(1.f, recGain_ + 1.f / float(kPunchFadeFrames));
     else if (recGain_ > 0.f)
         recGain_ = std::max(0.f, recGain_ - 1.f / float(kPunchFadeFrames));
+    retention_ += (retentionTarget_ - retention_) * kRetentionCoefficient;
+    if (std::fabs(retentionTarget_ - retention_) < 1e-6f)
+        retention_ = retentionTarget_;
 }
 
 // ---------------------------------------------------------------- layers
@@ -308,6 +352,7 @@ void Engine::StartFirstTake() {
     postRoll_ = postRollLength_ = 0;
     overdub_ = recordRequest_ = false;
     recGain_ = 0.f;
+    capture_ = Capture::Off;
     jumping_ = false;
     playing_ = true;
 }
@@ -341,13 +386,8 @@ void Engine::FinishFirstTake() {
     mirror_ = true;
     canUndo_ = true;
     canRedo_ = false;
-    state_ = State::Looping;
     ComputeWindow(windowStart_, windowSize_);
-    windowDirty_ = false;
-    edgeMode_ = seamRequest_;
-    tailMode_ = DesiredTailMode();
-    jumping_ = false;
-    ResetHead(windowStart_);
+    EnterLoop(windowStart_);
     if (windowStart_ != 0 || direction_ < 0)
         opGain_ = 0.f;  // playback does not begin on the faded-in first frame
 }
@@ -368,9 +408,17 @@ void Engine::WritePostRoll(float inLeft, float inRight) {
         tail_[active_] = postRollLength_;
 }
 
-bool Engine::CanStartOverdub() const {
+bool Engine::CanStartLayer() const {
     return state_ == State::Looping && pendingOp_ == Op::None && !overdub_ && recGain_ <= 0.f &&
-           postRoll_ >= postRollLength_ && !(syncPending_ && active_ != syncSource_);
+           capture_ == Capture::Off && postRoll_ >= postRollLength_ &&
+           !(syncPending_ && active_ != syncSource_);
+}
+
+void Engine::StartLayer() {
+    if (mode_ == LoopMode::Resample)
+        StartCapture();
+    else
+        StartOverdub();
 }
 
 // A new layer: the other buffer becomes the snapshot of the current state.
@@ -398,11 +446,65 @@ void Engine::StartOverdub() {
     writeMode_ = mode_;
 }
 
+// Resample: what is heard (loop playback plus input) is written into the
+// other buffer from frame 0 with its own length; the current loop becomes the
+// undo state when the capture is committed.
+void Engine::StartCapture() {
+    captureTarget_ = 1 - active_;
+    // The other buffer is overwritten: the old undo state and any copy into
+    // it are gone. The current state is complete in the active buffer here.
+    syncPending_ = false;
+    mirror_ = false;
+    canUndo_ = canRedo_ = false;
+    length_[captureTarget_] = 0;
+    tail_[captureTarget_] = 0;
+    capture_ = Capture::Recording;
+    capturePosition_ = 0;
+    recordRequest_ = false;
+}
+
+void Engine::StopCapture() {
+    captureLength_ = capturePosition_;
+    if (captureLength_ == 0) {
+        capture_ = Capture::Off;
+        return;
+    }
+    capturePost_ = 0;
+    capturePostLength_ = capacity_ - captureLength_ >= kTailFrames ? kTailFrames : 0;
+    capture_ = capturePostLength_ ? Capture::PostRoll : Capture::Waiting;
+    if (capture_ == Capture::Waiting)
+        pendingOp_ = Op::Commit;
+}
+
+void Engine::CaptureSample(float left, float right) {
+    if (capture_ != Capture::Recording && capture_ != Capture::PostRoll)
+        return;
+    Frame* target = buffer_[captureTarget_];
+    const Frame heard = SoftLimit(Frame{left, right});
+    if (capture_ == Capture::Recording) {
+        const uint32_t i = capturePosition_;
+        if (i < capacity_) {
+            const float g = i < kRecordFadeFrames ? float(i) / float(kRecordFadeFrames) : 1.f;
+            target[i] = Scale(heard, g);
+        }
+        if (++capturePosition_ >= capacity_)
+            StopCapture();  // automatic stop at the buffer limit
+        return;
+    }
+    const uint32_t i = captureLength_ + capturePost_;
+    if (i < capacity_)
+        target[i] = Scale(heard, 1.f - float(capturePost_) / float(kTailFrames));
+    if (++capturePost_ >= capturePostLength_) {
+        capture_ = Capture::Waiting;
+        pendingOp_ = Op::Commit;
+    }
+}
+
 void Engine::ExecuteOperation() {
     const Op op = pendingOp_;
     pendingOp_ = Op::None;
     recordRequest_ = false;
-    const uint32_t position = Position();
+    uint32_t position = Position();
     switch (op) {
     case Op::Undo:
         if (canUndo_) {
@@ -431,18 +533,44 @@ void Engine::ExecuteOperation() {
             canRedo_ = false;
         }
         break;
+    case Op::Commit:
+        if (capture_ == Capture::Waiting) {
+            active_ = captureTarget_;
+            length_[active_] = captureLength_;
+            tail_[active_] = capturePostLength_;
+            canUndo_ = true;  // back to the loop that was resampled
+            canRedo_ = false;
+            capture_ = Capture::Off;
+            position = 0;
+        }
+        break;
     case Op::None:
         break;
     }
-    state_ = Length() > 0 ? State::Looping : State::Empty;
-    if (state_ == State::Looping) {
+    if (Length() > 0) {
         ComputeWindow(windowStart_, windowSize_);
-        windowDirty_ = false;
-        edgeMode_ = seamRequest_;
-        tailMode_ = DesiredTailMode();
-        jumping_ = false;
-        ResetHead(position < Length() ? position : 0);
+        if (op == Op::Commit)
+            position = windowStart_;
+        EnterLoop(position < Length() ? position : 0);
+    } else {
+        state_ = State::Empty;
     }
+}
+
+// Starts looping the current state at `absolute` while the output is silent:
+// seams, window and slices are set directly, without crossfades.
+void Engine::EnterLoop(uint32_t absolute) {
+    state_ = State::Looping;
+    ComputeWindow(windowStart_, windowSize_);
+    playStart_ = windowStart_;
+    playSize_ = windowSize_;
+    windowDirty_ = false;
+    edgeMode_ = seamRequest_;
+    tailMode_ = DesiredTailMode();
+    jumping_ = false;
+    ResetSlices();
+    UpdateSegmentation();
+    ResetHead(absolute);
 }
 
 // ---------------------------------------------------------------- window and seams
@@ -459,46 +587,76 @@ void Engine::ComputeWindow(uint32_t& start, uint32_t& size) const {
     size = std::min(length, kMinWindowFrames + uint32_t(double(size_) * double(size_) * span));
 }
 
+void Engine::PlayWindowTarget(uint32_t& start, uint32_t& size) const {
+    if (repeating_) {
+        start = Absolute(repeatStart_, windowStart_);
+        size = repeatSize_;
+    } else {
+        start = windowStart_;
+        size = windowSize_;
+    }
+}
+
 void Engine::ApplyWindow() {
-    windowDirty_ = false;
     uint32_t start, size;
     ComputeWindow(start, size);
-    if (start == windowStart_ && size == windowSize_)
-        return;
-    const uint32_t length = Length();
-    const uint32_t absolute = Absolute(head_.index);
-    const uint32_t oldStart = windowStart_, oldSize = windowSize_, oldIndex = head_.index;
-    windowStart_ = start;
-    windowSize_ = size;
-    const uint32_t relative = absolute >= start ? absolute - start : absolute + length - start;
-    const bool edge = size >= kMinWindowFrames &&
-                      (relative < kSeamFrames || relative + kSeamFrames >= size);
-    if (relative < size && !edge) {
-        head_.index = relative;
-        return;
+    if (start != windowStart_ || size != windowSize_) {
+        windowStart_ = start;
+        windowSize_ = size;
+        repeating_ = false;  // a repeat belongs to the old window
+        UpdateSegmentation();
     }
-    // Crossfade from a second head that keeps reading the old window.
-    jump_.index = oldIndex;
-    jumpStart_ = oldStart;
-    jumpSize_ = oldSize;
-    jump_.previous = head_.previous;
-    jump_.current = head_.current;
-    jumping_ = true;
-    jumpGain_ = 1.f;
-    head_.index = relative < size ? relative : (direction_ > 0 ? 0 : size - 1);
-    head_.current = ReadSeam(head_.index);
-    head_.previous = head_.current;
+    PlayWindowTarget(start, size);
+    if ((start == playStart_ && size == playSize_) || MoveHead(start, size, Absolute(head_.index)))
+        windowDirty_ = false;
+}
+
+// Puts the head into the window (start, size) at `absolute`. A position change,
+// a position outside the window or on a window edge starts a 384-frame
+// crossfade from a second head that keeps reading the old window. Returns
+// false when that is needed while a crossfade is still running.
+bool Engine::MoveHead(uint32_t start, uint32_t size, uint32_t absolute) {
+    if (size == 0)
+        return false;
+    uint32_t relative = RelativeTo(absolute, start);
+    bool jump = absolute != Absolute(head_.index);
+    if (relative >= size) {
+        relative = direction_ > 0 ? 0 : size - 1;
+        jump = true;
+    }
+    // Either window's edge region shapes the read, so leaving or entering one
+    // must crossfade too.
+    if (size >= kMinWindowFrames && (relative < kSeamFrames || relative + kSeamFrames >= size))
+        jump = true;
+    if (playSize_ >= kMinWindowFrames &&
+        (head_.index < kSeamFrames || head_.index + kSeamFrames >= playSize_))
+        jump = true;
+    if (jump) {
+        if (jumping_)
+            return false;
+        jump_ = head_;
+        jumpStart_ = playStart_;
+        jumpSize_ = playSize_;
+        jumping_ = true;
+        jumpGain_ = 1.f;
+    }
+    playStart_ = start;
+    playSize_ = size;
+    head_.index = relative;
+    if (jump) {
+        head_.current = ReadSeam(relative);
+        head_.previous = head_.current;
+    }
+    return true;
 }
 
 void Engine::ResetHead(uint32_t absolute) {
     const uint32_t length = Length();
     uint32_t relative = 0;
     if (length > 0) {
-        absolute = std::min(absolute, length - 1);
-        relative = absolute >= windowStart_ ? absolute - windowStart_
-                                            : absolute + length - windowStart_;
-        if (relative >= windowSize_)
-            relative = direction_ > 0 ? 0 : windowSize_ - 1;
+        relative = RelativeTo(std::min(absolute, length - 1), playStart_);
+        if (relative >= playSize_)
+            relative = direction_ > 0 ? 0 : playSize_ - 1;
     }
     head_.index = relative;
     head_.previous = {};
@@ -518,7 +676,7 @@ void Engine::UpdateSeamLatches() {
     if (jumping_)
         return;
     const uint32_t relative = head_.index;
-    const uint32_t size = windowSize_;
+    const uint32_t size = playSize_;
     if (edgeMode_ != seamRequest_ &&
         (size < kMinWindowFrames || (relative >= kSeamFrames && relative + kSeamFrames < size)))
         edgeMode_ = seamRequest_;
@@ -539,6 +697,10 @@ uint32_t Engine::Absolute(uint32_t relative, uint32_t start) const {
     while (a >= length)
         a -= length;
     return a;
+}
+
+uint32_t Engine::RelativeTo(uint32_t absolute, uint32_t start) const {
+    return absolute >= start ? absolute - start : absolute + Length() - start;
 }
 
 Frame Engine::Raw(uint32_t index) const {
@@ -584,6 +746,148 @@ Frame Engine::ReadSeam(uint32_t relative, uint32_t start, uint32_t size) const {
     return x;
 }
 
+// ---------------------------------------------------------------- Slice/Skip
+
+// Base segment: the whole window below 4 s, otherwise the window divided by the
+// smallest power of two that gives segments of at most about 2 s. Slices
+// divide a segment by 1, 2, 4, 8 or 16 and are at least 1152 frames long.
+void Engine::UpdateSegmentation() {
+    segmentDirty_ = false;
+    const uint32_t size = windowSize_;
+    uint32_t base = size;
+    if (size >= kFreeSegmentLimit) {
+        const uint32_t needed = size / kSegmentTarget;
+        uint32_t parts = 1;
+        while (parts < needed)
+            parts <<= 1;
+        base = size / parts;
+    }
+    const float scaled = 4.9f * slice_;
+    const uint32_t step = std::min<uint32_t>(uint32_t(scaled), 4);
+    sliceDivisor_ = 1u << step;
+    repeatDepth_ = uint32_t(6.1f * (scaled - float(step)));
+    sliceLength_ = std::min<uint32_t>(std::max(base / sliceDivisor_, kMinWindowFrames),
+                                      std::max<uint32_t>(size, 1));
+    sliceCount_ = std::max<uint32_t>(1, size / std::max<uint32_t>(sliceLength_, 1));
+}
+
+void Engine::ResetSlices() {
+    repeating_ = sliceReverse_ = sliceOffset_ = false;
+    pitch_ = pitchTarget_ = 1.f;
+    pitchStep_ = 0.f;
+    glideLeft_ = 0;
+    sliceCounter_ = 0.0;
+}
+
+// The slice counter advances by the distance the head travels.
+void Engine::AdvanceSlices() {
+    if (sliceLength_ == 0 || increment_ <= 0.f)
+        return;
+    sliceCounter_ += double(increment_);
+    if (sliceCounter_ < double(sliceLength_))
+        return;
+    sliceCounter_ -= double(sliceLength_);
+    if (sliceCounter_ >= double(sliceLength_))
+        sliceCounter_ = 0.0;
+    SliceBoundary();
+}
+
+uint32_t Engine::NextRandom() {
+    uint32_t x = random_;  // xorshift32
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    random_ = x;
+    return x;
+}
+
+uint32_t Engine::GlideFrames(float fraction) {
+    const uint32_t choices = uint32_t(3.99f * fraction) + 1;  // of 0, 1/4, 1/2, 3/4, 1
+    return uint32_t(float(Below(choices)) * 0.25f * float(sliceLength_));
+}
+
+void Engine::StartPitch(float target, uint32_t glideFrames) {
+    ++events_.pitches;
+    pitchTarget_ = target;
+    if (glideFrames == 0) {
+        pitch_ = target;
+        glideLeft_ = 0;
+        return;
+    }
+    pitchStep_ = (target - pitch_) / float(glideFrames);
+    glideLeft_ = glideFrames;
+}
+
+// At each boundary the previous slice's transformations end and new ones are
+// drawn (analysis section 7). Repeats loop a short window at the head; Skip
+// moves the head, reverses the slice or changes its pitch.
+void Engine::SliceBoundary() {
+    ++events_.boundaries;
+    const bool wasRepeating = repeating_;
+    repeating_ = sliceReverse_ = sliceOffset_ = false;
+    pitch_ = pitchTarget_ = 1.f;
+    glideLeft_ = 0;
+    const uint32_t size = windowSize_;
+    const uint32_t slice = sliceLength_;
+    if (size == 0)
+        return;
+    uint32_t relative = RelativeTo(Absolute(head_.index), windowStart_);
+    if (relative >= size)
+        relative = 0;
+    bool moved = false;
+    if (skip_ > kSkipActive) {
+        const float scaled = 5.99f * skip_;
+        const uint32_t zone = uint32_t(scaled);
+        const float f = scaled - float(zone);
+        if (!jumping_ && Chance(kOffsetChance)) {
+            if (f >= .5f)  // jump to a random slice boundary
+                relative = Below(sliceCount_) * slice;
+            else           // move ahead by up to 2 f slice lengths
+                relative = uint32_t((uint64_t(relative) +
+                                     uint64_t(float(Below(101)) * .01f * 2.f * f * float(slice))) %
+                                    size);
+            sliceOffset_ = moved = true;
+            ++events_.offsets;
+        }
+        if (zone >= 1 && Chance(.125f + .5f * f)) {
+            sliceReverse_ = true;
+            ++events_.reverses;
+        }
+        if (zone >= 2 && Chance(kPitchChance)) {
+            if (zone == 2) {  // micro pitch within +-2 semitones
+                StartPitch(std::exp2((4.f * f * Uniform() - 2.f) / 12.f), GlideFrames(f));
+            } else if (zone == 3) {  // octaves
+                static constexpr float kOctaves[] = {1.f, 2.f, .5f, 4.f};
+                StartPitch(kOctaves[Below(uint32_t(3.99f * f) + 1)], 0);
+            } else {  // semitone jump, in zone 5 sometimes with a glide
+                const float semitones = std::floor(24.f * f) * (Chance(.5f) ? 1.f : -1.f);
+                const uint32_t glide = zone >= 5 && Chance(f) ? GlideFrames(f) : 0;
+                StartPitch(std::exp2(semitones / 12.f), glide);
+            }
+        }
+    }
+    if (slice_ > kSliceActive && Chance(kRepeatChance)) {
+        const uint32_t j = Below(repeatDepth_ + 1);
+        if (j > 0) {
+            const uint32_t r = std::min(std::max(slice >> j, kMinWindowFrames), size);
+            const bool backwards = reverseRequest_ != sliceReverse_;
+            uint32_t from = backwards ? (relative + 1 >= r ? relative + 1 - r : 0) : relative;
+            if (from + r > size)
+                from = size - r;
+            repeating_ = true;
+            repeatStart_ = from;
+            repeatSize_ = r;
+            ++events_.repeats;
+        }
+    }
+    if (moved || repeating_ || wasRepeating) {
+        uint32_t start, length;
+        PlayWindowTarget(start, length);
+        if (!MoveHead(start, length, Absolute(relative, windowStart_)))
+            windowDirty_ = true;  // applied once the running crossfade ends
+    }
+}
+
 // ---------------------------------------------------------------- head
 
 void Engine::AdvanceHead(float inLeft, float inRight, float& outLeft, float& outRight) {
@@ -593,7 +897,7 @@ void Engine::AdvanceHead(float inLeft, float inRight, float& outLeft, float& out
     if (crossings > 0) {
         phase_ -= float(crossings);
         const float inverse = 1.f / increment_;
-        const uint32_t size = windowSize_;
+        const uint32_t size = playSize_;
         for (uint32_t c = 1; c <= crossings; ++c) {
             // Input at the moment this frame is crossed inside the sample.
             const float t = Clamp((float(c) - start) * inverse, 0.f, 1.f);
@@ -637,18 +941,24 @@ void Engine::WriteFrame(uint32_t absolute, Frame input, float gain) {
         return;  // unreachable: layers start only once this buffer is complete
     EnsureCopied(absolute);
     Frame& x = buffer_[active_][absolute];
-    if (writeMode_ == LoopMode::SoundOnSound) {
+    float keep = 1.f;  // what remains of the old material, also for the post-roll
+    if (writeMode_ == LoopMode::Replace) {
+        x = Mix(x, input, gain);
+        keep = 1.f - gain;
+    } else if (writeMode_ == LoopMode::Frippertronics && !sliceOffset_) {
+        // old x k + input; the factor and the input fade in with the punch.
+        keep = 1.f - gain * (1.f - retention_);
+        x = SoftLimit(Frame{x.left * keep + input.left * gain, x.right * keep + input.right * gain});
+    } else {  // Sound on Sound, also Frippertronics while a Skip offset is active
         x.left = Clamp(x.left + input.left * gain, -1.f, 1.f);
         x.right = Clamp(x.right + input.right * gain, -1.f, 1.f);
-        return;
     }
-    x = Mix(x, input, gain);
-    // The post-roll belongs to the start of the loop and is replaced with it.
-    if (absolute < tail_[active_]) {
+    // The post-roll belongs to the start of the loop and decays with it.
+    if (keep < 1.f && absolute < tail_[active_]) {
         const uint32_t t = Length() + absolute;
         if (t < capacity_) {
             EnsureCopied(t);
-            buffer_[active_][t] = Scale(buffer_[active_][t], 1.f - gain);
+            buffer_[active_][t] = Scale(buffer_[active_][t], keep);
         }
     }
 }

@@ -683,6 +683,354 @@ static void TestBounds() {
     PASS("bounds: x8, reverse, windows, odd blocks; guards intact\n");
 }
 
+// ------------------------------------------------------------------ loop modes
+
+static void LoadTone(Rig& rig, uint32_t frames, double hz, float amplitude) {
+    std::vector<Frame> v(frames);
+    for (uint32_t i = 0; i < frames; ++i)
+        v[i] = Tone(i, hz, amplitude);
+    CHECK(rig.engine.LoadLoop(v.data(), frames));
+    rig.Run(kOpRampFrames + 10);
+}
+
+static void TestFrippertronics() {
+    Rig rig(3 * kSecond);
+    Engine& e = rig.engine;
+    // Decay knob as in the manual: left keeps, right erases; default -3 dB.
+    CHECK_NEAR(e.FrippertronicsRetention(), .707, 1e-4);
+    struct Knob {
+        float decay;
+        double k;
+    };
+    for (const Knob c : {Knob{0.f, .999}, Knob{.25f, .999 * .75}, Knob{1.f, 0.0}}) {
+        e.SetFrippertronicsDecay(c.decay);
+        rig.Run(4000);
+        CHECK_NEAR(e.FrippertronicsRetention(), c.k, 1e-4);
+    }
+    e.SetFrippertronicsDecay(0.f);
+    rig.Run(200);  // one-pole 0.005 per sample: 1 - e^-1 of the way after 200 samples
+    CHECK_NEAR(e.FrippertronicsRetention(), .999 * (1.0 - std::pow(.995, 200.0)), 1e-3);
+
+    const uint32_t length = kSecond;
+    rig.RecordTake(length, Constant(.5f));
+    rig.WaitIdle(Constant(.5f));  // the post-roll hears the input
+    CHECK(e.TailLength() == kTailFrames);
+    // Undo and redo are locked in this mode.
+    e.SetLoopMode(LoopMode::Frippertronics);
+    CHECK(!e.CanUndo() && !e.CanRedo());
+    e.Undo();
+    rig.Run(1000);
+    CHECK(!e.OperationPending() && e.Length() == length && e.GetState() == State::Looping);
+
+    // Two passes without input: old x k x k.
+    e.SetFrippertronicsDecay(.5f);
+    rig.Run(4000);
+    const double k = .999 * .5;
+    const auto before = Snapshot(e);
+    uint32_t p0 = e.Position();
+    e.PressRecord();
+    rig.Run(2 * length);
+    e.PressRecord();
+    rig.WaitIdle();
+    uint32_t q = (p0 + length / 2) % length;
+    CHECK_NEAR(e.StoredFrame(q).left, before[q].left * k * k, 1e-5);
+    CHECK_NEAR(e.StoredFrame(q).right, before[q].right * k * k, 1e-5);
+    // The factor fades in with the punch: no step in the stored material.
+    float step = 0.f;
+    for (uint32_t i = 0; i < 3 * kPunchFadeFrames; ++i)
+        step = std::max(step, std::fabs(e.StoredFrame((p0 + i + 1) % length).left -
+                                        e.StoredFrame((p0 + i) % length).left));
+    CHECK(step < 2e-3f);
+    // The post-roll decays together with the loop start it continues.
+    bool together = true;
+    for (uint32_t j = 1; j < kTailFrames; ++j)
+        together &= std::fabs(e.StoredFrame(length + j).left * before[j].left -
+                              before[length + j].left * e.StoredFrame(j).left) < 1e-6f;
+    CHECK(together && e.StoredFrame(length + 480).left < .99f * before[length + 480].left);
+    // Another mode unlocks undo, which returns the state before the pass.
+    e.SetLoopMode(LoopMode::SoundOnSound);
+    CHECK(e.CanUndo());
+    e.Undo();
+    rig.WaitIdle();
+    CHECK(SameState(e, before));
+    e.Redo();
+    rig.WaitIdle();
+
+    // Input adds on top of the decayed material.
+    e.SetLoopMode(LoopMode::Frippertronics);
+    e.SetFrippertronicsDecay(0.f);
+    rig.Run(4000);
+    const auto base = Snapshot(e);
+    p0 = e.Position();
+    e.PressRecord();
+    rig.Run(length, Constant(.3f));
+    e.PressRecord();
+    rig.WaitIdle();
+    q = (p0 + length / 2) % length;
+    CHECK_NEAR(e.StoredFrame(q).left, base[q].left * .999 + .3, 1e-5);
+    // Loud layers saturate softly below 1 instead of growing without bound.
+    e.PressRecord();
+    rig.Run(4 * length, Constant(.9f));
+    e.PressRecord();
+    rig.WaitIdle();
+    float peak = 0.f;
+    for (uint32_t i = 0; i < length; ++i)
+        peak = std::max({peak, std::fabs(e.StoredFrame(i).left), std::fabs(e.StoredFrame(i).right)});
+    CHECK(peak > .95f && peak < 1.f);
+    // Erase stays available.
+    e.Erase();
+    rig.WaitIdle();
+    CHECK(e.GetState() == State::Empty && !e.CanUndo());
+    e.SetLoopMode(LoopMode::SoundOnSound);
+    CHECK(e.CanUndo());
+    CHECK(rig.GuardsIntact());
+    PASS("frippertronics: decay knob as in the manual, old x k + input, soft limit, undo locked\n");
+}
+
+static int ZeroCrossings(const Engine& e, uint32_t from, uint32_t to) {
+    int n = 0;
+    for (uint32_t i = from + 1; i < to; ++i)
+        n += (e.StoredFrame(i - 1).left < 0.f) != (e.StoredFrame(i).left < 0.f);
+    return n;
+}
+
+static void TestResample() {
+    Rig rig(4 * kSecond);
+    Engine& e = rig.engine;
+    rig.RecordTake(kSecond, ToneSignal(441.0, .4f));
+    rig.WaitIdle(ToneSignal(441.0, .4f));
+    const auto before = Snapshot(e);
+    e.SetLoopMode(LoopMode::Resample);
+    e.SetVarispeed(12.f);
+    rig.Run(2000);
+    rig.StartCapture();
+    e.PressRecord();
+    CHECK(e.Resampling() && !e.CanUndo() && e.Busy());
+    const uint32_t frames = 30000;
+    rig.Run(frames);
+    e.PressRecord();
+    rig.Run(kTailFrames + kOpRampFrames + 10);
+    CHECK(!e.Resampling() && e.Length() == frames && e.TailLength() == kTailFrames);
+    CHECK(e.CanUndo() && !e.CanRedo());
+    // The new loop is what was heard, faded in over the first 960 frames.
+    bool same = true;
+    for (uint32_t i = 0; i < frames; ++i) {
+        const float g = i < kRecordFadeFrames ? float(i) / float(kRecordFadeFrames) : 1.f;
+        same &= e.StoredFrame(i).left == rig.left[i] * g && e.StoredFrame(i).right == rig.right[i] * g;
+    }
+    CHECK(same);
+    // Captured at +12 semitones: an octave up when played at x1.
+    const double hz = ZeroCrossings(e, 2000, frames) / 2.0 / (double(frames - 2000) / kRate);
+    CHECK_NEAR(hz, 882.0, 10.0);
+    e.SetVarispeed(0.f);
+    // The resampled loop is undoable like a layer.
+    e.Undo();
+    rig.WaitIdle();
+    CHECK(SameState(e, before));
+    e.Redo();
+    rig.WaitIdle();
+    CHECK(e.Length() == frames);
+    // Erase during a capture abandons it; undo returns the loop.
+    const auto current = Snapshot(e);
+    e.PressRecord();
+    rig.Run(5000);
+    e.Erase();
+    rig.WaitIdle();
+    CHECK(e.GetState() == State::Empty && !e.Resampling());
+    e.Undo();
+    rig.WaitIdle();
+    CHECK(SameState(e, current));
+    CHECK(rig.GuardsIntact());
+    // Automatic stop at the capacity, without post-roll.
+    Rig full(60000);
+    full.RecordTake(20000, ToneSignal(441.0, .4f));
+    full.WaitIdle();
+    full.engine.SetLoopMode(LoopMode::Resample);
+    full.engine.PressRecord();
+    full.Run(70000, ToneSignal(300.0, .2f));
+    full.WaitIdle();
+    CHECK(full.engine.Length() == 60000 && full.engine.TailLength() == 0 && full.engine.CanUndo());
+    CHECK(full.GuardsIntact());
+    PASS("resample: output captured into the other buffer, own length, undoable, auto-stop\n");
+}
+
+static void TestSliceSegmentation() {
+    struct Case {
+        uint32_t frames;
+        float slice;
+        uint32_t divisor, length;
+    };
+    for (const Case c : {Case{8 * kSecond, 0.f, 1, 96000}, Case{8 * kSecond, .25f, 2, 48000},
+                         Case{8 * kSecond, .5f, 4, 24000}, Case{8 * kSecond, .7f, 8, 12000},
+                         Case{8 * kSecond, 1.f, 16, 6000}, Case{5 * kSecond, .5f, 4, 30000},
+                         Case{6 * kSecond, 0.f, 1, 72000},  // 6 s / 1 s rounds up to 4 segments
+                         Case{3 * kSecond, 1.f, 16, 9000}, Case{1500, 1.f, 16, kMinWindowFrames}}) {
+        Rig rig(9 * kSecond);
+        LoadTone(rig, c.frames, 100.0, .3f);
+        rig.engine.SetSlice(c.slice);
+        rig.Run(1);
+        CHECK(rig.engine.SliceDivisor() == c.divisor);
+        CHECK(rig.engine.SliceLength() == c.length);
+    }
+    PASS("slice segmentation: power-of-two segments, divisor 2^floor(4.9 slice), 1152 minimum\n");
+}
+
+struct SliceRun {
+    SliceEvents events;
+    std::vector<float> pitches;
+    uint32_t minRepeat = ~0u, maxRepeat = 0;
+    uint32_t backwards = 0;  // blocks played in reverse
+    float maxIncrement = 0.f;
+};
+static SliceRun RunSlices(float slice, float skip, uint32_t boundaries, uint32_t seed = 12345) {
+    Rig rig(kSecond);
+    Engine& e = rig.engine;
+    LoadTone(rig, kSecond / 2, 100.0, .4f);  // slices of 1500 frames at slice >= 0.82
+    e.SetRandomSeed(seed);
+    e.SetSlice(slice);
+    e.SetSkip(skip);
+    SliceRun run;
+    for (uint64_t n = 0; e.Events().boundaries < boundaries && n < 100000000; n += 48) {
+        rig.Run(48);
+        run.pitches.push_back(e.SlicePitch());
+        run.backwards += e.PlayingBackwards();
+        run.maxIncrement = std::max(run.maxIncrement, e.Increment());
+        if (e.Repeating() && e.PlaySize() < e.WindowSize()) {
+            run.minRepeat = std::min(run.minRepeat, e.PlaySize());
+            run.maxRepeat = std::max(run.maxRepeat, e.PlaySize());
+        }
+    }
+    CHECK(rig.GuardsIntact());
+    run.events = e.Events();
+    return run;
+}
+static double Rate(uint32_t count, const SliceEvents& e) { return double(count) / double(e.boundaries); }
+
+static void TestSliceSkipStatistics() {
+    const uint32_t n = 2000;
+    // Repeats: probability 3/5, depth j uniform in 0..floor(6.1 f).
+    auto repeats = RunSlices(.999f, 0.f, n);  // f = 0.895, j in 0..5
+    CHECK_NEAR(Rate(repeats.events.repeats, repeats.events), .6 * 5.0 / 6.0, .04);
+    CHECK(repeats.maxRepeat > 0);  // the head really loops the short window
+    CHECK(repeats.minRepeat >= kMinWindowFrames && repeats.maxRepeat <= 1500);
+    CHECK(repeats.events.offsets == 0 && repeats.events.reverses == 0 && repeats.events.pitches == 0);
+    auto none = RunSlices(.41f, 0.f, n / 4);  // start of a divisor step: f ~ 0, no repeats
+    CHECK(none.events.repeats == 0);
+
+    // Skip zones (slice 0.82: 16 slices, f ~ 0.02, so no repeats).
+    auto zone0 = RunSlices(.82f, .05f, n);
+    CHECK_NEAR(Rate(zone0.events.offsets, zone0.events), .5, .04);
+    CHECK(zone0.events.reverses == 0 && zone0.events.pitches == 0 && zone0.events.repeats == 0);
+    auto jumps = RunSlices(.82f, .13f, n);  // f >= 0.5: random slice boundaries
+    CHECK_NEAR(Rate(jumps.events.offsets, jumps.events), .5, .04);
+    auto zone1 = RunSlices(.82f, .25f, n);  // f = 0.4975
+    CHECK_NEAR(Rate(zone1.events.reverses, zone1.events), .125 + .5 * .4975, .04);
+    CHECK(zone1.events.pitches == 0 && zone1.backwards > 0 && zone0.backwards == 0);
+
+    auto inSet = [](const std::vector<float>& values, std::vector<double> allowed) {
+        for (float v : values) {
+            bool ok = false;
+            for (double a : allowed)
+                ok |= std::fabs(v - a) < 1e-4;
+            if (!ok)
+                return false;
+        }
+        return true;
+    };
+    auto zone2 = RunSlices(.82f, .34f, n);  // f = 0.0366: about -2 semitones, no glide
+    CHECK_NEAR(Rate(zone2.events.pitches, zone2.events), .25, .035);
+    const double f2 = 5.99 * .34 - 2.0;
+    bool micro = true;
+    for (float v : zone2.pitches)
+        micro &= v == 1.f ||
+                 (v >= std::exp2(-2.0 / 12.0) - 1e-5 && v <= std::exp2((4.0 * f2 - 2.0) / 12.0) + 1e-5);
+    CHECK(micro);
+    auto zone3 = RunSlices(.82f, .6f, n);  // f = 0.594: x1, x2 or x1/2
+    CHECK_NEAR(Rate(zone3.events.pitches, zone3.events), .25, .035);
+    CHECK(inSet(zone3.pitches, {1.0, 2.0, .5}));
+    CHECK_NEAR(zone3.maxIncrement, 2.0, .01);  // the head really runs at x2
+    auto zone4 = RunSlices(.82f, .75f, n);  // f = 0.4925: +-11 semitones
+    CHECK_NEAR(Rate(zone4.events.pitches, zone4.events), .25, .035);
+    CHECK(inSet(zone4.pitches, {1.0, std::exp2(11.0 / 12.0), std::exp2(-11.0 / 12.0)}));
+    auto zone5 = RunSlices(.82f, .95f, n);  // f = 0.6905: +-16 semitones, glides
+    CHECK_NEAR(Rate(zone5.events.pitches, zone5.events), .25, .035);
+    bool bounded = true, glided = false;
+    for (float v : zone5.pitches) {
+        bounded &= std::fabs(std::log2(v)) <= 16.0 / 12.0 + 1e-4;
+        glided |= std::fabs(std::fabs(std::log2(v)) - 16.0 / 12.0) > 1e-3 && v != 1.f;
+    }
+    CHECK(bounded && glided);
+    // A fixed seed repeats the sequence; another seed does not.
+    auto again = RunSlices(.82f, .95f, n);
+    CHECK(again.pitches == zone5.pitches);
+    auto other = RunSlices(.82f, .95f, n, 777);
+    CHECK(other.pitches != zone5.pitches);
+    PASS("slice/skip: repeat, offset, reverse and pitch probabilities per zone, fixed-seed sequence\n");
+}
+
+static void TestSliceSkipAudio() {
+    for (SeamMode mode : {SeamMode::Window, SeamMode::Crossfade})
+        for (float skip : {.5f, .6f, .95f}) {
+            Rig rig(3 * kSecond);
+            Engine& e = rig.engine;
+            e.SetSeamMode(mode);
+            LoadTone(rig, 2 * kSecond, 100.0, .5f);
+            e.SetSlice(.9f);
+            e.SetSkip(skip);
+            rig.StartCapture();
+            rig.Run(4 * kSecond);
+            e.SetStart(.25f);  // slices inside a Start/Size window
+            e.SetSize(.6f);
+            rig.Run(4 * kSecond);
+            CHECK(e.Events().boundaries > 50 && e.Events().repeats > 0 && e.Events().pitches > 0);
+            CHECK(MaxStep(rig.left) <= SeamBound(400.0, .5f));
+            CHECK(MaxStep(rig.right) <= SeamBound(400.0, .5f));
+        }
+    // Overdub at x8, x1 and x1/4 while slicing: bounded and guarded.
+    Rig rig(3 * kSecond);
+    Engine& e = rig.engine;
+    LoadTone(rig, 2 * kSecond, 100.0, .5f);
+    rig.WaitIdle();
+    e.SetSlice(.95f);
+    e.SetSkip(.8f);
+    for (float st : {36.f, 0.f, -24.f}) {
+        e.SetVarispeed(st);
+        const auto before = Snapshot(e);
+        e.PressRecord();
+        rig.Run(kSecond, ToneSignal(330.0, .4f));
+        e.PressRecord();
+        rig.WaitIdle();
+        e.Undo();  // and undo stays exact while slices move the head
+        rig.WaitIdle();
+        CHECK(SameState(e, before));
+        e.Redo();
+        rig.WaitIdle();
+    }
+    bool finite = true;
+    for (uint32_t i = 0; i < e.Length(); ++i)
+        finite &= std::isfinite(e.StoredFrame(i).left) && std::fabs(e.StoredFrame(i).left) <= 1.f;
+    CHECK(finite && rig.GuardsIntact());
+    // Frippertronics while a Skip offset is active adds like Sound on Sound.
+    Rig fripp(kSecond);
+    LoadTone(fripp, kSecond / 2, 100.0, .4f);
+    fripp.engine.SetLoopMode(LoopMode::Frippertronics);
+    fripp.engine.SetFrippertronicsDecay(1.f);  // erase whatever the decay rule touches
+    fripp.engine.SetSlice(.82f);
+    fripp.engine.SetSkip(.05f);  // offsets only
+    fripp.Run(4000);
+    fripp.engine.PressRecord();
+    fripp.Run(kSecond / 2);
+    fripp.engine.PressRecord();
+    fripp.WaitIdle();
+    uint32_t zeros = 0;
+    for (uint32_t i = 0; i < fripp.engine.Length(); ++i)
+        zeros += fripp.engine.StoredFrame(i).left == 0.f;
+    const double share = double(zeros) / fripp.engine.Length();
+    CHECK(share > .1 && share < .9);
+    CHECK(fripp.GuardsIntact());
+    PASS("slice/skip audio: click-free in both seam modes and windows, overdub exact undo\n");
+}
+
 int main() {
     const auto begin = std::chrono::steady_clock::now();
     TestInit();
@@ -695,6 +1043,11 @@ int main() {
     TestInertia();
     TestVarispeed();
     TestBounds();
+    TestFrippertronics();
+    TestResample();
+    TestSliceSegmentation();
+    TestSliceSkipStatistics();
+    TestSliceSkipAudio();
     {
         auto rig = std::make_unique<Rig>(kMaxFrames);
         for (double seconds : {42.0, 44.0, 86.0, 87.0, 88.0})

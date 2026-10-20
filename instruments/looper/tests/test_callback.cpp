@@ -55,6 +55,8 @@ int main() {
     CHECK(engine.Init(48000.f, a, b, LOOPER_BUFFER_FRAMES));
     hw.pot[knobs::Varispeed].value = .4f;  // unity
     hw.pot[knobs::Inertia].value = 0.f;
+    hw.pot[knobs::Slope].value = .5f;
+    hw.pot[knobs::Size].value = 1.f;  // whole loop
     Blocks(20);
     CHECK(engine.VarispeedTarget() == 0.f && engine.GetState() == looper::State::Empty);
 
@@ -118,9 +120,56 @@ int main() {
     Press(keys::Undo);
     CHECK(engine.GetState() == looper::State::Looping);
 
-    // Mode keys.
+    // Mode keys: S6 cycles, S9..S12 select directly.
+    auto mode = [] { return (uiState.load() >> ui::kModeShift) & 3u; };
     Press(keys::LoopMode);
-    CHECK(engine.GetLoopMode() == looper::LoopMode::Replace && (uiState.load() & ui::Replace));
+    CHECK(engine.GetLoopMode() == looper::LoopMode::Replace && mode() == 1);
+    Press(keys::kFirstMode + 3);
+    CHECK(engine.GetLoopMode() == looper::LoopMode::Resample && mode() == 3);
+    Press(keys::LoopMode);
+    CHECK(engine.GetLoopMode() == looper::LoopMode::SoundOnSound && mode() == 0);
+    // Frippertronics: decay pot as in the manual, undo key locked.
+    Press(keys::kFirstMode + 2);
+    CHECK(engine.GetLoopMode() == looper::LoopMode::Frippertronics && mode() == 2);
+    CHECK(!engine.CanUndo() && !(uiState.load() & (ui::CanUndo | ui::CanRedo)));
+    const uint32_t before = engine.Length();
+    Press(keys::Undo);
+    Blocks(50);
+    CHECK(!engine.OperationPending() && engine.Length() == before && !engine.CanRedo());
+    hw.pot[knobs::Decay].value = 1.f;
+    Blocks(200);
+    CHECK(engine.FrippertronicsDecay() == 1.f && engine.FrippertronicsRetention() < 1e-3f);
+    hw.pot[knobs::Decay].value = 0.f;
+    Blocks(200);
+    CHECK(std::fabs(engine.FrippertronicsRetention() - looper::kMaxRetention) < 1e-3f);
+    Press(keys::kFirstMode);
+    CHECK(engine.CanRedo());  // the redo of the erase above is visible again
+    // Slice, Skip, Start and Size pots.
+    hw.pot[knobs::Slice].value = 1.f;
+    hw.pot[knobs::Skip].value = .5f;
+    Blocks(2);
+    CHECK(engine.SliceDivisor() == 16);
+    hw.pot[knobs::Slice].value = 0.f;
+    hw.pot[knobs::Skip].value = 0.f;
+    hw.pot[knobs::Start].value = .5f;
+    hw.pot[knobs::Size].value = .5f;
+    Blocks(20);
+    CHECK(engine.WindowStart() == engine.Length() / 2 && engine.WindowSize() < engine.Length());
+    hw.pot[knobs::Start].value = 0.f;
+    hw.pot[knobs::Size].value = 1.f;
+    Blocks(20);
+    CHECK(engine.WindowSize() == engine.Length());
+    // Resample with the record key: the loop is replaced and undoable.
+    Press(keys::kFirstMode + 3);
+    Press(keys::Record);
+    CHECK(engine.Resampling() && (uiState.load() & ui::Recording));
+    Blocks(500);
+    Press(keys::Record);
+    Blocks(100);
+    CHECK(!engine.Resampling() && engine.Length() > 500 * 48 && engine.Length() < 560 * 48);
+    Press(keys::Undo);
+    CHECK(engine.Length() == before);
+    Press(keys::kFirstMode + 1);
     Press(keys::Seam);
     CHECK(engine.GetSeamMode() == looper::SeamMode::Crossfade && (uiState.load() & ui::Crossfade));
 
