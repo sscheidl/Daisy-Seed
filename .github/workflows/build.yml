@@ -17,6 +17,9 @@ jobs:
           - project: physical-modeling
             directory: instruments/physical-modeling
             image: PhysicalModeling
+          - project: looper
+            directory: instruments/looper
+            image: Looper
     steps:
       - uses: actions/checkout@v4
       - name: Fetch pinned dependencies
