@@ -59,6 +59,18 @@ independently from those descriptions.
 Not in v0.1: Slice/Skip, Frippertronics, Resample, effects, input saturation and
 mix curves, 1V/Oct, the encoder range modes, SD card, MIDI.
 
+**Decided for Frippertronics (2026-10-20),** following manual v1.1.0 rather than
+the analyzed code, whose behavior is still OPEN (analysis section 8):
+
+* **Knob direction:** fully left = no decay, fully right = strongest decay. The
+  retention factor is therefore `k = 0.999 × (1 − knob)`, so fully right erases
+  old material on each pass. The original's default `k = 0.707` corresponds to
+  knob ≈ 0.29.
+* **Undo lock:** undo and redo are ignored while the loop mode is Frippertronics,
+  and the undo LED shows them as unavailable. They work again once another mode is
+  selected; erase stays available. This avoids state changes that are hard to
+  follow while the loop keeps decaying.
+
 ## Seed3 controls (v0.1)
 
 [src/main.cpp](src/main.cpp) runs the engine in the audio callback (48 kHz,
