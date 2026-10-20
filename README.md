@@ -12,6 +12,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI; ARM and host tests pass; keys, AD envelope, polyphony, fast repeats, and MIDI with Studio One reported working on hardware |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings instrument, six models, global stereo reverb and USB MIDI; software validation in project docs |
 | [Granular](instruments/granular/) | `instruments/granular/` | Project outline and reference comparison; original engine planned |
+| [Looper](instruments/looper/) | `instruments/looper/` | Stardust firmware analysis published (buffers, WAV paths, undo); original engine planned |
 | [Ambient Reverb v0.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb imported from the FV-1 research project; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 
@@ -27,7 +28,8 @@ Daisy-Seed/
 ├── instruments/
 │   ├── toy-piano/          # Makefile, README, src, tests, docs, generated build
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
-│   └── granular/           # project plan
+│   ├── granular/           # project plan
+│   └── looper/             # Stardust analysis and looper plan
 ├── effects/
 │   ├── reverb/             # buildable original Ambient Reverb
 │   └── granular/           # effect plan
