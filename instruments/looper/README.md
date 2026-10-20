@@ -12,7 +12,7 @@ analysis (SHA-256
 `e7556ffd3bbfa578b7061e4b06de6d010d4842115439121eea458e2e6cf1a48a`). The
 results are in this directory:
 
-* [Firmware analysis: memory, WAV paths, and undo](docs/STARDUST_ANALYSIS.md)
+* [Firmware analysis: memory, files, undo, and playback](docs/STARDUST_ANALYSIS.md)
   with evidence classes, function addresses, and open questions.
 * [Feasibility study of October 19, 2026](docs/FEASIBILITY_2026-10-19.md)
   (German, unchanged): GO for an independent C++ implementation, HOLD for
@@ -35,8 +35,17 @@ flash the Stardust binary or an analysis ELF onto the Seed3.**
   with 10 ms ramps. Resample writes into the inactive buffer. Overdub writes into
   the active buffer in place.
 * After every state change, the original writes the whole loop as a 16-bit WAV to
-  its internal card and reloads the previous file into the undo buffer. Whether
-  multi-layer undo depends on that reload is still **open**.
+  its internal card and reloads the previous file into the undo buffer. There is
+  one undo step plus redo; from the second overdub on, that step is correct only
+  after the card reload, because no RAM copy keeps the undo buffer current.
+* Varispeed is a semitone target with a short glide and exponential inertia on
+  the linear speed (time constant up to 2 s, separate up and down weights), limited
+  to ×8 and played back with two-point linear interpolation. The loop seam is a
+  fade to zero, not a crossfade.
+* Slice/Skip divide the loop into power-of-two slices and draw offsets, reverse,
+  repeats, and pitch jumps from a fixed-seed xorshift generator. The
+  Frippertronics factor is the Shift+Start knob value (0…0.999); its direction
+  contradicts the manual and needs a hardware check.
 * The loop-menu WAV import accepts only 16-bit, 48 kHz, mono or stereo files and
   rejects anything longer than the buffer. Two other load paths read until end
   of file without a length check; the clone must bound-check every path.
