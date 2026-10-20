@@ -1,6 +1,6 @@
 # Local validation - v0.1.0
 
-**RESULT: LOCAL SOFTWARE PASS / HARDWARE PENDING.**
+**RESULT: SOFTWARE PASS / HARDWARE PENDING.**
 
 Started 2026-10-19; review corrections validated 2026-10-20, Europe/Berlin.
 The original local PASS at `c71c67a` was incomplete: independent review exposed
@@ -18,8 +18,17 @@ or Physical Modeling source/docs. Shared changes integrate Nebulae with the
 catalogue/build/checks. No board was flashed, bootloader changed or release made.
 Upstream pins and license decisions are in [the audit](UPSTREAM_ANALYSIS.md).
 
-Remote draft PR and CI verification are now authorized and pending execution;
-this report does not count configured workflows as executed tests.
+[Draft PR #17](https://github.com/sscheidl/Daisy-Seed/pull/17) targets main.
+[CI run 39485407516](https://github.com/sscheidl/Daisy-Seed/actions/runs/39485407516)
+built source `ed14ea5fc7218f69485d849e182487588b638233` on Ubuntu 24.04.
+Its Nebulae job passed GCC host tests, ASan/UBSan/float-cast-overflow, both Linux
+ThreadSanitizer concurrency executables, ARM compilation and image/ELF/capacity
+checks. All four matrix jobs, including the full build/test catalogue, passed.
+The [downloaded artifact](https://github.com/sscheidl/Daisy-Seed/actions/runs/39485407516/artifacts/12292619536)
+contains BIN/ELF/MAP/SHA256SUMS. Its BIN was checked locally and is byte-identical
+to the Windows ARM build (SHA256 below). Initial Linux failures were four
+misleading test loop layouts and a missing explicit `<cstring>` include; both
+were corrected without disabling compiler warnings or tests.
 
 ## Artifact evidence
 
@@ -58,7 +67,7 @@ the maximum accepted length and one extra frame for every rate/channel format.
 | 4 UI/live | PASS | All 16 slots/keys, five actions, three switch values with stability, held-key release/suppression, SOURCE tap/hold/catch, all primary/secondary pot mappings, LEDs, stereo capture, full/early overdub and circular stop; poisoned-SDRAM construction |
 | 5 MIDI | PASS | Actual callback/parser tests with running status and realtime interleave, Note On/Off/velocity zero, note/channel/local-C5 collisions, pitch bend, eight CCs, all-notes-off/reset/disconnect and overflow recovery; queue and producer/consumer load tests |
 | 6 local integration | PASS | Root build/tests, ASan/UBSan, other-project ARM/host regression commands, release-guard tests, firmware/ELF/SHA checks, licenses and diff check; CI configuration extended |
-| Remote CI/PR | PENDING | Draft PR, Linux TSan and artifact verification to be recorded after execution |
+| Remote Nebulae CI/PR | PASS | Draft #17, run 39485407516; Linux GCC/sanitizers/TSan, ARM and downloaded artifact/hash verified |
 | Target tests | PENDING-HARDWARE | CPU/stack high-water, stereo analog path, switch lever, SD, USB enumeration and sound require the short hardware plan |
 
 ## Executed tests and corrective checks
@@ -89,7 +98,8 @@ microSD access is pending, while the real BSP/HAL/FatFS path is ARM-linked.
 `test-thread` was attempted locally: LLVM-MinGW reports `unsupported option
 '-fsanitize=thread' for target 'x86_64-w64-windows-gnu'`. Therefore local TSan is
 **N/A (unsupported platform)**, not PASS. The same queue and bridge tests run
-normally and under ASan/UBSan; Linux CI is configured to run TSan after a push.
+normally and under ASan/UBSan; Linux CI executed both TSan tests successfully
+in the run linked above.
 
 Direct Windows release-guard invocation initially picked the System32 WSL shim
 (no distribution installed), then MSYS truncated a literal newline test argument.
@@ -120,5 +130,5 @@ storage is in SDRAM. Do not infer deadline safety from host tests; measure DWT
 peak/overrun counters on hardware before treating real-time margin as validated.
 
 Local artifacts and [hardware smoke steps](HARDWARE_TEST_PLAN.md) are ready for
-the user. The missing hardware test is **not** a software HOLD. Remote CI and PR
-delivery are being validated separately from local execution.
+the user. The missing hardware test is **not** a software HOLD. The PR remains
+a draft; merge, flash, bootloader update and release are separate actions.

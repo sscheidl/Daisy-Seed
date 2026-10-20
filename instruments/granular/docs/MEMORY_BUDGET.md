@@ -56,7 +56,7 @@ the table is a build result, not a hard-coded duration limit.
 
 Static DTCM headroom is 53,972 bytes. Linker and ELF gates enforce a minimum
 16 KiB stack floor. `-fstack-usage` emits `.su`: application Audio is 104 bytes,
-Engine::Process 168, RenderGrains 152 and Mincer::Process 128 in the validated
+Engine::Process 168, RenderGrains 144 and Mincer::Process 128 in the validated
 configuration. These per-function sizes do not prove a complete nested HAL/IRQ
 worst case. Actual stack high-water remains a hardware measurement.
 
