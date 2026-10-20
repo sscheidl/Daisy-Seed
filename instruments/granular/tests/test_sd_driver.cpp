@@ -1,6 +1,7 @@
 #include "../src/sd_driver.c"
 #include <cassert>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 SD_HandleTypeDef hsd1;
 static unsigned mode=0,reads=0,aborts=0,services=0,cleans=0,invalidates=0;
