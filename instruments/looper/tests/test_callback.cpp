@@ -19,7 +19,7 @@ static int failures = 0;
 constexpr size_t kBlock = 48;
 static uint64_t t = 0;
 static float peak = 0.f, loopEnergy = 0.f;
-static bool finite = true;
+static bool allFinite = true;
 
 static void Blocks(unsigned count, float amplitude = 0.f) {
     float il[kBlock], ir[kBlock], ol[kBlock], orr[kBlock];
@@ -32,7 +32,7 @@ static void Blocks(unsigned count, float amplitude = 0.f) {
         }
         AudioCallback(in, out, kBlock);
         for (size_t i = 0; i < kBlock; ++i) {
-            finite &= std::isfinite(ol[i]) && std::isfinite(orr[i]);
+            allFinite &= std::isfinite(ol[i]) && std::isfinite(orr[i]);
             peak = std::max({peak, std::fabs(ol[i]), std::fabs(orr[i])});
             loopEnergy += std::fabs(ol[i] - il[i]);
         }
@@ -194,7 +194,7 @@ int main() {
     Blocks(4100, .9f);
     CHECK(engine.GetState() == looper::State::Looping && engine.Length() == LOOPER_BUFFER_FRAMES);
     Blocks(200, .9f);
-    CHECK(finite && peak <= 1.f);
+    CHECK(allFinite && peak <= 1.f);
 
     if (failures) {
         std::printf("FAILED: %d production callback check(s)\n", failures);
