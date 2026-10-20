@@ -5,7 +5,8 @@ Project `granular`, for the **Seed3 Desktop Development Kit**, using the officia
 2048-point phase vocoder run from the same PCM16 source. Pitch and scan speed are
 independent. This adapts Qu-Bit's default Nebulae v2.1.2 Granular Looper, with the
 documented differences below. It does not host alternate instruments or claim
-bit-identical Csound output. [Validation](docs/VALIDATION.md) separates software
+bit-identical Csound output. This is the Nebulae granular project; the separate
+[Stardust tape looper](../looper/) has its own analysis and implementation path. [Validation](docs/VALIDATION.md) separates software
 checks from pending hardware checks. No board was flashed or sound auditioned.
 
 ## Build and binary
@@ -31,8 +32,8 @@ durations, not measured end-to-end latency or CPU usage.
 Windows PATH needs the ARM toolchain, xPack build tools and Git `usr/bin`.
 Host validation used LLVM-MinGW: `HOST_CXX=clang++`. Windows ThreadSanitizer is
 unsupported; Linux CI has a `test-thread` target. The workflow uploads BIN, ELF,
-MAP and SHA256SUMS after a push. This local-only implementation started no remote
-CI run. Generated outputs and toolchains are not tracked.
+MAP and SHA256SUMS after a push. See validation for executed CI evidence.
+Generated outputs and toolchains are not tracked.
 
 ## Eight fixed pots
 
@@ -92,10 +93,12 @@ Keyboard LEDs show only debounced physical presses.
 
 * RECORD starts/stops stereo capture. First Live capture records input at the
   input gain even without an SD sample; File captures processed file playback.
-  Completion selects Live. START/SIZE/SPEED are held during first normal capture.
+  First capture completion selects Live. START/SIZE/SPEED are held during every
+  normal capture, including overdub.
 * On an existing Live loop, RECORD punches into its current position. It records
   the processed loop plus blend-weighted input into an inactive bank and stops
   after one pass. Length stays fixed; normal overdub resets speed/pitch to unity.
+  Finishing an overdub preserves the latest File/Live source choice.
   An early stop copies untouched frames in bounded 8192-frame batches, with the
   RECORD LED on until complete (at most about 1.37 s at full capacity).
 * FILE advances on release to the next occupied numbered slot, wrapping around.
@@ -169,9 +172,11 @@ Class-compliant external USB MIDI, Omni input, one shared stereo voice with last
 note priority. Note On/Off, velocity-zero Note On, +/-2-semitone bend on the current
 note's channel, CC20-27 for pots in table order. C4/60 leaves base PITCH unchanged.
 CC120/123 release that channel; CC121 resets its bend; MIDI Reset clears MIDI
-notes/bends. Each MIDI channel and keyboard have separate ownership. Before the
-first note playback loops freely; afterwards it follows held notes with a short
-release. Disconnect releases MIDI notes and leaves local keys/DSP available.
+notes/bends. Each MIDI channel and keyboard have separate ownership. In all three
+modes, notes transpose/retrigger playback with smoothed velocity gain. With no held
+note, playback runs freely at the base pitch and full gain, including after note
+release, panic or a mode change. Disconnect releases MIDI notes and leaves local
+keys/DSP available.
 
 Only physical keyboard changes send channel-1 notes, velocity 100. Received MIDI
 is never echoed; function buttons send nothing. Duplicate C5 keys produce one

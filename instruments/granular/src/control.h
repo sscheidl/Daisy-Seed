@@ -71,7 +71,7 @@ class Notes {
     int Current() const;
     float Velocity() const;
     float Bend(const float* bends) const;
-    bool engaged=false;
+    bool engaged=false; // Historical note activity, never an audio gate.
   private:
     uint32_t order_[17][128]{}; uint8_t velocity_[17][128]{}; uint32_t serial_=0;
 };

@@ -197,6 +197,67 @@ static void TestMidi() {
     r.e->MidiEvent({0x90,0,67,100});r.e->Disconnect();CHECK(r.e->notes.Current()==-1);
     std::puts("PASS MIDI: velocity-zero, last-note/channel/keyboard collisions, duplicate physical C5, pitch bend, eight CCs, all-notes-off/disconnect");
 }
+// Audibility regressions: note-state assertions alone missed the sticky mute.
+static double SettledRms(Rig& r) {
+    double sum=0;
+    for(unsigned block=0;block<200;++block) {
+        r.Tick();
+        if(block>=100) for(float x:r.ol) sum+=double(x)*x;
+    }
+    return std::sqrt(sum/(100*kBlock));
+}
+static void TestFreePlayback() {
+    for(unsigned mode=0;mode<3;++mode) {
+        Rig r;r.e->ui.mode=mode;
+        const double baseline=SettledRms(r);CHECK(baseline>.01);
+        r.e->Key(0,60,true);r.Tick();r.e->Key(0,60,false);
+        CHECK(SettledRms(r)>baseline*.5);
+        // Note Off, velocity-zero, all-sound/all-notes-off, reset, disconnect.
+        for(unsigned release=0;release<6;++release) {
+            r.e->MidiEvent({0x90,3,60,100});r.Tick();
+            switch(release) {
+            case 0:r.e->MidiEvent({0x80,3,60,0});break;
+            case 1:r.e->MidiEvent({0x90,3,60,0});break;
+            case 2:r.e->MidiEvent({0xb0,3,120,0});break;
+            case 3:r.e->MidiEvent({0xb0,3,123,0});break;
+            case 4:r.e->MidiEvent({0xff,0,0,0});break;
+            case 5:r.e->Disconnect();break;
+            }
+            CHECK(r.e->notes.Current()==-1);CHECK(SettledRms(r)>baseline*.5);
+        }
+        r.e->Key(0,60,true);r.Tick();r.e->notes.AllOff();
+        CHECK(SettledRms(r)>baseline*.5);
+    }
+    for(unsigned toggle:{0u,1u}) {
+        Rig r;ControlFrame f;std::copy(std::begin(r.e->ui.params.primary),std::end(r.e->ui.params.primary),f.pot);
+        f.toggle=2;r.e->ui.Process(f,*r.e);f.ms=21;r.e->ui.Process(f,*r.e);
+        CHECK(r.e->ui.mode==2);const double baseline=SettledRms(r);
+        f.keys=1;r.e->ui.Process(f,*r.e);r.Tick();CHECK(r.e->notes.Current()==60);
+        f.toggle=uint8_t(toggle);f.ms=30;r.e->ui.Process(f,*r.e);f.ms=51;r.e->ui.Process(f,*r.e);
+        CHECK(r.e->ui.mode==(toggle==0?1u:0u));CHECK(r.e->notes.Current()==-1);
+        CHECK(SettledRms(r)>baseline*.5);
+    }
+    std::puts("PASS audio regressions: free playback after keyboard/MIDI release, panic/reset/disconnect and both keyboard mode exits");
+}
+static void TestRecordSource() {
+    Rig r(32768);r.e->live=true;r.l.fill(.2f);
+    r.e->Act(Action::Record);for(unsigned i=0;i<80;++i)r.Tick();r.e->Act(Action::Record);
+    const uint32_t length=r.e->LiveLength();CHECK(length==80*kBlock && r.e->live);
+    r.e->Act(Action::Record);r.Tick();r.e->Act(Action::Source);
+    CHECK(!r.e->live && r.e->finalizing);
+    for(unsigned i=0;i<4;++i)r.Tick();
+    CHECK(!r.e->live && !r.e->recording && !r.e->finalizing && r.e->LiveLength()==length);
+    // Overdub completion also preserves an explicit return to Live.
+    r.e->Act(Action::Source);r.e->Act(Action::Record);r.Tick();
+    r.e->Act(Action::Source);r.e->Act(Action::Source);
+    for(unsigned i=0;i<4;++i)r.Tick();CHECK(r.e->live && r.e->LiveLength()==length);
+    // Every normal recording locks START/SIZE/SPEED, including overdubs.
+    r.e->Act(Action::Record);r.Tick();const float speed=r.e->EffectiveSpeed();
+    r.e->ui.params.primary[Speed]=0;for(unsigned i=0;i<10;++i)r.Tick();
+    Near(r.e->EffectiveSpeed(),speed);r.e->Act(Action::Record);
+    for(unsigned i=0;i<4;++i)r.Tick();
+    std::puts("PASS recording regressions: SOURCE survives multi-block overdub publication; normal overdub speed lock");
+}
 static void TestLoader() {
     MemoryFile f;f.bytes=Wav(48000,2,4096);std::vector<int16_t> pcm(8192,1234);FileBridge b;Loader load;load.Init(f,pcm.data(),pcm.size()*2,b);
     CHECK(load.Request(3));for(unsigned i=0;i<10 && load.state==Loader::State::Validate;++i) load.Service();
@@ -225,6 +286,6 @@ int main(int argc,char** argv) {
         CHECK(capacity>1024 && capacity<=kSdramBytes);TestWav(capacity);return 0;
     }
     const auto start=std::chrono::steady_clock::now();
-    TestWav();TestUi();TestDsp();TestMidi();TestLoader();
+    TestWav();TestUi();TestDsp();TestMidi();TestFreePlayback();TestRecordSource();TestLoader();
     std::printf("PASS %u assertions in %.2f s (HOST timing, not Cortex-M7 CPU evidence)\n",checks,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
 }

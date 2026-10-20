@@ -8,15 +8,15 @@ runtime measurement of stack high-water or CPU utilization.
 
 | Region | Used/reserved | Capacity | Purpose |
 | --- | ---: | ---: | --- |
-| AXI SRAM | 163,488 B | 491,520 B | BOOT_SRAM image plus isolated 512-byte SD IDMA sector and alignment |
+| AXI SRAM | 163,072 B | 491,520 B | BOOT_SRAM image plus isolated 512-byte SD IDMA sector and alignment |
 | DTCM | 77,100 B | 131,072 B | Board/USB/UI/queues/loader and normal static data |
 | D2 noncacheable DMA | 18,596 B | 32,768 B | Official audio/LED/UART buffers |
 | D2 regular | 65,536 B | 262,144 B | Explicit bounded C-library/USB heap |
 | SDRAM allocated | 58,720,256 B | 67,108,864 B | Live banks, DSP and dynamically sized one-file PCM region |
 | SDRAM unallocated reserve | 8,388,608 B | included above | Not exposed as file capacity |
 
-`arm-none-eabi-size`: text 160,080; data 2,868; BSS 58,879,852 bytes. BSS includes
-NOLOAD reservations and is not BIN size. Actual BIN is **162,956 bytes**. The
+`arm-none-eabi-size`: text 159,664; data 2,868; BSS 58,879,852 bytes. BSS includes
+NOLOAD reservations and is not BIN size. Actual BIN is **162,540 bytes**. The
 checker verifies its loaded bytes against the actual ARM ELF segments.
 
 ## SDRAM layout and format limits

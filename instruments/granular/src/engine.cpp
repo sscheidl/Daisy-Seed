@@ -27,7 +27,9 @@ void Engine::EndRecord() {
     else if(write_) {live_length_=write_;PublishLive();}
 }
 void Engine::PublishLive(bool resume) {
-    active_bank_^=1; recording=false; finalizing=false; live=true;
+    active_bank_^=1; recording=false; finalizing=false;
+    // Only the first capture selects Live; finishing an overdub preserves SOURCE.
+    if(!overdub_) live=true;
     if(!resume) position_=0;
     last_read_frame_=0;
     ResetDsp();
@@ -142,7 +144,7 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
     if(!gate) bridge_->ack.store(false,std::memory_order_release);
     const float smooth=1-std::exp(-float(n)/(kRate*.02f));
     for(unsigned i=0;i<8;++i) {
-        if(!(recording && !overdub_ && !circular && (i==Start||i==Size||i==Speed)))
+        if(!(recording && !circular && (i==Start||i==Size||i==Speed)))
             smoothed_[i]+=(i==Window?1-std::exp(-float(n)/(kRate*.1f)):smooth)*(ui.params.primary[i]-smoothed_[i]);
         alt_[i]+=smooth*(ui.params.secondary[i]-alt_[i]);
     }
@@ -180,7 +182,8 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
         std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);
         std::fill(gran_[0],gran_[0]+n,0);std::fill(gran_[1],gran_[1]+n,0);
     }
-    const float musical_target=notes.engaged?(note<0?0.f:notes.Velocity()):1.f;
+    // Notes transpose/retrigger; releasing the last note restores free playback.
+    const float musical_target=note<0?1.f:notes.Velocity();
     for(unsigned s=0;s<n;++s) {
         file_gain_=std::clamp(file_gain_+(gate?-1.f:1.f)/256,0.f,1.f);
         musical_gain_+=.004f*(musical_target-musical_gain_);
