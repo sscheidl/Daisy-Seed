@@ -22,6 +22,9 @@ inline constexpr uint32_t DWT_CTRL_CYCCNTENA_Msk = 1;
 inline constexpr uint32_t CoreDebug_DEMCR_TRCENA_Msk = 1;
 inline uint32_t SystemCoreClock = 480000000;
 namespace daisy {
+struct Switch3 {
+    enum { POS_CENTER = 0, POS_UP = 1, POS_DOWN = 2 };
+};
 struct AudioHandle {
     using InputBuffer = const float* const*;
     using OutputBuffer = float**;
@@ -44,16 +47,20 @@ struct Hardware {
         void SetSampleRate(float) {}
     };
     std::array<Pot, 8> pot{};
+    std::array<float, 16> led{};
+    unsigned ledUpdates = 0;
     std::array<DigitalControl, 16> button{};
     std::array<bool, 16> pressed{};
+    struct Toggle3 { int position = Switch3::POS_CENTER; int Read() const { return position; } } tog_sw18;
+    struct Toggle2 { bool pressed = false; bool Pressed() const { return pressed; } } tog_sw17;
     struct RightDetect { bool pressed = false; bool Pressed() const { return pressed; } } right_detect;
     void Init() { for (auto& b : button) b.Init(true); }
     void UpdateAllControls() {
         for (std::size_t i = 0; i < button.size(); ++i)
             button[i].Debounce(!pressed[i]);
     }
-    void SetLed(int, float) {}
-    void UpdateLeds() {}
+    void SetLed(int index, float brightness) { led[std::size_t(index)] = brightness; }
+    void UpdateLeds() { ++ledUpdates; }
 };
 }
 }

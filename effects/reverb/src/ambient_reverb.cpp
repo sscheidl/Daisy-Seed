@@ -67,7 +67,8 @@ void AmbientReverb::SetParameters(const Parameters &input, bool immediate) {
     unsigned smooth = immediate ? 0 : unsigned(sampleRate_ * .04f);
     for (unsigned i = 0; i < 8; ++i) {
         float seconds = float(tankLength_[i] + apLength_[i]) / sampleRate_;
-        state_.gain[i].Set(std::exp(-6.907755279f * seconds / p.decaySeconds), smooth);
+        state_.gain[i].Set(std::exp(-6.907755279f * seconds /
+                                    (p.sustain ? 45.f : p.decaySeconds)), smooth);
     }
     for (unsigned i = 0; i < 5; ++i)
         state_.mode[i].Set(i == unsigned(p.mode) ? 1.f : 0.f, smooth);
@@ -87,6 +88,7 @@ void AmbientReverb::SetParameters(const Parameters &input, bool immediate) {
     state_.level.Set(p.outputGain, smooth);
     state_.send.Set(p.bypass ? 0.f : 1.f, smooth);
     state_.hold.Set(p.hold ? 1.f : 0.f, immediate ? 0 : unsigned(sampleRate_ * .3f));
+    state_.sustain.Set(p.sustain ? 1.f : 0.f, smooth);
 }
 float AmbientReverb::Guard(float x) {
     if (x > 8) {
@@ -106,6 +108,7 @@ Stereo AmbientReverb::Process(Stereo in) {
     const float hold = state_.hold.Next(), send = state_.send.Next();
     const float tone = state_.tone.Next(), hp = state_.highpass.Next(),
                 depth = state_.depth.Next() * (1 - hold), rate = state_.rate.Next();
+    const float sustain = state_.sustain.Next();
     const float diffusion = state_.diffusion.Next(), texture = state_.texture.Next();
     std::array<float, 5> mode{};
     for (unsigned i = 0; i < 5; ++i)
@@ -148,14 +151,15 @@ Stereo AmbientReverb::Process(Stereo in) {
         l = inputAp_[i].Allpass(l, inputLength_[i], .6f);
         r = inputAp_[i + 4].Allpass(r, inputLength_[i + 4], .6f);
     }
-    const float diffuse = diffusion * (1 - .8f * mode[4]);
+    const float diffuse = diffusion * (1 - .8f * mode[4] * (1 - texture));
     x.left += (l - x.left) * diffuse;
     x.right += (r - x.right) * diffuse;
     std::array<float, 8> y{};
     Stereo wet{};
     for (unsigned i = 0; i < 8; ++i) {
         const float mod = lfo_[i].Process(rate * kLfoRatios[i], parameters_.shape, waveSmoothing_);
-        y[i] = tank_[i].Read(float(tankLength_[i]) + depth * mod);
+        y[i] = tank_[i].Read(float(tankLength_[i]) +
+                            depth * (1 + .75f * texture * mode[0] * sustain) * mod);
         y[i] = tankAp_[i].Allpass(y[i], apLength_[i], .5f);
         wet.left += y[i] * kOutLeft[i] * .3535533906f;
         wet.right += y[i] * kOutRight[i] * .3535533906f;

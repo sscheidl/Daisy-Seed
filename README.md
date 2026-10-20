@@ -12,7 +12,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI; ARM and host tests pass; keys, AD envelope, polyphony, fast repeats, and MIDI with Studio One reported working on hardware |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings instrument, six models, global stereo reverb and USB MIDI; software validation in project docs |
 | [Granular](instruments/granular/) | `instruments/granular/` | Project outline and reference comparison; original engine planned |
-| [Ambient Reverb v0.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb imported from the FV-1 research project; host tests and ARM build pass; hardware test pending |
+| [Ambient Reverb v0.2](effects/reverb/) | `effects/reverb/` | Original stereo reverb with Desktop controls and variable-rate wet Stretch; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 
 The repository remains **`sscheidl/Daisy-Seed`**. Project directories share one Git
@@ -74,7 +74,7 @@ its directory with `make -C instruments/toy-piano`. Its image is
 `instruments/toy-piano/src/version.h`; `make -s version` prints it. Builds for
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
-The reverb image is `effects/reverb/build/AmbientReverb-v0.1.bin`.
+The reverb image is `effects/reverb/build/AmbientReverb-v0.2.bin`.
 
 Each implemented project is currently a separate firmware image. Switching
 instruments requires flashing the corresponding BIN; runtime instrument switching

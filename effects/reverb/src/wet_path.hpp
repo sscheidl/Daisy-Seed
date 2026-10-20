@@ -1,0 +1,37 @@
+#pragma once
+// SPDX-License-Identifier: MIT
+#include "ambient_reverb.hpp"
+
+namespace ambient {
+// Keeps dry audio at codec rate. The wet engine is clocked at 12–48 kHz by a
+// fractional scheduler; a 64-tap low-pass FIR precedes decimation and the wet
+// output is linearly interpolated. No allocation or coefficient design in Process().
+class WetPath {
+  public:
+    bool Prepare(float sampleRate, Memory &memory);
+    void SetParameters(const Parameters &parameters);
+    void ServiceFilter(); // Call at control rate, never once per sample.
+    void SetLegacyMono(bool enabled);
+    Stereo Process(Stereo input, bool rightConnected);
+    const Diagnostics &GetDiagnostics() const { return core_.GetDiagnostics(); }
+    float InternalRateRatio() const { return ratio_; }
+
+  private:
+    static constexpr unsigned kTaps = 64;
+    static constexpr unsigned kFilterBands = 17;
+    static_assert((kTaps & (kTaps - 1)) == 0, "FIR ring size must be a power of two");
+    AmbientReverb core_;
+    Parameters parameters_{};
+    float sampleRate_ = 48000, ratio_ = 1, targetRatio_ = 1, phase_ = 0;
+    float filterRatio_ = -1;
+    std::array<float, kTaps> coefficients_{}, historyLeft_{}, historyRight_{};
+    std::array<std::array<float, kTaps>, kFilterBands> coefficientBank_{};
+    unsigned historyIndex_ = 0;
+    Stereo previousWet_{}, currentWet_{};
+    Ramp dry_, wet_, send_, panLeft_, panRight_, mono_;
+    bool ready_ = false;
+    void DesignFilterBank(); // Called only by Prepare(), before audio starts.
+    void ConfigureFilter(float safeRatio);
+    Stereo Filter(Stereo input);
+};
+} // namespace ambient

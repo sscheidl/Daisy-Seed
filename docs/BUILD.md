@@ -46,7 +46,7 @@ make PROJECT=reverb-fx test
 make PROJECT=reverb-fx test-sanitize
 make test-release
 python3 scripts/check-firmware.py
-python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.1.bin
+python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.2.bin
 ```
 
 Toy Piano is the default when PROJECT is omitted. `make -C instruments/toy-piano`
@@ -117,4 +117,4 @@ abort the workflow.
 Only the release job requests `contents: write`; normal CI is read-only.
 The existing v0.2 name is retained for Toy Piano. Other instruments need their
 own version/tag conventions before their first release.
-Ambient Reverb v0.1 is a CI artifact, not a published GitHub Release.
+Ambient Reverb v0.2 is a CI artifact, not a published GitHub Release.

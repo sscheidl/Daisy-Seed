@@ -57,7 +57,7 @@ Do not repeat `program-boot` for ordinary firmware updates.
    remains installed for the next update.
 
 For the first Ambient Reverb test, select
-`effects/reverb/build/AmbientReverb-v0.1.bin` in the Web Programmer, or use
+`effects/reverb/build/AmbientReverb-v0.2.bin` in the Web Programmer, or use
 `make PROJECT=reverb-fx program-dfu` with the same J7 connection and bootloader
 sequence. See the [reverb controls and test steps](../effects/reverb/README.md).
 

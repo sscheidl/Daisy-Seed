@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "../src/ambient_reverb.hpp"
+#include "../src/wet_path.hpp"
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -223,6 +224,33 @@ void Hold() {
     }
     Require(release < last * .03, "hold release does not decay");
 }
+void SustainTail() {
+    Fixture sustained, natural;
+    Parameters p;
+    p.mix = 1;
+    p.decaySeconds = 2;
+    p.modDepthMs = 0;
+    sustained.Prepare(48000, p);
+    natural.Prepare(48000, p);
+    for (int n = 0; n < 48000; ++n) {
+        const Stereo x{n == 0 ? .2f : 0, n == 0 ? .2f : 0};
+        sustained.fx.Process(x);
+        natural.fx.Process(x);
+    }
+    p.sustain = true;
+    sustained.fx.SetParameters(p);
+    double sustainedEnergy = 0, naturalEnergy = 0;
+    for (int n = 0; n < 48000 * 4; ++n) {
+        const Stereo x{n == 1000 ? .1f : 0, n == 1000 ? .1f : 0};
+        const auto a = sustained.fx.Process(x), b = natural.fx.Process(x);
+        if (n > 48000 * 3) {
+            sustainedEnergy += Energy(a);
+            naturalEnergy += Energy(b);
+        }
+    }
+    Require(sustainedEnergy > naturalEnergy * 20,
+            "Sustain does not lengthen the tail while admitting new input");
+}
 void CharactersAndBypass() {
     Fixture a, b;
     Parameters p;
@@ -347,6 +375,77 @@ void Stability() {
         Require(std::isfinite(y.left) && std::isfinite(y.right), "overload becomes nonfinite");
     }
 }
+void WetClockAndMono() {
+    auto memoryFast = std::make_unique<Memory>();
+    auto memorySlow = std::make_unique<Memory>();
+    WetPath fast, slow;
+    Parameters p;
+    p.mix = 1;
+    p.outputGain = 1;
+    p.preDelayMs = 20;
+    p.modDepthMs = 0;
+    fast.SetParameters(p);
+    p.stretch = 1;
+    slow.SetParameters(p);
+    Require(fast.Prepare(48000, *memoryFast) && slow.Prepare(48000, *memorySlow),
+            "wet path prepare failed");
+    Require(std::abs(fast.InternalRateRatio() - 1) < 1e-6 &&
+                std::abs(slow.InternalRateRatio() - .25f) < 1e-6,
+            "stretch endpoints are not 48/12 kHz");
+    int firstFast = -1, firstSlow = -1;
+    for (int n = 0; n < 48000; ++n) {
+        const Stereo impulse{n == 0 ? .3f : 0, n == 0 ? .3f : 0};
+        const auto a = fast.Process(impulse, true), b = slow.Process(impulse, true);
+        Require(std::isfinite(a.left) && std::isfinite(a.right) && std::isfinite(b.left) &&
+                    std::isfinite(b.right),
+                "stretched output nonfinite");
+        if (firstFast < 0 && Energy(a) > 1e-11f)
+            firstFast = n;
+        if (firstSlow < 0 && Energy(b) > 1e-11f)
+            firstSlow = n;
+    }
+    Require(firstFast > 500 && firstSlow > firstFast * 2,
+            "wet clock does not extend physical delay time");
+    Parameters dry;
+    dry.mix = 0;
+    dry.outputGain = 1;
+    dry.pan = 1;
+    fast.SetParameters(dry);
+    fast.SetLegacyMono(true);
+    for (int n = 0; n < 4000; ++n) {
+        auto y = fast.Process({.3f, -.1f}, true);
+        if (n > 3000)
+            Require(std::abs(y.left - .1f) < 1e-5f && y.left == y.right,
+                    "legacy mono is not a bounded L/R half-sum on both outputs");
+    }
+    fast.SetLegacyMono(false);
+    for (int n = 0; n < 4000; ++n) {
+        auto y = fast.Process({.3f, -.1f}, true);
+        if (n > 3000)
+            Require(std::abs(y.left - .3f) < 1e-5f && std::abs(y.right + .1f) < 1e-5f,
+                    "stereo restoration changed dry input");
+    }
+    p.mix = .7f;
+    p.outputGain = .8f;
+    float peak = 0;
+    audio = true;
+    for (int n = 0; n < 12000; ++n) {
+        if (n % 1000 == 0) {
+            p.stretch = .25f * float((n / 1000) % 5);
+            fast.SetParameters(p);
+        }
+        if (n % 100 == 0)
+            fast.ServiceFilter();
+        const auto y = fast.Process({.08f * std::sin(.02f * n), -.04f}, true);
+        Require(std::isfinite(y.left) && std::isfinite(y.right),
+                "stretch transition became nonfinite");
+        peak = std::max({peak, std::abs(y.left), std::abs(y.right)});
+    }
+    audio = false;
+    Require(allocations == 0 && peak < 1, "stretch transition allocates or clips");
+    std::cout << "Stretch first impulse sample 48/12 kHz: " << firstFast << "/" << firstSlow
+              << "\n";
+}
 void Benchmark() {
     Fixture f;
     f.Prepare(48000, AmbientReverb::Preset(Mode::Halo));
@@ -368,8 +467,10 @@ int main() {
         Pitch();
         Interfaces();
         Hold();
+        SustainTail();
         CharactersAndBypass();
         Stability();
+        WetClockAndMono();
         LongDecay();
         Benchmark();
         std::cout << "PASS ambient\n";
