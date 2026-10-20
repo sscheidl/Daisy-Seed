@@ -17,7 +17,7 @@ list:
 $(PROJECT_ACTIONS):
 	$(if $(PROJECT_DIR_$(PROJECT)),,$(error Unknown PROJECT '$(PROJECT)'; run make list))
 	$(if $(filter $(PROJECT),$(BUILDABLE_PROJECTS)),,$(error PROJECT '$(PROJECT)' is planned and has no firmware yet))
-	$(MAKE) -C $(PROJECT_DIR_$(PROJECT)) $@
+	"$(MAKE)" -C $(PROJECT_DIR_$(PROJECT)) $@
 
 all-projects:
 	$(foreach p,$(BUILDABLE_PROJECTS),"$(MAKE)" PROJECT=$(p) all &&) true
