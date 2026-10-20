@@ -30,8 +30,9 @@ single-color brightness-controlled LEDs, eight pots, a two-way toggle
 template reads the latter using `Switch3::POS_UP`, `POS_CENTER`, and
 `POS_DOWN`. Index 0 corresponds to S1/D1 or VR1 respectively; no extra GPIO
 assignment is required. The physical orientation and the user's "Switch 1"
-label should be confirmed at the first board test: the **three-position**
-hardware member is `tog_sw18`. The kit has no slider or RGB preset LED.
+and "Switch 2" labels should be confirmed at the first board test: the
+**three-position** hardware member is `tog_sw18` and the **two-position**
+member is `tog_sw17`. The kit has no slider or RGB preset LED.
 
 ## Proposed direct mapping
 
@@ -140,9 +141,22 @@ not imply fourteen simultaneously running DSP instances.
 
 For that later revision, S1–S14 directly select modes 1–14 with no bank or
 shift action. Tentatively, S15 is Bypass and S16 is Sustain; whether both are
-needed remains an open interaction decision. The two-way `tog_sw17` can hold
-the Trails On/Off setting, while Width stays on the three-way `tog_sw18` and
-X/Stretch stay on VR6/VR8. Exactly one of D1–D14 shows the selected mode;
+needed remains an open interaction decision. The two-way `tog_sw17` selects
+**Stereo** or **Legacy Mono**, inspired by the user's note that the Slöer
+predecessor was mono;
+it does not claim to recreate that pedal's firmware. Width stays on the
+three-way `tog_sw18` and X/Stretch stay on VR6/VR8. In Legacy Mono, use the
+left input alone when the right input is unplugged; with both inputs present,
+use a bounded half-sum of left and right. Feed that mono signal to both DSP
+input channels, force zero wet stereo width, and send identical mono output to
+both codec channels. Smooth the switch transition to prevent clicks and test
+phase-opposed stereo input, which can cancel in any mono downmix. In Stereo,
+keep the existing two-channel path and the selected Width setting. The current
+firmware's mono-input duplication is **not** a switchable mono-output mode.
+Trails may simply remain On in this 14-mode layout; any need for an Off
+setting requires a separate visible control decision.
+
+Exactly one of D1–D14 shows the selected mode;
 D15 is lit only while bypass is active, and D16 only while Sustain is active,
 if these functions are retained. LEDs follow applied state after debouncing,
 including any temporary footswitch-style gesture. The current D16
