@@ -37,6 +37,11 @@ The second row gives each modulation shape one direct button. This keeps all
 basic actions available with one finger and avoids a hidden bypass-plus-knob
 layer. Modes are *functional references* to our original engine:
 
+The two pedal faders each become a dedicated physical pot on the Desktop kit:
+**X = VR6** and **Stretch = VR8**. They are never combined into one control or
+hidden behind a shift gesture. VR8 remains the existing Predelay control in
+v0.1 until the Stretch DSP path has been implemented and validated.
+
 | Button | Proposed action | Current DSP mode/state | LED |
 | --- | --- | --- | --- |
 | S1 | Dream-inspired pad | Cloud | D1 selected |
