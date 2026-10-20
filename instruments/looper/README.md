@@ -1,13 +1,13 @@
 # Looper — Instrument Project
 
-**Status: engine v0.2 with all four loop modes and Slice/Skip; host tests and ARM
-build pass; no hardware run yet.** Project ID: `looper`. The goal is an original
+**Status: v0.3 with all four loop modes, Slice/Skip, and loop persistence and WAV
+import on the microSD card; host tests and ARM build pass; no hardware run yet.** Project ID: `looper`. The goal is an original
 stereo tape looper for the Seed3 Desktop Dev Kit, using the Qu-Bit Stardust as the
 behavioral reference. Validation details: [docs/VALIDATION.md](docs/VALIDATION.md); checklist for the
 first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.2.0.bin
+make PROJECT=looper -j4            # firmware: build/Looper-v0.3.0.bin
 make PROJECT=looper test           # host engine and production-callback tests
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```
@@ -93,8 +93,8 @@ independently from those descriptions.
   physical seam like the window. Mode changes take effect only while the head is
   away from every seam region, so switching never steps the output.
 
-Not in v0.2: effects, input saturation and mix curves, Freeze, clock-synced
-slices, 1V/Oct and CV, the encoder range modes, SD card, MIDI.
+Not in v0.3: effects, input saturation and mix curves, Freeze, clock-synced
+slices, 1V/Oct and CV, the encoder range modes, WAV export, MIDI.
 
 **Decided for Frippertronics (2026-10-20),** following manual v1.1.0 rather than
 the analyzed code, whose behavior is still OPEN (analysis section 8); both are
@@ -109,7 +109,7 @@ implemented and tested:
   selected; erase stays available. This avoids state changes that are hard to
   follow while the loop keeps decaying.
 
-## Seed3 controls (v0.2)
+## Seed3 controls (v0.3)
 
 [src/main.cpp](src/main.cpp) runs the engine in the audio callback (48 kHz,
 48-frame blocks) and outputs dry input plus loop through a soft limit above
@@ -127,6 +127,7 @@ Size, Slice, Skip and Decay.
 | S5 | Erase (undoable) | dim while a loop exists |
 | S6 | Next loop mode | |
 | S7 | Seam: window ↔ crossfade | on for crossfade |
+| S8 | Import the next WAV file from `looper/loops/` (undoable) | card: off = none, dim = ready, blinking = saving or loading, fast = error |
 | S9–S12 | Sound on Sound, Replace, Frippertronics, Resample | on for the selected mode |
 | VR1 (pot 0) | Varispeed −24…+36 semitones, whole semitones, unity at 40 % | |
 | VR2 (pot 1) | Inertia 0…1 | |
@@ -139,6 +140,40 @@ Size, Slice, Skip and Decay.
 | D16 | | callback deadline overrun seen |
 
 The physical orientation of keys and pots still needs a check on the board.
+
+## microSD (v0.3)
+
+A FAT32 card holds a folder `looper/` (created when missing):
+
+* **`loop.wav`, persistence.** Two seconds after the loop last changed and once
+  the engine is idle (no recording, fade, undo copy or import running), the main
+  loop writes the current loop as 32-bit float stereo WAV at 48 kHz, with a
+  small `lprs` chunk for the loop length and the crossfade post-roll. Audio keeps
+  running. The file is written as `loop.tmp` in 32 KB pieces and replaces
+  `loop.wav` only when complete; any change to the loop during the write
+  discards it, and the save starts again later. After erase, `loop.wav` is
+  deleted. At power-up the firmware loads `loop.wav` (or a complete `loop.tmp`
+  left by a power loss between delete and rename) before audio starts. Only the
+  current loop is kept: undo starts empty after a power cycle. 87 s take about
+  33 MB.
+* **`loops/`, import.** S8 loads the next `*.wav` file, sorted by name ignoring
+  case (at most 32 files, names shorter than 96 characters, hidden files
+  skipped). Accepted: 16- or 24-bit PCM or 32-bit float, also
+  WAVE_FORMAT_EXTENSIBLE, mono (duplicated) or up to 8 channels (the first two
+  are used), exactly 48 kHz, at most 87 s. Every chunk is checked against the
+  file size and the length against the buffer before anything is written.
+  The file is read into the other buffer while the loop keeps playing, then the
+  engine switches with a 10 ms fade; undo returns the previous loop. While a
+  file loads, record, undo and erase are ignored. Rejected files and a busy
+  engine (recording, resampling) are shown with a fast-blinking S8 LED.
+
+All card access runs in the main loop. The audio callback only publishes a
+snapshot of the engine state (sequence lock) and answers import requests, so
+file I/O never runs in the callback. The FatFS objects and the 32 KB transfer
+buffer live in SDRAM, because the SDMMC1 IDMA cannot reach DTCM. The SD
+interrupt runs below the audio DMA. The original fades audio out and pauses it
+for imports and reloads its undo state from the card; this firmware does neither
+(analysis sections 3 and 9).
 
 ## Reference: Qu-Bit Stardust
 
@@ -204,6 +239,6 @@ The steps follow the gates of the feasibility study, adapted to this repository:
    Resample and Slice/Skip in v0.2, each with deterministic host tests. Tape and
    digital effects remain; their DSP in the original is not analyzed yet.
 5. **microSD and controls:** file access outside the audio callback, WAV
-   validation with bounds checks (the engine's `LoadLoop` already rejects
-   oversize loads), power-cycle persistence, and mapping of the Stardust controls
-   onto the kit's keys, knobs, switch, and MIDI.
+   validation with bounds checks and power-cycle persistence in v0.3 (host-tested
+   with an in-memory card; the card itself is untested). Open: WAV export, the
+   mapping of the remaining Stardust controls onto the kit's switches and MIDI.

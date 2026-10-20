@@ -47,6 +47,7 @@ struct Hardware {
     std::array<DigitalControl, 16> button{};
     std::array<bool, 16> pressed{};
     struct RightDetect { bool pressed = false; bool Pressed() const { return pressed; } } right_detect;
+    RightDetect sd_detect{true};  // card in the slot
     void Init() { for (auto& b : button) b.Init(true); }
     void UpdateAllControls() {
         for (std::size_t i = 0; i < button.size(); ++i)

@@ -1,4 +1,4 @@
-# Hardware test — Looper v0.2 — PENDING — USER TEST
+# Hardware test — Looper v0.3 — PENDING — USER TEST
 
 No hardware run or flash has been done by the agent. Work through the sections in
 order: later checks only make sense once the earlier ones pass. Tick each box and
@@ -7,7 +7,7 @@ skipped one.
 
 ## 0. Prepare
 
-- [ ] Build or download `Looper-v0.2.0.bin` and note its SHA-256. The PR CI
+- [ ] Build or download `Looper-v0.3.0.bin` and note its SHA-256. The PR CI
       artifact and a local build of the same commit must match.
 - [ ] Flash it through the external Daisy bootloader as in
       [docs/FLASHING.md](../../../docs/FLASHING.md) (`PROJECT=looper`). Do not
@@ -36,7 +36,7 @@ Record: board revision, binary SHA-256, source, input level, monitoring.
 
 ## 2. Keys, pots and LEDs
 
-- [ ] Each key S1–S7 and S9–S12 does what the README table says, and the LED
+- [ ] Each key S1–S12 does what the README table says, and the LED
       above it matches. Note any key or LED that is swapped or mirrored.
 - [ ] Each pot 0–7 controls the listed parameter; turning right increases it.
       Note the physical position of each pot number on the board.
@@ -92,7 +92,30 @@ Record: board revision, binary SHA-256, source, input level, monitoring.
 - [ ] All of these stay free of clicks in both seam modes. Note any click with
       the pot positions.
 
-## 7. Report
+## 7. microSD
+
+Use a FAT32 card. Put a few WAV files (48 kHz; 16/24-bit or float; mono or
+stereo; one longer than 87 s; one at 44.1 kHz) into a folder `looper/loops/`.
+
+- [ ] Without a card the S8 LED is off and everything else works.
+- [ ] With a card the S8 LED is dim after boot.
+- [ ] Record a loop and wait: about 2 s after the last change the S8 LED blinks
+      while `loop.wav` is written. Note how long a short loop and a full 87 s
+      loop take. Audio must not drop out and D16 stays off.
+- [ ] Overdub while it is saving: the save stops, and starts again after the
+      overdub.
+- [ ] Power-cycle: the last saved loop plays again after boot. Undo is not
+      available right after boot.
+- [ ] Erase, wait 3 s, power-cycle: the looper starts empty.
+- [ ] S8 loads the files of `looper/loops/` in name order, one per press; the
+      loop switches with a short fade. S3 returns the previous loop. The 44.1 kHz
+      file and the over-long file make the S8 LED blink fast and change nothing.
+- [ ] Pull the card while it is saving: no crash, LED off; insert it again: the
+      next change is saved.
+- [ ] Check `looper/loop.wav` on a computer: it plays as a 32-bit float stereo
+      WAV at 48 kHz.
+
+## 8. Report
 
 Write down for each box: pass, fail, or not tested, plus notes. Especially:
 boot time, any D16 event, control orientation, clicks with the settings that

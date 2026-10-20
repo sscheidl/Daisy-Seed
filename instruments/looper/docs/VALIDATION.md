@@ -1,10 +1,12 @@
-# Validation — Looper v0.2
+# Validation — Looper v0.3
 
 Date: 2026-10-20. Hardware validation: **PENDING — no run on the Seed3 yet.**
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
 | Host engine tests | PASS | `tests/test_engine.cpp`, 3.9 s at `-O2`, 15.5 s with ASan/UBSan |
+| WAV parser and writer | PASS | `tests/test_wav.cpp`: valid variants, every rejection, round trip, fuzzing |
+| Card persistence and import | PASS | `tests/test_store.cpp` with an in-memory card and fault injection |
 | Production callback | PASS | `tests/test_callback.cpp` runs `src/main.cpp` with the kit fake and libDaisy's `DigitalControl` |
 | ARM build | PASS | `make PROJECT=looper`, image check with `scripts/check-firmware.py` |
 | Hardware | PENDING | see the list at the end |
@@ -41,7 +43,9 @@ are checked after every scenario; ASan covers the rest of the heap.
 | Slice segmentation | 8 s window: 96,000 / 48,000 / 24,000 / 12,000 / 6,000 frames for slice 0, 0.25, 0.5, 0.7, 1; 5 s and 6 s windows (segments rounded to a power of two), 3 s window as one segment, 1,152-frame minimum |
 | Slice/Skip statistics | 2,000 boundaries each with a fixed seed: repeat rate 0.6 × 5/6 at f = 0.895, none at the start of a divisor step, repeat window 1,152…1,500 frames; offsets 1/2 in zone 1 (both offset kinds), reverse 0.125 + 0.5 f in zone 2 with real reverse playback; pitch changes 1/4 in zones 3–6 with values in the expected sets (micro pitch range, ×1/×2/×½ with the head really at ×2, ±11 semitones, ±16 semitones with glides); same seed → same sequence, another seed → a different one |
 | Slice/Skip audio | 100 Hz tone, slice 0.9 and skip in manual zones 3, 4 and 6, window and crossfade seams, whole loop and a Start/Size window: largest sample step within the slope of a 400 Hz tone plus the fade slope; overdubs at ×8, ×1 and ×¼ while slicing stay finite and within ±1, and undo after each is exact; Frippertronics with Skip offsets keeps the frames written during offset slices (Sound on Sound rule) |
-| Callback | Keys S1–S7 through the debouncer: take start/stop, play/pause, undo/redo toggle, reverse, erase and undo of erase, loop and seam mode; knob mapping −24/+6/0/+36 semitones and inertia; S6 cycling and S9–S12 selecting the four loop modes with the mode LEDs; the undo key locked in Frippertronics; decay, Slice, Start and Size pots; a resample with the record key and its undo; held key with 1–6 ms dropouts does not retrigger; automatic stop of a 4 s buffer; output finite and within ±1 |
+| WAV | PCM 16/24 bit and float 32, mono to 8 channels, WAVE_FORMAT_EXTENSIBLE (PCM and float GUID), odd-sized and unknown chunks with pad bytes, fmt after data, RIFF size beyond the file, clamping of out-of-range and non-finite floats. Rejected: short or non-RIFF/WAVE files, missing or short fmt, missing data, 8/32-bit PCM, 16-bit float, ADPCM, 0 or 9 channels, wrong block align, wrong GUID, 44.1 and 96 kHz, 0 frames, capacity + 1 frames (exactly the capacity passes), truncated data, a data size of 0xFFFFFFFF; an inconsistent loop chunk is ignored. Float32 stereo with loop chunk round-trips bit for bit. Every truncation of two valid files and 40,000 random header mutations: no read past the end, every accepted header lies inside the file, decoded samples finite and within ±1 |
+| Card | Nothing saved while empty; save 2 s after the last change and only while idle; file equals the stored frames and tail exactly; no save without a change; undo is saved; power-up recall restores the loop exactly, not undoable, without re-saving; erase deletes the file. A layer started during a save, a version change between copying and writing a chunk, and the audio thread writing while the last chunk is copied all discard the temporary file and keep the last good `loop.wav`; write failure (retry after 10 s), failed rename (the complete `loop.tmp` is recalled), truncated `loop.tmp` (not recalled), card pulled during a save (abort, no-card status, save after reinsertion). Import: case-insensitive order, wrap-around, hidden and non-WAV files skipped, mono/stereo values, exactly the capacity accepted, wrong rate and capacity + 1 rejected without change, undoable, saved and recalled, refused while overdubbing, replaces a running save, no files reported; with a 3-callback reply delay. Engine: while importing, record, undo and erase are ignored; invalid commits change nothing |
+| Callback | Keys S1–S7 through the debouncer: take start/stop, play/pause, undo/redo toggle, reverse, erase and undo of erase, loop and seam mode; knob mapping −24/+6/0/+36 semitones and inertia; S6 cycling and S9–S12 selecting the four loop modes with the mode LEDs; the undo key locked in Frippertronics; decay, Slice, Start and Size pots; a resample with the record key and its undo; with an in-memory card: the full loop saved, S8 importing `loops/one.wav`, and a power-up recalling the last save; held key with 1–6 ms dropouts does not retrigger; automatic stop of a 4 s buffer; output finite and within ±1 |
 
 Mutation check (done by hand for v0.1 and again for v0.2, not part of
 `make test`): disabling the seam window, the post-roll tail, copy on write, the
@@ -50,18 +54,23 @@ or the punch fade; inverting the decay knob, dropping the Frippertronics punch
 ramp, its Sound-on-Sound rule during Skip offsets or the post-roll decay; the
 resample fade-in; halving the repeat chance; not applying the repeat window, the
 slice reverse or the slice pitch; rounding segments to non-powers of two; or not
-crossfading when the head leaves an edge region each make the suite fail.
+crossfading when the head leaves an edge region each make the suite fail. For
+v0.3 also: removing the truncation or sample-rate check, the version check, the
+save delay, the abort on change, the check after copying a chunk, the recall of
+`loop.tmp`, the deletion after erase, the name sort, or the import lock in the
+engine.
 
 ## Memory and image
 
-* `Looper-v0.2.0.bin`: 109,916 bytes, SHA-256
-  `785c557e6fa07ed089857517a08ab59b68eaf3a895bdfce98539f92bbefd068c` (local build,
-  not a release). The slice counter uses `double`, which the `fpv5-d16` FPU runs
+* `Looper-v0.3.0.bin`: 146,892 bytes, SHA-256
+  `c7545199b93c9129e2f030c1a58b697f4bf7717b2ca144134e078a73ae5bb18e` (local build,
+  not a release; v0.2.0 was 109,916 bytes, `785c557e…d068c`). The slice counter uses `double`, which the `fpv5-d16` FPU runs
   in hardware (no soft-float helpers are linked).
-* SDRAM: 66,816,000 bytes for the two buffers (99.56 % of 64 MiB). Delay lines or
-  reverb for later effects must use internal SRAM.
+* SDRAM: 66,816,000 bytes for the two buffers plus 32 KB transfer buffer and the
+  FatFS objects (99.62 % of 64 MiB). Delay lines or reverb for later effects must
+  use internal SRAM.
 * The engine object (4.3 KB, mostly the copy bitmap) is in `.data`; DTCM 58 KB,
-  SRAM image 110 KB of 480 KB.
+  SRAM image 147 KB of 480 KB, DTCM 64 KB.
 * `.sdram_bss` is NOLOAD; `main` zeroes both buffers after `hw.Init()`. The only
   static initializer in `main.cpp` constructs the kit object and does not touch
   SDRAM (checked in the disassembly).
@@ -93,6 +102,10 @@ crossfading when the head leaves an edge region each make the suite fail.
   limit) and switches with a 10 ms ramp after a 960-frame post-roll.
 * The crossfade for moves also runs when the head leaves an edge region of the
   old window, so the end of a repeat never steps the edge gain.
+* Card: one `loop.wav` in 32-bit float instead of the original's 16-bit
+  `loop.wav`/`temp.wav` pair that also carries the undo state; imports load
+  into the other buffer while audio plays instead of pausing audio; only 48 kHz
+  files are accepted (no resampling); no WAV export yet.
 
 ## Needs hardware
 
@@ -109,3 +122,8 @@ Step-by-step checklist: [HARDWARE_TEST.md](HARDWARE_TEST.md).
    repeat starts in window mode).
 4. Key and pot orientation, LED brightness, debounce feel.
 5. Input level and soft limit with a line source; mono/stereo jack detection.
+6. microSD: card detect, mount, FAT32 cards of different sizes and speeds, the
+   time a full 87 s save takes, no audio dropouts or D16 events while saving or
+   importing, recall after a power cycle, removal during a save. The SDMMC/FatFS
+   path, the cache handling and the SD interrupt priority are untested on the
+   board.

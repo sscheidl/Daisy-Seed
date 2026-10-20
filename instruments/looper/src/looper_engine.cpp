@@ -121,7 +121,7 @@ void Engine::ProcessSample(float inLeft, float inRight, float& outLeft, float& o
 // ---------------------------------------------------------------- controls
 
 void Engine::PressRecord() {
-    if (!ready_)
+    if (!ready_ || importing_)
         return;
     switch (state_) {
     case State::Empty:
@@ -151,21 +151,22 @@ void Engine::PressRecord() {
 void Engine::SetPlaying(bool playing) { playing_ = playing; }
 
 void Engine::Undo() {
-    if (ready_ && CanUndo() && state_ != State::Recording)
+    if (ready_ && !importing_ && CanUndo() && state_ != State::Recording)
         RequestOperation(Op::Undo);
 }
 
 void Engine::Redo() {
-    if (ready_ && CanRedo() && state_ != State::Recording)
+    if (ready_ && !importing_ && CanRedo() && state_ != State::Recording)
         RequestOperation(Op::Redo);
 }
 
 void Engine::Erase() {
-    if (!ready_)
+    if (!ready_ || importing_)
         return;
     if (state_ == State::Recording) {  // abandon the first take; nothing to keep
         state_ = State::Empty;
         recordPosition_ = 0;
+        ++version_;
         return;
     }
     if (Length() > 0)
@@ -182,20 +183,42 @@ void Engine::RequestOperation(Op op) {
 bool Engine::Busy() const {
     return state_ == State::Recording || overdub_ || recGain_ > 0.f || recordRequest_ ||
            pendingOp_ != Op::None || postRoll_ < postRollLength_ || syncPending_ ||
-           capture_ != Capture::Off;
+           capture_ != Capture::Off || importing_;
 }
 
 bool Engine::LoadLoop(const Frame* source, uint32_t frames) {
-    if (!ready_ || source == nullptr || frames == 0 || frames > capacity_ || Busy())
+    if (source == nullptr)
         return false;
+    Frame* target = BeginImport(frames);
+    if (target == nullptr)
+        return false;
+    std::memcpy(target, source, size_t(frames) * sizeof(Frame));
+    return CommitImport(frames, 0, true);
+}
+
+Frame* Engine::BeginImport(uint32_t frames) {
+    if (!ready_ || frames == 0 || frames > capacity_ || Busy())
+        return nullptr;
+    importing_ = true;
+    importFrames_ = frames;
+    return buffer_[1 - active_];
+}
+
+bool Engine::CommitImport(uint32_t length, uint32_t tail, bool undoable) {
+    if (!importing_)
+        return false;
+    importing_ = false;
+    if (length == 0 || tail > kTailFrames || length + tail > importFrames_ ||
+        length + tail > capacity_)
+        return false;  // nothing changed; the other buffer may hold a partial file
     const uint8_t target = 1 - active_;
-    std::memcpy(buffer_[target], source, size_t(frames) * sizeof(Frame));
-    length_[target] = frames;
-    tail_[target] = 0;
+    length_[target] = length;
+    tail_[target] = tail;
     active_ = target;
-    canUndo_ = true;  // the previous state stays in the other buffer
+    canUndo_ = undoable;  // the previous state stays in the other buffer
     canRedo_ = false;
     mirror_ = false;
+    ++version_;
     EnterLoop(0);
     opGain_ = 0.f;  // fade the new material in
     return true;
@@ -332,8 +355,11 @@ void Engine::UpdateRamps() {
         opGain_ = std::min(1.f, opGain_ + 1.f / float(kOpRampFrames));
     if (overdub_)
         recGain_ = std::min(1.f, recGain_ + 1.f / float(kPunchFadeFrames));
-    else if (recGain_ > 0.f)
+    else if (recGain_ > 0.f) {
         recGain_ = std::max(0.f, recGain_ - 1.f / float(kPunchFadeFrames));
+        if (recGain_ <= 0.f)
+            ++version_;  // the layer is complete
+    }
     retention_ += (retentionTarget_ - retention_) * kRetentionCoefficient;
     if (std::fabs(retentionTarget_ - retention_) < 1e-6f)
         retention_ = retentionTarget_;
@@ -342,6 +368,7 @@ void Engine::UpdateRamps() {
 // ---------------------------------------------------------------- layers
 
 void Engine::StartFirstTake() {
+    ++version_;
     state_ = State::Recording;
     recordPosition_ = 0;
     length_[0] = length_[1] = 0;
@@ -374,6 +401,7 @@ void Engine::RecordFirstTake(float inLeft, float inRight) {
 
 void Engine::FinishFirstTake() {
     const uint32_t length = std::min(recordPosition_, capacity_);
+    ++version_;
     if (length == 0) {
         state_ = State::Empty;
         return;
@@ -404,8 +432,10 @@ void Engine::WritePostRoll(float inLeft, float inRight) {
         buffer_[0][index] = f;
         buffer_[1][index] = f;
     }
-    if (++postRoll_ >= postRollLength_)
+    if (++postRoll_ >= postRollLength_) {
         tail_[active_] = postRollLength_;
+        ++version_;
+    }
 }
 
 bool Engine::CanStartLayer() const {
@@ -425,6 +455,7 @@ void Engine::StartLayer() {
 // Blocks are copied before their first write (copy on write) and the rest in
 // the background, so undo never depends on storage.
 void Engine::StartOverdub() {
+    ++version_;
     const uint8_t other = 1 - active_;
     length_[other] = length_[active_];
     tail_[other] = tail_[active_];
@@ -501,6 +532,7 @@ void Engine::CaptureSample(float left, float right) {
 }
 
 void Engine::ExecuteOperation() {
+    ++version_;
     const Op op = pendingOp_;
     pendingOp_ = Op::None;
     recordRequest_ = false;
