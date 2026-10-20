@@ -10,3 +10,8 @@
 /diagnostics/release/
 __pycache__/
 .pytest_cache/
+# Stardust analysis inputs and outputs stay local
+/instruments/looper/**/*.bin
+/instruments/looper/**/*.elf
+/instruments/looper/**/*.pkl
+/instruments/looper/work/
