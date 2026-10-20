@@ -25,10 +25,13 @@ p. 6. These are **documented pedal behaviors**, not functions already present
 in our firmware.
 
 The pinned `desktop_devkit::Hardware` exposes 16 debounced buttons, 16
-single-color brightness-controlled LEDs, and eight pots. Index 0 corresponds
-to S1/D1 or VR1 respectively; no extra GPIO assignment is required. The
-physical orientation of the kit's controls should still be confirmed by the
-operator at the first board test. The kit has no slider or RGB preset LED.
+single-color brightness-controlled LEDs, eight pots, a two-way toggle
+(`tog_sw17`), and a three-way toggle (`tog_sw18`). The official Desktop
+template reads the latter using `Switch3::POS_UP`, `POS_CENTER`, and
+`POS_DOWN`. Index 0 corresponds to S1/D1 or VR1 respectively; no extra GPIO
+assignment is required. The physical orientation and the user's "Switch 1"
+label should be confirmed at the first board test: the **three-position**
+hardware member is `tog_sw18`. The kit has no slider or RGB preset LED.
 
 ## Proposed direct mapping
 
@@ -41,6 +44,8 @@ The two pedal faders each become a dedicated physical pot on the Desktop kit:
 **X = VR6** and **Stretch = VR8**. They are never combined into one control or
 hidden behind a shift gesture. VR8 remains the existing Predelay control in
 v0.1 until the Stretch DSP path has been implemented and validated.
+The three-position board switch provides pedal-style Width directly:
+up = Wide, center = Medium, down = Narrow. Mode 1–5 are S1–S5 respectively.
 
 | Button | Proposed action | Current DSP mode/state | LED |
 | --- | --- | --- | --- |
@@ -67,7 +72,7 @@ soft takeover in this revision. No RGB color or “modified preset” claim is m
 | VR2 | Filter/tone, exponential 400–14,000 Hz | Already present; mode-specific pedal filter curves are unknown |
 | VR3 | Modulation depth, 0–3 ms | Already present |
 | VR4 | Dry/wet mix, 0–100% | Already present |
-| VR5 | Continuous stereo width, 0–100% | Already present; 0/50/100% replace the pedal's three switch positions approximately |
+| VR5 | **Target:** wet-signal Pan, available directly instead of the pedal's secondary Mix gesture | Not implemented; v0.1 still controls continuous Width. Keep it labeled **Width** until Pan DSP and the three-position Width switch are implemented |
 | VR6 | X: behavior determined by selected mode | Partly present; see gap table |
 | VR7 | Modulation rate, 0.03–1.5 Hz | Already present, promoted from the pedal's secondary control |
 | VR8 | **Target:** Stretch, increasing wet-path time expansion and coloration | Not implemented; v0.1 still controls predelay. Keep it labeled **Predelay** until a real Stretch DSP path and new version exist |
@@ -85,8 +90,11 @@ bounded parameter smoothing for a click-free change; test fast mode switching.
 | Rise: swell time | Bloom maps `texture` to `riseSeconds` | Retain the exponential 0.05–4 s mapping and verify retrigger behavior |
 
 The pedal's Pan secondary control has no matching parameter in the current
-engine. It is deferred; stereo width remains available on VR5. Assigning Pan
-to a spare button or adding presets requires a separate, visible UI decision.
+engine. Its proposed direct VR5 mapping is deferred until a real Pan control
+exists. The current continuous Width control must then move to the three-way
+switch: Wide/Medium/Narrow map to 100/50/0% as an initial approximation. The
+pedal's exact stereo curves are unknown. Adding presets requires a separate,
+visible UI decision.
 Do not claim that the five current modes reproduce the pedal's algorithms.
 
 ## Switch behavior to implement
@@ -118,10 +126,37 @@ reset, and power-on Trails gesture are **deferred**. No persistent storage or
 bootloader changes are part of the first control revision. S14–S16 are kept
 free for a later explicit choice rather than assigning undocumented actions.
 
+## Growth path: sixteen original modes
+
+The engine may later expose **16 selectable original algorithm slots**, each
+with a stable mode ID and its own explicitly defined interpretation of X.
+The first five slots remain Dream/Cloud, Light/Halo, Rain/Scatter, Dark/Abyss,
+and Rise/Bloom on S1–S5 in the initial bank. Additional slots are for our own
+models and experiments, not claims to replicate proprietary pedal algorithms.
+Only the selected algorithm processes audio; the number of menu slots does
+not imply sixteen simultaneously running DSP instances.
+
+For that later revision, use the board's two-way `tog_sw17` to select banks A
+and B and S1–S8 to select one of eight modes in the chosen bank. This preserves
+direct access to modes 1–5 with bank A selected. S9–S13 can remain the five
+shape buttons; S14/S15/S16 would become Sustain/Bypass/Trails. Width stays on
+the three-way `tog_sw18`, and X/Stretch stay on VR6/VR8. The overrun indicator
+currently on D16 needs a separate diagnostic display or a documented LED
+pattern before S16/D16 is reassigned. This banked layout **supersedes** the
+first-revision S6–S8 performance controls; do not silently change those
+buttons in a v0.1 image. Announce and test the migration as a new version.
+
+Before adding modes, define a stable mode-ID table, a bounded transition
+policy for switching algorithms with a live tail, and worst-case RAM/cycle
+budgets for the heaviest mode. Mode-specific X values should be derived from
+the current physical VR6 position; no hidden values or preset recall are
+needed for this stage.
+
 ## Implementation sequence and acceptance
 
 1. Move button gestures and LED state into a small fixed-size control state
-   machine. Map S1–S5 to the existing modes, S9–S13 to shapes, and VR6 by mode.
+   machine. Map S1–S5 to the existing modes, S9–S13 to shapes, VR6 by mode,
+   and the three-way `tog_sw18` to Width. Keep VR5 on Width until Pan exists.
    Keep `UpdateLeds()` in the main loop. Test simultaneous presses, debounce,
    short contact dropouts, startup with a held button, and 250 ms boundaries.
 2. Give Sustain, Bypass, and No Trails their defined DSP transitions. Test
@@ -139,7 +174,8 @@ free for a later explicit choice rather than assigning undocumented actions.
    changing decay/tone.
 
 First manual board check: start at low monitor level, verify the physical S/VR
-labels against `desktop_devkit::Hardware`, then test each mode, X endpoints,
+labels against `desktop_devkit::Hardware` (especially the three-way switch),
+then test each mode, X endpoints,
 Sustain press/release, bypass tap/hold, Trails on/off, stereo width, and the
 D16 overrun indicator. Record board revision, connections, firmware hash,
 callback cycles, and audible discontinuities. No hardware latency or CPU result
