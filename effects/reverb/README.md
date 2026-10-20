@@ -47,6 +47,10 @@ DSP coefficients at most about 50 times per second; button presses are handled
 on debounced edges. As with Toy Piano, a brief contact dropout while a button
 remains held cannot trigger a second action.
 
+The [Slöer-inspired Desktop control plan](docs/CONTROL_PLAN.md) proposes a closer
+pedal-style layout. It is a design document; the table above describes the
+current v0.1 firmware.
+
 ## Build and test
 
 From the repository root, with the pinned submodules and ARM toolchain installed

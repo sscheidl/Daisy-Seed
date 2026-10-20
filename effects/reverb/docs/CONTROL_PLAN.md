@@ -1,0 +1,204 @@
+# Slöer-Inspired Controls on the Seed3 Desktop Kit
+
+**Status: interaction plan, not implemented firmware.** This plan was written on
+October 20, 2026, against `sscheidl/Daisy-Seed` main at `abc5a71` and the
+[Walrus Audio Slöer digital manual](https://cdn.shopify.com/s/files/1/0906/8480/files/Sloer_Digital_Manual.pdf?v=1689191307)
+(7-page PDF, SHA-256 `6c773b95e83fdcc2237f7a8005b3b94c99284cb1780defba77ea0d1d3d18962d`).
+The [Thomann listing and front-panel photo](https://www.thomann.de/de/walrus_audio_sloeer_ambient_reverb_black.htm)
+confirm the black pedal's physical layout: four top knobs, a Width switch,
+X and Stretch faders, a Mode knob, and Bypass and Sustain footswitches.
+The manual documents the pedal's controls, not its internal DSP algorithm.
+The firmware is an original Ambient Reverb and no sonic equivalence is claimed.
+The [current v0.1 controls](../README.md#what-it-does) remain authoritative until
+an implementation and a new firmware build are validated.
+
+## Manual and board facts
+
+The manual describes Dream, Light, Rain, Dark, and Rise modes (p. 2). Its four
+main knobs are Decay, Filter, Depth, and Mix; Width is a three-position switch,
+X is a mode-dependent fader, and Stretch changes the pedal's internal processing
+rate (pp. 3–4). Rate and Pan are secondary controls reached by holding Bypass
+while moving Depth or Mix. Bypass has a momentary-on gesture when the effect is
+off. Sustain is momentary in most modes and latching in Dream; Trails can be
+switched off (p. 5). Three saved presets and color feedback are described on
+p. 6. These are **documented pedal behaviors**, not functions already present
+in our firmware.
+
+The pinned `desktop_devkit::Hardware` exposes 16 debounced buttons, 16
+single-color brightness-controlled LEDs, eight pots, a two-way toggle
+(`tog_sw17`), and a three-way toggle (`tog_sw18`). The official Desktop
+template reads the latter using `Switch3::POS_UP`, `POS_CENTER`, and
+`POS_DOWN`. Index 0 corresponds to S1/D1 or VR1 respectively; no extra GPIO
+assignment is required. The physical orientation and the user's "Switch 1"
+and "Switch 2" labels should be confirmed at the first board test: the
+**three-position** hardware member is `tog_sw18` and the **two-position**
+member is `tog_sw17`. The kit has no slider or RGB preset LED.
+
+## Proposed direct mapping
+
+The first row selects the pedal-inspired modes and handles live performance.
+The second row gives each modulation shape one direct button. This keeps all
+basic actions available with one finger and avoids a hidden bypass-plus-knob
+layer. Modes are *functional references* to our original engine:
+
+The two pedal faders each become a dedicated physical pot on the Desktop kit:
+**X = VR6** and **Stretch = VR8**. They are never combined into one control or
+hidden behind a shift gesture. VR8 remains the existing Predelay control in
+v0.1 until the Stretch DSP path has been implemented and validated.
+The three-position board switch provides pedal-style Width directly:
+up = Wide, center = Medium, down = Narrow. Mode 1–5 are S1–S5 respectively.
+
+| Button | Proposed action | Current DSP mode/state | LED |
+| --- | --- | --- | --- |
+| S1 | Dream-inspired pad | Cloud | D1 selected |
+| S2 | Light-inspired octave up | Halo | D2 selected |
+| S3 | Rain-inspired audible taps | Scatter | D3 selected |
+| S4 | Dark-inspired octave down | Abyss | D4 selected |
+| S5 | Rise-inspired swell | Bloom | D5 selected |
+| S6 | Sustain: latch in Dream; hold while pressed in other modes | `hold`, after the behavior change below | D6 active |
+| S7 | Effect bypass: tap to latch; hold from bypass for temporary effect | `bypass`, after the gesture change below | D7 bypass active |
+| S8 | Toggle Trails / No Trails | `trails`, after tail reset is defined | D8 Trails enabled |
+| S9–S13 | Direct Sine / Warp / Sink / Step / Random shape selection | `shape` | D9–D13 one selected |
+| S14–S16 | Reserved; no action in the first control revision | — | D14–D15 unused; D16 keeps the overrun latch |
+
+One selected mode LED and one shape LED stay lit at a time. Every button LED
+indicates its *applied* function state: selected mode/shape or active
+Sustain/Bypass/Trails. D7 follows the actual temporary bypass state, not just
+the latched preference. At startup:
+Dream/Cloud, Sine, Trails on, Sustain off, effect on. The default pot values
+come from physical positions after ADC settling; there is no preset recall or
+soft takeover in this revision. No RGB color or “modified preset” claim is made.
+
+| Pot | Proposed role | Implementation status |
+| --- | --- | --- |
+| VR1 | Decay, exponential 1–45 s nominal range | Already present; nominal value is not measured RT60 |
+| VR2 | Filter/tone, exponential 400–14,000 Hz | Already present; mode-specific pedal filter curves are unknown |
+| VR3 | Modulation depth, 0–3 ms | Already present |
+| VR4 | Dry/wet mix, 0–100% | Already present |
+| VR5 | **Target:** wet-signal Pan, available directly instead of the pedal's secondary Mix gesture | Not implemented; v0.1 still controls continuous Width. Keep it labeled **Width** until Pan DSP and the three-position Width switch are implemented |
+| VR6 | X: behavior determined by selected mode | Partly present; see gap table |
+| VR7 | Modulation rate, 0.03–1.5 Hz | Already present, promoted from the pedal's secondary control |
+| VR8 | **Target:** Stretch, increasing wet-path time expansion and coloration | Not implemented; v0.1 still controls predelay. Keep it labeled **Predelay** until a real Stretch DSP path and new version exist |
+
+The same VR6 position is reinterpreted immediately on each mode change, as on
+a physical X control. Do not store hidden per-mode X values. Reuse the current
+bounded parameter smoothing for a click-free change; test fast mode switching.
+
+| Manual X role | Current original engine | Required change for the proposed interface |
+| --- | --- | --- |
+| Dream: vibrato over sustained pad | Cloud has no Texture effect; current Hold disables modulation | Add a bounded vibrato contribution while Dream sustain is active without destabilizing feedback |
+| Light: +1 octave amount | Halo `texture` controls octave-up contribution | Map VR6 to that contribution and verify full wet range |
+| Rain: diffusion of audible taps | Scatter `texture` changes early-tap level; Scatter also fixes a reduced diffusion factor | Make VR6 control the taps-versus-diffusion character directly; keep output bounded |
+| Dark: −1 octave amount | Abyss `texture` controls octave-down contribution | Map VR6 to that contribution and verify full wet range |
+| Rise: swell time | Bloom maps `texture` to `riseSeconds` | Retain the exponential 0.05–4 s mapping and verify retrigger behavior |
+
+The pedal's Pan secondary control has no matching parameter in the current
+engine. Its proposed direct VR5 mapping is deferred until a real Pan control
+exists. The current continuous Width control must then move to the three-way
+switch: Wide/Medium/Narrow map to 100/50/0% as an initial approximation. The
+pedal's exact stereo curves are unknown. Adding presets requires a separate,
+visible UI decision.
+Do not claim that the five current modes reproduce the pedal's algorithms.
+
+## Switch behavior to implement
+
+* **Sustain:** In Dream, each qualified S6 press alternates between sustaining
+  the current tail and returning to the VR1 decay setting. In the other modes,
+  S6 sustains only while held, then returns to VR1 decay. The current engine's
+  `hold` freezes a tail *and blocks new input*, whereas the manual describes a
+  long trail. The audio behavior must be deliberately changed or described as
+  a freeze approximation; a control remap alone is insufficient. Keep the
+  transition smoothed and confirm whether new notes feed the sustained tail.
+* **Bypass:** A press when active moves to bypass. A press while bypassed
+  activates the effect immediately. If released before a proposed 250 ms
+  threshold, it stays active; if held at least 250 ms, it returns to bypass on
+  release. The threshold is our board design choice, not a manual timing value.
+  The audio callback must never wait for a gesture timer. Preserve dry signal
+  and use short gain ramps at both transitions.
+* **Trails:** S8 toggles the stored setting; default is on at every power-up.
+  With Trails on, bypass stops new input and lets the existing tail decay.
+  With No Trails, the tail must fade out and be cleared so that it cannot
+  reappear when re-engaged. The current `trails=false` only mutes wet output
+  while the internal state keeps processing, so it needs a regression test.
+* **Shapes:** S9–S13 directly select one shape. Current `Step` is smoothed; the
+  manual's Square has hard transitions. Keep the existing shape labeled Step
+  until an intentional, bounded Square-style behavior has been assessed.
+
+The pedal's preset-save chord, three color-coded memories, boot-time factory
+reset, and power-on Trails gesture are **deferred**. No persistent storage or
+bootloader changes are part of the first control revision. S14–S16 are kept
+free for a later explicit choice rather than assigning undocumented actions.
+
+## Growth path: fourteen directly selected original modes
+
+The engine may later expose **up to 14 selectable original algorithm slots**,
+each with a stable mode ID and its own explicitly defined interpretation of X.
+The first five slots remain Dream/Cloud, Light/Halo, Rain/Scatter, Dark/Abyss,
+and Rise/Bloom on S1–S5. Additional slots are for our own
+models and experiments, not claims to replicate proprietary pedal algorithms.
+Only the selected algorithm processes audio; the number of menu slots does
+not imply fourteen simultaneously running DSP instances.
+
+For that later revision, S1–S14 directly select modes 1–14 with no bank or
+shift action. Tentatively, S15 is Bypass and S16 is Sustain; whether both are
+needed remains an open interaction decision. The two-way `tog_sw17` selects
+**Stereo** or **Legacy Mono**, inspired by the user's note that the Slöer
+predecessor was mono;
+it does not claim to recreate that pedal's firmware. Width stays on the
+three-way `tog_sw18` and X/Stretch stay on VR6/VR8. In Legacy Mono, use the
+left input alone when the right input is unplugged; with both inputs present,
+use a bounded half-sum of left and right. Feed that mono signal to both DSP
+input channels, force zero wet stereo width, and send identical mono output to
+both codec channels. Smooth the switch transition to prevent clicks and test
+phase-opposed stereo input, which can cancel in any mono downmix. In Stereo,
+keep the existing two-channel path and the selected Width setting. The current
+firmware's mono-input duplication is **not** a switchable mono-output mode.
+Trails may simply remain On in this 14-mode layout; any need for an Off
+setting requires a separate visible control decision.
+
+Exactly one of D1–D14 shows the selected mode;
+D15 is lit only while bypass is active, and D16 only while Sustain is active,
+if these functions are retained. LEDs follow applied state after debouncing,
+including any temporary footswitch-style gesture. The current D16
+overrun diagnostic then needs a separate debug indication or telemetry path.
+The current direct shape buttons S9–S13 cannot coexist with fourteen direct
+mode buttons. Give each algorithm a documented default modulation shape;
+consider a separate shape-selection gesture only after testing that it does
+not interfere with live mode changes. Do not silently remap the first-revision
+S6–S13 controls in a v0.1 image. Announce and test the migration as a new
+version.
+
+Before adding modes, define a stable mode-ID table, a bounded transition
+policy for switching algorithms with a live tail, and worst-case RAM/cycle
+budgets for the heaviest mode. Mode-specific X values should be derived from
+the current physical VR6 position; no hidden values or preset recall are
+needed for this stage.
+
+## Implementation sequence and acceptance
+
+1. Move button gestures and LED state into a small fixed-size control state
+   machine. Map S1–S5 to the existing modes, S9–S13 to shapes, VR6 by mode,
+   and the three-way `tog_sw18` to Width. Keep VR5 on Width until Pan exists.
+   Keep `UpdateLeds()` in the main loop. Test simultaneous presses, debounce,
+   short contact dropouts, startup with a held button, and 250 ms boundaries.
+2. Give Sustain, Bypass, and No Trails their defined DSP transitions. Test
+   release, retrigger, mode changes during sustain, and bypass while tails are
+   active. Verify finite and bounded audio; no allocation, I/O, or blocking in
+   the audio callback.
+3. Improve Dream and Rain X behavior and compare synthetic renders with the
+   current modes. Build with the pinned ARM toolchain and check SDRAM, stack,
+   and callback cycle budget on the actual kit. Only then revise the control
+   table in the main README and produce a new BIN.
+4. Investigate Stretch separately: the codec can remain at 48 kHz while a wet
+   processing path runs at a reduced internal rate with proper anti-alias
+   filtering and resampling. Measure quality, memory, and CPU before assigning
+   VR8 to Stretch. Do not relabel predelay as Stretch or simulate it only by
+   changing decay/tone.
+
+First manual board check: start at low monitor level, verify the physical S/VR
+labels against `desktop_devkit::Hardware` (especially the three-way switch),
+then test each mode, X endpoints,
+Sustain press/release, bypass tap/hold, Trails on/off, stereo width, and the
+D16 overrun indicator. Record board revision, connections, firmware hash,
+callback cycles, and audible discontinuities. No hardware latency or CPU result
+is claimed by this plan.

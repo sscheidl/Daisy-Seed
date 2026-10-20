@@ -12,6 +12,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI; ARM and host tests pass; keys, AD envelope, polyphony, fast repeats, and MIDI with Studio One reported working on hardware |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings instrument, six models, global stereo reverb and USB MIDI; software validation in project docs |
 | [Nebulae on Daisy v0.1.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
+| [Looper](instruments/looper/) | `instruments/looper/` | Port of the Qu-Bit Stardust tape looper; firmware analysis published (buffers, WAV paths, undo, varispeed, Slice/Skip, Frippertronics); original engine planned |
 | [Ambient Reverb v0.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb imported from the FV-1 research project; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 
@@ -27,7 +28,8 @@ Daisy-Seed/
 ├── instruments/
 │   ├── toy-piano/          # Makefile, README, src, tests, docs, generated build
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
-│   └── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
+│   ├── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
+│   └── looper/             # Stardust analysis and looper plan
 ├── effects/
 │   ├── reverb/             # buildable original Ambient Reverb
 │   └── granular/           # effect plan
