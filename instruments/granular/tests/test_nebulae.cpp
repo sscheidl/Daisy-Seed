@@ -174,14 +174,16 @@ static void TestDsp() {
     r.e->Act(Action::Reset);Near(r.e->Position(),0);r.e->Act(Action::Freeze);
     r.e->ui.params.primary[Speed]=0;for(unsigned i=0;i<20;++i) r.Tick();CHECK(r.e->EffectiveSpeed()<0);
     r.e->live=true;r.e->ui.params.primary[Blend]=.5f;r.l.fill(.25f);r.r.fill(-.125f);
-    for(unsigned i=0;i<80;++i) r.Tick();CHECK(r.ol.back()>0 && r.or_.back()<0); // live without file/record
+    for(unsigned i=0;i<80;++i) r.Tick();
+    CHECK(r.ol.back()>0 && r.or_.back()<0); // live without file/record
     r.e->Act(Action::Record);for(unsigned i=0;i<4;++i) r.Tick();r.e->Act(Action::Record);
     CHECK(r.e->LiveLength()==4*kBlock && !r.e->recording);
     r.e->Act(Action::Record);CHECK(r.e->recording);for(unsigned i=0;i<4;++i) r.Tick();CHECK(!r.e->recording && r.e->LiveLength()==4*kBlock);
     r.e->Act(Action::Record);r.Tick();r.e->Act(Action::Record);CHECK(r.e->finalizing);r.Tick();CHECK(!r.e->finalizing);
     r.e->Act(Action::Clear);CHECK(r.e->LiveLength()==0 && !r.e->recording);
     r.e->Act(Action::Circular);r.e->Act(Action::Record);for(unsigned i=0;i<20;++i) r.Tick();CHECK(r.e->recording);r.e->Act(Action::Record);
-    for(unsigned i=0;i<30;++i) r.Tick();CHECK(!r.e->recording && !r.e->finalizing);
+    for(unsigned i=0;i<30;++i) r.Tick();
+    CHECK(!r.e->recording && !r.e->finalizing);
     for(unsigned i=0;i<1000;++i) {for(unsigned p=0;p<8;++p) {r.e->ui.params.primary[p]=float((i*13+p*37)%101)/100;r.e->ui.params.secondary[p]=float((i+p)%101)/100;}r.Tick();}
     std::puts("PASS DSP: FFT roundtrip, seven windows/morphs, BLEND, 18 stereo tone/rate/pitch/speed cases, freeze/reset/reverse, live/record/overdub/circular and stress");
 }
@@ -250,7 +252,8 @@ static void TestRecordSource() {
     // Overdub completion also preserves an explicit return to Live.
     r.e->Act(Action::Source);r.e->Act(Action::Record);r.Tick();
     r.e->Act(Action::Source);r.e->Act(Action::Source);
-    for(unsigned i=0;i<4;++i)r.Tick();CHECK(r.e->live && r.e->LiveLength()==length);
+    for(unsigned i=0;i<4;++i)r.Tick();
+    CHECK(r.e->live && r.e->LiveLength()==length);
     // Every normal recording locks START/SIZE/SPEED, including overdubs.
     r.e->Act(Action::Record);r.Tick();const float speed=r.e->EffectiveSpeed();
     r.e->ui.params.primary[Speed]=0;for(unsigned i=0;i<10;++i)r.Tick();
@@ -268,7 +271,8 @@ static void TestLoader() {
     auto previous=pcm;f.bytes[0]='X';CHECK(load.Request(4));for(unsigned i=0;i<10 && load.state!=Loader::State::Idle;++i) load.Service();
     CHECK(load.error==FileError::Format && load.active==3 && pcm==previous && !b.gate.load());
     f.bytes=Wav(44100,2,4096);f.fail_after=5000;CHECK(load.Request(5));
-    for(unsigned i=0;i<10 && load.state!=Loader::State::WaitMute;++i) load.Service();b.ack.store(true);
+    for(unsigned i=0;i<10 && load.state!=Loader::State::WaitMute;++i) load.Service();
+    b.ack.store(true);
     for(unsigned i=0;i<10 && load.state!=Loader::State::Publish;++i) load.Service();
     CHECK(load.error==FileError::Io && load.active==0 && b.published.frames==0 && !b.gate.load());
     b.ack.store(false);load.Service();f.opening=FileError::NoCard;CHECK(!load.Request(6));CHECK(load.error==FileError::NoCard);
