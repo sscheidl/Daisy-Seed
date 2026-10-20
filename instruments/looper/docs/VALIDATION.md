@@ -96,6 +96,8 @@ crossfading when the head leaves an edge region each make the suite fail.
 
 ## Needs hardware
 
+Step-by-step checklist: [HARDWARE_TEST.md](HARDWARE_TEST.md).
+
 1. SDRAM: both buffers zeroed at boot (duration), record and play an 87 s loop.
 2. Callback deadline at 48 kHz / 48 frames: worst case ×8 overdub with copy on
    write and the background copy, with Slice/Skip moving the head and the jump

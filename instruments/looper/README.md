@@ -3,8 +3,8 @@
 **Status: engine v0.2 with all four loop modes and Slice/Skip; host tests and ARM
 build pass; no hardware run yet.** Project ID: `looper`. The goal is an original
 stereo tape looper for the Seed3 Desktop Dev Kit, using the Qu-Bit Stardust as the
-behavioral reference. Validation details and open hardware checks:
-[docs/VALIDATION.md](docs/VALIDATION.md).
+behavioral reference. Validation details: [docs/VALIDATION.md](docs/VALIDATION.md); checklist for the
+first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md).
 
 ```sh
 make PROJECT=looper -j4            # firmware: build/Looper-v0.2.0.bin
