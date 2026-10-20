@@ -11,7 +11,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | --- | --- | --- |
 | [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI; ARM and host tests pass; keys, AD envelope, polyphony, fast repeats, and MIDI with Studio One reported working on hardware |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings instrument, six models, global stereo reverb and USB MIDI; software validation in project docs |
-| [Granular](instruments/granular/) | `instruments/granular/` | Project outline and reference comparison; original engine planned |
+| [Nebulae on Daisy v0.1.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
 | [Looper v0.2](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse; host tests and ARM build pass; hardware test pending |
 | [Ambient Reverb v0.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb imported from the FV-1 research project; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
@@ -28,7 +28,7 @@ Daisy-Seed/
 ├── instruments/
 │   ├── toy-piano/          # Makefile, README, src, tests, docs, generated build
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
-│   ├── granular/           # project plan
+│   ├── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
 │   └── looper/             # Stardust analysis and buildable engine core
 ├── effects/
 │   ├── reverb/             # buildable original Ambient Reverb
@@ -41,9 +41,8 @@ Daisy-Seed/
 └── DaisySP/               # pinned official submodule
 ```
 
-In this cloud workspace the repository is at `/workspace/Daisy-Seed`. A clone or
-pull in a local playground creates the same directories; this cloud workspace
-does not change a separate desktop checkout.
+The same project layout is used in local checkouts and cloud workspaces.
+The Nebulae implementation was built and validated in the local Windows checkout.
 
 Hardware diagnostics live in the separate
 [Daisy-Seed3-Desktop-Diagnostics](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics)
@@ -77,6 +76,9 @@ its directory with `make -C instruments/toy-piano`. Its image is
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
 The reverb image is `effects/reverb/build/AmbientReverb-v0.1.bin`.
+Nebulae builds with `make PROJECT=granular` to
+`instruments/granular/build/NebulaeOnDaisy-v0.1.0.bin`; its controls and hardware
+test are in the [project README](instruments/granular/README.md).
 
 Each implemented project is currently a separate firmware image. Switching
 instruments requires flashing the corresponding BIN; runtime instrument switching
@@ -94,7 +96,8 @@ and a shared effect chain have not been implemented.
 The operator accepted the Toy Piano v0.2 release BIN after reporting “all tests
 green” on October 17, 2026. The [validation report](instruments/toy-piano/docs/VALIDATION.md)
 still lists hardware measurements and detailed MIDI cases without recorded
-results. The next steps are a manual test of Ambient Reverb on the kit, hardware validation of the Torus physical modeling instrument, and then a bounded granular prototype.
+results. The next steps are hardware tests of Ambient Reverb, the Torus physical
+modeling instrument and Nebulae on Daisy.
 Effect variants can share DSP components once those components actually exist.
 Resonator models belong to the physical modeling project. The original Ambient
 Reverb is separate from the planned Clouds/Nimbus study and a possible direct

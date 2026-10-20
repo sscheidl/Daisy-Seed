@@ -16,11 +16,11 @@ include $(SYSTEM_FILES_DIR)/Makefile
 
 .PHONY: libs
 libs:
-	$(MAKE) -C $(LIBDAISY_DIR)
-	$(MAKE) -C $(DAISYSP_DIR)
+	"$(MAKE)" -C $(LIBDAISY_DIR)
+	"$(MAKE)" -C $(DAISYSP_DIR)
 
 $(BUILD_DIR)/$(TARGET).elf: $(LIBDAISY_DIR)/build/libdaisy.a $(DAISYSP_DIR)/build/libdaisysp.a
 $(LIBDAISY_DIR)/build/libdaisy.a:
-	$(MAKE) -C $(LIBDAISY_DIR)
+	"$(MAKE)" -C $(LIBDAISY_DIR)
 $(DAISYSP_DIR)/build/libdaisysp.a:
-	$(MAKE) -C $(DAISYSP_DIR)
+	"$(MAKE)" -C $(DAISYSP_DIR)
