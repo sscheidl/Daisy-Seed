@@ -55,13 +55,15 @@ up = Wide, center = Medium, down = Narrow. Mode 1–5 are S1–S5 respectively.
 | S4 | Dark-inspired octave down | Abyss | D4 selected |
 | S5 | Rise-inspired swell | Bloom | D5 selected |
 | S6 | Sustain: latch in Dream; hold while pressed in other modes | `hold`, after the behavior change below | D6 active |
-| S7 | Effect bypass: tap to latch; hold from bypass for temporary effect | `bypass`, after the gesture change below | D7 effect active |
+| S7 | Effect bypass: tap to latch; hold from bypass for temporary effect | `bypass`, after the gesture change below | D7 bypass active |
 | S8 | Toggle Trails / No Trails | `trails`, after tail reset is defined | D8 Trails enabled |
 | S9–S13 | Direct Sine / Warp / Sink / Step / Random shape selection | `shape` | D9–D13 one selected |
 | S14–S16 | Reserved; no action in the first control revision | — | D14–D15 unused; D16 keeps the overrun latch |
 
-One selected mode LED and one shape LED stay lit at a time. LEDs indicate
-*applied* switch states, including temporary bypass activation. At startup:
+One selected mode LED and one shape LED stay lit at a time. Every button LED
+indicates its *applied* function state: selected mode/shape or active
+Sustain/Bypass/Trails. D7 follows the actual temporary bypass state, not just
+the latched preference. At startup:
 Dream/Cloud, Sine, Trails on, Sustain off, effect on. The default pot values
 come from physical positions after ADC settling; there is no preset recall or
 soft takeover in this revision. No RGB color or “modified preset” claim is made.
@@ -126,25 +128,31 @@ reset, and power-on Trails gesture are **deferred**. No persistent storage or
 bootloader changes are part of the first control revision. S14–S16 are kept
 free for a later explicit choice rather than assigning undocumented actions.
 
-## Growth path: sixteen original modes
+## Growth path: fourteen directly selected original modes
 
-The engine may later expose **16 selectable original algorithm slots**, each
-with a stable mode ID and its own explicitly defined interpretation of X.
+The engine may later expose **up to 14 selectable original algorithm slots**,
+each with a stable mode ID and its own explicitly defined interpretation of X.
 The first five slots remain Dream/Cloud, Light/Halo, Rain/Scatter, Dark/Abyss,
-and Rise/Bloom on S1–S5 in the initial bank. Additional slots are for our own
+and Rise/Bloom on S1–S5. Additional slots are for our own
 models and experiments, not claims to replicate proprietary pedal algorithms.
 Only the selected algorithm processes audio; the number of menu slots does
-not imply sixteen simultaneously running DSP instances.
+not imply fourteen simultaneously running DSP instances.
 
-For that later revision, use the board's two-way `tog_sw17` to select banks A
-and B and S1–S8 to select one of eight modes in the chosen bank. This preserves
-direct access to modes 1–5 with bank A selected. S9–S13 can remain the five
-shape buttons; S14/S15/S16 would become Sustain/Bypass/Trails. Width stays on
-the three-way `tog_sw18`, and X/Stretch stay on VR6/VR8. The overrun indicator
-currently on D16 needs a separate diagnostic display or a documented LED
-pattern before S16/D16 is reassigned. This banked layout **supersedes** the
-first-revision S6–S8 performance controls; do not silently change those
-buttons in a v0.1 image. Announce and test the migration as a new version.
+For that later revision, S1–S14 directly select modes 1–14 with no bank or
+shift action. Tentatively, S15 is Bypass and S16 is Sustain; whether both are
+needed remains an open interaction decision. The two-way `tog_sw17` can hold
+the Trails On/Off setting, while Width stays on the three-way `tog_sw18` and
+X/Stretch stay on VR6/VR8. Exactly one of D1–D14 shows the selected mode;
+D15 is lit only while bypass is active, and D16 only while Sustain is active,
+if these functions are retained. LEDs follow applied state after debouncing,
+including any temporary footswitch-style gesture. The current D16
+overrun diagnostic then needs a separate debug indication or telemetry path.
+The current direct shape buttons S9–S13 cannot coexist with fourteen direct
+mode buttons. Give each algorithm a documented default modulation shape;
+consider a separate shape-selection gesture only after testing that it does
+not interfere with live mode changes. Do not silently remap the first-revision
+S6–S13 controls in a v0.1 image. Announce and test the migration as a new
+version.
 
 Before adding modes, define a stable mode-ID table, a bounded transition
 policy for switching algorithms with a live tail, and worst-case RAM/cycle
