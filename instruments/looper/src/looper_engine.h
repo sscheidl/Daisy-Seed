@@ -133,6 +133,8 @@ class Engine {
     bool SliceOffsetActive() const { return sliceOffset_; }
     float SlicePitch() const { return pitch_; }
     const SliceEvents& Events() const { return events_; }
+    // Blocks copied for undo snapshots so far, for tests and diagnostics.
+    uint32_t CopiedBlocks() const { return copiedBlocks_; }
     // Stored frame of the current state (index < Length() + TailLength()).
     Frame StoredFrame(uint32_t index) const;
 
@@ -165,6 +167,7 @@ class Engine {
     void ComputeWindow(uint32_t& start, uint32_t& size) const;
     void PlayWindowTarget(uint32_t& start, uint32_t& size) const;
     bool MoveHead(uint32_t start, uint32_t size, uint32_t absolute);
+    void StartJump();
     void ResetHead(uint32_t absolute);
     void UpdateSeamLatches();
     TailMode DesiredTailMode() const;
@@ -186,9 +189,11 @@ class Engine {
     uint32_t Absolute(uint32_t relative, uint32_t start) const;
     uint32_t RelativeTo(uint32_t absolute, uint32_t start) const;
     Frame Raw(uint32_t index) const;
-    Frame Composite(uint32_t absolute) const;
-    Frame ReadSeam(uint32_t relative) const { return ReadSeam(relative, playStart_, playSize_); }
-    Frame ReadSeam(uint32_t relative, uint32_t start, uint32_t size) const;
+    Frame Composite(uint32_t absolute, TailMode tail) const;
+    Frame ReadSeam(uint32_t relative) const {
+        return ReadSeam(relative, playStart_, playSize_, tailMode_);
+    }
+    Frame ReadSeam(uint32_t relative, uint32_t start, uint32_t size, TailMode tail) const;
     void WriteFrame(uint32_t absolute, Frame input, float gain);
     void EnsureCopied(uint32_t index);
     void CopyBlock(uint32_t block);
@@ -215,6 +220,8 @@ class Engine {
     bool syncPending_ = false;
     uint8_t syncSource_ = 0;
     uint32_t syncBlocks_ = 0, syncCursor_ = 0, syncCredit_ = 0;
+    uint32_t writeCopies_ = 0;  // frames copied on write since the last SyncStep
+    uint32_t copiedBlocks_ = 0;
     uint32_t copied_[(kMaxBlocks + 31) / 32] = {};
 
     uint32_t recordPosition_ = 0;
@@ -242,6 +249,7 @@ class Engine {
     bool jumping_ = false;
     float jumpGain_ = 0.f;
     uint32_t jumpStart_ = 0, jumpSize_ = 0;  // window the jump head keeps reading
+    TailMode jumpTail_ = TailMode::Off;      // and its seam
     float phase_ = 0.f;
     float previousInLeft_ = 0.f, previousInRight_ = 0.f;
 

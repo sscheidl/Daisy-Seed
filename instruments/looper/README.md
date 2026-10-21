@@ -33,7 +33,9 @@ independently from those descriptions.
   * *Frippertronics* writes `old × k + input` on each pass. `k` follows the decay
     knob with a one-pole of 0.005 per sample (about 4 ms) and fades in with the
     punch, so the old material never steps. The sum goes through a soft limit
-    (transparent below 0.95, asymptote 1.0); the original does not limit here.
+    (transparent below 0.95, asymptote 1.0) that fades in with the punch as well,
+    so material above the knee does not step either; the original does not
+    limit here.
     While a Skip offset is active the layer adds like Sound on Sound, as in the
     original.
   * *Resample* captures what is heard (loop playback plus input) into the other
@@ -46,7 +48,9 @@ independently from those descriptions.
   below). Erase during a resample abandons the capture.
 * **Copy on write:** when a layer starts, the other buffer becomes the snapshot.
   Each 128-frame block is copied before its first write, and a background job
-  copies the rest at 32 frames per sample (about 2.7 s for 87 s). Until it
+  copies the rest at 32 frames per sample (about 2.7 s for 87 s). Copies on write
+  count against the same budget, so a 48-frame callback copies at most 1,536
+  frames unless its writes alone need more. Until it
   finishes, reads of uncopied blocks come from the buffer both states share, so
   undo is immediate and never depends on storage (the original reloads the
   previous state from its SD card). A new layer or resample started right after
@@ -90,8 +94,12 @@ independently from those descriptions.
   (a 960-frame linear crossfade of the first take's seam) and blends window seams
   inside the loop with the material that follows the window end over 384 frames.
   Without a post-roll (a take that filled the buffer) the crossfade mode gates the
-  physical seam like the window. Mode changes take effect only while the head is
-  away from every seam region, so switching never steps the output.
+  physical seam like the window. Loops shorter than 1,152 frames dip to zero over
+  a third of their length at each end of the seam in both modes, unless they are
+  at least 960 frames long and the crossfade mode has their post-roll. Mode
+  changes take effect only while the head is away from every seam region, so
+  switching never steps the output; where a loop has no such region (up to 1,344
+  frames), the post-roll crossfade switches in under a 384-frame jump crossfade.
 
 Not in v0.3: effects, input saturation and mix curves, Freeze, clock-synced
 slices, 1V/Oct and CV, the encoder range modes, WAV export, MIDI.
