@@ -4,8 +4,41 @@
 #define main FirmwareMain
 #include "../src/main.cpp"
 #undef main
+#include "memory_volume.h"
 #include <cmath>
 #include <cstdio>
+
+// The card behind main.cpp's storage code: in memory, always mounted.
+static MemoryVolume memoryCard;
+namespace looper {
+bool InitCard(bool (*present)()) { return present != nullptr; }
+Volume& CardVolume() { return memoryCard; }
+}  // namespace looper
+
+static std::vector<uint8_t> Pcm16Stereo(uint32_t frames, int16_t value) {
+    std::vector<uint8_t> b;
+    auto put = [&](uint32_t v, int n) {
+        for (int i = 0; i < n; ++i)
+            b.push_back(uint8_t(v >> (8 * i)));
+    };
+    auto tag = [&](const char* t) { b.insert(b.end(), t, t + 4); };
+    tag("RIFF");
+    put(36 + frames * 4, 4);
+    tag("WAVE");
+    tag("fmt ");
+    put(16, 4);
+    put(1, 2);
+    put(2, 2);
+    put(48000, 4);
+    put(48000 * 4, 4);
+    put(4, 2);
+    put(16, 2);
+    tag("data");
+    put(frames * 4, 4);
+    for (uint32_t i = 0; i < frames * 2; ++i)
+        put(uint16_t(value), 2);
+    return b;
+}
 
 static int failures = 0;
 #define CHECK(condition)                                                        \
@@ -31,6 +64,7 @@ static void Blocks(unsigned count, float amplitude = 0.f) {
             ir[i] = -1.f;  // ignored: no plug in the right input
         }
         AudioCallback(in, out, kBlock);
+        ServiceStorage(daisy::System::now);  // the main loop between callbacks
         for (size_t i = 0; i < kBlock; ++i) {
             allFinite &= std::isfinite(ol[i]) && std::isfinite(orr[i]);
             peak = std::max({peak, std::fabs(ol[i]), std::fabs(orr[i])});
@@ -53,6 +87,10 @@ int main() {
     std::uninitialized_fill_n(a, LOOPER_BUFFER_FRAMES, looper::Frame{});
     std::uninitialized_fill_n(b, LOOPER_BUFFER_FRAMES, looper::Frame{});
     CHECK(engine.Init(48000.f, a, b, LOOPER_BUFFER_FRAMES));
+    memoryCard.files["0:/looper/loops/one.wav"] = Pcm16Stereo(24000, 8192);  // 0.5 s at 0.25
+    cardPresent.store(hw.sd_detect.Pressed());
+    InitStorage();
+    CHECK(storageReady && engine.GetState() == looper::State::Empty);  // nothing saved yet
     hw.pot[knobs::Varispeed].value = .4f;  // unity
     hw.pot[knobs::Inertia].value = 0.f;
     hw.pot[knobs::Slope].value = .5f;
@@ -195,6 +233,25 @@ int main() {
     CHECK(engine.GetState() == looper::State::Looping && engine.Length() == LOOPER_BUFFER_FRAMES);
     Blocks(200, .9f);
     CHECK(allFinite && peak <= 1.f);
+
+    // microSD: the full loop is saved after 2 s idle, S8 imports loops/one.wav,
+    // and a power-up recalls the last saved loop.
+    Blocks(4000);
+    CHECK(memoryCard.files.count("0:/looper/loop.wav") && store.Saves() > 0);
+    uint32_t shown = ~0u;
+    ShowLeds(daisy::System::now, shown);
+    CHECK(store.GetStatus(daisy::System::now) == looper::LoopStore::Status::Idle);
+    Press(keys::Import);
+    Blocks(100);
+    CHECK(engine.Length() == 24000 && engine.StoredFrame(12000).left == .25f);
+    CHECK(std::string(store.LastImportName()) == "one.wav" && engine.CanUndo());
+    Blocks(3000);
+    const uint32_t saved = store.Saves();
+    CHECK(saved >= 2);
+    CHECK(engine.Init(48000.f, a, b, LOOPER_BUFFER_FRAMES) && engine.GetState() == looper::State::Empty);
+    InitStorage();  // power-up
+    CHECK(engine.GetState() == looper::State::Looping && engine.Length() == 24000);
+    CHECK(engine.StoredFrame(12000).right == .25f && !engine.CanUndo());
 
     if (failures) {
         std::printf("FAILED: %d production callback check(s)\n", failures);

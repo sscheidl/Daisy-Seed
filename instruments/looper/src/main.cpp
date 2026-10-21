@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Looper for the Daisy Seed3 Desktop Dev Kit, libDaisy commit in the repository
-// README. Engine with loop modes and Slice/Skip; no SD card, MIDI or effects.
+// README. Engine with loop modes and Slice/Skip, loop persistence and WAV import
+// on the microSD card; no MIDI or effects.
+#include "card_volume.h"
+#include "loop_store.h"
 #include "looper_engine.h"
 #include "version.h"
 const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
@@ -17,7 +20,9 @@ using namespace daisy;
 static_assert(LOOPER_BUFFER_FRAMES <= looper::kMaxFrames, "buffer exceeds the engine limit");
 
 namespace keys {
-enum : unsigned { Record = 0, Play = 1, Undo = 2, Reverse = 3, Erase = 4, LoopMode = 5, Seam = 6 };
+enum : unsigned {
+    Record = 0, Play = 1, Undo = 2, Reverse = 3, Erase = 4, LoopMode = 5, Seam = 6, Import = 7
+};
 // S9..S12 select Sound on Sound, Replace, Frippertronics, Resample directly.
 constexpr unsigned kFirstMode = 8, kModes = 4;
 }
@@ -47,6 +52,99 @@ static std::atomic<uint32_t> uiState{0}, maximumCycles{0}, overruns{0};
 static uint32_t budgetCycles = 0;
 static float settled[knobs::Decay + 1] = {-1, -1, -1, -1, -1, -1, -1, -1};
 
+// microSD: loop.wav is saved from the main loop and recalled at power-up;
+// S8 imports the next WAV file of 0:/looper/loops. The transfer buffer must be
+// reachable by the SDMMC IDMA, which cannot access DTCM.
+alignas(32) static uint8_t DSY_SDRAM_BSS transfer[32768];
+static looper::LoopStore store;
+static bool storageReady = false;
+static std::atomic<bool> cardPresent{false}, importRequested{false};
+
+// Engine state for the main loop, published by the audio callback under a
+// sequence lock (odd while it is written).
+static std::atomic<uint32_t> snapshotSequence{0}, snapshotVersion{0}, snapshotLength{0},
+    snapshotTail{0};
+static std::atomic<bool> snapshotIdle{false};
+static std::atomic<const looper::Frame*> snapshotFrames{nullptr};
+
+static void PublishSnapshot() {
+    snapshotSequence.fetch_add(1, std::memory_order_relaxed);
+    std::atomic_thread_fence(std::memory_order_release);
+    snapshotVersion.store(engine.ContentVersion(), std::memory_order_relaxed);
+    snapshotIdle.store(!engine.Busy(), std::memory_order_relaxed);
+    snapshotFrames.store(engine.ActiveFrames(), std::memory_order_relaxed);
+    snapshotLength.store(engine.Length(), std::memory_order_relaxed);
+    snapshotTail.store(engine.TailLength(), std::memory_order_relaxed);
+    snapshotSequence.fetch_add(1, std::memory_order_release);
+}
+
+struct SnapshotView final : looper::EngineView {
+    looper::EngineSnapshot Get() override {
+        looper::EngineSnapshot s;
+        for (;;) {
+            const uint32_t before = snapshotSequence.load(std::memory_order_acquire);
+            s.version = snapshotVersion.load(std::memory_order_relaxed);
+            s.idle = snapshotIdle.load(std::memory_order_relaxed);
+            s.frames = snapshotFrames.load(std::memory_order_relaxed);
+            s.length = snapshotLength.load(std::memory_order_relaxed);
+            s.tail = snapshotTail.load(std::memory_order_relaxed);
+            std::atomic_thread_fence(std::memory_order_acquire);
+            if (!(before & 1u) && snapshotSequence.load(std::memory_order_relaxed) == before)
+                return s;
+        }
+    }
+};
+
+// Import requests from the main loop, executed at the start of the next audio
+// callback. A cancel is kept separately so that a following request cannot
+// overwrite it and leave the engine importing.
+struct CallbackPort final : looper::ImportPort {
+    enum : uint32_t { None, BeginRequest, CommitRequest };
+    std::atomic<uint32_t> command{None}, first{0}, second{0};
+    std::atomic<bool> cancel{false};
+    std::atomic<Reply> reply{Reply::Idle};
+    std::atomic<looper::Frame*> buffer{nullptr};
+
+    void Begin(uint32_t frames) override { Request(BeginRequest, frames, 0); }
+    void Commit(uint32_t length, uint32_t tail) override { Request(CommitRequest, length, tail); }
+    void Cancel() override {
+        reply.store(Reply::Idle, std::memory_order_relaxed);
+        cancel.store(true, std::memory_order_release);
+    }
+    Reply Poll(looper::Frame*& out) override {
+        const Reply r = reply.load(std::memory_order_acquire);
+        out = buffer.load(std::memory_order_relaxed);
+        return r;
+    }
+    void Request(uint32_t c, uint32_t a, uint32_t b) {
+        first.store(a, std::memory_order_relaxed);
+        second.store(b, std::memory_order_relaxed);
+        reply.store(Reply::Pending, std::memory_order_relaxed);
+        command.store(c, std::memory_order_release);
+    }
+    void Execute() {  // audio thread
+        if (cancel.exchange(false, std::memory_order_acquire)) {
+            engine.CancelImport();
+            buffer.store(nullptr, std::memory_order_relaxed);
+        }
+        const uint32_t c = command.exchange(None, std::memory_order_acquire);
+        if (c == BeginRequest) {
+            looper::Frame* p = engine.BeginImport(first.load(std::memory_order_relaxed));
+            buffer.store(p, std::memory_order_relaxed);
+            reply.store(p ? Reply::Granted : Reply::Denied, std::memory_order_release);
+        } else if (c == CommitRequest) {
+            const bool ok = engine.CommitImport(first.load(std::memory_order_relaxed),
+                                                second.load(std::memory_order_relaxed));
+            buffer.store(nullptr, std::memory_order_relaxed);
+            reply.store(ok ? Reply::Done : Reply::Failed, std::memory_order_release);
+        }
+    }
+};
+static SnapshotView view;
+static CallbackPort port;
+static_assert(std::atomic<looper::ImportPort::Reply>::is_always_lock_free);
+static_assert(std::atomic<const looper::Frame*>::is_always_lock_free);
+
 // Knob 0: -24..+36 semitones, rounded to whole semitones; unity at 40 %.
 static float VarispeedFromKnob(float k) {
     k = std::min(std::max(k, 0.f), 1.f);
@@ -65,6 +163,7 @@ static float Settled(unsigned knob) {
 // The engine is owned by the audio callback; controls are read there too.
 static void Controls() {
     hw.UpdateAllControls();
+    cardPresent.store(hw.sd_detect.Pressed(), std::memory_order_relaxed);
     uint32_t presses = 0;
     for (unsigned i = 0; i < 16; ++i) {
         const uint32_t bit = 1u << i;
@@ -94,6 +193,8 @@ static void Controls() {
     for (unsigned m = 0; m < keys::kModes; ++m)
         if (presses & (1u << (keys::kFirstMode + m)))
             engine.SetLoopMode(looper::LoopMode(m));
+    if (presses & (1u << keys::Import))
+        importRequested.store(true, std::memory_order_relaxed);
     if (presses & (1u << keys::Seam))
         engine.SetSeamMode(engine.GetSeamMode() == looper::SeamMode::Window
                                ? looper::SeamMode::Crossfade
@@ -141,8 +242,10 @@ static float CodecLevel(float x) {
 static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t n) {
     const uint32_t start = DWT->CYCCNT;
     Controls();
+    port.Execute();
     const float* inRight = hw.right_detect.Pressed() ? in[1] : in[0];
     engine.Process(in[0], inRight, out[0], out[1], n);  // loop playback only
+    PublishSnapshot();
     for (size_t i = 0; i < n; ++i) {
         out[0][i] = CodecLevel(in[0][i] + out[0][i]);
         out[1][i] = CodecLevel(inRight[i] + out[1][i]);
@@ -152,6 +255,62 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
         maximumCycles.store(elapsed, std::memory_order_relaxed);
     if (elapsed > budgetCycles)
         overruns.fetch_add(1, std::memory_order_relaxed);
+}
+
+static bool CardPresent() { return cardPresent.load(std::memory_order_relaxed); }
+
+// Before audio starts: set up the card and recall the saved loop.
+static void InitStorage() {
+    storageReady = looper::InitCard(&CardPresent) &&
+                   store.Init(&looper::CardVolume(), transfer, sizeof(transfer), LOOPER_BUFFER_FRAMES,
+                              "0:/looper");
+    if (storageReady)
+        store.Recall(engine);
+    PublishSnapshot();
+}
+
+// Main loop: all card access happens here.
+static void ServiceStorage(uint32_t now) {
+    if (!storageReady)
+        return;
+    if (importRequested.exchange(false, std::memory_order_relaxed))
+        store.RequestImport();
+    store.Service(view, port, now);
+}
+
+static float CardLed(looper::LoopStore::Status status, uint32_t now) {
+    switch (status) {
+    case looper::LoopStore::Status::NoCard: return 0.f;
+    case looper::LoopStore::Status::Idle: return .1f;
+    case looper::LoopStore::Status::Error: return (now / 62u) & 1u ? 1.f : 0.f;
+    default: return (now / 125u) & 1u ? .5f : 0.f;  // saving or importing
+    }
+}
+
+// LEDs are updated from the main loop, and only when something changed.
+static void ShowLeds(uint32_t now, uint32_t& shown) {
+    const uint32_t s = uiState.load(std::memory_order_relaxed);
+    const bool blink = (now / 125u) & 1u;
+    const auto status = storageReady ? store.GetStatus(now) : looper::LoopStore::Status::NoCard;
+    const float card = CardLed(status, now);
+    const uint32_t frame = s | (blink ? 1u << 31 : 0u) |
+                           (overruns.load(std::memory_order_relaxed) ? 1u << 30 : 0u) |
+                           (uint32_t(card * 10.f) << 24);
+    if (frame == shown)
+        return;
+    shown = frame;
+    hw.SetLed(keys::Record,
+              (s & ui::Recording) ? 1.f : ((s & ui::RecordPending) && blink ? .5f : 0.f));
+    hw.SetLed(keys::Play, (s & ui::Playing) ? .5f : 0.f);
+    hw.SetLed(keys::Undo, (s & ui::CanRedo) ? .15f : ((s & ui::CanUndo) ? .5f : 0.f));
+    hw.SetLed(keys::Reverse, (s & ui::Reversed) ? .5f : 0.f);
+    hw.SetLed(keys::Erase, (s & ui::HasLoop) ? .15f : 0.f);
+    for (unsigned m = 0; m < keys::kModes; ++m)
+        hw.SetLed(keys::kFirstMode + m, ((s >> ui::kModeShift) & 3u) == m ? .5f : 0.f);
+    hw.SetLed(keys::Seam, (s & ui::Crossfade) ? .5f : 0.f);
+    hw.SetLed(keys::Import, card);
+    hw.SetLed(15, (frame & (1u << 30)) ? 1.f : 0.f);
+    hw.UpdateLeds();
 }
 
 static void Halt() {
@@ -172,32 +331,27 @@ int main() {
     std::uninitialized_fill_n(b, LOOPER_BUFFER_FRAMES, looper::Frame{});
     if (!engine.Init(hw.seed.AudioSampleRate(), a, b, LOOPER_BUFFER_FRAMES))
         Halt();
+    for (int i = 0; i < 50; ++i) {  // settle the debounced card-detect switch
+        hw.UpdateAllControls();
+        System::Delay(1);
+    }
+    cardPresent.store(hw.sd_detect.Pressed(), std::memory_order_relaxed);
+    InitStorage();
     budgetCycles = (SystemCoreClock / 48000u) * 48u;
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CYCCNT = 0;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
     hw.seed.StartAudio(AudioCallback);
-    uint32_t shown = ~0u;
+    uint32_t shown = ~0u, ledsAt = 0;
     while (true) {
-        System::Delay(10);
-        const uint32_t s = uiState.load(std::memory_order_relaxed);
-        const bool blink = (System::GetNow() / 125u) & 1u;
-        const uint32_t frame = s | (blink ? 1u << 31 : 0u) |
-                               (overruns.load(std::memory_order_relaxed) ? 1u << 30 : 0u);
-        if (frame == shown)
-            continue;  // UpdateLeds only on changes
-        shown = frame;
-        hw.SetLed(keys::Record,
-                  (s & ui::Recording) ? 1.f : ((s & ui::RecordPending) && blink ? .5f : 0.f));
-        hw.SetLed(keys::Play, (s & ui::Playing) ? .5f : 0.f);
-        hw.SetLed(keys::Undo, (s & ui::CanRedo) ? .15f : ((s & ui::CanUndo) ? .5f : 0.f));
-        hw.SetLed(keys::Reverse, (s & ui::Reversed) ? .5f : 0.f);
-        hw.SetLed(keys::Erase, (s & ui::HasLoop) ? .15f : 0.f);
-        for (unsigned m = 0; m < keys::kModes; ++m)
-            hw.SetLed(keys::kFirstMode + m, ((s >> ui::kModeShift) & 3u) == m ? .5f : 0.f);
-        hw.SetLed(keys::Seam, (s & ui::Crossfade) ? .5f : 0.f);
-        hw.SetLed(15, (frame & (1u << 30)) ? 1.f : 0.f);
-        hw.UpdateLeds();
+        const uint32_t now = System::GetNow();
+        ServiceStorage(now);
+        if (now - ledsAt >= 10) {
+            ledsAt = now;
+            ShowLeds(now, shown);
+        }
+        if (!store.Active())
+            System::Delay(1);
         // Inspect maximumCycles / overruns in a debugger for on-board CPU evidence.
     }
 }
