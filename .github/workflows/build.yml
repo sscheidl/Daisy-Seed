@@ -20,6 +20,9 @@ jobs:
           - project: granular
             directory: instruments/granular
             image: NebulaeOnDaisy
+          - project: looper
+            directory: instruments/looper
+            image: Looper
     steps:
       - uses: actions/checkout@v4
       - name: Fetch pinned dependencies

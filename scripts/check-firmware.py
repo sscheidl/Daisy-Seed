@@ -3,7 +3,8 @@
 
 Usage: check-firmware.py [image.bin]
 Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
-Also accepts effects/reverb/build/AmbientReverb-v<version>.bin.
+Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
+PhysicalModeling-v<version>.bin and instruments/looper/build/Looper-v<version>.bin.
 This does not replace a hardware test.
 """
 import pathlib
@@ -39,6 +40,13 @@ elif path.name.startswith('AmbientReverb-v'):
     version = match.group(1)
     expected_name = f'AmbientReverb-v{version}.bin'
     marker = rb'AMBIENT-REVERB-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('Looper-v'):
+    looper = root / 'instruments' / 'looper'
+    match = re.search(r'LOOPER_VERSION\s+"([^"]+)"', (looper / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Looper version"
+    version = match.group(1)
+    expected_name = f'Looper-v{version}.bin'
+    marker = rb'LOOPER-VERSION=([0-9.]+)\x00'
 else:
     expected_name = f'ToyPiano-v{version}.bin'
     marker = rb'TOYPIANO-FW-VERSION=([0-9.]+)\x00'
