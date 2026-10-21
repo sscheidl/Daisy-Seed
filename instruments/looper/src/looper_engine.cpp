@@ -40,14 +40,14 @@ float SoftLimit(float x) {
     return std::copysign(.95f + .05f * e / (.05f + e), x);
 }
 Frame SoftLimit(Frame f) { return {SoftLimit(f.left), SoftLimit(f.right)}; }
-// Linear gain over the first and last kSeamFrames of a span; exactly 0 at both ends.
-float EdgeGain(uint32_t index, uint32_t span) {
+// Linear gain over the first and last `ramp` frames of a span; exactly 0 at both ends.
+float EdgeGain(uint32_t index, uint32_t span, uint32_t ramp = kSeamFrames) {
     float g = 1.f;
-    if (index < kSeamFrames)
-        g = float(index) / float(kSeamFrames);
+    if (index < ramp)
+        g = float(index) / float(ramp);
     const uint32_t back = span - 1 - index;
-    if (back < kSeamFrames)
-        g = std::min(g, float(back) / float(kSeamFrames));
+    if (back < ramp)
+        g = std::min(g, float(back) / float(ramp));
     return g;
 }
 
@@ -467,7 +467,7 @@ void Engine::StartOverdub() {
         syncSource_ = active_;
         syncBlocks_ = (length_[active_] + tail_[active_] + kCopyBlockFrames - 1) / kCopyBlockFrames;
         syncCursor_ = 0;
-        syncCredit_ = 0;
+        syncCredit_ = writeCopies_ = 0;
         std::fill_n(copied_, (syncBlocks_ + 31) / 32, 0u);
     }
     canUndo_ = true;
@@ -666,11 +666,7 @@ bool Engine::MoveHead(uint32_t start, uint32_t size, uint32_t absolute) {
     if (jump) {
         if (jumping_)
             return false;
-        jump_ = head_;
-        jumpStart_ = playStart_;
-        jumpSize_ = playSize_;
-        jumping_ = true;
-        jumpGain_ = 1.f;
+        StartJump();
     }
     playStart_ = start;
     playSize_ = size;
@@ -680,6 +676,16 @@ bool Engine::MoveHead(uint32_t start, uint32_t size, uint32_t absolute) {
         head_.previous = head_.current;
     }
     return true;
+}
+
+// The jump head continues the current read (window and seam) and fades out.
+void Engine::StartJump() {
+    jump_ = head_;
+    jumpStart_ = playStart_;
+    jumpSize_ = playSize_;
+    jumpTail_ = tailMode_;
+    jumping_ = true;
+    jumpGain_ = 1.f;
 }
 
 void Engine::ResetHead(uint32_t absolute) {
@@ -696,14 +702,21 @@ void Engine::ResetHead(uint32_t absolute) {
     phase_ = 0.f;
 }
 
+// The post-roll crossfade needs the loop to cover the whole tail. Shorter
+// loops, and those without a post-roll, gate their seam instead.
 Engine::TailMode Engine::DesiredTailMode() const {
-    if (seamRequest_ != SeamMode::Crossfade || Length() < kMinWindowFrames)
+    if (seamRequest_ != SeamMode::Crossfade)
         return TailMode::Off;
-    return tail_[active_] >= kTailFrames ? TailMode::Tail : TailMode::Gate;
+    if (tail_[active_] >= kTailFrames && Length() >= kTailFrames)
+        return TailMode::Tail;
+    return Length() >= kMinWindowFrames ? TailMode::Gate : TailMode::Off;
 }
 
 // Seam behavior changes only while the head is away from every seam region,
-// so a mode switch or a finished post-roll never steps the output.
+// so a mode switch or a finished post-roll never steps the output. Where the
+// tail mode has no such region (loops up to kTailFrames + kSeamFrames, or a
+// window that never leaves the seam), it switches under a jump crossfade, but
+// only after the edge mode, so a crossfade edge never meets an ungated seam.
 void Engine::UpdateSeamLatches() {
     if (jumping_)
         return;
@@ -716,8 +729,14 @@ void Engine::UpdateSeamLatches() {
     if (tailMode_ != wanted) {
         const uint32_t absolute = Absolute(relative);
         if (absolute >= kTailFrames && absolute + kSeamFrames < Length() &&
-            (size < kMinWindowFrames || relative >= kSeamFrames))
+            (size < kMinWindowFrames || relative >= kSeamFrames)) {
             tailMode_ = wanted;
+        } else if (edgeMode_ == seamRequest_) {
+            StartJump();
+            tailMode_ = wanted;
+            head_.current = ReadSeam(relative);
+            head_.previous = head_.current;
+        }
     }
 }
 
@@ -747,23 +766,28 @@ Frame Engine::Raw(uint32_t index) const {
 // Stored frame with the physical seam of the first take: in crossfade mode the
 // faded-out post-roll is added to the faded-in start, or, without a post-roll,
 // both sides of the seam are gated like the original window.
-Frame Engine::Composite(uint32_t absolute) const {
+Frame Engine::Composite(uint32_t absolute, TailMode tail) const {
     Frame x = Raw(absolute);
     const uint32_t length = Length();
-    if (tailMode_ == TailMode::Tail && absolute < kTailFrames && absolute < tail_[active_]) {
+    if (tail == TailMode::Tail && absolute < kTailFrames && absolute < tail_[active_]) {
         const Frame t = Raw(length + absolute);
         x.left += t.left;
         x.right += t.right;
-    } else if (tailMode_ == TailMode::Gate && absolute < length) {
+    } else if (tail == TailMode::Gate && absolute < length) {
         x = Scale(x, EdgeGain(absolute, length));
     }
     return x;
 }
 
-Frame Engine::ReadSeam(uint32_t relative, uint32_t start, uint32_t size) const {
-    const Frame x = Composite(Absolute(relative, start));
-    if (size < kMinWindowFrames)
-        return x;
+Frame Engine::ReadSeam(uint32_t relative, uint32_t start, uint32_t size, TailMode tail) const {
+    const Frame x = Composite(Absolute(relative, start), tail);
+    if (size < kMinWindowFrames) {
+        // Only a loop shorter than the smallest window: unless the post-roll
+        // crossfades it, its seam dips over a third of the loop at each end.
+        if (tail == TailMode::Tail)
+            return x;
+        return Scale(x, EdgeGain(relative, size, std::max<uint32_t>(size / 3, 1)));
+    }
     if (edgeMode_ == SeamMode::Window)
         return Scale(x, EdgeGain(relative, size));
     const uint32_t length = Length();
@@ -773,7 +797,7 @@ Frame Engine::ReadSeam(uint32_t relative, uint32_t start, uint32_t size) const {
         while (continuation >= length)
             continuation -= length;
         const float w = float(relative) / float(kSeamFrames);
-        return Mix(Composite(continuation), x, w);
+        return Mix(Composite(continuation, tail), x, w);
     }
     return x;
 }
@@ -949,7 +973,7 @@ void Engine::AdvanceHead(float inLeft, float inRight, float& outLeft, float& out
                     jump_.index = jump_.index + 1 >= jumpSize_ ? 0 : jump_.index + 1;
                 else
                     jump_.index = jump_.index == 0 ? jumpSize_ - 1 : jump_.index - 1;
-                jump_.current = ReadSeam(jump_.index, jumpStart_, jumpSize_);
+                jump_.current = ReadSeam(jump_.index, jumpStart_, jumpSize_, jumpTail_);
             }
         }
     }
@@ -978,9 +1002,12 @@ void Engine::WriteFrame(uint32_t absolute, Frame input, float gain) {
         x = Mix(x, input, gain);
         keep = 1.f - gain;
     } else if (writeMode_ == LoopMode::Frippertronics && !sliceOffset_) {
-        // old x k + input; the factor and the input fade in with the punch.
+        // old x k + input, soft limited; the whole result, limit included,
+        // fades in with the punch.
         keep = 1.f - gain * (1.f - retention_);
-        x = SoftLimit(Frame{x.left * keep + input.left * gain, x.right * keep + input.right * gain});
+        const Frame full = SoftLimit(
+            Frame{x.left * retention_ + input.left, x.right * retention_ + input.right});
+        x = Mix(x, full, gain);
     } else {  // Sound on Sound, also Frippertronics while a Skip offset is active
         x.left = Clamp(x.left + input.left * gain, -1.f, 1.f);
         x.right = Clamp(x.right + input.right * gain, -1.f, 1.f);
@@ -1001,8 +1028,10 @@ void Engine::EnsureCopied(uint32_t index) {
     if (!syncPending_)
         return;
     const uint32_t block = index / kCopyBlockFrames;
-    if (block < syncBlocks_ && !Copied(block))
+    if (block < syncBlocks_ && !Copied(block)) {
         CopyBlock(block);
+        writeCopies_ += kCopyBlockFrames;
+    }
 }
 
 void Engine::CopyBlock(uint32_t block) {
@@ -1013,12 +1042,17 @@ void Engine::CopyBlock(uint32_t block) {
     std::memcpy(buffer_[1 - syncSource_] + begin, buffer_[syncSource_] + begin,
                 size_t(count) * sizeof(Frame));
     copied_[block >> 5] |= 1u << (block & 31);
+    ++copiedBlocks_;
 }
 
 void Engine::SyncStep(size_t frames) {
     if (!syncPending_)
         return;
     syncCredit_ += uint32_t(std::min<size_t>(frames, 4096)) * kSyncFramesPerSample;
+    // Copies on write share the budget: a callback copies at most the larger of
+    // the budget and what its writes needed.
+    syncCredit_ -= std::min(syncCredit_, writeCopies_);
+    writeCopies_ = 0;
     while (syncCursor_ < syncBlocks_) {
         const bool copy = !Copied(syncCursor_);
         const uint32_t cost = copy ? kCopyBlockFrames : 8;

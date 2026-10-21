@@ -295,6 +295,60 @@ static void TestSeams() {
     PASS("seams: window dip and crossfade are click-free, also at capacity and in windows\n");
 }
 
+// Loops of 1152 to 1344 frames have no position outside both the tail and the
+// end seam: the post-roll crossfade switches in under a jump crossfade. Loops
+// shorter than the smallest window gate their seam over a third of the loop,
+// or crossfade it when they cover the whole post-roll.
+static void TestShortLoops() {
+    for (uint32_t length = kMinWindowFrames; length <= kTailFrames + kSeamFrames + 56; ++length) {
+        Rig rig(length + kTailFrames + 1000);
+        Engine& e = rig.engine;
+        e.SetSeamMode(SeamMode::Crossfade);
+        rig.RecordTake(length, Constant(.5f));
+        rig.StartCapture();
+        rig.Run(kTailFrames, Constant(.5f));  // the post-roll hears the input
+        rig.Run(6 * length);
+        CHECK(e.TailLength() == kTailFrames);
+        CHECK_NEAR(MinAbs(rig.left, rig.left.size() - 2 * length, rig.left.size()), .5, 1e-3);
+        // Gate ramp plus the ramp of the switch.
+        CHECK(MaxStep(rig.left) <= 2.f * .5f / kSeamFrames);
+    }
+    for (SeamMode mode : {SeamMode::Window, SeamMode::Crossfade})
+        for (uint32_t length : {3u, 100u, 600u, kTailFrames - 1, kTailFrames, 1100u,
+                                kMinWindowFrames - 1}) {
+            Rig rig(length + kTailFrames + 1000);
+            Engine& e = rig.engine;
+            e.SetSeamMode(mode);
+            rig.RecordTake(length, Constant(.5f));
+            rig.StartCapture();
+            rig.Run(kTailFrames, Constant(.5f));
+            rig.Run(std::max(6 * length, 4000u));
+            // Seam ramp times the first-take fade-in, plus the switch to the tail.
+            const float ramp = float(std::max<uint32_t>(length / 3, 1));
+            CHECK(MaxStep(rig.left) <=
+                  .5f * (1.f / ramp + 1.f / kRecordFadeFrames + 1.f / kSeamFrames) * 1.01f);
+            const float low = MinAbs(rig.left, rig.left.size() - 2 * length, rig.left.size());
+            if (mode == SeamMode::Crossfade && length >= kTailFrames)
+                CHECK_NEAR(low, .5, 1e-3);
+            else
+                CHECK(low < 1e-3f);  // the seam dips to zero
+        }
+    // Switching the seam mode on a 1200-frame loop never steps the output.
+    {
+        const double hz = 220.0;
+        const float amp = .5f;
+        Rig rig(3 * kSecond);
+        rig.RecordTake(1200, ToneSignal(hz, amp));
+        rig.StartCapture();
+        for (int i = 0; i < 200; ++i) {
+            rig.engine.SetSeamMode(i & 1 ? SeamMode::Crossfade : SeamMode::Window);
+            rig.Run(97 + (i * 31) % 300, ToneSignal(hz, amp));
+        }
+        CHECK(MaxStep(rig.left) <= SeamBound(hz, amp));
+    }
+    PASS("short loops: crossfade from 1152 to 1344 frames, gated or crossfaded seams below\n");
+}
+
 static void TestWindowAndJump() {
     Rig rig(5 * kSecond);
     const uint32_t length = 4 * kSecond;
@@ -438,6 +492,46 @@ static void TestUndoLayers() {
         CHECK(rig.GuardsIntact());
     }
     PASS("undo/redo exact after 1st, 2nd, 3rd overdub, with and without finished copy; erase undoable\n");
+}
+
+// Copies on write count against the background copy budget: at x8 with
+// Slice/Skip moving the head, no 48-frame callback copies more than 1536 frames.
+static void TestCopyBudget() {
+    const uint32_t budget = 48 * kSyncFramesPerSample / kCopyBlockFrames;  // blocks
+    for (LoopMode mode : {LoopMode::SoundOnSound, LoopMode::Replace, LoopMode::Frippertronics}) {
+        Rig rig(10 * kSecond + kTailFrames);
+        Engine& e = rig.engine;
+        rig.RecordTake(10 * kSecond, ToneSignal(110.0, .25f));
+        rig.WaitIdle(ToneSignal(110.0, .25f));
+        e.SetLoopMode(mode);
+        e.PressRecord();  // no copy: both buffers still hold the take
+        rig.Run(kSecond, ToneSignal(220.0, .1f));
+        e.PressRecord();
+        rig.WaitIdle();
+        const auto before = Snapshot(e);
+        e.SetVarispeed(kMaxSemitones);
+        e.SetSlice(.6f);
+        e.SetSkip(.4f);
+        rig.Run(4800);
+        e.PressRecord();
+        uint32_t worst = 0, callbacks = 0;
+        while (e.UndoCopyPending() && callbacks < 100000) {
+            const uint32_t copied = e.CopiedBlocks();
+            rig.Run(rig.block, ToneSignal(330.0, .1f));
+            worst = std::max(worst, e.CopiedBlocks() - copied);
+            ++callbacks;
+        }
+        CHECK(!e.UndoCopyPending() && callbacks > 100);
+        CHECK(worst <= budget);
+        e.PressRecord();
+        rig.WaitIdle();
+        e.SetLoopMode(LoopMode::SoundOnSound);  // Frippertronics locks undo
+        e.Undo();
+        rig.WaitIdle();
+        CHECK(SameState(e, before));
+        CHECK(rig.GuardsIntact());
+    }
+    PASS("undo copy: copies on write share the 1536-frame budget per callback, undo exact\n");
 }
 
 // Record, overdub, undo and redo at long lengths; the buffer is the full 87 s.
@@ -787,6 +881,34 @@ static void TestFrippertronics() {
     PASS("frippertronics: decay knob as in the manual, old x k + input, soft limit, undo locked\n");
 }
 
+// The soft limit fades in with the punch like the rest of the write: material
+// above the 0.95 knee does not step where a silent overdub punches in or out.
+static void TestFrippertronicsKnee() {
+    const uint32_t length = kSecond / 5;
+    for (float level : {.951f, .96f, .98f, .99f, 1.f})
+        for (float decay : {0.f, kDefaultDecay, .5f, 1.f}) {
+            Rig rig(2 * length);
+            Engine& e = rig.engine;
+            const std::vector<Frame> loop(length, Frame{level, -level});
+            CHECK(e.LoadLoop(loop.data(), length));
+            e.SetLoopMode(LoopMode::Frippertronics);
+            e.SetFrippertronicsDecay(decay);
+            rig.WaitIdle();
+            rig.Run(4000);  // retention settled
+            e.PressRecord();
+            rig.Run(2 * kPunchFadeFrames);
+            e.PressRecord();
+            rig.WaitIdle();
+            float step = 0.f;
+            for (uint32_t i = 0; i < length; ++i) {
+                const Frame a = e.StoredFrame(i), b = e.StoredFrame((i + 1) % length);
+                step = std::max({step, std::fabs(b.left - a.left), std::fabs(b.right - a.right)});
+            }
+            CHECK_NEAR(step, 0.0, 1.05 / kPunchFadeFrames);
+        }
+    PASS("frippertronics: the soft limit fades in with the punch, 0.951 to 1.0, every decay\n");
+}
+
 static int ZeroCrossings(const Engine& e, uint32_t from, uint32_t to) {
     int n = 0;
     for (uint32_t i = from + 1; i < to; ++i)
@@ -1036,14 +1158,17 @@ int main() {
     TestInit();
     TestFirstTake();
     TestSeams();
+    TestShortLoops();
     TestWindowAndJump();
     TestOverdubModes();
     TestUndoLayers();
+    TestCopyBudget();
     TestReverse();
     TestInertia();
     TestVarispeed();
     TestBounds();
     TestFrippertronics();
+    TestFrippertronicsKnee();
     TestResample();
     TestSliceSegmentation();
     TestSliceSkipStatistics();
