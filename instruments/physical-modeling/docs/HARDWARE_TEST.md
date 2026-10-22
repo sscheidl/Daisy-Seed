@@ -6,6 +6,8 @@ click-free model changes, four voices, stereo distribution, MIDI/pitch bend and
 functioning knobs. See [results, conditions and raw data](HARDWARE_RESULTS_2026-10-22.md).
 The checklist below remains the procedure for repeat testing; individual detailed
 items beyond the reported results are not automatically marked complete.
+The [playing/automation follow-up](HARDWARE_PLAYING_2026-10-22.md) measured repeatable
+deadline overruns on entry into string-based models; resolving this remains open.
 
 1. Download the Physical Modeling Actions artifact; verify SHA256SUMS.
    Use the already working external Daisy bootloader and the application BIN
@@ -33,7 +35,8 @@ items beyond the reported results are not automatically marked complete.
 10. Measure actual callback average/peak and 1 ms deadline misses using the
     telemetry instructions below. Also check analog output peaks, IRQ/stack
     behavior and stationary-pot noise/MIDI ownership. A settled-model four-voice
-    CPU run is recorded; manual knob-sweep/model-transition capture remains open.
+    CPU run and MIDI-driven knob/model changes are recorded. The latter exposed
+    switch-time deadline overruns; physical control movement is a separate check.
 
 Record board revision, codec, USB host/DAW, switch orientation and observations.
 Software tests do not replace listening, electrical measurements or hardware

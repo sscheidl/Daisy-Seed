@@ -1,2 +1,2 @@
 # Preserve the original telemetry capture bytes and its recorded SHA-256.
-2026-10-22-four-voices.csv -text whitespace=trailing-space,space-before-tab,cr-at-eol
+*.csv -text whitespace=trailing-space,space-before-tab,cr-at-eol

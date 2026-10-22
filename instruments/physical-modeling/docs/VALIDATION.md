@@ -3,6 +3,8 @@
 Software validation: 2026-10-19. Hardware follow-up: 2026-10-22.
 **FUNCTIONAL HARDWARE ACCEPTANCE REPORTED — FOUR-VOICE CPU MEASURED.**
 See [hardware results and raw data](HARDWARE_RESULTS_2026-10-22.md).
+A [practical follow-up](HARDWARE_PLAYING_2026-10-22.md) found repeatable callback
+deadline overruns during model changes; this real-time issue remains open.
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
@@ -114,6 +116,13 @@ limiter knee or establish parameter/model-transition worst cases. See the
 Host clock mocks remain mechanism tests only. The block deadline is 1 ms, and
 polyphony remains four; six/eight voices and a modulation matrix are unmeasured.
 
+Subsequent ordinary-rate playing/automation captures include model transitions:
+one/two/eight moving controls, at most eight requested notes per chord, and four
+actual DSP voices. They found 20 deadline overruns across 300085 captured blocks,
+with a highest callback peak of 141.58%. All overrun increments coincide with
+snapshot intervals containing entry into string-based models. See
+[the raw evidence and schedule](HARDWARE_PLAYING_2026-10-22.md).
+
 ## Remaining user validation
 
 The user reports successful flashing, click-free model changes with continuing
@@ -122,7 +131,8 @@ with S1 (Studio One), and functioning knobs with familiar Rings behavior.
 The agent subsequently read hardware telemetry with explicit authorization;
 flashing was performed by the user.
 
-Manual CPU capture during knob sweeps/model changes, analog output-level
+MIDI-driven knob sweeps/model changes are measured; resolving switch-time
+deadline overruns remains open. Physical control movement, analog output-level
 measurements, physical switch orientation as a separately recorded check, full
 IRQ budget, stack high-water and stationary-pot noise remain open. Board
 revision/codec identity and flashed-image checksum were not independently

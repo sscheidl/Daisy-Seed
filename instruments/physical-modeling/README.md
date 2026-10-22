@@ -7,6 +7,8 @@ Status: **software validated; functional hardware acceptance reported;
 four-voice CPU measured** (2026-10-22). See
 [executed validation and artifact](docs/VALIDATION.md) and
 [hardware results with raw measurements](docs/HARDWARE_RESULTS_2026-10-22.md).
+The [practical follow-up](docs/HARDWARE_PLAYING_2026-10-22.md) found repeatable
+deadline overruns during model changes; resolving that switch cost remains open.
 
 ## Models and controls
 
@@ -70,8 +72,10 @@ Flash only the application BIN. A working compatible bootloader needs no
 reinstallation. The user reports successful flashing and functional listening
 tests with S1 (Studio One). The authorized six-model hardware CPU capture recorded
 zero deadline overruns in 174084 blocks, with a highest peak of 56.71% at four
-voices and muted final master. Parameter sweeps and transition peaks remain open;
-see [the full conditions and results](docs/HARDWARE_RESULTS_2026-10-22.md).
+voices and muted final master in the settled-model run. A subsequent practical
+run with knob sweeps found switch-time peaks up to 141.58% and deadline overruns;
+see [settled results](docs/HARDWARE_RESULTS_2026-10-22.md) and
+[playing/automation results](docs/HARDWARE_PLAYING_2026-10-22.md).
 CPU average/peak and deadline misses can be requested over USB MIDI; the
 [hardware test guide](docs/HARDWARE_TEST.md) includes a CSV measurement helper.
 

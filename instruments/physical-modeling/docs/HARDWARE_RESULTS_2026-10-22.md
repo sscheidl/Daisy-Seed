@@ -2,6 +2,10 @@
 
 **FUNCTIONAL HARDWARE ACCEPTANCE REPORTED — FOUR-VOICE CPU MEASURED.**
 
+Follow-up: [practical playing and automation](HARDWARE_PLAYING_2026-10-22.md)
+found repeated deadline overruns during model changes. The zero-overrun settled
+run below remains valid for its recorded conditions.
+
 The user successfully flashed the instrument and confirmed its behavior by
 playing/listening with S1 (Studio One). With the user's explicit authorization,
 the agent then collected real callback telemetry over USB MIDI. The agent did
@@ -83,10 +87,11 @@ callback budget** at these settings. This is measured four-voice headroom.
 Six voices are a plausible follow-up experiment; neither six nor eight voices,
 nor a modulation matrix, have been implemented or performance-validated here.
 
-This run does not establish the worst possible parameter combination. A separate
-capture during manual playing, knob sweeps and model transitions is still open.
-The settled-model reset deliberately excludes transition peaks. Muting also
-excludes the final output limiter's nonlinear path from this run.
+This run does not establish the worst possible parameter combination. Subsequent
+[MIDI-driven knob sweeps and model transitions](HARDWARE_PLAYING_2026-10-22.md)
+found a repeatable switch-time issue; physical hand operation is a separate
+check. The settled-model reset here deliberately excludes transition peaks.
+Muting also excludes the final output limiter's nonlinear path from this run.
 
 Telemetry measures the user callback interval, including controls, MIDI
 consumption and DSP. USB serialization, snapshot publication and work outside
