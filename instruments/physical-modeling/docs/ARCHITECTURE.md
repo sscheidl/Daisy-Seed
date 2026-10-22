@@ -136,4 +136,5 @@ request is outstanding. Snapshot formatting and USB SendMessage stay in main,
 and sending requires an enumerated external host. No unsolicited telemetry is
 sent. Ordinary MIDI channel messages are used for reliable framing with the
 pinned USB transport; the protocol is in MIDI.md. Host fake timer tests validate
-the mechanism only. Actual board readings remain NOT MEASURED until user testing.
+the mechanism only. Actual four-voice board readings were collected on 2026-10-22;
+see [hardware results and measurement scope](HARDWARE_RESULTS_2026-10-22.md).

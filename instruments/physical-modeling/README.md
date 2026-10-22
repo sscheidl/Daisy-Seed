@@ -3,8 +3,10 @@
 Four-voice Mutable Instruments Rings / Torus instrument for the **Electro-Smith
 Seed3 Desktop Development Kit**. Native C++17, pinned libDaisy, 48 kHz stereo.
 No external audio input or extra synthesis/reverb engine is used.
-Software status: **SOFTWARE READY — HARDWARE TEST PENDING**; see
-[executed validation and artifact](docs/VALIDATION.md).
+Status: **software validated; functional hardware acceptance reported;
+four-voice CPU measured** (2026-10-22). See
+[executed validation and artifact](docs/VALIDATION.md) and
+[hardware results with raw measurements](docs/HARDWARE_RESULTS_2026-10-22.md).
 
 ## Models and controls
 
@@ -65,9 +67,12 @@ The Firmware CI matrix provides `PhysicalModeling-v0.1.0.bin`, `.elf`, `.map` an
 Use the **existing external Daisy bootloader**, following
 [FLASHING](../../docs/FLASHING.md) and [HARDWARE_TEST](docs/HARDWARE_TEST.md).
 Flash only the application BIN. A working compatible bootloader needs no
-reinstallation. No flash or hardware access was performed during development.
-Hardware/audio listening/real CPU load: **PENDING — USER TEST**.
-CPU average/peak and deadline misses can now be requested over USB MIDI; the
+reinstallation. The user reports successful flashing and functional listening
+tests with S1 (Studio One). The authorized six-model hardware CPU capture recorded
+zero deadline overruns in 174084 blocks, with a highest peak of 56.71% at four
+voices and muted final master. Parameter sweeps and transition peaks remain open;
+see [the full conditions and results](docs/HARDWARE_RESULTS_2026-10-22.md).
+CPU average/peak and deadline misses can be requested over USB MIDI; the
 [hardware test guide](docs/HARDWARE_TEST.md) includes a CSV measurement helper.
 
 ## Provenance and limits
@@ -86,4 +91,5 @@ At extreme damping the FM model intentionally approaches an oscillator, as in
 Torus. The original string model's approximate tuning is retained (the host probe
 measured about 887 Hz for an 880 Hz target with structure .25/damping .7).
 Output gain is fixed at 0.8 times MIDI master volume, followed by a soft peak
-protection below +/-0.8 FS. CPU deadline margin requires measurement on hardware.
+protection below +/-0.8 FS. The recorded four-voice CPU margin applies to its
+documented settings; six/eight voices and a modulation matrix are not yet measured.
