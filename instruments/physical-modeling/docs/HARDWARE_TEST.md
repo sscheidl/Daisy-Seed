@@ -7,7 +7,8 @@ functioning knobs. See [results, conditions and raw data](HARDWARE_RESULTS_2026-
 The checklist below remains the procedure for repeat testing; individual detailed
 items beyond the reported results are not automatically marked complete.
 The [playing/automation follow-up](HARDWARE_PLAYING_2026-10-22.md) measured repeatable
-deadline overruns on entry into string-based models; resolving this remains open.
+deadline overruns on entry into string-based models. The user accepts these
+as a known transition limitation for the intended four-voice use.
 
 1. Download the Physical Modeling Actions artifact; verify SHA256SUMS.
    Use the already working external Daisy bootloader and the application BIN

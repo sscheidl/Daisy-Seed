@@ -2,6 +2,11 @@
 
 **Repeated model-switch callback deadline overruns found at ordinary note rates.**
 
+User assessment: changing models during performance is uncommon in the intended
+use. The measured switch-time spikes are accepted as a documented limitation of
+the current four-voice instrument, not a blocker for that use. No audible problem
+was reported in the earlier functional test.
+
 After the [settled-model measurement](HARDWARE_RESULTS_2026-10-22.md), the user
 requested automated simulation of normal playing and knob movements. These
 follow-ups used actual Daisy callback telemetry and conservative MIDI schedules.
@@ -61,10 +66,10 @@ pot movement/filtering, switch debounce and audible clicks are not simulated.
 
 ## Interpretation and next action
 
-Running synthesis has headroom. The repeated switch cost is a concrete remaining
-real-time issue before increasing voice count. The user's earlier report of
-click-free operation remains valid; muted testing cannot determine whether these
-measured overruns produce audible dropouts.
+Running synthesis has headroom. The repeated switch cost is a known transition
+limitation, accepted by the user for the intended four-voice use. The user's
+earlier report of click-free operation remains valid; muted testing cannot
+determine whether these measured overruns produce audible dropouts.
 
 Source inspection suggests synchronous initialization as a candidate:
 `Part::ConfigureResonators()` initializes all eight internal string processors
@@ -72,9 +77,11 @@ inside the callback on entering the four string-based models; `String::Init()`
 clears their delay lines. This matches the affected model groups, but these
 measurements do not separately profile those initialization calls.
 
-The focused follow-up is to measure/reduce switch-time work, preserve the global
-reverb tail, and repeat these practical scenarios. Six/eight actual voices and
-a modulation matrix remain unimplemented/unmeasured.
+Profiling/reducing switch-time work is an optional future optimization if seamless
+live model changes become a requirement; no current redesign is requested.
+Any such change must preserve the global reverb tail. Six/eight actual voices and
+a modulation matrix remain unimplemented/unmeasured and require their own normal
+playing measurements. Retain the transition result when evaluating those changes.
 
 ## Raw evidence
 

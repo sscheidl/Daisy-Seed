@@ -7,8 +7,9 @@ Status: **software validated; functional hardware acceptance reported;
 four-voice CPU measured** (2026-10-22). See
 [executed validation and artifact](docs/VALIDATION.md) and
 [hardware results with raw measurements](docs/HARDWARE_RESULTS_2026-10-22.md).
-The [practical follow-up](docs/HARDWARE_PLAYING_2026-10-22.md) found repeatable
-deadline overruns during model changes; resolving that switch cost remains open.
+The [practical follow-up](docs/HARDWARE_PLAYING_2026-10-22.md) found short deadline
+overruns during model changes, accepted by the user as a known limitation for
+the intended use. Running synthesis has headroom.
 
 ## Models and controls
 

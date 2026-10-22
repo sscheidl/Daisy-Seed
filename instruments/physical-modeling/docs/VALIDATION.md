@@ -4,7 +4,8 @@ Software validation: 2026-10-19. Hardware follow-up: 2026-10-22.
 **FUNCTIONAL HARDWARE ACCEPTANCE REPORTED — FOUR-VOICE CPU MEASURED.**
 See [hardware results and raw data](HARDWARE_RESULTS_2026-10-22.md).
 A [practical follow-up](HARDWARE_PLAYING_2026-10-22.md) found repeatable callback
-deadline overruns during model changes; this real-time issue remains open.
+deadline overruns during model changes. The user accepts these as a documented
+limitation for the intended four-voice use; optimizing transitions is optional.
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
@@ -131,8 +132,8 @@ with S1 (Studio One), and functioning knobs with familiar Rings behavior.
 The agent subsequently read hardware telemetry with explicit authorization;
 flashing was performed by the user.
 
-MIDI-driven knob sweeps/model changes are measured; resolving switch-time
-deadline overruns remains open. Physical control movement, analog output-level
+MIDI-driven knob sweeps/model changes are measured. Switch-time deadline overruns
+are documented and accepted for the intended use. Physical control movement, analog output-level
 measurements, physical switch orientation as a separately recorded check, full
 IRQ budget, stack high-water and stationary-pot noise remain open. Board
 revision/codec identity and flashed-image checksum were not independently
