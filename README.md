@@ -40,6 +40,7 @@ Daisy-Seed/
 │   └── mod-on-daisy/       # reusable modulation matrix: include, tests, bench firmware, tools
 ├── editors/
 │   └── mod-on-daisy/       # grid editor: JUCE standalone (src/), browser variant (web/)
+├── diagnostics/           # Seed3 hardware diagnostics: firmware, Windows GUI, tests
 ├── common/desktop.mk      # shared official Seed3 Desktop build settings
 ├── docs/                  # hardware, build, flashing, and references
 ├── scripts/               # toolchain and BOOT_SRAM image checks
@@ -51,9 +52,8 @@ Daisy-Seed/
 The same project layout is used in local checkouts and cloud workspaces.
 The Nebulae implementation was built and validated in the local Windows checkout.
 
-Hardware diagnostics live in the separate
-[Daisy-Seed3-Desktop-Diagnostics](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics)
-repository.
+Hardware diagnostics (firmware, Windows GUI, protocol, tests) live in
+[diagnostics/](diagnostics/README.md).
 
 ## Build and test
 
