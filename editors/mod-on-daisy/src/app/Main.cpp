@@ -1,0 +1,241 @@
+// Mod on Daisy Editor, JUCE standalone (GUI.md § 3, D6: Windows first, VST3 later).
+//   ModOnDaisyEditor                      normal start
+//   ModOnDaisyEditor --selftest <dir>     drives the window against the simulator, checks
+//                                         the device CRC after every step, writes screenshots
+#include "../ui/EditorComponent.h"
+#include <juce_gui_basics/juce_gui_basics.h>
+
+namespace {
+using namespace editor;
+using editor::ui::EditorComponent;
+
+class MainWindow : public juce::DocumentWindow {
+  public:
+    explicit MainWindow(const juce::String& name)
+        : DocumentWindow(name, ui::colour::bg, DocumentWindow::allButtons) {
+        setUsingNativeTitleBar(true);
+        setContentOwned(new EditorComponent(), true);
+        setResizable(true, true);
+        setResizeLimits(1100, 860, 4000, 3000);
+        centreWithSize(getWidth(), getHeight());
+    }
+    EditorComponent& Editor() { return *static_cast<EditorComponent*>(getContentComponent()); }
+    void closeButtonPressed() override { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }
+};
+
+// ------------------------------------------------------------------ self-test
+class SelfTest {
+  public:
+    SelfTest(EditorComponent& e, juce::File dir) : e_(e), dir_(std::move(dir)) {}
+
+    int Run() {
+        e_.UseManualClock();
+        dir_.createDirectory();
+        log_ = dir_.getChildFile("selftest.txt");
+        log_.replaceWithText({});
+        ToyPiano();
+        PhysicalModeling();
+        Offline();
+        if(failures_)
+            Say("FAIL: " + juce::String(failures_) + " checks");
+        else
+            Say("PASS: JUCE editor against the simulated device (screenshots in " + dir_.getFullPathName() + ")");
+        return failures_ ? 1 : 0;
+    }
+
+  private:
+    // A GUI application has no console on Windows: every line also goes to selftest.txt.
+    void Say(const juce::String& line) {
+        std::printf("%s\n", line.toRawUTF8());
+        std::fflush(stdout);
+        log_.appendText(line + "\n");
+    }
+    void Check(bool ok, const char* what) {
+        if(!ok) {
+            Say(juce::String("CHECK failed: ") + what);
+            ++failures_;
+        }
+    }
+#define SELFTEST_CHECK(cond) Check((cond), #cond)
+
+    bool Settle(uint32_t max_ms = 5000) {
+        for(uint32_t i = 0; i < max_ms; ++i) {
+            e_.Step(1);
+            if(e_.GetSession().Idle() && e_.GetSession().State() != LinkState::Connecting) {
+                e_.Step(30);
+                e_.RefreshNow();
+                return true;
+            }
+        }
+        return false;
+    }
+    bool InSync() {
+        return e_.GetSimulator() && e_.GetSimulator()->Device().CurrentCrc() == e_.GetModel().Crc();
+    }
+    juce::MouseEvent Mouse(juce::Point<float> pos, juce::Point<float> down, juce::ModifierKeys mods = {},
+                           int clicks = 1) {
+        auto& grid = e_.Grid();
+        const juce::Time t = juce::Time::getCurrentTime();
+        return juce::MouseEvent(juce::Desktop::getInstance().getMainMouseSource(), pos, mods,
+                                juce::MouseInputSource::defaultPressure, juce::MouseInputSource::defaultOrientation,
+                                juce::MouseInputSource::defaultRotation, juce::MouseInputSource::defaultTiltX,
+                                juce::MouseInputSource::defaultTiltY, &grid, &grid, t, down, t, clicks, pos != down);
+    }
+    juce::Point<float> Centre(int s, int t) { return e_.Grid().CellBounds(s * 8 + t).getCentre().toFloat(); }
+    void Key(int code, juce::juce_wchar ch = 0) { e_.Grid().keyPressed(juce::KeyPress(code, {}, ch)); }
+    void Shot(const char* name) {
+        e_.RefreshNow();
+        const juce::Image image = e_.createComponentSnapshot(e_.getLocalBounds(), true, 1.0f);
+        juce::File file = dir_.getChildFile(name);
+        file.deleteFile();
+        juce::FileOutputStream out(file);
+        juce::PNGImageFormat().writeImageToStream(image, out);
+    }
+    int PortIndex(const char* label) { return e_.PortNames().indexOf(ui::U(label)); }
+
+    void ToyPiano() {
+        e_.ConnectTo(PortIndex("Simulator: Toy Piano"));
+        SELFTEST_CHECK(Settle());
+        Model& m = e_.GetModel();
+        SELFTEST_CHECK(e_.GetSession().Connected() && e_.GetSession().Device().key == "toy-piano");
+        SELFTEST_CHECK(m.columns[0].name == "Pitch" && !m.columns[6].present && !m.Allowed(7 * 8 + 3));
+
+        // Keyboard: LFO 1 → Pitch +30.
+        e_.Grid().Select(0);
+        for(int i = 0; i < 3; ++i)
+            Key(juce::KeyPress::pageUpKey);
+        SELFTEST_CHECK(Settle() && m.Depth(0) == 30 && InSync());
+
+        // Drag: Modwheel → Level 100 px down = -50.
+        auto& grid = e_.Grid();
+        const juce::Point<float> c = Centre(5, 1);
+        grid.mouseDown(Mouse(c, c));
+        for(int y = 4; y <= 100; y += 4) {
+            grid.mouseDrag(Mouse(c.translated(0, float(y)), c));
+            e_.Step(3);
+        }
+        grid.mouseUp(Mouse(c.translated(0, 100), c));
+        SELFTEST_CHECK(Settle() && m.Depth(5 * 8 + 1) == -50 && InSync());
+
+        // Mouse wheel +5, then the cell editor's slider: Poly AT → Level 80.
+        for(int i = 0; i < 5; ++i)
+            grid.mouseWheelMove(Mouse(Centre(7, 1), Centre(7, 1)), {0.0f, 0.2f, false, false, false});
+        SELFTEST_CHECK(m.Depth(7 * 8 + 1) == 5 && m.selected == 7 * 8 + 1);
+        e_.DepthSlider().setValue(80, juce::sendNotificationSync);
+        SELFTEST_CHECK(Settle() && m.Depth(7 * 8 + 1) == 80 && InSync());
+
+        // Double-click switches off and keeps the depth.
+        grid.mouseDoubleClick(Mouse(Centre(5, 1), Centre(5, 1), {}, 2));
+        SELFTEST_CHECK(Settle() && !m.Enabled(5 * 8 + 1) && m.Depth(5 * 8 + 1) == -50 && InSync());
+
+        // Sources: LFO 1 S&H at MIDI clock 1/8, LFO 2 2.4 Hz, Random smooth at gate 2.
+        ui::SourcePanel& lfo1 = e_.Source(0);
+        lfo1.Shape().setSelectedId(mod::SampleHold + 1, juce::sendNotificationSync);
+        lfo1.Sync(mod::MidiClock).onClick();
+        lfo1.Division().setSelectedId(6 + 1, juce::sendNotificationSync);
+        e_.Source(1).Rate().setValue(HzToRate(2.4f), juce::sendNotificationSync);
+        ui::SourcePanel& rnd = e_.Source(2);
+        rnd.Shape().setSelectedId(mod::Smooth + 1, juce::sendNotificationSync);
+        rnd.Sync(mod::GateClock).onClick();
+        rnd.Gate().setSelectedId(2, juce::sendNotificationSync);
+        SELFTEST_CHECK(Settle() && InSync());
+        SELFTEST_CHECK(m.patch.lfo[0].shape == mod::SampleHold && m.patch.lfo[0].division == 6);
+        SELFTEST_CHECK(m.patch.random.division == mod::kDefaultGateDivision && m.patch.random.gate == 1);
+        SELFTEST_CHECK(!lfo1.Rate().isVisible() && lfo1.Division().isVisible() && rnd.Gate().isVisible());
+
+        // Limit of 8 active connections.
+        for(int cell : {1, 2, 8, 9, 18, 19}) {
+            grid.Select(cell);
+            Key(juce::KeyPress::pageUpKey);
+        }
+        SELFTEST_CHECK(Settle() && m.ActiveCount() == 8 && InSync());
+        grid.Select(3 * 8 + 3);
+        Key(juce::KeyPress::pageUpKey);
+        SELFTEST_CHECK(Settle() && m.ActiveCount() == 8 && !m.Enabled(3 * 8 + 3) && InSync());
+        SELFTEST_CHECK(e_.LogText().contains(ui::U("Höchstens 8")));
+        grid.Select(18); // back to fewer than 8 for the screenshot
+        Key('0', '0');
+        grid.Select(19);
+        Key('0', '0');
+
+        // Name, live monitor, screenshot.
+        e_.NameField().setText("Vibrato Test");
+        e_.NameField().onReturnKey();
+        e_.Step(800);
+        SELFTEST_CHECK(Settle() && InSync() && e_.GetSimulator()->Device().CurrentPatch().name == std::string("Vibrato Test"));
+        grid.Select(7 * 8 + 1);
+        Shot("juce-editor-toy-piano.png");
+
+        // File: save, clear, load, same CRC as before.
+        const juce::File file = dir_.getChildFile("selftest.modpatch");
+        const uint32_t before = m.Crc();
+        SELFTEST_CHECK(e_.SaveFile(file));
+        e_.GetSession().ClearMatrix();
+        SELFTEST_CHECK(Settle() && m.ActiveCount() == 0 && InSync());
+        SELFTEST_CHECK(e_.LoadFile(file));
+        SELFTEST_CHECK(Settle() && m.Crc() == before && InSync());
+        Say("PASS toy-piano: keyboard, drag, wheel, slider, on/off, sources, limit 8, name, files");
+    }
+
+    void PhysicalModeling() {
+        e_.ConnectTo(PortIndex("Simulator: Physical Modeling"));
+        SELFTEST_CHECK(Settle() && e_.GetSession().Device().key == "physical-modeling");
+        Model& m = e_.GetModel();
+        SELFTEST_CHECK(m.columns[5].name == "Excitation" && !m.Allowed(7 * 8 + 5));
+        auto& grid = e_.Grid();
+        const int cells[][3] = {{0, 2, 40}, {1, 1, -30}, {2, 4, 25}, {6, 6, 60}, {7, 2, 70}, {7, 0, 12}};
+        for(const auto& c : cells) {
+            grid.Select(c[0] * 8 + c[1]);
+            e_.GetSession().EditDepth(c[0] * 8 + c[1], c[2]);
+        }
+        e_.Source(0).Rate().setValue(HzToRate(0.5f), juce::sendNotificationSync);
+        e_.Step(800);
+        SELFTEST_CHECK(Settle() && InSync());
+        grid.Select(7 * 8 + 2);
+        Shot("juce-editor-physical-modeling.png");
+        Say("PASS physical-modeling: columns, Poly AT per voice, Excitation greyed out");
+    }
+
+    void Offline() {
+        e_.Disconnect();
+        SELFTEST_CHECK(e_.GetSession().State() == LinkState::Offline);
+        e_.Grid().Select(12);
+        Key(juce::KeyPress::pageDownKey);
+        SELFTEST_CHECK(e_.GetModel().Depth(12) == -10);
+        Say("PASS offline: editing without a device");
+    }
+
+    EditorComponent& e_;
+    juce::File dir_, log_;
+    int failures_ = 0;
+};
+
+class Application : public juce::JUCEApplication {
+  public:
+    const juce::String getApplicationName() override { return "Mod on Daisy Editor"; }
+    const juce::String getApplicationVersion() override { return MOD_EDITOR_VERSION; }
+    bool moreThanOneInstanceAllowed() override { return true; }
+
+    void initialise(const juce::String& command_line) override {
+        window_ = std::make_unique<MainWindow>(getApplicationName() + " " + getApplicationVersion());
+        const juce::StringArray args = juce::StringArray::fromTokens(command_line, true);
+        const int i = args.indexOf("--selftest");
+        if(i >= 0) {
+            const juce::File dir = juce::File::getCurrentWorkingDirectory().getChildFile(
+                args[i + 1].isEmpty() ? juce::String("selftest") : args[i + 1].unquoted());
+            const int result = SelfTest(window_->Editor(), dir).Run();
+            setApplicationReturnValue(result);
+            quit();
+            return;
+        }
+        window_->setVisible(true);
+    }
+    void shutdown() override { window_.reset(); }
+    void systemRequestedQuit() override { quit(); }
+
+  private:
+    std::unique_ptr<MainWindow> window_;
+};
+}
+
+START_JUCE_APPLICATION(Application)

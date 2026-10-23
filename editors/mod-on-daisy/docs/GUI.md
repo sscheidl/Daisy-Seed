@@ -5,10 +5,16 @@
 **Kommunikation:** USB-MIDI mit dem Protokoll aus
 [modules/mod-on-daisy/docs/PROTOCOL.md](../../../modules/mod-on-daisy/docs/PROTOCOL.md).
 
-> **Stand 23.10.2026:** Als Schnellvariante gibt es einen **Browser-Editor**
-> ([`../web/`](../web/), Bedienung im [README](../README.md)). Er setzt das Raster, den
-> Zelleneditor, die Quellenleiste, die Live-Anzeige und die Dateien dieses Konzepts um.
-> Der JUCE-Editor folgt danach; VST3 kommt später.
+> **Stand 23.10.2026:**
+> * Der **JUCE-Editor** (Standalone, [`../src/`](../src/)) setzt Raster, Zelleneditor,
+>   Quellenleiste, Live-Anzeige und Dateien dieses Konzepts um. Er nutzt die
+>   Firmware-Header direkt und bringt einen Simulator mit (§ 3).
+> * Der **Browser-Editor** ([`../web/`](../web/)) bleibt als Schnellvariante ohne
+>   Installation. Beide lesen und schreiben dieselben `.modpatch`-Dateien.
+> * Noch nicht umgesetzt: Rückgängig/Wiederholen, Schema-Cache für die
+>   Offline-Bearbeitung, die Frage „Vom Gerät laden / Zum Gerät senden“ beim
+>   Wiederverbinden (der Editor lädt derzeit immer vom Gerät), Spaltenzuordnung über
+>   Namen bei abweichendem Schema. VST3 kommt später.
 
 ## 1. Leitlinien
 
@@ -139,17 +145,21 @@ neuesten Wert (PROTOCOL § 4).
 
 ```text
 editors/mod-on-daisy/
-├── CMakeLists.txt          JUCE per CMake (FetchContent oder Submodul, Version fest)
+├── CMakeLists.txt          JUCE 9.0.4 per FetchContent (Version fest)
+├── Makefile                Kerntests ohne JUCE
 ├── README.md
 ├── docs/GUI.md
-└── src/
-    ├── core/               ohne JUCE-GUI-Abhängigkeit, testbar
-    │   ├── PatchModel      Raster, Quellparameter, Undo-Stapel; nutzt modules/…/patch.h
-    │   ├── DeviceLink      MIDI-Ein/Aus, Anfragewarteschlange, Zeitüberschreitung, Wiederholung, CRC-Abgleich
-    │   ├── Schema          Zielbeschreibungen, Cache je Schema-Hash
-    │   └── PatchFile       JSON lesen/schreiben
-    ├── ui/                 MatrixGrid, CellEditor, SourceBar, StatusBar, DeviceDialog
-    └── app/                Standalone-Anwendung (später zusätzlich AudioProcessor für VST3)
+├── src/
+│   ├── core/               ohne JUCE, testbar
+│   │   ├── Model.h         Raster, Spalten, Quellparameter, Bearbeitungsregeln; nutzt patch.h
+│   │   ├── Session.h       Anfragewarteschlange, Zeitüberschreitung, Wiederholung, CRC-Abgleich, Monitor
+│   │   ├── PatchFile.h     .modpatch (JSON) lesen/schreiben, wie der Browser-Editor
+│   │   ├── Simulator.h     Controller und Engine der Firmware als „Gerät“ im PC
+│   │   └── SimInstruments.h Spaltentabellen von Toy Piano und Physical Modeling (nur Simulator)
+│   ├── ui/                 MatrixGrid, SourcePanel, EditorComponent, MidiPort, Theme
+│   └── app/                Standalone-Anwendung mit --selftest (später zusätzlich AudioProcessor für VST3)
+├── tests/test_core.cpp     Kern gegen den Firmware-Controller, mit Verlust und Verfälschung
+└── web/                    Browser-Editor
 ```
 
 * `core/` bindet `modules/mod-on-daisy/include/mod_on_daisy/protocol.h` und `patch.h`
@@ -164,8 +174,11 @@ editors/mod-on-daisy/
 * **Tests**: `core/` wird mit einem simulierten Gerät getestet, das denselben
   `Controller` aus `modules/mod-on-daisy` auf dem Host nutzt. Dazu Verlust, Verzögerung
   und Verfälschung von Rahmen.
-* `OFFEN` vor Phase 3: Lizenzbedingungen von JUCE (AGPLv3 oder kommerziell mit
-  kostenloser Einstiegsstufe) und die JUCE-Version.
+* **JUCE-Version:** 9.0.4, fest in `CMakeLists.txt`.
+* `OFFEN` **Lizenz:** JUCE steht unter AGPLv3 oder einer kommerziellen JUCE-Lizenz.
+  Für den eigenen Gebrauch spielt das keine Rolle. Vor einer Weitergabe der `.exe` an
+  andere ist zu entscheiden, ob der Editor unter AGPLv3 steht oder eine JUCE-Lizenz
+  genutzt wird. Siehe README.
 
 ## 4. Bewusst nicht in v0.1
 

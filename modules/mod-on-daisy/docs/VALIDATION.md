@@ -59,6 +59,25 @@ Der Browser-Codec (`editors/mod-on-daisy/web/mod_protocol.js`) liefert dieselben
 Referenzwerte wie C++ und Python: CRC-Prüfwert, Patch-Testvektor `E2340CC6`,
 Rahmengrößen 95/100 Byte. Das Gerät startet mit der Standard-Patch-CRC `61C264C4`.
 
+## 1b. JUCE-Editor gegen den echten Controller (`GEMESSEN`)
+
+* **Kern** (`make -C editors/mod-on-daisy test`, auch mit ASan/UBSan):
+  * Der Kern des JUCE-Editors läuft gegen Controller und Engine der Firmware.
+  * Geprüft: Verbinden, Spalten, gesperrte Zellen, Bearbeiten, Grenze 8 (auch für eine
+    auf 0 gesetzte, eingeschaltete Zelle), Quellen, Name, Leeren, Datei-Upload mit
+    Abbruch, Trennen ohne späte Wiederholungen, keine Antwort.
+  * 100 Werte beim Ziehen gehen als 6 `SET_CELL` zum Gerät.
+  * 400 zufällige Änderungen bei je 5 % verlorenen Anfragen, verlorenen und
+    verfälschten Antworten (drei Startwerte): Editor und Gerät enden auf derselben
+    Patch-CRC.
+* **Fenster** (`--selftest`, Linux unter Xvfb): Tastatur, Ziehen, Mausrad, Regler,
+  Doppelklick, Quellen, Grenze, Name und Dateien gegen den Simulator mit Toy-Piano- und
+  Physical-Modeling-Spalten. Nach jedem Schritt stimmt die Patch-CRC überein.
+* **Dateien**: Eine vom JUCE-Editor gespeicherte Datei ergibt im Browser-Editor dieselbe
+  Patch-CRC (`506290C2`), eine Datei des Browser-Editors lädt im Kern unverändert.
+* **Windows** (MSVC): Build, Kerntest und Selbsttest laufen in der CI
+  (`.github/workflows/editor.yml`). Am echten Daisy unter Windows: `NICHT GEMESSEN`.
+
 ## 2. ARM-Build der Messfirmware (`GEMESSEN`)
 
 | Variante | BIN | `mod::Module` (RAM) | `Engine::Tick` Code | `Controller::Execute` Code |
