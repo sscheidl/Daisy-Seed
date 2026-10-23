@@ -1,185 +1,195 @@
-# Mod on Daisy — MIDI-Protokoll (Entwurf v1)
+# Mod on Daisy — MIDI-Protokoll v1 (Spezifikation)
 
-**Stand:** 22. Oktober 2026 · **Status:** Entwurf, nicht implementiert. Wird in Phase 2 als
-`protocol.h` umgesetzt und in Firmware, Host-Tests und Editor gemeinsam genutzt.
-Hintergrund und Begründungen: [ARCHITECTURE.md § 4](ARCHITECTURE.md#4-midi-protokoll-frage-3).
+**Stand:** 23. Oktober 2026 · **Status:** Spezifikation, nicht implementiert. Wird in
+Phase 2 als `include/mod_on_daisy/protocol.h` umgesetzt, das Firmware, Host-Tests und
+der JUCE-Editor gemeinsam nutzen. Transport: **USB-MIDI** über J7 („Daisy Seed
+External“, D6). Grundlagen: [DECISIONS.md](DECISIONS.md) D9 und E9,
+[ARCHITECTURE.md](ARCHITECTURE.md) § 3–4.
 
 ## 1. Ebenen
 
-| Ebene | Nachrichten | Zweck | Braucht Editor? |
+| Ebene | Nachrichten | Wirkung | Editor nötig? |
 | --- | --- | --- | --- |
-| **Live** | CC, Channel-Aftertouch, Note On/Off (Velocity, Keytrack), Pitch Bend, optional MIDI-Clock | Werte der MIDI-*Quellen* | nein |
-| **Konfiguration** | SysEx, Hersteller-ID `0x7D` | Beschreibungen, Slots, Quellparameter, Presets, Monitoring | ja |
+| **Live** | CC1, Channel Pressure, Poly Key Pressure, Note On/Off, CC123 | Werte der Quellen 6–8, Drucktabelle, Retrigger | nein |
+| **Konfiguration** | SysEx `F0 7D 4D 44 …` | Raster, Quellparameter, Beschreibungen, Diagnose, später Presets | ja |
 
-Die eigenen CCs eines Instruments (z. B. CC20–33 in Physical Modeling) bleiben
-unverändert. Mod on Daisy **verbraucht** nur die SysEx-Rahmen mit eigenem Kopf sowie die
-CCs, die einer MIDI-Quelle zugewiesen sind. Alle anderen Nachrichten gibt
-`Controller::HandleMidi()` mit `false` an das Instrument weiter. Eine Ausnahme sind
-Noten: Sie werden für Velocity, Keytrack und Retrigger **mitgelesen** und trotzdem
-weitergegeben.
-
-### 1.1 Standardbelegung der MIDI-Quellen
-
-| Quelle | Standard | Begründung |
-| --- | --- | --- |
-| Mod-Wheel | CC1 | Konvention |
-| GP1–GP4 | CC16–19 | im MIDI-Standard „General Purpose Controller 1–4“; kollidiert nicht mit CC20–33 der vorhandenen Instrumente |
-| Aftertouch | Channel Pressure | — |
-| Velocity, Keytrack | letzte Note On | — |
-| Pitch Bend | Pitch Bend | als Quelle; die eigene Bend-Verarbeitung des Instruments bleibt |
-
-Jede Zuweisung lässt sich ändern: CC-Nummer, Kanal oder Omni, 7- oder 14-Bit (MSB n,
-LSB n+32). Das Instrument meldet seine reservierten CC-Bereiche (`IDENTIFY`), damit der
-Editor Konflikte anzeigt. Kanal 16 CC100–119 bleibt für die vorhandene
-Telemetrie frei.
+* Die Live-Ebene ist **omni**, also auf allen Kanälen gültig (v0.1).
+* CC1 und Aftertouch werden von Mod on Daisy **verbraucht**.
+* Noten werden **mitgelesen und weitergegeben**.
+* Fremde SysEx-Rahmen und SysEx mit anderer Projektkennung gibt `HandleMidi()` mit
+  `false` an das Instrument weiter.
+* Die vorhandenen Instrument-CCs (Physical Modeling CC20–33, Telemetrie Kanal 16
+  CC100–119; Nebulae CC20–27) bleiben unberührt.
 
 ## 2. Rahmenformat
 
 ```text
-F0 7D 4D 44 <dev> <ver> <cmd> <seq> <payload …> <chk> F7
-    │  └─┬─┘   │     │     │     │                  └─ Prüfsumme
-    │   "MD"   │     │     │     └─ 0…127, rollierend, vom Editor vergeben
-    │          │     │     └─ Kommando (Anfragen 0x00–0x3F, Antworten = Anfrage | 0x40)
-    │          │     └─ Protokollversion (1)
-    │          └─ Geräte-ID 0…15, 0x7F = alle
-    └─ Hersteller-ID „nicht-kommerziell“
+F0 7D 4D 44 <ver> <dev> <cmd> <seq> <len> <payload: len Bytes> <chk> F7
+   │  └─┬─┘   │     │     │     │     │                            └ Prüfsumme
+   │   "MD"   │     │     │     │     └ Länge der Nutzdaten, 0…109
+   │          │     │     │     └ 0…127, vom Editor vergeben, rollierend
+   │          │     │     └ Anfrage 0x01–0x3F; Antwort = Anfrage | 0x40; 0x7F = NAK
+   │          │     └ Geräte-ID 0…15; 0x7F = alle (nur für IDENTIFY)
+   │          └ Protokoll-Hauptversion, hier 1
+   └ SysEx-Hersteller-ID „nicht-kommerziell / Entwicklung“ (D9)
 ```
 
-* **Maximale Rahmenlänge 120 Byte** einschließlich `F0` und `F7`. Grund: Der gepinnte
-  libDaisy-Parser speichert höchstens 128 Byte zwischen `F0` und `F7` und meldet längere
-  Nachrichten abgeschnitten, aber als vollständig.
-* **Prüfsumme** im Roland-Stil: `chk = (128 − (Σ Bytes von <dev> bis Ende Payload) mod 128) mod 128`.
-  Falsche Prüfsumme oder falsche Länge → `NAK`. Abgeschnittene Rahmen werden so erkannt.
-* **Kodierung der Nutzdaten**, alle Bytes 7-Bit:
+| Regel | Wert | Grund |
+| --- | --- | --- |
+| Rahmenlänge | **≤ 120 Byte** einschließlich `F0` und `F7` | libDaisy speichert höchstens 128 Byte zwischen `F0` und `F7` und meldet längere Nachrichten abgeschnitten, aber als vollständig (`SYSEX_BUFFER_LEN`, E9) |
+| Projektkennung | `4D 44` („MD“) | `0x7D` teilen sich alle nicht-kommerziellen Projekte |
+| Prüfsumme | `chk = (128 − (Σ Bytes von <ver> bis Ende Payload) mod 128) mod 128` (Roland-Stil) | Erkennt Bytefehler; das Längenfeld erkennt abgeschnittene oder verschobene Rahmen |
+| Geräte-ID | Standard 0. In v0.1 fest in der Firmware, später gespeichert (STORAGE § 3) | mehrere Kits an einem Rechner |
+
+**Annahme eines Rahmens** in dieser Reihenfolge:
+
+1. Kopf `7D 4D 44` passt nicht → `false`, ans Instrument.
+2. `<dev>` ist nicht die eigene ID und nicht `0x7F` → verbraucht, keine Antwort.
+3. `<ver> ≠ 1` → `NAK 6`.
+4. Länge oder Prüfsumme falsch → `NAK 1` bzw. `NAK 2`.
+5. Sonst ausführen.
+
+**Kodierung der Nutzdaten** (alle Bytes 7-Bit):
 
 | Typ | Bytes | Kodierung |
 | --- | --- | --- |
 | `u7` | 1 | direkt |
 | `u14` | 2 | LSB zuerst, je 7 Bit |
-| `s14` | 2 | Offset-Binär: `v + 8192`, Bereich −8192…+8191 |
-| `depth` | 2 | `s14`; ±8191 ≙ ±1,0 (Auflösung ≈ 1,2·10⁻⁴) |
-| `u32` / `f32` | 5 | 32 Bit in 5 × 7 Bit, LSB zuerst (`f32` = IEEE-754-Bitmuster) |
-| `str` | 1 + n | Länge `u7` (≤ 16), danach 7-Bit-ASCII |
+| `u32` | 5 | 32 Bit in 5 × 7 Bit, LSB zuerst |
+| `str` | 1 + n | Länge `u7`, danach 7-Bit-ASCII, ohne Null |
+| `packed(n)` | n + ⌈n/7⌉ | 8-in-7: je 7 Datenbytes gehen ein MSB-Byte und 7 × 7 Bit voraus |
+| `mask64` | 10 | 64 Bit in 10 × 7 Bit, LSB zuerst; Bit `8·s + t` = Zelle (Quelle s, Ziel t) |
+| `depth8` | 1 Byte vor dem Packen | `int8_t` −100…+100 im Zweierkomplement |
 
 ## 3. Kommandos
 
-Jede Anfrage bekommt genau eine Antwort: `cmd | 0x40` bei Erfolg, `0x7F NAK` bei einem
-Fehler. Der Editor hat **höchstens eine Anfrage gleichzeitig offen**, wartet 200 ms und
-wiederholt höchstens dreimal. Das Gerät sendet **höchstens eine Antwort pro Millisekunde**,
-ausschließlich aus dem Main-Loop.
+### 3.1 Identifikation und Zielbeschreibung
 
-### 3.1 Identifikation und Beschreibung
-
-| Cmd | Name | Anfrage | Antwort (`| 0x40`) |
+| Cmd | Name | Anfrage | Antwort (`cmd \| 0x40`) |
 | --- | --- | --- | --- |
-| `0x01` | `IDENTIFY` | — | Protokollversion, `str` Instrument-Key (z. B. `physical-modeling`), `str` Firmwareversion, `u7` Quellen, `u7` Ziele, `u7` Slots, `u7` Preset-Slots, `u14` Tick-Rate in Hz, `u32` Schema-Hash, reservierte CC-Bereiche (Anzahl + Paare) |
-| `0x02` | `GET_SOURCE_INFO` | `u7` Index | Index, `u7` Typ, `u7` Flags (bipolar, audio-fähig, belegt durch Instrument), `str` Name, `u7` Parameterzahl |
-| `0x03` | `GET_SOURCE_PARAM_INFO` | `u7` Quelle, `u7` Parameter | `str` Name, `u14` Min, Max, Standard, `u7` Einheit/Kurve, bei Auswahllisten Anzahl der Einträge |
-| `0x04` | `GET_TARGET_INFO` | `u7` Index | Index, `u14` stabile ID, `u7` Gruppe, `u7` Reihenfolge, `u7` Art, `u7` Stufen, `u7` max. Rate, `u7` Flags (bipolar), `f32` Anzeige-Min, `f32` Anzeige-Max, `u7` Einheit, `str` Key |
-| `0x05` | `GET_TARGET_NAME` | `u7` Index | `str` Anzeigename (getrennt, damit Rahmen klein bleiben) |
-| `0x06` | `GET_GROUP_INFO` | `u7` Gruppe | `str` Gruppenname |
+| `0x01` | `IDENTIFY` | — | `u7` Haupt-, `u7` Nebenversion des Protokolls · `u7 u7 u7` Modulversion · `str` Instrument-Key (≤ 16) · `str` Instrumentversion (≤ 12) · `u7` kMaxActive · `u14` effektive Tick-Rate in Hz · `u7` Preset-Slots (v0.1: 0) · `u32` Schema-Hash · `u7` Fähigkeiten (Bit 0 Speicher, Bit 1 Monitor, Bit 2 Diagnose, Bit 3 Poly AT global = Last-Note) |
+| `0x02` | `GET_TARGET` | `u7` Spalte 0…7 | `u7` Spalte · `u7` Flags (Bit 0 vorhanden, Bit 1 `per_voice`, Bit 2 `latched`) · `u14` span · 16383 · `str` Name (≤ 12) · `str` span-Text (≤ 8) |
+| `0x03` | `GET_ALLOWED` | — | `mask64` erlaubte Zellen (ARCHITECTURE § 3.2) |
 
-Der **Schema-Hash** ist eine CRC-32 über alle Quell-, Parameter- und Zielbeschreibungen.
-Kennt der Editor den Hash bereits, überspringt er `0x02`–`0x06`.
+Der **Schema-Hash** ist eine CRC-32 über Instrument-Key, alle acht Zielbeschreibungen und
+die Poly-AT-Regel. Kennt der Editor den Hash bereits, überspringt er `GET_TARGET`.
 
-### 3.2 Routing und Quellparameter
+### 3.2 Raster und Quellparameter
+
+Jede Antwort auf ein zustandsänderndes Kommando enthält `u7` Status (0 = übernommen),
+`u7` aktive Zellen und `u32` **CRC-32 des gesamten Patches nach der Änderung**.
 
 | Cmd | Name | Anfrage | Antwort |
 | --- | --- | --- | --- |
-| `0x10` | `GET_SLOT` | `u7` Slot | Slot, `u7` Quelle (0x7F = leer), `u14` Ziel-ID, `u7` Via (0x7F = keine), `depth`, `u7` Flags |
-| `0x11` | `SET_SLOT` | wie Antwort von `GET_SLOT` | Slot, `u7` Status (0 = übernommen, 1 = Ziel unbekannt → deaktiviert) |
-| `0x12` | `SET_DEPTH` | `u7` Slot, `depth` | Slot |
-| `0x13` | `SET_SLOT_FLAGS` | `u7` Slot, `u7` Flags | Slot |
-| `0x14` | `CLEAR_SLOTS` | — | — |
-| `0x18` | `GET_SOURCE_PARAM` | `u7` Quelle, `u7` Parameter | `u14` Wert |
-| `0x19` | `SET_SOURCE_PARAM` | `u7` Quelle, `u7` Parameter, `u14` Wert | — |
+| `0x10` | `GET_MATRIX` | — | `packed(64)` Tiefen · `mask64` eingeschaltet · `u32` Patch-CRC |
+| `0x11` | `SET_MATRIX` | `packed(64)` Tiefen · `mask64` eingeschaltet | Status · aktive · Patch-CRC |
+| `0x12` | `SET_CELL` | `u7` Quelle · `u7` Ziel · `u7` Betrag 0…100 · `u7` Bits (0 negativ, 1 eingeschaltet) | Status · aktive · Patch-CRC |
+| `0x13` | `CLEAR_MATRIX` | — | Status · aktive · Patch-CRC |
+| `0x18` | `GET_SOURCE` | `u7` Quelle (0, 1, 2) | `u7` Quelle · `u14` Rate · `u7` Form bzw. Modus · `u7` Retrigger (Random: 0) |
+| `0x19` | `SET_SOURCE` | `u7` Quelle · `u7` Parameter (0 Rate, 1 Form/Modus, 2 Retrigger) · `u14` Wert | Status · aktive · Patch-CRC |
+| `0x1A` | `GET_NAME` | — | `str` Patch-Name (≤ 16) |
+| `0x1B` | `SET_NAME` | `str` Name | Status · aktive · Patch-CRC |
 
-Für die Slot-Flags gilt: Bit 0 aktiv, Bit 1–2 Polarität (`0` wie Quelle, `1` uni→bi,
-`2` bi→uni), Bit 3 invertieren, Bit 4 Audio-Rate gewünscht. Ein Audio-Rate-Wunsch wird nur
-erfüllt, wenn Ziel und Quelle es unterstützen, sonst läuft die Route mit Control-Rate.
+**Rahmengrößen**: `GET_MATRIX`-Antwort = 9 Kopf + 74 + 10 + 5 + 2 = **100 Byte**;
+`SET_MATRIX` = **95 Byte**. Das ganze Raster wird also in einem Rahmen übertragen und
+**atomar** übernommen. Ein ungültiges Raster (mehr als 8 aktive Zellen, nicht erlaubte
+Zelle aktiv, Tiefe außerhalb ±100) wird als Ganzes abgelehnt.
 
-Außerhalb einer Transaktion wird jede Änderung **sofort** kompiliert und veröffentlicht.
-Beim Ziehen eines Reglers im Editor begrenzt der Editor `SET_DEPTH` auf etwa 50 pro
-Sekunde. Der Triple-Buffer sorgt dafür, dass im Gerät immer der letzte Stand gewinnt.
+**Ablehnungen bei `SET_CELL`**:
 
-### 3.3 Transaktionen
+* Eine 9. aktive Zelle → `NAK 7`; der Patch bleibt unverändert.
+* Eine nicht erlaubte Zelle → `NAK 8`.
+* Eine ausgeschaltete Zelle darf jederzeit eine Tiefe bekommen. Sie zählt erst mit,
+  wenn sie eingeschaltet wird.
 
-| Cmd | Name | Wirkung |
-| --- | --- | --- |
-| `0x20` | `BEGIN` | Ab jetzt wird nur die Schattenkopie geändert. |
-| `0x21` | `COMMIT` | Schattenkopie prüfen, kompilieren und auf einmal veröffentlichen. |
-| `0x22` | `ABORT` | Schattenkopie verwerfen. |
-
-Wenn 2 s lang keine Nachricht eintrifft, bricht das Gerät die Transaktion ab. Nutzen:
-Beim Laden eines Presets aus dem Editor hört man keine Zwischenzustände.
-
-### 3.4 Presets im Gerät
+### 3.3 Diagnose und Monitoring
 
 | Cmd | Name | Anfrage | Antwort |
 | --- | --- | --- | --- |
-| `0x30` | `STORE` | `u7` Slot, `str` Name | nach dem Schreiben. Bis dahin ist der Main-Loop blockiert, der Editor zeigt „Speichere…“ und wartet bis zu 2 s |
-| `0x31` | `RECALL` | `u7` Slot | `u7` Status (0 ok, 1 leer, 2 ungültig, 3 fremdes Instrument) |
-| `0x32` | `GET_PRESET_INFO` | `u7` Slot | `u7` Status, `str` Name, `u32` CRC |
-| `0x33` | `DUMP` | `u7` Slot (0x7F = Arbeitspatch), `u7` Chunk | `u7` Chunk, `u7` Chunks gesamt, bis zu 96 Byte 7-Bit-gepackter Patch-Daten |
-| `0x34` | `LOAD_CHUNK` | `u7` Chunk, `u7` gesamt, Daten | Chunk; nach dem letzten Chunk CRC prüfen → Arbeitspatch |
-| `0x35` | `SET_POWER_ON` | `u7` Slot (0x7F = aus) | — |
+| `0x30` | `MONITOR` | `u7` Rate Hz (0 = aus, ≤ 25) | Bestätigung; danach ungefragte Rahmen `0x70` mit 8 × `u14` Quellwerten und 8 × `u14` globalen Offsets (Offset-Binär, 8192 = 0) |
+| `0x31` | `GET_STATS` | — | `u32` Ticks · `u32` Tick-Zyklen min/mittel/max · `u32` Callback-Last mittel/max (‰·10) · `u32` Überläufe · `u32` MIDI-Rahmen verworfen (Diagnose-Messung, TEST_PLAN § 3) |
+| `0x32` | `RESET_STATS` | — | — |
+| `0x33` | `SET_SCENARIO` | `u7` Szenario-Nr. | Status (nur Messfirmware `bench/`; im Instrument `NAK 9`) |
 
-Für Binärdaten gilt die übliche 8-in-7-Packung: 7 Datenbytes und davor ein Byte mit den
-sieben MSBs. Ein Patch von etwa 600 Byte braucht damit 8 Chunks.
+* Das Monitoring endet **3 s nach der letzten `MONITOR`-Anfrage**. Der Editor erneuert
+  es jede Sekunde. Ein geschlossener Editor hinterlässt deshalb keinen Datenstrom.
+* Die Werte liest der Main-Loop aus einem Schnappschuss, den der Audio-IRQ über eine
+  SPSC-Queue veröffentlicht.
+* Außer Monitor-Rahmen sendet das Gerät **nie ungefragt**.
 
-### 3.5 Monitoring (optional, Phase 3b)
+### 3.4 Gerät und Presets (spezifiziert, in v0.1 nicht implementiert)
 
-| Cmd | Name | Anfrage | Antwort / Strom |
+| Cmd | Name | Anfrage | Antwort |
 | --- | --- | --- | --- |
-| `0x3C` | `MONITOR` | `u7` Rate in Hz (0 = aus, max. 30), `u7` Auswahl (Quellen, Ziel-Offsets) | Bestätigung; danach Rahmen `0x7C` mit bis zu 32 × `s14` Werten |
+| `0x20` | `STORE` | `u7` Slot 0…7 | Status · `u32` CRC (erst nach Abschluss; siehe STORAGE § 5) |
+| `0x21` | `RECALL` | `u7` Slot | Status (0 ok, 1 leer, 2 CRC ungültig, 3 fremdes Instrument/Schema) · aktive · Patch-CRC |
+| `0x22` | `GET_SLOT_INFO` | `u7` Slot | Status · `str` Name · `u32` CRC · `u32` Sequenz |
+| `0x23` | `SET_POWER_ON` | `u7` Slot (0x7F = Standardpatch) | Status |
+| `0x24` | `GET_CALIBRATION` | — | CV-Offsets 2 × `u14` · Geräte-ID |
+| `0x25` | `SET_CALIBRATION` | wie Antwort | Status (v0.1: nur RAM, ohne Speichern) |
 
-Das Abonnement erlischt **3 s nach der letzten `MONITOR`-Anfrage**. Der Editor erneuert es
-jede Sekunde. Ein geschlossener Editor lässt deshalb keinen Datenstrom zurück, der eine
-DAW belastet. Monitor-Daten liest der Main-Loop aus einem Schnappschuss, den der
-Audio-IRQ über eine SPSC-Queue veröffentlicht, nach dem Muster von `CpuSnapshot` in
-Physical Modeling.
+In v0.1 beantwortet die Firmware `0x20`–`0x23` mit `NAK 9`, der Editor graut die
+Speicherfunktionen aus (IDENTIFY, Bit 0). `0x24`/`0x25` dienen in Phase 2 der Messung der
+CV-Nullpunkte und wirken nur im RAM.
 
-### 3.6 Fehler
+### 3.5 Fehler
 
 `0x7F NAK`: `u7` abgelehntes Kommando, `u7` Code.
 
 | Code | Bedeutung |
 | --- | --- |
 | 1 | Prüfsumme falsch |
-| 2 | Länge falsch oder Rahmen abgeschnitten |
+| 2 | Länge falsch (Längenfeld ≠ tatsächliche Länge, Rahmen > 120 Byte) |
 | 3 | Kommando unbekannt |
 | 4 | Wert außerhalb des Bereichs |
-| 5 | beschäftigt (Speichern läuft) |
-| 6 | Schema oder Version passt nicht |
-| 7 | Transaktion fehlt oder ist abgelaufen |
-| 8 | Speicherfehler (QSPI) |
+| 5 | beschäftigt |
+| 6 | Protokollversion nicht unterstützt |
+| 7 | Grenze aktiver Verbindungen erreicht |
+| 8 | Zelle nicht erlaubt (ausgegraut) |
+| 9 | nicht implementiert |
+| 10 | Speicherfehler |
+| 11 | Schema passt nicht |
 
-## 4. Ablauf einer Editor-Sitzung
+## 4. Zuverlässige Übertragung
+
+1. **Eine offene Anfrage**: Der Editor sendet die nächste Anfrage erst nach Antwort
+   oder Zeitüberschreitung (250 ms). Danach wiederholt er höchstens dreimal mit
+   **derselben** `seq`. Bleibt die Antwort aus, gilt die Verbindung als getrennt.
+2. **Wiederholungen ohne Doppelwirkung**: Das Gerät merkt sich die letzte `seq` und die
+   letzte Antwort. Kommt ein bytegleicher Rahmen mit derselben `seq` erneut, sendet es
+   die gespeicherte Antwort, ohne erneut auszuführen.
+3. **Bestätigung mit CRC**: Jede Änderung wird mit der Patch-CRC beantwortet. Der Editor
+   berechnet dieselbe CRC aus seinem Modell, mit demselben `patch.h`. Weichen beide ab,
+   folgt eine **Neusynchronisation** mit `GET_MATRIX`, `GET_SOURCE` × 3 und `GET_NAME`.
+4. **Atomare Übernahme** ganzer Raster über `SET_MATRIX`, etwa beim Laden einer Datei
+   im Editor.
+5. **Gedrosseltes Ziehen**: Beim Ziehen einer Tiefe sendet der Editor `SET_CELL`
+   höchstens alle 20 ms. Kommt eine Antwort aus, sendet er den jeweils letzten Wert.
+6. **Begrenzte Last im Gerät**: höchstens ein Rahmen pro `Service()`, höchstens eine
+   Antwort pro Millisekunde, Senden nur bei konfiguriertem USB-Host (wie Toy Piano).
+
+## 5. Ablauf einer Sitzung
 
 ```text
-Editor                                Gerät
-IDENTIFY ───────────────────────────► 
-         ◄─────────────────────────── IDENTIFY|40 (Key, Version, Hash …)
-[Hash unbekannt] GET_*_INFO × n ────► … ◄── Beschreibungen (einmalig, danach im Cache)
-GET_SLOT × 32, GET_SOURCE_PARAM × m ► … ◄── aktueller Zustand
-… Benutzer zieht Regler …
-SET_DEPTH (≤ 50/s) ─────────────────► sofort hörbar
-… Preset aus der Bibliothek laden …
-BEGIN, SET_SLOT × 32, SET_SOURCE_PARAM × m, COMMIT ──► auf einmal hörbar
-STORE 3 "Pad Drift" ────────────────► QSPI (blockiert kurz)
+Editor                                         Gerät
+IDENTIFY (dev 0x7F) ─────────────────────────► jedes Gerät antwortet mit seiner ID
+[Hash unbekannt] GET_TARGET × 8, GET_ALLOWED ► Spaltenköpfe, ausgegraute Zellen
+GET_MATRIX, GET_SOURCE × 3, GET_NAME ────────► Zustand; CRC vergleichen
+… Zelle wählen, Tiefe ziehen …
+SET_CELL (≤ 50/s) ───────────────────────────► sofort hörbar; Antwort mit CRC
+… Datei laden …
+SET_MATRIX, SET_SOURCE × 6, SET_NAME ────────► Raster auf einmal, Parameter danach
+MONITOR 20 (jede Sekunde erneuert) ──────────► Live-Werte für die Zeilen-/Zellenanzeige
 ```
 
-Bei 32 Slots und etwa 40 Quellparametern umfasst eine vollständige Abfrage rund 75
-Anfragen. Bei einer Antwort pro Millisekunde und USB-Latenz ist sie in **deutlich unter
-einer Sekunde** erledigt (`SCHÄTZUNG`). Über DIN-MIDI mit 3125 Byte/s dauert sie etwa 2 s.
+Eine vollständige Synchronisation braucht 15 Anfragen. Über USB dauert sie
+`SCHÄTZUNG` **unter 0,1 s**.
 
-## 5. Offene Punkte
+## 6. Offene Punkte
 
-* `OFFEN`: Wie Hosts den von libDaisy erzeugten SysEx-Sendestrom verarbeiten, an dem
-  `F7` als getrenntes Paket hängt ([ARCHITECTURE.md § 1](ARCHITECTURE.md#1-ausgangslage-im-repository)).
-  Getestet wird mit Windows (Studio One, MIDI-Monitor) und macOS. Falls nötig, kommt ein
-  eigenes Framing.
-* `OFFEN`: Ob NRPN als Rückfallebene für Tiefen nötig ist, für DAWs, die SysEx filtern
-  (NRPN-MSB = Slot, LSB = Feld). Entscheidung erst nach dem VST3-Test.
-* `OFFEN`: Preset-Wechsel per Program Change. Standardmäßig aus, weil Instrumente PC
-  selbst nutzen können.
+* `OFFEN`: Wie Windows den SysEx-Sendestrom der gepinnten libDaisy verarbeitet, die
+  `F7` als getrenntes Paket sendet (E9). Das ist der **erste Hardwaretest in Phase 2**
+  (TEST_PLAN § 4). Falls nötig, kommt ein eigenes Framing im Adapter.
+* `OFFEN`: Gleichzeitige Portnutzung durch Editor und Studio One (E10). Phase 3.
+* Später: 14-Bit-Modwheel (CC1/CC33), MPE, NRPN als Rückfallebene für DAWs, die SysEx
+  filtern.

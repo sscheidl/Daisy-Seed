@@ -1,41 +1,38 @@
 # Mod on Daisy
 
-Universelle, wiederverwendbare **Modulationsmatrix** für Instrumente und Effekte auf dem
-Seed3 Desktop Development Kit. Das Modul ist eigenständig und wird in vorhandene Projekte
-eingebunden. Es ist ausdrücklich nicht fest in eine einzelne Firmware eingebaut.
+Schlanke, universell einsetzbare **Modulationsmatrix** für Instrumente und Effekte auf
+dem Seed3 Desktop Development Kit. Das Modul ist eigenständig, wird in vorhandene
+Projekte eingebunden und ist nicht fest in eine Firmware eingebaut. Der grafische
+Editor entsteht getrennt unter [`editors/mod-on-daisy/`](../../editors/mod-on-daisy/).
 
-**Status: Konzeptphase (Phase 1).** Es gibt noch keinen Code und keine Firmware.
+**Status: Phase 1 — Architektur und technische Spezifikation v0.1.** Es gibt noch keinen
+Code und keine Firmware. Die vorhandenen Instrumente sind unverändert.
+
+## v0.1 auf einen Blick
+
+| | |
+| --- | --- |
+| Matrix | 8×8-Raster, Tiefe −100…+100 je Kreuzungspunkt, höchstens 8 aktive Verbindungen |
+| Quellen | LFO 1, LFO 2, Random/S&H, CV 1, CV 2, Modwheel (CC1), Channel AT, Poly AT (stimmenbezogen) |
+| Ziele | 8 instrumentspezifische Spalten; nicht unterstützte Zellen ausgegraut |
+| Rate | Control-Rate 1 kHz (bzw. einmal pro Audio-Block), **keine Audio-Rate** |
+| Bedienung | Editor (JUCE, Windows) über USB-MIDI/SysEx `0x7D` |
+| Ressourcen (Schätzung) | ≈ 1,2 KiB RAM, < 0,3 % CPU bei 8 Verbindungen |
+| Speicherung | QSPI spezifiziert, noch nicht implementiert |
+| Pilot | Toy Piano (technisch), dann Rings mit Poly AT, später Nebulae |
+
+## Dokumente
 
 | Dokument | Inhalt |
 | --- | --- |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architektur, DSP-Raten, Integration, Ressourcen, Speicherung, Editor/VST3, Phasen, Risiken, **offene Entscheidungen** |
-| [docs/PROTOCOL.md](docs/PROTOCOL.md) | Entwurf des MIDI-Protokolls (Live-CCs und SysEx-Konfiguration) |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Entscheidungen v0.1, **technische Einwände**, Architekturänderungen, offene Punkte |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modulstruktur, Datenstrukturen, Verarbeitung, globale und stimmenbezogene Modulation, Instrumentenschnittstelle, Abschätzung |
+| [docs/PROTOCOL.md](docs/PROTOCOL.md) | MIDI-Protokoll v1 |
+| [docs/STORAGE.md](docs/STORAGE.md) | QSPI-Aufteilung, Schreib- und Löschverfahren, Datenintegrität |
+| [docs/TEST_PLAN_PHASE2.md](docs/TEST_PLAN_PHASE2.md) | Host-Tests, Messfirmware, Szenarien, Hardwaretests, Abnahme |
+| [../../editors/mod-on-daisy/docs/GUI.md](../../editors/mod-on-daisy/docs/GUI.md) | Raster-GUI und Editor-Architektur |
 
 ## Leitgedanke
 
-Die Hardware bleibt unmittelbar spielbar. Komplexe Modulationszuordnungen werden in einem
-grafischen Editor über MIDI eingestellt, nicht über Hardware-Menüs.
-
-## Kernideen
-
-* **Quellen → kompiliertes Routing → normierte Ziel-Offsets.** Instrumente beschreiben
-  ihre modulierbaren Parameter in einer `constexpr`-Tabelle mit stabilen IDs. Der Editor
-  liest sie vom Gerät, deshalb braucht ein neues Instrument keinen eigenen Editor.
-* **Control-Rate (~1 kHz) als Standard**, Audio-Rate nur für ausdrücklich markierte
-  Ziele. Geschätzte Last: < 0,5 % CPU und ~6–8 KB RAM bei 32 Routen. Gemessen wird ab
-  Phase 2 bzw. 4.
-* **Header-only C++17-Kern ohne libDaisy-Abhängigkeit**, auf dem Host testbar. Der
-  Protokoll-Codec wird zwischen Firmware und Editor geteilt.
-* Echtzeitregeln wie in allen Projekten des Repositories: kein Heap, keine Locks und kein
-  USB oder QSPI im Audio-IRQ; lock-freier Triple-Buffer zwischen Main-Loop und Audio.
-
-## Vorgehen
-
-1. Architekturkonzept ← **aktuell**
-2. Eigenständiger Prototyp mit Host-Tests und erster CPU-Messung
-3. MIDI-Editor (JUCE-Standalone, vorher technischer Test des MIDI-Wegs unter Windows)
-4. Performanceprüfung auf Hardware
-5. Integration, vorgeschlagener Pilot: Physical Modeling, danach Looper
-6. Erweiterung: weitere Quellen und Instrumente, VST3
-
-Die Phasen sind ein Vorschlag und noch nicht verbindlich beschlossen.
+Die Hardware bleibt unmittelbar spielbar. Modulationszuordnungen gehören in die
+grafische Oberfläche, nicht in Hardware-Menüs.
