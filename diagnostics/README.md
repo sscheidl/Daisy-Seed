@@ -1,6 +1,6 @@
 # Daisy Seed3 Hardware Diagnostic Suite
 
-Standalone diagnostics for the **Electro-Smith Seed3 Desktop Development Kit**:
+Hardware diagnostics for the **Electro-Smith Seed3 Desktop Development Kit**:
 C++ firmware and a Windows application (Python/PySide6), communicating over USB CDC
 through the carrier's **J7** connector. The GUI and documentation are in English.
 
@@ -34,10 +34,10 @@ or electrical feedback from the LEDs.
 
 ## Binary downloads
 
-The [Hardware diagnostics workflow](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics/actions/workflows/diagnostics.yml)
+The [Hardware diagnostics workflow](https://github.com/sscheidl/Daisy-Seed/actions/workflows/diagnostics.yml)
 builds firmware (`DaisyDiagnostic.bin`, `.elf`) and Windows (`DaisyDiagnostic.exe`).
 Open a successful run and download its ZIP files under **Artifacts**; each
-includes `SHA256SUMS`. Access to this private repository is required. Actions
+includes `SHA256SUMS`. Access to the private Daisy-Seed repository is required. Actions
 artifacts expire according to their retention period. Releases are separate,
 versioned snapshots and are not created automatically.
 
@@ -50,17 +50,18 @@ See [card reader instructions and hardware checks](docs/SD_CARD_READER.md).
 ## Quick start
 
 ```bash
-git clone https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics.git
-cd Daisy-Seed3-Desktop-Diagnostics
+git clone https://github.com/sscheidl/Daisy-Seed.git
+cd Daisy-Seed
 git submodule update --init libDaisy
 git -C libDaisy submodule update --init --recursive --jobs 4
+cd diagnostics
 
 # Firmware: Windows / Git Bash
 bash scripts/install-toolchain-windows.sh
 bash scripts/build-firmware.sh
 # -> firmware/build/DaisyDiagnostic.bin
 
-# Python application and tests, from the repository root
+# Python application and tests, from diagnostics/
 python -m pip install -r windows/requirements.txt
 python -m pytest tests/python
 ```
@@ -77,9 +78,8 @@ firmware/   C++ firmware, hardware glue, portable application logic
 windows/    PySide6 application and EXE packaging
 protocol/   DDP specification, C++ framing, shared test vectors
 tests/      C++ host tests and Python/protocol/session/GUI tests
-scripts/    Toolchain installers, builds, binary checks, MSVC tests
+scripts/    Windows toolchain installer, builds, binary checks, MSVC tests
 docs/       Setup, operation, firmware details, validation, handover
-libDaisy/   Pinned official hardware-library submodule
 ```
 
 ## Documentation
@@ -93,5 +93,5 @@ libDaisy/   Pinned official hardware-library submodule
 * [Technical handover](docs/HANDOVER.md)
 * [Repository migration](docs/MIGRATION.md)
 
-[Toy Piano](https://github.com/sscheidl/Daisy-Seed) is developed separately. This
-repository needs neither its source code nor DaisySP.
+The suite is part of [Daisy-Seed](../README.md). It uses the shared libDaisy
+submodule and toolchain, but not DaisySP or any instrument source.

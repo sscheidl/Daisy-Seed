@@ -1,17 +1,19 @@
-# Standalone build and tests
+# Build and tests
 
-Run these commands from the repository root. Requirements: Git, Python 3.12,
+Run these commands from the `diagnostics/` directory of Daisy-Seed unless noted. Requirements: Git, Python 3.12,
 GNU Make and the pinned ARM toolchain for firmware; g++ for Linux host tests or
-MSVC Build Tools on Windows. The only direct submodule is libDaisy
-`f715e4875b2d28445d0c11a0a17f064a248f69d0`. Toy Piano and DaisySP are not required.
+MSVC Build Tools on Windows. The only dependency is the shared libDaisy
+submodule of Daisy-Seed (`f715e4875b2d28445d0c11a0a17f064a248f69d0`). DaisySP is not required.
 
 ```bash
+# From the Daisy-Seed root:
 git submodule update --init libDaisy
 git -C libDaisy submodule update --init --recursive --jobs 4
+cd diagnostics
 # Windows / Git Bash:
 bash scripts/install-toolchain-windows.sh
 # Linux x86_64 instead:
-# bash scripts/install-toolchain.sh
+# bash ../scripts/install-toolchain.sh
 bash scripts/build-firmware.sh
 ```
 

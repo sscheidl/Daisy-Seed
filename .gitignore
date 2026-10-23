@@ -3,11 +3,6 @@
 /effects/*/build/
 /.tools/
 *.wav
-/diagnostics/firmware/build/
-/diagnostics/windows/build/
-/diagnostics/windows/dist/
-/diagnostics/windows/*.log
-/diagnostics/release/
 __pycache__/
 .pytest_cache/
 # Stardust analysis inputs and outputs stay local

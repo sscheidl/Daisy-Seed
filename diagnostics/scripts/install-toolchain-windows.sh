@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Installs the pinned xPack ARM GCC and GNU Make for Windows x64 into <repo>/.tools
+# Installs the pinned xPack ARM GCC and GNU Make for Windows x64 into <Daisy-Seed>/.tools
 # (run from Git Bash). Checksums are the values published with the xPack releases.
 set -euo pipefail
 repo="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-tools="$repo/.tools"
+tools="$(cd -- "$repo/.." && pwd)/.tools"
 mkdir -p "$tools"
 cd "$tools"
 fetch() {  # url, archive name, sha256

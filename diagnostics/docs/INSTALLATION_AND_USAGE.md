@@ -14,7 +14,7 @@ strictly read-only; its disabled reader controls explain which firmware is neede
 * Windows 11. Windows 10 is expected to work but has not been tested.
 * Daisy bootloader **v6.x External** on the Seed3.
 * `DaisyDiagnostic.bin` and `DaisyDiagnostic.exe`, built locally or downloaded
-  from a successful [Hardware diagnostics run](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics/actions/workflows/diagnostics.yml).
+  from a successful [Hardware diagnostics run](https://github.com/sscheidl/Daisy-Seed/actions/workflows/diagnostics.yml).
 
 Windows normally binds CDC devices to `usbser.sys` as a USB Serial Device (COMx).
 

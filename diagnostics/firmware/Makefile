@@ -20,7 +20,7 @@ C_INCLUDES += -Isrc -I$(PROTOCOL_DIR)
 C_INCLUDES += -I$(LIBDAISY_DIR)/Middlewares/Patched/ST/STM32_USB_Device_Library/Class/CDC/Inc
 # FatFs sources are needed for the optional read-only microSD test.
 USE_FATFS = 1
-LIBDAISY_DIR = ../libDaisy
+LIBDAISY_DIR = ../../libDaisy
 SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core
 # Same bootloader variant as the official Desktop template: DFU over carrier port J7.
 # The firmware never installs a bootloader; `make program-boot` is not used here.

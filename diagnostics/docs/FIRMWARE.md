@@ -48,8 +48,10 @@ The installers contain full archive checksums. See [BUILD.md](BUILD.md).
 ## Building and checks
 
 ```bash
+# From the Daisy-Seed root:
 git submodule update --init libDaisy
 git -C libDaisy submodule update --init --recursive --jobs 4
+cd diagnostics
 bash scripts/install-toolchain-windows.sh  # Windows / Git Bash
 bash scripts/build-firmware.sh
 # -> firmware/build/DaisyDiagnostic.bin
