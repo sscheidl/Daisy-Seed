@@ -47,7 +47,6 @@ target_compile_definitions(ModOnDaisyEditor PRIVATE
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_JACK=0
-    JUCE_DISPLAY_SPLASH_SCREEN=0
     JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:ModOnDaisyEditor,JUCE_PRODUCT_NAME>"
     JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:ModOnDaisyEditor,JUCE_VERSION>")
 # Source files are UTF-8 (umlauts in the German interface).
