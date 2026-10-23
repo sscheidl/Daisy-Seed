@@ -119,10 +119,10 @@ only in SAMPLE mode (SW18 center):
 * Banks are built on the shared read-only SD driver ([plan](../../../common/sd/PLAN.md)):
   FatFs R0.16 with long file names, directory reads and exFAT, so FAT32 and exFAT
   cards both work. Nebulae's own `src/sd_driver.c` is replaced before this step.
-* Long names are needed only for sorting. To open a file, each table entry keeps
-  the 8.3 short name (`FILINFO::altname`), which keeps every path short:
-  `0:/NEBULAE/SAMPLES/<SFN>/<SFN>`. Both tables with long names need about
-  2 x 16 x 256 B = 8 KiB; DTCM has 53,972 B of static headroom
+* exFAT has no 8.3 short names (`FILINFO::altname` stays empty), so both tables
+  keep the long names, used for sorting and for opening. A path buffer of about
+  530 B holds `0:/NEBULAE/SAMPLES/<bank>/<file>` with 255-character names. Both
+  tables need about 2 x 16 x 256 B = 8 KiB; DTCM has 53,972 B of static headroom
   ([memory](MEMORY_BUDGET.md)).
 * `neb::File::Open(slot)` keeps its interface; `SdFile` resolves the slot through
   the active bank's table instead of formatting `%02u.wav`. The `occupied` mask

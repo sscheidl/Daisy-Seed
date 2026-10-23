@@ -1,7 +1,8 @@
 # Shared read-only SD driver - PLANNED
 
-**Status: plan only, nothing implemented.** Decisions recorded on 2026-10-23.
-Hardware behaviour of the shared driver is **NICHT GEMESSEN**.
+**Status:** decisions recorded on 2026-10-23. Step 1 (shared driver, host tests,
+symbol check) is implemented, see [README](README.md); steps 2-5 are open. Hardware
+behaviour of the shared driver is **NICHT GEMESSEN**.
 
 One microSD read path for every firmware in this repository, instead of separate
 drivers per project. First users: the Diagnostics read test and Nebulae on Daisy
@@ -50,8 +51,9 @@ used. It combines the parts of both existing drivers:
 
 From Nebulae:
 
-* SDMMC1 IDMA only into an isolated, 32-byte-aligned bounce buffer in AXI SRAM,
-  with cache clean/invalidate; FatFs buffers may live anywhere (DTCM, SDRAM).
+* SDMMC1 IDMA only into an isolated, 32-byte-aligned bounce buffer that the
+  application provides in IDMA-reachable memory (AXI SRAM or SDRAM), with cache
+  clean/invalidate; FatFs buffers may live anywhere (DTCM, SDRAM).
 * Timeout per transfer, abort and `STA_NOINIT` on timeout, error or removal.
 * Card-present check before every transfer (callback into the application).
 * Service hook between transfers. Nebulae services USB MIDI there; Diagnostics
@@ -64,6 +66,7 @@ From Diagnostics:
 * Re-initialization on every mount, so a swapped card or a failed first attempt
   starts from scratch (`HAL_SD_DeInit`, then init).
 * Optional overall time budget per operation (Diagnostics: 5 s per test).
+* Waiting for the card's transfer state before each transfer.
 * Linked-symbol policy, see below.
 
 Configuration per application, set at init:
@@ -82,7 +85,8 @@ and BSP init remain in use. Load throughput at any setting is NICHT GEMESSEN.
 
 * `common/sd/sd.mk`: adds the FatFs sources, the disk layer and the include path
   for the project's build. Diagnostics (own Makefile) and projects using
-  `common/desktop.mk` both include it. It fails the build if `USE_FATFS = 1`.
+  `common/desktop.mk` both include it, before libDaisy's `core/Makefile`. It fails
+  the build if `USE_FATFS = 1` or if it is included too late.
 * A shared ELF check, derived from `FORBIDDEN_SYMBOLS` in
   `diagnostics/firmware/Makefile`, runs for every image that uses the driver:
   * forbidden: SDMMC write/erase/lock commands, `HAL_SD_Write*`, `HAL_SD_Erase`,
@@ -100,9 +104,9 @@ and BSP init remain in use. Load throughput at any setting is NICHT GEMESSEN.
 * `common/sd/fatfs/`: unmodified `ff.c`, `ff.h`, `diskio.h`, `ffunicode.c` from
   `ff16.zip`, then patch-1 and patch-2 applied in that order.
 * `common/sd/fatfs/VERSION.md`: version, download URLs, SHA256 of `ff16.zip`,
-  `ff16p1.diff`, `ff16p2.diff` and of the resulting sources; NICHT ERMITTELT until
-  the import. Updates only on purpose, with the reason in that file.
-* FatFs license text in `common/sd/LICENSES/` (BSD-style, any purpose).
+  `ff16p1.diff`, `ff16p2.diff` and of the resulting sources (recorded at the import
+  on 2026-10-23). Updates only on purpose, with the reason in that file.
+* FatFs license text in `common/sd/fatfs/LICENSE.txt` (BSD-style, any purpose).
 * exFAT note: the specification is public since 2019; FatFs' documentation
   mentions possible licensing questions for commercial products. Not relevant for
   this private project; to be checked before any sale.

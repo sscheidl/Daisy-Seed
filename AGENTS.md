@@ -13,6 +13,7 @@ Firmware for the Electro-Smith Seed3 Desktop Kit plus host tools. Start with
 | Editors | `make -C editors/mod-on-daisy test test-sanitize`; JUCE app via CMake, then `"Mod on Daisy Editor" --selftest out` |
 | Hardware diagnostics | `make -C diagnostics/firmware test test-sanitize`, `bash diagnostics/scripts/build-firmware.sh`, `python -m pytest diagnostics/tests/python` |
 | Images | `python scripts/check-firmware.py <bin>`; hardware-test package: `python scripts/hardware_test_package.py` |
+| Shared SD driver | `make -C common/sd test test-sanitize arm-check` |
 
 CI (`.github/workflows/build.yml`, `editor.yml`, `diagnostics.yml`) runs the same; keep it green.
 

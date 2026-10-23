@@ -3,6 +3,24 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  sd-driver:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned libDaisy (HAL headers)
+        run: |
+          git submodule update --init libDaisy
+          git -C libDaisy submodule update --init --recursive --jobs 4
+      - name: Install pinned ARM toolchain
+        run: |
+          bash scripts/install-toolchain.sh
+          echo "$GITHUB_WORKSPACE/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin" >> "$GITHUB_PATH"
+      - name: Test shared SD driver on FAT32/exFAT images
+        run: make -C common/sd test
+      - name: Test shared SD driver with ASan and UBSan
+        run: make -C common/sd test-sanitize
+      - name: Cross-compile and check SD symbol policy
+        run: make -C common/sd arm-check
   build:
     runs-on: ubuntu-24.04
     strategy:
