@@ -9,7 +9,9 @@ struct Parameters {
     float decaySeconds = 14, toneHz = 5500, lowCutHz = 65, preDelayMs = 25;
     float modRateHz = .18f, modDepthMs = .8f, width = 1, mix = .45f, diffusion = .85f;
     float texture = .4f, riseSeconds = 1, outputGain = .8f;
-    bool hold = false, bypass = false, trails = true;
+    // Applied by the firmware wet-path adapter; the standalone engine ignores these.
+    float pan = 0, stretch = 0;
+    bool hold = false, bypass = false, trails = true, sustain = false;
 };
 // Plain storage, deliberately no constructors/default member initializers.
 // Place in SDRAM and call Prepare AFTER the hardware initializes SDRAM.
@@ -51,7 +53,7 @@ class AmbientReverb {
     struct State {
         Ramp gain[8], mode[5];
         Ramp tone, highpass, preDelay, depth, rate, width, dry, wet, diffusion, texture, riseStep,
-            level, send, hold;
+            level, send, hold, sustain;
     } state_;
     bool ready_ = false;
     float sampleRate_ = 48000, waveSmoothing_ = 0, envelopeRelease_ = 0;
