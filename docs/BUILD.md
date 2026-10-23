@@ -81,11 +81,21 @@ callback timing still require a hardware check.
 Shared release-preflight tests remain in root `tests/`; `make test-release` uses
 a temporary Git repository and a fake API without creating releases.
 
-The CI matrix builds Toy Piano, Ambient Reverb, Physical Modeling and Nebulae,
-deriving each BIN name from
-its project version. It uploads BIN, ELF and SHA256SUMS for both.
-Private-repository downloads require
-an authorized GitHub login.
+Actions are divided into cost-controlled stages:
+
+* **Automatic** `quick.yml`: Linux host tests for the release guard, Mod on Daisy,
+  the editor core (no JUCE) and diagnostics, for code PRs and pushes to `main`.
+  No ARM toolchain, sanitizer sweep, Windows builds or full project matrix.
+* **Manual** `build.yml`: **Actions -> Firmware -> Run workflow**, choose one
+  project (or explicitly `all`). The selected firmware gets host, sanitizer
+  and applicable thread tests, an ARM image validation and downloadable artifacts.
+* **Manual** `editor.yml` and `diagnostics.yml`: native Windows/JUCE and
+  diagnostics firmware builds, only when needed.
+* **Manual** `release.yml`: full Toy Piano checks and firmware build before a
+  draft release. Publication follows human hardware acceptance.
+
+These limits apply across private repositories; artifacts still require an
+authorized GitHub login.
 
 Nebulae uses `make PROJECT=granular`, with the same `test` and `test-sanitize`
 targets. Its additional `scripts/check-granular-elf.py` validates actual ARM
@@ -114,8 +124,8 @@ release list, including drafts, are checked first. Existing versions or API erro
 abort the workflow.
 
 1. Update the project version and changelog for a new release.
-2. After merge, a change to that version header triggers the workflow. It can also
-   be started manually under Actions → Release → Run workflow on main.
+2. After merge, start the workflow **manually** via Actions → Release → Run workflow on main.
+   A version-header change alone does not trigger an Actions run.
 3. By default it creates a **draft** (`publish=false`). Test its BIN on the device
    before publishing the draft. Publication creates the tag on the built commit.
    `publish=true` publishes immediately.

@@ -1,0 +1,54 @@
+name: Quick checks
+# Small automatic host checks only: no ARM builds, sanitizers, Windows or JUCE compilation.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'Makefile'
+      - 'projects.mk'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'instruments/**'
+      - 'effects/**'
+      - 'modules/**'
+      - 'editors/**'
+      - 'diagnostics/**'
+      - 'common/**'
+      - 'libDaisy'
+      - 'DaisySP'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'Makefile'
+      - 'projects.mk'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'instruments/**'
+      - 'effects/**'
+      - 'modules/**'
+      - 'editors/**'
+      - 'diagnostics/**'
+      - 'common/**'
+      - 'libDaisy'
+      - 'DaisySP'
+permissions:
+  contents: read
+concurrency:
+  group: quick-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify release guards without writing to GitHub
+        run: make test-release
+      - name: Mod on Daisy host-only tests
+        run: make -C modules/mod-on-daisy test
+      - name: Mod on Daisy editor core without JUCE compilation
+        run: make -C editors/mod-on-daisy test
+      - name: Diagnostics firmware host tests
+        run: make -C diagnostics/firmware test

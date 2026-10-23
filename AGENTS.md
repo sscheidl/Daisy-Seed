@@ -3,6 +3,30 @@
 Firmware for the Electro-Smith Seed3 Desktop Kit plus host tools. Start with
 [README.md](README.md), [HANDOVER.md](HANDOVER.md) and the project's own README.
 
+## GitHub Actions budget policy (mandatory)
+
+The GitHub Free Actions quota is shared across private repositories. Preserve it.
+
+* **Automatic**: `.github/workflows/quick.yml` runs short Linux host tests on
+  code PRs and pushes to `main` (10-minute timeout, superseded runs cancelled).
+  Documentation-only changes should not trigger CI.
+* **Manual firmware**: `Actions -> Firmware -> Run workflow`, selecting one
+  project (default: `physical-modeling-mod`). The expensive `all` choice is
+  explicitly opt-in. No full ARM matrix on push/PR.
+* **Manual editor/diagnostics**: `Actions -> Editor` and
+  `Actions -> Hardware diagnostics` are dispatched only when native app or
+  firmware artifacts are needed.
+* **Manual release**: `Actions -> Release -> Run workflow` executes the complete
+  Toy Piano host, sanitizer, thread, ARM-build and release-guard tests before
+  creating a draft by default. Never launch releases simply because a version
+  header changed. Publication and hardware acceptance are the human's decision.
+* Run tests for the changed component locally before pushing. Run the full
+  project/sanitizer suites when preparing a release or specifically investigating
+  a fault, not after every cosmetic or documentation edit.
+* Do not add broad automatic triggers, expensive runners or parallel build
+  matrices without the human's explicit approval. Budget-exhausted CI is not
+  evidence of a software failure.
+
 ## Build and test before every push
 
 | Area | Commands |
@@ -14,7 +38,7 @@ Firmware for the Electro-Smith Seed3 Desktop Kit plus host tools. Start with
 | Hardware diagnostics | `make -C diagnostics/firmware test test-sanitize`, `bash diagnostics/scripts/build-firmware.sh`, `python -m pytest diagnostics/tests/python` |
 | Images | `python scripts/check-firmware.py <bin>`; hardware-test package: `python scripts/hardware_test_package.py` |
 
-CI (`.github/workflows/build.yml`, `editor.yml`, `diagnostics.yml`) runs the same; keep it green.
+Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor and diagnostics builds are manual; run the relevant validations locally before pushing.
 
 ## Rules
 

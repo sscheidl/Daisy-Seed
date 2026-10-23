@@ -1,21 +1,8 @@
 name: Editor
 # Mod on Daisy Editor (editors/mod-on-daisy): core tests on Linux, the JUCE window
 # against the simulator under Xvfb, and the Windows standalone .exe as an artifact.
+# Expensive native builds: manual dispatch only; see quick.yml for automatic host tests.
 on:
-  push:
-    paths:
-      - editors/mod-on-daisy/**
-      - modules/mod-on-daisy/include/**
-      - instruments/toy-piano/src/modulation.h
-      - instruments/physical-modeling/src/modulation.h
-      - .github/workflows/editor.yml
-  pull_request:
-    paths:
-      - editors/mod-on-daisy/**
-      - modules/mod-on-daisy/include/**
-      - instruments/toy-piano/src/modulation.h
-      - instruments/physical-modeling/src/modulation.h
-      - .github/workflows/editor.yml
   workflow_dispatch:
 permissions:
   contents: read
