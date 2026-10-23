@@ -8,8 +8,10 @@ Firmware for the Electro-Smith Seed3 Desktop Kit plus host tools. Start with
 The GitHub Free Actions quota is shared across private repositories. Preserve it.
 
 * **Automatic**: `.github/workflows/quick.yml` runs short Linux host tests on
-  code PRs and pushes to `main` (10-minute timeout, superseded runs cancelled).
-  Documentation-only changes should not trigger CI.
+  code PRs and pushes to `main` (15-minute timeout, superseded runs cancelled).
+  Only relevant instrument/module host tests run; docs-only changes do not trigger CI.
+* **Artifacts**: self-test screenshots/logs are retained for 3 days, firmware
+  and native app binaries for 14 days; published Releases are separate.
 * **Manual firmware**: `Actions -> Firmware -> Run workflow`, selecting one
   project (default: `physical-modeling-mod`). The expensive `all` choice is
   explicitly opt-in. No full ARM matrix on push/PR.
@@ -27,7 +29,7 @@ The GitHub Free Actions quota is shared across private repositories. Preserve it
   matrices without the human's explicit approval. Budget-exhausted CI is not
   evidence of a software failure.
 
-## Build and test before every push
+## Commands for targeted local validation
 
 | Area | Commands |
 | --- | --- |
@@ -48,9 +50,9 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   the agent runs the command-line steps and records what the human reports.
 * **Report only what was observed.** Mark results `GEMESSEN` (with date) or
   `NICHT GEMESSEN`. Never fill in expected values as results.
-* **Releases**: merging a change of `instruments/toy-piano/src/version.h` to `main`
-  creates a release *draft*. Do not publish releases; the human does after the
-  hardware test.
+* **Releases**: changing `instruments/toy-piano/src/version.h` does not
+  start a release. Only the human manually dispatches the release workflow;
+  publish a draft only after hardware acceptance.
 * **Sound must not change by accident.** Golden tests (FNV-1a over the output) pin
   Toy Piano and Physical Modeling: with an empty matrix, Toy Piano v0.3 must match the
   v0.2 hash and the Physical Modeling `MOD=1` build the v0.1.0 hash. The Physical
