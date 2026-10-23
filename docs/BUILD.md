@@ -83,9 +83,11 @@ a temporary Git repository and a fake API without creating releases.
 
 Actions are divided into cost-controlled stages:
 
-* **Automatic** `quick.yml`: Linux host tests for the release guard, Mod on Daisy,
-  the editor core (no JUCE) and diagnostics, for code PRs and pushes to `main`.
-  No ARM toolchain, sanitizer sweep, Windows builds or full project matrix.
+* **Automatic** `quick.yml`: one Linux job for the release guard plus only host
+  tests of affected instruments/modules (Toy Piano, Physical Modeling including
+  MOD, Nebulae, Looper, Reverb, Mod on Daisy, editor core and diagnostics).
+  Runs on code PRs and pushes to `main`, not docs-only commits (`docs/`, `*.md`).
+  No ARM toolchain, sanitizer sweep, Windows builds or full firmware matrix.
 * **Manual** `build.yml`: **Actions -> Firmware -> Run workflow**, choose one
   project (or explicitly `all`). The selected firmware gets host, sanitizer
   and applicable thread tests, an ARM image validation and downloadable artifacts.
@@ -94,8 +96,13 @@ Actions are divided into cost-controlled stages:
 * **Manual** `release.yml`: full Toy Piano checks and firmware build before a
   draft release. Publication follows human hardware acceptance.
 
-These limits apply across private repositories; artifacts still require an
-authorized GitHub login.
+Editor self-test reports and screenshots are retained for 3 days, experimental
+firmware and native app artifacts for 14 days. Published releases are separate.
+These workflows do not configure Actions caches.
+
+These limits especially matter for private repositories; public repositories
+have different billing for GitHub-hosted standard runners. Downloads from
+private repositories require an authorized GitHub login.
 
 Nebulae uses `make PROJECT=granular`, with the same `test` and `test-sanitize`
 targets. Its additional `scripts/check-granular-elf.py` validates actual ARM
