@@ -1,45 +1,114 @@
 # Übergabe — lokal weiterarbeiten
 
-**Stand:** 23. Oktober 2026, Ende der Cloud-Sitzung. Ab jetzt wird lokal unter Windows
-mit Claude Code und Codex weitergearbeitet, mit USB-Zugriff auf das Seed3 Desktop Kit.
+**Stand:** 23. Oktober 2026, abends, Ende der Cloud-Sitzung. Ab jetzt wird lokal unter
+Windows mit Claude Code und Codex weitergearbeitet, mit USB-Zugriff auf das Seed3
+Desktop Kit. Für einen neuen Chat genügt der Einstiegstext in § 7.
 
-## 1. Was fertig ist
+## 1. Wo der Code liegt
 
-| Teil | Stand | Wo |
-| --- | --- | --- |
-| Mod on Daisy (Modul) | Phase 2 fertig: Kern, Host-Tests, Messfirmware, `mod_probe.py` | `modules/mod-on-daisy/` |
-| Toy Piano v0.3 | Matrix integriert; mit leerer Matrix bitgleich zu v0.2; Release-**Entwurf** v0.3 auf GitHub | `instruments/toy-piano/` |
-| Physical Modeling + Matrix | eigene Fassung `MOD=1`; reguläre Fassung bytegleich | `instruments/physical-modeling/` |
-| Browser-Editor | nutzbar, Ende-zu-Ende-Test gegen den Firmware-Controller | `editors/mod-on-daisy/web/` |
-| JUCE-Editor | Windows-`.exe` aus der CI, eingebauter Simulator, Selbsttest | `editors/mod-on-daisy/src/` |
-| Hardwaretests | **alle offen**, Laufzettel bereit | [HARDWARE_TEST_RUN.md](modules/mod-on-daisy/docs/HARDWARE_TEST_RUN.md) |
-
-Auf `main` sind PR #22 (Modul) und PR #23 (Toy Piano v0.3, Physical Modeling, Browser-Editor).
-Der JUCE-Editor und diese Übergabe liegen auf dem Branch `ccr-352fb5fc-fxr9ox`. Nach
-dem Merge ist alles auf `main`.
-
-## 2. Lokal einrichten (Windows)
+| Ort | Inhalt |
+| --- | --- |
+| `main` | PR #22 (Modul), #23 (Toy Piano v0.3, Physical Modeling `MOD=1`, Browser-Editor), #24 (JUCE-Editor, Übergabe), #27 (kostenbewusste CI) |
+| Branch **`ccr-352fb5fc-fxr9ox`** | zwei Commits **noch nicht auf `main`**: `67eb8da` Editor-Fixes aus dem ersten Hardwaretest, `70f1e4c` Physical Modeling mod2 (Level-Spalte) und Potistellungen in den Editoren. Per PR zusammenführen |
 
 ```bash
-git clone https://github.com/sscheidl/Daisy-Seed.git
-cd Daisy-Seed
+git fetch origin
+git checkout ccr-352fb5fc-fxr9ox && git pull      # neuester Stand
 git submodule update --init libDaisy DaisySP
 git -C libDaisy submodule update --init --recursive --jobs 4
 ```
 
-Ein vorhandener Checkout: `git checkout main && git pull`. Die Submodule bleiben auf den
-gepinnten Ständen ([docs/BUILD.md](docs/BUILD.md)).
+**CI** (seit PR #27):
+* `build.yml` (Firmware) und `editor.yml` (JUCE-Editor mit Windows-`.exe`) starten nur
+  von Hand: Actions → Workflow → „Run workflow“, Branch wählen.
+* `quick.yml` führt bei Push und PR die betroffenen Host-Tests aus.
+
+## 2. Was fertig ist
+
+| Teil | Stand | Wo |
+| --- | --- | --- |
+| Mod on Daisy (Modul) | Kern, Host-Tests, Messfirmware, `mod_probe.py`, Protokoll 1.0; Erweiterung „Grundwerte im Monitor“ (optional, abwärtskompatibel) | `modules/mod-on-daisy/` |
+| Toy Piano v0.3 | Matrix integriert; mit leerer Matrix bitgleich zu v0.2; Release-**Entwurf** v0.3 auf GitHub; sendet noch keine Grundwerte | `instruments/toy-piano/` |
+| Physical Modeling + Matrix | eigene Fassung `MOD=1`, IDENTIFY `0.1.0-mod2`: Spalte 7 = **Level** (statt Reverb), meldet Potistellungen; reguläre Fassung bytegleich | `instruments/physical-modeling/` |
+| JUCE-Editor | Standalone (Windows-`.exe` aus der CI), Simulator, Selbsttest, Potistellungen in den Spaltenköpfen | `editors/mod-on-daisy/src/` |
+| Browser-Editor | Schnellvariante, gleiche Dateien und Anzeigen | `editors/mod-on-daisy/web/` |
+| Übergabe-Werkzeuge | Laufzettel, Paket-Skript, Agentenregeln | [HARDWARE_TEST_RUN.md](modules/mod-on-daisy/docs/HARDWARE_TEST_RUN.md), `scripts/hardware_test_package.py`, [AGENTS.md](AGENTS.md) |
+
+Prüfwerte zum Wiedererkennen:
+
+| Was | Wert |
+| --- | --- |
+| Golden-Hash Toy Piano (v0.2 = v0.3 mit leerer Matrix) | `52580874FA24361F` |
+| Golden-Hash Physical Modeling (regulär = `MOD=1` mit leerer Matrix) | `37DE0BF9D93B81CE` |
+| SHA-256 `ToyPiano-v0.3.bin` (= Release-Entwurf) | `6dd79871…` |
+| SHA-256 `PhysicalModeling-v0.1.0.bin` (regulär) | `eb8f412a…` |
+| SHA-256 `ModBench-v0.1.0.bin` / `-block256` / `-max64` | `9f50a57b…` / `5cdeb0f6…` / `7f209c15…` |
+| SHA-256 `PhysicalModelingMod-v0.1.0.bin` (mod2, Branch) | `bb9798a0…` |
+| Standard-Patch-CRC / Patch-Testvektor | `61C264C4` / `E2340CC6` |
+
+## 3. Hardwaretest: Stand
+
+Laufzettel: [modules/mod-on-daisy/docs/HARDWARE_TEST_RUN.md](modules/mod-on-daisy/docs/HARDWARE_TEST_RUN.md).
+Ergebnisse: [VALIDATION.md](modules/mod-on-daisy/docs/VALIDATION.md) § 1b „Am Gerät“.
+
+**`GEMESSEN` am 23.10.2026** (Physical Modeling `MOD=1`, Stand PR #24, JUCE-Editor):
+
+| Schritt | Ergebnis |
+| --- | --- |
+| E1 | bestanden: Verbindung, alle 8 Spalten |
+| E2–E8 | bestanden bis auf die Befunde unten |
+| E9 | Poly AT → Brightness bestätigt, Poly AT × Excitation schraffiert |
+| R8 | MIDI-Clock synchronisiert die LFOs |
+
+**Befunde und was daraus wurde** (Branch, am Gerät noch nicht nachgeprüft):
+
+1. Kontextmenü an fester Stelle und in Systemfarben → öffnet jetzt am Mauszeiger, in
+   App-Farben.
+2. Schnelle LFOs schienen zu hängen (20 Hz Abtastung) → Band über 5 Hz.
+3. Studio One belegt den Port exklusiv → Meldung nennt die Ursache, Anzeige „keine
+   Live-Daten“. **Lösung offen**, siehe § 4.
+4. LFO-Anzeige im Clock-Modus blieb aus → am Simulator nicht nachvollziehbar.
+   Wahrscheinlich Folge von 3. Quellen ohne aktive Verbindung sind jetzt abgedunkelt.
+5. „Vom Gerät laden“ ohne erkennbare Wirkung → meldet jetzt die geladene Prüfsumme,
+   mit Tooltip.
+6. Spalte Reverb wirkungslos → **Level** (Entscheidung Betreiber).
+7. Potistellungen fehlten → Grundwerte im Monitor, Strich und Balken in den Editoren
+   (Entscheidung Betreiber).
+
+**Noch offen am Gerät:**
+* Physical Modeling mit Branch-Stand nachprüfen: E9b (Potistrich, Level), E7b (Windows
+  MIDI Services), R1–R7, R9, R10.
+* Toy Piano T1–T15 und E1–E10 mit Toy Piano.
+* Messfirmware H1–H8, S0–S8.
+
+Für den Test vom Branch neu bauen:
+* Firmware: `make PROJECT=physical-modeling-mod` oder `python scripts/hardware_test_package.py`.
+* Editor: `.exe` über Actions → Editor auf dem Branch oder lokal mit CMake.
+
+## 4. Offene Entscheidungen und Aufgaben
+
+| Thema | Stand | Nächster Schritt |
+| --- | --- | --- |
+| Studio One + Editor gleichzeitig | Windows gibt den Port einer Anwendung | E7b prüfen. Wenn Windows MIDI Services nicht hilft: Durchleitung im Editor (Editor hält den Daisy-Port, Studio One nutzt einen virtuellen Port, z. B. loopMIDI) — auf Wunsch umsetzen |
+| Branch → `main` | 2 Commits offen | PR anlegen, Codex-Review, mergen |
+| Toy Piano v0.3 veröffentlichen | Entwurf wartet auf T1–T15 | entscheidet der Mensch |
+| Grundwerte für Toy Piano | absichtlich aus, damit v0.3 dem Entwurf entspricht | mit der nächsten Toy-Piano-Version (z. B. 0.3.1) einschalten |
+| JUCE-Lizenz | AGPLv3 oder JUCE-Lizenz | vor Weitergabe der `.exe` entscheiden |
+| Speicher (QSPI) | nur spezifiziert (D8) | eigene Freigabe nötig |
+| Editor-Feinschliff | offen: Rückgängig/Wiederholen, Wahl beim Wiederverbinden, Schema-Cache | nach den Hardwaretests |
+| Nebulae als dritter Pilot, VST3 | geplant | später |
+
+## 5. Lokal einrichten (Windows)
 
 | Wofür | Was gebraucht wird |
 | --- | --- |
-| Firmware bauen | `make` und die ARM-Toolchain wie beim bisherigen lokalen Nebulae-Build. Getestet ist xPack GCC **13.2.1-1.1**; es gibt sie auch für Windows. Alternativ WSL mit `bash scripts/install-toolchain.sh` |
-| Nur testen, nicht bauen | die Images aus der CI: GitHub → Actions → **Firmware** → Artifacts |
-| Host-Tests | `g++` (MSYS2/WSL) oder die CI |
-| JUCE-Editor | `.exe` aus Actions → **Editor** → Artifacts, oder Visual Studio 2022 mit CMake ([Editor-README](editors/mod-on-daisy/README.md)) |
-| `mod_probe.py`, Paket-Skript | Python 3 und `pip install mido python-rtmidi` |
-| Flashen | Chrome/Edge mit dem [Daisy Web Programmer](https://flash.daisy.audio/) oder `dfu-util` ([docs/FLASHING.md](docs/FLASHING.md)) |
+| Firmware bauen | `make` und xPack GCC **13.2.1-1.1** (auch für Windows) wie beim bisherigen Nebulae-Build; alternativ WSL mit `bash scripts/install-toolchain.sh` |
+| Nur testen | Images aus Actions → **Firmware** (von Hand starten) |
+| JUCE-Editor | `.exe` aus Actions → **Editor** oder Visual Studio 2022 + CMake ([Editor-README](editors/mod-on-daisy/README.md)) |
+| `mod_probe.py`, Paket-Skript | Python 3, `pip install mido python-rtmidi` |
+| Flashen | Daisy Web Programmer (Chrome/Edge) oder `dfu-util` ([docs/FLASHING.md](docs/FLASHING.md)) |
 
-Kurzprobe nach dem Einrichten:
+Kurzprobe:
 
 ```bash
 make PROJECT=toy-piano test
@@ -48,40 +117,45 @@ make -C editors/mod-on-daisy test
 python modules/mod-on-daisy/tools/mod_probe.py selftest
 ```
 
-## 3. Hardwaretest
+## 6. Wichtige Dokumente
 
-1. Paket bauen: `python scripts/hardware_test_package.py`. Das baut alle Images, prüft
-   sie und legt sie mit `mod_probe.py`, den Editoren und dem Laufzettel in
-   `build/hardware-test/` ab. Ohne lokale Toolchain mit `--no-build` und den CI-Images
-   an ihren Build-Pfaden.
-2. Den [Laufzettel](modules/mod-on-daisy/docs/HARDWARE_TEST_RUN.md) abarbeiten:
-   * V: Vorbereitung
-   * H/S: Messfirmware; zuerst `lengths`, sonst lohnt der Rest nicht
-   * T1–T15: Toy Piano
-   * R1–R10: Physical Modeling
-   * E1–E10: Editoren am Gerät
-   Jede Zeile sagt, ob der Agent oder der Mensch sie ausführt.
-3. Die Ergebnisse auf einem Branch eintragen und per PR zusammenführen.
+* Regeln für Agenten: [AGENTS.md](AGENTS.md). Hardware und Releases bleiben beim Menschen;
+  Ergebnisse nur wie beobachtet; Golden-Tests; feste Versionen.
+* Modul: [DECISIONS](modules/mod-on-daisy/docs/DECISIONS.md),
+  [ARCHITECTURE](modules/mod-on-daisy/docs/ARCHITECTURE.md),
+  [PROTOCOL](modules/mod-on-daisy/docs/PROTOCOL.md) (SysEx 0x7D, Monitor 0x7E, Grundwerte § 3.3),
+  [STORAGE](modules/mod-on-daisy/docs/STORAGE.md), [VALIDATION](modules/mod-on-daisy/docs/VALIDATION.md).
+* Instrumente: [Toy Piano HARDWARE_TEST_V0.3](instruments/toy-piano/docs/HARDWARE_TEST_V0.3.md),
+  [Physical Modeling MODULATION](instruments/physical-modeling/docs/MODULATION.md).
+* Editoren: [README](editors/mod-on-daisy/README.md) (inkl. Studio One / Windows MIDI
+  Services), [GUI.md](editors/mod-on-daisy/docs/GUI.md).
 
-## 4. Offene Entscheidungen (beim Menschen)
+## 7. Einstiegstext für einen neuen Chat
 
-* **Toy Piano v0.3 veröffentlichen**: Der Entwurf auf GitHub → Releases wartet auf
-  bestandene T1–T15.
-* **JUCE-Lizenz**: Vor einer Weitergabe der `.exe` an andere zwischen AGPLv3 und einer
-  JUCE-Lizenz entscheiden ([Editor-README](editors/mod-on-daisy/README.md#lizenz)).
-* **Speicher (QSPI)**: Nur spezifiziert ([STORAGE.md](modules/mod-on-daisy/docs/STORAGE.md)).
-  Schreibfunktionen brauchen eine eigene Freigabe (D8).
-* **Portzugriff im VST3-Plugin**: Darüber entscheidet das Ergebnis von H4 bzw. E7.
+Zum Kopieren in einen neuen Chat (Claude Code oder Codex, lokal im Repo-Ordner):
 
-## 5. Vorgeschlagene nächste Schritte
+```text
+Projekt: sscheidl/Daisy-Seed, Mod on Daisy (8x8-Modulationsmatrix für Seed3 Desktop),
+lokal unter Windows mit USB-Zugriff auf das Kit.
 
-1. Hardwaretest nach Laufzettel, Befunde beheben.
-2. Toy Piano v0.3 veröffentlichen.
-3. Editor-Feinschliff, der nach dem Hardwaretest ansteht. Bekannt offen:
-   Rückgängig/Wiederholen, beim Wiederverbinden die Wahl „vom Gerät laden / zum Gerät
-   senden“, Schema-Cache für die Offline-Bearbeitung ([GUI.md](editors/mod-on-daisy/docs/GUI.md)).
-4. Speicherplätze im QSPI, nach Freigabe.
-5. Nebulae als dritter Pilot (ARCHITECTURE.md § 6).
-6. VST3-Fassung des Editors für Studio One.
+Bitte zuerst lesen: HANDOVER.md, AGENTS.md, modules/mod-on-daisy/docs/HARDWARE_TEST_RUN.md
+und modules/mod-on-daisy/docs/VALIDATION.md § 1b.
 
-Für Agenten gelten die Regeln in [AGENTS.md](AGENTS.md).
+Stand: main enthält PR #22–#24 und #27. Der Branch ccr-352fb5fc-fxr9ox hat zwei
+Commits mehr: Editor-Fixes aus dem ersten Hardwaretest sowie Physical Modeling mod2
+(Spalte 7 = Level, Potistellungen im Monitor und in beiden Editoren). Am Gerät noch
+nicht nachgeprüft.
+
+Nächste Aufgaben:
+1. Branch ccr-352fb5fc-fxr9ox auschecken, Host-Tests laufen lassen, PR nach main anlegen.
+2. PhysicalModelingMod neu bauen und mit dem neuen JUCE-Editor E9b und E7b aus dem
+   Laufzettel durchgehen (ich höre und bediene, du führst die Befehle aus und trägst
+   die Ergebnisse als GEMESSEN mit Datum ein).
+3. Je nach E7b: Studio-One-Koexistenz lösen (Windows MIDI Services oder Durchleitung
+   über einen virtuellen Port im Editor).
+4. Danach Toy Piano T1–T15 und Messfirmware H/S.
+
+Regeln: Flashen nur nach meiner Freigabe im Bootloader-Modus, keine Releases
+veröffentlichen, Ergebnisse nur wie beobachtet, Golden-Hashes und bytegleiche
+Images (Toy Piano v0.3, reguläres Physical Modeling, ModBench) nicht versehentlich ändern.
+```
