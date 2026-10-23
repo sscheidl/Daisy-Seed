@@ -117,12 +117,20 @@ Befunde:
 5. **„Vom Gerät laden“** zeigte keine erkennbare Wirkung. Das ist richtig, solange
    nichts anderes das Gerät geändert hat. Jetzt meldet der Editor „Zustand vom Gerät
    geladen (Patch-CRC …)“, und der Tooltip erklärt den Knopf.
-6. **Spalte „Reverb“** (Hallzeit) wirkt kaum. Gewünscht ist ein wirksamerer Parameter
-   der Torus-Engine. Offen, Entscheidung beim Betreiber.
-7. **Potistellungen** werden nicht angezeigt. Je nach Stellung wirkt dieselbe
-   Modulation anders, weil der Offset zum Potiwert addiert und auf 0…1 begrenzt wird.
-   Offen; dafür müsste die Firmware die Grundwerte im Monitor mitsenden
-   (Protokollerweiterung).
+6. **Spalte „Reverb“** (Hallzeit) wirkt kaum. Auf Entscheidung des Betreibers ist
+   Spalte 7 jetzt **Level** (Ausgangspegel 0…2, mit leerer Matrix genau 1); IDENTIFY
+   meldet `0.1.0-mod2`. Host: Modwheel → Level −100 blendet bis Stille aus; der
+   Golden-Hash der leeren Matrix ist unverändert. Am Gerät `NICHT GEMESSEN`.
+7. **Potistellungen** wurden nicht angezeigt. Je nach Stellung wirkt dieselbe Modulation
+   anders, weil der Offset zum Potiwert addiert und auf 0…1 begrenzt wird.
+   * Umgesetzt als abwärtskompatible Protokollerweiterung: Grundwerte hinten im
+     Monitor-Rahmen (52 statt 36 Byte), Fähigkeit Bit 4. Eingeschaltet nur im
+     Physical-Modeling-Build `MOD=1`.
+   * Beide Editoren zeigen die Potistellung als Strich und den Weg der Modulation als
+     Balken; `mod_probe.py monitor` druckt sie mit.
+   * Toy Piano v0.3, die reguläre Physical-Modeling-Fassung und alle ModBench-Varianten
+     sind bytegleich zum Übergabe-Paket.
+   * Am Gerät `NICHT GEMESSEN`.
 
 ## 2. ARM-Build der Messfirmware (`GEMESSEN`)
 

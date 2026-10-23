@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := test
 HOST_CXX ?= g++
 HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -Wshadow -pthread
-INCLUDES = -I../../modules/mod-on-daisy/include
+INCLUDES = -I../../modules/mod-on-daisy/include -DMOD_ON_DAISY_BASE_MONITOR=1 # simulator sends base values
 HEADERS = $(wildcard src/core/*.h) $(wildcard ../../modules/mod-on-daisy/include/mod_on_daisy/*.h)
 
 .PHONY: test test-sanitize app clean

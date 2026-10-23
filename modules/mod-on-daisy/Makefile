@@ -14,6 +14,8 @@ test: $(HEADERS)
 	./build/host/test_mod
 	$(HOST_CXX) $(HOST_FLAGS) $(STRESS_FLAGS) $(HOST_INCLUDES) tests/test_mod.cpp -o build/host/test_mod_64
 	MOD_FUZZ_ROUNDS=20000 ./build/host/test_mod_64
+	$(HOST_CXX) $(HOST_FLAGS) -DMOD_ON_DAISY_BASE_MONITOR=1 $(HOST_INCLUDES) tests/test_mod.cpp -o build/host/test_mod_base
+	MOD_FUZZ_ROUNDS=20000 ./build/host/test_mod_base
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_bench.cpp -o build/host/test_bench
 	./build/host/test_bench
 	$(HOST_CXX) $(HOST_FLAGS) $(STRESS_FLAGS) $(HOST_INCLUDES) tests/test_bench.cpp -o build/host/test_bench_64
@@ -21,7 +23,7 @@ test: $(HEADERS)
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_thread.cpp -o build/host/test_thread
 	./build/host/test_thread
 	python3 tools/mod_probe.py selftest
-	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tools/mod_sim.cpp -o build/host/mod_sim
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) -DMOD_ON_DAISY_BASE_MONITOR=1 tools/mod_sim.cpp -o build/host/mod_sim
 	node ../../editors/mod-on-daisy/web/tests/protocol.test.cjs
 
 # Browser editor against the simulated device in headless Chromium (needs Playwright;
@@ -29,7 +31,7 @@ test: $(HEADERS)
 PLAYWRIGHT_MODULE ?= $(shell npm root -g 2>/dev/null)/playwright
 test-editor:
 	mkdir -p build/host
-	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tools/mod_sim.cpp -o build/host/mod_sim
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) -DMOD_ON_DAISY_BASE_MONITOR=1 tools/mod_sim.cpp -o build/host/mod_sim
 	PLAYWRIGHT_MODULE=$(PLAYWRIGHT_MODULE) node ../../editors/mod-on-daisy/web/tests/e2e.cjs build/host/mod_sim build/host
 
 test-sanitize:

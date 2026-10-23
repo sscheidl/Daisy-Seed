@@ -234,13 +234,21 @@ async function testPhysicalModeling(browser) {
   await page.click('#connect');
   await page.waitForFunction(() => document.getElementById('status').textContent.includes('physical-modeling'));
   const headers = await page.$$eval('#grid thead th .name', (els) => els.map((e) => e.textContent));
-  assert.deepStrictEqual(headers, ['Pitch', 'Structure', 'Brightness', 'Damping', 'Position', 'Excitation', 'Reverb', 'Dry/Wet']);
+  assert.deepStrictEqual(headers, ['Pitch', 'Structure', 'Brightness', 'Damping', 'Position', 'Excitation', 'Level', 'Dry/Wet']);
   assert(await cell(page, 7, 5).evaluate((e) => e.classList.contains('blocked')), 'Poly AT × Excitation greyed out');
   await cell(page, 7, 2).click();
   assert((await page.textContent('#cellInfo')).includes('pro Stimme'));
   await page.keyboard.press('PageUp');
   await settle(page);
   assert.deepStrictEqual((await dump(sim)).active, [[7, 2, 10]]);
+  // Pot positions: the PM build reports column base values; the header shows a tick there.
+  const stop = pumpTime(page, sim);
+  await page.waitForFunction(() => state.monitor && state.monitor.length === 26, null, { timeout: 5000 });
+  stop();
+  const based = await page.$$eval('#grid thead th .meter', (els) => els.map((e) => e.classList.contains('based')));
+  assert.deepStrictEqual(based, Array(8).fill(true));
+  const tick = await page.$eval('#grid thead th[data-target="5"] .meter b', (b) => b.style.left);
+  assert(Math.abs(parseFloat(tick) - 80) < 0.1, tick); // Excitation default 0.8
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'editor-physical-modeling.png'), fullPage: true });
   await page.close();
   sim.proc.stdin.end();

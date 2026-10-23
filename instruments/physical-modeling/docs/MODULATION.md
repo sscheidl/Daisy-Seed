@@ -20,7 +20,9 @@ as it is:
 
 ## Columns
 
-The grid columns are the instrument parameters 0–7 (same as CC20–27):
+Columns 0–5 and 7 are the instrument parameters of the same index (same as CC20–25
+and CC27). Column 6 is the output level since the first hardware test (23.10.2026):
+the reverb decay it replaced had little audible effect.
 
 | Column | Target | Path | Depth 100 means |
 | --- | --- | --- | --- |
@@ -30,7 +32,7 @@ The grid columns are the instrument parameters 0–7 (same as CC20–27):
 | 3 | Damping | global and per voice | full range |
 | 4 | Position | global and per voice | full range |
 | 5 | Excitation | global, latched at the strike | full range; Poly AT greyed out |
-| 6 | Reverb (decay) | global | full range |
+| 6 | **Level** (output gain, smoothed 5 ms) | global | ±100 % of unity: gain 0 (silence) … 2 (+6 dB, into the soft limiter); exactly 1 with an empty matrix |
 | 7 | Dry/Wet | global | full range |
 
 * **Global offsets** go through the existing 5 ms parameter smoothing. The pot or CC
@@ -42,7 +44,14 @@ The grid columns are the instrument parameters 0–7 (same as CC20–27):
     this costs no extra filter work.
   * Pressure is tracked per MIDI note. A voice takes the pressure of the note it
     plays. After Note Off the voice keeps ringing and glides back within 10 ms.
-* Poly AT on Reverb and Dry/Wet uses the most recent held note (last note).
+* Poly AT on Level and Dry/Wet uses the most recent held note (last note).
+* **Base values for the editor**: this build reports each column's pot/CC position
+  before modulation in the monitor (`MOD_ON_DAISY_BASE_MONITOR=1`, protocol extension
+  in PROTOCOL.md § 3.3). Level reports its unity point 0.5. The editors show a tick at
+  the pot position and the span the modulation covers, so it is visible when a
+  modulation runs into 0 or 1. Requested in the hardware test of 23.10.2026.
+* IDENTIFY reports the version `0.1.0-mod2` (mod2: Level column and base values). The
+  image name stays `PhysicalModelingMod-v0.1.0.bin`; the regular build is unchanged.
 * `OFFEN`: In the chord models, Structure selects the chord for the whole part.
   A per-voice Structure there changes only the resonator settings, not the chord.
   Whether that is musically useful needs listening.

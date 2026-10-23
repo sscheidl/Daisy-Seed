@@ -1,5 +1,14 @@
 # Changelog
 
+## Mod on Daisy build, mod2 - 2026-10-23 (after the first hardware test)
+
+* Column 6 is now **Level** (output gain 0..2, unity with an empty matrix) instead of
+  the reverb decay, which had little audible effect. Pot 6 still sets the decay.
+* The monitor reports each column's pot/CC position as base value; the editors show
+  where a modulation lands. IDENTIFY version `0.1.0-mod2`.
+* Unchanged: the regular image (byte-identical) and the sound of the MOD build with an
+  empty matrix (golden hash 37DE0BF9D93B81CE).
+
 ## Separate Mod on Daisy build - 2026-10-23
 
 * New, separate image `PhysicalModelingMod-v0.1.0.bin` (`make PROJECT=physical-modeling-mod`,

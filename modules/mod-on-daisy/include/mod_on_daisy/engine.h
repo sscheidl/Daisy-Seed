@@ -5,11 +5,21 @@
 #include "notes.h"
 #include "program.h"
 
+// Optional: the instrument reports each column's base value (pot/CC position before
+// modulation) for the monitor, so the editor can show where a modulation lands.
+// Off by default; an instrument enables it with -DMOD_ON_DAISY_BASE_MONITOR=1.
+#ifndef MOD_ON_DAISY_BASE_MONITOR
+#define MOD_ON_DAISY_BASE_MONITOR 0
+#endif
+
 namespace mod {
 struct MonitorSnapshot {
     float source[kSources]{};
     float offset[kTargets]{};
     float cv_raw[2]{}; // before calibration and dead band (CV calibration, TEST_PLAN H5)
+#if MOD_ON_DAISY_BASE_MONITOR
+    float base[kTargets]{-1, -1, -1, -1, -1, -1, -1, -1}; // 0..1; -1 = not reported
+#endif
 };
 
 class Engine {
@@ -111,6 +121,12 @@ class Engine {
         return Clamp01(base + offset_[target] + program_->voice_gain[target] * voice_pressure);
     }
     float VoiceGain(std::size_t target) const { return program_->voice_gain[target]; }
+    // Audio IRQ, optional: the column's value before modulation, for the monitor only.
+#if MOD_ON_DAISY_BASE_MONITOR
+    void ReportBase(std::size_t target, float base) { base_[target] = base; }
+#else
+    void ReportBase(std::size_t, float) {}
+#endif
     float NotePressure(uint8_t note) const { return float(live_->PressureRaw(note)) * (1.0f / 127.0f); }
     float PressureCoeff() const { return midi_coeff_; }
     bool Active() const { return program_->active; }
@@ -186,6 +202,10 @@ class Engine {
             m.offset[i] = offset_[i];
         m.cv_raw[0] = cv_raw_[0];
         m.cv_raw[1] = cv_raw_[1];
+#if MOD_ON_DAISY_BASE_MONITOR
+        for(std::size_t i = 0; i < kTargets; ++i)
+            m.base[i] = base_[i];
+#endif
         monitor_.Publish();
     }
 
@@ -201,6 +221,9 @@ class Engine {
     bool gate_now_[2]{}, gate_before_[2]{};
     float source_[kSources]{};
     float offset_[kTargets]{};
+#if MOD_ON_DAISY_BASE_MONITOR
+    float base_[kTargets]{-1, -1, -1, -1, -1, -1, -1, -1};
+#endif
     bool was_active_ = false;
     Voice lfo_[2]{Voice{0, 0, 0, 0, false, Rng(0x9E3779B9u)}, Voice{0, 0, 0, 0, false, Rng(0x7F4A7C15u)}};
     Voice random_{0, 0, 0, 0, false, Rng(0x2545F491u)};

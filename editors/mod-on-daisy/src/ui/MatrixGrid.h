@@ -160,6 +160,23 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
                 case Meter::Live: return U(kSourceNames[s]) + ": " + juce::String(monitor_.source[s], 2);
             }
         }
+        if(cell == kNoCell && p.y < kColHeader && p.x >= kRowHeader) {
+            const int t = juce::jlimit(0, int(mod::kTargets) - 1, (p.x - kRowHeader) * int(mod::kTargets)
+                                                                     / std::max(1, getWidth() - kRowHeader));
+            const Column& col = model_.columns[std::size_t(t)];
+            if(!col.present)
+                return U("Das Instrument hat hier kein Ziel.");
+            juce::String tip = U(col.name) + U(": Tiefe 100 = ") + U(col.SpanLabel());
+            if(has_monitor_ && monitor_.HasBase(std::size_t(t)))
+                tip << U("\nPoti ") << juce::String(monitor_.base[t], 2) << U(", Modulation ")
+                    << (monitor_.offset[t] >= 0 ? "+" : "") << juce::String(monitor_.offset[t], 2) << U(" → ")
+                    << juce::String(monitor_.Result(std::size_t(t)), 2)
+                    << U(" (weißer Strich: Potistellung, Balken: Weg der Modulation)");
+            else if(has_monitor_)
+                tip << U("\nGlobaler Offset ") << juce::String(monitor_.offset[t], 2)
+                    << U(" (das Instrument meldet keine Potistellung)");
+            return tip;
+        }
         if(cell == kNoCell)
             return {};
         if(!model_.Allowed(cell))
@@ -185,7 +202,10 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         const juce::String span = col.present ? U(col.SpanLabel()) + (col.latched ? U(" · Anschlag") : U(""))
                                               : U("nicht vorhanden");
         g.drawText(span, r.removeFromTop(16), juce::Justification::centred);
-        if(col.present)
+        if(col.present && has_monitor_ && monitor_.HasBase(std::size_t(t)))
+            PaintBaseMeter(g, r.removeFromTop(8).reduced(6, 2).toFloat(), monitor_.base[t],
+                           monitor_.Result(std::size_t(t)), Stale());
+        else if(col.present)
             PaintMeter(g, r.removeFromTop(8).reduced(6, 2).toFloat(), has_monitor_ ? monitor_.offset[t] : 0.0f, true,
                        Stale() ? Meter::Stale : Meter::Live);
     }

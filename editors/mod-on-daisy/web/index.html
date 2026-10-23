@@ -44,6 +44,8 @@ table.grid tbody th .src { color: var(--ink); font-weight: 600; font-size: 12.5p
 .meter { position: relative; height: 4px; background: var(--line); border-radius: 2px; margin-top: 4px; overflow: hidden; }
 .meter i { position: absolute; top: 0; bottom: 0; background: var(--accent); }
 .meter.center::after { content: ""; position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1px; background: var(--muted); }
+.meter b { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); display: none; }
+.meter.based b { display: block; } .meter.based::after { display: none; } /* pot position reported */
 td.cell { width: 72px; height: 44px; border-radius: 7px; border: 1px solid var(--line); text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; cursor: ns-resize; position: relative; }
 td.cell.zero { color: var(--muted); font-weight: 400; }
 td.cell.pos { background: rgba(var(--pos), var(--a)); }
@@ -217,7 +219,7 @@ function buildGrid() {
   state.targets.forEach((t, i) => {
     const th = document.createElement('th');
     th.className = t.present ? '' : 'absent';
-    th.innerHTML = `<span class="name"></span><span class="span"></span><div class="meter center"><i></i></div>`;
+    th.innerHTML = `<span class="name"></span><span class="span"></span><div class="meter center"><i></i><b></b></div>`;
     th.querySelector('.name').textContent = t.present ? t.name : '—';
     th.querySelector('.span').textContent = t.present ? `${t.spanText.replace('+-', '±')}${t.latched ? ' · Anschlag' : ''}` : 'nicht vorhanden';
     th.title = t.present ? `${t.name}: Tiefe 100 = ${t.spanText.replace('+-', '±')}${t.perVoice ? ', pro Stimme' : ''}${t.latched ? ', wirkt beim nächsten Anschlag' : ''}` : 'Das Instrument hat hier kein Ziel';
@@ -505,10 +507,21 @@ function renderSources() {
 // ------------------------------------------------------------------ monitor
 function onMonitor(payload) {
   const r = new P.Reader(payload);
-  const v = Array.from({ length: 18 }, () => ((r.u14() & 16383) - 8192) / 8191);
+  // 18 values; 26 when the instrument also reports its pot positions (PROTOCOL.md § 3.3).
+  const v = Array.from({ length: payload.length >= 52 ? 26 : 18 }, () => ((r.u14() & 16383) - 8192) / 8191);
   state.monitor = v;
   document.querySelectorAll('#grid tbody th .meter i').forEach((i, s) => setMeter(i, v[s], s < 5));
-  document.querySelectorAll('#grid thead th .meter i').forEach((i, t) => setMeter(i, v[8 + t], true));
+  document.querySelectorAll('#grid thead th .meter').forEach((m, t) => {
+    const base = v.length > 18 ? v[18 + t] : -1;
+    m.classList.toggle('based', base >= 0);
+    if (base < 0) return setMeter(m.querySelector('i'), v[8 + t], true);
+    // White tick: pot position; bar: where the modulation takes the column (clamped 0..1).
+    const result = Math.max(0, Math.min(1, base + v[8 + t]));
+    const i = m.querySelector('i');
+    i.style.left = Math.min(base, result) * 100 + '%';
+    i.style.width = Math.abs(result - base) * 100 + '%';
+    m.querySelector('b').style.left = base * 100 + '%';
+  });
 }
 function setMeter(el, value, bipolar) {
   value = Math.max(-1, Math.min(1, value));

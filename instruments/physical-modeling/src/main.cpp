@@ -49,8 +49,14 @@ void Modulate(size_t size) {
     mod::Engine& engine = modulation.engine;
     mod::adapter::ReadHardware(engine, hw);
     engine.Tick(size);
-    for(unsigned t = 0; t < 8; ++t)
+    for(unsigned t = 0; t < 8; ++t) {
+        if(t == kLevelColumn)
+            continue;
         synth->parameters.SetModOffset(t, engine.Offset(t));
+        engine.ReportBase(t, synth->parameters.Target(t)); // pot/CC position, for the editor
+    }
+    synth->parameters.SetModLevel(LevelGain(engine.Apply(kLevelColumn, kLevelBase)));
+    engine.ReportBase(kLevelColumn, kLevelBase);
     std::array<float, 5> gain{};
     bool voices = false;
     for(unsigned t = 0; t < 5; ++t) {

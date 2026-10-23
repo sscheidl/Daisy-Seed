@@ -105,7 +105,7 @@ class Controller {
             last_monitor_ms_ = now_ms;
             engine_->Monitor().Fetch();
             const MonitorSnapshot& m = engine_->Monitor().Front();
-            uint8_t payload[36];
+            uint8_t payload[MOD_ON_DAISY_BASE_MONITOR ? 52 : 36];
             proto::Writer w(payload, sizeof(payload));
             for(float v : m.source)
                 w.U14(proto::EncodeSigned(v));
@@ -113,6 +113,10 @@ class Controller {
                 w.U14(proto::EncodeSigned(v));
             for(float v : m.cv_raw)
                 w.U14(proto::EncodeSigned(v));
+#if MOD_ON_DAISY_BASE_MONITOR
+            for(float v : m.base) // appended: clients reading 36 bytes are unaffected
+                w.U14(proto::EncodeSigned(v));
+#endif
             uint8_t frame[proto::kMaxFrame];
             const std::size_t size = proto::BuildFrame(frame, device_, proto::MonitorFrame, 0, payload, w.Size());
             out.Send(frame, size);
@@ -209,7 +213,8 @@ class Controller {
                 w.U14(unsigned(sample_rate_ / float(block_size_) + 0.5f));
                 w.U7(0); // preset slots: storage not implemented (D8)
                 w.U32(schema_);
-                w.U7(0x02 | (diagnostics_ ? 0x04 : 0) | 0x08); // monitor, diagnostics, Poly AT last note
+                // monitor, diagnostics, Poly AT last note, base values in the monitor
+            w.U7(0x02 | (diagnostics_ ? 0x04 : 0) | 0x08 | (MOD_ON_DAISY_BASE_MONITOR ? 0x10 : 0));
                 return Ack(f, w);
             case proto::GetTarget: {
                 const unsigned t = r.U7();

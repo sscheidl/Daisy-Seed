@@ -11,13 +11,19 @@
 #pragma GCC diagnostic pop
 #endif
 
+#include <array>
+
 namespace editor {
 struct SimInstrument {
     const char* label;
     mod::InstrumentInfo (*make)();
+    std::array<float, mod::kTargets> bases; // reported pot positions; -1 = the firmware reports none
 };
+// Toy Piano v0.3 reports no base values; Physical Modeling MOD=1 does: here its power-on
+// pot defaults (ParameterManager) and Level at unity.
 inline const SimInstrument kSimInstruments[] = {
-    {"Simulator: Toy Piano", toy_piano::MakeModInfo},
-    {"Simulator: Physical Modeling", physical_modeling::MakeModInfo},
+    {"Simulator: Toy Piano", toy_piano::MakeModInfo, {-1, -1, -1, -1, -1, -1, -1, -1}},
+    {"Simulator: Physical Modeling", physical_modeling::MakeModInfo,
+     {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.8f, physical_modeling::kLevelBase, 0.25f}},
 };
 }

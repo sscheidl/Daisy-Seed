@@ -182,6 +182,7 @@ class SelfTest {
         SELFTEST_CHECK(Settle() && e_.GetSession().Device().key == "physical-modeling");
         Model& m = e_.GetModel();
         SELFTEST_CHECK(m.columns[5].name == "Excitation" && !m.Allowed(7 * 8 + 5));
+        SELFTEST_CHECK(m.columns[6].name == "Level"); // replaced the reverb decay (mod2)
         auto& grid = e_.Grid();
         const int cells[][3] = {{0, 2, 40}, {1, 1, -30}, {2, 4, 25}, {6, 6, 60}, {7, 2, 70}, {7, 0, 12}};
         for(const auto& c : cells) {

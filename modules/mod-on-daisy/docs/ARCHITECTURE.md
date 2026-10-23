@@ -384,7 +384,7 @@ modulation.controller.Service(daisy::System::GetNow(), sender);
 | 3 | Damping | `Damping` | Stimme | 100 % |
 | 4 | Position | `Position` | Stimme | 100 % |
 | 5 | Excitation | `Excitation` | global, `latched` | 100 % |
-| 6 | Reverb | `Decay` | global | 100 % |
+| 6 | Level | Ausgangspegel (Grundwert 0,5 = Verstärkung 1) | global | `+-100%` (0…2); ersetzt seit dem Hardwaretest 23.10.2026 Reverb/`Decay` |
 | 7 | Dry/Wet | `Wet` | global | 100 % |
 
 ¹ `OFFEN`: In Akkordmodellen wählt Structure den Akkord für den ganzen Part

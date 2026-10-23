@@ -67,7 +67,7 @@ F0 7D 4D 44 <ver> <dev> <cmd> <seq> <len> <payload: len Bytes> <chk> F7
 
 | Cmd | Name | Anfrage | Antwort (`cmd \| 0x40`) |
 | --- | --- | --- | --- |
-| `0x01` | `IDENTIFY` | — | `u7` Haupt-, `u7` Nebenversion des Protokolls · `u7 u7 u7` Modulversion · `str` Instrument-Key (≤ 24) · `str` Instrumentversion (≤ 12) · `u7` kMaxActive · `u14` effektive Tick-Rate in Hz · `u7` Preset-Slots (v0.1: 0) · `u32` Schema-Hash · `u7` Fähigkeiten (Bit 0 Speicher, Bit 1 Monitor, Bit 2 Diagnose, Bit 3 Poly AT global = Last-Note) |
+| `0x01` | `IDENTIFY` | — | `u7` Haupt-, `u7` Nebenversion des Protokolls · `u7 u7 u7` Modulversion · `str` Instrument-Key (≤ 24) · `str` Instrumentversion (≤ 12) · `u7` kMaxActive · `u14` effektive Tick-Rate in Hz · `u7` Preset-Slots (v0.1: 0) · `u32` Schema-Hash · `u7` Fähigkeiten (Bit 0 Speicher, Bit 1 Monitor, Bit 2 Diagnose, Bit 3 Poly AT global = Last-Note, Bit 4 Grundwerte im Monitor) |
 | `0x02` | `GET_TARGET` | `u7` Spalte 0…7 | `u7` Spalte · `u7` Flags (Bit 0 vorhanden, Bit 1 `per_voice`, Bit 2 `latched`) · `u14` span · 16383 · `str` Name (≤ 12) · `str` span-Text (≤ 8) |
 | `0x03` | `GET_ALLOWED` | — | `mask64` erlaubte Zellen (ARCHITECTURE § 3.2) |
 
@@ -106,7 +106,7 @@ Zelle aktiv, Tiefe außerhalb ±100) wird als Ganzes abgelehnt.
 
 | Cmd | Name | Anfrage | Antwort |
 | --- | --- | --- | --- |
-| `0x30` | `MONITOR` | `u7` Rate Hz (0 = aus, ≤ 25) | `u7` Rate (Antwortcode `0x70`); danach ungefragte Rahmen **`0x7E`** mit 8 × `u14` Quellwerten, 8 × `u14` globalen Offsets und 2 × `u14` CV-Rohwerten vor Kalibrierung und Totzone (Offset-Binär, 8192 = 0, ±8191 = ±1), 36 Byte |
+| `0x30` | `MONITOR` | `u7` Rate Hz (0 = aus, ≤ 25) | `u7` Rate (Antwortcode `0x70`); danach ungefragte Rahmen **`0x7E`** mit 8 × `u14` Quellwerten, 8 × `u14` globalen Offsets und 2 × `u14` CV-Rohwerten vor Kalibrierung und Totzone (Offset-Binär, 8192 = 0, ±8191 = ±1), 36 Byte. Mit Fähigkeit Bit 4 folgen 8 × `u14` Grundwerte der Spalten (Poti-/CC-Stellung vor der Modulation, 0…1; −1 = nicht gemeldet), dann 52 Byte |
 | `0x31` | `GET_STATS` | — | 10 × `u32` (50 Byte): Ticks · Matrix-Zyklen min/mittel/max · Callback-Last mittel/max (in 0,01 %) · Überläufe · verlorene MIDI-Ereignisse · Main-Loop-Höchstwerte in Zyklen für `HandleMidi`-Durchlauf und `Service` (Messfirmware, TEST_PLAN § 3) |
 | `0x32` | `RESET_STATS` | — | — |
 | `0x33` | `SET_SCENARIO` | `u7` Szenario-Nr. | Status (nur Messfirmware `bench/`; im Instrument `NAK 9`) |
@@ -116,6 +116,11 @@ Zelle aktiv, Tiefe außerhalb ±100) wird als Ganzes abgelehnt.
 * Die Werte liest der Main-Loop aus einem Schnappschuss, den der Audio-IRQ über eine
   SPSC-Queue veröffentlicht.
 * Außer Monitor-Rahmen sendet das Gerät **nie ungefragt**.
+* Die Grundwerte sind eine **abwärtskompatible Erweiterung** (23.10.2026): Sie hängen
+  hinten an, ein Client, der 36 Byte liest, merkt nichts. Ein Instrument schaltet sie
+  mit `MOD_ON_DAISY_BASE_MONITOR=1` ein und meldet die Werte mit
+  `Engine::ReportBase(t, base)`. Eingeschaltet ist das derzeit nur im Physical-Modeling-
+  Build `MOD=1`; Toy Piano v0.3 sendet weiter 36 Byte.
 * Die Monitor-Rahmen haben den Code `0x7E`, weil `0x70` schon die Antwort auf `MONITOR`
   ist (`0x30 | 0x40`). Der Browser-Editor-Test hat diese Kollision gefunden. Code `0x7E`
   gehört zur Anfrage `0x3E`, die es nicht gibt und die immer mit `NAK` beantwortet wird.

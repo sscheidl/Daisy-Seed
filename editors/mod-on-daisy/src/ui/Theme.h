@@ -64,6 +64,21 @@ enum class Meter {
     Stale, // no monitor data arrives (port taken by another application?)
 };
 
+// Column meter with a reported base value: a 0..1 track, a tick at the pot position and
+// the span from there to where the modulation takes the column.
+inline void PaintBaseMeter(juce::Graphics& g, juce::Rectangle<float> r, float base, float result, bool stale) {
+    g.setColour(stale ? colour::line.withAlpha(0.45f) : colour::line);
+    g.fillRoundedRectangle(r, 2.0f);
+    const float xb = r.getX() + r.getWidth() * juce::jlimit(0.0f, 1.0f, base);
+    if(!stale) {
+        const float xr = r.getX() + r.getWidth() * juce::jlimit(0.0f, 1.0f, result);
+        g.setColour(colour::accent);
+        g.fillRect(juce::Rectangle<float>(std::min(xb, xr), r.getY(), std::max(1.0f, std::abs(xr - xb)), r.getHeight()));
+    }
+    g.setColour(colour::ink);
+    g.fillRect(juce::Rectangle<float>(xb - 1.0f, r.getY() - 2.0f, 2.0f, r.getHeight() + 4.0f));
+}
+
 // Horizontal meter: bipolar from the centre or unipolar from the left.
 inline void PaintMeter(juce::Graphics& g, juce::Rectangle<float> r, float value, bool bipolar,
                        Meter state = Meter::Live) {

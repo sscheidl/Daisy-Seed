@@ -30,6 +30,16 @@ enum class LinkState { Offline, Connecting, Connected };
 
 struct MonitorValues {
     float source[mod::kSources]{}, offset[mod::kTargets]{}, cv[2]{};
+    // Column base values (pot/CC position before modulation), 0..1; -1 = not reported.
+    // Only instruments with IDENTIFY capability bit 4 send them (PROTOCOL.md § 3.3).
+    float base[mod::kTargets]{-1, -1, -1, -1, -1, -1, -1, -1};
+
+    bool HasBase(std::size_t t) const { return base[t] >= 0.0f; }
+    // Where the column ends up: base plus the global offset, clamped like Engine::Apply.
+    float Result(std::size_t t) const {
+        const float v = base[t] + offset[t];
+        return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+    }
 };
 
 inline std::string ErrorText(unsigned code) {
@@ -375,6 +385,9 @@ class Session {
             v = proto::DecodeSigned(rd.U14());
         for(float& v : m.cv)
             v = proto::DecodeSigned(rd.U14());
+        if(size >= 52)
+            for(float& v : m.base)
+                v = proto::DecodeSigned(rd.U14());
         return m;
     }
 

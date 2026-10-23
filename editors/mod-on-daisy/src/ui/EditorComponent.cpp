@@ -182,6 +182,7 @@ void EditorComponent::ConnectTo(int index) {
     if(p.simulator >= 0) {
         simulator_ = std::make_unique<Simulator>(kSimInstruments[p.simulator].make(),
                                                  uint32_t(juce::Random::getSystemRandom().nextInt()));
+        simulator_->bases = kSimInstruments[p.simulator].bases;
         session_.Connect(*simulator_, now_);
     } else {
         juce::String error;

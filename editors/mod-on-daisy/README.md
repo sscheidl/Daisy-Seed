@@ -19,7 +19,8 @@ Beide Fassungen lesen und schreiben dieselben `.modpatch`-Dateien.
 
 Die CI baut bei jeder Änderung `ModOnDaisyEditor.exe`:
 
-1. Auf GitHub unter **Actions → Editor** den letzten grünen Lauf öffnen.
+1. Auf GitHub unter **Actions → Editor** den letzten grünen Lauf öffnen. Der Lauf
+   startet nur von Hand („Run workflow“, Branch wählen).
 2. Unten bei **Artifacts** `ModOnDaisyEditor-windows-x64-…` herunterladen und entpacken.
 3. `ModOnDaisyEditor.exe` starten. Eine Installation ist nicht nötig, die
    Visual-C++-Laufzeit ist eingebaut.
@@ -64,8 +65,18 @@ als Datei speichern und später ins echte Gerät laden.
   * Sync: Frei (dann Rate und Retrigger), MIDI-Clock (dann Teilung) oder Gate (dann
     Eingang und Zyklen pro Impuls).
   * Random: Modus Stufe oder geglättet, Sync wie bei den LFOs.
-* **Live-Anzeige**: Die Balken unter den Quellen zeigen deren aktuellen Wert, die unter
-  den Spaltennamen den gesamten Offset.
+* **Live-Anzeige**:
+  * Die Balken unter den Quellen zeigen deren aktuellen Wert.
+  * Abgedunkelt: Die Quelle hat keine aktive Verbindung; die Firmware berechnet sie dann
+    nicht.
+  * Volles helles Band: Ein freier LFO oder Random läuft schneller als 5 Hz. Die Anzeige
+    kommt mit 20 Bildern/s und könnte ihn nur stehend zeigen.
+  * Unter den Spaltennamen steht der gesamte Offset. Meldet das Instrument seine
+    Potistellungen (Physical Modeling `0.1.0-mod2`), zeigt ein weißer Strich die
+    Potistellung und der Balken den Weg der Modulation von dort aus. So sieht man, ob
+    eine Modulation an 0 oder 1 anstößt.
+  * „keine Live-Daten“ oben links: Es kommen keine Monitordaten an, meist weil eine
+    andere Anwendung den Eingang hält (siehe unten).
 * **Dateien**:
   * „Datei speichern …“ legt eine `.modpatch`-Datei an (JSON).
   * „Datei öffnen …“ prüft die Datei zuerst und überträgt dann das ganze Raster in einem
@@ -79,6 +90,35 @@ als Datei speichern und später ins echte Gerät laden.
   Ohne Antwort wiederholt er eine Anfrage dreimal.
 * **Verbindungsverlust**: Wird der Daisy abgezogen, meldet der Editor das und arbeitet
   offline weiter. Beim erneuten Verbinden gilt der Zustand des Geräts.
+
+### Studio One und der Editor gleichzeitig
+
+Unter Windows öffnet bisher nur **ein** Programm den Port „Daisy Seed External“.
+Studio One nimmt ihn exklusiv, sobald er dort aktiv ist. Das wurde am 23.10.2026 am Gerät
+beobachtet:
+
+* Ein schon verbundener Editor steuert weiter. Er bekommt aber keine Antworten und keine
+  Live-Daten mehr („keine Antwort vom Gerät“, „keine Live-Daten“).
+* Nach dem Trennen lässt sich nicht neu verbinden, solange Studio One den Port hält.
+
+**Prüfung: Windows MIDI Services.** Mit den neuen Windows MIDI Services können mehrere
+Programme denselben Port gleichzeitig nutzen. Microsoft verteilt sie für Windows 11.
+Ob sie auf diesem Rechner schon aktiv sind, zeigt am zuverlässigsten der Versuch:
+
+1. Windows-Version notieren (`winver`) und die Windows-Updates einspielen.
+2. Daisy an J7, den Editor schließen.
+3. Studio One öffnen, „Daisy Seed External“ dort als Ein- und Ausgang aktiv lassen und
+   prüfen, dass Noten vom Daisy ankommen.
+4. Jetzt den Editor starten und **Verbinden**.
+5. Ergebnis notieren (Laufzettel E7b):
+   * **Geht**: Status grün, Live-Anzeige läuft, Änderungen werden bestätigt, und
+     Studio One empfängt weiter Noten. Dann laufen beide nebeneinander.
+   * **Geht nicht**: Der Editor meldet den Port als belegt.
+
+Geht es nicht, bleibt vorerst die Umgehung: den Daisy-Port in Studio One deaktivieren,
+solange der Editor läuft. Als dauerhafte Lösung kann der Editor den Daisy-Port halten
+und Noten, Clock und CC von einem virtuellen Port durchreichen, den Studio One nutzt,
+zum Beispiel loopMIDI. Das ist noch nicht umgesetzt.
 
 ### Selbst bauen
 
@@ -113,7 +153,8 @@ make -C editors/mod-on-daisy test-sanitize    # dasselbe mit ASan/UBSan
   `out/selftest.txt`.
 
 Die CI (`.github/workflows/editor.yml`) führt beides unter Linux (Xvfb) und Windows aus
-und stellt die `.exe` bereit.
+und stellt die `.exe` bereit. Sie startet nur von Hand: GitHub → Actions → **Editor** →
+„Run workflow“.
 
 ### Lizenz
 

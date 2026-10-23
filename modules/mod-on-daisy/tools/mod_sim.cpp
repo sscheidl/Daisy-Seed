@@ -1,6 +1,6 @@
 // Host simulator of a Mod on Daisy device: the real Controller and Engine with an
 // instrument's column table, driven over stdin/stdout. Used by the browser
-// editor's end-to-end test; no hardware involved.
+// editor's end-to-end test; no hardware involved. Built with MOD_ON_DAISY_BASE_MONITOR=1.
 //
 //   mod_sim [toy-piano|physical-modeling|bench]
 //   stdin:  "S <hex>"  MIDI message (SysEx F0 … F7 or a short message)
@@ -52,10 +52,20 @@ int main(int argc, char** argv) {
     }
     static mod::Module module;
     module.Init(info, 48000.0f, 48);
+    // Physical Modeling MOD=1 reports its pot positions (power-on defaults here) as
+    // column base values; Toy Piano v0.3 and the bench report none (PROTOCOL.md § 3.3).
+    float bases[mod::kTargets] = {-1, -1, -1, -1, -1, -1, -1, -1};
+    if(which == "physical-modeling") {
+        const float pm[mod::kTargets] = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.8f, physical_modeling::kLevelBase, 0.25f};
+        for(std::size_t t = 0; t < mod::kTargets; ++t)
+            bases[t] = pm[t];
+    }
     Stdout out;
     uint32_t now = 1;
     auto advance = [&](unsigned ms) {
         for(unsigned i = 0; i < ms; ++i) {
+            for(std::size_t t = 0; t < mod::kTargets; ++t)
+                module.engine.ReportBase(t, bases[t]);
             module.engine.Tick(48);
             module.controller.Service(++now, out);
         }

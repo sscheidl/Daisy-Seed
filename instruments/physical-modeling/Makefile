@@ -4,11 +4,12 @@ VERSION := $(shell sed -n 's/.*PHYSICAL_MODELING_VERSION "\(.*\)".*/\1/p' src/ve
 # directory; the default build compiles exactly the v0.1.0 sources.
 MOD ?= 0
 MOD_ON_DAISY = ../../modules/mod-on-daisy
-MOD_FLAGS = -DPHYSICAL_MODELING_MOD=1 -DTORUS_VOICE_MODULATION=1 -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+MOD_DEFS = -DPHYSICAL_MODELING_MOD=1 -DTORUS_VOICE_MODULATION=1 -DMOD_ON_DAISY_BASE_MONITOR=1
+MOD_FLAGS = $(MOD_DEFS) -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 ifeq ($(MOD),1)
 TARGET = PhysicalModelingMod-v$(VERSION)
 override BUILD_DIR = build/mod
-C_DEFS = -DPHYSICAL_MODELING_MOD=1 -DTORUS_VOICE_MODULATION=1
+C_DEFS = $(MOD_DEFS)
 C_INCLUDES += -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 else
 TARGET = PhysicalModeling-v$(VERSION)

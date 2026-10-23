@@ -457,7 +457,7 @@ void TestProtocolCommands() {
     id.Str(version, 12);
     assert(id.U7() == kMaxActive && id.U14() == 1000 && id.U7() == 0);
     assert(id.U32() == SchemaHash(d.info));
-    assert(id.U7() == 0x0A && id.AtEnd());
+    assert(id.U7() == (0x0A | (MOD_ON_DAISY_BASE_MONITOR ? 0x10 : 0)) && id.AtEnd());
 
     // The longest planned key is sent in full (review finding: 17 > 16 characters).
     {
@@ -738,7 +738,34 @@ void TestControllerBehavior() {
         m.module.controller.Service(m.now + t, m.out);
     assert(m.out.count >= 38 && m.out.count <= 41);
     const Reply frame0 = Decode(m.out.frames[0], m.out.sizes[0]);
-    assert(frame0.frame.command == proto::MonitorFrame && frame0.payload.size() == 36);
+    assert(frame0.frame.command == proto::MonitorFrame);
+#if MOD_ON_DAISY_BASE_MONITOR
+    // Base values (PROTOCOL.md § 3.3): appended after the 36 bytes, -1 until reported.
+    assert(frame0.payload.size() == 52);
+    {
+        Device b;
+        const Reply id = b.Request(proto::Identify, {});
+        assert(id.payload.back() & 0x10); // capability bit 4
+        b.Request(proto::Monitor, Bytes({20}));
+        b.module.engine.ReportBase(2, 0.25f);
+        b.module.engine.Tick(48);
+        b.out.count = 0;
+        for(uint32_t t = 0; t < 60; ++t)
+            b.module.controller.Service(b.now + t, b.out);
+        assert(b.out.count >= 1);
+        const Reply f = Decode(b.out.frames[b.out.count - 1], b.out.sizes[b.out.count - 1]);
+        proto::Reader rd(f.payload.data(), f.payload.size());
+        for(int i = 0; i < 18; ++i)
+            rd.U14();
+        float base[kTargets];
+        for(float& v : base)
+            v = proto::DecodeSigned(rd.U14());
+        assert(rd.Ok() && rd.AtEnd());
+        assert(std::fabs(base[2] - 0.25f) < 1e-3f && base[0] == -1.0f && base[7] == -1.0f);
+    }
+#else
+    assert(frame0.payload.size() == 36); // no base values unless the instrument enables them
+#endif
     // No reply code may equal the monitor frame code (found by the editor test).
     for(unsigned cmd = 0; cmd < 0x40; ++cmd)
         assert((cmd | proto::kReplyBit) != proto::MonitorFrame || cmd == 0x3E);

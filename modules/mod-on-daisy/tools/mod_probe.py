@@ -365,11 +365,16 @@ def monitor(dev, seconds, rate=20):
         while dev.monitor:
             _, data = dev.monitor.pop(0)
             r = Reader(data)
-            values = [signed(r.u14()) for _ in range(18)]
+            # 18 values, plus 8 column base values (pot/CC position) when the
+            # instrument reports them (52 bytes, IDENTIFY capability bit 4).
+            values = [signed(r.u14()) for _ in range(len(data) // 2)]
             raw[0].append(values[16])
             raw[1].append(values[17])
-            print(' '.join(f'{SOURCES[i][:5]}={values[i]:+.3f}' for i in range(8)),
-                  '| CV raw', f'{values[16]:+.4f} {values[17]:+.4f}')
+            line = ' '.join(f'{SOURCES[i][:5]}={values[i]:+.3f}' for i in range(8))
+            line += ' | CV raw ' + f'{values[16]:+.4f} {values[17]:+.4f}'
+            if len(values) >= 26:
+                line += ' | base ' + ' '.join('--' if v < 0 else f'{v:.2f}' for v in values[18:26])
+            print(line)
     dev.request(CMD['monitor'], bytes([0]))
     for i in range(2):
         if raw[i]:

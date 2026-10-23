@@ -4,6 +4,7 @@
 #include "../src/core/PatchFile.h"
 #include "../src/core/SimInstruments.h"
 #include "../src/core/Simulator.h"
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -115,6 +116,7 @@ void TestConnect() {
     const std::vector<uint8_t> ours = MonitorFrameFrom(0);
     rig.session.OnMessage(ours.data(), ours.size());
     CHECK(rig.monitor_frames == frames + 1);
+    CHECK(!rig.last_monitor.HasBase(0)); // Toy Piano v0.3 reports no base values
     std::printf("PASS connect: IDENTIFY, columns, allowed cells, CRC 61C264C4, monitor\n");
 }
 
@@ -304,12 +306,24 @@ void TestFaults() {
 
 void TestPhysicalModeling() {
     Rig rig(physical_modeling::MakeModInfo());
+    rig.sim.bases = kSimInstruments[1].bases;
+    rig.sim.bases[1] = 0.9f; // Structure pot near the top
     CHECK(rig.Connect());
     CHECK(rig.session.Device().key == "physical-modeling");
     CHECK(rig.model.columns[5].name == "Excitation" && rig.model.columns[5].latched);
     CHECK(!rig.model.Allowed(Cell(mod::PolyAt, 5)) && rig.model.Allowed(Cell(mod::PolyAt, 2)));
     rig.session.EditDepth(Cell(mod::PolyAt, 2), 10);
     CHECK(rig.RunUntilIdle() && rig.InSync());
+    CHECK(rig.model.columns[6].name == "Level" && !rig.model.columns[6].latched);
+    CHECK((rig.session.Device().caps & 0x10) != 0);
+    // Base values (hardware test 2026-10-23: the pot positions decide where a modulation lands).
+    rig.session.EditDepth(Cell(mod::ModWheel, 1), 50);
+    rig.sim.Midi(0xB0, 1, 127); // wheel full: +0.5 on Structure
+    CHECK(rig.RunUntilIdle());
+    rig.Run(300);
+    CHECK(rig.last_monitor.HasBase(1) && std::fabs(rig.last_monitor.base[1] - 0.9f) < 1e-3f);
+    CHECK(rig.last_monitor.offset[1] > 0.45f && rig.last_monitor.Result(1) == 1.0f); // clipped at the top
+    CHECK(std::fabs(rig.last_monitor.base[6] - 0.5f) < 1e-3f);
     std::printf("PASS physical-modeling: 8 columns, Poly AT per voice, Excitation latched\n");
 }
 

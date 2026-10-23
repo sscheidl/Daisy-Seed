@@ -92,6 +92,8 @@ andere MIDI-Programme schließen, weil der Port nur einer Anwendung gehört.
 | E7 | M | Studio One mit aktivem Daisy-Port öffnen, dann im Editor **Verbinden** | klare Meldung „… belegt (z. B. Studio One) …“, kein Absturz |
 | E8 | M | Während der Verbindung das USB-Kabel an J7 ziehen, wieder stecken, **Verbinden** | „Gerät getrennt“, offline weiter bearbeitbar; danach Zustand vom Gerät geladen |
 | E9 | M | Physical Modeling: verbinden, Poly AT → Brightness +70, Akkord halten, eine Taste drücken | Poly AT × Excitation schraffiert; nur die gedrückte Stimme ändert sich |
+| E9b | M | Physical Modeling (`0.1.0-mod2`): Potis drehen, Modwheel → Level −100 | Spaltenköpfe zeigen einen weißen Strich an der Potistellung, der dem Poti folgt; der Balken zeigt den Weg der Modulation. Spalte 7 heißt „Level“, das Modwheel blendet bis Stille aus |
+| E7b | M | Mehrere Programme pro Port prüfen (Windows MIDI Services), siehe [Editor-README](../../../editors/mod-on-daisy/README.md#studio-one-und-der-editor-gleichzeitig) | Ergebnis notieren: gehen Studio One und Editor gleichzeitig? |
 | E10 | M | `editor/ModOnDaisyEditor.html` in Chrome/Edge, SysEx erlauben, verbinden, eine Zelle ändern | Bestätigung mit Patch-CRC wie im JUCE-Editor |
 
 Ergebnisse in [VALIDATION.md](VALIDATION.md) § 1b (JUCE-Editor) bzw. § 1a
