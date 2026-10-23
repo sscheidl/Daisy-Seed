@@ -30,6 +30,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
+          retention-days: 3
           name: editor-selftest-linux-${{ github.sha }}
           path: build/selftest
           if-no-files-found: warn
@@ -60,12 +61,14 @@ jobs:
           Get-FileHash dist/ModOnDaisyEditor.exe -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  ModOnDaisyEditor.exe" } | Set-Content dist/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 3
           name: ModOnDaisyEditor-windows-x64-${{ github.sha }}
           path: dist
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
+          retention-days: 3
           name: editor-selftest-windows-${{ github.sha }}
           path: build/selftest
           if-no-files-found: warn
