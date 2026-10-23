@@ -1,0 +1,97 @@
+name: Hardware diagnostics
+on:
+  push:
+    paths:
+      - "diagnostics/**"
+      - ".github/workflows/diagnostics.yml"
+      - "libDaisy"
+      - "scripts/install-toolchain.sh"
+  pull_request:
+    paths:
+      - "diagnostics/**"
+      - ".github/workflows/diagnostics.yml"
+      - "libDaisy"
+      - "scripts/install-toolchain.sh"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  firmware:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned dependencies
+        run: |
+          git submodule update --init libDaisy
+          git -C libDaisy submodule update --init --recursive --jobs 4
+      - name: Install pinned ARM toolchain
+        run: |
+          bash scripts/install-toolchain.sh
+          echo "$GITHUB_WORKSPACE/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin" >> "$GITHUB_PATH"
+      - name: Host tests (protocol, LED modes, session)
+        run: make -C diagnostics/firmware test
+      - name: Host tests with ASan and UBSan
+        run: make -C diagnostics/firmware test-sanitize
+      - name: Build both variants and verify image/symbol policies
+        run: bash diagnostics/scripts/build-firmware.sh
+      - name: Record source and variant
+        run: |
+          printf 'Source: %s\nVariant: strictly read-only diagnostics\n' "$GITHUB_SHA" > diagnostics/firmware/build/BUILD_INFO.txt
+          printf 'Source: %s\nVariant: writable SD card reader; starts unexported\n' "$GITHUB_SHA" > diagnostics/firmware/build/reader/BUILD_INFO.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DaisyDiagnostic-readonly-firmware-${{ github.sha }}
+          path: |
+            diagnostics/firmware/build/DaisyDiagnostic.bin
+            diagnostics/firmware/build/DaisyDiagnostic.elf
+            diagnostics/firmware/build/SHA256SUMS
+            diagnostics/firmware/build/BUILD_INFO.txt
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DaisyDiagnostic-cardreader-firmware-${{ github.sha }}
+          path: |
+            diagnostics/firmware/build/reader/DaisyDiagnostic-CardReader.bin
+            diagnostics/firmware/build/reader/DaisyDiagnostic-CardReader.elf
+            diagnostics/firmware/build/reader/SHA256SUMS
+            diagnostics/firmware/build/reader/BUILD_INFO.txt
+          if-no-files-found: error
+
+  windows-app:
+    runs-on: windows-latest
+    env:
+      QT_QPA_PLATFORM: offscreen
+      QT_QPA_FONTDIR: C:\Windows\Fonts
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install -r diagnostics/windows/requirements.txt
+      - name: Python, protocol and GUI tests (simulation, headless)
+        run: python -m pytest diagnostics/tests/python -v
+      - name: Build EXE
+        run: cmd /c diagnostics\windows\build_exe.cmd
+      - name: Start EXE in simulation mode
+        run: |
+          $p = Start-Process -FilePath diagnostics\windows\dist\DaisyDiagnostic.exe `
+               -ArgumentList '--sim', '--selftest', '5' -WindowStyle Hidden -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "EXE selftest failed: $($p.ExitCode)" }
+      - name: Checksum
+        run: |
+          "Source: ${{ github.sha }}" | Set-Content diagnostics\windows\dist\BUILD_INFO.txt
+          Get-FileHash diagnostics\windows\dist\DaisyDiagnostic.exe -Algorithm SHA256 |
+            ForEach-Object { "$($_.Hash.ToLower())  DaisyDiagnostic.exe" } |
+            Set-Content diagnostics\windows\dist\SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DaisyDiagnostic-windows-${{ github.sha }}
+          path: |
+            diagnostics/windows/dist/DaisyDiagnostic.exe
+            diagnostics/windows/dist/SHA256SUMS
+            diagnostics/windows/dist/BUILD_INFO.txt
+          if-no-files-found: error

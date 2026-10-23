@@ -1,13 +1,97 @@
-# Daisy Seed3 Hardware Diagnostic Suite has moved
+# Daisy Seed3 Hardware Diagnostic Suite
 
-The diagnostic suite is developed independently in
-[sscheidl/Daisy-Seed3-Desktop-Diagnostics](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics).
-Firmware, Windows GUI, protocol, simulator, tests, and documentation live there.
+Hardware diagnostics for the **Electro-Smith Seed3 Desktop Development Kit**:
+C++ firmware and a Windows application (Python/PySide6), communicating over USB CDC
+through the carrier's **J7** connector. The GUI and documentation are in English.
 
-[Binary downloads: BIN/ELF and Windows EXE](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics/actions/workflows/diagnostics.yml)
-are available as artifacts of successful builds, with SHA-256 checksums. The
-repository is private, so downloading requires access.
+> **Validation:** ARM builds and automated software/simulation tests pass.
+> Hardware tests **H1–H10 passed on 17 October 2026**, with H3 shortened to about
+> three minutes. Some results are operator reports rather than recorded measurements.
+> H11 (a second Windows PC without Python) is still open. Those results apply to
+> firmware 0.1.0. The new 0.2.0 card-reader implementation has **software tests
+> only; Windows drive enumeration and physical card writes remain untested**.
+> See the [test report](docs/TEST_REPORT.md) and [reader review](docs/SD_CARD_READER_REVIEW.md).
 
-Diagnostic history was preserved. Historical versions also remain in this
-repository's Git history and pull requests. This repository focuses on Toy Piano.
-See the diagnostic repository's test report for its current hardware validation status.
+![Diagnostic GUI in simulation mode](docs/images/gui-simulation.png)
+
+## Features
+
+| Area | Firmware | Windows GUI |
+| --- | --- | --- |
+| 16 buttons S1–S16 | libDaisy debounce, held state, press counts | Two rows of eight, highlighting and counts |
+| 16 LEDs D1–D16 | Off / on / individual / chase / follow buttons, brightness | Commanded state and controls |
+| 8 knobs VR1–VR8 | Normalized value and raw ADC value | Knobs, percentage, min/max |
+| SW17 / SW18 | Two-position / three-position switches; SW18 debounce | Position display |
+| microSD | Card detection; optional **read-only** filesystem test | No card / detected / readable / error |
+| Optional SD card reader | Separate writable CDC + MSC firmware variant; exclusive card ownership | Explicit share, Windows eject, return or interruption acknowledgement |
+| Audio inputs L/R | Input jack detection only; outputs have no detection | Input connector indicators |
+| USB | DDP v1: handshake, 10–100 Hz state stream, CRC, keepalive | Discovery, timeouts, reconnection |
+| Simulation | — | Device model speaking the same protocol |
+
+Audio processing, DSP, MIDI DIN, USB-MIDI, USB host, CV, and gate functions are
+marked **Not implemented** or **N/I**. Displayed LED states are targets, not optical
+or electrical feedback from the LEDs.
+
+## Binary downloads
+
+The [Hardware diagnostics workflow](https://github.com/sscheidl/Daisy-Seed/actions/workflows/diagnostics.yml)
+builds firmware (`DaisyDiagnostic.bin`, `.elf`) and Windows (`DaisyDiagnostic.exe`).
+Open a successful run and download its ZIP files under **Artifacts**; each
+includes `SHA256SUMS`. Access to the private Daisy-Seed repository is required. Actions
+artifacts expire according to their retention period. Releases are separate,
+versioned snapshots and are not created automatically.
+
+Choose `DaisyDiagnostic-readonly-firmware-*` for the strictly protected diagnostic
+image (`DaisyDiagnostic.bin`), or `DaisyDiagnostic-cardreader-firmware-*` for
+`DaisyDiagnostic-CardReader.bin`. The latter can write card sectors after explicit
+sharing. `DaisyDiagnostic-windows-*` contains the application for both variants.
+See [card reader instructions and hardware checks](docs/SD_CARD_READER.md).
+
+## Quick start
+
+```bash
+git clone https://github.com/sscheidl/Daisy-Seed.git
+cd Daisy-Seed
+git submodule update --init libDaisy
+git -C libDaisy submodule update --init --recursive --jobs 4
+cd diagnostics
+
+# Firmware: Windows / Git Bash
+bash scripts/install-toolchain-windows.sh
+bash scripts/build-firmware.sh
+# -> firmware/build/DaisyDiagnostic.bin
+
+# Python application and tests, from diagnostics/
+python -m pip install -r windows/requirements.txt
+python -m pytest tests/python
+```
+
+Start the GUI on Windows with `windows\run.cmd --sim` (simulation) or
+`windows\run.cmd` (hardware). Build the EXE with `windows\build_exe.cmd`.
+Host firmware tests: `make -C firmware test test-sanitize` (Linux/g++), or
+`scripts\run-host-tests-msvc.cmd` (Windows/MSVC).
+
+## Layout
+
+```text
+firmware/   C++ firmware, hardware glue, portable application logic
+windows/    PySide6 application and EXE packaging
+protocol/   DDP specification, C++ framing, shared test vectors
+tests/      C++ host tests and Python/protocol/session/GUI tests
+scripts/    Windows toolchain installer, builds, binary checks, MSVC tests
+docs/       Setup, operation, firmware details, validation, handover
+```
+
+## Documentation
+
+* [Installation and usage](docs/INSTALLATION_AND_USAGE.md)
+* [Build and dependencies](docs/BUILD.md)
+* [Flashing](docs/FLASHING.md)
+* [Firmware architecture and limits](docs/FIRMWARE.md)
+* [DDP v1 protocol](protocol/PROTOCOL.md)
+* [Software and hardware test report](docs/TEST_REPORT.md)
+* [Technical handover](docs/HANDOVER.md)
+* [Repository migration](docs/MIGRATION.md)
+
+The suite is part of [Daisy-Seed](../README.md). It uses the shared libDaisy
+submodule and toolchain, but not DaisySP or any instrument source.

@@ -1,0 +1,8 @@
+/.work/
+/firmware/build/
+/windows/build/
+/windows/dist/
+/windows/*.log
+/release/
+__pycache__/
+.pytest_cache/
