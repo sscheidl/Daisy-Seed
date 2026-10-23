@@ -505,11 +505,23 @@ void Part::Process(const PerformanceState& performance_state,
     {
         PerformanceState voice_state = performance_state;
         voice_state.strum = struck_[voice];
+#ifdef TORUS_VOICE_MODULATION
+        // Mod on Daisy build only: per-voice patch and pitch offset (Poly AT).
+        if(voice_fm_)
+            voice_state.fm += voice_fm_[voice];
+        const Patch& voice_patch = voice_patch_ ? voice_patch_[voice] : patch;
+        float cutoff = voice_patch.brightness * (2.0f - voice_patch.brightness);
+        float note
+            = note_[voice] + voice_state.tonic + voice_state.fm;
+#define TORUS_PATCH voice_patch
+#else
         // Compute MIDI note value, frequency, and cutoff frequency for excitation
         // filter.
         float cutoff = patch.brightness * (2.0f - patch.brightness);
         float note
             = note_[voice] + performance_state.tonic + performance_state.fm;
+#define TORUS_PATCH patch
+#endif
         float frequency = SemitonesToRatio(note - 69.0f) * a3;
         float filter_cutoff_range
             = performance_state.internal_exciter
@@ -535,7 +547,7 @@ void Part::Process(const PerformanceState& performance_state,
         {
             RenderModalVoice(voice,
                              voice_state,
-                             patch,
+                             TORUS_PATCH,
                              frequency,
                              filter_cutoff,
                              size);
@@ -544,7 +556,7 @@ void Part::Process(const PerformanceState& performance_state,
         {
             RenderFMVoice(voice,
                           voice_state,
-                          patch,
+                          TORUS_PATCH,
                           frequency,
                           filter_cutoff,
                           size);
@@ -553,12 +565,13 @@ void Part::Process(const PerformanceState& performance_state,
         {
             RenderStringVoice(voice,
                               voice_state,
-                              patch,
+                              TORUS_PATCH,
                               frequency,
                               filter_cutoff,
                               size);
         }
 
+#undef TORUS_PATCH
         if(polyphony_ == 1)
         {
             // Send the two sets of harmonics / pickups to individual outputs.

@@ -11,7 +11,14 @@ Editor entsteht getrennt unter [`editors/mod-on-daisy/`](../../editors/mod-on-da
   `ModBench` sind fertig, ebenso das Testskript `tools/mod_probe.py` und CI.
 * Messungen und Funktionstests auf dem Desktop-Kit stehen aus
   ([docs/VALIDATION.md](docs/VALIDATION.md), [bench/README.md](bench/README.md)).
-* Die vorhandenen Instrumente sind unverändert.
+* **Integriert:**
+  * [Toy Piano v0.3](../../instruments/toy-piano/README.md#modulation-v03) als
+    Entwicklungsumgebung;
+  * eine getrennte Fassung von
+    [Physical Modeling (Rings/Torus)](../../instruments/physical-modeling/docs/MODULATION.md)
+    mit Poly AT pro Stimme.
+* Beide sind mit leerer Matrix bitgleich zum vorherigen Klang (Golden-Tests). Die
+  reguläre Physical-Modeling-Firmware ist bytegleich geblieben.
 
 ## v0.1 auf einen Blick
 

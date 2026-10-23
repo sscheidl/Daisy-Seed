@@ -445,5 +445,5 @@ Apply-Aufrufe), getrennt vom restlichen Callback.
 | 2 Prototyp und Messung | **Software umgesetzt**: Kern, Host-Tests (ASan/UBSan/TSan, 1 Mio. Fuzz-Rahmen), Messfirmware (3 Varianten), `mod_probe.py`, CI. **Offen**: Messungen S0–S8 und Hardwaretests H1–H8 auf dem Desktop-Kit |
 | 3 Editor | nach den Ergebnissen von H3 und H4 |
 | 4 Performance | mit integrierten Instrumenten |
-| 5 Integration | Toy Piano v0.3, danach Rings mit Stimmenweg, danach Nebulae |
+| 5 Integration | **Toy Piano v0.3 umgesetzt**; **Physical Modeling als getrennter Build (`MOD=1`) mit Stimmenweg umgesetzt**; Hardwaretests ausstehend; danach Nebulae |
 | 6 Erweiterung | QSPI-Speicherung (STORAGE.md, eigene Freigabe), VST3, weitere Quellen |

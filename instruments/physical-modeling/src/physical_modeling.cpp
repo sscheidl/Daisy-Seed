@@ -35,6 +35,21 @@ void Synth::Render(float* left, float* right) {
     state.tonic = 0;
     state.fm = parameters.PitchOffset();
     state.chord = chord_.Process(patch.structure);
+#if PHYSICAL_MODELING_MOD
+    if(voice_enabled_) {
+        for(unsigned v = 0; v < kVoices; ++v) {
+            const float p = voice_pressure_[v];
+            voice_patch_[v].structure = Unit(patch.structure + voice_gain_[1] * p);
+            voice_patch_[v].brightness = Unit(patch.brightness + voice_gain_[2] * p);
+            voice_patch_[v].damping = Unit(patch.damping + voice_gain_[3] * p);
+            voice_patch_[v].position = Unit(patch.position + voice_gain_[4] * p);
+            voice_fm_[v] = 48.0f * voice_gain_[0] * p; // Frequency: 0..1 = 48 semitones
+        }
+        part_.set_voice_modulation(voice_patch_, voice_fm_);
+    } else {
+        part_.set_voice_modulation(nullptr, nullptr);
+    }
+#endif
     float input[kQuantum]{};
     part_.Process(state, patch, input, left, right, kQuantum);
     float wet_left[kQuantum], wet_right[kQuantum];

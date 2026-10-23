@@ -24,6 +24,10 @@ unchanged. The separate regression projects continue using their existing parser
 
 Local changes:
 
+* Mod on Daisy build only (`TORUS_VOICE_MODULATION`, set by `MOD=1`): Part accepts
+  per-voice patches and pitch offsets (`set_voice_modulation`). Without the define
+  the original voice loop is compiled unchanged.
+
 * Part: four independent keyboard strikes and velocities, direct MIDI pitch,
   fixed four voices, 12-sample LFO step, one shared global reverb instead of
   Part's model-local instance; original resonator and string equations retained.

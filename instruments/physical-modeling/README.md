@@ -6,6 +6,10 @@ No external audio input or extra synthesis/reverb engine is used.
 Software status: **SOFTWARE READY — HARDWARE TEST PENDING**; see
 [executed validation and artifact](docs/VALIDATION.md).
 
+**Mod on Daisy:** a separate build with the modulation matrix and Poly AT per
+voice is described in [docs/MODULATION.md](docs/MODULATION.md)
+(`make PROJECT=physical-modeling-mod`). The regular build is unchanged.
+
 ## Models and controls
 
 | SW17 bank | SW18 UP | SW18 CENTER | SW18 DOWN |

@@ -4,7 +4,8 @@
 Usage: check-firmware.py [image.bin]
 Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
 Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
-PhysicalModeling-v<version>.bin, instruments/looper/build/Looper-v<version>.bin and
+PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
+instruments/looper/build/Looper-v<version>.bin and
 modules/mod-on-daisy/bench/build/ModBench-v<version>.bin.
 This does not replace a hardware test.
 """
@@ -27,6 +28,13 @@ if path.name.startswith('NebulaeOnDaisy-v'):
     version = match.group(1)
     expected_name = f'NebulaeOnDaisy-v{version}.bin'
     marker = rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('PhysicalModelingMod-v'):
+    physical = root / 'instruments' / 'physical-modeling'
+    match = re.search(r'PHYSICAL_MODELING_VERSION\s+"([^"]+)"', (physical / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Physical Modeling version"
+    version = match.group(1)
+    expected_name = f'PhysicalModelingMod-v{version}.bin'
+    marker = rb'PHYSICAL-MODELING-MOD-VERSION=([0-9.]+)\x00'
 elif path.name.startswith('PhysicalModeling-v'):
     physical = root / 'instruments' / 'physical-modeling'
     match = re.search(r'PHYSICAL_MODELING_VERSION\s+"([^"]+)"', (physical / 'src' / 'version.h').read_text())
