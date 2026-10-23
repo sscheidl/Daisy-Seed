@@ -4,7 +4,7 @@ name: Release
 # The git tag is created by GitHub when the release is published, on the commit built here.
 #
 # * Run it by hand: Actions -> Release -> Run workflow (branch main).
-# * It also runs when a push to main changes src/version.h.
+# * A version bump does not trigger a release automatically (Actions budget).
 # * By default the release stays a DRAFT. Review the BIN (flash and test it), then
 #   publish the draft on the Releases page, or run the workflow with "publish" ticked.
 on:
@@ -14,9 +14,6 @@ on:
         description: "Publish immediately (creates the tag). Unticked: draft only."
         type: boolean
         default: false
-  push:
-    branches: [main]
-    paths: [instruments/toy-piano/src/version.h]
 permissions:
   contents: read
 concurrency:
