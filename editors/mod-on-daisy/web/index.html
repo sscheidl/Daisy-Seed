@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mod on Daisy Editor</title>
+<style>
+:root {
+  --bg: #f4f3f0; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #dcdad5;
+  --accent: #c2571a; --pos: 214, 104, 32; --neg: 38, 110, 200; --sel: #111;
+  --ok: #2e7d32; --warn: #b26a00; --err: #c62828; --hatch: #e7e5e0;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #131315; --panel: #1c1c1f; --ink: #ececef; --muted: #9a9aa3; --line: #303036;
+    --accent: #f08a4b; --pos: 240, 138, 75; --neg: 90, 160, 245; --sel: #fff; --hatch: #26262b; }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; } /* beats display: grid on labels */
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+header h1 { font-size: 16px; margin: 0 8px 0 0; letter-spacing: .02em; }
+header h1 span { color: var(--accent); }
+select, input, button { font: inherit; color: inherit; }
+select, input[type=text], input[type=number] { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+button { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:disabled { opacity: .5; cursor: default; }
+.pill { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; white-space: nowrap; }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.err { color: var(--err); border-color: var(--err); }
+main { max-width: 1180px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 300px; }
+@media (max-width: 980px) { main { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+.gridwrap { overflow-x: auto; }
+table.grid { border-collapse: separate; border-spacing: 4px; user-select: none; outline: none; }
+table.grid th { font-weight: 500; font-size: 12px; color: var(--muted); }
+table.grid thead th { min-width: 72px; text-align: center; vertical-align: bottom; padding: 0 2px 4px; }
+table.grid thead th .name { display: block; color: var(--ink); font-weight: 600; font-size: 12.5px; }
+table.grid thead th .span { display: block; font-size: 11px; }
+table.grid thead th.absent .name { color: var(--muted); font-weight: 400; }
+table.grid tbody th { text-align: left; padding-right: 8px; white-space: nowrap; min-width: 112px; }
+table.grid tbody th .src { color: var(--ink); font-weight: 600; font-size: 12.5px; }
+.meter { position: relative; height: 4px; background: var(--line); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.meter i { position: absolute; top: 0; bottom: 0; background: var(--accent); }
+.meter.center::after { content: ""; position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1px; background: var(--muted); }
+td.cell { width: 72px; height: 44px; border-radius: 7px; border: 1px solid var(--line); text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; cursor: ns-resize; position: relative; }
+td.cell.zero { color: var(--muted); font-weight: 400; }
+td.cell.pos { background: rgba(var(--pos), var(--a)); }
+td.cell.neg { background: rgba(var(--neg), var(--a)); }
+td.cell.off { border-style: dashed; }
+td.cell.off .v::before { content: "("; } td.cell.off .v::after { content: ")"; }
+td.cell.blocked { cursor: not-allowed; color: transparent; background: repeating-linear-gradient(135deg, var(--hatch) 0 6px, transparent 6px 12px); }
+td.cell.selected { outline: 2px solid var(--sel); outline-offset: 1px; }
+td.cell.pending::after { content: ""; position: absolute; right: 4px; top: 4px; width: 6px; height: 6px; border-radius: 3px; background: var(--warn); }
+.count { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.count b { color: var(--ink); }
+.editor { display: grid; gap: 10px; }
+.editor .route { font-weight: 600; }
+.editor input[type=range] { width: 100%; accent-color: var(--accent); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sources { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); grid-column: 1 / -1; }
+.source h3 { margin: 0 0 8px; font-size: 14px; }
+.source label { display: grid; grid-template-columns: 74px 1fr; align-items: center; gap: 6px; margin: 6px 0; font-size: 13px; color: var(--muted); }
+.source label > * { color: var(--ink); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; padding: 4px 8px; background: transparent; }
+.seg button.on { background: var(--accent); color: #fff; }
+.hz { font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; }
+.footer { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+#log { font-size: 13px; min-height: 1.4em; }
+#log.err { color: var(--err); } #log.warn { color: var(--warn); } #log.ok { color: var(--ok); }
+.hint { font-size: 12px; color: var(--muted); }
+kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Mod on <span>Daisy</span></h1>
+  <label>Ausgang <select id="outPort"><option value="">–</option></select></label>
+  <label>Eingang <select id="inPort"><option value="">–</option></select></label>
+  <button id="connect" class="primary">Verbinden</button>
+  <span id="status" class="pill">offline</span>
+</header>
+<main>
+  <section class="card">
+    <h2>Modulationsmatrix</h2>
+    <div class="gridwrap"><table class="grid" id="grid" tabindex="0" aria-label="Modulationsmatrix 8 × 8"></table></div>
+    <div class="count">Aktive Verbindungen: <b id="active">0</b> / <span id="maxActive">8</span></div>
+    <p class="hint">Zelle wählen · senkrecht ziehen ändert die Tiefe (mit <kbd>Shift</kbd> fein) · Mausrad ±1 (<kbd>Shift</kbd> ±10) · Doppelklick ein/aus · Tastatur: Pfeile, <kbd>+</kbd>/<kbd>−</kbd>, <kbd>Bild↑</kbd>/<kbd>Bild↓</kbd> ±10, <kbd>0</kbd>, <kbd>Leertaste</kbd></p>
+  </section>
+  <aside class="card editor">
+    <h2>Verbindung</h2>
+    <div class="route" id="route">–</div>
+    <div class="row"><input type="range" id="depthRange" min="-100" max="100" step="1" value="0" disabled>
+      <input type="number" id="depthNum" min="-100" max="100" step="1" value="0" style="width:70px" disabled></div>
+    <label class="row"><input type="checkbox" id="enabledBox" disabled> eingeschaltet</label>
+    <div class="row"><button id="zeroBtn" disabled>Auf 0</button><button id="invertBtn" disabled>Invertieren</button></div>
+    <div class="hint" id="cellInfo"></div>
+    <h2 style="margin-top:12px">Gerät</h2>
+    <div class="hint" id="deviceInfo">Nicht verbunden. Der Editor arbeitet offline; Änderungen lassen sich als Datei speichern.</div>
+  </aside>
+  <section class="sources" id="sources"></section>
+  <section class="card footer">
+    <label>Patch <input type="text" id="patchName" maxlength="16" placeholder="Name" style="width:160px"></label>
+    <button id="loadBtn">Datei öffnen …</button><input type="file" id="fileInput" accept=".modpatch,.json" hidden>
+    <button id="saveBtn">Datei speichern …</button>
+    <button id="clearBtn">Matrix leeren</button>
+    <button id="pullBtn" disabled>Vom Gerät neu laden</button>
+    <button id="demoBtn" title="Spalten von Toy Piano v0.3 und ein Beispiel-Patch, ohne Gerät">Demo (offline)</button>
+    <span id="log" role="status"></span>
+  </section>
+</main>
+<script src="mod_protocol.js"></script>
+<script>
+'use strict';
+const P = window.ModProtocol;
+const $ = (id) => document.getElementById(id);
+
+// ------------------------------------------------------------------ state
+const state = {
+  patch: P.defaultPatch(),
+  targets: Array.from({ length: 8 }, (_, t) => ({ present: true, perVoice: false, latched: false, name: `Ziel ${t + 1}`, spanText: '' })),
+  allowed: (1n << 64n) - 1n,
+  maxActive: 8,
+  selected: 0,
+  device: null,          // IDENTIFY result
+  link: null,
+  monitor: null,         // { source[8], offset[8], cv[2] }
+};
+
+// ------------------------------------------------------------------ device link
+class DeviceLink {
+  constructor(output, input, onMonitor) {
+    this.output = output; this.input = input; this.onMonitor = onMonitor;
+    this.device = P.BROADCAST; this.seq = Math.floor(Math.random() * 128);
+    this.queue = []; this.current = null;
+    input.onmidimessage = (e) => this.receive(e.data);
+  }
+  close() {
+    this.input.onmidimessage = null;
+    const pending = this.current ? [this.current, ...this.queue] : this.queue;
+    if (this.current) clearTimeout(this.current.timer); // no more retries on the closed port
+    this.current = null; this.queue = [];
+    pending.forEach((q) => q.reject(new Error('getrennt')));
+  }
+  request(command, payload = [], device) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ command, payload, device, resolve, reject });
+      this.pump();
+    });
+  }
+  pump() {
+    if (this.current || !this.queue.length) return;
+    const q = this.queue.shift();
+    this.seq = (this.seq + 1) & 127;
+    q.seq = this.seq; q.tries = 0;
+    q.frame = P.buildFrame(q.device ?? this.device, q.command, q.seq, q.payload);
+    this.current = q;
+    this.send();
+  }
+  send() {
+    const q = this.current;
+    q.tries++;
+    try { this.output.send(q.frame); } catch (e) { return this.finish(null, e); }
+    clearTimeout(q.timer);
+    q.timer = setTimeout(() => {
+      if (q.tries <= 3) this.send();
+      else this.finish(null, new Error('keine Antwort vom Gerät'));
+    }, 250);
+  }
+  finish(reply, error) {
+    const q = this.current;
+    if (!q) return;
+    clearTimeout(q.timer);
+    this.current = null;
+    if (error) q.reject(error); else q.resolve(reply);
+    this.pump();
+  }
+  receive(data) {
+    let f;
+    try { f = P.parseFrame(data); } catch (e) { return; } // damaged: the retry will fix it
+    if (!f) return;
+    if (f.command === P.MONITOR_FRAME) { this.onMonitor(f.payload); return; }
+    const q = this.current;
+    if (!q || f.seq !== q.seq) return;
+    if (f.command === P.NAK) {
+      const err = new Error(`Gerät lehnt ab: ${P.ERRORS[f.payload[1]] || 'Fehler ' + f.payload[1]}`);
+      err.code = f.payload[1];
+      this.finish(null, err);
+    } else if (f.command === (q.command | P.REPLY_BIT)) {
+      if (q.command === P.CMD.identify) this.device = f.device;
+      this.finish(f);
+    }
+  }
+}
+
+// ------------------------------------------------------------------ messages
+let lastAlert = 0;
+// Confirmations never hide a warning or error that is less than 4 s old.
+function log(text, kind = '') {
+  const el = $('log');
+  if (kind === 'ok' && Date.now() - lastAlert < 4000) return;
+  if (kind === 'warn' || kind === 'err') lastAlert = Date.now();
+  el.textContent = text;
+  el.className = kind;
+}
+function setStatus(text, kind) { const el = $('status'); el.textContent = text; el.className = 'pill ' + (kind || ''); }
+
+// ------------------------------------------------------------------ grid
+const cellEls = [];
+function buildGrid() {
+  const g = $('grid');
+  g.innerHTML = '';
+  const head = g.createTHead().insertRow();
+  head.appendChild(document.createElement('th'));
+  state.targets.forEach((t, i) => {
+    const th = document.createElement('th');
+    th.className = t.present ? '' : 'absent';
+    th.innerHTML = `<span class="name"></span><span class="span"></span><div class="meter center"><i></i></div>`;
+    th.querySelector('.name').textContent = t.present ? t.name : '—';
+    th.querySelector('.span').textContent = t.present ? `${t.spanText.replace('+-', '±')}${t.latched ? ' · Anschlag' : ''}` : 'nicht vorhanden';
+    th.title = t.present ? `${t.name}: Tiefe 100 = ${t.spanText.replace('+-', '±')}${t.perVoice ? ', pro Stimme' : ''}${t.latched ? ', wirkt beim nächsten Anschlag' : ''}` : 'Das Instrument hat hier kein Ziel';
+    th.dataset.target = i;
+    head.appendChild(th);
+  });
+  const body = g.createTBody();
+  cellEls.length = 0;
+  P.SOURCES.forEach((name, s) => {
+    const tr = body.insertRow();
+    const th = document.createElement('th');
+    th.innerHTML = `<span class="src"></span><div class="meter ${s < 5 ? 'center' : ''}"><i></i></div>`;
+    th.querySelector('.src').textContent = name;
+    tr.appendChild(th);
+    for (let t = 0; t < 8; ++t) {
+      const td = tr.insertCell();
+      const cell = s * 8 + t;
+      td.className = 'cell';
+      td.dataset.cell = cell;
+      td.innerHTML = '<span class="v"></span>';
+      cellEls[cell] = td;
+      attachCellEvents(td, cell);
+    }
+  });
+  renderGrid();
+}
+
+function blockedReason(cell) {
+  const s = Math.floor(cell / 8), t = cell % 8, target = state.targets[t];
+  if (!target.present) return 'Das Instrument hat hier kein Ziel.';
+  if ((state.allowed & P.bit(cell)) !== 0n) return '';
+  if (s === 7 && target.latched) return 'Poly AT wirkt hier nicht: der Wert wird beim Anschlag übernommen.';
+  return 'Diese Quelle ist im Instrument belegt.';
+}
+const allowedCell = (cell) => (state.allowed & P.bit(cell)) !== 0n && state.targets[cell % 8].present;
+
+function renderCell(cell) {
+  const td = cellEls[cell];
+  if (!td) return;
+  const d = state.patch.depth[cell], on = P.isEnabled(state.patch, cell), ok = allowedCell(cell);
+  td.classList.toggle('blocked', !ok);
+  td.classList.toggle('zero', ok && d === 0);
+  td.classList.toggle('off', ok && d !== 0 && !on);
+  td.classList.toggle('selected', cell === state.selected);
+  td.classList.toggle('pending', pendingCells.has(cell) || inFlightCell === cell);
+  td.querySelector('.v').textContent = !ok ? '' : d === 0 ? '·' : (d > 0 ? '+' : '') + d;
+  const colored = ok && on && d !== 0;
+  td.classList.toggle('pos', colored && d > 0);
+  td.classList.toggle('neg', colored && d < 0);
+  td.style.setProperty('--a', (0.15 + 0.6 * Math.abs(d) / 100).toFixed(3)); // opacity follows |depth|
+  td.title = ok ? `${P.SOURCES[Math.floor(cell / 8)]} → ${state.targets[cell % 8].name}: ${d}${on ? '' : ' (aus)'}` : blockedReason(cell);
+}
+function renderGrid() {
+  for (let c = 0; c < 64; ++c) renderCell(c);
+  $('active').textContent = P.activeCount(state.patch);
+  $('maxActive').textContent = state.maxActive;
+  renderEditor();
+}
+
+function renderEditor() {
+  const cell = state.selected, s = Math.floor(cell / 8), t = cell % 8, ok = allowedCell(cell);
+  $('route').textContent = `${P.SOURCES[s]} → ${state.targets[t].present ? state.targets[t].name : '—'}`;
+  const d = state.patch.depth[cell];
+  for (const id of ['depthRange', 'depthNum', 'enabledBox', 'zeroBtn', 'invertBtn']) $(id).disabled = !ok;
+  $('depthRange').value = d; $('depthNum').value = d;
+  $('enabledBox').checked = P.isEnabled(state.patch, cell);
+  const target = state.targets[t];
+  $('cellInfo').textContent = !ok ? blockedReason(cell)
+    : `Tiefe 100 = ${target.spanText.replace('+-', '±') || 'voller Bereich'}`
+      + (s === 7 ? (target.perVoice ? ' · Poly AT pro Stimme' : ' · Poly AT der zuletzt gespielten Note') : '')
+      + (target.latched ? ' · wirkt beim nächsten Anschlag' : '');
+}
+
+// ------------------------------------------------------------------ editing
+const pendingCells = new Set();
+let inFlightCell = -1, changesInFlight = 0;
+// Every state change goes through here, so the CRC check knows what is still open.
+function change(command, payload) {
+  changesInFlight++;
+  return state.link.request(command, payload).finally(() => { changesInFlight--; });
+}
+
+function setDepth(cell, depth, { enable } = {}) {
+  if (!allowedCell(cell)) return;
+  depth = Math.max(-100, Math.min(100, Math.round(depth)));
+  const p = state.patch;
+  const wasActive = P.isActive(p, cell);
+  p.depth[cell] = depth;
+  let on = P.isEnabled(p, cell);
+  if (enable !== undefined) on = enable;
+  else if (depth !== 0 && !on && !wasActive) on = true; // a new connection switches itself on
+  const others = P.activeCount(p) - (P.isActive(p, cell) ? 1 : 0); // without this cell
+  if (on && depth !== 0 && !wasActive && others >= state.maxActive) {
+    on = false;
+    log(`Höchstens ${state.maxActive} aktive Verbindungen – diese Zelle bleibt ausgeschaltet.`, 'warn');
+  }
+  p.enabled = on ? p.enabled | P.bit(cell) : p.enabled & ~P.bit(cell);
+  pendingCells.add(cell);
+  renderCell(cell);
+  $('active').textContent = P.activeCount(p);
+  if (cell === state.selected) renderEditor();
+  flushCells();
+}
+
+function flushCells() {
+  const link = state.link;
+  if (!link) { pendingCells.clear(); return; }
+  if (inFlightCell >= 0 || !pendingCells.size) return;
+  const cell = pendingCells.values().next().value;
+  pendingCells.delete(cell);
+  inFlightCell = cell;
+  const d = state.patch.depth[cell];
+  const bits = (d < 0 ? 1 : 0) | (P.isEnabled(state.patch, cell) ? 2 : 0);
+  change(P.CMD.setCell, [Math.floor(cell / 8), cell % 8, Math.abs(d), bits])
+    .then((f) => confirmCrc(f.payload))
+    .catch((e) => { log(e.message, 'err'); return pull(); })
+    .finally(() => { inFlightCell = -1; renderCell(cell); setTimeout(flushCells, 20); });
+}
+
+// Every change is answered with the device's patch CRC; compare it with ours.
+function confirmCrc(payload) {
+  const r = new P.Reader(payload);
+  r.u7();
+  r.u7();
+  const crc = r.u32();
+  if (pendingCells.size || pendingSources.size || changesInFlight > 1) return; // more is on its way
+  if (crc !== P.patchCrc(state.patch)) {
+    log('Editor und Gerät waren nicht gleich – Zustand neu vom Gerät geladen.', 'warn');
+    return pull();
+  }
+  log('Gerät bestätigt (Patch-CRC ' + crc.toString(16).toUpperCase().padStart(8, '0') + ').', 'ok');
+}
+
+function attachCellEvents(td, cell) {
+  let drag = null;
+  td.addEventListener('pointerdown', (e) => {
+    select(cell);
+    if (!allowedCell(cell)) return;
+    drag = { y: e.clientY, start: state.patch.depth[cell] };
+    td.setPointerCapture(e.pointerId);
+  });
+  td.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const step = e.shiftKey ? 8 : 2;
+    const next = drag.start + Math.round((drag.y - e.clientY) / step);
+    if (next !== state.patch.depth[cell]) setDepth(cell, next);
+  });
+  const end = () => { drag = null; };
+  td.addEventListener('pointerup', end);
+  td.addEventListener('pointercancel', end);
+  td.addEventListener('dblclick', () => {
+    if (!allowedCell(cell) || state.patch.depth[cell] === 0) return;
+    setDepth(cell, state.patch.depth[cell], { enable: !P.isEnabled(state.patch, cell) });
+  });
+  td.addEventListener('wheel', (e) => {
+    if (!allowedCell(cell)) return;
+    e.preventDefault();
+    select(cell);
+    setDepth(cell, state.patch.depth[cell] + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 10 : 1));
+  }, { passive: false });
+}
+
+function select(cell) {
+  const old = state.selected;
+  state.selected = cell;
+  renderCell(old);
+  renderCell(cell);
+  renderEditor();
+}
+
+$('grid').addEventListener('keydown', (e) => {
+  const c = state.selected, s = Math.floor(c / 8), t = c % 8, d = state.patch.depth[c];
+  const moves = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+  if (moves[e.key]) {
+    const [ds, dt] = moves[e.key];
+    select(((s + ds + 8) % 8) * 8 + (t + dt + 8) % 8);
+  } else if (e.key === '+' || e.key === '=') setDepth(c, d + 1);
+  else if (e.key === '-') setDepth(c, d - 1);
+  else if (e.key === 'PageUp') setDepth(c, d + 10);
+  else if (e.key === 'PageDown') setDepth(c, d - 10);
+  else if (e.key === '0' || e.key === 'Delete' || e.key === 'Backspace') setDepth(c, 0);
+  else if (e.key === ' ') { if (d !== 0) setDepth(c, d, { enable: !P.isEnabled(state.patch, c) }); }
+  else return;
+  e.preventDefault();
+});
+$('depthRange').addEventListener('input', (e) => setDepth(state.selected, +e.target.value));
+$('depthNum').addEventListener('change', (e) => setDepth(state.selected, +e.target.value));
+$('enabledBox').addEventListener('change', (e) => setDepth(state.selected, state.patch.depth[state.selected], { enable: e.target.checked }));
+$('zeroBtn').addEventListener('click', () => setDepth(state.selected, 0));
+$('invertBtn').addEventListener('click', () => setDepth(state.selected, -state.patch.depth[state.selected]));
+
+// ------------------------------------------------------------------ sources
+const pendingSources = new Map(); // "src:param" -> value
+let sourceInFlight = false;
+function setSourceParam(src, param, value) {
+  const p = src === 2 ? state.patch.random : state.patch.lfo[src];
+  const key = Object.keys(P.PARAM).find((k) => P.PARAM[k] === param);
+  const prevSync = p.sync;
+  if (key === 'shape' && src === 2) p.mode = value; else p[key] = value;
+  if (key === 'sync' && value !== prevSync) { // same rule as the device: each source starts at its default
+    p.division = value === 2 ? P.DEFAULT_GATE_DIVISION : P.DEFAULT_MIDI_DIVISION;
+  }
+  pendingSources.set(`${src}:${param}`, value);
+  renderSources();
+  flushSources();
+}
+function flushSources() {
+  const link = state.link;
+  if (!link) { pendingSources.clear(); return; }
+  if (sourceInFlight || !pendingSources.size) return;
+  const [key, value] = pendingSources.entries().next().value;
+  pendingSources.delete(key);
+  const [src, param] = key.split(':').map(Number);
+  sourceInFlight = true;
+  change(P.CMD.setSource, new P.Writer().u7(src).u7(param).u14(value).bytes)
+    .then((f) => confirmCrc(f.payload))
+    .catch((e) => { log(e.message, 'err'); return pull(); })
+    .finally(() => { sourceInFlight = false; setTimeout(flushSources, 30); });
+}
+
+function buildSources() {
+  const root = $('sources');
+  root.innerHTML = '';
+  [0, 1, 2].forEach((src) => {
+    const card = document.createElement('div');
+    card.className = 'card source';
+    card.dataset.src = src;
+    card.innerHTML = `
+      <h3>${P.SOURCES[src]}</h3>
+      <label>${src === 2 ? 'Modus' : 'Form'} <select class="shape"></select></label>
+      <label>Sync <span class="seg sync"></span></label>
+      <label class="rateRow">Rate <span class="row"><input type="range" class="rate" min="0" max="${P.RATE_MAX}" step="1"><span class="hz"></span></span></label>
+      <label class="divRow">Teilung <select class="division"></select></label>
+      <label class="gateRow">Eingang <select class="gate"><option value="0">Gate 1</option><option value="1">Gate 2</option></select></label>
+      ${src < 2 ? '<label class="retrigRow">Retrigger <span><input type="checkbox" class="retrigger"> bei Note On</span></label>' : ''}`;
+    const shape = card.querySelector('.shape');
+    (src === 2 ? P.RANDOM_MODES : P.SHAPES).forEach((n, i) => shape.add(new Option(n, i)));
+    shape.addEventListener('change', () => setSourceParam(src, P.PARAM.shape, +shape.value));
+    const seg = card.querySelector('.sync');
+    P.SYNCS.forEach((n, i) => {
+      const b = document.createElement('button');
+      b.textContent = n;
+      b.type = 'button';
+      b.dataset.sync = i;
+      b.addEventListener('click', () => setSourceParam(src, P.PARAM.sync, i));
+      seg.appendChild(b);
+    });
+    const rate = card.querySelector('.rate');
+    rate.addEventListener('input', () => setSourceParam(src, P.PARAM.rate, +rate.value));
+    card.querySelector('.division').addEventListener('change', (e) => setSourceParam(src, P.PARAM.division, +e.target.value));
+    card.querySelector('.gate').addEventListener('change', (e) => setSourceParam(src, P.PARAM.gate, +e.target.value));
+    const rt = card.querySelector('.retrigger');
+    if (rt) rt.addEventListener('change', () => setSourceParam(src, P.PARAM.retrigger, rt.checked ? 1 : 0));
+    root.appendChild(card);
+  });
+  renderSources();
+}
+function renderSources() {
+  document.querySelectorAll('.source').forEach((card) => {
+    const src = +card.dataset.src;
+    const p = src === 2 ? state.patch.random : state.patch.lfo[src];
+    card.querySelector('.shape').value = src === 2 ? p.mode : p.shape;
+    card.querySelectorAll('.sync button').forEach((b) => b.classList.toggle('on', +b.dataset.sync === p.sync));
+    card.querySelector('.rate').value = p.rate;
+    const hz = P.rateToHz(p.rate);
+    card.querySelector('.hz').textContent = hz < 1 ? hz.toFixed(3) + ' Hz' : hz.toFixed(2) + ' Hz';
+    card.querySelector('.rateRow').hidden = p.sync !== 0;
+    card.querySelector('.divRow').hidden = p.sync === 0;
+    card.querySelector('.gateRow').hidden = p.sync !== 2;
+    const div = card.querySelector('.division');
+    const names = P.divisionNames(p.sync);
+    if (div.options.length !== names.length || div.dataset.sync !== String(p.sync)) {
+      div.innerHTML = '';
+      names.forEach((n, i) => div.add(new Option(p.sync === 2 ? `${n} Zyklen/Impuls` : n, i)));
+      div.dataset.sync = p.sync;
+    }
+    div.value = p.division;
+    card.querySelector('.gate').value = p.gate;
+    const rt = card.querySelector('.retrigger');
+    if (rt) { rt.checked = !!p.retrigger; card.querySelector('.retrigRow').hidden = p.sync !== 0; }
+  });
+  $('patchName').value = state.patch.name;
+}
+
+// ------------------------------------------------------------------ monitor
+function onMonitor(payload) {
+  const r = new P.Reader(payload);
+  const v = Array.from({ length: 18 }, () => ((r.u14() & 16383) - 8192) / 8191);
+  state.monitor = v;
+  document.querySelectorAll('#grid tbody th .meter i').forEach((i, s) => setMeter(i, v[s], s < 5));
+  document.querySelectorAll('#grid thead th .meter i').forEach((i, t) => setMeter(i, v[8 + t], true));
+}
+function setMeter(el, value, bipolar) {
+  value = Math.max(-1, Math.min(1, value));
+  if (bipolar) { el.style.left = (50 + Math.min(0, value) * 50) + '%'; el.style.width = Math.abs(value) * 50 + '%'; }
+  else { el.style.left = '0'; el.style.width = Math.max(0, value) * 100 + '%'; }
+}
+
+// ------------------------------------------------------------------ connection
+let midiAccess = null, monitorTimer = null;
+async function initMidi() {
+  if (!navigator.requestMIDIAccess) {
+    log('Dieser Browser kennt kein Web MIDI. Bitte Chrome oder Edge verwenden.', 'err');
+    $('connect').disabled = true;
+    return;
+  }
+  try {
+    midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+  } catch (e) {
+    log('Kein MIDI-Zugriff mit SysEx erlaubt (Browser-Freigabe nötig): ' + e.message, 'err');
+    return;
+  }
+  const fill = (sel, ports) => {
+    const old = sel.value;
+    sel.innerHTML = '';
+    ports.forEach((p) => sel.add(new Option(p.name, p.id)));
+    const daisy = ports.find((p) => /daisy/i.test(p.name));
+    sel.value = ports.some((p) => p.id === old) ? old : daisy ? daisy.id : ports[0] ? ports[0].id : '';
+  };
+  const refresh = () => {
+    fill($('outPort'), [...midiAccess.outputs.values()]);
+    fill($('inPort'), [...midiAccess.inputs.values()]);
+    if (state.link && ![...midiAccess.outputs.values()].some((p) => p === state.link.output && p.state === 'connected')) disconnect('Gerät getrennt');
+  };
+  midiAccess.onstatechange = refresh;
+  refresh();
+}
+
+function disconnect(reason) {
+  if (state.link) state.link.close();
+  state.link = null;
+  clearInterval(monitorTimer);
+  setStatus(reason || 'offline', reason ? 'err' : '');
+  $('connect').textContent = 'Verbinden';
+  $('pullBtn').disabled = true;
+}
+
+async function connect() {
+  if (state.link) return disconnect();
+  if (!midiAccess) await initMidi();
+  if (!midiAccess) return;
+  const out = midiAccess.outputs.get($('outPort').value), inp = midiAccess.inputs.get($('inPort').value);
+  if (!out || !inp) return log('Bitte Ein- und Ausgang wählen.', 'warn');
+  try {
+    await out.open(); await inp.open();
+  } catch (e) {
+    return log('Port kann nicht geöffnet werden – ist er von einer anderen Anwendung belegt (z. B. Studio One)? ' + e.message, 'err');
+  }
+  state.link = new DeviceLink(out, inp, onMonitor);
+  setStatus('verbinde …');
+  try {
+    const f = await state.link.request(P.CMD.identify, [], P.BROADCAST);
+    const r = new P.Reader(f.payload);
+    const info = { protocol: `${r.u7()}.${r.u7()}`, module: `${r.u7()}.${r.u7()}.${r.u7()}`, key: r.str(), version: r.str(),
+      maxActive: r.u7(), tickHz: r.u14(), slots: r.u7(), schema: r.u32(), caps: r.u7(), device: f.device };
+    if (!info.protocol.startsWith('1.')) throw new Error('Protokollversion ' + info.protocol + ' wird nicht unterstützt');
+    state.device = info;
+    state.maxActive = info.maxActive;
+    await pull(true);
+    setStatus(`${info.key} ${info.version} · ID ${info.device}`, 'ok');
+    $('deviceInfo').textContent = `${info.key} ${info.version}, Mod on Daisy ${info.module}, Protokoll ${info.protocol}, Tick ${info.tickHz} Hz, Schema ${info.schema.toString(16).toUpperCase().padStart(8, '0')}. Speicherplätze im Gerät: ${info.slots ? info.slots : 'noch keine (Patches als Datei sichern)'}.`;
+    $('connect').textContent = 'Trennen';
+    $('pullBtn').disabled = false;
+    const renew = () => state.link && state.link.request(P.CMD.monitor, [20]).catch(() => {});
+    renew();
+    monitorTimer = setInterval(renew, 1000);
+    log('Verbunden. Der Zustand des Geräts wurde geladen.', 'ok');
+  } catch (e) {
+    disconnect('Fehler');
+    log(e.message, 'err');
+  }
+}
+
+// Read everything from the device (columns once per connection, then the patch).
+async function pull(withColumns = false) {
+  const link = state.link;
+  if (!link) return;
+  pendingCells.clear(); pendingSources.clear();
+  if (withColumns) {
+    for (let t = 0; t < 8; ++t) {
+      const r = new P.Reader((await link.request(P.CMD.getTarget, [t])).payload);
+      r.u7();
+      const flags = r.u7(), span = r.u14() / 16383, name = r.str(), spanText = r.str();
+      state.targets[t] = { present: !!(flags & 1), perVoice: !!(flags & 2), latched: !!(flags & 4), span, name, spanText };
+    }
+    state.allowed = new P.Reader((await link.request(P.CMD.getAllowed)).payload).mask64();
+    buildGrid();
+  }
+  const m = new P.Reader((await link.request(P.CMD.getMatrix)).payload);
+  const patch = P.defaultPatch();
+  patch.depth = m.packed(64).map((b) => (b > 127 ? b - 256 : b));
+  patch.enabled = m.mask64();
+  m.u32();
+  for (let src = 0; src < 3; ++src) {
+    const r = new P.Reader((await link.request(P.CMD.getSource, [src])).payload);
+    r.u7();
+    const v = { rate: r.u14(), shape: r.u7(), sync: r.u7(), gate: r.u7(), division: r.u7(), retrigger: r.u7() };
+    if (src === 2) patch.random = { rate: v.rate, mode: v.shape, sync: v.sync, gate: v.gate, division: v.division };
+    else patch.lfo[src] = v;
+  }
+  patch.name = new P.Reader((await link.request(P.CMD.getName)).payload).str();
+  state.patch = patch;
+  renderGrid();
+  renderSources();
+}
+
+// ------------------------------------------------------------------ files
+function savePatch() {
+  const p = state.patch;
+  const doc = {
+    format: 'mod-on-daisy-patch', version: 1,
+    instrument_key: state.device ? state.device.key : null,
+    schema_hash: state.device ? state.device.schema.toString(16).toUpperCase().padStart(8, '0') : null,
+    name: p.name,
+    columns: state.targets.map((t) => (t.present ? t.name : null)),
+    depth: Array.from({ length: 8 }, (_, s) => p.depth.slice(s * 8, s * 8 + 8)),
+    enabled: Array.from({ length: 8 }, (_, s) => Array.from({ length: 8 }, (_, t) => P.isEnabled(p, s * 8 + t))),
+    lfo: p.lfo, random: p.random,
+  };
+  const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (p.name || 'patch').replace(/[^\w.-]+/g, '_') + '.modpatch';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+async function loadPatch(text) {
+  const doc = JSON.parse(text);
+  if (doc.format !== 'mod-on-daisy-patch' || doc.version !== 1) throw new Error('Keine Mod-on-Daisy-Patchdatei (Version 1).');
+  if (state.device && doc.instrument_key && doc.instrument_key !== state.device.key
+      && !confirm(`Die Datei ist für „${doc.instrument_key}“, verbunden ist „${state.device.key}“. Trotzdem laden?`)) return;
+  const p = P.defaultPatch();
+  doc.depth.forEach((row, s) => row.forEach((d, t) => { p.depth[s * 8 + t] = Math.max(-100, Math.min(100, d | 0)); }));
+  doc.enabled.forEach((row, s) => row.forEach((on, t) => { if (on) p.enabled |= P.bit(s * 8 + t); }));
+  p.lfo = doc.lfo.map((l) => ({ ...P.defaultPatch().lfo[0], ...l }));
+  p.random = { ...P.defaultPatch().random, ...doc.random };
+  p.name = String(doc.name || '').slice(0, 16);
+  for (let c = 0; c < 64; ++c) if (P.isActive(p, c) && !allowedCell(c)) { p.enabled &= ~P.bit(c); }
+  if (P.activeCount(p) > state.maxActive) throw new Error(`Die Datei hat mehr als ${state.maxActive} aktive Verbindungen.`);
+  state.patch = p;
+  renderGrid(); renderSources();
+  if (!state.link) return log('Patch geladen (offline).', 'ok');
+  let f;
+  try {
+    const w = new P.Writer().packed(p.depth.map((d) => d & 0xff)).mask64(p.enabled);
+    await change(P.CMD.setMatrix, w.bytes); // the whole grid at once
+    for (let src = 0; src < 3; ++src) {
+      const v = src === 2 ? { ...p.random, shape: p.random.mode, retrigger: 0 } : p.lfo[src];
+      for (const [k, param] of Object.entries(P.PARAM)) {
+        if (src === 2 && k === 'retrigger') continue;
+        await change(P.CMD.setSource, new P.Writer().u7(src).u7(param).u14(v[k]).bytes);
+      }
+    }
+    f = await change(P.CMD.setName, new P.Writer().str(p.name, 16).bytes);
+  } catch (e) {
+    // Part of the file is already on the device: show what it really has.
+    await pull().catch(() => {});
+    throw new Error(`Datei nur teilweise übertragen (${e.message}) – Zustand neu vom Gerät geladen.`);
+  }
+  confirmCrc(f.payload);
+}
+
+// ------------------------------------------------------------------ demo (offline preview)
+// Toy Piano v0.3 columns as the firmware reports them, plus an example patch.
+function loadDemo() {
+  if (state.link) return log('Demo nur ohne verbundenes Gerät.', 'warn');
+  const col = (name, spanText, perVoice, latched) => ({ present: true, perVoice, latched, name, spanText });
+  state.targets = [col('Pitch', '+-2 st', true, false), col('Level', '+-100%', true, false),
+    col('Harmonic', '+-0.5', true, false), col('Attack', '100%', false, true), col('Decay', '100%', false, true),
+    ...[0, 1, 2].map(() => ({ present: false, perVoice: false, latched: false, name: '', spanText: '' }))];
+  state.allowed = 0n;
+  for (let s = 0; s < 8; ++s) for (let t = 0; t < 5; ++t) if (!(s === 7 && t >= 3)) state.allowed |= P.bit(s * 8 + t);
+  const p = P.defaultPatch();
+  const set = (s, t, d, on = true) => { p.depth[s * 8 + t] = d; if (on) p.enabled |= P.bit(s * 8 + t); };
+  set(0, 0, 25);          // LFO 1 → Pitch: vibrato
+  set(1, 1, -40);         // LFO 2 → Level: tremolo
+  set(2, 2, 35);          // Random → Harmonic
+  set(5, 1, -60, false);  // Modwheel → Level, switched off
+  set(6, 3, 70);          // Channel AT → Attack
+  set(7, 1, 80);          // Poly AT → Level per voice
+  set(7, 0, 15);          // Poly AT → Pitch per voice
+  p.lfo[0] = { ...p.lfo[0], rate: 9000, shape: 0 };
+  p.lfo[1] = { ...p.lfo[1], shape: 1, sync: 1, division: 6 };
+  p.random = { ...p.random, mode: 1, sync: 2, gate: 0, division: 2 };
+  p.name = 'Demo Vibrato';
+  state.patch = p;
+  state.maxActive = 8;
+  state.selected = 7 * 8 + 1;
+  buildGrid();
+  renderSources();
+  $('deviceInfo').textContent = 'Demo: Spalten von Toy Piano v0.3, offline. Mit einem Daisy „Verbinden“ klicken.';
+  log('Demo geladen – ohne Gerät, Änderungen bleiben im Browser.', 'ok');
+}
+
+// ------------------------------------------------------------------ wiring
+$('demoBtn').addEventListener('click', loadDemo);
+$('connect').addEventListener('click', connect);
+$('pullBtn').addEventListener('click', () => pull().then(() => log('Vom Gerät geladen.', 'ok')).catch((e) => log(e.message, 'err')));
+$('saveBtn').addEventListener('click', savePatch);
+$('loadBtn').addEventListener('click', () => $('fileInput').click());
+$('fileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try { await loadPatch(await file.text()); } catch (err) { log(err.message, 'err'); }
+});
+$('clearBtn').addEventListener('click', async () => {
+  state.patch.depth.fill(0);
+  state.patch.enabled = 0n;
+  pendingCells.clear();
+  renderGrid();
+  if (state.link) {
+    try { confirmCrc((await change(P.CMD.clearMatrix)).payload); } catch (e) { log(e.message, 'err'); }
+  }
+});
+$('patchName').addEventListener('change', async (e) => {
+  state.patch.name = e.target.value.replace(/[^\x20-\x7e]/g, '').slice(0, 16);
+  e.target.value = state.patch.name;
+  if (state.link) {
+    try { confirmCrc((await change(P.CMD.setName, new P.Writer().str(state.patch.name, 16).bytes)).payload); }
+    catch (err) { log(err.message, 'err'); }
+  }
+});
+
+buildGrid();
+buildSources();
+if (location.hash === '#demo') loadDemo(); // index.html#demo: offline preview
+initMidi();
+</script>
+</body>
+</html>

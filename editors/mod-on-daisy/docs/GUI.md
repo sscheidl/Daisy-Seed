@@ -5,6 +5,11 @@
 **Kommunikation:** USB-MIDI mit dem Protokoll aus
 [modules/mod-on-daisy/docs/PROTOCOL.md](../../../modules/mod-on-daisy/docs/PROTOCOL.md).
 
+> **Stand 23.10.2026:** Als Schnellvariante gibt es einen **Browser-Editor**
+> ([`../web/`](../web/), Bedienung im [README](../README.md)). Er setzt das Raster, den
+> Zelleneditor, die Quellenleiste, die Live-Anzeige und die Dateien dieses Konzepts um.
+> Der JUCE-Editor folgt danach; VST3 kommt später.
+
 ## 1. Leitlinien
 
 * **Das Raster ist die Oberfläche.** Alle 64 Kreuzungspunkte sind immer sichtbar, ohne

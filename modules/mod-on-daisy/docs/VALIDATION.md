@@ -33,6 +33,32 @@ Zwei Fehler wurden vor dem Commit gefunden und behoben:
   beantwortete. Ein neu gestarteter Client mit gleicher `seq` hätte veraltete Werte
   erhalten, etwa alte Statistiken.
 
+## 1a. Browser-Editor gegen den echten Controller (`GEMESSEN`)
+
+`make -C modules/mod-on-daisy test-editor`:
+* Headless-Chromium (Playwright) mit simuliertem Web-MIDI-Port.
+* Die Rahmen gehen an `tools/mod_sim`, also den Controller- und Engine-Code der
+  Firmware auf dem PC.
+* Geprüft mit den Spalten von Toy Piano und Physical Modeling sowie offline.
+* Nach jedem Schritt stimmt die Patch-CRC von Editor und Gerät überein: Tastatur,
+  Ziehen, Mausrad, Regler, Ein/Aus, Quellen, Grenze 8, Monitor, Datei
+  speichern/laden.
+
+Der Test fand zwei Fehler im Modul, die behoben sind:
+
+* **Protokoll**: Die Antwort auf `MONITOR` (0x30 | 0x40 = 0x70) hatte denselben Code
+  wie die Monitor-Datenrahmen. Ein Client konnte die Bestätigung nicht von den Daten
+  unterscheiden; `mod_probe.py monitor` wäre in eine Zeitüberschreitung gelaufen. Die
+  Monitor-Rahmen nutzen jetzt `0x7E`. Ein Test stellt sicher, dass kein Antwortcode
+  mit ihnen kollidiert.
+* **Sync-Teilung**: Beim Wechsel MIDI-Clock ↔ Gate blieb der Teilungsindex stehen. Aus
+  MIDI 1/4 wurde so Gate 4/1. Jetzt beginnt jede Sync-Art mit ihrem Standard (1/4 bzw.
+  1/1).
+
+Der Browser-Codec (`editors/mod-on-daisy/web/mod_protocol.js`) liefert dieselben
+Referenzwerte wie C++ und Python: CRC-Prüfwert, Patch-Testvektor `E2340CC6`,
+Rahmengrößen 95/100 Byte. Das Gerät startet mit der Standard-Patch-CRC `61C264C4`.
+
 ## 2. ARM-Build der Messfirmware (`GEMESSEN`)
 
 | Variante | BIN | `mod::Module` (RAM) | `Engine::Tick` Code | `Controller::Execute` Code |

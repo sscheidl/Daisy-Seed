@@ -106,7 +106,7 @@ Zelle aktiv, Tiefe außerhalb ±100) wird als Ganzes abgelehnt.
 
 | Cmd | Name | Anfrage | Antwort |
 | --- | --- | --- | --- |
-| `0x30` | `MONITOR` | `u7` Rate Hz (0 = aus, ≤ 25) | `u7` Rate; danach ungefragte Rahmen `0x70` mit 8 × `u14` Quellwerten, 8 × `u14` globalen Offsets und 2 × `u14` CV-Rohwerten vor Kalibrierung und Totzone (Offset-Binär, 8192 = 0, ±8191 = ±1), 36 Byte |
+| `0x30` | `MONITOR` | `u7` Rate Hz (0 = aus, ≤ 25) | `u7` Rate (Antwortcode `0x70`); danach ungefragte Rahmen **`0x7E`** mit 8 × `u14` Quellwerten, 8 × `u14` globalen Offsets und 2 × `u14` CV-Rohwerten vor Kalibrierung und Totzone (Offset-Binär, 8192 = 0, ±8191 = ±1), 36 Byte |
 | `0x31` | `GET_STATS` | — | 10 × `u32` (50 Byte): Ticks · Matrix-Zyklen min/mittel/max · Callback-Last mittel/max (in 0,01 %) · Überläufe · verlorene MIDI-Ereignisse · Main-Loop-Höchstwerte in Zyklen für `HandleMidi`-Durchlauf und `Service` (Messfirmware, TEST_PLAN § 3) |
 | `0x32` | `RESET_STATS` | — | — |
 | `0x33` | `SET_SCENARIO` | `u7` Szenario-Nr. | Status (nur Messfirmware `bench/`; im Instrument `NAK 9`) |
@@ -116,6 +116,9 @@ Zelle aktiv, Tiefe außerhalb ±100) wird als Ganzes abgelehnt.
 * Die Werte liest der Main-Loop aus einem Schnappschuss, den der Audio-IRQ über eine
   SPSC-Queue veröffentlicht.
 * Außer Monitor-Rahmen sendet das Gerät **nie ungefragt**.
+* Die Monitor-Rahmen haben den Code `0x7E`, weil `0x70` schon die Antwort auf `MONITOR`
+  ist (`0x30 | 0x40`). Der Browser-Editor-Test hat diese Kollision gefunden. Code `0x7E`
+  gehört zur Anfrage `0x3E`, die es nicht gibt und die immer mit `NAK` beantwortet wird.
 
 ### 3.4 Gerät und Presets (spezifiziert, in v0.1 nicht implementiert)
 

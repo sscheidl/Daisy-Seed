@@ -179,6 +179,7 @@ void TestUsbMidi() {
 int main() {
     hw.Init();
     piano.Init();
+    InitModulation(48000.0f); // v0.3: empty matrix, the v0.2 behavior below is unchanged
     hw.pot[1].value = 1.0f; // Long decay exposes unintended retriggers.
 
     // Held at audio startup: exactly the same seven-sample press qualification.

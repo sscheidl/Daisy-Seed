@@ -20,7 +20,8 @@ enum Command : uint8_t {
     Store = 0x20, Recall = 0x21, GetSlotInfo = 0x22, SetPowerOn = 0x23,
     GetCalibration = 0x24, SetCalibration = 0x25,
     Monitor = 0x30, GetStats = 0x31, ResetStats = 0x32, SetScenario = 0x33,
-    MonitorFrame = 0x70,
+    // Unsolicited monitor data. Not 0x70: that is the reply to Monitor (0x30 | 0x40).
+    MonitorFrame = 0x7E,
 };
 enum Error : uint8_t {
     ErrChecksum = 1, ErrLength = 2, ErrUnknown = 3, ErrRange = 4, ErrBusy = 5, ErrVersion = 6,

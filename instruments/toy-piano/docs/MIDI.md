@@ -10,7 +10,8 @@ and firmware updates. The USB connector on the Seed3 module is unused by the app
 | --- | --- |
 | Input | Note On on any channel, notes 0–127. Frequency follows the note; velocity 1–127 scales amplitude linearly. |
 | Input voices | 16 MIDI voices independent of the 16 key voices. A full pool steals the oldest voice; repeating a still-active note retriggers its existing voice. |
-| Envelope | VR1/VR2 set attack/decay at the strike. Note Off, sustain, CC, pitch bend and program changes are ignored: these are one-shot AD notes. |
+| Envelope | VR1/VR2 set attack/decay at the strike. Note Off, sustain, pitch bend and program changes are ignored: these are one-shot AD notes. |
+| Modulation (v0.3) | CC1 (mod wheel), channel aftertouch and polyphonic aftertouch are sources of the Mod on Daisy matrix. SysEx `F0 7D 4D 44 …` configures it ([protocol](../../../modules/mod-on-daisy/docs/PROTOCOL.md)); replies go back on the same port, at most one per millisecond. MIDI clock and Start sync the LFOs. Other CCs remain ignored. |
 | Output | S1–S16 send Note On on channel 1 with velocity 100 at debounced press, and Note Off at release. |
 | Bundling | Up to eight simultaneous key changes per transfer; the remainder follows at the next main-loop service, normally 1 ms later. There is no output event queue. |
 | Duplicate C5 | S8/S9 both send note 72: holding both produces two Note Ons, releasing them produces two Note Offs. |

@@ -550,6 +550,11 @@ void TestProtocolCommands() {
     r = d.Request(proto::SetSource, Bytes({0, ParamSync, GateClock, 0}));
     assert(r.frame.command == (proto::SetSource | 0x40));
     assert(d.module.controller.CurrentPatch().lfo[0].division == kDefaultGateDivision);
+    r = d.Request(proto::SetSource, Bytes({0, ParamSync, MidiClock, 0}));
+    assert(d.module.controller.CurrentPatch().lfo[0].division == kDefaultMidiDivision); // back to 1/4
+    r = d.Request(proto::SetSource, Bytes({0, ParamSync, MidiClock, 0}));             // same source: kept
+    assert(d.module.controller.CurrentPatch().lfo[0].division == kDefaultMidiDivision);
+    r = d.Request(proto::SetSource, Bytes({0, ParamSync, GateClock, 0}));
     r = d.Request(proto::SetSource, Bytes({0, ParamShape, SampleHold, 0}));
     assert(r.frame.command == (proto::SetSource | 0x40));
     r = d.Request(proto::SetSource, Bytes({0, ParamShape, kShapeCount, 0}));
@@ -734,6 +739,10 @@ void TestControllerBehavior() {
     assert(m.out.count >= 38 && m.out.count <= 41);
     const Reply frame0 = Decode(m.out.frames[0], m.out.sizes[0]);
     assert(frame0.frame.command == proto::MonitorFrame && frame0.payload.size() == 36);
+    // No reply code may equal the monitor frame code (found by the editor test).
+    for(unsigned cmd = 0; cmd < 0x40; ++cmd)
+        assert((cmd | proto::kReplyBit) != proto::MonitorFrame || cmd == 0x3E);
+    static_assert(proto::MonitorFrame != (proto::Monitor | proto::kReplyBit), "monitor reply collides");
     m.out.count = 0;
     for(uint32_t t = 2000; t < 6000; ++t)
         m.module.controller.Service(m.now + t, m.out);

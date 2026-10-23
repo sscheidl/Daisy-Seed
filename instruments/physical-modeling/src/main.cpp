@@ -7,10 +7,19 @@
 #include "usbd_core.h"
 #include <atomic>
 #include <new>
+#if PHYSICAL_MODELING_MOD
+#include "modulation.h"
+#include "mod_on_daisy_desktop.h"
+#include <cmath>
+#endif
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
 namespace {
 using namespace physical_modeling;
+#if PHYSICAL_MODELING_MOD
+const char kFirmwareId[] = "PHYSICAL-MODELING-MOD-VERSION=" PHYSICAL_MODELING_VERSION;
+#else
 const char kFirmwareId[] = "PHYSICAL-MODELING-VERSION=" PHYSICAL_MODELING_VERSION;
+#endif
 daisy::desktop_devkit::Hardware hw;
 daisy::MidiUsbHandler midi;
 // SDRAM is initialized by hw.Init(). Construct DSP there only afterwards.
@@ -26,6 +35,36 @@ bool cpu_reply_pending = false; // Main loop only; at most one outstanding reque
 uint32_t held = 0;
 static_assert(std::atomic<uint32_t>::is_always_lock_free);
 static_assert(daisy::desktop_devkit::kNumButtons == kNotes.size());
+#if PHYSICAL_MODELING_MOD
+// Mod on Daisy (separate build, docs/MODULATION.md): grid, replies, Poly AT per voice.
+mod::Module modulation;
+const mod::InstrumentInfo kModInfo = MakeModInfo();
+mod::adapter::UsbMidiSender mod_sender(midi);
+mod::VoicePressure voice_pressure[kVoices];
+
+void InitModulation(float sample_rate) { modulation.Init(kModInfo, sample_rate, kBlockSize); }
+
+// Audio IRQ: global offsets into the parameter smoothing, Poly AT into the voices.
+void Modulate(size_t size) {
+    mod::Engine& engine = modulation.engine;
+    mod::adapter::ReadHardware(engine, hw);
+    engine.Tick(size);
+    for(unsigned t = 0; t < 8; ++t)
+        synth->parameters.SetModOffset(t, engine.Offset(t));
+    std::array<float, 5> gain{};
+    bool voices = false;
+    for(unsigned t = 0; t < 5; ++t) {
+        gain[t] = engine.VoiceGain(t);
+        voices = voices || gain[t] != 0.0f;
+    }
+    std::array<float, kVoices> pressure{};
+    for(unsigned v = 0; v < kVoices; ++v) {
+        const int note = int(std::lround(synth->VoiceNote(v)));
+        pressure[v] = voice_pressure[v].Process(engine, note);
+    }
+    synth->SetVoiceModulation(voices, gain, pressure); // false: the shared upstream patch
+}
+#endif
 
 void InitializeSynth() {
     // .sdram_bss is NOLOAD and is not cleared by the BOOT_SRAM startup.
@@ -40,6 +79,9 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     const uint32_t request = cpu_request.exchange(0, std::memory_order_relaxed);
     cpu_meter.Begin(request == 2);
     hw.UpdateAllControls();
+#if PHYSICAL_MODELING_MOD
+    Modulate(size);
+#endif
     for(unsigned i = 0; i < 8; ++i) synth->parameters.Pot(i, hw.pot[i].Value());
     unsigned model;
     if(model_switch.Process(hw.tog_sw17.Pressed(), hw.tog_sw18.Read(), model))
@@ -81,6 +123,11 @@ void ServiceMidi() {
             }
             continue;
         }
+#if PHYSICAL_MODELING_MOD
+        mod::MidiMessage mod_message; // Mod on Daisy: SysEx, CC1, aftertouch; notes are observed
+        if(mod::adapter::ToMessage(event, mod_message) && modulation.controller.HandleMidi(mod_message))
+            continue;
+#endif
         uint8_t status;
         if(event.type == daisy::NoteOn) status = 0x90;
         else if(event.type == daisy::NoteOff) status = 0x80;
@@ -115,6 +162,9 @@ int main() {
     asm volatile("" : : "r"(kFirmwareId));
     hw.Init();
     InitializeSynth();
+#if PHYSICAL_MODELING_MOD
+    InitModulation(48000.0f);
+#endif
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(kBlockSize);
     cpu_meter.Init(hw.seed.AudioSampleRate(), kBlockSize);
@@ -126,5 +176,11 @@ int main() {
     config.transport_config.periph = daisy::MidiUsbTransport::Config::EXTERNAL;
     midi.Init(config); midi.StartReceive();
     hw.seed.StartAudio(AudioCallback);
-    while(true) { ServiceMidi(); ServiceCpuTelemetry(); ServiceLeds(); daisy::System::Delay(1); }
+    while(true) {
+        ServiceMidi(); ServiceCpuTelemetry(); ServiceLeds();
+#if PHYSICAL_MODELING_MOD
+        modulation.controller.Service(daisy::System::GetNow(), mod_sender);
+#endif
+        daisy::System::Delay(1);
+    }
 }

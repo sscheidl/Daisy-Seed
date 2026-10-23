@@ -7,7 +7,7 @@ HOST_INCLUDES = -Iinclude -Itests
 STRESS_FLAGS = -DMOD_ON_DAISY_MAX_ACTIVE=64
 HEADERS = $(wildcard include/mod_on_daisy/*.h) tests/common.h bench/src/scenarios.h
 
-.PHONY: test test-sanitize test-thread clean
+.PHONY: test test-sanitize test-thread test-editor clean
 test: $(HEADERS)
 	mkdir -p build/host
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_mod.cpp -o build/host/test_mod
@@ -21,6 +21,16 @@ test: $(HEADERS)
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_thread.cpp -o build/host/test_thread
 	./build/host/test_thread
 	python3 tools/mod_probe.py selftest
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tools/mod_sim.cpp -o build/host/mod_sim
+	node ../../editors/mod-on-daisy/web/tests/protocol.test.cjs
+
+# Browser editor against the simulated device in headless Chromium (needs Playwright;
+# preinstalled in the cloud environment, locally: npm i -g playwright && npx playwright install chromium).
+PLAYWRIGHT_MODULE ?= $(shell npm root -g 2>/dev/null)/playwright
+test-editor:
+	mkdir -p build/host
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tools/mod_sim.cpp -o build/host/mod_sim
+	PLAYWRIGHT_MODULE=$(PLAYWRIGHT_MODULE) node ../../editors/mod-on-daisy/web/tests/e2e.cjs build/host/mod_sim build/host
 
 test-sanitize:
 	$(MAKE) test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -Wshadow -pthread -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"

@@ -9,13 +9,15 @@ share the pinned libraries, toolchain, and board build configuration.
 
 | Project | Directory | Status |
 | --- | --- | --- |
-| [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI; ARM and host tests pass; keys, AD envelope, polyphony, fast repeats, and MIDI with Studio One reported working on hardware |
+| [Toy Piano v0.3](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3 hardware test pending |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings instrument, six models, global stereo reverb and USB MIDI; software validation in project docs |
+| [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [Nebulae on Daisy v0.1.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
 | [Looper v0.3](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import on microSD; host tests and ARM build pass; hardware test pending |
 | [Ambient Reverb v0.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb imported from the FV-1 research project; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 | [Mod on Daisy](modules/mod-on-daisy/) | `modules/mod-on-daisy/`, editor in `editors/mod-on-daisy/` | Reusable 8×8 modulation matrix (header-only module, no instrument firmware). Phase 2 software done: core, host tests (ASan/UBSan/TSan, fuzzing), bench firmware `make PROJECT=mod-bench`, `tools/mod_probe.py`; hardware measurements pending ([validation](modules/mod-on-daisy/docs/VALIDATION.md)). Spec: [decisions](modules/mod-on-daisy/docs/DECISIONS.md), [architecture](modules/mod-on-daisy/docs/ARCHITECTURE.md), [MIDI protocol](modules/mod-on-daisy/docs/PROTOCOL.md), [storage](modules/mod-on-daisy/docs/STORAGE.md) |
+| [Mod on Daisy Editor](editors/mod-on-daisy/) | `editors/mod-on-daisy/web/` | Browser editor (Chrome/Edge, Web MIDI) for the 8×8 grid and source parameters; end-to-end tested in headless Chromium against the firmware's controller (`make -C modules/mod-on-daisy test-editor`); JUCE/VST3 later |
 
 The repository remains **`sscheidl/Daisy-Seed`**. Project directories share one Git
 history while keeping their source, tests, validation notes, and build output
@@ -37,7 +39,7 @@ Daisy-Seed/
 ├── modules/
 │   └── mod-on-daisy/       # reusable modulation matrix: include, tests, bench firmware, tools
 ├── editors/
-│   └── mod-on-daisy/       # JUCE grid editor for the matrix (concept)
+│   └── mod-on-daisy/       # browser grid editor (web/), JUCE concept
 ├── common/desktop.mk      # shared official Seed3 Desktop build settings
 ├── docs/                  # hardware, build, flashing, and references
 ├── scripts/               # toolchain and BOOT_SRAM image checks
@@ -76,7 +78,7 @@ make test-release
 
 Toy Piano is the default when `PROJECT=` is omitted. You can also build it from
 its directory with `make -C instruments/toy-piano`. Its image is
-**`instruments/toy-piano/build/ToyPiano-v0.2.bin`**. The version is defined in
+**`instruments/toy-piano/build/ToyPiano-v0.3.bin`**. The version is defined in
 `instruments/toy-piano/src/version.h`; `make -s version` prints it. Builds for
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
