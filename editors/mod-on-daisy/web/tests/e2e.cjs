@@ -154,6 +154,15 @@ async function testToyPiano(browser) {
   for (const [s, t] of cells) { await cell(page, s, t).click(); await page.keyboard.press('PageUp'); }
   await settle(page);
   assert.strictEqual((await dump(sim)).active.length, 8);
+  // A cell set to 0 stays switched on; raising it again is the 8th connection, not a 9th.
+  await cell(page, 2, 3).click();
+  await page.keyboard.press('0');
+  await settle(page);
+  assert.strictEqual((await dump(sim)).active.length, 7);
+  await page.keyboard.press('PageUp');
+  await settle(page);
+  assert.strictEqual((await dump(sim)).active.length, 8, 'eighth connection allowed after zeroing');
+  assert(!(await page.textContent('#log')).includes('Höchstens 8'));
   await cell(page, 3, 3).click();
   await page.keyboard.press('PageUp');
   await settle(page);
@@ -188,6 +197,30 @@ async function testToyPiano(browser) {
   assert.deepStrictEqual(after.active, before.active);
   assert.strictEqual(after.name.trim(), 'Vibrato Test');
   assert.strictEqual(after.crc, before.crc);
+
+  // A file with a value the device rejects: the editor reloads the device state.
+  saved.lfo[1].shape = 9;
+  saved.depth[4][4] = 40; saved.enabled[4][4] = false;
+  fs.writeFileSync(file, JSON.stringify(saved));
+  await page.setInputFiles('#fileInput', file);
+  await page.waitForFunction(() => document.getElementById('log').textContent.includes('teilweise'));
+  await settle(page);
+  const partial = await dump(sim);
+  assert.strictEqual(partial.crc, await pageCrc(page), 'editor shows the partly loaded device state');
+  assert.strictEqual(await page.evaluate(() => state.patch.depth[36]), 40, 'the grid did arrive');
+
+  // Disconnecting cancels the request in flight: no late retry, no late reload.
+  const late = await page.evaluate(async () => {
+    const sent = [];
+    const input = { onmidimessage: null };
+    const link = new DeviceLink({ send: (f) => sent.push(f) }, input, () => {});
+    const reply = link.request(ModProtocol.CMD.getMatrix).then(() => 'answered', (e) => e.message);
+    link.close();
+    const result = await reply;
+    await new Promise((r) => setTimeout(r, 600));
+    return { result, sent: sent.length, current: link.current };
+  });
+  assert.deepStrictEqual(late, { result: 'getrennt', sent: 1, current: null });
 
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'editor-toy-piano.png'), fullPage: true });
   await page.close();
