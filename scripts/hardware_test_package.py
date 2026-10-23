@@ -11,7 +11,9 @@ Nothing is flashed; flashing stays a manual step (docs/FLASHING.md).
 """
 import argparse
 import hashlib
+import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -58,6 +60,21 @@ def build():
     run('make', '-C', BENCH, 'MAX_ACTIVE=64', '-j4')
 
 
+def rewrite_links(text, source_dir):
+    """Relative links of a copied document, pointing back into this checkout."""
+    def repl(m):
+        target = m.group(2)
+        if re.match(r'[a-z]+:|#', target):
+            return m.group(0)
+        path, _, anchor = target.partition('#')
+        resolved = (source_dir / path).resolve()
+        if not resolved.exists():
+            raise SystemExit(f'{source_dir}: broken link {target}')
+        rel = os.path.relpath(resolved, OUT).replace(os.sep, '/')
+        return f'{m.group(1)}({rel}{"#" + anchor if anchor else ""})'
+    return re.sub(r'(\[[^\]]*\])\(([^)\s]+)\)', repl, text)
+
+
 def single_file_editor(web):
     html = (web / 'index.html').read_text(encoding='utf-8')
     js = (web / 'mod_protocol.js').read_text(encoding='utf-8')
@@ -95,7 +112,11 @@ def main():
     (OUT / 'editor' / 'ModOnDaisyEditor.html').write_text(single_file_editor(web), encoding='utf-8')
     if args.editor_exe:
         shutil.copy2(args.editor_exe, OUT / 'editor' / 'ModOnDaisyEditor.exe')
-    shutil.copy2(ROOT / 'modules' / 'mod-on-daisy' / 'docs' / 'HARDWARE_TEST_RUN.md', OUT / 'README.md')
+    sheet = ROOT / 'modules' / 'mod-on-daisy' / 'docs' / 'HARDWARE_TEST_RUN.md'
+    note = ('> Paket aus `scripts/hardware_test_package.py`. Die Links zeigen in den Checkout, '
+            'aus dem es gebaut wurde.\n\n')
+    (OUT / 'README.md').write_text(note + rewrite_links(sheet.read_text(encoding='utf-8'), sheet.parent),
+                                   encoding='utf-8')
 
     commit = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT, capture_output=True,
                             text=True).stdout.strip() or 'unbekannt'

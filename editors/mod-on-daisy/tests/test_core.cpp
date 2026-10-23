@@ -81,6 +81,15 @@ struct Rig {
 
 int Cell(int s, int t) { return s * 8 + t; }
 
+std::vector<uint8_t> MonitorFrameFrom(uint8_t device) {
+    uint8_t payload[36]{};
+    for(std::size_t i = 0; i < sizeof(payload); i += 2)
+        payload[i + 1] = 64; // s14 8192 = 0.0
+    uint8_t frame[proto::kMaxFrame];
+    const std::size_t n = proto::BuildFrame(frame, device, proto::MonitorFrame, 0, payload, sizeof(payload));
+    return {frame, frame + n};
+}
+
 void TestConnect() {
     Rig rig(toy_piano::MakeModInfo());
     CHECK(rig.Connect());
@@ -100,6 +109,12 @@ void TestConnect() {
     CHECK(rig.session.StatusText().find("toy-piano") != std::string::npos);
     rig.Run(500);
     CHECK(rig.monitor_frames >= 5); // ~20 Hz after the subscription
+    const int frames = rig.monitor_frames;
+    const std::vector<uint8_t> other = MonitorFrameFrom(5); // another device ID on the port
+    rig.session.OnMessage(other.data(), other.size());
+    const std::vector<uint8_t> ours = MonitorFrameFrom(0);
+    rig.session.OnMessage(ours.data(), ours.size());
+    CHECK(rig.monitor_frames == frames + 1);
     std::printf("PASS connect: IDENTIFY, columns, allowed cells, CRC 61C264C4, monitor\n");
 }
 
@@ -224,6 +239,12 @@ void TestDisconnect() {
     CHECK(rig.wire.frames == sent);
     CHECK(rig.logs.size() == logs);
     CHECK(rig.session.State() == LinkState::Offline && rig.session.StatusText() == "Gerät getrennt");
+    // Codex finding on PR #24: a monitor frame arriving after Disconnect (e.g. later in
+    // the same MIDI batch) must not repopulate the live display.
+    const int frames = rig.monitor_frames;
+    const std::vector<uint8_t> late = MonitorFrameFrom(0);
+    rig.session.OnMessage(late.data(), late.size());
+    CHECK(rig.monitor_frames == frames);
     // Edits go on offline and reach the device after reconnecting via the CRC check.
     rig.session.EditDepth(Cell(1, 1), -20);
     rig.wire.cut = false;
@@ -357,6 +378,23 @@ void TestPatchFile() {
     CHECK(l.ok && !l.patch.Enabled(7, 1) && l.patch.depth[7][1] == 80);
 
     CHECK(!LoadPatch("{\"format\": \"other\", \"version\": 1}", toy).ok);
+    // Codex findings on PR #24: incomplete files and out-of-range values are refused,
+    // never turned into a default patch or wrapped into another value.
+    l = LoadPatch("{\"format\": \"mod-on-daisy-patch\", \"version\": 1}", toy);
+    CHECK(!l.ok && l.error.find("unvollständig") != std::string::npos);
+    std::string short_grid = browser;
+    short_grid.replace(short_grid.find("    [0, 0, 0, 0, 0, 0, 0, 0],\n"), 30, "");
+    CHECK(!LoadPatch(short_grid, toy).ok);
+    for(const char* bad : {"\"shape\": 256", "\"shape\": -1", "\"rate\": 65536", "\"rate\": 16384"}) {
+        std::string s = browser;
+        const std::string key = std::string(bad).substr(0, std::string(bad).find(':'));
+        const std::size_t at = s.find(key + ": ");
+        s.replace(at, s.find(',', at) - at, bad);
+        l = LoadPatch(s, toy);
+        CHECK(!l.ok);
+        if(l.ok)
+            std::fprintf(stderr, "  accepted %s\n", bad);
+    }
     CHECK(!LoadPatch("{not json", toy).ok);
     std::string too_many = browser;
     too_many.replace(too_many.find("[false, false, false, false, false, false, false, false],"), 57,

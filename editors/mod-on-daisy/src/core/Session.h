@@ -132,15 +132,17 @@ class Session {
 
     // Everything the device sends, F0 … F7.
     void OnMessage(const uint8_t* bytes, std::size_t size) {
-        if(size < 2 || bytes[0] != 0xF0 || bytes[size - 1] != 0xF7)
-            return;
+        if(!transport_ || size < 2 || bytes[0] != 0xF0 || bytes[size - 1] != 0xF7)
+            return; // after Disconnect nothing reaches the handlers, not even monitor frames
         const uint8_t* body = bytes + 1;
         const std::size_t length = size - 2;
         proto::Frame f;
         if(proto::ParseHeader(body, length, f) != proto::Parse::Ok || proto::Verify(body, length, f) != 0)
             return; // damaged or foreign: the retry repairs a damaged reply
+        if(device_ != proto::kBroadcast && f.device != device_)
+            return; // another device on the same port
         if(f.command == proto::MonitorFrame) {
-            if(monitor)
+            if(monitor && Connected())
                 monitor(DecodeMonitor(f.payload, f.length));
             return;
         }

@@ -23,7 +23,7 @@ liegt auch als `README.md` im Hardwaretest-Paket.
 | V1 | A | Repo aktualisieren und das Paket bauen: `python scripts/hardware_test_package.py`. Ergebnis in `build/hardware-test/`. Ohne lokale ARM-Toolchain die CI-Artefakte nehmen (Actions → Firmware bzw. Editor) |
 | V2 | A | JUCE-Editor: `ModOnDaisyEditor.exe` aus Actions → Editor holen oder selbst bauen ([Editor-README](../../../editors/mod-on-daisy/README.md)). Mit `--editor-exe <Pfad>` kommt er ins Paket |
 | V3 | A | `pip install mido python-rtmidi`, dann `P selftest` (ohne Gerät): `PASS` |
-| V4 | A | `"Mod on Daisy Editor.exe" --selftest out` unter Windows: `out/selftest.txt` endet mit `PASS` |
+| V4 | A | Selbsttest des JUCE-Editors unter Windows, Ergebnis in `out/selftest.txt` (endet mit `PASS`). Mit dem CI-Artefakt im entpackten Ordner: `.\ModOnDaisyEditor.exe --selftest out`. Mit eigenem Build vom Repo-Wurzelverzeichnis: `& "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor.exe" --selftest out` |
 | V5 | M | Studio One schließen oder dort „Daisy Seed External“ deaktivieren. Windows gibt den Port nur einer Anwendung |
 | V6 | M | Flashen nach [docs/FLASHING.md](../../../docs/FLASHING.md): J7, RESET, dann BOOT im 2-s-Fenster, Web Programmer oder `make PROJECT=<id> program-dfu`. Den externen Bootloader v6.x nur installieren, wenn er fehlt |
 

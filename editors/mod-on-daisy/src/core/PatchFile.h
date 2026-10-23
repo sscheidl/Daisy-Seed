@@ -263,27 +263,53 @@ inline LoadedPatch LoadPatch(const std::string& text, const Model& m) {
     }
     if(const json::Value* key = doc.Get("instrument_key"); key && key->type == json::Value::String)
         out.instrument_key = key->string;
+    // The grid and the LFOs must be there in full; the browser editor refuses them missing too.
+    auto rows8x8 = [&](const char* name) {
+        const json::Value* rows = doc.Get(name);
+        if(!rows || rows->type != json::Value::Array || rows->array.size() != mod::kSources)
+            return false;
+        for(const json::Value& row : rows->array)
+            if(row.type != json::Value::Array || row.array.size() != mod::kTargets)
+                return false;
+        return true;
+    };
+    const json::Value* lfo_list = doc.Get("lfo");
+    if(!rows8x8("depth") || !rows8x8("enabled") || !lfo_list || lfo_list->type != json::Value::Array
+       || lfo_list->array.size() != 2 || lfo_list->array[0].type != json::Value::Object
+       || lfo_list->array[1].type != json::Value::Object) {
+        out.error = "Die Datei ist unvollständig (Raster 8 × 8 und zwei LFOs erwartet).";
+        return out;
+    }
     mod::Patch& p = out.patch;
     auto grid = [&](const char* name, auto&& apply) {
-        if(const json::Value* rows = doc.Get(name))
-            for(std::size_t s = 0; s < rows->array.size() && s < mod::kSources; ++s)
-                for(std::size_t t = 0; t < rows->array[s].array.size() && t < mod::kTargets; ++t)
-                    apply(s, t, rows->array[s].array[t]);
+        const json::Value& rows = *doc.Get(name);
+        for(std::size_t s = 0; s < mod::kSources; ++s)
+            for(std::size_t t = 0; t < mod::kTargets; ++t)
+                apply(s, t, rows.array[s].array[t]);
     };
     grid("depth", [&](std::size_t s, std::size_t t, const json::Value& v) {
         const int d = v.Int();
         p.depth[s][t] = int8_t(d < -mod::kMaxDepth ? -mod::kMaxDepth : (d > mod::kMaxDepth ? mod::kMaxDepth : d));
     });
     grid("enabled", [&](std::size_t s, std::size_t t, const json::Value& v) { p.SetEnabled(s, t, v.Truthy()); });
-    auto num = [](const json::Value& obj, const char* key, unsigned fallback) {
+    // Out-of-range values refuse the file instead of wrapping (256 must not become 0).
+    bool in_range = true;
+    auto num = [&in_range](const json::Value& obj, const char* key, unsigned fallback, unsigned max = 255) {
         const json::Value* v = obj.Get(key);
-        return v ? unsigned(v->Int(int(fallback))) : fallback;
+        if(!v)
+            return fallback;
+        const int i = v->Int(-1);
+        if(i < 0 || unsigned(i) > max) {
+            in_range = false;
+            return fallback;
+        }
+        return unsigned(i);
     };
     if(const json::Value* lfo = doc.Get("lfo"))
         for(std::size_t i = 0; i < 2 && i < lfo->array.size(); ++i) {
             const json::Value& l = lfo->array[i];
             mod::LfoParams& d = p.lfo[i];
-            d.rate = uint16_t(num(l, "rate", d.rate));
+            d.rate = uint16_t(num(l, "rate", d.rate, mod::kRateMax));
             d.shape = uint8_t(num(l, "shape", d.shape));
             d.sync = uint8_t(num(l, "sync", d.sync));
             d.gate = uint8_t(num(l, "gate", d.gate));
@@ -292,7 +318,7 @@ inline LoadedPatch LoadPatch(const std::string& text, const Model& m) {
         }
     if(const json::Value* r = doc.Get("random")) {
         mod::RandomParams& d = p.random;
-        d.rate = uint16_t(num(*r, "rate", d.rate));
+        d.rate = uint16_t(num(*r, "rate", d.rate, mod::kRateMax));
         d.mode = uint8_t(num(*r, "mode", d.mode));
         d.sync = uint8_t(num(*r, "sync", d.sync));
         d.gate = uint8_t(num(*r, "gate", d.gate));
@@ -305,7 +331,7 @@ inline LoadedPatch LoadPatch(const std::string& text, const Model& m) {
     for(int c = 0; c < kCells; ++c)
         if(p.Active(std::size_t(SourceOf(c)), std::size_t(TargetOf(c))) && !m.Allowed(c))
             p.SetEnabled(std::size_t(SourceOf(c)), std::size_t(TargetOf(c)), false);
-    if(ValidateSource(p.lfo[0]) != mod::Status::Ok || ValidateSource(p.lfo[1]) != mod::Status::Ok
+    if(!in_range || ValidateSource(p.lfo[0]) != mod::Status::Ok || ValidateSource(p.lfo[1]) != mod::Status::Ok
        || ValidateSource(p.random) != mod::Status::Ok) {
         out.error = "Die Datei enthält ungültige Werte für LFO oder Random.";
         return out;
