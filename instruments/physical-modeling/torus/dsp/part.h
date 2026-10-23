@@ -82,6 +82,16 @@ class Part
                  float*                  aux,
                  size_t                  size);
 
+#ifdef TORUS_VOICE_MODULATION
+    // Mod on Daisy build only: per-voice patches and pitch offsets (semitones)
+    // for the next Process() calls; nullptr = the shared patch, as upstream.
+    inline void set_voice_modulation(const Patch* patches, const float* fm)
+    {
+        voice_patch_ = patches;
+        voice_fm_    = fm;
+    }
+#endif
+
     inline bool bypass() const { return bypass_; }
     inline void set_bypass(bool bypass) { bypass_ = bypass; }
 
@@ -167,6 +177,10 @@ class Part
     int32_t  active_voice_;
     uint32_t step_counter_;
     int32_t  polyphony_;
+#ifdef TORUS_VOICE_MODULATION
+    const Patch* voice_patch_ = nullptr;
+    const float* voice_fm_    = nullptr;
+#endif
 
     Resonator                resonator_[kMaxPolyphony];
     String                   string_[kNumStrings];

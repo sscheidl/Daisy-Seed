@@ -45,7 +45,7 @@ Do not repeat `program-boot` for ordinary firmware updates.
    The USR LED first flashes quickly, then pulses slowly while waiting for firmware.
    This differs from the ROM-DFU sequence above.
 3. Connect with the [Daisy Web Programmer](https://flash.daisy.audio/), choose Custom
-   and select **`instruments/toy-piano/build/ToyPiano-v0.2.bin`**. Alternatively:
+   and select **`instruments/toy-piano/build/ToyPiano-v0.3.bin`**. Alternatively:
 
    ```bash
    make PROJECT=toy-piano program-dfu

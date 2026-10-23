@@ -11,6 +11,10 @@ The [practical follow-up](docs/HARDWARE_PLAYING_2026-10-22.md) found short deadl
 overruns during model changes, accepted by the user as a known limitation for
 the intended use. Running synthesis has headroom.
 
+**Mod on Daisy:** a separate build with the modulation matrix and Poly AT per
+voice is described in [docs/MODULATION.md](docs/MODULATION.md)
+(`make PROJECT=physical-modeling-mod`). The regular build is unchanged.
+
 ## Models and controls
 
 | SW17 bank | SW18 UP | SW18 CENTER | SW18 DOWN |

@@ -41,16 +41,30 @@ class ParameterManager {
     void SelectModel(unsigned model) { Set(Model, float(std::min(5u, model)) / 5.0f); }
     void SetBend(unsigned raw) { bend_target_ = Bend(raw); }
     float PitchOffset() const { return Transpose(current_[Frequency]) + bend_; }
+#if PHYSICAL_MODELING_MOD
+    // Mod on Daisy offset for parameters 0..7 (normalized, summed before the 5 ms
+    // smoothing). With offset 0 the goal is exactly the target.
+    void SetModOffset(unsigned id, float offset) { if(id < 8) mod_offset_[id] = offset; }
+#endif
     void Advance() {
         // 5 ms at 4 kHz; snap small residuals so dry/wet endpoints are exact.
         for(unsigned i = 0; i < Count; ++i) {
+#if PHYSICAL_MODELING_MOD
+            const float goal = Unit(target_[i] + mod_offset_[i]);
+            current_[i] += 0.0487705755f * (goal - current_[i]);
+            if(std::fabs(goal - current_[i]) < 0.000001f) current_[i] = goal;
+#else
             current_[i] += 0.0487705755f * (target_[i] - current_[i]);
             if(std::fabs(target_[i] - current_[i]) < 0.000001f) current_[i] = target_[i];
+#endif
         }
         bend_ += 0.0487705755f * (bend_target_ - bend_);
     }
   private:
     std::array<float, Count> target_{}, current_{};
+#if PHYSICAL_MODELING_MOD
+    std::array<float, Count> mod_offset_{};
+#endif
     std::array<PotFilter, 8> pots_{};
     float bend_ = 0, bend_target_ = 0;
 };

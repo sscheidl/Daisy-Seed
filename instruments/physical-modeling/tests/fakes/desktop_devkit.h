@@ -30,13 +30,23 @@ struct SaiHandle {
 };
 // USB MIDI: the firmware polls events and sends raw 3-byte messages. The fake
 // feeds scripted events in and records every message handed to SendMessage().
-enum MidiMessageType { NoteOff, NoteOn, ControlChange, PitchBend };
+// Names as in libDaisy's MidiEvent.h, so the real Mod on Daisy adapter compiles.
+enum MidiMessageType { NoteOff, NoteOn, ControlChange, PitchBend, PolyphonicKeyPressure, ProgramChange,
+                       ChannelPressure, SystemCommon, SystemRealTime, ChannelMode, MessageLast };
+enum SystemCommonType { SystemExclusive, MTCQuarterFrame, SongPositionPointer, SongSelect };
+enum SystemRealTimeType { TimingClock, SRTUndefined0, Start, Continue, Stop };
+enum ChannelModeType { AllSoundOff, ResetAllControllers, LocalControl, AllNotesOff };
 #define DSY_SDRAM_BSS
 struct NoteOnEvent { int channel; uint8_t note, velocity; };
 struct MidiEvent {
     MidiMessageType type = NoteOn;
     int channel = 0;
     uint8_t data[2] = {0, 0};
+    uint8_t sysex_data[128] = {};
+    uint8_t sysex_message_len = 0;
+    SystemCommonType sc_type = SystemExclusive;
+    SystemRealTimeType srt_type = TimingClock;
+    ChannelModeType cm_type = AllSoundOff;
     NoteOnEvent AsNoteOn() { return {channel, data[0], data[1]}; }
 };
 struct MidiUsbTransport {
@@ -79,6 +89,9 @@ struct Hardware {
     struct Toggle { bool value = false; bool Pressed() const { return value; } } tog_sw17;
     struct Switch3 { int value = 0; int Read() const { return value; } } tog_sw18;
     std::array<Pot, 8> pot{};
+    std::array<Pot, 2> cv{};
+    struct Gate { bool high = false; bool State() const { return high; } };
+    std::array<Gate, 2> gate_in{};
     std::array<DigitalControl, kNumButtons> button{};
     std::array<bool, kNumButtons> pressed{};
     unsigned led_transfers = 0;

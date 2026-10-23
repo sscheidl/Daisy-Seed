@@ -17,12 +17,19 @@ jobs:
           - project: physical-modeling
             directory: instruments/physical-modeling
             image: PhysicalModeling
+          - project: physical-modeling-mod
+            directory: instruments/physical-modeling
+            build: build/mod
+            image: PhysicalModelingMod
           - project: granular
             directory: instruments/granular
             image: NebulaeOnDaisy
           - project: looper
             directory: instruments/looper
             image: Looper
+          - project: mod-bench
+            directory: modules/mod-on-daisy/bench
+            image: ModBench
     steps:
       - uses: actions/checkout@v4
       - name: Fetch pinned dependencies
@@ -40,7 +47,7 @@ jobs:
       - name: Test DSP and callback with ASan and UBSan
         run: make PROJECT=${{ matrix.project }} test-sanitize
       - name: Test lock-free MIDI queues with ThreadSanitizer
-        if: matrix.project == 'toy-piano' || matrix.project == 'physical-modeling' || matrix.project == 'granular'
+        if: matrix.project == 'toy-piano' || matrix.project == 'physical-modeling' || matrix.project == 'granular' || matrix.project == 'mod-bench'
         run: make PROJECT=${{ matrix.project }} test-thread
       - name: Cross-compile firmware
         run: make PROJECT=${{ matrix.project }} -j4
@@ -53,21 +60,26 @@ jobs:
         id: version
         run: echo "value=$(make -s PROJECT=${{ matrix.project }} version)" >> "$GITHUB_OUTPUT"
       - name: Check firmware image
-        run: python3 scripts/check-firmware.py ${{ matrix.directory }}/build/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
+        run: python3 scripts/check-firmware.py ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
       - name: Check ARM ELF and static memory reserves
-        if: matrix.project == 'physical-modeling'
-        run: python3 scripts/check-physical-elf.py ${{ matrix.directory }}/build/PhysicalModeling-v${{ steps.version.outputs.value }}.elf
+        if: matrix.project == 'physical-modeling' || matrix.project == 'physical-modeling-mod'
+        run: python3 scripts/check-physical-elf.py ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
       - name: Check Nebulae ARM memory, SD DMA and dynamic WAV capacities
         if: matrix.project == 'granular'
-        run: python3 scripts/check-granular-elf.py ${{ matrix.directory }}/build/NebulaeOnDaisy-v${{ steps.version.outputs.value }}.elf --host-test
+        run: python3 scripts/check-granular-elf.py ${{ matrix.directory }}/${{ matrix.build || 'build' }}/NebulaeOnDaisy-v${{ steps.version.outputs.value }}.elf --host-test
+      - name: Build Mod on Daisy bench variants (block 256, 64 active cells)
+        if: matrix.project == 'mod-bench'
+        run: |
+          make -C modules/mod-on-daisy/bench BLOCK=256 -j4
+          make -C modules/mod-on-daisy/bench MAX_ACTIVE=64 -j4
       - name: Generate checksum
-        run: cd ${{ matrix.directory }}/build && sha256sum ${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin > SHA256SUMS
+        run: cd ${{ matrix.directory }}/${{ matrix.build || 'build' }} && sha256sum ${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.project }}-v${{ steps.version.outputs.value }}-${{ github.sha }}
           path: |
-            ${{ matrix.directory }}/build/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
-            ${{ matrix.directory }}/build/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
-            ${{ matrix.directory }}/build/${{ matrix.image }}-v${{ steps.version.outputs.value }}.map
-            ${{ matrix.directory }}/build/SHA256SUMS
+            ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
+            ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
+            ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.map
+            ${{ matrix.directory }}/${{ matrix.build || 'build' }}/SHA256SUMS
           if-no-files-found: error

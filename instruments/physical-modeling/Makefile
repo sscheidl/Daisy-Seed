@@ -1,6 +1,18 @@
 .DEFAULT_GOAL := all
 VERSION := $(shell sed -n 's/.*PHYSICAL_MODELING_VERSION "\(.*\)".*/\1/p' src/version.h | head -n 1)
+# MOD=1: the separate Mod on Daisy build (docs/MODULATION.md), own image and build
+# directory; the default build compiles exactly the v0.1.0 sources.
+MOD ?= 0
+MOD_ON_DAISY = ../../modules/mod-on-daisy
+MOD_FLAGS = -DPHYSICAL_MODELING_MOD=1 -DTORUS_VOICE_MODULATION=1 -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+ifeq ($(MOD),1)
+TARGET = PhysicalModelingMod-v$(VERSION)
+override BUILD_DIR = build/mod
+C_DEFS = -DPHYSICAL_MODELING_MOD=1 -DTORUS_VOICE_MODULATION=1
+C_INCLUDES += -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+else
 TARGET = PhysicalModeling-v$(VERSION)
+endif
 DSP_SOURCES = torus/dsp/part.cpp torus/dsp/fm_voice.cpp torus/dsp/string.cpp torus/dsp/resonator.cpp torus/resources.cpp third_party/stmlib/dsp/units.cc third_party/stmlib/utils/random.cc
 CPP_SOURCES = src/main.cpp src/physical_modeling.cpp src/midi_parser.cpp $(filter %.cpp,$(DSP_SOURCES))
 C_INCLUDES += -Itorus -Ithird_party -Isrc -Wno-unused-local-typedefs -fstack-usage
@@ -29,6 +41,12 @@ test:
 	./build/host/test_parser
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_review.cpp src/physical_modeling.cpp $(DSP_SOURCES) -o build/host/test_review
 	./build/host/test_review
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) -Itests/fakes -I../../libDaisy/src tests/test_golden.cpp src/physical_modeling.cpp $(DSP_SOURCES) -o build/host/test_golden
+	./build/host/test_golden
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) $(MOD_FLAGS) -Itests/fakes -I../../libDaisy/src tests/test_golden.cpp src/physical_modeling.cpp $(DSP_SOURCES) -o build/host/test_golden_mod
+	./build/host/test_golden_mod
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) $(MOD_FLAGS) -Itests/fakes -I../../libDaisy/src tests/test_modulation.cpp src/physical_modeling.cpp $(DSP_SOURCES) -o build/host/test_modulation
+	./build/host/test_modulation
 	$(HOST_PYTHON) -m unittest discover -s tests -p test_cpu_probe.py -v
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -pthread -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all -fno-omit-frame-pointer"

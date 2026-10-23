@@ -1,0 +1,84 @@
+name: Editor
+# Mod on Daisy Editor (editors/mod-on-daisy): core tests on Linux, the JUCE window
+# against the simulator under Xvfb, and the Windows standalone .exe as an artifact.
+on:
+  push:
+    paths:
+      - editors/mod-on-daisy/**
+      - modules/mod-on-daisy/include/**
+      - instruments/toy-piano/src/modulation.h
+      - instruments/physical-modeling/src/modulation.h
+      - .github/workflows/editor.yml
+  pull_request:
+    paths:
+      - editors/mod-on-daisy/**
+      - modules/mod-on-daisy/include/**
+      - instruments/toy-piano/src/modulation.h
+      - instruments/physical-modeling/src/modulation.h
+      - .github/workflows/editor.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install JUCE build dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libasound2-dev libfreetype-dev libfontconfig1-dev libx11-dev \
+            libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libxi-dev \
+            libgl1-mesa-dev xvfb
+      - name: Test editor core against the firmware controller
+        run: make -C editors/mod-on-daisy test test-sanitize
+      - name: Build JUCE editor
+        run: |
+          cmake -S editors/mod-on-daisy -B build/editor -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/editor --parallel 4
+      - name: Self-test the window against the simulator
+        run: |
+          xvfb-run -a -s "-screen 0 1600x1200x24" \
+            "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor" --selftest build/selftest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-selftest-linux-${{ github.sha }}
+          path: build/selftest
+          if-no-files-found: warn
+
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build JUCE editor (MSVC, x64)
+        run: |
+          cmake -S editors/mod-on-daisy -B build/editor -A x64
+          cmake --build build/editor --config Release --parallel
+      - name: Test editor core (MSVC)
+        run: ctest --test-dir build/editor -C Release --output-on-failure
+      - name: Self-test the window against the simulator
+        shell: pwsh
+        run: |
+          $exe = "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList "--selftest", "build/selftest" -Wait -PassThru
+          Get-Content build/selftest/selftest.txt
+          if ($p.ExitCode -ne 0) { exit 1 }
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor.exe" "dist/ModOnDaisyEditor.exe"
+          Copy-Item editors/mod-on-daisy/README.md dist/README.md
+          Get-FileHash dist/ModOnDaisyEditor.exe -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  ModOnDaisyEditor.exe" } | Set-Content dist/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ModOnDaisyEditor-windows-x64-${{ github.sha }}
+          path: dist
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-selftest-windows-${{ github.sha }}
+          path: build/selftest
+          if-no-files-found: warn
