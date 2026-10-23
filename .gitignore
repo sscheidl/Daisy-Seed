@@ -16,4 +16,5 @@ __pycache__/
 /instruments/looper/**/*.pkl
 /instruments/looper/work/
 /modules/*/build/
+/editors/*/build/
 /modules/*/bench/build/

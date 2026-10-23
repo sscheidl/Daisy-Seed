@@ -17,7 +17,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Ambient Reverb v0.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb imported from the FV-1 research project; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 | [Mod on Daisy](modules/mod-on-daisy/) | `modules/mod-on-daisy/`, editor in `editors/mod-on-daisy/` | Reusable 8×8 modulation matrix (header-only module, no instrument firmware). Phase 2 software done: core, host tests (ASan/UBSan/TSan, fuzzing), bench firmware `make PROJECT=mod-bench`, `tools/mod_probe.py`; hardware measurements pending ([validation](modules/mod-on-daisy/docs/VALIDATION.md)). Spec: [decisions](modules/mod-on-daisy/docs/DECISIONS.md), [architecture](modules/mod-on-daisy/docs/ARCHITECTURE.md), [MIDI protocol](modules/mod-on-daisy/docs/PROTOCOL.md), [storage](modules/mod-on-daisy/docs/STORAGE.md) |
-| [Mod on Daisy Editor](editors/mod-on-daisy/) | `editors/mod-on-daisy/web/` | Browser editor (Chrome/Edge, Web MIDI) for the 8×8 grid and source parameters; end-to-end tested in headless Chromium against the firmware's controller (`make -C modules/mod-on-daisy test-editor`); JUCE/VST3 later |
+| [Mod on Daisy Editor](editors/mod-on-daisy/) | `editors/mod-on-daisy/` (`src/` JUCE, `web/` browser) | Grid editor for the 8×8 matrix and source parameters. **JUCE standalone** (Windows .exe from CI, Linux/macOS via CMake) with a built-in simulator of the firmware; core tested against the firmware's controller with lost/corrupted frames (`make -C editors/mod-on-daisy test`). Browser variant (Chrome/Edge, Web MIDI) end-to-end tested in headless Chromium. VST3 later |
 
 The repository remains **`sscheidl/Daisy-Seed`**. Project directories share one Git
 history while keeping their source, tests, validation notes, and build output
@@ -39,7 +39,7 @@ Daisy-Seed/
 ├── modules/
 │   └── mod-on-daisy/       # reusable modulation matrix: include, tests, bench firmware, tools
 ├── editors/
-│   └── mod-on-daisy/       # browser grid editor (web/), JUCE concept
+│   └── mod-on-daisy/       # grid editor: JUCE standalone (src/), browser variant (web/)
 ├── common/desktop.mk      # shared official Seed3 Desktop build settings
 ├── docs/                  # hardware, build, flashing, and references
 ├── scripts/               # toolchain and BOOT_SRAM image checks
