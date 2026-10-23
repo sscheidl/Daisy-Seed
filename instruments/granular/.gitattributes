@@ -1,0 +1,2 @@
+# Preserve the upstream MIT notice byte-for-byte, including its original trailing space.
+LICENSES/Qu-Bit-MIT.txt -whitespace

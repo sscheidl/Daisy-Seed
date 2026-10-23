@@ -3,7 +3,10 @@
 
 Usage: check-firmware.py [image.bin]
 Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
-Also accepts effects/reverb/build/AmbientReverb-v<version>.bin.
+Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
+PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
+instruments/looper/build/Looper-v<version>.bin and
+modules/mod-on-daisy/bench/build/ModBench-v<version>.bin.
 This does not replace a hardware test.
 """
 import pathlib
@@ -18,7 +21,21 @@ assert match, "Could not read the version from src/version.h"
 version = match.group(1)
 
 path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else project / 'build' / f'ToyPiano-v{version}.bin'
-if path.name.startswith('PhysicalModeling-v'):
+if path.name.startswith('NebulaeOnDaisy-v'):
+    granular = root / 'instruments' / 'granular'
+    match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Nebulae version"
+    version = match.group(1)
+    expected_name = f'NebulaeOnDaisy-v{version}.bin'
+    marker = rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('PhysicalModelingMod-v'):
+    physical = root / 'instruments' / 'physical-modeling'
+    match = re.search(r'PHYSICAL_MODELING_VERSION\s+"([^"]+)"', (physical / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Physical Modeling version"
+    version = match.group(1)
+    expected_name = f'PhysicalModelingMod-v{version}.bin'
+    marker = rb'PHYSICAL-MODELING-MOD-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('PhysicalModeling-v'):
     physical = root / 'instruments' / 'physical-modeling'
     match = re.search(r'PHYSICAL_MODELING_VERSION\s+"([^"]+)"', (physical / 'src' / 'version.h').read_text())
     assert match, "Could not read the Physical Modeling version"
@@ -32,6 +49,20 @@ elif path.name.startswith('AmbientReverb-v'):
     version = match.group(1)
     expected_name = f'AmbientReverb-v{version}.bin'
     marker = rb'AMBIENT-REVERB-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('Looper-v'):
+    looper = root / 'instruments' / 'looper'
+    match = re.search(r'LOOPER_VERSION\s+"([^"]+)"', (looper / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Looper version"
+    version = match.group(1)
+    expected_name = f'Looper-v{version}.bin'
+    marker = rb'LOOPER-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('ModBench-v'):
+    bench = root / 'modules' / 'mod-on-daisy' / 'bench'
+    match = re.search(r'MOD_BENCH_VERSION\s+"([^"]+)"', (bench / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Mod on Daisy bench version"
+    version = match.group(1)
+    expected_name = f'ModBench-v{version}.bin'
+    marker = rb'MOD-BENCH-VERSION=([0-9.]+)\x00'
 else:
     expected_name = f'ToyPiano-v{version}.bin'
     marker = rb'TOYPIANO-FW-VERSION=([0-9.]+)\x00'

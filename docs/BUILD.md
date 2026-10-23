@@ -81,10 +81,16 @@ callback timing still require a hardware check.
 Shared release-preflight tests remain in root `tests/`; `make test-release` uses
 a temporary Git repository and a fake API without creating releases.
 
-The CI matrix builds Toy Piano and Ambient Reverb, deriving each BIN name from
+The CI matrix builds Toy Piano, Ambient Reverb, Physical Modeling and Nebulae,
+deriving each BIN name from
 its project version. It uploads BIN, ELF and SHA256SUMS for both.
 Private-repository downloads require
 an authorized GitHub login.
+
+Nebulae uses `make PROJECT=granular`, with the same `test` and `test-sanitize`
+targets. Its additional `scripts/check-granular-elf.py` validates actual ARM
+segments, the isolated AXI SD-DMA sector, stack reserve and dynamically derived
+PCM16 SDRAM limits. See its [validation report](../instruments/granular/docs/VALIDATION.md).
 
 ## Adding another implemented project
 

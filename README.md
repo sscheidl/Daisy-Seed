@@ -9,12 +9,15 @@ share the pinned libraries, toolchain, and board build configuration.
 
 | Project | Directory | Status |
 | --- | --- | --- |
-| [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI; ARM and host tests pass; keys, AD envelope, polyphony, fast repeats, and MIDI with Studio One reported working on hardware |
+| [Toy Piano v0.3](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3 hardware test pending |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings instrument, six models, global stereo reverb and USB MIDI; software validation in project docs |
-| [Granular](instruments/granular/) | `instruments/granular/` | Project outline and reference comparison; original engine planned |
-| [Looper](instruments/looper/) | `instruments/looper/` | Port of the Qu-Bit Stardust tape looper; firmware analysis published (buffers, WAV paths, undo, varispeed, Slice/Skip, Frippertronics); original engine planned |
+| [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
+| [Nebulae on Daisy v0.1.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
+| [Looper v0.3](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import on microSD; host tests and ARM build pass; hardware test pending |
 | [Ambient Reverb v0.2](effects/reverb/) | `effects/reverb/` | Original stereo reverb with Desktop controls and variable-rate wet Stretch; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
+| [Mod on Daisy](modules/mod-on-daisy/) | `modules/mod-on-daisy/`, editor in `editors/mod-on-daisy/` | Reusable 8×8 modulation matrix (header-only module, no instrument firmware). Phase 2 software done: core, host tests (ASan/UBSan/TSan, fuzzing), bench firmware `make PROJECT=mod-bench`, `tools/mod_probe.py`; hardware measurements pending ([validation](modules/mod-on-daisy/docs/VALIDATION.md)). Spec: [decisions](modules/mod-on-daisy/docs/DECISIONS.md), [architecture](modules/mod-on-daisy/docs/ARCHITECTURE.md), [MIDI protocol](modules/mod-on-daisy/docs/PROTOCOL.md), [storage](modules/mod-on-daisy/docs/STORAGE.md) |
+| [Mod on Daisy Editor](editors/mod-on-daisy/) | `editors/mod-on-daisy/` (`src/` JUCE, `web/` browser) | Grid editor for the 8×8 matrix and source parameters. **JUCE standalone** (Windows .exe from CI, Linux/macOS via CMake) with a built-in simulator of the firmware; core tested against the firmware's controller with lost/corrupted frames (`make -C editors/mod-on-daisy test`). Browser variant (Chrome/Edge, Web MIDI) end-to-end tested in headless Chromium. VST3 later |
 
 The repository remains **`sscheidl/Daisy-Seed`**. Project directories share one Git
 history while keeping their source, tests, validation notes, and build output
@@ -28,11 +31,15 @@ Daisy-Seed/
 ├── instruments/
 │   ├── toy-piano/          # Makefile, README, src, tests, docs, generated build
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
-│   ├── granular/           # project plan
-│   └── looper/             # Stardust analysis and looper plan
+│   ├── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
+│   └── looper/             # Stardust analysis and buildable engine core
 ├── effects/
 │   ├── reverb/             # buildable original Ambient Reverb
 │   └── granular/           # effect plan
+├── modules/
+│   └── mod-on-daisy/       # reusable modulation matrix: include, tests, bench firmware, tools
+├── editors/
+│   └── mod-on-daisy/       # grid editor: JUCE standalone (src/), browser variant (web/)
 ├── common/desktop.mk      # shared official Seed3 Desktop build settings
 ├── docs/                  # hardware, build, flashing, and references
 ├── scripts/               # toolchain and BOOT_SRAM image checks
@@ -41,9 +48,8 @@ Daisy-Seed/
 └── DaisySP/               # pinned official submodule
 ```
 
-In this cloud workspace the repository is at `/workspace/Daisy-Seed`. A clone or
-pull in a local playground creates the same directories; this cloud workspace
-does not change a separate desktop checkout.
+The same project layout is used in local checkouts and cloud workspaces.
+The Nebulae implementation was built and validated in the local Windows checkout.
 
 Hardware diagnostics live in the separate
 [Daisy-Seed3-Desktop-Diagnostics](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics)
@@ -72,11 +78,14 @@ make test-release
 
 Toy Piano is the default when `PROJECT=` is omitted. You can also build it from
 its directory with `make -C instruments/toy-piano`. Its image is
-**`instruments/toy-piano/build/ToyPiano-v0.2.bin`**. The version is defined in
+**`instruments/toy-piano/build/ToyPiano-v0.3.bin`**. The version is defined in
 `instruments/toy-piano/src/version.h`; `make -s version` prints it. Builds for
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
 The reverb image is `effects/reverb/build/AmbientReverb-v0.2.bin`.
+Nebulae builds with `make PROJECT=granular` to
+`instruments/granular/build/NebulaeOnDaisy-v0.1.0.bin`; its controls and hardware
+test are in the [project README](instruments/granular/README.md).
 
 Each implemented project is currently a separate firmware image. Switching
 instruments requires flashing the corresponding BIN; runtime instrument switching
@@ -84,6 +93,8 @@ and a shared effect chain have not been implemented.
 
 ## Documentation and next steps
 
+* **[Handover](HANDOVER.md)** (state, local setup, hardware test run sheet, open decisions)
+  and the [agent rules](AGENTS.md).
 * [Build and toolchain](docs/BUILD.md), [hardware](docs/HARDWARE.md), and [flashing](docs/FLASHING.md).
 * [Toy Piano controls and hardware test](instruments/toy-piano/README.md),
   [USB MIDI](instruments/toy-piano/docs/MIDI.md),
@@ -94,7 +105,8 @@ and a shared effect chain have not been implemented.
 The operator accepted the Toy Piano v0.2 release BIN after reporting “all tests
 green” on October 17, 2026. The [validation report](instruments/toy-piano/docs/VALIDATION.md)
 still lists hardware measurements and detailed MIDI cases without recorded
-results. The next steps are a manual test of Ambient Reverb on the kit, hardware validation of the Torus physical modeling instrument, and then a bounded granular prototype.
+results. The next steps are hardware tests of Ambient Reverb, the Torus physical
+modeling instrument and Nebulae on Daisy.
 Effect variants can share DSP components once those components actually exist.
 Resonator models belong to the physical modeling project. The original Ambient
 Reverb is separate from the planned Clouds/Nimbus study and a possible direct

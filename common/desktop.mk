@@ -1,8 +1,9 @@
 # Shared Seed3 Desktop Dev Kit build settings; include from a project Makefile.
 # Each project supplies TARGET and its own CPP_SOURCES and tests.
-# Projects live two levels below the repository (instruments/<id>, effects/<id>).
+# Projects live two levels below the repository (instruments/<id>, effects/<id>);
+# deeper projects (modules/mod-on-daisy/bench) set DAISY_ROOT before the include.
 # Relative paths also avoid injecting spaces from a local Playground path into flags.
-DAISY_ROOT := ../..
+DAISY_ROOT ?= ../..
 DEBUG = 0
 OPT = -O3
 APP_TYPE = BOOT_SRAM
@@ -16,11 +17,11 @@ include $(SYSTEM_FILES_DIR)/Makefile
 
 .PHONY: libs
 libs:
-	$(MAKE) -C $(LIBDAISY_DIR)
-	$(MAKE) -C $(DAISYSP_DIR)
+	"$(MAKE)" -C $(LIBDAISY_DIR)
+	"$(MAKE)" -C $(DAISYSP_DIR)
 
 $(BUILD_DIR)/$(TARGET).elf: $(LIBDAISY_DIR)/build/libdaisy.a $(DAISYSP_DIR)/build/libdaisysp.a
 $(LIBDAISY_DIR)/build/libdaisy.a:
-	$(MAKE) -C $(LIBDAISY_DIR)
+	"$(MAKE)" -C $(LIBDAISY_DIR)
 $(DAISYSP_DIR)/build/libdaisysp.a:
-	$(MAKE) -C $(DAISYSP_DIR)
+	"$(MAKE)" -C $(DAISYSP_DIR)

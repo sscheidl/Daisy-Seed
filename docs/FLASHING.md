@@ -45,7 +45,7 @@ Do not repeat `program-boot` for ordinary firmware updates.
    The USR LED first flashes quickly, then pulses slowly while waiting for firmware.
    This differs from the ROM-DFU sequence above.
 3. Connect with the [Daisy Web Programmer](https://flash.daisy.audio/), choose Custom
-   and select **`instruments/toy-piano/build/ToyPiano-v0.2.bin`**. Alternatively:
+   and select **`instruments/toy-piano/build/ToyPiano-v0.3.bin`**. Alternatively:
 
    ```bash
    make PROJECT=toy-piano program-dfu
@@ -60,6 +60,12 @@ For the first Ambient Reverb test, select
 `effects/reverb/build/AmbientReverb-v0.2.bin` in the Web Programmer, or use
 `make PROJECT=reverb-fx program-dfu` with the same J7 connection and bootloader
 sequence. See the [reverb controls and test steps](../effects/reverb/README.md).
+
+For Nebulae on Daisy v0.1.0, use the same **carrier J7 / external bootloader**
+application sequence with `instruments/granular/build/NebulaeOnDaisy-v0.1.0.bin`,
+or explicitly run `make PROJECT=granular program-dfu`. No bootloader update is
+needed for an already compatible external v6.x installation. This implementation
+did not flash a device. Follow its [short smoke plan](../instruments/granular/docs/HARDWARE_TEST_PLAN.md).
 
 ## If the device is missing
 

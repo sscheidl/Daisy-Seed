@@ -1,4 +1,4 @@
-# Toy Piano v0.2
+# Toy Piano v0.3
 
 Project ID: `toy-piano` · [All instruments and effects](../../README.md)
 
@@ -36,13 +36,50 @@ C5 using independent voices. Edit [src/config.h](src/config.h) to change the map
 * LEDs D1–D16 follow the debounced keys independently of the envelope.
 * **USB-MIDI over J7:** incoming notes use 16 additional voices with velocity;
   S1–S16 transmit notes on channel 1. See [USB-MIDI](docs/MIDI.md).
-* VR3–VR8, toggle switches, DIN MIDI, SD, CV/gates and audio inputs have no musical
-  function. **RV1** is the separate analog headphone volume control, not VR1.
+* **Modulation (v0.3):** the [Mod on Daisy](../../modules/mod-on-daisy/) 8×8
+  matrix modulates the targets below; see [Modulation](#modulation-v03).
+* VR3–VR8, toggle switches, DIN MIDI, SD and audio inputs have no musical function.
+  CV 1/2 and Gate 1/2 are matrix sources and sync inputs. **RV1** is the separate
+  analog headphone volume control, not VR1.
 
 The sound is a sine with a quiet second harmonic (12%). Retriggering preserves
 phase and envelope level. Fixed scaling and a soft limiter below 0.8 protect
 against digital clipping; single notes are relatively quiet. S8/S9 have separate
 phases, so their fundamentals can partially cancel when played together.
+
+## Modulation (v0.3)
+
+Toy Piano is the development environment of the
+[Mod on Daisy](../../modules/mod-on-daisy/) matrix. Its columns:
+
+| Column | Target | Applies to | Depth 100 means |
+| --- | --- | --- | --- |
+| 0 | Pitch | each voice (vibrato, Poly AT bends) | ±2 semitones |
+| 1 | Level | each voice (tremolo, Poly AT swells) | ±100 % gain (0–2×) |
+| 2 | Harmonic | each voice | ±0.5 second-harmonic weight (range 0–0.5) |
+| 3 | Attack | next strike (latched) | the full pot range |
+| 4 | Decay | next strike (latched) | the full pot range |
+| 5–7 | — | free for experiments | greyed out |
+
+* Rows (sources): LFO 1, LFO 2, Random/S&H, CV 1, CV 2, mod wheel (CC1), channel
+  aftertouch and polyphonic aftertouch.
+* Poly AT modulates only the MIDI voice that plays the pressed note. Key voices
+  have no aftertouch.
+* LFOs offer six waveforms and can be free running, synced to MIDI clock or synced
+  to a gate input.
+* Configuration is done over USB-MIDI SysEx. Until the editor exists, use
+  [`mod_probe.py`](../../modules/mod-on-daisy/tools/mod_probe.py), for example:
+
+```bash
+python modules/mod-on-daisy/tools/mod_probe.py matrix
+python modules/mod-on-daisy/tools/mod_probe.py set-cell LFO1 0 30    # vibrato
+python modules/mod-on-daisy/tools/mod_probe.py source LFO1 rate 9000 # ~0.9 Hz
+python modules/mod-on-daisy/tools/mod_probe.py set-cell POLYAT 1 80  # pressure swells each note
+python modules/mod-on-daisy/tools/mod_probe.py clear
+```
+
+* The matrix is empty after power-on (no storage yet), and Toy Piano then sounds
+  exactly like v0.2.
 
 ## Building
 
