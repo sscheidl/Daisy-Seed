@@ -9,7 +9,7 @@ share the pinned libraries, toolchain, and board build configuration.
 
 | Project | Directory | Status |
 | --- | --- | --- |
-| [Toy Piano v0.2](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI; ARM and host tests pass; keys, AD envelope, polyphony, fast repeats, and MIDI with Studio One reported working on hardware |
+| [Toy Piano v0.3](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3 hardware test pending |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings instrument, six models, global stereo reverb and USB MIDI; software validation in project docs |
 | [Nebulae on Daisy v0.1.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
 | [Looper v0.3](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import on microSD; host tests and ARM build pass; hardware test pending |
@@ -76,7 +76,7 @@ make test-release
 
 Toy Piano is the default when `PROJECT=` is omitted. You can also build it from
 its directory with `make -C instruments/toy-piano`. Its image is
-**`instruments/toy-piano/build/ToyPiano-v0.2.bin`**. The version is defined in
+**`instruments/toy-piano/build/ToyPiano-v0.3.bin`**. The version is defined in
 `instruments/toy-piano/src/version.h`; `make -s version` prints it. Builds for
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.

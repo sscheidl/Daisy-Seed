@@ -68,7 +68,7 @@ void ToyPiano::Init(float sample_rate) {
     for(auto& voice : voices_)
         voice = Voice{};
     for(std::size_t i = 0; i < kNumKeys; ++i) {
-        voices_[i].increment = midi_increment_[kMidiNotes[i]];
+        voices_[i].increment = voices_[i].base_increment = midi_increment_[kMidiNotes[i]];
         voices_[i].harmonic = kSecondHarmonic;
     }
 }
@@ -103,8 +103,8 @@ void ToyPiano::NoteOn(uint8_t note, uint8_t velocity, float attack, float decay)
     voice.note = note;
     voice.order = ++note_counter_;
     // A stolen voice keeps its phase and level, so it changes pitch without a click.
-    voice.increment = midi_increment_[note];
-    voice.harmonic = voice.increment < kMaxHarmonicIncrement ? kSecondHarmonic : 0.0f;
+    voice.increment = voice.base_increment = midi_increment_[note];
+    voice.harmonic = DefaultHarmonic(voice.increment);
     voice.envelope.Trigger(attack, decay, sample_rate_, velocity / 127.0f);
 }
 
@@ -113,6 +113,30 @@ int ToyPiano::MidiVoiceNote(std::size_t index) const {
         return -1;
     const Voice& voice = voices_[kNumKeys + index];
     return voice.envelope.Active() ? voice.note : -1;
+}
+
+void ToyPiano::Modulate(std::size_t index, float pitch_ratio, float level, float harmonic, std::size_t ramp) {
+    if(index >= kNumVoices)
+        return;
+    Voice& voice = voices_[index];
+    voice.increment = voice.base_increment * pitch_ratio;
+    // The anti-aliasing rule follows the modulated pitch.
+    voice.harmonic = voice.increment < kMaxHarmonicIncrement ? harmonic : 0.0f;
+    voice.level_target = level;
+    if(!voice.envelope.Active()) { // silent: take the level at once, no stale ramp later
+        voice.level = level;
+        voice.level_ramp = 0;
+        return;
+    }
+    voice.level_ramp = static_cast<uint32_t>(std::max<std::size_t>(1, ramp));
+    voice.level_step = (level - voice.level) / static_cast<float>(voice.level_ramp);
+}
+
+void ToyPiano::ClearModulation(std::size_t ramp) {
+    for(std::size_t i = 0; i < kNumVoices; ++i) {
+        Voice& voice = voices_[i];
+        Modulate(i, 1.0f, 1.0f, DefaultHarmonic(voice.base_increment), ramp);
+    }
 }
 
 float ToyPiano::Sine(float phase) const {
@@ -130,7 +154,12 @@ float ToyPiano::ProcessRaw() {
         if(second_phase >= 1.0f)
             second_phase -= 1.0f;
         const float wave = Sine(voice.phase) + voice.harmonic * Sine(second_phase);
-        sum += wave * voice.envelope.Process();
+        if(voice.level_ramp) { // linear level ramp: no zipper noise at the 1 kHz tick
+            voice.level += voice.level_step;
+            if(--voice.level_ramp == 0)
+                voice.level = voice.level_target;
+        }
+        sum += wave * voice.envelope.Process() * voice.level; // level 1: exactly as in v0.2
         // Never reset phase on retrigger. No transcendental work per sample.
         voice.phase += voice.increment;
         if(voice.phase >= 1.0f)

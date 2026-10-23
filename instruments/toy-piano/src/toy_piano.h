@@ -47,17 +47,32 @@ class ToyPiano {
     const AdEnvelope& MidiEnvelope(std::size_t index) const { return voices_[kNumKeys + index].envelope; }
     // Note of MIDI voice `index` (0..15), or -1 while it is silent.
     int MidiVoiceNote(std::size_t index) const;
+    // Mod on Daisy (v0.3). Voice 0..31: pitch ratio, level gain (1 = unmodulated,
+    // reached by a linear ramp over `ramp` samples) and second-harmonic weight.
+    // Without calls the voices render exactly as in v0.2.
+    void Modulate(std::size_t voice, float pitch_ratio, float level, float harmonic, std::size_t ramp);
+    // Back to the unmodulated pitch and harmonic; the level ramps back to 1.
+    void ClearModulation(std::size_t ramp);
+    float VoiceIncrement(std::size_t voice) const { return voices_[voice].increment; }
+    float VoiceLevel(std::size_t voice) const { return voices_[voice].level; }
+    float VoiceHarmonic(std::size_t voice) const { return voices_[voice].harmonic; }
   private:
     static constexpr std::size_t kTableSize = 2048;
     struct Voice {
         AdEnvelope envelope;
         float phase = 0.0f;
-        float increment = 0.0f;
+        float increment = 0.0f;      // used for rendering
+        float base_increment = 0.0f; // the note's pitch, before modulation
         float harmonic = 0.0f;
+        float level = 1.0f, level_target = 1.0f, level_step = 0.0f;
+        uint32_t level_ramp = 0;
         int note = -1;
         uint32_t order = 0;
     };
     float Sine(float phase) const;
+    static float DefaultHarmonic(float increment) {
+        return increment < kMaxHarmonicIncrement ? kSecondHarmonic : 0.0f;
+    }
     std::size_t AllocateMidiVoice(uint8_t note) const;
     float sample_rate_ = kSampleRate;
     uint32_t note_counter_ = 0;

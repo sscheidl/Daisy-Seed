@@ -1,8 +1,7 @@
 #pragma once
 // The only libDaisy-dependent part of Mod on Daisy: Seed3 Desktop CV/gate
 // inputs, libDaisy MIDI events and the USB-MIDI transmit path.
-#include "daisy_seed.h"
-#include "desktop_devkit.h"
+#include "desktop_devkit.h" // brings daisy_seed.h, MidiEvent and MidiUsbHandler
 #include "usbd_core.h"
 #include "mod_on_daisy/module.h"
 

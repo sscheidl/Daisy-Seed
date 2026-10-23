@@ -1,3 +1,22 @@
+# Validation — Toy Piano
+
+## v0.3 (Mod on Daisy) — 2026-10-23
+
+Software checks on Linux x86_64 (GCC 13.3, glibc 2.39, as the CI runner) and ARM
+(xPack GCC 13.2.1). No hardware attached.
+
+| Check | Result |
+| --- | --- |
+| `make test` (DSP, production callback, golden, modulation) | PASS |
+| `make test-sanitize` (ASan + UBSan), `make test-thread` (TSan) | PASS |
+| **Golden test**: 9 s of keys, pots, MIDI notes and CC1 through the production callback; FNV-1a hash of every output sample | `52580874FA24361F`, recorded with unchanged v0.2 and reproduced by v0.3 with an empty matrix: **bit-identical** |
+| Modulation through callback and USB-MIDI SysEx | LFO → Pitch ±2 st (ratio 0.8910 … 1.1223); Poly AT raises only the pressed MIDI voice (gain 2.0), other voices 1.0, key voices unaffected; mod wheel → level 0; level ramps within 1 ms; silent voices take the level at once; channel AT → attack latched for the next strike only (level 5 ms after strike 0.997 → 0.001); harmonic clamps at 0.5 and stays off above 12 kHz; clearing the grid restores pitch, level and harmonic exactly |
+| ARM build | `ToyPiano-v0.3.bin`; DTCM 118,928 B of 131,072 B (v0.2: 116,072 B) |
+
+Hardware: NOT TESTED. Checklist: [HARDWARE_TEST_V0.3.md](HARDWARE_TEST_V0.3.md).
+
+---
+
 # Validation — Toy Piano v0.2
 
 Date: 2026-10-17. Software checks ran on Linux x86_64 without an attached Daisy.
