@@ -99,6 +99,7 @@ jobs:
         run: cd ${{ matrix.directory }}/${{ matrix.build }} && sha256sum ${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 14
           name: ${{ matrix.project }}-v${{ steps.version.outputs.value }}-${{ github.sha }}
           path: |
             ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
