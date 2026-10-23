@@ -80,8 +80,10 @@ jobs:
               # If history is unavailable, run all suites rather than silently skip.
               changed = ["Makefile"]
 
+          # common/sd/ has its own suite and is not used by any firmware yet.
           shared = any(p in ("Makefile", "projects.mk", "libDaisy", "DaisySP") or
-                       p.startswith("common/") for p in changed)
+                       (p.startswith("common/") and not p.startswith("common/sd/"))
+                       for p in changed)
           def touched(*prefixes):
               return shared or any(p.startswith(prefixes) for p in changed)
 
@@ -95,6 +97,7 @@ jobs:
               "editor": touched("editors/mod-on-daisy/",
                                 "modules/mod-on-daisy/include/"),
               "diagnostics": touched("diagnostics/"),
+              "sd": touched("common/sd/", "scripts/check-sd-symbols.py"),
           }
           if ".github/workflows/quick.yml" in changed:
               suites = {key: True for key in suites}
@@ -137,3 +140,6 @@ jobs:
       - name: Diagnostics host tests
         if: steps.changes.outputs.diagnostics == 'true'
         run: make -C diagnostics/firmware test
+      - name: Shared SD driver host tests (FAT32/exFAT images)
+        if: steps.changes.outputs.sd == 'true'
+        run: make -C common/sd test
