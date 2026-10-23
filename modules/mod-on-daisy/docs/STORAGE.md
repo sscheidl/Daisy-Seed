@@ -80,7 +80,7 @@ gelöscht (`0xFF`).
 | 16 | 4 | Schema-Hash (Einstellungen: 0) |
 | 20 | 4 | CRC-32 der Nutzdaten |
 | 24 | 4 | CRC-32 der Bytes 0–23 (Kopf) |
-| 28 | n | Nutzdaten: serialisierter `Patch` (104 B, ARCHITECTURE § 3.3) bzw. Einstellungen |
+| 28 | n | Nutzdaten: serialisierter `Patch` (109 B, ARCHITECTURE § 3.3) bzw. Einstellungen |
 | 252 | 4 | **Commit-Wort** `0x434F4D54` („COMT“), wird zuletzt geschrieben |
 
 Der Datensatz passt in eine 256-Byte-Programmierseite; das Commit-Wort steht am Ende

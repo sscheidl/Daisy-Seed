@@ -15,3 +15,5 @@ __pycache__/
 /instruments/looper/**/*.elf
 /instruments/looper/**/*.pkl
 /instruments/looper/work/
+/modules/*/build/
+/modules/*/bench/build/

@@ -1,8 +1,8 @@
 # Mod on Daisy — MIDI-Protokoll v1 (Spezifikation)
 
-**Stand:** 23. Oktober 2026 · **Status:** Spezifikation, nicht implementiert. Wird in
-Phase 2 als `include/mod_on_daisy/protocol.h` umgesetzt, das Firmware, Host-Tests und
-der JUCE-Editor gemeinsam nutzen. Transport: **USB-MIDI** über J7 („Daisy Seed
+**Stand:** 23. Oktober 2026 · **Status:** umgesetzt in `include/mod_on_daisy/protocol.h`
+(Codec) und `controller.h` (Kommandos), auf dem Host geprüft. Firmware, Host-Tests und
+der JUCE-Editor nutzen denselben Codec; `tools/mod_probe.py` spiegelt ihn in Python. Transport: **USB-MIDI** über J7 („Daisy Seed
 External“, D6). Grundlagen: [DECISIONS.md](DECISIONS.md) D9 und E9,
 [ARCHITECTURE.md](ARCHITECTURE.md) § 3–4.
 
@@ -10,7 +10,7 @@ External“, D6). Grundlagen: [DECISIONS.md](DECISIONS.md) D9 und E9,
 
 | Ebene | Nachrichten | Wirkung | Editor nötig? |
 | --- | --- | --- | --- |
-| **Live** | CC1, Channel Pressure, Poly Key Pressure, Note On/Off, CC123 | Werte der Quellen 6–8, Drucktabelle, Retrigger | nein |
+| **Live** | CC1, Channel Pressure, Poly Key Pressure, Note On/Off, CC120/123, MIDI-Clock `F8`, Start `FA` | Werte der Quellen 6–8, Drucktabelle, Retrigger, LFO-/Random-Sync | nein |
 | **Konfiguration** | SysEx `F0 7D 4D 44 …` | Raster, Quellparameter, Beschreibungen, Diagnose, später Presets | ja |
 
 * Die Live-Ebene ist **omni**, also auf allen Kanälen gültig (v0.1).
@@ -56,7 +56,7 @@ F0 7D 4D 44 <ver> <dev> <cmd> <seq> <len> <payload: len Bytes> <chk> F7
 | `u7` | 1 | direkt |
 | `u14` | 2 | LSB zuerst, je 7 Bit |
 | `u32` | 5 | 32 Bit in 5 × 7 Bit, LSB zuerst |
-| `str` | 1 + n | Länge `u7`, danach 7-Bit-ASCII, ohne Null |
+| `str` | 1 + n | Länge `u7`, danach 7-Bit-ASCII, ohne Null („±“ wird als `+-` übertragen) |
 | `packed(n)` | n + ⌈n/7⌉ | 8-in-7: je 7 Datenbytes gehen ein MSB-Byte und 7 × 7 Bit voraus |
 | `mask64` | 10 | 64 Bit in 10 × 7 Bit, LSB zuerst; Bit `8·s + t` = Zelle (Quelle s, Ziel t) |
 | `depth8` | 1 Byte vor dem Packen | `int8_t` −100…+100 im Zweierkomplement |
@@ -85,8 +85,8 @@ Jede Antwort auf ein zustandsänderndes Kommando enthält `u7` Status (0 = über
 | `0x11` | `SET_MATRIX` | `packed(64)` Tiefen · `mask64` eingeschaltet | Status · aktive · Patch-CRC |
 | `0x12` | `SET_CELL` | `u7` Quelle · `u7` Ziel · `u7` Betrag 0…100 · `u7` Bits (0 negativ, 1 eingeschaltet) | Status · aktive · Patch-CRC |
 | `0x13` | `CLEAR_MATRIX` | — | Status · aktive · Patch-CRC |
-| `0x18` | `GET_SOURCE` | `u7` Quelle (0, 1, 2) | `u7` Quelle · `u14` Rate · `u7` Form bzw. Modus · `u7` Retrigger (Random: 0) |
-| `0x19` | `SET_SOURCE` | `u7` Quelle · `u7` Parameter (0 Rate, 1 Form/Modus, 2 Retrigger) · `u14` Wert | Status · aktive · Patch-CRC |
+| `0x18` | `GET_SOURCE` | `u7` Quelle (0 LFO 1, 1 LFO 2, 2 Random) | `u7` Quelle · `u14` Rate · `u7` Form bzw. Modus · `u7` Sync · `u7` Gate · `u7` Teilung · `u7` Retrigger (Random: 0) |
+| `0x19` | `SET_SOURCE` | `u7` Quelle · `u7` Parameter (0 Rate, 1 Form/Modus, 2 Sync, 3 Gate, 4 Teilung, 5 Retrigger) · `u14` Wert | Status · aktive · Patch-CRC |
 | `0x1A` | `GET_NAME` | — | `str` Patch-Name (≤ 16) |
 | `0x1B` | `SET_NAME` | `str` Name | Status · aktive · Patch-CRC |
 
@@ -106,8 +106,8 @@ Zelle aktiv, Tiefe außerhalb ±100) wird als Ganzes abgelehnt.
 
 | Cmd | Name | Anfrage | Antwort |
 | --- | --- | --- | --- |
-| `0x30` | `MONITOR` | `u7` Rate Hz (0 = aus, ≤ 25) | Bestätigung; danach ungefragte Rahmen `0x70` mit 8 × `u14` Quellwerten und 8 × `u14` globalen Offsets (Offset-Binär, 8192 = 0) |
-| `0x31` | `GET_STATS` | — | `u32` Ticks · `u32` Tick-Zyklen min/mittel/max · `u32` Callback-Last mittel/max (‰·10) · `u32` Überläufe · `u32` MIDI-Rahmen verworfen (Diagnose-Messung, TEST_PLAN § 3) |
+| `0x30` | `MONITOR` | `u7` Rate Hz (0 = aus, ≤ 25) | `u7` Rate; danach ungefragte Rahmen `0x70` mit 8 × `u14` Quellwerten, 8 × `u14` globalen Offsets und 2 × `u14` CV-Rohwerten vor Kalibrierung und Totzone (Offset-Binär, 8192 = 0, ±8191 = ±1), 36 Byte |
+| `0x31` | `GET_STATS` | — | 10 × `u32` (50 Byte): Ticks · Matrix-Zyklen min/mittel/max · Callback-Last mittel/max (in 0,01 %) · Überläufe · verlorene MIDI-Ereignisse · Main-Loop-Höchstwerte in Zyklen für `HandleMidi`-Durchlauf und `Service` (Messfirmware, TEST_PLAN § 3) |
 | `0x32` | `RESET_STATS` | — | — |
 | `0x33` | `SET_SCENARIO` | `u7` Szenario-Nr. | Status (nur Messfirmware `bench/`; im Instrument `NAK 9`) |
 
@@ -155,9 +155,16 @@ CV-Nullpunkte und wirken nur im RAM.
 1. **Eine offene Anfrage**: Der Editor sendet die nächste Anfrage erst nach Antwort
    oder Zeitüberschreitung (250 ms). Danach wiederholt er höchstens dreimal mit
    **derselben** `seq`. Bleibt die Antwort aus, gilt die Verbindung als getrennt.
-2. **Wiederholungen ohne Doppelwirkung**: Das Gerät merkt sich die letzte `seq` und die
-   letzte Antwort. Kommt ein bytegleicher Rahmen mit derselben `seq` erneut, sendet es
-   die gespeicherte Antwort, ohne erneut auszuführen.
+2. **Wiederholungen ohne Doppelwirkung**:
+   * Bei zustandsändernden Kommandos (`SET_*`, `CLEAR_MATRIX`, `SET_SCENARIO`) merkt sich
+     das Gerät die letzte `seq` und die letzte Antwort.
+   * Kommt ein bytegleicher Rahmen mit derselben `seq` erneut, sendet es die
+     gespeicherte Antwort, ohne erneut auszuführen.
+   * Jede andere Änderung des Patches löscht diesen Speicher, zum Beispiel eine
+     Tastenkombination.
+   * Lesekommandos werden immer frisch beantwortet.
+   * Clients beginnen mit einer zufälligen `seq`, damit ein neu gestarteter Client
+     nicht versehentlich eine alte Antwort erhält.
 3. **Bestätigung mit CRC**: Jede Änderung wird mit der Patch-CRC beantwortet. Der Editor
    berechnet dieselbe CRC aus seinem Modell, mit demselben `patch.h`. Weichen beide ab,
    folgt eine **Neusynchronisation** mit `GET_MATRIX`, `GET_SOURCE` × 3 und `GET_NAME`.
@@ -165,7 +172,8 @@ CV-Nullpunkte und wirken nur im RAM.
    im Editor.
 5. **Gedrosseltes Ziehen**: Beim Ziehen einer Tiefe sendet der Editor `SET_CELL`
    höchstens alle 20 ms. Kommt eine Antwort aus, sendet er den jeweils letzten Wert.
-6. **Begrenzte Last im Gerät**: höchstens ein Rahmen pro `Service()`, höchstens eine
+6. **Begrenzte Last im Gerät**: Antwortwarteschlange mit 2 Rahmen (weitere werden
+   verworfen und vom Editor wiederholt), höchstens ein Rahmen pro `Service()`, höchstens eine
    Antwort pro Millisekunde, Senden nur bei konfiguriertem USB-Host (wie Toy Piano).
 
 ## 5. Ablauf einer Sitzung

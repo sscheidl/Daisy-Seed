@@ -1,7 +1,8 @@
 # Mod on Daisy — Testplan Phase 2 (Prototyp und erste Messung)
 
-**Stand:** 23. Oktober 2026 · **Status:** Plan. Phase 2 beginnt erst nach Freigabe der
-Spezifikation und der offenen Punkte in [DECISIONS.md § 4](DECISIONS.md#4-offene-entscheidungen).
+**Stand:** 23. Oktober 2026 · **Status:** Phase 2 freigegeben (DECISIONS N1–N6). § 2
+ist umgesetzt und grün, § 3 ist gebaut, § 3.2 und § 4 laufen auf der Hardware. Ergebnisse
+in [VALIDATION.md](VALIDATION.md).
 
 ## 1. Umfang
 
@@ -36,7 +37,7 @@ Zufall.
 
 | Test | Erwartung |
 | --- | --- |
-| Serialisierung | feste 104 Byte, Little Endian, Round-Trip identisch |
+| Serialisierung | feste 109 Byte, Little Endian, Round-Trip identisch |
 | CRC-32 | Prüfwert `CRC32("123456789") = 0xCBF43926`; Patch-CRC gleich auf x86-64-Host und ARM (Testvektor im Repository) |
 | Validierung | Tiefe ±101 → abgelehnt; 9 aktive Zellen → abgelehnt; aktive, nicht erlaubte Zelle → abgelehnt; ausgeschaltete Zelle mit Tiefe → erlaubt; Name mit Byte > 127 → abgelehnt |
 | Erlaubte Zellen | Ziel ohne Namen → ganze Spalte gesperrt; Poly AT auf `latched` → gesperrt; Poly AT global je nach Regel Last-Note oder gesperrt; Quelle in `unavailable_sources` → Zeile gesperrt |
@@ -120,7 +121,7 @@ Zufall.
 | Überläufe | Callback-Dauer > Blockbudget, gezählt |
 | Main-Loop | Höchstdauer von `HandleMidi` + `Service`, getrennt von der Sendedauer `SendMessage` (bis zu 3 × 100 µs blockierend) |
 | MIDI-Verluste | Lückenerkennung in einem nummerierten Teststrom aus `mod_probe.py`; libDaisy meldet Überläufe der FIFO nicht selbst |
-| Speicher | `arm-none-eabi-size`, MAP-Datei, `nm -C --size-sort` gefiltert auf `mod::`; DTCM- und SRAM-Differenz gegen den Build S0 ohne Modul; `-fstack-usage` (`.su`) für `Tick`, `HandleMidi` und `Service` |
+| Speicher | `arm-none-eabi-size`, MAP-Datei, `nm -C -S` für das Objekt `modulation` (gesamter Modulzustand) und die Code-Symbole `mod::`; `-fstack-usage` (`.su`) für `Tick`, `HandleMidi`, `Service` |
 
 * **Steuerung und Auslesen**:
   * Das Szenario wird per `SET_SCENARIO` gewählt, die Ergebnisse kommen per
@@ -132,11 +133,11 @@ Zufall.
 
 | Nr. | Szenario | Zweck |
 | --- | --- | --- |
-| S0 | Prüfinstrument ohne Modul (eigener Build) | Basis |
+| S0 | Prüfinstrument, Matrix wird nicht aufgerufen (Bypass) | Basis |
 | S1 | Modul eingebunden, **Matrix inaktiv** (leerer Patch) | Grundkosten |
 | S2 | **1 Verbindung**: LFO 1 → globales Ziel | wenige Verbindungen |
 | S3 | **4 Verbindungen**: LFO 1, LFO 2, Random, Modwheel | wenige Verbindungen |
-| S4 | **8 Verbindungen**, alle 8 Quellen, davon Poly AT auf 3 Stimmenzielen, 4 Stimmen | **Maximum v0.1** |
+| S4 | **8 Verbindungen**, jede der 8 Quellen einmal, Poly AT auf einem Stimmenziel (Level), alle Stimmen lesen 5 Stimmenziele, 4 Stimmen | **Maximum v0.1** |
 | S5 | wie S4, 32 Stimmen | Stimmenweg wie Toy Piano |
 | S6 | 64 aktive Zellen, 32 Stimmen (Variante `kMaxActive = 64`) | Lasttest über der Grenze (E6) |
 | S7 | S4 + Editor-Last: `SET_CELL` 50/s und `MONITOR` 25 Hz | Main-Loop und Program-Wechsel |
@@ -168,7 +169,7 @@ Gemessene Werte werden als `GEMESSEN` gekennzeichnet; Werte, die noch fehlen, al
 | Matrix-Anteil S6, Maximum | ≤ 6 000 Zyklen (Information, keine Abnahme) |
 | Überläufe | 0 in S1–S8 |
 | Modul-RAM gesamt | ≤ 2 KiB |
-| DTCM-Zuwachs gegenüber S0 | ≤ 2 KiB |
+| DTCM-Belegung durch das Modul (`modulation`) | ≤ 2 KiB |
 | Main-Loop pro `Service` ohne `SendMessage` | ≤ 50 µs |
 | MIDI-Verluste in S8 | 0 |
 
@@ -186,6 +187,7 @@ Ursache im Messbericht benannt; danach wird entschieden.
 | H5 | CV-Eingänge (E8) | Werte bei offener Buchse, 0 V und, falls verfügbar, ±5 V: Nullpunkt, Rauschen (Standardabweichung), Skalierung → Totzone und Kalibrierung festlegen |
 | H6 | Live-MIDI | CC1, Channel AT und Poly AT aus Keyboard oder Studio One sichtbar im Monitor; Poly AT pro Note korrekt zugeordnet |
 | H7 | Hörtest | Prüfton mit LFO 0,02–20 Hz, Modwheel-Sweep und Poly AT ohne Zipper-Geräusche bei Block 48; Block 256 gesondert bewerten (E7) |
+| H8 | Synchronisation (N4) | LFO auf MIDI-Clock aus Studio One (1/4, 1/8T, 1 Takt): läuft im Tempo, Start setzt auf den Taktanfang, Stopp hält. LFO auf Gate 1/2 mit Impulsen von 1 ms, 5 ms und 20 ms Länge: zählt Impulse (Monitor) – entscheidet über EXTI für Gates (E8) |
 
 ## 5. Abschluss von Phase 2
 

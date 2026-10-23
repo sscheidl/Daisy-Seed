@@ -1,15 +1,21 @@
 # Mod on Daisy — Architektur und technische Spezifikation v0.1
 
-**Stand:** 23. Oktober 2026 · **Phase:** 1 · **Status:** Spezifikation, kein Code.
-Grundlage sind die [Architekturentscheidungen v0.1](DECISIONS.md) (D1–D11) und die dort
-benannten Einwände (E1–E12). Diese Fassung ersetzt das Konzept vom 22. Oktober; der
-alte Stand bleibt in der Git-Historie.
+**Stand:** 23. Oktober 2026 · **Status:** Spezifikation v0.1. Phase 2 ist als Software
+umgesetzt und auf dem Host geprüft. Die Messungen auf der Hardware stehen aus
+([VALIDATION.md](VALIDATION.md)).
+Grundlage sind die [Architekturentscheidungen v0.1](DECISIONS.md) (D1–D11, Nachtrag
+N1–N6) und die dort benannten Einwände (E1–E12).
 
-Evidenzklassen wie in DECISIONS.md: `BELEGT`, `SCHÄTZUNG`, `VORSCHLAG`, `OFFEN`.
+Evidenzklassen: `BELEGT` (Code oder libDaisy nachgelesen), `GEMESSEN` (Build oder Test),
+`SCHÄTZUNG`, `VORSCHLAG`, `OFFEN`.
 
-**Grundsatz:** eine schlanke Komponente. Feste Größen (8 Quellen, 8 Ziele, 8 aktive
-Verbindungen), kein Heap, keine virtuellen Aufrufe im Audiopfad, keine Audio-Rate.
-Der Audiopfad braucht etwa 1 KiB RAM und weniger als 0,3 % CPU (§ 8).
+**Grundsatz:** eine schlanke Komponente:
+
+* feste Größen: 8 Quellen, 8 Ziele, 8 aktive Verbindungen;
+* kein Heap, keine virtuellen Aufrufe im Audiopfad, keine Audio-Rate;
+* das Modul belegt in der Firmware **1 936 Byte RAM** (`GEMESSEN`), davon etwa 1 KiB im
+  Audiopfad;
+* Schätzung: weniger als 0,3 % CPU (§ 8).
 
 ---
 
@@ -17,385 +23,361 @@ Der Audiopfad braucht etwa 1 KiB RAM und weniger als 0,3 % CPU (§ 8).
 
 ```text
 modules/mod-on-daisy/
-├── README.md
-├── docs/                 DECISIONS, ARCHITECTURE, PROTOCOL, STORAGE, TEST_PLAN_PHASE2
-├── include/mod_on_daisy/ (Phase 2) header-only, C++17, nur <cstdint>/<atomic>/<array>
-│   ├── types.h           Source, TargetInfo, InstrumentInfo, Konstanten
-│   ├── patch.h           Patch (Raster + Quellparameter), Validierung, CRC-32, Serialisierung
-│   ├── sources.h         Lfo, RandomSource, Smoother, CvConditioner
-│   ├── program.h         Program, Compile(Patch, InstrumentInfo) → Program
-│   ├── mailbox.h         lock-freier Triple-Buffer für Program
-│   ├── engine.h          Audio-Seite
-│   ├── notes.h           Drucktabelle, gehaltene Noten, Last-Note (Main schreibt, Audio liest)
-│   ├── protocol.h        SysEx-Codec (auch vom Editor eingebunden)
-│   └── controller.h      Main-Seite: MIDI-Eingang, Protokoll, Antworten
-├── adapters/             (Phase 2) desktop_devkit.h — einzige libDaisy-Abhängigkeit
-├── tests/                (Phase 2) Host-Tests, ASan/UBSan/TSan
-├── bench/                (Phase 2) Messfirmware, kein Instrument
-└── tools/                (Phase 2) kleines Python-Testskript für SysEx unter Windows
+├── Makefile              Host-Tests: make test | test-sanitize | test-thread
+├── docs/                 DECISIONS, ARCHITECTURE, PROTOCOL, STORAGE, TEST_PLAN_PHASE2, VALIDATION
+├── include/mod_on_daisy/ header-only, C++17, nur Standardbibliothek
+│   ├── types.h           Konstanten, Source/Shape/Sync, Teilungen, TargetInfo, InstrumentInfo, AllowedCells
+│   ├── patch.h           Patch (Raster + Quellparameter), Validate, Serialize (109 B), CRC-32, SchemaHash
+│   ├── sources.h         Sinus/Formen, Rng, Smoother, CV-Totzone, ClockFollower; Rate → Inkrement (Main)
+│   ├── program.h         Program und Compile(Patch) → Program (Main)
+│   ├── mailbox.h         lock-freier Triple-Buffer
+│   ├── notes.h           LiveState: CC1, Aftertouch, Drucktabelle, Last-Note, Clock-/Start-/Note-On-Zähler
+│   ├── engine.h          Engine (Audio-IRQ) und VoicePressure
+│   ├── protocol.h        SysEx-Codec (Writer/Reader, Rahmen, Prüfsumme) — auch für den Editor
+│   ├── controller.h      Controller (Main-Loop): MIDI-Eingang, Protokoll, Antworten, Monitor
+│   └── module.h          Module = LiveState + Engine + Controller
+├── adapters/mod_on_daisy_desktop.h   einzige libDaisy-Abhängigkeit: CV/Gate, MidiEvent, USB-Senden
+├── tests/                test_mod.cpp, test_thread.cpp, test_bench.cpp
+├── bench/                Messfirmware ModBench (projects.mk: mod-bench)
+└── tools/mod_probe.py    Kommandozeilen-Client für SysEx-Tests und Messabläufe
 
-editors/mod-on-daisy/     (Phase 3) JUCE-Editor, bindet include/mod_on_daisy/protocol.h und patch.h ein
+editors/mod-on-daisy/     (Phase 3) JUCE-Editor, bindet protocol.h und patch.h ein
 ```
 
 **Abhängigkeitsregeln**
 
-* `include/` hängt weder von libDaisy noch von DaisySP ab. Dadurch läuft es auf dem Host
-  in Tests und im Editor.
-* `adapters/` ist die einzige Stelle, an der `daisy::` vorkommt: CV aus
-  `desktop_devkit::Hardware`, `MidiEvent` → `mod::MidiMessage`, Senden über
-  `MidiUsbHandler`.
-* Der Editor nutzt **dieselben** Dateien `protocol.h` und `patch.h`. Serialisierung und
-  CRC sind dadurch auf beiden Seiten garantiert identisch.
-* Instrumente binden das Modul per `C_INCLUDES += -I../../modules/mod-on-daisy/include`
-  (und `adapters`) ein. Es gibt kein zusätzliches Archiv und keine Änderung an
-  `common/desktop.mk`.
+* `include/` hängt weder von libDaisy noch von DaisySP ab. Es läuft auf dem Host, in
+  Tests und im Editor.
+* `adapters/` ist die einzige Stelle mit `daisy::`.
+* Editor und Testskript nutzen dieselbe Serialisierung. Der Prüfwert
+  `CRC(Testpatch) = E2340CC6` wird in C++ (`test_mod.cpp`) und Python
+  (`mod_probe.py selftest`) gleich berechnet.
+* Instrumente binden das Modul mit
+  `C_INCLUDES += -I../../modules/mod-on-daisy/include -I../../modules/mod-on-daisy/adapters`
+  ein. Ein zusätzliches Archiv gibt es nicht.
 
 ## 2. Ausführungskontexte und Besitz
 
 ```text
  USB-IRQ (libDaisy)      Main-Loop                                 Audio-IRQ
  ──────────────────      ─────────────────────────────────         ───────────────────────────
- Paket → MidiEvent  ──►  Instrument: PopEvent()                    hw.UpdateAllControls()
- (FIFO 256)              ├─► mod.controller.HandleMidi(ev) ──┐     mod.engine.SetCv(cv1, cv2)
-                         │    · SysEx (eigener Kopf): Protokoll│    mod.engine.Tick(n)
-                         │    · CC1, ChAT → atomare Rohwerte   │     ├ Program holen (Mailbox)
-                         │    · PolyAT, NoteOn/Off → notes.h   │     ├ Quellen rechnen
-                         │    · Rückgabe false für Noten       │     └ globale Offsets
-                         ├─► Instrument verarbeitet Rest       │   Instrument-DSP:
-                         └─► mod.controller.Service(ms, out)   │     Apply(t, base)
-                              · ≤ 1 Antwort/ms                 │     ApplyVoice(t, base, p)
-                              · Patch → Compile → Mailbox ─────┘
+ Paket → MidiEvent  ──►  usb_midi.PopEvent() → adapter::ToMessage  hw.UpdateAllControls()
+ (FIFO 256)              ├─► controller.HandleMidi(m) ───────┐     adapter::ReadHardware(engine, hw)
+                         │    · SysEx "MD": Protokoll         │     engine.Tick(n)
+                         │    · CC1, ChAT, PolyAT → LiveState │      ├ Program holen (Triple-Buffer)
+                         │    · Noten, Clock, Start: mitlesen │      ├ Clocks, Gates, Retrigger
+                         ├─► false: Instrument verarbeitet    │      ├ Quellen rechnen
+                         └─► controller.Service(ms, sender)   │      └ globale Offsets
+                              · ≤ 1 Antwort/ms, Monitor       │   Instrument-DSP:
+                              · Patch → Compile → Publish ────┘     Apply / ApplyVoice
 ```
 
 | Zustand | Schreiber | Leser | Mechanismus |
 | --- | --- | --- | --- |
-| `Patch` (Arbeitskopie) | Main | Main | keiner nötig |
-| `Program` | Main (Compile) | Audio | Triple-Buffer, Release/Acquire |
-| Rohwerte CC1, ChAT, Last-Note-Druck | Main | Audio | `std::atomic<uint8_t>`, relaxed |
-| Drucktabelle `pressure[128]` | Main | Audio | `std::atomic<uint8_t>`, relaxed |
-| Retrigger-Zähler (Note On) | Main | Audio | `std::atomic<uint32_t>` |
-| Engine-Zustand (Phasen, Glättung, Offsets) | Audio | Audio | Alleinbesitz |
-| Monitor-Schnappschuss (optional) | Audio | Main | SPSC-Queue wie `CpuSnapshot` in Physical Modeling |
+| `Patch`, Antwortpuffer | Main | Main | keiner nötig |
+| `Program` | Main (`Compile`) | Audio | Triple-Buffer, acq_rel |
+| CC1, Channel AT, Last-Note-Druck, `pressure[128]` | Main | Audio | `atomic<uint8_t>`, relaxed |
+| Note-On-, Clock-, Start-Zähler, Clock-Stand bei Start | Main | Audio | `atomic<uint32_t>`; Start mit Release/Acquire |
+| Engine-Zustand (Phasen, Glättung, Clock-Folger, Offsets) | Audio | Audio | Alleinbesitz |
+| Monitor-Schnappschuss | Audio | Main | Triple-Buffer, nur wenn der Monitor aktiv ist |
 
-Alle verwendeten Atomics werden per `static_assert(…::is_always_lock_free)` geprüft, wie
-in den vorhandenen Queues.
+Alle Atomics werden per `static_assert(…::is_always_lock_free)` geprüft. ThreadSanitizer
+läuft auf dem Zusammenspiel beider Threads (`test_thread.cpp`).
 
 ## 3. Datenstrukturen
 
-### 3.1 Konstanten und Quellen
+### 3.1 Quellen (Zeilen, feste Reihenfolge D3)
 
-```cpp
-namespace mod {
-constexpr size_t kSources = 8, kTargets = 8;
-constexpr size_t kMaxActive = 8;           // D2: Richtwert, nur in der Validierung (E6)
-enum Source : uint8_t { Lfo1, Lfo2, Random, Cv1, Cv2, ModWheel, ChannelAt, PolyAt };
-}
-```
-
-| Zeile | Quelle | Wertebereich | Rohdaten | Glättung |
+| Zeile | Quelle | Bereich | Rohdaten | Aufbereitung |
 | --- | --- | --- | --- | --- |
-| 0 | LFO 1 | −1…+1 | intern | keine (stetig) |
-| 1 | LFO 2 | −1…+1 | intern | keine |
-| 2 | Random / S&H | −1…+1 | intern | Modus „geglättet“: linear zwischen Zufallswerten |
-| 3 | CV 1 | −1…+1 | `hw.cv[0].Value()` | Totzone + 2 ms |
-| 4 | CV 2 | −1…+1 | `hw.cv[1].Value()` | Totzone + 2 ms |
-| 5 | Modwheel | 0…1 | CC1 (alle Kanäle) | 10 ms |
-| 6 | Channel AT | 0…1 | Channel Pressure (alle Kanäle) | 10 ms |
-| 7 | Poly AT | 0…1 | Poly Key Pressure pro Note | 10 ms (pro Stimme im Instrument bzw. Last-Note in der Engine) |
-
-Unipolare Quellen mit negativer Tiefe senken das Ziel ab. Polaritätsoptionen gibt es in
-v0.1 nicht.
+| 0 | LFO 1 | −1…+1 | intern | Form, Rate oder Sync (§ 4.2) |
+| 1 | LFO 2 | −1…+1 | intern | wie LFO 1 |
+| 2 | Random / S&H | −1…+1 | intern | Stufe oder geglättet; Rate oder Sync |
+| 3 | CV 1 | −1…+1 | `hw.cv[0].Value()` | Kalibrierung, Totzone 0,02, 2 ms |
+| 4 | CV 2 | −1…+1 | `hw.cv[1].Value()` | wie CV 1 |
+| 5 | Modwheel | 0…1 | CC1, alle Kanäle | 10 ms |
+| 6 | Channel AT | 0…1 | Channel Pressure, alle Kanäle | 10 ms |
+| 7 | Poly AT | 0…1 | Poly Key Pressure pro Note | Stimmenziele: pro Stimme 10 ms (`VoicePressure`); globale Ziele: Last-Note, 10 ms |
 
 ### 3.2 Zielbeschreibung des Instruments
 
 ```cpp
 struct TargetInfo {
-    const char* name;       // Spaltenkopf, ≤ 12 Zeichen; nullptr = Spalte nicht vorhanden
-    const char* span_text;  // Anzeige für Tiefe 100, z. B. "±12 st", ≤ 8 Zeichen
-    float       span;       // normierter Hub bei Tiefe 100, 0 < span ≤ 1 (E5)
-    bool        per_voice;  // Instrument kann das Ziel pro Stimme modulieren
-    bool        latched;    // Wert wird nur beim Anschlag gelesen (z. B. Excitation)
+    const char* name = nullptr;      // Spaltenkopf, ≤ 12 Zeichen ASCII; nullptr = keine Spalte
+    const char* span_text = nullptr; // Bedeutung von Tiefe 100, ≤ 8 Zeichen ASCII, z. B. "+-12 st"
+    float span = 1.0f;               // normierter Hub bei Tiefe 100 (N2), 0 < span ≤ 1
+    bool per_voice = false;          // Instrument nutzt ApplyVoice (Poly AT pro Stimme)
+    bool latched = false;            // nur beim Anschlag gelesen → Poly-AT-Zelle gesperrt
 };
 struct InstrumentInfo {
-    const char* key;                  // "toy-piano", "physical-modeling", "granular"
-    const char* version;              // Firmwareversion des Instruments
-    TargetInfo  targets[kTargets];
-    uint8_t     unavailable_sources;  // Bit s = Quelle s nicht nutzbar (z. B. CV vom Instrument belegt)
+    const char* key; const char* version;   // ≤ 16 bzw. ≤ 12 Zeichen
+    TargetInfo targets[8];
+    uint8_t unavailable_sources = 0;        // Bit s: Quelle vom Instrument belegt
 };
 ```
 
-Die **Spaltennummer ist die Ziel-ID**. Ihre Bedeutung gehört zur Schnittstelle des
-Instruments. Wer sie ändert, ändert den **Schema-Hash**, eine CRC-32 über Key und alle
-Zielbeschreibungen (PROTOCOL § 3.1). Gespeicherte Patches mit anderem Hash werden
-nicht stillschweigend geladen (STORAGE § 4.4).
+* Die **Spaltennummer ist die Ziel-ID**. `SchemaHash(info)` ist eine CRC-32 über Key,
+  alle Spalten und die Poly-AT-Regel. Gespeicherte Patches und Editor-Caches werden
+  daran gebunden.
+* **Erlaubte Zellen** (`AllowedCells`): Ziel vorhanden, Quelle verfügbar, und nicht Poly
+  AT auf einem `latched`-Ziel. Poly AT auf globalen Zielen ist erlaubt und nutzt den
+  Last-Note-Druck (N1).
+* Strings sind 7-Bit-ASCII, weil SysEx nur 7-Bit-Bytes überträgt. Das Zeichen „±“
+  schreibt das Instrument als `+-`, der Editor zeigt es als ±.
 
-**Erlaubte Zellen** (`allowed_mask`, 64 Bit, beim `Init` berechnet und an den Editor
-gemeldet; nicht erlaubte Zellen sind ausgegraut):
-
-```text
-allowed(s, t) = target[t].name != nullptr
-              ∧ (unavailable_sources & (1 << s)) == 0
-              ∧ ¬(s == PolyAt ∧ target[t].latched)          // Druck entsteht nach dem Anschlag
-              ∧ ¬(s == PolyAt ∧ ¬target[t].per_voice ∧ poly_global == Grey)   // DECISIONS § 4.1
-```
-
-### 3.3 Patch (editierbare Konfiguration, 104 Byte)
+### 3.3 Patch (editierbare Konfiguration)
 
 ```cpp
-struct LfoParams    { uint16_t rate; uint8_t shape; uint8_t retrigger; };  // rate: 0…16383
-struct RandomParams { uint16_t rate; uint8_t mode;  uint8_t reserved;  };
+struct LfoParams    { uint16_t rate = 6000; uint8_t shape, sync, gate, division = 4, retrigger; };
+struct RandomParams { uint16_t rate = 8000; uint8_t mode,  sync, gate, division = 4; };
 struct Patch {
-    uint8_t      format = 1;        // Patch-Formatversion
-    uint8_t      reserved = 0;
-    int8_t       depth[kSources][kTargets]; // −100…+100, 0 = keine Wirkung
-    uint8_t      enabled[kSources];         // Bit t = Zelle (s, t) eingeschaltet
-    LfoParams    lfo[2];
-    RandomParams random;
-    char         name[16];                  // 7-Bit-ASCII, mit Nullen aufgefüllt
-};                                          // 2 + 64 + 8 + 8 + 4 + 16 = 102 Byte (+2 Ausrichtung)
+    uint8_t format = 1;
+    int8_t  depth[8][8];   // −100…+100
+    uint8_t enabled[8];    // Bit t = Zelle (s, t) eingeschaltet
+    LfoParams lfo[2]; RandomParams random;
+    char name[16];
+};   // serialisiert: 1 + 64 + 8 + 2·7 + 6 + 16 = 109 Byte, Little Endian, ohne Padding
 ```
 
-* Eine Zelle ist **aktiv**, wenn sie eingeschaltet ist und `depth ≠ 0`. Eine
-  ausgeschaltete Zelle behält ihre Tiefe; die Verbindung lässt sich also ein- und
-  ausschalten, ohne den Wert zu verlieren.
-* **Validierung** (`Validate(patch, info)`): alle Tiefen im Bereich, höchstens
-  `kMaxActive` aktive Zellen, nur erlaubte Zellen aktiv, Parameter im Bereich, Name
-  7-Bit. Ein ungültiger Patch wird **als Ganzes abgelehnt**, nie teilweise übernommen.
-* **Serialisierung**: feste Byte-Reihenfolge (Little Endian, ohne Padding) und
-  `Crc32(serialize(patch))` (CRC-32/ISO-HDLC, wie zlib). Dieselbe Funktion nutzen
-  Firmware, Editor und Speicher.
+* **Aktiv** ist eine Zelle, wenn sie eingeschaltet ist und `depth ≠ 0`. Eine
+  ausgeschaltete Zelle behält ihre Tiefe.
+* **`Validate(patch, allowed)`** lehnt einen Patch als Ganzes ab, wenn:
+  * Format oder Tiefen ungültig sind (`Range`);
+  * ein Parameter außerhalb des Bereichs liegt, auch eine Teilung, die zur Sync-Quelle
+    nicht passt (`Range`);
+  * eine aktive Zelle nicht erlaubt ist (`NotAllowed`);
+  * mehr als `kMaxActive` Zellen aktiv sind (`Limit`).
+  Teilweise übernommen wird nie.
 
-**Quellparameter v0.1** (`VORSCHLAG`, DECISIONS § 4.4–4.5):
+**Quellparameter** (N4/N5; Parameternummern wie in `SET_SOURCE`):
 
-| Quelle | Parameter | Werte |
-| --- | --- | --- |
-| LFO 1/2 | Rate | 0…16383 → 0,02…20 Hz logarithmisch: `f = 0,02 · 1000^(r/16383)` |
-| | Wellenform | 0 Sinus, 1 Dreieck, 2 Sägezahn auf, 3 Sägezahn ab, 4 Rechteck |
-| | Retrigger | 0 frei laufend, 1 Neustart bei jedem Note On |
-| Random | Rate | wie LFO-Rate; Häufigkeit neuer Zufallswerte |
-| | Modus | 0 Stufe (S&H), 1 geglättet (linear zum nächsten Wert) |
+| Nr. | Parameter | LFO 1/2 | Random |
+| --- | --- | --- | --- |
+| 0 | Rate | 0…16383 → 0,02…20 Hz logarithmisch, `f = 0,02 · 1000^(r/16383)`; gilt bei Sync = frei | wie LFO: Häufigkeit neuer Zufallswerte |
+| 1 | Form / Modus | 0 Sinus, 1 Dreieck, 2 Sägezahn steigend, 3 Sägezahn fallend, 4 Rechteck, 5 Sample & Hold | 0 Stufe (S&H), 1 geglättet |
+| 2 | Sync | 0 frei, 1 MIDI-Clock, 2 Gate | wie LFO |
+| 3 | Gate | 0 Gate 1, 1 Gate 2 (bei Sync = Gate) | wie LFO |
+| 4 | Teilung | MIDI: 0 4 Takte, 1 2 Takte, 2 1 Takt, 3 1/2, 4 1/4, 5 1/4T, 6 1/8, 7 1/8T, 8 1/16, 9 1/16T, 10 1/32. Gate: 0 1 Zyklus pro 4 Impulse, 1 pro 2, 2 pro Impuls, 3 zwei pro Impuls, 4 vier pro Impuls | wie LFO |
+| 5 | Retrigger | 0 aus, 1 Neustart bei jedem Note On (nur bei Sync = frei) | — |
+
+Wechselt die Sync-Quelle auf Gate und die bisherige MIDI-Teilung ist dort ungültig, setzt
+der Controller die Teilung auf 1:1.
 
 ### 3.4 Program (kompilierte Form für den Audio-IRQ)
 
 ```cpp
-struct Connection { uint8_t source, target; uint16_t pad; float gain; }; // gain = depth/100 · span[t]
+struct Connection   { uint8_t source, target; float gain; };      // gain = depth/100 · span
+struct SourceConfig { uint32_t inc; Ratio ratio; uint8_t shape, sync, gate, retrigger; };
 struct Program {
-    uint8_t    count;                 // aktive globale Verbindungen
-    uint8_t    source_mask;           // benutzte Quellen (nur diese werden gerechnet)
-    bool       active;                // count > 0 oder Poly-AT-Stimmenweg benutzt
-    Connection conn[kMaxActive];      // 8 × 8 Byte
-    float      voice_gain[kTargets];  // Poly AT pro Stimme: depth/100 · span, sonst 0
-    uint32_t   lfo_inc[2], random_inc;// Phaseninkrement pro Sample (2^32 · f / fs)
-    uint8_t    lfo_shape[2], lfo_retrigger[2], random_mode;
-};                                    // ≈ 120 Byte
+    uint8_t count; bool active;          // active == false → alle Offsets exakt +0.0f
+    Connection conn[kMaxActive];
+    float voice_gain[8];                 // Poly AT auf per_voice-Zielen
+    SourceConfig lfo[2], random;
+    float cv_offset[2];                  // Gerätekalibrierung, nicht Teil des Patches
+};
 ```
 
-Der Main-Loop führt `Compile()` nach jeder angenommenen Änderung aus. Dabei passiert
-Folgendes:
+`Compile()` läuft nur im Main-Loop und erledigt dort folgende Schritte:
 
-* Aktive Zellen werden in `conn[]` oder `voice_gain[]` einsortiert.
-* Poly AT auf einem `per_voice`-Ziel geht in `voice_gain[t]`. Poly AT auf einem
-  globalen Ziel wird zu einer normalen Verbindung mit der Last-Note-Quelle.
-* Die Rate wird in ein Phaseninkrement umgerechnet. `powf` läuft damit nur im
-  Main-Loop.
+* Poly AT auf einem `per_voice`-Ziel → `voice_gain[t]`.
+* Alles andere, auch Poly AT auf globalen Zielen, wird zu einer `Connection`.
+* Rate → Phaseninkrement (`powf`) und Teilung → `Ratio`.
 
 ### 3.5 Übergabe Main → Audio
 
-Ein **Triple-Buffer** mit drei `Program`-Instanzen, insgesamt ≈ 360 Byte. Main schreibt in
-den freien Puffer und tauscht ihn atomar (Release) mit dem mittleren, Audio holt ihn zu
-Beginn von `Tick()` ab (Acquire). Keine Seite wartet, und es gewinnt der neueste Stand.
-LFO-Phasen und Glättungszustände liegen in der Engine. Ein neues Program setzt sie
-nicht zurück, Rasteränderungen beim Spielen sind deshalb nahtlos.
+* Ein **Triple-Buffer** (`mailbox.h`) mit drei `Program`-Instanzen: Main schreibt in
+  `Back()` und veröffentlicht mit `Publish()`; Audio holt zu Beginn von `Tick()` mit
+  `Fetch()` ab. Keine Seite wartet, und es gewinnt immer der neueste Stand.
+* Phasen und Glättungszustände liegen in der Engine. Ein neues Program setzt sie nicht
+  zurück (Test `TestProgramSwapKeepsPhase`).
 
 ## 4. Modulationsverarbeitung
 
 ### 4.1 Ablauf eines Ticks
 
-`Tick(n)` wird vom Instrument einmal pro Audio-Block aufgerufen, mit der tatsächlichen
-Sampleanzahl `n`: 48 bei Toy Piano und Physical Modeling, 256 bei Nebulae.
+`Tick(n)` läuft einmal pro Audio-Block mit der tatsächlichen Sampleanzahl `n`:
 
 ```text
-1. Program aus der Mailbox holen, falls neu.
-2. Wenn !program.active: Phasen fortschreiben (2 Additionen), Offsets bleiben +0.0f, Ende.
-3. Für jede Quelle in source_mask: Wert berechnen (§ 4.2–4.4) → src[8].
-4. offset[0..7] = 0; für jede Verbindung c: offset[c.target] += c.gain · src[c.source].
+1. Program aus dem Triple-Buffer holen, falls neu; bei geändertem n die Koeffizienten neu berechnen.
+2. Clock-Folger fortschreiben: MIDI-Clock-Impulse, Start, Gate-Flanken; Note-On-Zähler für Retrigger.
+3. !program.active → beim Übergang Offsets auf +0.0f setzen; freie Phasen fortschreiben; Ende.
+4. LFO 1/2, Random, CV 1/2, Modwheel, Channel AT, Poly AT (Last-Note) berechnen → source[8].
+5. offset[0..7] = 0; für jede Verbindung c: offset[c.target] += c.gain · source[c.source].
 ```
 
-Danach liest das Instrument, wann immer es einen Parameter braucht:
+Bei aktiver Matrix werden immer alle acht Quellen gerechnet. Das kostet nur wenige
+hundert Zyklen und hält jede Quelle aktuell, sobald eine neue Verbindung hinzukommt.
+
+Das Instrument liest:
 
 ```cpp
-float Apply(size_t t, float base) const     { return Clamp01(base + offset_[t]); }
-float ApplyVoice(size_t t, float base, float voice_pressure) const
-    { return Clamp01(base + offset_[t] + voice_gain_[t] * voice_pressure); }
+float Apply(t, base)            = Clamp01(base + offset[t])
+float ApplyVoice(t, base, p)    = Clamp01(base + offset[t] + voice_gain[t] · p)
 ```
 
-**Bitgenau neutral**: Ohne aktive Verbindung ist `offset_[t] == +0.0f`, und
-`Clamp01(base + 0.0f) == base` gilt für jedes `base` in [0, 1]. Ein Instrument mit
-eingebundener, aber leerer Matrix verhält sich dadurch exakt wie vorher. Das wird
-getestet (TEST_PLAN § 2.3).
+* **Bitgenau neutral**: Ohne aktive Verbindung ist `offset[t] == +0.0f` und
+  `voice_gain[t] == 0`. Für jedes `base` in [0, 1] liefert die Matrix dann genau `base`
+  (Test `TestNeutral`, auch nachdem eine Verbindung entfernt wurde).
+* Begrenzt wird **nach** der Summe.
 
-**Begrenzung erst nach der Summe**: Gegenläufige Verbindungen heben sich korrekt auf.
-Die Begrenzung auf [0, 1] verhindert ungültige Werte für die Abbildung des Instruments.
+### 4.2 LFO, Random und Synchronisation
 
-### 4.2 LFO und Random
-
-* **Phase** als `uint32_t`-Akkumulator: `phase += inc · n`. Der Überlauf ist der
-  Periodenwechsel, ohne `fmod` und ohne Drift. Die Frequenz stimmt bei jeder
-  Blockgröße (E7).
-* **Formen** aus `p = phase / 2^32`: Dreieck, Sägezahn und Rechteck direkt; Sinus über
-  ein Polynom ohne Tabelle (Fehler < 0,1 %, `SCHÄTZUNG`).
-* **Retrigger**: Ändert sich der Note-On-Zähler, setzt die Engine die Phase auf 0.
-* **Random**: eigener Phasenakkumulator. Bei Überlauf gilt `prev = cur` und
-  `cur = xorshift32() → −1…+1`. Modus Stufe gibt `cur` aus, Modus geglättet
-  `prev + (cur − prev) · p`. Der Startwert ist fest, Tests sind reproduzierbar.
+* **Frei**: `uint32_t`-Phasenakkumulator `phase += inc · n`. Die Phase ist nach gleicher
+  Sampleanzahl für alle Tick-Längen bitgleich (Test bei 12, 32, 48, 64 und 256 Samples).
+* **Formen** aus `p ∈ [0, 1)`:
+  * Sinus über ein Polynom, Fehler 0,11 % (`GEMESSEN`);
+  * Dreieck, Sägezahn und Rechteck direkt aus der Phase;
+  * Sample & Hold zieht bei jedem Periodenwechsel einen neuen Wert (xorshift32, fester
+    Startwert).
+* **Random**: neuer Wert bei jedem Periodenwechsel. Im Modus geglättet läuft der Wert
+  linear vom vorigen zum neuen.
+* **Synchronisation** (`ClockFollower`):
+  * Der Folger zählt Impulse: MIDI-Clock mit 24 ppqn, oder Gate-Flanken, die einmal pro
+    Block abgefragt werden.
+  * Er schätzt die Periode (MIDI: Glättung 1/8, Gate: 1/2).
+  * Die Phase ist `((Impulse mod den) + Bruchteil) · num / den`; der Bruchteil
+    interpoliert zwischen den Impulsen.
+* **Verhalten der Synchronisation**:
+  * **MIDI Start** (`FA`): Der nächste Clock-Impuls ist Taktanfang, die Phase steht bis
+    dahin auf 0. Continue und Stop setzen nichts zurück.
+  * **Clock oder Gate stoppt**: Der Bruchteil läuft höchstens bis kurz vor den nächsten
+    erwarteten Impuls. Der LFO **hält** und läuft nicht davon (Test `TestMidiClockSync`).
+  * **Auflösung**: MIDI-Clock-Impulse und Gate-Flanken werden mit Blockauflösung
+    erfasst, bei Block 48 also 1 ms. Der Jitter wird durch die Periodenschätzung
+    geglättet. Gate-Impulse kürzer als ein Block können verloren gehen (E8, Messung H8).
+* **Retrigger** (nur frei laufend): Jedes Note On setzt die Phase auf 0.
 
 ### 4.3 CV-Aufbereitung
 
 ```text
-x = cv − cal_offset[i]                 // Gerätekalibrierung (STORAGE § 3), Standard 0
-x = |x| < 0,02 ? 0 : (x − sign(x)·0,02) / 0,98    // Totzone gegen Rauschen offener Buchsen (E8)
-y += a_cv · (x − y)                    // ≈ 2 ms
+x = cv − cal_offset[i]                              // Kalibrierung (SET_CALIBRATION, RAM in v0.1)
+x = |x| < 0,02 ? 0 : sign(x) · (|x| − 0,02) / 0,98   // Totzone gegen Rauschen offener Buchsen
+y += a · (x − y)                                    // 2 ms
 ```
 
-Die Werte für Totzone und Zeitkonstante sind `VORSCHLAG`. Sie werden in Phase 2 am
-Gerät festgelegt.
+Totzone und Zeitkonstante sind `VORSCHLAG` und werden in H5 am Gerät überprüft. Der
+Monitor zeigt dafür auch die Rohwerte.
 
-### 4.4 MIDI-Quellen
+### 4.4 MIDI-Quellen und -Ereignisse (`Controller::HandleMidi`)
 
-* **Main** (`HandleMidi`):
-  * CC1 → `mw_raw`; Channel Pressure → `chat_raw`.
-  * Note On (Velocity > 0) → `pressure[n] = 0`, Note gehalten, ans Ende der Last-Note-Liste,
-    Retrigger-Zähler + 1.
-  * Poly Pressure → `pressure[n] = v`, nur wenn die Note gehalten ist.
-  * Note Off oder Note On mit Velocity 0 → `pressure[n] = 0`, Note aus der Liste.
-  * `last_pressure = pressure[letzte gehaltene Note]`, oder 0, wenn keine gehalten ist.
-* Noten werden **mitgelesen und an das Instrument weitergegeben** (`HandleMidi` gibt
-  `false` zurück). CC1 und Aftertouch werden verbraucht. Das ist unkritisch, weil keines
-  der vorhandenen Instrumente diese Nachrichten nutzt (`BELEGT`: Toy Piano verarbeitet
-  nur Note On, Physical Modeling nur CC20–33, Note On und Pitch Bend).
-* **Audio**: 7-Bit-Rohwert / 127, anschließend Glättung mit 10 ms gegen Stufen der
-  7-Bit-Werte.
-* Die Last-Note-Liste fasst 16 Einträge. Läuft sie über, fällt die älteste Note heraus,
-  was nur die Last-Note-Regel betrifft. `All Notes Off` (CC123) leert Tabelle und Liste.
+| Nachricht | Wirkung | an das Instrument weiter? |
+| --- | --- | --- |
+| CC1 | Modwheel | nein |
+| Channel Pressure | Channel AT | nein |
+| Poly Key Pressure | `pressure[note]`, nur bei gehaltener Note; Last-Note | nein |
+| Note On (v > 0) | Druck der Note = 0, Note gehalten, ans Ende der Last-Note-Liste, Retrigger-Zähler + 1 | ja |
+| Note Off, Note On v = 0 | Druck = 0, Note entfernt | ja |
+| CC120, CC123 | alle Noten und Drücke löschen | ja |
+| Clock `F8`, Start `FA` | Clock-Zähler bzw. Taktanfang | ja |
+| SysEx `7D 4D 44 …` | Protokoll | nein |
+| alles andere | — | ja |
+
+Die Last-Note-Liste fasst 16 Noten. Bei Überlauf fällt die älteste heraus; das betrifft
+nur die Last-Note-Regel.
 
 ### 4.5 Parametersprünge vermeiden
 
 | Ursache | Maßnahme |
 | --- | --- |
-| 7-Bit-MIDI-Stufen | 10 ms Glättung in der Engine (global) bzw. im Stimmen-Helfer |
+| 7-Bit-MIDI-Stufen | 10 ms Glättung (global in der Engine, pro Stimme in `VoicePressure`) |
 | CV-Rauschen | Totzone + 2 ms |
-| Tiefenänderung im Editor | Offset springt einmal pro Tick. Instrumente mit eigener Parameterglättung (Physical Modeling 5 ms) fangen das ab. Bei Toy Piano v0.3 bekommen die neuen Ziele eine eigene 5-ms-Glättung (Phase 5). |
-| Random im Modus Stufe | gewollt; Modus geglättet als Alternative |
-| Neues Program | keine Phasen-Rücksetzung, Offsets laufen stetig weiter |
-| Lastspitzen | feste Schleifengrenzen (≤ 8 Quellen, ≤ 8 Verbindungen), kein Heap, kein `powf`, keine Datenabhängigkeit |
+| Tiefenänderung im Editor | Offset springt einmal pro Tick; die eigene Parameterglättung des Instruments fängt das ab (Physical Modeling 5 ms; Toy Piano v0.3 bekommt eine) |
+| S&H, Random-Stufe, Rechteck | gewollt; Random geglättet als Alternative |
+| Neues Program | Phasen und Glättung laufen weiter |
+| Lastspitzen | feste Schleifengrenzen, kein Heap (Test `TestNoAllocation`), kein libm im Tick außer `fabs` |
 
-Stufenziele wie Modellwahl sind in v0.1 **keine** Ziele. Damit entfallen Hysterese und
-Crossfade-Fragen; sie lassen sich später ergänzen.
+Stufenziele wie die Modellwahl sind in v0.1 keine Ziele.
 
 ## 5. Globale und stimmenbezogene Modulation
 
-### 5.1 Zwei Wege
-
 | Weg | Quellen | Ergebnis | Kosten |
 | --- | --- | --- | --- |
-| **Global** | alle 8, Poly AT als Last-Note | `offset_[t]`, einmal pro Tick | ≤ 8 Multiplikationen und Additionen |
-| **Stimme** | nur Poly AT | `voice_gain_[t] · voice_pressure` beim Lesen pro Stimme | 1 Multiplikation und Addition pro Stimme und Ziel |
+| **Global** | alle 8, Poly AT als Last-Note | `offset[t]`, einmal pro Tick | ≤ `kMaxActive` Multiplikationen und Additionen |
+| **Stimme** | nur Poly AT | `voice_gain[t] · VoicePressure` beim Lesen pro Stimme | 1 Multiplikation und Addition pro Stimme und Ziel |
 
-Alle übrigen Quellen sind für jede Stimme gleich. Pro Stimme muss deshalb **nur der
-Poly-AT-Anteil** gerechnet werden; das hält den Stimmenweg billig. Die Engine kennt
-keine Stimmen. Die Zuordnung Stimme → Note bleibt beim Instrument, das sie ohnehin
-führt (E3).
-
-### 5.2 Helfer für Instrumente
-
-```cpp
-// Pro Stimme ein Objekt (4 Byte), gehört zum Instrument, läuft im Audio-IRQ.
-class VoicePressure {
-  public:
-    float Process(const Engine& e, int note) {   // note < 0: Stimme stumm
-        const float target = note >= 0 ? e.NotePressure(uint8_t(note)) : 0.0f;
-        y_ += e.PressureCoeff() * (target - y_); // 10 ms, Koeffizient passend zu n
-        return y_;
-    }
-    void Reset() { y_ = 0.0f; }                  // bei Voice-Stealing optional
-  private:
-    float y_ = 0.0f;
-};
-```
-
-### 5.3 Verhalten in Grenzfällen
+* Nur Poly AT ist pro Stimme verschieden. Die Engine kennt deshalb keine Stimmen; die
+  Zuordnung Stimme → Note bleibt beim Instrument (E3).
+* `VoicePressure::Process(engine, note)` glättet den Druck der Note einer Stimme
+  (`note < 0` = stumm → 0).
 
 | Fall | Verhalten |
 | --- | --- |
-| Voice-Stealing | Die Stimme spielt eine neue Note, deren Druck mit 0 beginnt. Der Helfer gleitet in 10 ms vom alten Wert dorthin; mit `Reset()` springt er sofort. |
-| Gleiche Note in zwei Stimmen | gleicher Druck (MIDI-1.0-Grenze, E3) |
-| Note Off bei weiterklingender Stimme (Rings ignoriert Note Off) | Druck → 0, die Modulation gleitet zum Grundwert zurück |
+| Voice-Stealing | Die neue Note beginnt mit Druck 0; der Helfer gleitet in 10 ms dorthin, mit `Reset()` sofort |
+| Gleiche Note in zwei Stimmen | gleicher Druck (MIDI-1.0-Grenze) |
+| Note Off, Stimme klingt weiter | Druck → 0, Modulation gleitet zum Grundwert |
 | Poly AT ohne gehaltene Note | ignoriert |
-| Keyboard sendet nur Channel AT | Die Poly-AT-Zeile bleibt wirkungslos; der Editor zeigt die Live-Aktivität (Monitor) |
-| Monophones Instrument (Nebulae) | alle Ziele global → Last-Note-Druck |
+| Monophones Instrument (Nebulae) | alle Ziele global → Last-Note |
 
 ## 6. Instrumentenschnittstelle
 
-### 6.1 API (Entwurf)
+### 6.1 API
 
 ```cpp
 namespace mod {
-class Engine {                                   // Audio-IRQ
-  public:
-    void  Init(const InstrumentInfo& info, float sample_rate);
-    void  SetCv(float cv1, float cv2);           // nach hw.UpdateAllControls()
-    void  Tick(size_t samples);
-    float Apply(size_t target, float base) const;
-    float ApplyVoice(size_t target, float base, float voice_pressure) const;
-    float NotePressure(uint8_t note) const;      // 0…1, ungeglättet
-    float PressureCoeff() const;
-    bool  Active() const;
+struct Module {                                       // ein statisches Objekt pro Instrument
+    LiveState live; Engine engine; Controller controller;
+    void Init(const InstrumentInfo&, float sample_rate, std::size_t block_size,
+              uint8_t device_id = 0, Diagnostics* diagnostics = nullptr);
 };
-class Controller {                               // Main-Loop
-  public:
-    void Init(Engine& engine, const InstrumentInfo& info, uint8_t device_id);
-    bool HandleMidi(const MidiMessage& m);       // true = verbraucht
-    void Service(uint32_t now_ms, MidiSender& out);
+class Engine {                                        // Audio-IRQ
+    void  SetHardware(float cv1, float cv2, bool gate1, bool gate2);   // via adapter::ReadHardware
+    void  Tick(std::size_t samples);
+    float Apply(std::size_t target, float base) const;
+    float ApplyVoice(std::size_t target, float base, float voice_pressure) const;
+    float NotePressure(uint8_t note) const;  float PressureCoeff() const;  bool Active() const;
 };
-struct Module { Engine engine; Controller controller; };  // statisch, Platzierung per MOD_ON_DAISY_HOT
+class Controller {                                    // Main-Loop
+    bool   HandleMidi(const MidiMessage&);           // true = verbraucht
+    void   Service(uint32_t now_ms, MidiSender&);
+    Status LoadPatch(const Patch&);                  // lokal, z. B. Tastenkombination
+    void   SetCalibration(float cv1, float cv2);
+};
+namespace adapter {                                   // libDaisy
+    void ReadHardware(Engine&, daisy::desktop_devkit::Hardware&);
+    bool ToMessage(const daisy::MidiEvent&, MidiMessage&);
+    class UsbMidiSender : public MidiSender;          // prüft USBD_STATE_CONFIGURED wie Toy Piano
+}
 }
 ```
 
-`MidiMessage` ist eine kleine libDaisy-freie Struktur aus Typ, Kanal, zwei Datenbytes und
-einem Zeiger auf SysEx-Daten mit Länge. `MidiSender` ist ein Interface mit
-`bool Send(const uint8_t*, size_t)`. Es wird nur im Main-Loop aufgerufen, ein virtueller
-Aufruf ist dort unkritisch. Der Adapter implementiert es mit `MidiUsbHandler::SendMessage`
-und prüft vorher `dev_state == USBD_STATE_CONFIGURED`, wie Toy Piano.
+### 6.2 Einbindung (Muster: `bench/src/main.cpp`)
 
-### 6.2 Einbindung in fünf Schritten (Phase 5, je Instrument)
+```cpp
+mod::Module modulation;                    // optional MOD_ON_DAISY_HOT für eine andere Section
+modulation.Init(kInfo, hw.seed.AudioSampleRate(), kBlock);
+// Audio-Callback
+hw.UpdateAllControls();
+mod::adapter::ReadHardware(modulation.engine, hw);
+modulation.engine.Tick(size);
+value = modulation.engine.Apply(t, base);  // bzw. ApplyVoice(t, base, voice.pressure.Process(engine, note))
+// Main-Loop
+while(usb_midi.HasEvents()) {
+    const daisy::MidiEvent e = usb_midi.PopEvent();
+    mod::MidiMessage m;
+    if(mod::adapter::ToMessage(e, m) && !modulation.controller.HandleMidi(m))
+        InstrumentMidi(e);
+}
+modulation.controller.Service(daisy::System::GetNow(), sender);
+```
 
-1. Eine `constexpr InstrumentInfo` mit bis zu 8 Zielen anlegen.
-2. Im Makefile die Include-Pfade ergänzen und `mod::Module` statisch anlegen.
-3. Im Audio-Callback nach `UpdateAllControls()` `SetCv(hw.cv[0].Value(), hw.cv[1].Value())`
-   und `Tick(size)` aufrufen. An den Lesestellen der Parameter `Apply` bzw. `ApplyVoice`.
-4. Im Main-Loop jedes `MidiEvent` zuerst an `HandleMidi()` geben und danach
-   `Service()` aufrufen.
-5. Host-Test: Die vorhandenen Callback-Fakes zeigen mit leerer Matrix bitgenau dieselbe
-   Ausgabe, mit Matrix die erwartete Modulation.
+### 6.3 Zieltabellen
 
-### 6.3 Vorschläge für Zieltabellen
-
-**Toy Piano v0.3** (technischer Integrationstest; neue Ziele nötig, E4):
+**Toy Piano v0.3** (Entwicklungsumgebung, N3):
 
 | Spalte | Ziel | Weg | span | Hinweis |
 | --- | --- | --- | --- | --- |
-| 0 | Pitch | Stimme | ±1 st | Vibrato; pro Stimme über Phaseninkrement × 2^(x/12) |
+| 0 | Pitch | Stimme | `+-1 st` | Vibrato |
 | 1 | Level | Stimme | 100 % | Tremolo, Poly-AT-Lautstärke |
 | 2 | Harmonic | Stimme | 100 % | Anteil des 2. Obertons |
 | 3 | Attack | global, `latched` | 100 % | wirkt beim nächsten Anschlag |
 | 4 | Decay | global, `latched` | 100 % | wirkt beim nächsten Anschlag |
-| 5–7 | — | — | — | ausgegraut (prüft D4) |
+| 5–7 | frei für Versuche | — | — | sonst ausgegraut |
 
 **Rings (Physical Modeling)** (DSP-Änderung für den Stimmenweg nötig, E1):
 
 | Spalte | Ziel | Parameter heute | Weg | span |
 | --- | --- | --- | --- | --- |
-| 0 | Pitch | `Frequency` (0…1 = ±24 st) | Stimme | 0,25 = ±12 st |
+| 0 | Pitch | `Frequency` (0…1 = ±24 st) | Stimme | 0,25 = `+-12 st` |
 | 1 | Structure | `Structure` | Stimme¹ | 100 % |
 | 2 | Brightness | `Brightness` | Stimme | 100 % |
 | 3 | Damping | `Damping` | Stimme | 100 % |
@@ -404,82 +386,64 @@ und prüft vorher `dev_state == USBD_STATE_CONFIGURED`, wie Toy Piano.
 | 6 | Reverb | `Decay` | global | 100 % |
 | 7 | Dry/Wet | `Wet` | global | 100 % |
 
-¹ `OFFEN`: In Akkordmodellen wählt Structure den Akkord über `ChordSelector` für den
-ganzen Part. Ob eine stimmenbezogene Structure dort sinnvoll ist, wird in Phase 5
-geprüft.
+¹ `OFFEN`: In Akkordmodellen wählt Structure den Akkord für den ganzen Part
+(`ChordSelector`). Ob eine stimmenbezogene Structure dort sinnvoll ist, wird bei der
+Integration geprüft.
 
-Integration: `ParameterManager::Advance()` glättet bereits mit 5 ms. Die globalen Ziele
-brauchen nur `current_[i] += k · (Apply(i, target_[i]) − current_[i])`. Der Stimmenweg
-übergibt 4 Patches und 4 Pitch-Offsets an `Part::Process`.
-
-**Nebulae** (alles global, Poly AT als Last-Note; effektiv 187,5 Hz, E7): Start, Speed,
-Size, Density, Pitch, Overlap, Blend, Window, abgebildet auf `Parameters::primary[0..7]`.
+**Nebulae**: Start, Speed, Size, Density, Pitch, Overlap, Blend und Window, alle global.
+Poly AT kommt dort über die Last-Note-Regel; die effektive Rate liegt bei 187,5 Hz (E7).
 
 ## 7. Echtzeitregeln
 
-Die Regeln entsprechen denen der vorhandenen Projekte und sind verbindlich:
+* **Audio-IRQ**: kein Heap, keine Locks, kein USB, kein QSPI, kein Logging, kein `powf`
+  oder `exp` (Koeffizienten nur bei geänderter Tick-Länge), keine virtuellen Aufrufe,
+  feste Schleifengrenzen.
+* **Main-Loop**: Protokoll, Validierung, `Compile()`, CRC. Antworten gehen in eine
+  Warteschlange mit **2 Rahmen**, weil der Editor höchstens eine Anfrage offen hat.
+  `Service()` sendet höchstens einen Rahmen pro Millisekunde.
+* **Flash**: keine Schreibfunktion in v0.1 (D8). `STORE`/`RECALL` → `NAK 9`.
 
-* **Audio-IRQ**: kein Heap, keine Locks, kein USB, kein QSPI, kein Logging, kein `powf`,
-  keine Division pro Verbindung, keine virtuellen Aufrufe, feste Schleifengrenzen.
-* **Main-Loop**: Protokoll, Validierung, `Compile()`, CRC. Pro Aufruf von `Service()`
-  höchstens ein Rahmen verarbeiten und höchstens eine Antwort senden.
-* **Speicherort**: Standard ist `.bss`, bei BOOT_SRAM also DTCM (E12). Mit dem Makro
-  `MOD_ON_DAISY_HOT` kann ein Instrument den Zustand in den AXI-SRAM legen.
-* **Flash**: In v0.1 gibt es keine Flash-Schreibfunktion (D8). `STORE`-Befehle beantwortet
-  die Firmware mit `NAK 9 = nicht implementiert`.
+## 8. Speicher und Performance
 
-## 8. Speicher- und Performanceabschätzung
+### 8.1 RAM und Code (`GEMESSEN`, ARM-Build der Messfirmware, `arm-none-eabi-nm`)
 
-### 8.1 RAM (`SCHÄTZUNG`)
+| Posten | Bytes |
+| --- | ---: |
+| `mod::Module` gesamt (kMaxActive 8) | **1 936** |
+| `mod::Module` gesamt (kMaxActive 64, Lasttest) | 3 280 |
+| davon Controller (Patch, Antwort, Wiederholungscache, 2 Sende-Rahmen) | ≈ 870 (`SCHÄTZUNG` aus den Feldgrößen) |
+| davon Engine (3 Programs, 3 Monitor-Schnappschüsse, Zustand) | ≈ 850 |
+| davon LiveState (Drucktabelle 128 B, Noten, Zähler) | ≈ 190 |
+| Stack `Engine::Tick` (`-fstack-usage`) | 40 |
+| Code `Engine::Tick` / `Controller::Execute` | 3,3 KiB / 8,6 KiB |
 
-| Posten | Bytes | Kontext |
-| --- | ---: | --- |
-| Program × 3 (Triple-Buffer) | 360 | Audio/Main |
-| Engine: Phasen, Random, 5 Glättungen, `src[8]`, `offset[8]`, Koeffizienten | 150 | Audio |
-| Drucktabelle 128 + Rohwerte + Zähler | 140 | Main → Audio |
-| Last-Note-Liste (16) + gehaltene Noten (128 Bit) | 32 | Main |
-| Patch (Arbeitskopie) | 104 | Main |
-| Empfangsrahmen, Senderahmen, Antwortcache für Wiederholungen | 3 × 120 | Main |
-| `VoicePressure` pro Stimme (Instrument) | 4 je Stimme | Audio |
-| **Summe Modul** | **≈ 1,15 KiB** | |
-| Konstanten (`InstrumentInfo`, Namen) | ≈ 0,2 KiB | Image |
-| Code | ≈ 4–8 KiB | Image (BOOT_SRAM-Grenze 480 KiB) |
+Das Modul liegt standardmäßig im `.bss` und damit bei BOOT_SRAM im DTCM. Toy Piano hat
+dort noch etwa 14,9 KiB frei. 1,9 KiB sind tragbar, werden bei der Integration aber im
+ELF-Check mitgeführt.
 
-### 8.2 CPU pro Tick (`SCHÄTZUNG`, Cortex-M7 480 MHz)
+### 8.2 CPU (`SCHÄTZUNG`; Messung: TEST_PLAN § 3, VALIDATION.md)
 
 Das Budget pro 48-Sample-Block beträgt 1 ms bzw. **480 000 Zyklen**.
 
 | Szenario | Zyklen pro Tick | Anteil bei 1 kHz |
 | --- | ---: | ---: |
-| Matrix inaktiv (eingebunden, keine Verbindung) | ~30 + 8 × ~5 Apply | ≈ 0,015 % |
-| 1 Verbindung (LFO → 1 Ziel) | ~100–150 | ≈ 0,03 % |
-| 4 Verbindungen | ~150–250 | ≈ 0,05 % |
-| 8 Verbindungen, alle Quellen benutzt | ~250 | ≈ 0,05 % |
-| + Stimmenweg Rings (4 Stimmen × 5 Ziele) | +~200 | ≈ 0,1 % gesamt |
-| + Stimmenweg Toy Piano (32 Stimmen × 3 Ziele) | +~900 | ≈ 0,25 % gesamt |
-| Lasttest: 64 aktive Zellen (über der v0.1-Grenze) | ~600 | ≈ 0,13 % |
+| Matrix inaktiv | ~30 + Apply | ≈ 0,015 % |
+| 1–4 Verbindungen (alle Quellen gerechnet) | ~200–300 | ≈ 0,05 % |
+| 8 Verbindungen | ~300 | ≈ 0,06 % |
+| + Stimmenweg 4 Stimmen × 5 Ziele | +~200 | ≈ 0,1 % |
+| + Stimmenweg 32 Stimmen × 5 Ziele | +~1 300 | ≈ 0,3 % |
+| Lasttest: 64 aktive Zellen, 32 Stimmen | ~2 000 | ≈ 0,4 % |
 
-Die Unsicherheit liegt bei etwa Faktor 2–3 (Inlining, Cache, Aufrufkosten). Selbst
-dann bleibt die Matrix **unter 1 % CPU**. Main-Loop-Kosten pro Rasteränderung:
-Validierung, Compile und CRC-32 über 104 Byte, zusammen etwa 5 000 Zyklen (≈ 10 µs).
+Die Messfirmware misst genau diesen Anteil mit dem DWT-Zykluszähler (Tick plus alle
+Apply-Aufrufe), getrennt vom restlichen Callback.
 
-Was die Matrix nicht abdeckt: Kosten, die ein Ziel im Instrument auslöst. Bei Torus
-entstehen keine (Filter werden ohnehin pro Quantum berechnet, E1). Bei Toy Piano
-kostet das neue Pitch-Ziel pro Stimme ein `exp2`. Das wird in Phase 5 gemessen.
+## 9. Stand der Phasen
 
-Wie gemessen wird, steht in [TEST_PLAN_PHASE2.md](TEST_PLAN_PHASE2.md) § 3.
-
-## 9. Weiteres Vorgehen
-
-| Phase | Inhalt |
+| Phase | Stand |
 | --- | --- |
-| 1 | diese Spezifikation; Entscheidungen DECISIONS § 4 |
-| 2 | `include/` + Host-Tests + Messfirmware `bench/` + SysEx-Hardwaretest (TEST_PLAN) |
-| 3 | JUCE-Editor Standalone Windows (editors/mod-on-daisy/docs/GUI.md) |
-| 4 | Performanceprüfung mit integrierten Instrumenten |
-| 5 | Toy Piano v0.3, danach Rings mit Stimmenweg, danach Nebulae |
-| 6 | QSPI-Speicherung umsetzen (STORAGE.md), VST3, weitere Quellen |
-
-Die Speicherung ist in Phase 6 eingeplant. Ihre Spezifikation liegt vor; die Umsetzung
-braucht nach D8 eine eigene Freigabe und kann bei Bedarf früher erfolgen, frühestens nach
-Phase 2.
+| 1 Spezifikation | abgeschlossen; Entscheidungen in DECISIONS.md |
+| 2 Prototyp und Messung | **Software umgesetzt**: Kern, Host-Tests (ASan/UBSan/TSan, 1 Mio. Fuzz-Rahmen), Messfirmware (3 Varianten), `mod_probe.py`, CI. **Offen**: Messungen S0–S8 und Hardwaretests H1–H8 auf dem Desktop-Kit |
+| 3 Editor | nach den Ergebnissen von H3 und H4 |
+| 4 Performance | mit integrierten Instrumenten |
+| 5 Integration | Toy Piano v0.3, danach Rings mit Stimmenweg, danach Nebulae |
+| 6 Erweiterung | QSPI-Speicherung (STORAGE.md, eigene Freigabe), VST3, weitere Quellen |

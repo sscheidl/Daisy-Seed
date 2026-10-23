@@ -1,6 +1,6 @@
 # Mod on Daisy — Architekturentscheidungen v0.1 und technische Einwände
 
-**Stand:** 23. Oktober 2026 · **Phase:** 1 (Architektur und Spezifikation)
+**Stand:** 23. Oktober 2026 · **Phase:** 1 abgeschlossen, Phase 2 als Software umgesetzt
 
 Dieses Dokument hält die Entscheidungen des Projektinhabers fest. Darauf folgen die
 technischen Einwände, die sich bei der Prüfung gegen den tatsächlichen Code des
@@ -13,6 +13,7 @@ Spezifikation selbst steht in:
 | [PROTOCOL.md](PROTOCOL.md) | MIDI-Protokoll v1 (Live-Ebene und SysEx-Konfiguration) |
 | [STORAGE.md](STORAGE.md) | QSPI-Aufteilung, Lösch- und Schreibverfahren, Datenintegrität (nur Spezifikation) |
 | [TEST_PLAN_PHASE2.md](TEST_PLAN_PHASE2.md) | Host-Tests, Messfirmware, Messszenarien und Abnahme für Phase 2 |
+| [VALIDATION.md](VALIDATION.md) | Ergebnisse von Phase 2 (Host gemessen, Hardware ausstehend) |
 | [../../../editors/mod-on-daisy/docs/GUI.md](../../../editors/mod-on-daisy/docs/GUI.md) | Raster-GUI und Editor-Architektur (JUCE) |
 
 **Evidenzklassen:** `BELEGT` = im Repository oder im gepinnten libDaisy nachgelesen;
@@ -215,10 +216,29 @@ pro Instrument im ELF-Check mitgeführt.
 | A7 | Eigenes, stromausfallsicheres QSPI-Verfahren statt `PersistentStorage`; Gerätekalibrierung getrennt vom Patch | D8, E8, E11 |
 | A8 | Messfirmware `modules/mod-on-daisy/bench/` in Phase 2; Toy-Piano-Integration als eigener Schritt v0.3 | D1, D10, E4 |
 
-## 4. Offene Entscheidungen
+## 4. Nachtrag: Entscheidungen vom 23.10.2026
 
-1. **Poly AT auf globalen Zielen**: Last-Note-Druck (**Vorschlag**) oder ausgegraut?
-2. **Zielbezogener Modulationsumfang (`span`)** als Teil der Instrumentenschnittstelle (**Vorschlag**)?
-3. **Toy Piano v0.3**: neue Ziele Level, Pitch und Harmonic, jeweils pro Stimme (**Vorschlag**). Darf Toy Piano dafür nach Phase 2 geändert werden?
-4. **LFO-Parameter v0.1**: Rate 0,02–20 Hz, Wellenform (Sinus, Dreieck, Sägezahn auf/ab, Rechteck), Retrigger aus/Note (**Vorschlag**). Weitere wie Phase oder Sync später.
-5. **Random/S&H v0.1**: Takt-Rate und Modus „Stufe“ oder „geglättet“ (**Vorschlag**). Gate 1 als Takt wäre billig, steht aber nicht in der Quellenliste; erst später?
+Die offenen Punkte aus der ersten Fassung dieses Dokuments sind entschieden:
+
+| Nr. | Thema | Entscheidung | Umsetzung |
+| --- | --- | --- | --- |
+| N1 | Poly AT auf globalen Zielen | **Druck der zuletzt angeschlagenen, gehaltenen Note** (Last-Note) | `LiveState`, `AllowedCells`; nur `latched`-Ziele bleiben für Poly AT gesperrt |
+| N2 | Bedeutung von Tiefe 100 | **pro Ziel festgelegt** (`span`), weil jeder Parameter eine andere musikalische Bedeutung hat | `TargetInfo::span`, `span_text`; Editor zeigt den Umfang im Spaltenkopf |
+| N3 | Toy Piano | darf neue Ziele bekommen. Es ist **Entwicklungsumgebung**, kein eigentliches Instrument; hier wird ausprobiert | Toy Piano v0.3 als nächster Integrationsschritt (ARCHITECTURE § 6.3) |
+| N4 | LFO-Parameter | Wellenformen **Sinus, Dreieck, Sägezahn steigend und fallend, Rechteck, Sample & Hold**; **Synchronisation schaltbar**: frei laufend, MIDI-Clock oder einer der Gate-Eingänge | Parameter Rate, Form, Sync, Gate, Teilung, Retrigger (ARCHITECTURE § 3.3, § 4.2) |
+| N5 | Random/S&H | gleiche Sync-Möglichkeiten wie die LFOs (frei, MIDI-Clock, Gate); Modus Stufe oder geglättet | Ergänzung von mir für ein einheitliches Bedienkonzept, mit wenig Aufwand, weil dieselbe Clock-Logik genutzt wird. Lässt sich wieder entfernen |
+| N6 | Messfirmware drei Ebenen tief | `common/desktop.mk` setzt `DAISY_ROOT ?= ../..` statt `:=` (rückwärtskompatibel) | umgesetzt; alle Instrumente bauen unverändert |
+
+Damit ist Phase 2 freigegeben und als Software umgesetzt. Der Stand steht in
+[VALIDATION.md](VALIDATION.md).
+
+**Präzisierungen meinerseits** (ohne Einfluss auf die Entscheidungen, bei Bedarf änderbar):
+
+* **Teilungen bei MIDI-Clock**: 4 Takte bis 1/32 einschließlich Triolen 1/4T, 1/8T,
+  1/16T.
+* **Teilungen bei Gate**: 1 Zyklus pro 4, pro 2 oder pro 1 Impuls; 2 oder 4 Zyklen pro
+  Impuls. Zwischen den Impulsen interpoliert die gemessene Periode.
+* **MIDI Start** setzt synchronisierte LFOs auf den Taktanfang.
+* **Clock-Stopp**: Bleibt der Takt aus, halten synchronisierte LFOs an, statt frei
+  weiterzulaufen.
+* **Retrigger** wirkt nur bei frei laufenden LFOs.

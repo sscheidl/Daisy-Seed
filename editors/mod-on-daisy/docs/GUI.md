@@ -36,7 +36,7 @@
 │ Auswahl: LFO 2 → Brightness   Tiefe [ -20 ]  ◄━━━━━━━●━━━━━━━━━► An/Aus [x]   │  Zelleneditor
 │ Aktive Verbindungen: 5 / 8                                                     │
 ├────────────────────────────────────────────────────────────────────────────────┤
-│ LFO 1: Rate 2,40 Hz  Form ∿ Sinus ▾  Retrigger ☐ │ LFO 2 … │ Random: Rate, Modus│  Quellenleiste
+│ LFO 1: ∿ Sinus ▾ [Frei|Clock|Gate] Rate 2,40 Hz ☐Retrig │ LFO 2 … │ Random …   │  Quellenleiste
 ├────────────────────────────────────────────────────────────────────────────────┤
 │ Patch „Pad Drift“  [Öffnen…] [Speichern…] [Vom Gerät laden] [Zum Gerät senden]   │  Dateien
 │ Geräte-Slots 1–8 (ausgegraut bis Speicher freigegeben)                         │
@@ -86,9 +86,18 @@ neuesten Wert (PROTOCOL § 4).
 
 ### 2.3 Quellenleiste
 
-* **LFO 1/2**: Rate als Drehregler (0,02–20 Hz, logarithmisch, Anzeige in Hz),
-  Wellenform als Auswahl mit Symbol, Retrigger als Schalter.
-* **Random**: Rate und Modus (Stufe/geglättet).
+* **LFO 1/2**:
+  * **Wellenform** als Auswahl mit Symbol: Sinus, Dreieck, Sägezahn steigend,
+    Sägezahn fallend, Rechteck, Sample & Hold.
+  * **Sync** als Umschalter mit drei Stellungen: *Frei*, *MIDI-Clock*, *Gate* (N4).
+  * Bei *Frei* ein Drehregler **Rate** (0,02–20 Hz, logarithmisch, Anzeige in Hz) und
+    der Schalter **Retrigger**.
+  * Bei *MIDI-Clock* eine Auswahl **Teilung** (4 Takte … 1/32, mit Triolen).
+  * Bei *Gate* die Auswahl **Gate 1/2** und eine **Teilung** (1/4, 1/2, 1/1, 2/1, 4/1
+    Zyklen pro Impuls).
+  * Der Editor zeigt nur die Bedienelemente, die zur gewählten Sync-Art passen.
+* **Random**: Modus (Stufe/geglättet) sowie dieselben Sync-Möglichkeiten und Rate bzw.
+  Teilung wie die LFOs.
 * **CV 1/2, Modwheel, Channel AT, Poly AT**: keine Parameter in v0.1, nur die
   Live-Anzeige. Die CV-Kalibrierung liegt in einem gesonderten Dialog „Gerät“, weil
   sie zum Gerät gehört und nicht zum Patch.

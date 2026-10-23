@@ -4,7 +4,8 @@
 Usage: check-firmware.py [image.bin]
 Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
 Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
-PhysicalModeling-v<version>.bin and instruments/looper/build/Looper-v<version>.bin.
+PhysicalModeling-v<version>.bin, instruments/looper/build/Looper-v<version>.bin and
+modules/mod-on-daisy/bench/build/ModBench-v<version>.bin.
 This does not replace a hardware test.
 """
 import pathlib
@@ -47,6 +48,13 @@ elif path.name.startswith('Looper-v'):
     version = match.group(1)
     expected_name = f'Looper-v{version}.bin'
     marker = rb'LOOPER-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('ModBench-v'):
+    bench = root / 'modules' / 'mod-on-daisy' / 'bench'
+    match = re.search(r'MOD_BENCH_VERSION\s+"([^"]+)"', (bench / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Mod on Daisy bench version"
+    version = match.group(1)
+    expected_name = f'ModBench-v{version}.bin'
+    marker = rb'MOD-BENCH-VERSION=([0-9.]+)\x00'
 else:
     expected_name = f'ToyPiano-v{version}.bin'
     marker = rb'TOYPIANO-FW-VERSION=([0-9.]+)\x00'
