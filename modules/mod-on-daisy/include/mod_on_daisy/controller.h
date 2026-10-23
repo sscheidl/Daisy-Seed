@@ -371,12 +371,15 @@ class Controller {
         switch(param) {
             case ParamRate: *rate = uint16_t(value); break;
             case ParamShape: *shape = uint8_t(value > 255 ? 255 : value); break;
-            case ParamSync:
-                *sync = uint8_t(value > 255 ? 255 : value);
-                // Keep a valid division when the clock source changes.
-                if(*sync == GateClock && *division >= kGateDivisionCount)
-                    *division = kDefaultGateDivision;
+            case ParamSync: {
+                const uint8_t next = uint8_t(value > 255 ? 255 : value);
+                // The division index means something else per clock source (MIDI 1/4 vs.
+                // gate 4/1): a change of source starts at that source's default.
+                if(next != *sync)
+                    *division = next == GateClock ? kDefaultGateDivision : kDefaultMidiDivision;
+                *sync = next;
                 break;
+            }
             case ParamGate: *gate = uint8_t(value > 255 ? 255 : value); break;
             case ParamDivision: *division = uint8_t(value > 255 ? 255 : value); break;
             case ParamRetrigger:

@@ -160,8 +160,9 @@ struct Patch {
 | 4 | Teilung | MIDI: 0 4 Takte, 1 2 Takte, 2 1 Takt, 3 1/2, 4 1/4, 5 1/4T, 6 1/8, 7 1/8T, 8 1/16, 9 1/16T, 10 1/32. Gate: 0 1 Zyklus pro 4 Impulse, 1 pro 2, 2 pro Impuls, 3 zwei pro Impuls, 4 vier pro Impuls | wie LFO |
 | 5 | Retrigger | 0 aus, 1 Neustart bei jedem Note On (nur bei Sync = frei) | — |
 
-Wechselt die Sync-Quelle auf Gate und die bisherige MIDI-Teilung ist dort ungültig, setzt
-der Controller die Teilung auf 1:1.
+Wechselt die Sync-Art, setzt der Controller die Teilung auf den Standard der neuen Art:
+MIDI-Clock 1/4, Gate 1 Zyklus pro Impuls. Derselbe Index bedeutet je nach Art etwas
+anderes; in der MIDI-Tabelle ist 4 zum Beispiel 1/4, in der Gate-Tabelle 4/1.
 
 ### 3.4 Program (kompilierte Form für den Audio-IRQ)
 

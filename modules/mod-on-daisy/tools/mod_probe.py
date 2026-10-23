@@ -29,7 +29,7 @@ CMD = dict(identify=0x01, get_target=0x02, get_allowed=0x03, get_matrix=0x10, se
            set_cell=0x12, clear_matrix=0x13, get_source=0x18, set_source=0x19, get_name=0x1A,
            set_name=0x1B, get_calibration=0x24, set_calibration=0x25, monitor=0x30, get_stats=0x31,
            reset_stats=0x32, set_scenario=0x33)
-MONITOR_FRAME, NAK = 0x70, 0x7F
+MONITOR_FRAME, NAK = 0x7E, 0x7F  # 0x70 is the reply to MONITOR
 SOURCES = ['LFO1', 'LFO2', 'RANDOM', 'CV1', 'CV2', 'MODWHEEL', 'CHAT', 'POLYAT']
 SOURCE_PARAMS = ['rate', 'shape', 'sync', 'gate', 'division', 'retrigger']
 ERRORS = {1: 'checksum', 2: 'length', 3: 'unknown command', 4: 'range', 5: 'busy', 6: 'version',
