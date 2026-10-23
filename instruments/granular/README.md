@@ -128,7 +128,8 @@ are volatile.
 
 FAT32 microSD on the Desktop board: `0:/NEBULAE/SAMPLES/01.wav` ... `16.wav`.
 FAT case-insensitivity applies. Startup/insertion attempts the first existing
-slot. With no card, select Live and record normally.
+slot. With no card, select Live and record normally. Free file names and
+subfolder banks are planned, not implemented: [sample banks](docs/SAMPLE_BANKS.md).
 
 Only RIFF/WAVE PCM16, mono/stereo, 44100/48000 Hz is accepted. Other encodings,
 containers, rates, depths, channels and WAVE_FORMAT_EXTENSIBLE are rejected.
