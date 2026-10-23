@@ -1,6 +1,11 @@
 # Validation — Daisy Physical Modeling 0.1.0
 
-Date: 2026-10-19. Hardware validation: **PENDING — USER TEST**.
+Software validation: 2026-10-19. Hardware follow-up: 2026-10-22.
+**FUNCTIONAL HARDWARE ACCEPTANCE REPORTED — FOUR-VOICE CPU MEASURED.**
+See [hardware results and raw data](HARDWARE_RESULTS_2026-10-22.md).
+A [practical follow-up](HARDWARE_PLAYING_2026-10-22.md) found repeatable callback
+deadline overruns during model changes. The user accepts these as a documented
+limitation for the intended four-voice use; optimizing transitions is optional.
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
@@ -103,18 +108,38 @@ allocation. Static reserves are linker measurements, not stack high-water data. 
 application/DSP frame in the audio path is now 272 bytes (Synth::Render); the
 main-loop MIDI service has a 312-byte frame.
 
-Real CPU utilization: **NOT MEASURED**. The firmware now exposes actual callback
-smoothed average/peak and deadline misses through requested MIDI diagnostics;
-`tools/cpu_probe.py` records those real replies as CSV on the user's PC. Host
-clock mocks validate the mechanism only. The audio block deadline is 1 ms, and
-polyphony remains four until a separately evaluated implementation exists.
+Real callback CPU utilization was measured on 2026-10-22: four voices in all six
+models, average readings approximately 33.07–42.69%, highest captured peak 56.71%,
+and zero deadline overruns across 174084 captured blocks. The completed run used
+maximum reverb Decay and a muted final master; it does not exercise the final
+limiter knee or establish parameter/model-transition worst cases. See the
+[measurement conditions, averaging method and raw CSV](HARDWARE_RESULTS_2026-10-22.md).
+Host clock mocks remain mechanism tests only. The block deadline is 1 ms, and
+polyphony remains four; six/eight voices and a modulation matrix are unmeasured.
+
+Subsequent ordinary-rate playing/automation captures include model transitions:
+one/two/eight moving controls, at most eight requested notes per chord, and four
+actual DSP voices. They found 20 deadline overruns across 300085 captured blocks,
+with a highest callback peak of 141.58%. All overrun increments coincide with
+snapshot intervals containing entry into string-based models. See
+[the raw evidence and schedule](HARDWARE_PLAYING_2026-10-22.md).
 
 ## Remaining user validation
 
-Physical flash, audio listening/levels, physical switch orientation, real CPU/IRQ
-budget, stack high-water and Studio One USB enumeration: **PENDING — USER TEST**.
-Use HARDWARE_TEST.md. No attached hardware was accessed or flashed. Optional NRPN,
-aftertouch assignment, MPE and DIN MIDI are not part of this implementation.
+The user reports successful flashing, click-free model changes with continuing
+reverb tails, four-voice polyphony, expected stereo distribution, MIDI/pitch bend
+with S1 (Studio One), and functioning knobs with familiar Rings behavior.
+The agent subsequently read hardware telemetry with explicit authorization;
+flashing was performed by the user.
+
+MIDI-driven knob sweeps/model changes are measured. Switch-time deadline overruns
+are documented and accepted for the intended use. Physical control movement, analog output-level
+measurements, physical switch orientation as a separately recorded check, full
+IRQ budget, stack high-water and stationary-pot noise remain open. Board
+revision/codec identity and flashed-image checksum were not independently
+verified. Use [the hardware checklist](HARDWARE_TEST.md) for further checks.
+Optional NRPN, aftertouch assignment, MPE and DIN MIDI are not part of this
+implementation.
 
 
-**SOFTWARE READY — HARDWARE TEST PENDING**
+**SOFTWARE VALIDATED — FUNCTIONAL HARDWARE ACCEPTANCE REPORTED — FOUR-VOICE CPU MEASURED**

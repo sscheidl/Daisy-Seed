@@ -9,7 +9,7 @@ both `test` and `test-sanitize`. Corrections stay on the existing feature branch
 | --- | --- |
 | F1 global reverb tail | Fixed: fade dry and reverb send only; never fade the stored wet return. Model-6 polarity affects only dry, so the wet tail never flips on model changes. |
 | F2 model-6 reverb coupling | Deliberate design, retained per user instruction: Decay, Dry/Wet and Reverb Damping/Diffusion/Input Gain stay independent from synthesis Damping/Brightness. Special string damping/dispersion/stereo routing remain. Architecture now states this explicitly. |
-| F3 CPU measurement | Official CpuLoadMeter in the callback, smoothed average/peak and deadline-overrun counters, coherent audio-to-main snapshots on request, channel-16 MIDI diagnostic replies only in main. Optional real-device CSV/benchmark helper. Actual board readings remain NOT MEASURED. No eight-voice mode or memory migration is inferred from host timing. |
+| F3 CPU measurement | Official CpuLoadMeter in the callback, smoothed average/peak and deadline-overrun counters, coherent audio-to-main snapshots on request, channel-16 MIDI diagnostic replies only in main. Optional real-device CSV/benchmark helper. [Actual four-voice board readings](HARDWARE_RESULTS_2026-10-22.md) were collected on 2026-10-22. No eight-voice mode or memory migration is inferred from host timing. |
 | F4 test gaps | Regular spectral four-note tests in every model, earlier-voice preservation and fifth-note steal, bend on all sounding voices, extreme levels, wet-tail waveform continuity including model 6, CC28 versus unchanged/moved switches. |
 | F5 chord thresholds | Original Structure*10 nearest-chord rule with +/-0.1 chord hysteresis restored; unit tests cover thresholds, jitter and endpoints. |
 | F6 diffusion default | Normalized default .625/.9 gives actual .625 diffusion; units and mapping documented and tested. |
@@ -41,7 +41,10 @@ at controlled synthetic durations: averaging, peaks above 100%, deadline countin
 reset, timer wrap, request filtering and offline guard. They are **not real CPU
 measurements**. The telemetry SPSC payload also has its own concurrent TSan test.
 The Python decoder is tested offline for framing, malformed/partial packets,
-resynchronization, overload values and uint32 counters. No measurement tool was
-run against a board; no hardware access or flash was performed.
+resynchronization, overload values and uint32 counters. During the original
+software review, no measurement tool was run against a board and no hardware
+access or flash was performed. On 2026-10-22, after the user flashed and confirmed
+functional behavior, authorized real-board telemetry was captured; see
+[hardware follow-up](HARDWARE_RESULTS_2026-10-22.md).
 
 See MIDI.md for the diagnostic protocol and HARDWARE_TEST.md for real CSV capture.

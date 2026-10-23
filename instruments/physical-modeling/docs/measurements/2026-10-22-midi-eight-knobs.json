@@ -1,0 +1,86 @@
+{
+  "duration_requested_seconds": 60,
+  "master": 0,
+  "maximum_note_ons_per_second": 16,
+  "notes_per_chord": 8,
+  "controller_mode": "midi-all",
+  "model_change_interval_seconds": 10,
+  "one_knob_sweep_seconds": 12,
+  "knob_update_interval_seconds": 0.1,
+  "decoder_sha256": "064b5c4cc3bffb19fdfcded8f354481197f25b0ad94b4db37db002a0ea4bef73",
+  "model_changes": [
+    {
+      "elapsed_seconds": 0,
+      "model": 1
+    },
+    {
+      "elapsed_seconds": 10.0,
+      "model": 2
+    },
+    {
+      "elapsed_seconds": 20.0,
+      "model": 3
+    },
+    {
+      "elapsed_seconds": 30.0,
+      "model": 4
+    },
+    {
+      "elapsed_seconds": 40.0,
+      "model": 5
+    },
+    {
+      "elapsed_seconds": 50.0,
+      "model": 6
+    }
+  ],
+  "cc_ranges": {
+    "21": [
+      0,
+      127
+    ],
+    "22": [
+      0,
+      127
+    ],
+    "23": [
+      0,
+      127
+    ],
+    "24": [
+      0,
+      127
+    ],
+    "25": [
+      0,
+      127
+    ],
+    "26": [
+      0,
+      127
+    ],
+    "27": [
+      0,
+      127
+    ],
+    "20": [
+      0,
+      127
+    ]
+  },
+  "note_ons": 520,
+  "snapshots": 61,
+  "final_snapshot": {
+    "utc": "2026-10-22T20:56:53.281802+00:00",
+    "elapsed_seconds": 60.0,
+    "stage": "final",
+    "average_percent": 38.59,
+    "maximum_percent": 136.16,
+    "blocks": 60013,
+    "overruns": 4,
+    "model": 6,
+    "voices": 4
+  },
+  "completed": true,
+  "ended_utc": "2026-10-22T20:56:53.286507+00:00"
+}

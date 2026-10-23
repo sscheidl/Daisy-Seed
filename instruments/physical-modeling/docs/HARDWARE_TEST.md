@@ -1,4 +1,14 @@
-# Hardware acceptance — PENDING — USER TEST
+# Hardware acceptance
+
+Status, 2026-10-22: **functional hardware acceptance reported; four-voice CPU
+measured**. The user confirmed successful flashing, continuing reverb tails,
+click-free model changes, four voices, stereo distribution, MIDI/pitch bend and
+functioning knobs. See [results, conditions and raw data](HARDWARE_RESULTS_2026-10-22.md).
+The checklist below remains the procedure for repeat testing; individual detailed
+items beyond the reported results are not automatically marked complete.
+The [playing/automation follow-up](HARDWARE_PLAYING_2026-10-22.md) measured repeatable
+deadline overruns on entry into string-based models. The user accepts these
+as a known transition limitation for the intended four-voice use.
 
 1. Download the Physical Modeling Actions artifact; verify SHA256SUMS.
    Use the already working external Daisy bootloader and the application BIN
@@ -25,11 +35,14 @@
    take control, and a moved switch takes over model selection.
 10. Measure actual callback average/peak and 1 ms deadline misses using the
     telemetry instructions below. Also check analog output peaks, IRQ/stack
-    behavior and stationary-pot noise/MIDI ownership. CPU load: NOT MEASURED.
+    behavior and stationary-pot noise/MIDI ownership. A settled-model four-voice
+    CPU run and MIDI-driven knob/model changes are recorded. The latter exposed
+    switch-time deadline overruns; physical control movement is a separate check.
 
 Record board revision, codec, USB host/DAW, switch orientation and observations.
 Software tests do not replace listening, electrical measurements or hardware
-real-time deadline validation. No hardware access/flash was performed by the agent.
+real-time deadline validation. The user performed the flash; the agent collected
+CPU telemetry with explicit authorization on 2026-10-22.
 
 
 ## Record actual CPU measurements
@@ -52,12 +65,20 @@ record the board revision, binary SHA256, model/parameters, sample rate, block s
 smoothed average, maximum and deadline misses. 100% equals the 1 ms callback
 budget. Values above 100% and any deadline misses must be retained in the report.
 The benchmark changes synth controls, sends repeated chords for 30 seconds per
-model and ends at Master=0; send CC33=127 to play again. It measures steady-model
-stress after settling, so keep a separate manual run covering model transitions.
+model, sets Master=127 at each phase start and ends at Master=0. The repeated
+strikes with maximum reverb feedback/input can sound like a loud feedback loop;
+mute or turn down the external monitoring before starting. Afterward, reduce
+reverb/input settings before restoring CC33=127. The recorded 2026-10-22 run
+instead used a session wrapper to keep Master=0 throughout.
+It measures steady-model stress after settling, so keep a separate manual run
+covering model transitions. At 1 Hz polling, the last captured snapshot is around
+29 seconds; counters do not include the final unsampled interval of each phase.
 
 Host tests use synthetic clock values and **are not hardware performance data**.
-No measurements have yet been taken on a real board. Keep the CSV files as user
-measurements outside Git. Four-voice readings establish headroom; they alone do
+Actual board measurements from 2026-10-22 and their raw CSV are now recorded in
+[the results report](HARDWARE_RESULTS_2026-10-22.md) at the user's request.
+Keep exploratory captures outside Git until selected for documented results.
+Four-voice readings establish headroom; they alone do
 not prove that eight voices are possible, since the global reverb has fixed cost
 and the original Part still supports a maximum of four. No memory placement or
 voice-count expansion has been made without measurements.

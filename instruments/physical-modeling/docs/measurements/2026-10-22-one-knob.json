@@ -1,0 +1,132 @@
+{
+  "duration_requested_seconds": 180,
+  "master": 0,
+  "maximum_note_ons_per_second": 8,
+  "model_change_interval_seconds": 10,
+  "one_knob_sweep_seconds": 12,
+  "knob_update_interval_seconds": 0.1,
+  "decoder_sha256": "064b5c4cc3bffb19fdfcded8f354481197f25b0ad94b4db37db002a0ea4bef73",
+  "model_changes": [
+    {
+      "elapsed_seconds": 0,
+      "model": 1
+    },
+    {
+      "elapsed_seconds": 10.0,
+      "model": 2
+    },
+    {
+      "elapsed_seconds": 20.0,
+      "model": 3
+    },
+    {
+      "elapsed_seconds": 30.0,
+      "model": 4
+    },
+    {
+      "elapsed_seconds": 40.0,
+      "model": 5
+    },
+    {
+      "elapsed_seconds": 50.0,
+      "model": 6
+    },
+    {
+      "elapsed_seconds": 60.0,
+      "model": 1
+    },
+    {
+      "elapsed_seconds": 70.0,
+      "model": 2
+    },
+    {
+      "elapsed_seconds": 80.0,
+      "model": 3
+    },
+    {
+      "elapsed_seconds": 90.0,
+      "model": 4
+    },
+    {
+      "elapsed_seconds": 100.0,
+      "model": 5
+    },
+    {
+      "elapsed_seconds": 110.0,
+      "model": 6
+    },
+    {
+      "elapsed_seconds": 120.0,
+      "model": 1
+    },
+    {
+      "elapsed_seconds": 130.0,
+      "model": 2
+    },
+    {
+      "elapsed_seconds": 140.0,
+      "model": 3
+    },
+    {
+      "elapsed_seconds": 150.0,
+      "model": 4
+    },
+    {
+      "elapsed_seconds": 160.0,
+      "model": 5
+    },
+    {
+      "elapsed_seconds": 170.0,
+      "model": 6
+    }
+  ],
+  "cc_ranges": {
+    "21": [
+      0,
+      127
+    ],
+    "22": [
+      0,
+      127
+    ],
+    "23": [
+      0,
+      126
+    ],
+    "24": [
+      1,
+      127
+    ],
+    "25": [
+      0,
+      127
+    ],
+    "26": [
+      0,
+      126
+    ],
+    "27": [
+      0,
+      127
+    ],
+    "20": [
+      1,
+      127
+    ]
+  },
+  "note_ons": 800,
+  "snapshots": 181,
+  "final_snapshot": {
+    "utc": "2026-10-22T20:54:24.140372+00:00",
+    "elapsed_seconds": 180.0,
+    "stage": "final",
+    "average_percent": 39.43,
+    "maximum_percent": 141.54,
+    "blocks": 180053,
+    "overruns": 12,
+    "model": 6,
+    "voices": 4
+  },
+  "completed": true,
+  "ended_utc": "2026-10-22T20:54:24.145106+00:00"
+}

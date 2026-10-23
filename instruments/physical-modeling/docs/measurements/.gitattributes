@@ -1,0 +1,2 @@
+# Preserve the original telemetry capture bytes and its recorded SHA-256.
+*.csv -text whitespace=trailing-space,space-before-tab,cr-at-eol
