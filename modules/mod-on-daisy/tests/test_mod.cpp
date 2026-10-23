@@ -450,14 +450,28 @@ void TestProtocolCommands() {
     proto::Reader id(r.payload.data(), r.payload.size());
     assert(id.U7() == 1 && id.U7() == 0);
     id.U7(); id.U7(); id.U7();
-    char key[17];
-    id.Str(key, 16);
+    char key[kMaxKeyLength + 1]{};
+    id.Str(key, kMaxKeyLength);
     assert(std::strcmp(key, "test") == 0);
     char version[13];
     id.Str(version, 12);
     assert(id.U7() == kMaxActive && id.U14() == 1000 && id.U7() == 0);
     assert(id.U32() == SchemaHash(d.info));
     assert(id.U7() == 0x0A && id.AtEnd());
+
+    // The longest planned key is sent in full (review finding: 17 > 16 characters).
+    {
+        Device pm;
+        pm.info.key = "physical-modeling";
+        pm.module.Init(pm.info, 48000.0f, 48);
+        const Reply ident = pm.Request(proto::Identify, {}, proto::kBroadcast);
+        proto::Reader rr(ident.payload.data(), ident.payload.size());
+        for(int i = 0; i < 5; ++i)
+            rr.U7();
+        char long_key[kMaxKeyLength + 1]{};
+        assert(rr.Str(long_key, kMaxKeyLength) == 17 && rr.Ok());
+        assert(std::strcmp(long_key, "physical-modeling") == 0);
+    }
 
     r = d.Request(proto::GetTarget, Bytes({0}));
     proto::Reader target(r.payload.data(), r.payload.size());

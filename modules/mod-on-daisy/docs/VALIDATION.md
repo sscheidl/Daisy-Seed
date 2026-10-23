@@ -21,7 +21,7 @@ Kennzeichnung: `GEMESSEN` = in diesem Stand ausgeführt; `NICHT GEMESSEN` = steh
 | 2.4 Stimmenweg | Drucktabelle, Last-Note mit Überlauf (17 Noten), Voice-Stealing (Gleiten 10 ms, `Reset`), gleiche Note in zwei Stimmen, Poly AT global → Last-Note |
 | 2.5 Nebenläufigkeit | Triple-Buffer 200 000 Veröffentlichungen ohne gemischte oder ältere Werte; Main/Audio-Threads mit Noten, Druck, CC, Clock, SysEx und Monitor: **keine Meldung von TSan** |
 | 2.6 Codec | alle Kommandos Round-Trip; `GET_MATRIX` = **100 Byte**, `SET_MATRIX` = **95 Byte**; jedes gekippte Bit eines Rahmens erkannt; durch libDaisy gekürzter 128-Byte-Rumpf → `NAK 2`; falsche Version → `NAK 6`; fremde SysEx → ans Instrument; **10⁶ Fuzz-Rahmen** ohne Absturz, Patch immer gültig |
-| 2.7 Controller | Wiederholung mit gleicher `seq` einmal ausgeführt, Lesekommandos immer frisch, lokale Änderung löscht den Wiederholungsspeicher; 9. aktive Zelle → `NAK 7`, CRC unverändert; Warteschlange 2, ≤ 1 Antwort/ms; Monitor ~20 Hz, endet nach 3 s; ohne USB-Host keine Warteschlangenstaus; Speicherkommandos → `NAK 9` |
+| 2.7 Controller | Instrument-Key bis 24 Zeichen vollständig in `IDENTIFY` (`physical-modeling` = 17, Review-Befund); Wiederholung mit gleicher `seq` einmal ausgeführt, Lesekommandos immer frisch, lokale Änderung löscht den Wiederholungsspeicher; 9. aktive Zelle → `NAK 7`, CRC unverändert; Warteschlange 2, ≤ 1 Antwort/ms; Monitor ~20 Hz, endet nach 3 s; ohne USB-Host keine Warteschlangenstaus; Speicherkommandos → `NAK 9` |
 | Variante `kMaxActive = 64` | dieselben Tests (ohne Grenzprüfung 8) grün; Szenario S6 mit 64 aktiven Zellen gültig |
 | Szenarien | S0–S8 gültig für das Prüfinstrument; S4 nutzt jede Quelle genau einmal |
 
@@ -37,9 +37,9 @@ Zwei Fehler wurden vor dem Commit gefunden und behoben:
 
 | Variante | BIN | `mod::Module` (RAM) | `Engine::Tick` Code | `Controller::Execute` Code |
 | --- | ---: | ---: | ---: | ---: |
-| Block 48, kMaxActive 8 (`build/ModBench-v0.1.0.bin`) | 138 744 B | **1 936 B** | 3 406 B | 8 820 B |
-| Block 256, kMaxActive 8 (`build/b256-max8/`) | 138 760 B | 1 936 B | 3 406 B | 8 820 B |
-| Block 48, kMaxActive 64 (`build/b48-max64/`) | 143 560 B | 3 280 B | 3 332 B | 12 672 B |
+| Block 48, kMaxActive 8 (`build/ModBench-v0.1.0.bin`) | 138 608 B | **1 936 B** | 3 406 B | 8 628 B |
+| Block 256, kMaxActive 8 (`build/b256-max8/`) | 138 624 B | 1 936 B | 3 406 B | 8 628 B |
+| Block 48, kMaxActive 64 (`build/b48-max64/`) | 143 448 B | 3 280 B | 3 332 B | 12 504 B |
 
 * `scripts/check-firmware.py`: **PASS** (BOOT_SRAM-Vektoren, eingebettete Version).
 * Stack `Engine::Tick` 40 B (`-fstack-usage`).

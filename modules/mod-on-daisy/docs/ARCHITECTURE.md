@@ -110,7 +110,7 @@ struct TargetInfo {
     bool latched = false;            // nur beim Anschlag gelesen → Poly-AT-Zelle gesperrt
 };
 struct InstrumentInfo {
-    const char* key; const char* version;   // ≤ 16 bzw. ≤ 12 Zeichen
+    const char* key; const char* version;   // ≤ 24 (kMaxKeyLength) bzw. ≤ 12 Zeichen
     TargetInfo targets[8];
     uint8_t unavailable_sources = 0;        // Bit s: Quelle vom Instrument belegt
 };
@@ -415,7 +415,7 @@ Poly AT kommt dort über die Last-Note-Regel; die effektive Rate liegt bei 187,5
 | davon Engine (3 Programs, 3 Monitor-Schnappschüsse, Zustand) | ≈ 850 |
 | davon LiveState (Drucktabelle 128 B, Noten, Zähler) | ≈ 190 |
 | Stack `Engine::Tick` (`-fstack-usage`) | 40 |
-| Code `Engine::Tick` / `Controller::Execute` | 3,3 KiB / 8,6 KiB |
+| Code `Engine::Tick` / `Controller::Execute` | 3,3 KiB / 8,4 KiB |
 
 Das Modul liegt standardmäßig im `.bss` und damit bei BOOT_SRAM im DTCM. Toy Piano hat
 dort noch etwa 14,9 KiB frei. 1,9 KiB sind tragbar, werden bei der Integration aber im

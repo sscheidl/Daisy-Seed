@@ -41,6 +41,7 @@ constexpr uint8_t kGateDivisionCount = sizeof(kGateDivisions) / sizeof(kGateDivi
 constexpr uint8_t kDefaultMidiDivision = 4; // 1/4
 constexpr uint8_t kDefaultGateDivision = 2; // one cycle per pulse
 constexpr uint16_t kRateMax = 16383;        // 0.02 … 20 Hz, logarithmic
+constexpr std::size_t kMaxKeyLength = 24;   // "physical-modeling" has 17
 
 // One grid column, described by the instrument (ARCHITECTURE.md § 3.2).
 struct TargetInfo {
@@ -52,7 +53,7 @@ struct TargetInfo {
 };
 
 struct InstrumentInfo {
-    const char* key = nullptr;       // stable instrument key, <= 16 characters
+    const char* key = nullptr;       // stable instrument key, <= kMaxKeyLength characters
     const char* version = nullptr;   // instrument firmware version, <= 12 characters
     TargetInfo targets[kTargets]{};
     uint8_t unavailable_sources = 0; // bit s: source s is owned by the instrument

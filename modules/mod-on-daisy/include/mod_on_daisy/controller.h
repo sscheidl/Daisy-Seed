@@ -203,7 +203,7 @@ class Controller {
                 w.U7(kVersionMajor);
                 w.U7(mod::kVersionMinor);
                 w.U7(kVersionPatch);
-                w.Str(info_->key, 16);
+                w.Str(info_->key, kMaxKeyLength);
                 w.Str(info_->version, 12);
                 w.U7(kMaxActive);
                 w.U14(unsigned(sample_rate_ / float(block_size_) + 0.5f));
