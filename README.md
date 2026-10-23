@@ -15,6 +15,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Looper v0.3](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import on microSD; host tests and ARM build pass; hardware test pending |
 | [Ambient Reverb v0.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb imported from the FV-1 research project; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
+| [Mod on Daisy](modules/mod-on-daisy/) | `modules/mod-on-daisy/`, editor in `editors/mod-on-daisy/` | Reusable 8×8 modulation matrix (header-only module, no instrument firmware). Phase 2 software done: core, host tests (ASan/UBSan/TSan, fuzzing), bench firmware `make PROJECT=mod-bench`, `tools/mod_probe.py`; hardware measurements pending ([validation](modules/mod-on-daisy/docs/VALIDATION.md)). Spec: [decisions](modules/mod-on-daisy/docs/DECISIONS.md), [architecture](modules/mod-on-daisy/docs/ARCHITECTURE.md), [MIDI protocol](modules/mod-on-daisy/docs/PROTOCOL.md), [storage](modules/mod-on-daisy/docs/STORAGE.md) |
 
 The repository remains **`sscheidl/Daisy-Seed`**. Project directories share one Git
 history while keeping their source, tests, validation notes, and build output
@@ -33,6 +34,10 @@ Daisy-Seed/
 ├── effects/
 │   ├── reverb/             # buildable original Ambient Reverb
 │   └── granular/           # effect plan
+├── modules/
+│   └── mod-on-daisy/       # reusable modulation matrix: include, tests, bench firmware, tools
+├── editors/
+│   └── mod-on-daisy/       # JUCE grid editor for the matrix (concept)
 ├── common/desktop.mk      # shared official Seed3 Desktop build settings
 ├── docs/                  # hardware, build, flashing, and references
 ├── scripts/               # toolchain and BOOT_SRAM image checks
