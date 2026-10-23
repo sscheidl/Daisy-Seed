@@ -44,6 +44,7 @@ Editor entsteht getrennt unter [`editors/mod-on-daisy/`](../../editors/mod-on-da
 | [docs/STORAGE.md](docs/STORAGE.md) | QSPI-Aufteilung, Schreib- und Löschverfahren, Datenintegrität |
 | [docs/TEST_PLAN_PHASE2.md](docs/TEST_PLAN_PHASE2.md) | Host-Tests, Messfirmware, Szenarien, Hardwaretests, Abnahme |
 | [docs/VALIDATION.md](docs/VALIDATION.md) | Ergebnisse Phase 2 |
+| [docs/HARDWARE_TEST_RUN.md](docs/HARDWARE_TEST_RUN.md) | Laufzettel Hardwaretest (Messfirmware, Toy Piano, Physical Modeling, Editoren) mit Rollen Agent/Mensch |
 | [bench/README.md](bench/README.md) | Messfirmware: Bauen, Bedienung, Messablauf |
 | [../../editors/mod-on-daisy/docs/GUI.md](../../editors/mod-on-daisy/docs/GUI.md) | Raster-GUI und Editor-Architektur |
 

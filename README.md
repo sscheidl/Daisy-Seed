@@ -93,6 +93,8 @@ and a shared effect chain have not been implemented.
 
 ## Documentation and next steps
 
+* **[Handover](HANDOVER.md)** (state, local setup, hardware test run sheet, open decisions)
+  and the [agent rules](AGENTS.md).
 * [Build and toolchain](docs/BUILD.md), [hardware](docs/HARDWARE.md), and [flashing](docs/FLASHING.md).
 * [Toy Piano controls and hardware test](instruments/toy-piano/README.md),
   [USB MIDI](instruments/toy-piano/docs/MIDI.md),
