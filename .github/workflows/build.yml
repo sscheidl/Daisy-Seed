@@ -1,35 +1,63 @@
 name: Firmware
-on: [push, pull_request, workflow_dispatch]
+# Full ARM builds are deliberately opt-in to preserve the GitHub Free Actions quota.
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Choose one firmware (all is substantially more expensive)"
+        required: true
+        type: choice
+        default: physical-modeling-mod
+        options:
+          - physical-modeling-mod
+          - physical-modeling
+          - toy-piano
+          - granular
+          - looper
+          - reverb-fx
+          - mod-bench
+          - all
 permissions:
   contents: read
+concurrency:
+  group: firmware-${{ github.ref }}-${{ inputs.project }}
+  cancel-in-progress: true
 jobs:
-  build:
+  select:
     runs-on: ubuntu-24.04
+    outputs:
+      targets: ${{ steps.targets.outputs.targets }}
+    steps:
+      - id: targets
+        env:
+          SELECTED_PROJECT: ${{ inputs.project }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+          projects = [
+              {"project":"toy-piano","directory":"instruments/toy-piano","image":"ToyPiano","build":"build"},
+              {"project":"reverb-fx","directory":"effects/reverb","image":"AmbientReverb","build":"build"},
+              {"project":"physical-modeling","directory":"instruments/physical-modeling","image":"PhysicalModeling","build":"build"},
+              {"project":"physical-modeling-mod","directory":"instruments/physical-modeling","image":"PhysicalModelingMod","build":"build/mod"},
+              {"project":"granular","directory":"instruments/granular","image":"NebulaeOnDaisy","build":"build"},
+              {"project":"looper","directory":"instruments/looper","image":"Looper","build":"build"},
+              {"project":"mod-bench","directory":"modules/mod-on-daisy/bench","image":"ModBench","build":"build"},
+          ]
+          selected = os.environ["SELECTED_PROJECT"]
+          targets = projects if selected == "all" else [p for p in projects if p["project"] == selected]
+          if not targets:
+              raise SystemExit(f"Unknown project: {selected}")
+          print("targets=" + json.dumps(targets, separators=(",", ":")))
+          PY
+  build:
+    needs: select
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - project: toy-piano
-            directory: instruments/toy-piano
-            image: ToyPiano
-          - project: reverb-fx
-            directory: effects/reverb
-            image: AmbientReverb
-          - project: physical-modeling
-            directory: instruments/physical-modeling
-            image: PhysicalModeling
-          - project: physical-modeling-mod
-            directory: instruments/physical-modeling
-            build: build/mod
-            image: PhysicalModelingMod
-          - project: granular
-            directory: instruments/granular
-            image: NebulaeOnDaisy
-          - project: looper
-            directory: instruments/looper
-            image: Looper
-          - project: mod-bench
-            directory: modules/mod-on-daisy/bench
-            image: ModBench
+        include: ${{ fromJSON(needs.select.outputs.targets) }}
     steps:
       - uses: actions/checkout@v4
       - name: Fetch pinned dependencies
@@ -51,35 +79,31 @@ jobs:
         run: make PROJECT=${{ matrix.project }} test-thread
       - name: Cross-compile firmware
         run: make PROJECT=${{ matrix.project }} -j4
-      - name: Check complete project catalogue
-        if: matrix.project == 'physical-modeling'
-        run: |
-          make all-projects
-          make test-projects
       - name: Read version
         id: version
         run: echo "value=$(make -s PROJECT=${{ matrix.project }} version)" >> "$GITHUB_OUTPUT"
       - name: Check firmware image
-        run: python3 scripts/check-firmware.py ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
+        run: python3 scripts/check-firmware.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
       - name: Check ARM ELF and static memory reserves
         if: matrix.project == 'physical-modeling' || matrix.project == 'physical-modeling-mod'
-        run: python3 scripts/check-physical-elf.py ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
+        run: python3 scripts/check-physical-elf.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
       - name: Check Nebulae ARM memory, SD DMA and dynamic WAV capacities
         if: matrix.project == 'granular'
-        run: python3 scripts/check-granular-elf.py ${{ matrix.directory }}/${{ matrix.build || 'build' }}/NebulaeOnDaisy-v${{ steps.version.outputs.value }}.elf --host-test
+        run: python3 scripts/check-granular-elf.py ${{ matrix.directory }}/${{ matrix.build }}/NebulaeOnDaisy-v${{ steps.version.outputs.value }}.elf --host-test
       - name: Build Mod on Daisy bench variants (block 256, 64 active cells)
         if: matrix.project == 'mod-bench'
         run: |
           make -C modules/mod-on-daisy/bench BLOCK=256 -j4
           make -C modules/mod-on-daisy/bench MAX_ACTIVE=64 -j4
       - name: Generate checksum
-        run: cd ${{ matrix.directory }}/${{ matrix.build || 'build' }} && sha256sum ${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin > SHA256SUMS
+        run: cd ${{ matrix.directory }}/${{ matrix.build }} && sha256sum ${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 14
           name: ${{ matrix.project }}-v${{ steps.version.outputs.value }}-${{ github.sha }}
           path: |
-            ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
-            ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
-            ${{ matrix.directory }}/${{ matrix.build || 'build' }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.map
-            ${{ matrix.directory }}/${{ matrix.build || 'build' }}/SHA256SUMS
+            ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
+            ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
+            ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.map
+            ${{ matrix.directory }}/${{ matrix.build }}/SHA256SUMS
           if-no-files-found: error

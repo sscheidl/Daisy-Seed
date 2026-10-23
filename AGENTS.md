@@ -3,7 +3,33 @@
 Firmware for the Electro-Smith Seed3 Desktop Kit plus host tools. Start with
 [README.md](README.md), [HANDOVER.md](HANDOVER.md) and the project's own README.
 
-## Build and test before every push
+## GitHub Actions budget policy (mandatory)
+
+The GitHub Free Actions quota is shared across private repositories. Preserve it.
+
+* **Automatic**: `.github/workflows/quick.yml` runs short Linux host tests on
+  code PRs and pushes to `main` (15-minute timeout, superseded runs cancelled).
+  Only relevant instrument/module host tests run; docs-only changes do not trigger CI.
+* **Artifacts**: self-test screenshots/logs are retained for 3 days, firmware
+  and native app binaries for 14 days; published Releases are separate.
+* **Manual firmware**: `Actions -> Firmware -> Run workflow`, selecting one
+  project (default: `physical-modeling-mod`). The expensive `all` choice is
+  explicitly opt-in. No full ARM matrix on push/PR.
+* **Manual editor/diagnostics**: `Actions -> Editor` and
+  `Actions -> Hardware diagnostics` are dispatched only when native app or
+  firmware artifacts are needed.
+* **Manual release**: `Actions -> Release -> Run workflow` executes the complete
+  Toy Piano host, sanitizer, thread, ARM-build and release-guard tests before
+  creating a draft by default. Never launch releases simply because a version
+  header changed. Publication and hardware acceptance are the human's decision.
+* Run tests for the changed component locally before pushing. Run the full
+  project/sanitizer suites when preparing a release or specifically investigating
+  a fault, not after every cosmetic or documentation edit.
+* Do not add broad automatic triggers, expensive runners or parallel build
+  matrices without the human's explicit approval. Budget-exhausted CI is not
+  evidence of a software failure.
+
+## Commands for targeted local validation
 
 | Area | Commands |
 | --- | --- |
@@ -14,7 +40,7 @@ Firmware for the Electro-Smith Seed3 Desktop Kit plus host tools. Start with
 | Hardware diagnostics | `make -C diagnostics/firmware test test-sanitize`, `bash diagnostics/scripts/build-firmware.sh`, `python -m pytest diagnostics/tests/python` |
 | Images | `python scripts/check-firmware.py <bin>`; hardware-test package: `python scripts/hardware_test_package.py` |
 
-CI (`.github/workflows/build.yml`, `editor.yml`, `diagnostics.yml`) runs the same; keep it green.
+Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor and diagnostics builds are manual; run the relevant validations locally before pushing.
 
 ## Rules
 
@@ -24,9 +50,9 @@ CI (`.github/workflows/build.yml`, `editor.yml`, `diagnostics.yml`) runs the sam
   the agent runs the command-line steps and records what the human reports.
 * **Report only what was observed.** Mark results `GEMESSEN` (with date) or
   `NICHT GEMESSEN`. Never fill in expected values as results.
-* **Releases**: merging a change of `instruments/toy-piano/src/version.h` to `main`
-  creates a release *draft*. Do not publish releases; the human does after the
-  hardware test.
+* **Releases**: changing `instruments/toy-piano/src/version.h` does not
+  start a release. Only the human manually dispatches the release workflow;
+  publish a draft only after hardware acceptance.
 * **Sound must not change by accident.** Golden tests (FNV-1a over the output) pin
   Toy Piano and Physical Modeling: with an empty matrix, Toy Piano v0.3 must match the
   v0.2 hash and the Physical Modeling `MOD=1` build the v0.1.0 hash. The Physical

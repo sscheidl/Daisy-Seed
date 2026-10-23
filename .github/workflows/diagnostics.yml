@@ -1,17 +1,6 @@
 name: Hardware diagnostics
+# Expensive native builds: manual dispatch only; see quick.yml for automatic host tests.
 on:
-  push:
-    paths:
-      - "diagnostics/**"
-      - ".github/workflows/diagnostics.yml"
-      - "libDaisy"
-      - "scripts/install-toolchain.sh"
-  pull_request:
-    paths:
-      - "diagnostics/**"
-      - ".github/workflows/diagnostics.yml"
-      - "libDaisy"
-      - "scripts/install-toolchain.sh"
   workflow_dispatch:
 permissions:
   contents: read
@@ -40,6 +29,7 @@ jobs:
           printf 'Source: %s\nVariant: writable SD card reader; starts unexported\n' "$GITHUB_SHA" > diagnostics/firmware/build/reader/BUILD_INFO.txt
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 14
           name: DaisyDiagnostic-readonly-firmware-${{ github.sha }}
           path: |
             diagnostics/firmware/build/DaisyDiagnostic.bin
@@ -49,6 +39,7 @@ jobs:
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 14
           name: DaisyDiagnostic-cardreader-firmware-${{ github.sha }}
           path: |
             diagnostics/firmware/build/reader/DaisyDiagnostic-CardReader.bin
@@ -89,6 +80,7 @@ jobs:
             Set-Content diagnostics\windows\dist\SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 14
           name: DaisyDiagnostic-windows-${{ github.sha }}
           path: |
             diagnostics/windows/dist/DaisyDiagnostic.exe
