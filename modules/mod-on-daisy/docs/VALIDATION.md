@@ -76,7 +76,53 @@ Rahmengrößen 95/100 Byte. Das Gerät startet mit der Standard-Patch-CRC `61C26
 * **Dateien**: Eine vom JUCE-Editor gespeicherte Datei ergibt im Browser-Editor dieselbe
   Patch-CRC (`506290C2`), eine Datei des Browser-Editors lädt im Kern unverändert.
 * **Windows** (MSVC): Build, Kerntest und Selbsttest laufen in der CI
-  (`.github/workflows/editor.yml`). Am echten Daisy unter Windows: `NICHT GEMESSEN`.
+  (`.github/workflows/editor.yml`).
+
+### Am Gerät: JUCE-Editor mit `PhysicalModelingMod-v0.1.0.bin` (`GEMESSEN` 23.10.2026)
+
+Vom Betreiber unter Windows mit `ModOnDaisyEditor.exe` (Stand PR #24) beobachtet und
+berichtet. Die Fehler sind auf dem Host nachvollzogen.
+
+| Nr. | Ergebnis |
+| --- | --- |
+| E1 | bestanden: Verbindung über „Daisy Seed External“, Status `physical-modeling 0.1.0-mod · ID 0`, alle 8 Spalten |
+| E2–E8 | bestanden bis auf die Befunde unten; Patch-CRC bestätigt (z. B. `09EC4D1C` bei 7 Verbindungen) |
+| E9 | Poly AT → Brightness bestätigt; Poly AT × Excitation schraffiert |
+| R8 | MIDI-Clock synchronisiert die LFOs |
+| übrige R | `NICHT GEMESSEN` |
+
+Befunde:
+
+1. **Kontextmenü** öffnete immer an derselben Stelle statt am Mauszeiger und in den
+   Standardfarben. Behoben: Das Menü öffnet am Mauszeiger, in den Farben der App.
+2. **Schnelle LFOs**: Bei hoher Rate schien die Anzeige hängen zu bleiben. Ursache ist
+   Aliasing: Die Live-Anzeige kommt mit 20 Bildern/s, ein 20-Hz-LFO wird dann immer an
+   derselben Phase abgetastet. Behoben: Über 5 Hz zeigt der Balken ein Band statt eines
+   scheinbar stehenden Werts.
+3. **Studio One** öffnet den Daisy-Port exklusiv.
+   * Der Editor steuert weiter, solange er verbunden bleibt, erhält aber keine Antworten
+     und keine Live-Daten mehr („keine Antwort vom Gerät“).
+   * Nach dem Trennen ist kein neues Verbinden möglich, solange Studio One den Port hält.
+     Einmal war das Gerät 1–2 s lang wieder sichtbar; der Mechanismus ist unbekannt.
+   * Teilweise behoben: Die Meldung nennt die wahrscheinliche Ursache, und der Editor
+     zeigt „keine Live-Daten“, statt eingefrorene Balken. Die eigentliche Lösung (H4/E7)
+     ist offen.
+4. **LFO-Anzeige im MIDI-Clock-Modus**, auch nach dem Zurückschalten auf Frei, blieb aus.
+   * Im Simulator mit dem Firmware-Code laufen die Werte im Clock-Modus und danach im
+     Frei-Modus weiter; bei Clock-Stopp hält der LFO wie vorgesehen (N4).
+   * Wahrscheinlichste Ursache ist Befund 3: Studio One als Clock-Quelle hält den
+     Eingang, dann kommen keine Live-Daten an.
+   * Außerdem berechnet die Firmware Quellen ohne aktive Verbindung nicht. Ihre Balken
+     sind jetzt abgedunkelt; der Tooltip erklärt das.
+5. **„Vom Gerät laden“** zeigte keine erkennbare Wirkung. Das ist richtig, solange
+   nichts anderes das Gerät geändert hat. Jetzt meldet der Editor „Zustand vom Gerät
+   geladen (Patch-CRC …)“, und der Tooltip erklärt den Knopf.
+6. **Spalte „Reverb“** (Hallzeit) wirkt kaum. Gewünscht ist ein wirksamerer Parameter
+   der Torus-Engine. Offen, Entscheidung beim Betreiber.
+7. **Potistellungen** werden nicht angezeigt. Je nach Stellung wirkt dieselbe
+   Modulation anders, weil der Offset zum Potiwert addiert und auf 0…1 begrenzt wird.
+   Offen; dafür müsste die Firmware die Grundwerte im Monitor mitsenden
+   (Protokollerweiterung).
 
 ## 2. ARM-Build der Messfirmware (`GEMESSEN`)
 

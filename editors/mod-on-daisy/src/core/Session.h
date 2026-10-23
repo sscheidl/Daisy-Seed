@@ -165,7 +165,8 @@ class Session {
                 ++retries_;
                 Transmit();
             } else {
-                Finish(nullptr, "keine Antwort vom Gerät");
+                Finish(nullptr, "keine Antwort vom Gerät – ist der MIDI-Eingang von einer anderen Anwendung belegt "
+                                "(z. B. Studio One)?");
             }
         }
         FlushEdits();

@@ -35,6 +35,10 @@ class LookAndFeel : public juce::LookAndFeel_V4 {
         setColour(juce::TextEditor::outlineColourId, colour::line);
         setColour(juce::ToggleButton::tickColourId, colour::accent);
         setColour(juce::PopupMenu::backgroundColourId, colour::raised);
+        setColour(juce::PopupMenu::textColourId, colour::ink);
+        setColour(juce::PopupMenu::headerTextColourId, colour::muted);
+        setColour(juce::PopupMenu::highlightedBackgroundColourId, colour::accent);
+        setColour(juce::PopupMenu::highlightedTextColourId, juce::Colours::white);
         setColour(juce::TooltipWindow::backgroundColourId, colour::raised);
         setColour(juce::TooltipWindow::outlineColourId, colour::line);
     }
@@ -53,11 +57,26 @@ inline void PaintCard(juce::Graphics& g, juce::Rectangle<int> r, const juce::Str
     }
 }
 
+enum class Meter {
+    Live,  // the value as the device reports it
+    Idle,  // source not used by any active connection: the firmware does not compute it
+    Fast,  // faster than the monitor rate can show: a band instead of a frozen value
+    Stale, // no monitor data arrives (port taken by another application?)
+};
+
 // Horizontal meter: bipolar from the centre or unipolar from the left.
-inline void PaintMeter(juce::Graphics& g, juce::Rectangle<float> r, float value, bool bipolar) {
+inline void PaintMeter(juce::Graphics& g, juce::Rectangle<float> r, float value, bool bipolar,
+                       Meter state = Meter::Live) {
     value = juce::jlimit(-1.0f, 1.0f, value);
-    g.setColour(colour::line);
+    g.setColour(state == Meter::Idle || state == Meter::Stale ? colour::line.withAlpha(0.45f) : colour::line);
     g.fillRoundedRectangle(r, 2.0f);
+    if(state == Meter::Idle || state == Meter::Stale)
+        return;
+    if(state == Meter::Fast) {
+        g.setColour(colour::accent.withAlpha(0.45f));
+        g.fillRoundedRectangle(r, 2.0f);
+        return;
+    }
     g.setColour(colour::accent);
     if(bipolar) {
         const float mid = r.getCentreX(), x = mid + value * r.getWidth() * 0.5f;

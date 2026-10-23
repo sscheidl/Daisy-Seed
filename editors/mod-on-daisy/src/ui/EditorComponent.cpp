@@ -95,7 +95,13 @@ EditorComponent::EditorComponent()
     open_.onClick = [this] { OpenFileDialog(); };
     save_.onClick = [this] { SaveFileDialog(); };
     clear_.onClick = [this] { session_.ClearMatrix(); };
-    pull_.onClick = [this] { session_.Pull(); };
+    pull_.setTooltip(U("Liest Matrix, Quellen und Name neu vom Gerät, z. B. nach Änderungen mit einem anderen "
+                       "Programm. Ohne solche Änderungen bleibt alles gleich."));
+    pull_.onClick = [this] {
+        session_.Pull(false, [this] {
+            Log(LogKind::Ok, U("Zustand vom Gerät geladen (Patch-CRC ") + U(Hex32(model_.Crc())) + ").");
+        });
+    };
     addAndMakeVisible(log_);
     log_.setFont(juce::FontOptions(13.0f));
 
@@ -222,6 +228,7 @@ void EditorComponent::timerCallback() {
     Advance(now);
     if(now - last_ports_ >= 1000) {
         last_ports_ = now;
+        grid_.CheckStale();
         if(!port_.isPopupActive())
             RefreshPorts();
     }

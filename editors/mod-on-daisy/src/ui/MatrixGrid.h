@@ -9,6 +9,10 @@ namespace editor::ui {
 class MatrixGrid : public juce::Component, public juce::TooltipClient {
   public:
     static constexpr int kRowHeader = 124, kColHeader = 58, kGap = 4;
+    static constexpr uint32_t kStaleMs = 1500; // monitor frames come at 20 Hz
+    // Above a quarter of the monitor rate a sampled LFO looks frozen (20 Hz sampled at
+    // 20 Hz shows one value), so the meter shows a band instead.
+    static constexpr float kFastHz = float(Session::kMonitorRate) / 4.0f;
 
     std::function<void(int cell)> selected; // selection changed
 
@@ -20,11 +24,20 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
     void SetMonitor(const MonitorValues& m) {
         monitor_ = m;
         has_monitor_ = true;
+        last_monitor_ms_ = juce::Time::getMillisecondCounter();
         repaint();
     }
     void ClearMonitor() {
         has_monitor_ = false;
         repaint();
+    }
+    // Called about once a second: shows when the live data stops arriving.
+    void CheckStale() {
+        if(Stale() != painted_stale_)
+            repaint();
+    }
+    bool Stale() const {
+        return session_.Connected() && (!has_monitor_ || juce::Time::getMillisecondCounter() - last_monitor_ms_ > kStaleMs);
     }
 
     juce::Rectangle<int> CellBounds(int cell) const {
@@ -52,6 +65,13 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
     }
 
     void paint(juce::Graphics& g) override {
+        painted_stale_ = Stale();
+        if(painted_stale_) {
+            g.setColour(colour::warn);
+            g.setFont(juce::FontOptions(11.5f));
+            g.drawFittedText(U("keine Live-Daten"), juce::Rectangle<int>(0, 0, kRowHeader - 8, kColHeader - 8),
+                             juce::Justification::bottomLeft, 2);
+        }
         for(int t = 0; t < int(mod::kTargets); ++t)
             PaintColumnHeader(g, t);
         for(int s = 0; s < int(mod::kSources); ++s)
@@ -128,7 +148,18 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
     }
 
     juce::String getTooltip() override {
-        const int cell = CellAt(getMouseXYRelative());
+        const juce::Point<int> p = getMouseXYRelative();
+        const int cell = CellAt(p);
+        if(cell == kNoCell && p.x < kRowHeader && p.y > kColHeader) {
+            const int s = juce::jlimit(0, int(mod::kSources) - 1, (p.y - kColHeader) * int(mod::kSources)
+                                                                     / std::max(1, getHeight() - kColHeader));
+            switch(SourceMeter(s)) {
+                case Meter::Idle: return U("Keine aktive Verbindung: die Quelle wird nicht berechnet, die Anzeige ruht.");
+                case Meter::Fast: return U("Schneller als die Live-Anzeige (20 Bilder/s): Band statt Wert.");
+                case Meter::Stale: return U("Keine Live-Daten vom Gerät. Ist der Port von einer anderen Anwendung belegt?");
+                case Meter::Live: return U(kSourceNames[s]) + ": " + juce::String(monitor_.source[s], 2);
+            }
+        }
         if(cell == kNoCell)
             return {};
         if(!model_.Allowed(cell))
@@ -155,8 +186,8 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
                                               : U("nicht vorhanden");
         g.drawText(span, r.removeFromTop(16), juce::Justification::centred);
         if(col.present)
-            PaintMeter(g, r.removeFromTop(8).reduced(6, 2).toFloat(), has_monitor_ ? monitor_.offset[t] : 0.0f,
-                       true);
+            PaintMeter(g, r.removeFromTop(8).reduced(6, 2).toFloat(), has_monitor_ ? monitor_.offset[t] : 0.0f, true,
+                       Stale() ? Meter::Stale : Meter::Live);
     }
 
     void PaintRowHeader(juce::Graphics& g, int s) {
@@ -167,7 +198,21 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         g.setFont(juce::FontOptions(13.0f, juce::Font::bold));
         g.drawText(U(kSourceNames[s]), r.removeFromTop(18), juce::Justification::centredLeft);
         PaintMeter(g, r.removeFromTop(8).withTrimmedTop(2).toFloat(), has_monitor_ ? monitor_.source[s] : 0.0f,
-                   s < mod::ModWheel);
+                   s < mod::ModWheel, SourceMeter(s));
+    }
+
+    Meter SourceMeter(int s) const {
+        if(Stale())
+            return Meter::Stale;
+        bool used = false;
+        for(int t = 0; t < int(mod::kTargets); ++t)
+            used = used || model_.Active(s * 8 + t);
+        if(!used)
+            return Meter::Idle;
+        if(s <= mod::Random && model_.SourceParam(s, mod::ParamSync) == mod::Free
+           && RateToHz(model_.SourceParam(s, mod::ParamRate)) > kFastHz)
+            return Meter::Fast;
+        return Meter::Live;
     }
 
     void PaintCell(juce::Graphics& g, int c) {
@@ -225,7 +270,9 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         m.addItem(1, "Auf 0 setzen");
         m.addItem(2, "Invertieren", model_.Depth(cell) != 0);
         m.addItem(3, model_.Enabled(cell) ? "Ausschalten" : "Einschalten", model_.Depth(cell) != 0);
-        m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(this),
+        m.setLookAndFeel(&getLookAndFeel()); // the app's colours, not the platform default
+        // At the mouse pointer, as context menus open everywhere else.
+        m.showMenuAsync(juce::PopupMenu::Options().withMousePosition(),
                         [safe = juce::Component::SafePointer<MatrixGrid>(this), cell](int id) {
                             if(!safe)
                                 return;
@@ -243,7 +290,8 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
     Model& model_;
     Session& session_;
     MonitorValues monitor_;
-    bool has_monitor_ = false;
+    bool has_monitor_ = false, painted_stale_ = false;
+    uint32_t last_monitor_ms_ = 0;
     int drag_cell_ = kNoCell, drag_start_ = 0;
 };
 }
