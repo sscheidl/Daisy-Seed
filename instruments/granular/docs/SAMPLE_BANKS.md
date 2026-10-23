@@ -116,9 +116,9 @@ only in SAMPLE mode (SW18 center):
   16-entry table the same way. Only the 16 names of one bank are held at a time.
   Slot requests during a scan are kept (latest wins) and served afterwards, like
   the current `pending` request.
-* FatFS is configured with long file names (`_USE_LFN 1`, `_MAX_LFN 255`) and
-  directory reads (`_FS_MINIMIZE 0`) in libDaisy; nothing there has to change.
-  exFAT is disabled, so cards must be FAT32.
+* Banks are built on the shared read-only SD driver ([plan](../../../common/sd/PLAN.md)):
+  FatFs R0.16 with long file names, directory reads and exFAT, so FAT32 and exFAT
+  cards both work. Nebulae's own `src/sd_driver.c` is replaced before this step.
 * Long names are needed only for sorting. To open a file, each table entry keeps
   the 8.3 short name (`FILINFO::altname`), which keeps every path short:
   `0:/NEBULAE/SAMPLES/<SFN>/<SFN>`. Both tables with long names need about
@@ -148,7 +148,7 @@ Hardware (human, add to [HARDWARE_TEST_PLAN](HARDWARE_TEST_PLAN.md) when impleme
 
 * SW17 orientation, bank LEDs including dimming, bank scan time with many files,
   long and non-ASCII names created on Windows and macOS, a card formatted by
-  Windows and one by macOS.
+  Windows and one by macOS, a FAT32 card and an exFAT card larger than 32 GB.
 
 ## Out of scope
 
@@ -156,4 +156,5 @@ Hardware (human, add to [HARDWARE_TEST_PLAN](HARDWARE_TEST_PLAN.md) when impleme
 * Saving samples or the active bank (FILE+FREEZE stays reserved).
 * Showing file names; the device has no display. The PC's sorted folder view is
   the reference for the slot order.
-* exFAT and formats beyond PCM16 44.1/48 kHz mono/stereo.
+* Formats beyond PCM16 44.1/48 kHz mono/stereo.
+* Windows Explorer access to the card (deferred, see the plan's decision S6).
