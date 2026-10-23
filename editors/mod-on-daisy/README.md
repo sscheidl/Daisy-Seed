@@ -60,7 +60,9 @@ Firefox und Safari werden nicht unterstützt.
 * **Kontrolle**: Jede Änderung beantwortet das Gerät mit der Prüfsumme seines Patches.
   Der Editor vergleicht sie mit seinem eigenen Stand. Bei einer Abweichung lädt er
   den Zustand neu vom Gerät.
-* **Ohne Gerät** lässt sich offline bearbeiten und als Datei speichern.
+* **Ohne Gerät** lässt sich offline bearbeiten und als Datei speichern. **Demo (offline)**
+  (oder `index.html#demo`) zeigt das Raster mit den Toy-Piano-Spalten und einem
+  Beispiel-Patch.
 
 ## Tests
 

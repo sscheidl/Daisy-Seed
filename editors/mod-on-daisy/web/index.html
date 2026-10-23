@@ -107,6 +107,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     <button id="saveBtn">Datei speichern …</button>
     <button id="clearBtn">Matrix leeren</button>
     <button id="pullBtn" disabled>Vom Gerät neu laden</button>
+    <button id="demoBtn" title="Spalten von Toy Piano v0.3 und ein Beispiel-Patch, ohne Gerät">Demo (offline)</button>
     <span id="log" role="status"></span>
   </section>
 </main>
@@ -666,7 +667,40 @@ async function loadPatch(text) {
   confirmCrc(f.payload);
 }
 
+// ------------------------------------------------------------------ demo (offline preview)
+// Toy Piano v0.3 columns as the firmware reports them, plus an example patch.
+function loadDemo() {
+  if (state.link) return log('Demo nur ohne verbundenes Gerät.', 'warn');
+  const col = (name, spanText, perVoice, latched) => ({ present: true, perVoice, latched, name, spanText });
+  state.targets = [col('Pitch', '+-2 st', true, false), col('Level', '+-100%', true, false),
+    col('Harmonic', '+-0.5', true, false), col('Attack', '100%', false, true), col('Decay', '100%', false, true),
+    ...[0, 1, 2].map(() => ({ present: false, perVoice: false, latched: false, name: '', spanText: '' }))];
+  state.allowed = 0n;
+  for (let s = 0; s < 8; ++s) for (let t = 0; t < 5; ++t) if (!(s === 7 && t >= 3)) state.allowed |= P.bit(s * 8 + t);
+  const p = P.defaultPatch();
+  const set = (s, t, d, on = true) => { p.depth[s * 8 + t] = d; if (on) p.enabled |= P.bit(s * 8 + t); };
+  set(0, 0, 25);          // LFO 1 → Pitch: vibrato
+  set(1, 1, -40);         // LFO 2 → Level: tremolo
+  set(2, 2, 35);          // Random → Harmonic
+  set(5, 1, -60, false);  // Modwheel → Level, switched off
+  set(6, 3, 70);          // Channel AT → Attack
+  set(7, 1, 80);          // Poly AT → Level per voice
+  set(7, 0, 15);          // Poly AT → Pitch per voice
+  p.lfo[0] = { ...p.lfo[0], rate: 9000, shape: 0 };
+  p.lfo[1] = { ...p.lfo[1], shape: 1, sync: 1, division: 6 };
+  p.random = { ...p.random, mode: 1, sync: 2, gate: 0, division: 2 };
+  p.name = 'Demo Vibrato';
+  state.patch = p;
+  state.maxActive = 8;
+  state.selected = 7 * 8 + 1;
+  buildGrid();
+  renderSources();
+  $('deviceInfo').textContent = 'Demo: Spalten von Toy Piano v0.3, offline. Mit einem Daisy „Verbinden“ klicken.';
+  log('Demo geladen – ohne Gerät, Änderungen bleiben im Browser.', 'ok');
+}
+
 // ------------------------------------------------------------------ wiring
+$('demoBtn').addEventListener('click', loadDemo);
 $('connect').addEventListener('click', connect);
 $('pullBtn').addEventListener('click', () => pull().then(() => log('Vom Gerät geladen.', 'ok')).catch((e) => log(e.message, 'err')));
 $('saveBtn').addEventListener('click', savePatch);
@@ -697,6 +731,7 @@ $('patchName').addEventListener('change', async (e) => {
 
 buildGrid();
 buildSources();
+if (location.hash === '#demo') loadDemo(); // index.html#demo: offline preview
 initMidi();
 </script>
 </body>

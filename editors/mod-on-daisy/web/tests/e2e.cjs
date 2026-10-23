@@ -225,8 +225,13 @@ async function testOffline(browser) {
   assert.strictEqual(await page.evaluate(() => state.patch.depth[12]), -10);
   await page.click('#connect');
   assert((await page.textContent('#log')).includes('Ein- und Ausgang'));
+  await page.click('#demoBtn'); // offline preview with the Toy Piano columns
+  const headers = await page.$$eval('#grid thead th .name', (els) => els.map((e) => e.textContent));
+  assert.deepStrictEqual(headers.slice(0, 5), ['Pitch', 'Level', 'Harmonic', 'Attack', 'Decay']);
+  assert.strictEqual(await page.evaluate(() => ModProtocol.activeCount(state.patch)), 6);
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'editor-demo.png'), fullPage: true });
   await page.close();
-  console.log('PASS offline: editing without a device');
+  console.log('PASS offline: editing without a device, demo preview');
 }
 
 (async () => {
