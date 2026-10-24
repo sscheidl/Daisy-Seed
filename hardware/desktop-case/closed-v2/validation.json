@@ -1,0 +1,189 @@
+{
+  "date": "2026-10-24",
+  "hardware": "NICHT GEMESSEN",
+  "manufacturing_ready": false,
+  "parts": {
+    "closed-tray": {
+      "size_mm": [
+        215.0,
+        129.0,
+        23.4
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 0
+    },
+    "rear-hood": {
+      "size_mm": [
+        153.5,
+        55.0,
+        15.4
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 24.4
+    },
+    "midi-hood": {
+      "size_mm": [
+        28.0,
+        80.5,
+        15.4
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 24.4
+    },
+    "seed-hood": {
+      "size_mm": [
+        65.5,
+        33.0,
+        8.4
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 24.4
+    },
+    "lower-acrylic-reference": {
+      "size_mm": [
+        215.0,
+        129.0,
+        1.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 23.4
+    },
+    "upper-acrylic-reference": {
+      "size_mm": [
+        215.0,
+        129.0,
+        1.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 24.549999999999997
+    },
+    "key-guide-mixed": {
+      "size_mm": [
+        110.0,
+        33.0,
+        3.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 20.4
+    },
+    "key-guide-square": {
+      "size_mm": [
+        110.0,
+        33.0,
+        3.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 20.4
+    },
+    "key-guide-round": {
+      "size_mm": [
+        110.0,
+        33.0,
+        3.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 20.4
+    },
+    "removable-service-tool-fit-study": {
+      "size_mm": [
+        6.0,
+        6.0,
+        8.95
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 0
+    },
+    "guide-clearance-coupon": {
+      "size_mm": [
+        42.0,
+        18.0,
+        3.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 0
+    },
+    "H2-S9-cap-height-gauge": {
+      "size_mm": [
+        73.5,
+        13.0,
+        11.15
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 0
+    },
+    "paper-reference": {
+      "size_mm": [
+        215.0,
+        129.0,
+        0.15
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 24.4
+    }
+  },
+  "stack_mm": {
+    "pcb_top": 14.4,
+    "lower_bottom": 23.4,
+    "lower_top": 24.4,
+    "upper_bottom": 24.549999999999997,
+    "upper_top": 25.549999999999997,
+    "metal_upper_post": 9.0,
+    "knurlie_min_engagement": 3.85,
+    "lower_spacer_internal_screw_gap": 1.0,
+    "jack_thread_remaining": 3.5,
+    "cap_rest_assumption": 13.0,
+    "cap_pressed_exposure_assumption": 1.6
+  },
+  "unresolved": [
+    "Actual cap seating height, variation, release clearance and guide friction",
+    "Actual toggle shoulder elevation and included nut/washer stack",
+    "Seed header seating height, module transform and service actuator stroke/gap",
+    "Connector housing/plug and complete component Z collisions",
+    "Fastener fit, acrylic tolerances, structural forces and thermal behaviour"
+  ],
+  "checks": [
+    "All exported parts: closed, consistent winding, one connected component",
+    "Both acrylics clear all 16 cap envelopes",
+    "7 named assembly collision pairs clear",
+    "Both acrylics clear nominal connector access sweeps",
+    "Conservative Knurlie thread budget 3.85 mm"
+  ],
+  "source_sha256": {
+    "build_closed_case.py": "c5671fa40309d10558cba7bcc69975ac0426983518d64f9203263267e706651c",
+    "closed-mechanics.json": "ab977138259b4ca7a68e6ea24dcad02508e9aa8f0c7182f176ab7d9a1c2d9e69",
+    "board.json": "a3c9ca574f9752d44fceedb0dc7b4c1f68bf2604621fdd974da3a39d514b8f40",
+    "build_case.py": "7c50b5c00a6d8e7539bea0ce9c5c7d98c6bd82b3cf10a5ae71cf629e7bb344c6"
+  },
+  "artifact_sha256": {
+    "closed-tray.stl": "76badf3789f50c30c8dc2b01d36fe9e700b6d0f8ae4996f21f64d2ee92482560",
+    "guide-clearance-coupon.stl": "feae9a7fe6bd32d037f0ce459b0bcc3958c5fecf24c95d717eaa6b292aae2c61",
+    "H2-S9-cap-height-gauge.stl": "8a5655ac3a51f82de9bb422f0c8280d580270369591e6826739d7eef81eb3db3",
+    "key-guide-mixed.stl": "9d79f4a551c6313ae86fbe8bfa4b41342e962c27fcc76ae7481acce9b865811b",
+    "key-guide-round.stl": "32c56d4f4a3c560bc6c6ee59e0ffcf01489e54e0669678bcb43e84af0529fca5",
+    "key-guide-square.stl": "dbaf94a920d66a057ec981c3f57161cbe278e25a754b1f882bcc87465cdb7519",
+    "lower-acrylic-1mm.svg": "43d19c27fb7b8809c2ce39865a132ee69d9d5fdb4a96e072c4f7c1b021476026",
+    "lower-acrylic-reference.stl": "1bf231b09ea614326e3f7e4565a8c8d8e5816cd44b0afd925d63666115d7a776",
+    "midi-hood.stl": "23da4a0aab094b17f151da3c6d4698d4782d49332ba702a4bff2d82b91c90880",
+    "paper-overlay.svg": "e7738b8352e4da958bd42e85e0573a74dda7789a4e447202ec9617029641fe6b",
+    "paper-reference.stl": "b183d0940913ad629e16a560528d89786893de971b148d1c5e1494d7b0497870",
+    "rear-hood.stl": "81363d98903edb3ef178c2d483f19ba694d864ec26afc1d85112d796fc93914b",
+    "removable-service-tool-fit-study.stl": "719f1dfb79c614b003ab141335ddd1a6f12a9674531e487c2a6307148792b071",
+    "sandwich-and-height-study-a4.pdf": "ae98becaa2fd84c097a992c54aa87c088f21dea239f2711f4450bc323b9cd899",
+    "seed-hood.stl": "c0b23d1d2711e66961e7618a93b9ee88ccdecf91303858ab6a71d974620bac78",
+    "upper-acrylic-1mm.svg": "9637c9e4de57dbb2b0ccb18f1e7b1f9277dc21e09dafeae9b12f34203fd99165",
+    "upper-acrylic-reference.stl": "58b34bba4da8ab1f7187603ef1b7bb6d82f584733468657cde8f9816196906e2"
+  }
+}

@@ -1,4 +1,13 @@
-# Einfaches Desktop-Gehäuse V1
+# Desktop-Gehäuse / Paper on Daisy
+
+**Aktueller Entwurf: [geschlossene Konstruktion V2 mit Metallpfosten und zwei
+Acrylplatten](CLOSED_V2.md).** V2 ersetzt den offenen Ansatz unten: vier
+Knurlies M3 an den PCB-Bohrungen, separat befestigte Buchsen und Kippschalter,
+abgedecktes Seed-Modul und austauschbares Tastenraster. Die Höhenstudie ist
+digital geprüft; montierte Kappenhöhe und weitere Hardware-Passmaße sind
+NICHT GEMESSEN. Noch keine Fertigungsfreigabe.
+
+## Erster Entwurf V1 (Referenz)
 
 Ein **offener, verschraubter Prototyp** für das Seed3 Desktop Dev Kit: Wanne,
 separater Oberrahmen und austauschbare Papierbeschriftung. Eine optionale

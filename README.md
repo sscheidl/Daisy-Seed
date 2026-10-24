@@ -93,9 +93,11 @@ and a shared effect chain have not been implemented.
 
 ## Documentation and next steps
 
-* [Basic desktop case and Paper on Daisy carrier](hardware/desktop-case/):
-  printable tray/frame prototype, transparent-cover contours and a 1:1 A4 fit
-  template based on the official PCB data; physical fit and cable relief untested.
+* [Desktop case and Paper on Daisy](hardware/desktop-case/): closed V2 construction
+  study with metal standoffs, Knurlies, two acrylic layers and key guides;
+  physical fit untested. The first open tray/frame prototype remains available.
+* [Future effect programs](docs/FUTURE_EFFECT_PROGRAMS.md): stereo delay and the
+  existing original ambient reverb; integration and combined performance unmeasured.
 
 * **[Handover](HANDOVER.md)** (state, local setup, hardware test run sheet, open decisions)
   and the [agent rules](AGENTS.md).
