@@ -1,6 +1,7 @@
 # Übergabe — lokal weiterarbeiten
 
-**Stand:** 24. Oktober 2026 (Korrekturauftrag umgesetzt, Cloud-Sitzung). Ab jetzt wird lokal unter
+**Stand:** 24. Oktober 2026 abends (PR #29 gemergt, mod3 geflasht, lokale Sitzung; § 3a).
+Zuvor: Korrekturauftrag umgesetzt in der Cloud-Sitzung. Ab jetzt wird lokal unter
 Windows mit Claude Code und Codex weitergearbeitet, mit USB-Zugriff auf das Seed3
 Desktop Kit. Für einen neuen Chat genügt der Einstiegstext in § 7.
 
@@ -9,11 +10,13 @@ Desktop Kit. Für einen neuen Chat genügt der Einstiegstext in § 7.
 | Ort | Inhalt |
 | --- | --- |
 | `main` | PR #22 (Modul), #23 (Toy Piano v0.3, Physical Modeling `MOD=1`, Browser-Editor), #24 (JUCE-Editor, Übergabe), #27 (kostenbewusste CI) |
-| Branch **`ccr-352fb5fc-fxr9ox`** (PR #29) | **noch nicht auf `main`**: `67eb8da` Editor-Fixes aus dem ersten Hardwaretest, `70f1e4c` Physical Modeling mod2 (Level-Spalte, Potistellungen), dazu der Korrekturauftrag vom 24.10.2026 (Kompatibilitätsprüfung, Portfreigabe, Bereichsanzeige, Verbindungszustand, gemeinsame Aftertouch-Anzeige, Regressionstests) und die LFO-Quermodulation (mod3). Per PR zusammenführen |
+| `main` seit 24.10.2026 abends | dazu PR #29: Editor-Fixes aus dem ersten Hardwaretest, Physical Modeling mod2 (Level-Spalte, Potistellungen), Korrekturauftrag vom 24.10.2026, LFO-Quermodulation (mod3) und `mod_probe.py` für Windows (`bee9023`) |
+| Branch **`feat/editor-no-simulators`** | Editor: Simulatoren nur noch mit `--simulators`/Selbsttest, Daisy-Port wird auch nachträglich vorgeschlagen (`e30dc57`, lokal geprüft, kein PR; § 3a) |
+| Branch **`docs/modular-kernel-idea`** | diese Übergabe und die Idee [Modularer Firmwarekern](docs/MODULAR_KERNEL_IDEA.md) |
 
 ```bash
 git fetch origin
-git checkout ccr-352fb5fc-fxr9ox && git pull      # neuester Stand
+git checkout main && git pull                     # neuester Stand
 git submodule update --init libDaisy DaisySP
 git -C libDaisy submodule update --init --recursive --jobs 4
 ```
@@ -83,16 +86,52 @@ Ergebnisse: [VALIDATION.md](modules/mod-on-daisy/docs/VALIDATION.md) § 1b „Am
 * Toy Piano T1–T15 und E1–E10 mit Toy Piano.
 * Messfirmware H1–H8, S0–S8.
 
-Für den Test vom Branch neu bauen:
+Für den Test neu bauen (lokal unter Windows gebaut am 24.10.2026: xPack-GCC aus `.tools/`,
+Editor mit VS Build Tools 2022):
 * Firmware: `make PROJECT=physical-modeling-mod` oder `python scripts/hardware_test_package.py`.
 * Editor: `.exe` über Actions → Editor auf dem Branch oder lokal mit CMake.
+
+## 3a. Hardwaretest am 24.10.2026 abends (lokal, Windows 11)
+
+**`GEMESSEN` am 24.10.2026:**
+
+| Was | Ergebnis |
+| --- | --- |
+| Image | `PhysicalModelingMod-v0.1.0.bin` lokal gebaut, SHA-256 `ccabdaa9…` (= Übergabewert mod3), mit dem Daisy Web Programmer geflasht |
+| USB nach dem Flashen | zunächst Gerätemanager-Fehlercode 10 (`VID_0483 PID_5740`, ohne Name/Seriennummer); nach Abziehen und Einstecken an J7 sauber als „Daisy Seed External“ |
+| IDENTIFY (19:14, `mod_probe.py`) | `physical-modeling`, `0.1.0-mod3`, Fähigkeiten 122 (`0x7A`), Protokoll 1.0, Modul 0.1.0, Schema `942B2D07` |
+| `targets` | Pitch, Structure, Brightness, Damping, Position, Excitation (Anschlag), **Level**, Dry/Wet |
+| `matrix` | leer, Patch-CRC `C422B385` (Standard-Patch Format 2) |
+
+**Befunde:**
+* `mod_probe.py` fand unter Windows den Eingang nicht (rtmidi hängt je Richtung eine andere
+  Nummer an: „Daisy Seed External 18“/„… 19“), `matrix` brach in der cp1252-Konsole ab →
+  behoben in `bee9023`, auf `main`.
+* Der JUCE-Editor war mit einem **Simulator** verbunden statt mit dem Kit („toy-piano 0.3“,
+  danach „Simulator: Physical Modeling“ mit dessen festen Grundwerten). Der Simulator meldet
+  dasselbe IDENTIFY wie die Firmware und war nicht als Simulator erkennbar → Branch
+  `feat/editor-no-simulators`. **E9b ist deshalb noch nicht am Kit gelaufen** (`NICHT GEMESSEN`).
+
+**Gesammelte Wünsche für das nächste Editor-/Firmware-Update** (noch nicht umgesetzt außer 1–2):
+1. Simulatoren nur noch mit `--simulators` — Branch `feat/editor-no-simulators`.
+2. Daisy-Port wird auch vorgeschlagen, wenn das Kit erst nach dem Editor erscheint — derselbe Branch.
+3. Prozentanzeige im Spaltenkopf zeigt den **aktuellen Wert** der Reglerstellung statt des festen
+   Hubs „100 %“ (Hub z. B. klein dahinter oder als Tooltip).
+4. **Aktives Modell** (SW17/SW18 bzw. CC28) oben im Verbindungsbereich, live. Braucht Firmware
+   und Protokoll (optionales Monitorfeld), also neues Image.
+5. **FX-Alternativen** zum Torus-Reverb („Rings into Clouds“: Stereo Delay, Ambient Reverb,
+   Granular à la Clouds) — aufgegangen in der Idee [Modularer Firmwarekern](docs/MODULAR_KERNEL_IDEA.md).
+
+**Weiter mit:** neue `.exe` von `feat/editor-no-simulators` (Punkte 3/4 ggf. dazu), dann am Kit
+mit „Daisy Seed External“ E9b, E7b, E11–E17.
 
 ## 4. Offene Entscheidungen und Aufgaben
 
 | Thema | Stand | Nächster Schritt |
 | --- | --- | --- |
 | Studio One + Editor gleichzeitig | Windows gibt den Port einer Anwendung | E7b prüfen. Wenn Windows MIDI Services nicht hilft: Durchleitung im Editor (Editor hält den Daisy-Port, Studio One nutzt einen virtuellen Port, z. B. loopMIDI) — auf Wunsch umsetzen |
-| Branch → `main` | PR #29 offen | Review, mergen |
+| Editor ohne Simulatoren | Branch `feat/editor-no-simulators`, lokal geprüft | mit Punkten 3/4 aus § 3a bündeln, PR, neue `.exe` |
+| Modularer Firmwarekern | Idee, [MODULAR_KERNEL_IDEA.md](docs/MODULAR_KERNEL_IDEA.md), GitHub-Milestone | ausgearbeiteten Plan schreiben, später |
 | Toy Piano v0.3 veröffentlichen | Entwurf wartet auf T1–T15 | entscheidet der Mensch |
 | Grundwerte für Toy Piano | absichtlich aus, damit v0.3 dem Entwurf entspricht | mit der nächsten Toy-Piano-Version (z. B. 0.3.1) einschalten |
 | JUCE-Lizenz | AGPLv3 oder JUCE-Lizenz | vor Weitergabe der `.exe` entscheiden |
@@ -143,16 +182,17 @@ lokal unter Windows mit USB-Zugriff auf das Kit.
 Bitte zuerst lesen: HANDOVER.md, AGENTS.md, modules/mod-on-daisy/docs/HARDWARE_TEST_RUN.md
 und modules/mod-on-daisy/docs/VALIDATION.md § 1b.
 
-Stand: main enthält PR #22–#24 und #27. Der Branch ccr-352fb5fc-fxr9ox (PR #29) hat
-mehr: Editor-Fixes aus dem ersten Hardwaretest, Physical Modeling mod2/mod3 (Spalte 7 =
-Level, Grundwerte, erweiterter Monitor, LFO-Quermodulation) und den Korrekturauftrag
-vom 24.10.2026 in beiden Editoren. Am Gerät noch nicht nachgeprüft.
+Stand: main enthält PR #22–#24, #27 und #29 (Physical Modeling mod3 mit LFO-Quermodulation,
+Editor-Fixes, mod_probe für Windows). mod3 ist auf dem Kit geflasht, IDENTIFY bestätigt
+(HANDOVER.md § 3a). Branch feat/editor-no-simulators: Editor ohne Simulatoren in der
+Geräteliste, lokal geprüft. Gesammelte Wünsche: HANDOVER.md § 3a. Idee für später:
+docs/MODULAR_KERNEL_IDEA.md (GitHub-Milestone „Modularer Firmwarekern“).
 
 Nächste Aufgaben:
-1. Branch ccr-352fb5fc-fxr9ox auschecken, Host-Tests laufen lassen, PR nach main anlegen.
-2. PhysicalModelingMod neu bauen und mit dem neuen JUCE-Editor E9b, E7b und E11–E17 aus
-   dem Laufzettel durchgehen (ich höre und bediene, du führst die Befehle aus und trägst
-   die Ergebnisse als GEMESSEN mit Datum ein).
+1. Editor-Wünsche aus § 3a umsetzen (Branch feat/editor-no-simulators), PR, neue .exe.
+2. Mit dem neuen JUCE-Editor am Kit („Daisy Seed External“, kein Simulator) E9b, E7b und
+   E11–E17 aus dem Laufzettel durchgehen (ich höre und bediene, du führst die Befehle aus
+   und trägst die Ergebnisse als GEMESSEN mit Datum ein).
 3. Je nach E7b: Studio-One-Koexistenz lösen (Windows MIDI Services oder Durchleitung
    über einen virtuellen Port im Editor).
 4. Danach Toy Piano T1–T15 und Messfirmware H/S.
