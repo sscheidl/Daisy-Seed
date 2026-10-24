@@ -11,7 +11,7 @@ Desktop Kit. Für einen neuen Chat genügt der Einstiegstext in § 7.
 | --- | --- |
 | `main` | PR #22 (Modul), #23 (Toy Piano v0.3, Physical Modeling `MOD=1`, Browser-Editor), #24 (JUCE-Editor, Übergabe), #27 (kostenbewusste CI) |
 | `main` seit 24.10.2026 abends | dazu PR #29: Editor-Fixes aus dem ersten Hardwaretest, Physical Modeling mod2 (Level-Spalte, Potistellungen), Korrekturauftrag vom 24.10.2026, LFO-Quermodulation (mod3) und `mod_probe.py` für Windows (`bee9023`) |
-| Branch **`feat/editor-no-simulators`** | Editor: Simulatoren nur noch mit `--simulators`/Selbsttest, Daisy-Port wird auch nachträglich vorgeschlagen (`e30dc57`, lokal geprüft, kein PR; § 3a) |
+| Branch **`feat/editor-no-simulators`** (PR #33) | Physical Modeling **mod4** (aktives Modell, Schutz gegen die Studio-One-Rückkopplung), Editor ohne Simulatoren, Spaltenwerte, Modellanzeige; am Kit mit Studio One getestet (§ 3b) |
 | Branch **`docs/modular-kernel-idea`** | diese Übergabe und die Idee [Modularer Firmwarekern](docs/MODULAR_KERNEL_IDEA.md) |
 
 ```bash
@@ -122,15 +122,34 @@ Editor mit VS Build Tools 2022):
 5. **FX-Alternativen** zum Torus-Reverb („Rings into Clouds“: Stereo Delay, Ambient Reverb,
    Granular à la Clouds) — aufgegangen in der Idee [Modularer Firmwarekern](docs/MODULAR_KERNEL_IDEA.md).
 
-**Weiter mit:** neue `.exe` von `feat/editor-no-simulators` (Punkte 3/4 ggf. dazu), dann am Kit
-mit „Daisy Seed External“ E9b, E7b, E11–E17.
+Punkte 1–4 sind in PR #33 umgesetzt (§ 3b).
+
+## 3b. mod4 am Kit, Studio One parallel (24.10.2026, ab 21:55)
+
+* **Ursache von E7b gefunden** (Agent, `mod_probe.py` parallel zu Studio One): Windows MIDI
+  Services lässt beide Programme an den Port; Befehle wirkten, Antworten fehlten. Studio One
+  schickt per Input-Monitoring alles vom Daisy zurück; die Firmware beantwortete jeden
+  zurückgeschickten Antwortrahmen mit NAK → endlose NAK-Schleifen (rund 500 Rahmen/s).
+  Behoben in mod4: Rahmen mit Antwortbit werden nie beantwortet (PROTOCOL § 2, Schritt 2a).
+* **`GEMESSEN`** mit mod4 (`9517db27…`): IDENTIFY, `modes` und Monitor (61 Rahmen in 3 s) parallel
+  zu Studio One. Vom Betreiber berichtet: **E7b bestanden** (Studio One zuerst, dann Editor:
+  Status grün, Modulation hörbar, CRC bestätigt), Spaltenwerte folgen den Potis, Modell wechselt
+  mit SW17/SW18. Einzelheiten: VALIDATION § 1b.
+* `NICHT GEMESSEN`: umgekehrte Reihenfolge (Editor zuerst), Modwheel → Level, CC28 „(MIDI)“, E19,
+  E11–E17, R1–R7, R9, R10.
+* **Toy Piano v0.3 hat den Rückkopplungsschutz noch nicht** (Image soll bytegleich zum
+  Release-Entwurf bleiben) und hätte mit Studio One dasselbe Problem → in der nächsten
+  Toy-Piano-Version nachziehen (Entscheidung Betreiber).
+
+**Weiter mit:** PR #33 mergen; restliche Schritte aus dem Laufzettel.
 
 ## 4. Offene Entscheidungen und Aufgaben
 
 | Thema | Stand | Nächster Schritt |
 | --- | --- | --- |
-| Studio One + Editor gleichzeitig | Windows gibt den Port einer Anwendung | E7b prüfen. Wenn Windows MIDI Services nicht hilft: Durchleitung im Editor (Editor hält den Daisy-Port, Studio One nutzt einen virtuellen Port, z. B. loopMIDI) — auf Wunsch umsetzen |
-| Editor ohne Simulatoren | Branch `feat/editor-no-simulators`, lokal geprüft | mit Punkten 3/4 aus § 3a bündeln, PR, neue `.exe` |
+| Studio One + Editor gleichzeitig | **gelöst** mit mod4 (§ 3b): Windows MIDI Services teilt den Port, die Rückkopplungsschleife ist behoben | umgekehrte Reihenfolge noch prüfen; VST3-Fassung bleibt wünschenswert, ist dafür aber nicht mehr nötig |
+| PR #33 (mod4, Editor) | am Kit getestet, Quick checks | mergen |
+| Rückkopplungsschutz für Toy Piano | fehlt in v0.3 | mit der nächsten Toy-Piano-Version (Entscheidung Betreiber) |
 | Modularer Firmwarekern | Idee, [MODULAR_KERNEL_IDEA.md](docs/MODULAR_KERNEL_IDEA.md), GitHub-Milestone | ausgearbeiteten Plan schreiben, später |
 | Toy Piano v0.3 veröffentlichen | Entwurf wartet auf T1–T15 | entscheidet der Mensch |
 | Grundwerte für Toy Piano | absichtlich aus, damit v0.3 dem Entwurf entspricht | mit der nächsten Toy-Piano-Version (z. B. 0.3.1) einschalten |
@@ -184,18 +203,17 @@ und modules/mod-on-daisy/docs/VALIDATION.md § 1b.
 
 Stand: main enthält PR #22–#24, #27 und #29 (Physical Modeling mod3 mit LFO-Quermodulation,
 Editor-Fixes, mod_probe für Windows). mod3 ist auf dem Kit geflasht, IDENTIFY bestätigt
-(HANDOVER.md § 3a). Branch feat/editor-no-simulators: Editor ohne Simulatoren in der
-Geräteliste, lokal geprüft. Gesammelte Wünsche: HANDOVER.md § 3a. Idee für später:
+(HANDOVER.md § 3a). PR #33 (Branch feat/editor-no-simulators): Physical Modeling mod4 mit
+Modellanzeige und Schutz gegen die Studio-One-Rückkopplung, Editor ohne Simulatoren; am Kit
+mit Studio One getestet (§ 3b). Idee für später:
 docs/MODULAR_KERNEL_IDEA.md (GitHub-Milestone „Modularer Firmwarekern“).
 
 Nächste Aufgaben:
-1. Editor-Wünsche aus § 3a umsetzen (Branch feat/editor-no-simulators), PR, neue .exe.
-2. Mit dem neuen JUCE-Editor am Kit („Daisy Seed External“, kein Simulator) E9b, E7b und
-   E11–E17 aus dem Laufzettel durchgehen (ich höre und bediene, du führst die Befehle aus
-   und trägst die Ergebnisse als GEMESSEN mit Datum ein).
-3. Je nach E7b: Studio-One-Koexistenz lösen (Windows MIDI Services oder Durchleitung
-   über einen virtuellen Port im Editor).
-4. Danach Toy Piano T1–T15 und Messfirmware H/S.
+1. PR #33 mergen (falls noch offen).
+2. Mit dem JUCE-Editor am Kit die offenen Schritte aus § 3b und E11–E17 durchgehen (ich höre
+   und bediene, du führst die Befehle aus und trägst die Ergebnisse als GEMESSEN mit Datum ein).
+3. Rückkopplungsschutz für Toy Piano (neue Version, nach meiner Freigabe).
+4. Danach Toy Piano T1–T15 und Messfirmware H/S; VST3-Fassung planen.
 
 Regeln: Flashen nur nach meiner Freigabe im Bootloader-Modus, keine Releases
 veröffentlichen, Ergebnisse nur wie beobachtet, Golden-Hashes und bytegleiche
