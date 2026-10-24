@@ -55,12 +55,14 @@ class SourcePanel : public juce::Component {
             if(l != &fm_label_)
                 addAndMakeVisible(l);
         }
-        fm_label_.setText(src == mod::Lfo1 ? U("FM ← L2") : U("FM ← L1"), juce::dontSendNotification);
-        const juce::String fm_tip = U("Quermodulation: ") + U(kSourceNames[1 - src])
-            + U(" verändert die Rate dieses LFOs, ±100 = ±2 Oktaven. Nur im freien Lauf; mit Clock oder Gate "
-                "bestimmt der Takt die Rate.");
-        fm_.setTooltip(fm_tip);
-        fm_label_.setTooltip(fm_tip);
+        if(!random) { // cross modulation exists for LFO 1/2 only; kSourceNames[1 - src] needs src < 2
+            fm_label_.setText(src == mod::Lfo1 ? U("FM ← L2") : U("FM ← L1"), juce::dontSendNotification);
+            const juce::String fm_tip = U("Quermodulation: ") + U(kSourceNames[1 - src])
+                + U(" verändert die Rate dieses LFOs, ±100 = ±2 Oktaven. Nur im freien Lauf; mit Clock oder Gate "
+                    "bestimmt der Takt die Rate.");
+            fm_.setTooltip(fm_tip);
+            fm_label_.setTooltip(fm_tip);
+        }
         shape_label_.setText(random ? "Modus" : "Form", juce::dontSendNotification);
         sync_label_.setText("Sync", juce::dontSendNotification);
         rate_label_.setText("Rate", juce::dontSendNotification);
