@@ -1,0 +1,2 @@
+# Keep the vendored sources byte-identical to the hashes in VERSION.md on every OS.
+* text eol=lf

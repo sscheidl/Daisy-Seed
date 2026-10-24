@@ -39,6 +39,7 @@ The GitHub Free Actions quota is shared across private repositories. Preserve it
 | Editors | `make -C editors/mod-on-daisy test test-sanitize`; JUCE app via CMake, then `"Mod on Daisy Editor" --selftest out` |
 | Hardware diagnostics | `make -C diagnostics/firmware test test-sanitize`, `bash diagnostics/scripts/build-firmware.sh`, `python -m pytest diagnostics/tests/python` |
 | Images | `python scripts/check-firmware.py <bin>`; hardware-test package: `python scripts/hardware_test_package.py` |
+| Shared SD driver | `make -C common/sd test test-sanitize arm-check` |
 
 Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor and diagnostics builds are manual; run the relevant validations locally before pushing.
 
