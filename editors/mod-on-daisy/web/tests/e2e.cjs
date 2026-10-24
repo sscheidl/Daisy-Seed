@@ -287,7 +287,7 @@ async function testCorrections(browser) {
   // Reconnect works and FM is offered (format 2 device).
   await page.evaluate(() => { window.__ports.silent = false; });
   await page.click('#connect');
-  await page.waitForFunction(() => document.getElementById('status').textContent.includes('mod3'));
+  await page.waitForFunction(() => document.getElementById('status').textContent.includes('mod4'));
   assert.strictEqual(await page.evaluate(() => state.patch.format), 2);
   assert(await page.locator('.source[data-src="0"] .fmRow').isVisible());
   assert.strictEqual(await pageCrc(page), (await dump(sim)).crc, 'format 2 CRC agrees');

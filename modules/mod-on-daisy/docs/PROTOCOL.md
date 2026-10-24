@@ -67,9 +67,10 @@ F0 7D 4D 44 <ver> <dev> <cmd> <seq> <len> <payload: len Bytes> <chk> F7
 
 | Cmd | Name | Anfrage | Antwort (`cmd \| 0x40`) |
 | --- | --- | --- | --- |
-| `0x01` | `IDENTIFY` | — | `u7` Haupt-, `u7` Nebenversion des Protokolls · `u7 u7 u7` Modulversion · `str` Instrument-Key (≤ 24) · `str` Instrumentversion (≤ 12) · `u7` kMaxActive · `u14` effektive Tick-Rate in Hz · `u7` Preset-Slots (v0.1: 0) · `u32` Schema-Hash · `u7` Fähigkeiten (Bit 0 Speicher, Bit 1 Monitor, Bit 2 Diagnose, Bit 3 Poly AT global = Last-Note, Bit 4 Grundwerte im Monitor, Bit 5 erweiterter Monitor, Bit 6 LFO-Quermodulation; § 3.6) |
+| `0x01` | `IDENTIFY` | — | `u7` Haupt-, `u7` Nebenversion des Protokolls · `u7 u7 u7` Modulversion · `str` Instrument-Key (≤ 24) · `str` Instrumentversion (≤ 12) · `u7` kMaxActive · `u14` effektive Tick-Rate in Hz · `u7` Preset-Slots (v0.1: 0) · `u32` Schema-Hash · `u7` Fähigkeiten (Bit 0 Speicher, Bit 1 Monitor, Bit 2 Diagnose, Bit 3 Poly AT global = Last-Note, Bit 4 Grundwerte im Monitor, Bit 5 erweiterter Monitor, Bit 6 LFO-Quermodulation; § 3.6) · optional angehängt `u7` Fähigkeiten 2 (Bit 0 Instrumentmodus; § 3.6) |
 | `0x02` | `GET_TARGET` | `u7` Spalte 0…7 | `u7` Spalte · `u7` Flags (Bit 0 vorhanden, Bit 1 `per_voice`, Bit 2 `latched`) · `u14` span · 16383 · `str` Name (≤ 12) · `str` span-Text (≤ 8) |
 | `0x03` | `GET_ALLOWED` | — | `mask64` erlaubte Zellen (ARCHITECTURE § 3.2) |
+| `0x04` | `GET_MODE` | `u7` Modus 0…Anzahl−1 | `u7` Modus · `u7` Anzahl · `str` Name (≤ 24) · `str` Bedienhinweis (≤ 24). Nur mit Fähigkeiten 2 Bit 0, sonst `NAK 3` (§ 3.6) |
 
 Der **Schema-Hash** ist eine CRC-32 über Instrument-Key, alle acht Zielbeschreibungen und
 die Poly-AT-Regel. Kennt der Editor den Hash bereits, überspringt er `GET_TARGET`.
@@ -106,7 +107,7 @@ Zelle aktiv, Tiefe außerhalb ±100) wird als Ganzes abgelehnt.
 
 | Cmd | Name | Anfrage | Antwort |
 | --- | --- | --- | --- |
-| `0x30` | `MONITOR` | `u7` Rate Hz (0 = aus, ≤ 25) | `u7` Rate (Antwortcode `0x70`); danach ungefragte Rahmen **`0x7E`** mit 8 × `u14` Quellwerten, 8 × `u14` globalen Offsets und 2 × `u14` CV-Rohwerten vor Kalibrierung und Totzone (Offset-Binär, 8192 = 0, ±8191 = ±1), 36 Byte. Mit Fähigkeit Bit 4 folgen 8 × `u14` Grundwerte der Spalten (Poti-/CC-Stellung oder fester Wert vor der Modulation, 0…1; −1 = nicht gemeldet), dann 52 Byte. Mit Bit 5 folgen außerdem 8 × `u14` Minimum und 8 × `u14` Maximum je Quelle im Monitorfenster, `u7` Taktzustand, `u7` Aftertouch-Art, `u7` Note, `u7` Wert, `u7` Alter: 89 Byte (§ 3.6) |
+| `0x30` | `MONITOR` | `u7` Rate Hz (0 = aus, ≤ 25) | `u7` Rate (Antwortcode `0x70`); danach ungefragte Rahmen **`0x7E`** mit 8 × `u14` Quellwerten, 8 × `u14` globalen Offsets und 2 × `u14` CV-Rohwerten vor Kalibrierung und Totzone (Offset-Binär, 8192 = 0, ±8191 = ±1), 36 Byte. Mit Fähigkeit Bit 4 folgen 8 × `u14` Grundwerte der Spalten (Poti-/CC-Stellung oder fester Wert vor der Modulation, 0…1; −1 = nicht gemeldet), dann 52 Byte. Mit Bit 5 folgen außerdem 8 × `u14` Minimum und 8 × `u14` Maximum je Quelle im Monitorfenster, `u7` Taktzustand, `u7` Aftertouch-Art, `u7` Note, `u7` Wert, `u7` Alter: 89 Byte. Mit Fähigkeiten 2 Bit 0 folgen `u7` aktiver Modus und `u7` Herkunft: 91 Byte (§ 3.6) |
 | `0x31` | `GET_STATS` | — | 10 × `u32` (50 Byte): Ticks · Matrix-Zyklen min/mittel/max · Callback-Last mittel/max (in 0,01 %) · Überläufe · verlorene MIDI-Ereignisse · Main-Loop-Höchstwerte in Zyklen für `HandleMidi`-Durchlauf und `Service` (Messfirmware, TEST_PLAN § 3) |
 | `0x32` | `RESET_STATS` | — | — |
 | `0x33` | `SET_SCENARIO` | `u7` Szenario-Nr. | Status (nur Messfirmware `bench/`; im Instrument `NAK 9`) |
@@ -204,6 +205,26 @@ bei MIDI-Clock oder Gate bestimmt der Takt die Rate, der Wert bleibt gespeichert
 * Der Patch hat dann **Format 2** mit 111 statt 109 Byte (STORAGE § 2). Die Patch-CRC
   deckt das Formatbyte ab: Standardpatch Format 2 `C422B385`, Testvektor `9D6E020E`
   (Format 1: `61C264C4`, `E2340CC6`).
+
+**Instrumentmodus (Fähigkeiten 2, Bit 0; Stand 24.10.2026 abends).** Ein Instrument mit
+umschaltbaren Modi (Physical Modeling: sechs Modelle über SW17/SW18 oder CC28) meldet,
+welcher Modus gerade klingt. Eingeschaltet mit `Extensions::modes`, nur zusammen mit dem
+erweiterten Monitor; derzeit nur im Physical-Modeling-Build `MOD=1` (`0.1.0-mod4`).
+
+* Die sieben Fähigkeitsbits von IDENTIFY sind belegt. Deshalb hängt IDENTIFY ein zweites
+  Byte **Fähigkeiten 2** an. Ein Client, der nach den Fähigkeiten aufhört zu lesen, merkt
+  nichts; fehlt das Byte, gilt 0.
+* `GET_MODE` (`0x04`) liefert Name und Bedienhinweis eines Modus, z. B. „Western Chords“
+  und „SW17 gedrückt · SW18 Mitte“. Der Editor fragt alle Modi einmal beim Verbinden ab.
+* Der Monitorrahmen wächst um 2 Byte auf **91 Byte**:
+
+| Byte | Inhalt |
+| --- | --- |
+| 89 | aktiver Modus 0…Anzahl−1; 127 = noch unbekannt |
+| 90 | Herkunft der letzten Umschaltung: 0 Bedienelemente am Gerät, 1 MIDI, 127 unbekannt |
+
+* Gemeldet wird der Modus, der **klingt** (bei Physical Modeling nach dem Überblenden),
+  nicht der angeforderte.
 
 Wer ein Protokollfeld ändert, ändert Firmware, `mod_probe.py`, beide Editoren, die
 Simulatoren und ihre Tests gemeinsam.

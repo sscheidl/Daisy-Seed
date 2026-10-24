@@ -62,6 +62,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     void Advance(uint32_t now_ms);
     void RefreshPorts();
     void RefreshAll();
+    void RefreshMode();
     void RefreshCellEditor();
     void Log(LogKind kind, const juce::String& text);
     void OpenFileDialog();
@@ -87,6 +88,8 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     juce::ComboBox port_;
     juce::TextButton connect_{"Verbinden"};
     juce::Label status_;
+    juce::Label mode_; // active instrument mode, e.g. "Modell: Western Chords"
+    int mode_index_ = -1, mode_origin_ = -1; // from the last monitor frame
     // grid card
     MatrixGrid grid_;
     juce::Label count_, hint_;

@@ -47,6 +47,8 @@ struct MonitorValues {
     uint8_t clocks = 0;   // bit 0 MIDI clock, bit 1 gate 1, bit 2 gate 2 running
     uint8_t at_kind = 0;  // 0 none, 1 channel, 2 poly
     uint8_t at_note = 0, at_value = 0, at_age = 127; // age in 20 ms, 127 = old
+    // Instrument mode (capabilities 2 bit 0, 91 bytes): index, origin 0 device / 1 MIDI; -1 = unknown.
+    int mode = -1, mode_origin = -1;
 
     bool HasBase(std::size_t t) const { return base[t] >= 0.0f; }
     // Where the column ends up: base plus the global offset, clamped like Engine::Apply.
@@ -181,6 +183,7 @@ class Session {
             d.slots = int(rd.U7());
             d.schema = rd.U32();
             d.caps = int(rd.U7());
+            d.caps2 = rd.AtEnd() ? 0 : int(rd.U7()); // appended by newer firmware
             d.device = r.device;
             if(!rd.Ok() || d.protocol_major != proto::kVersion) {
                 Fail("Protokollversion " + std::to_string(d.protocol_major) + "." + std::to_string(d.protocol_minor)
@@ -197,6 +200,8 @@ class Session {
                 SetStatus(device_info_.key + " " + device_info_.version + " · ID " + std::to_string(device_));
                 last_monitor_ = now_ - kMonitorRenewMs; // start at once
                 Log(LogKind::Ok, "Verbunden. Der Zustand des Geräts wurde geladen.");
+                if(device_info_.Modes())
+                    FetchMode(0);
             });
         }, [this](const std::string& message) { Fail(message); });
     }
@@ -510,7 +515,30 @@ class Session {
             m.at_value = uint8_t(rd.U7());
             m.at_age = uint8_t(rd.U7());
         }
+        if(size >= 91) {
+            const unsigned mode = rd.U7(), origin = rd.U7();
+            m.mode = mode == 127 ? -1 : int(mode);
+            m.mode_origin = origin == 127 ? -1 : int(origin);
+        }
         return m;
+    }
+
+    // Names of the instrument modes, one GET_MODE after the other (the first reply says how
+    // many). The view shows the mode as soon as its name is known.
+    void FetchMode(unsigned m) {
+        Send(proto::GetMode, {uint8_t(m)}, device_, [this, m](const Reply& r) {
+            proto::Reader rd(r.payload.data(), r.payload.size());
+            const unsigned index = rd.U7(), count = rd.U7();
+            const std::string name = ReadString(rd, mod::kMaxModeText), hint = ReadString(rd, mod::kMaxModeText);
+            if(!rd.Ok() || index != m || count > mod::kMaxModes)
+                return;
+            device_info_.modes.resize(count);
+            device_info_.modes[index] = {name, hint};
+            if(index + 1 < count)
+                FetchMode(index + 1);
+            if(changed)
+                changed();
+        }, [this](const std::string& message) { Log(LogKind::Warn, "Modi nicht gelesen: " + message); });
     }
 
     std::vector<uint8_t> SourcePayload(int src, int param) const {

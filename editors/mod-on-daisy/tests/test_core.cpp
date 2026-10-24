@@ -328,6 +328,39 @@ void TestPhysicalModeling() {
     std::printf("PASS physical-modeling: 8 columns, Poly AT per voice, Excitation latched\n");
 }
 
+// Hardware test 2026-10-24: the active model in the connection area and the current value
+// in each column header instead of the fixed span.
+void TestModeAndValueLabels() {
+    Rig rig(physical_modeling::MakeModInfo());
+    rig.sim.bases = kSimInstruments[1].bases;
+    rig.sim.mode = kSimInstruments[1].mode;
+    rig.sim.EnableExtensions(kSimInstruments[1].extensions);
+    CHECK(rig.Connect());
+    CHECK(rig.session.Device().Modes() && rig.session.Device().version == "0.1.0-mod4");
+    rig.Run(300); // GET_MODE 0..5 after connecting, monitor frames
+    const DeviceInfo& d = rig.session.Device();
+    CHECK(d.modes.size() == 6 && d.modes[4].name == "Western Chords" && d.modes[4].hint == "Bank B, SW18 Mitte");
+    CHECK(rig.last_monitor.mode == 0 && rig.last_monitor.mode_origin == 0);
+    rig.sim.mode = 4;
+    rig.sim.mode_origin = 1; // CC28
+    rig.Run(200);
+    CHECK(rig.last_monitor.mode == 4 && rig.last_monitor.mode_origin == 1);
+    // Toy Piano v0.3: no capabilities 2, no GET_MODE, 36-byte frames without a mode.
+    Rig toy(toy_piano::MakeModInfo());
+    CHECK(toy.Connect());
+    toy.Run(300);
+    CHECK(!toy.session.Device().Modes() && toy.session.Device().modes.empty() && toy.last_monitor.mode == -1);
+
+    // Value labels: unipolar 0..100 %, bipolar spans in their unit around 0.5.
+    const auto& cols = rig.model.columns;
+    CHECK(cols[1].ValueLabel(0.63f) == "63 %" && cols[1].ValueLabel(0.0f) == "0 %" && cols[1].ValueLabel(1.0f) == "100 %");
+    CHECK(cols[0].ValueLabel(0.5f) == "+0.0 st" && cols[0].ValueLabel(0.75f) == "+12.0 st"
+          && cols[0].ValueLabel(0.0f) == "-24.0 st"); // VR1: -24..+24 semitones
+    CHECK(cols[6].ValueLabel(0.5f) == "+0 %" && cols[6].ValueLabel(1.0f) == "+100 %"); // Level: gain 1 = +0 %
+    std::printf("PASS modes and value labels: 6 models with hints, origin MIDI, Toy Piano without modes, "
+                "63 %% / +12.0 st / +0 %%\n");
+}
+
 void TestPatchFile() {
     Model m;
     m.columns[0].name = "Pitch";
@@ -767,6 +800,7 @@ int main() {
     TestNoAnswer();
     TestFaults();
     TestPhysicalModeling();
+    TestModeAndValueLabels();
     TestPatchFile();
     TestExtendedMonitor();
     TestLfoFm();

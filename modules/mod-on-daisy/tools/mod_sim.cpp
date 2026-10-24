@@ -53,9 +53,9 @@ int main(int argc, char** argv) {
     static mod::Module module;
     module.Init(info, 48000.0f, 48);
     // Like the firmware: only the Physical Modeling MOD build enables the extensions
-    // (extended monitor, LFO cross modulation); Toy Piano v0.3 and the bench do not.
+    // (extended monitor, LFO cross modulation, active model); Toy Piano v0.3 and the bench do not.
     if(which == "physical-modeling")
-        module.EnableExtensions({true, true});
+        module.EnableExtensions({true, true, true});
     // Physical Modeling MOD=1 reports its pot positions (power-on defaults here) as
     // column base values; Toy Piano v0.3 and the bench report none (PROTOCOL.md § 3.3).
     float bases[mod::kTargets] = {-1, -1, -1, -1, -1, -1, -1, -1};
@@ -70,6 +70,8 @@ int main(int argc, char** argv) {
         for(unsigned i = 0; i < ms; ++i) {
             for(std::size_t t = 0; t < mod::kTargets; ++t)
                 module.engine.ReportBase(t, bases[t]);
+            if(which == "physical-modeling") // power-on: bank A, SW18 up = Modal Resonator
+                module.engine.ReportMode(0, mod::kModeFromDevice);
             module.engine.Tick(48);
             module.controller.Service(++now, out);
         }

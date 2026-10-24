@@ -6,6 +6,7 @@ Not the editor. A small command-line client for the protocol in docs/PROTOCOL.md
     pip install mido python-rtmidi
     python mod_probe.py ports
     python mod_probe.py identify
+    python mod_probe.py modes                       # instrument modes (capabilities 2 bit 0)
     python mod_probe.py matrix
     python mod_probe.py set-cell LFO1 0 35          # source, target column, depth
     python mod_probe.py source LFO1 sync 1          # MIDI clock
@@ -26,8 +27,8 @@ import time
 
 MANUFACTURER, PROJECT, VERSION = 0x7D, (0x4D, 0x44), 1
 MAX_FRAME, HEADER = 120, 8
-CMD = dict(identify=0x01, get_target=0x02, get_allowed=0x03, get_matrix=0x10, set_matrix=0x11,
-           set_cell=0x12, clear_matrix=0x13, get_source=0x18, set_source=0x19, get_name=0x1A,
+CMD = dict(identify=0x01, get_target=0x02, get_allowed=0x03, get_mode=0x04, get_matrix=0x10,
+           set_matrix=0x11, set_cell=0x12, clear_matrix=0x13, get_source=0x18, set_source=0x19, get_name=0x1A,
            set_name=0x1B, get_calibration=0x24, set_calibration=0x25, monitor=0x30, get_stats=0x31,
            reset_stats=0x32, set_scenario=0x33)
 MONITOR_FRAME, NAK = 0x7E, 0x7F  # 0x70 is the reply to MONITOR
@@ -280,7 +281,23 @@ def identify(dev):
     info = dict(protocol=f'{r.u7()}.{r.u7()}', module=f'{r.u7()}.{r.u7()}.{r.u7()}', instrument=r.str(),
                 version=r.str(), max_active=r.u7(), tick_hz=r.u14(), slots=r.u7(), schema=f'{r.u32():08X}',
                 capabilities=r.u7())
+    # Capabilities 2 is appended (PROTOCOL.md § 3.6); older firmware ends here.
+    info['capabilities2'] = r.u7() if r.pos < len(r.data) else 0
     return info
+
+
+def modes(dev):
+    """Names and selection hints of the instrument modes (GET_MODE), [] without capability 2 bit 0."""
+    if not identify(dev)['capabilities2'] & 1:
+        return []
+    result, count, m = [], 1, 0
+    while m < count:
+        r = Reader(dev.request(CMD['get_mode'], bytes([m])))
+        r.u7()
+        count = r.u7()
+        result.append(dict(name=r.str(), hint=r.str()))
+        m += 1
+    return result
 
 
 def targets(dev):
@@ -431,6 +448,10 @@ def monitor(dev, seconds, rate=20):
                 line += f' | clock {"M" if clocks & 1 else "-"}{"1" if clocks & 2 else "-"}{"2" if clocks & 4 else "-"}'
                 line += ' | AT ' + ('-' if kind == 0 else ('Kanal' if kind == 1 else f'Poly n{note}'))
                 line += f' {value} ({"alt" if age >= 127 else f"{age * 20} ms"})'
+            if len(data) >= 91:  # instrument mode and origin of the last change
+                mode, origin = data[89:91]
+                line += ' | mode ' + ('?' if mode == 127 else str(mode))
+                line += {0: ' (Geraet)', 1: ' (MIDI)'}.get(origin, '')
             print(line)
     dev.request(CMD['monitor'], bytes([0]))
     for i in range(2):
@@ -466,7 +487,7 @@ def main():
     p.add_argument('--port')
     p.add_argument('--device', type=int, default=0)
     sub = p.add_subparsers(dest='cmd', required=True)
-    for name in ['ports', 'identify', 'targets', 'matrix', 'clear', 'lengths', 'stats', 'cc-stats', 'selftest']:
+    for name in ['ports', 'identify', 'modes', 'targets', 'matrix', 'clear', 'lengths', 'stats', 'cc-stats', 'selftest']:
         sub.add_parser(name)
     c = sub.add_parser('set-cell')
     c.add_argument('source', choices=SOURCES, type=str.upper)
@@ -501,6 +522,9 @@ def main():
     dev = Device(args.port, args.device)
     if args.cmd == 'identify':
         print(identify(dev))
+    elif args.cmd == 'modes':
+        for i, m in enumerate(modes(dev)):
+            print(i, m['name'], '-', m['hint'])
     elif args.cmd == 'targets':
         for i, t in enumerate(targets(dev)):
             print(i, t)

@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <utility>
 #include <vector>
 using namespace physical_modeling;
 extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }
@@ -79,8 +80,9 @@ void TestIdentify() {
     char key[mod::kMaxKeyLength + 1]{}, version[13]{};
     id.Str(key, mod::kMaxKeyLength);
     id.Str(version, 12);
-    assert(std::strcmp(key, "physical-modeling") == 0 && std::strcmp(version, "0.1.0-mod3") == 0);
-    assert(r.back() == (0x0A | 0x30 | 0x40)); // extended monitor and LFO cross modulation
+    assert(std::strcmp(key, "physical-modeling") == 0 && std::strcmp(version, "0.1.0-mod4") == 0);
+    // extended monitor and LFO cross modulation; capabilities 2 bit 0: active model (mod4)
+    assert(r[r.size() - 2] == (0x0A | 0x30 | 0x40) && r.back() == 0x01);
     r = Request(mod::proto::GetAllowed, {});
     mod::proto::Reader allowed(r.data(), r.size());
     const uint64_t mask = allowed.Mask64();
@@ -203,7 +205,7 @@ void TestBaseMonitor() {
     assert(last);
     mod::proto::Frame f;
     assert(mod::proto::ParseHeader(last->data() + 1, last->size() - 2, f) == mod::proto::Parse::Ok);
-    assert(f.length == 89); // extended monitor: base values, ranges, clocks, aftertouch
+    assert(f.length == 91); // extended monitor: base values, ranges, clocks, aftertouch, model
     mod::proto::Reader rd(f.payload, f.length);
     for(int i = 0; i < 18; ++i)
         rd.U14();
@@ -216,6 +218,54 @@ void TestBaseMonitor() {
     Request(mod::proto::Monitor, {0});
     hw.pot[1].value = 0.5f;
     Tick(200);
+}
+
+// The last monitor frame's model bytes (89: model, 90: origin), PROTOCOL.md § 3.6.
+std::pair<unsigned, unsigned> MonitoredModel(unsigned ticks) {
+    Request(mod::proto::Monitor, {20});
+    midi.sent.clear();
+    Tick(ticks);
+    const std::vector<uint8_t>* last = nullptr;
+    for(const std::vector<uint8_t>& m : midi.sent)
+        if(m.size() > 7 && m[6] == mod::proto::MonitorFrame)
+            last = &m;
+    assert(last);
+    mod::proto::Frame f;
+    assert(mod::proto::ParseHeader(last->data() + 1, last->size() - 2, f) == mod::proto::Parse::Ok && f.length == 91);
+    return {f.payload[89], f.payload[90]};
+}
+
+void TestModel() {
+    // Six models with names and switch hints, in ModelIndex order.
+    const char* names[] = {"Modal Resonator", "Sympathetic Strings", "Inharmonic Strings",
+                           "FM Voice", "Western Chords", "String & Reverb"};
+    for(uint8_t m = 0; m < 6; ++m) {
+        std::vector<uint8_t> r = Request(mod::proto::GetMode, {m});
+        mod::proto::Reader rd(r.data(), r.size());
+        char name[mod::kMaxModeText + 1]{}, hint[mod::kMaxModeText + 1]{};
+        assert(rd.U7() == m && rd.U7() == 6);
+        rd.Str(name, mod::kMaxModeText);
+        rd.Str(hint, mod::kMaxModeText);
+        assert(rd.Ok() && rd.AtEnd() && std::strcmp(name, names[m]) == 0);
+        assert(std::strncmp(hint, m < 3 ? "Bank A" : "Bank B", 6) == 0);
+    }
+    uint8_t nak = 0;
+    Request(mod::proto::GetMode, {6}, &nak);
+    assert(nak == mod::proto::kNak);
+    // Power-on: the fake switches read bank A and SW18 position 0, accepted from the device.
+    assert(MonitoredModel(60) == std::make_pair(unsigned(SwitchModel(false, 0)), unsigned(mod::kModeFromDevice)));
+    // Bank B, SW18 down: String & Reverb from the device once the 20 ms debounce and the fade passed.
+    hw.tog_sw17.value = true;
+    hw.tog_sw18.value = 2;
+    assert(MonitoredModel(200) == std::make_pair(5u, unsigned(mod::kModeFromDevice)));
+    // CC28 selects FM Voice (index 3: floor(6 * v / 127) = 3 for v = 64) from MIDI.
+    Midi(daisy::ControlChange, 28, 64);
+    assert(MonitoredModel(200) == std::make_pair(3u, unsigned(mod::kModeFromMidi)));
+    Request(mod::proto::Monitor, {0});
+    hw.tog_sw17.value = false;
+    hw.tog_sw18.value = 0;
+    Tick(200);
+    std::printf("model: names, switches -> String & Reverb, CC28 -> FM Voice (origin MIDI)\n");
 }
 
 void TestStress() {
@@ -261,6 +311,7 @@ int main() {
     TestLatchedExcitation();
     TestLevel();
     TestBaseMonitor();
+    TestModel();
     TestStress();
-    std::printf("PASS: Physical Modeling Mod on Daisy build: SysEx, global offsets, Poly AT per voice, latched excitation, level column, base values, stress\n");
+    std::printf("PASS: Physical Modeling Mod on Daisy build: SysEx, global offsets, Poly AT per voice, latched excitation, level column, base values, model, stress\n");
 }

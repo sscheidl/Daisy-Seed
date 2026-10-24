@@ -11,8 +11,10 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace editor {
 constexpr int kCells = int(mod::kCells);
@@ -37,6 +39,28 @@ struct Column {
             s = "\xC2\xB1" + s.substr(2);
         return s;
     }
+
+    // The column's current value for the header (hardware test 24.10.2026: "63 %" instead of
+    // the fixed "100 %"). Unipolar columns show 0..100 %; a bipolar span ("+-12 st", "+-100%")
+    // gives the unit and puts the centre at 0.5: base 0.75 with span 0.25 = "+-12 st" is +12 st.
+    std::string ValueLabel(float base) const {
+        char text[24];
+        const char* number = span_text.c_str() + (span_text.rfind("+-", 0) == 0 ? 2 : 0);
+        char* end = nullptr;
+        const float amount = std::strtof(number, &end);
+        if(number != span_text.c_str() && end != number && span > 0.0f) {
+            std::string unit(end);
+            unit.erase(0, unit.find_first_not_of(' '));
+            const double v = double((base - 0.5f) * amount / span);
+            if(unit.rfind('%', 0) == 0)
+                std::snprintf(text, sizeof(text), "%+.0f %%", v);
+            else
+                std::snprintf(text, sizeof(text), "%+.1f %s", v, unit.c_str());
+        } else {
+            std::snprintf(text, sizeof(text), "%.0f %%", double(base * 100.0f));
+        }
+        return text;
+    }
 };
 
 // Where the current patch came from when it was loaded from a file without a device:
@@ -55,8 +79,15 @@ struct DeviceInfo {
     int max_active = int(mod::kMaxActive), tick_hz = 0, slots = 0, caps = 0, device = 0;
     uint32_t schema = 0;
 
+    int caps2 = 0;                    // appended to IDENTIFY (PROTOCOL.md § 3.6); 0 when absent
+    struct Mode {
+        std::string name, hint;       // GET_MODE, e.g. "Western Chords", "Bank B, SW18 Mitte"
+    };
+    std::vector<Mode> modes;          // filled after connecting, when Modes()
+
     bool ExtendedMonitor() const { return (caps & 0x20) != 0; } // ranges, clocks, aftertouch
     bool LfoFm() const { return (caps & 0x40) != 0; }           // LFO cross modulation, format 2
+    bool Modes() const { return (caps2 & 0x01) != 0; }          // active instrument mode in the monitor
 };
 
 inline std::string Hex32(uint32_t v) {

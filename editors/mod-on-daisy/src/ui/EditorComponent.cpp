@@ -23,6 +23,11 @@ EditorComponent::EditorComponent(bool with_simulators)
     session_.log = [this](LogKind k, const std::string& text) { Log(k, U(text)); };
     session_.monitor = [this](const MonitorValues& m) {
         grid_.SetMonitor(m);
+        if(m.mode != mode_index_ || m.mode_origin != mode_origin_) {
+            mode_index_ = m.mode;
+            mode_origin_ = m.mode_origin;
+            RefreshMode();
+        }
         for(int i = 0; i < 3; ++i)
             sources_[std::size_t(i)]->SetClockState(
                 m.ClockState(model_.SourceParam(i, mod::ParamSync), model_.SourceParam(i, mod::ParamGate)));
@@ -39,6 +44,8 @@ EditorComponent::EditorComponent(bool with_simulators)
             ConnectTo(port_.getSelectedItemIndex());
     };
     addAndMakeVisible(status_);
+    addAndMakeVisible(mode_);
+    mode_.setColour(juce::Label::textColourId, colour::ink);
     status_.setJustificationType(juce::Justification::centred);
 
     addAndMakeVisible(grid_);
@@ -196,6 +203,7 @@ void EditorComponent::ConnectTo(int index) {
         simulator_ = std::make_unique<Simulator>(kSimInstruments[p.simulator].make(),
                                                  uint32_t(juce::Random::getSystemRandom().nextInt()));
         simulator_->bases = kSimInstruments[p.simulator].bases;
+        simulator_->mode = kSimInstruments[p.simulator].mode;
         simulator_->EnableExtensions(kSimInstruments[p.simulator].extensions);
         session_.Connect(*simulator_, now_);
     } else {
@@ -270,6 +278,28 @@ void EditorComponent::ReleasePort() {
 // ------------------------------------------------------------------ view
 void EditorComponent::handleAsyncUpdate() { RefreshAll(); }
 
+// The model that sounds (PROTOCOL.md § 3.6), with how to select it on the kit.
+void EditorComponent::RefreshMode() {
+    const DeviceInfo& d = session_.Device();
+    juce::String text, tip;
+    if(session_.Connected() && d.Modes()) {
+        if(mode_index_ >= 0 && mode_index_ < int(d.modes.size()) && !d.modes[std::size_t(mode_index_)].name.empty()) {
+            const DeviceInfo::Mode& m = d.modes[std::size_t(mode_index_)];
+            text = U("Modell: ") + U(m.name) + (mode_origin_ == 1 ? U(" (MIDI)") : U(""));
+            tip = U(m.name) + U(" – am Gerät: ") + U(m.hint)
+                  + (mode_origin_ == 1 ? U("\nZuletzt per MIDI (CC28) gewählt; die Schalter stehen evtl. anders.")
+                                       : U(""));
+        } else {
+            text = U("Modell: …");
+        }
+        tip << U("\nAlle Modelle:");
+        for(std::size_t i = 0; i < d.modes.size(); ++i)
+            tip << U("\n  ") << U(d.modes[i].name) << U(" – ") << U(d.modes[i].hint);
+    }
+    mode_.setText(text, juce::dontSendNotification);
+    mode_.setTooltip(tip);
+}
+
 void EditorComponent::RefreshAll() {
     const LinkState s = session_.State();
     status_.setText(U(session_.StatusText()), juce::dontSendNotification);
@@ -280,6 +310,7 @@ void EditorComponent::RefreshAll() {
                                                 : (session_.StatusText() == "offline" ? colour::muted : colour::err));
     status_.setColour(juce::Label::outlineColourId, status_.findColour(juce::Label::textColourId));
     connect_.setButtonText(s == LinkState::Offline ? "Verbinden" : "Trennen");
+    RefreshMode();
     port_.setEnabled(s == LinkState::Offline);
     pull_.setEnabled(session_.Connected());
     count_.setText(U("Aktive Verbindungen: ") + juce::String(model_.ActiveCount()) + " / "
@@ -366,7 +397,9 @@ void EditorComponent::resized() {
         h.removeFromLeft(8);
         connect_.setBounds(h.removeFromLeft(110));
         h.removeFromLeft(12);
-        status_.setBounds(h.removeFromLeft(360));
+        status_.setBounds(h.removeFromLeft(330));
+        h.removeFromLeft(12);
+        mode_.setBounds(h);
     }
     r.reduce(kPad, kPad);
     footer_card_ = r.removeFromBottom(kFooter);

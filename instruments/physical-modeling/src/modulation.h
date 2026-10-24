@@ -14,10 +14,26 @@ constexpr unsigned kLevelColumn = 6;   // replaces Decay (reverb time), hardware
 constexpr float kLevelBase = 0.5f;     // gain = 2 * x: 0..2 (+6 dB), 1 with an empty matrix
 inline float LevelGain(float x) { return 2.0f * x; }
 
+#if MOD_ON_DAISY_EXTENSIONS
+// The six models in ModelIndex order (config.h SwitchModel: bank * 3 + UP/CENTER/DOWN),
+// reported to the editor (PROTOCOL.md § 3.6); README "Models and controls": bank A =
+// SW17 not pressed, B = pressed. 7-bit ASCII only (protocol strings).
+inline constexpr mod::ModeInfo kModes[] = {
+    {"Modal Resonator", "Bank A, SW18 oben"},     {"Sympathetic Strings", "Bank A, SW18 Mitte"},
+    {"Inharmonic Strings", "Bank A, SW18 unten"}, {"FM Voice", "Bank B, SW18 oben"},
+    {"Western Chords", "Bank B, SW18 Mitte"},     {"String & Reverb", "Bank B, SW18 unten"},
+};
+#endif
+
 inline mod::InstrumentInfo MakeModInfo() {
     mod::InstrumentInfo info;
     info.key = "physical-modeling";
-    info.version = PHYSICAL_MODELING_VERSION "-mod3"; // mod2: Level column; mod3: monitor ranges, LFO FM
+    // mod2: Level column; mod3: monitor ranges, LFO FM; mod4: active model in the monitor
+    info.version = PHYSICAL_MODELING_VERSION "-mod4";
+#if MOD_ON_DAISY_EXTENSIONS
+    info.modes = kModes;
+    info.mode_count = uint8_t(sizeof(kModes) / sizeof(kModes[0]));
+#endif
     info.targets[Frequency] = {"Pitch", "+-12 st", 0.25f, true, false}; // 0..1 = 48 semitones
     info.targets[Structure] = {"Structure", "100%", 1.0f, true, false};
     info.targets[Brightness] = {"Brightness", "100%", 1.0f, true, false};

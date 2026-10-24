@@ -12,7 +12,7 @@
   const MAX_FRAME = 120, HEADER = 8, MAX_PAYLOAD = MAX_FRAME - 2 - HEADER - 1;
   const BROADCAST = 0x7f, REPLY_BIT = 0x40, NAK = 0x7f, MONITOR_FRAME = 0x7e; // 0x70 = reply to monitor
   const CMD = {
-    identify: 0x01, getTarget: 0x02, getAllowed: 0x03,
+    identify: 0x01, getTarget: 0x02, getAllowed: 0x03, getMode: 0x04,
     getMatrix: 0x10, setMatrix: 0x11, setCell: 0x12, clearMatrix: 0x13,
     getSource: 0x18, setSource: 0x19, getName: 0x1a, setName: 0x1b,
     getCalibration: 0x24, setCalibration: 0x25,
@@ -35,6 +35,8 @@
   const PARAM = { rate: 0, shape: 1, sync: 2, gate: 3, division: 4, retrigger: 5, fm: 6 };
   const RATE_MAX = 16383, CELLS = 64, MAX_DEPTH = 100, MAX_FM = 100;
   const CAP = { monitor: 0x02, diagnostics: 0x04, polyAtLastNote: 0x08, baseMonitor: 0x10, extendedMonitor: 0x20, lfoFm: 0x40 };
+  // Capabilities 2, appended to IDENTIFY by newer firmware (PROTOCOL.md § 3.6).
+  const CAP2 = { modes: 0x01 };
 
   const rateToHz = (r) => 0.02 * Math.pow(1000, Math.min(RATE_MAX, Math.max(0, r)) / RATE_MAX);
   const hzToRate = (hz) => Math.round(Math.log(hz / 0.02) / Math.log(1000) * RATE_MAX);
@@ -161,13 +163,14 @@
   const divisionNames = (sync) => (sync === 2 ? GATE_DIVISIONS : MIDI_DIVISIONS);
 
   // Monitor frame (PROTOCOL.md § 3.3): 36 bytes plain, 52 with base values, 89 extended
-  // (range per source over the window, clock activity, last aftertouch).
+  // (range per source over the window, clock activity, last aftertouch), 91 with the
+  // instrument mode and its origin (0 device, 1 MIDI; -1 unknown).
   const s14 = (v) => ((v & 16383) - 8192) / 8191;
   function decodeMonitor(payload) {
     const r = new Reader(payload);
     const read = (n) => Array.from({ length: n }, () => s14(r.u14()));
     const m = { source: read(8), offset: read(8), cv: read(2), base: new Array(8).fill(-1), hasRange: false,
-      min: null, max: null, clocks: 0, atKind: 0, atNote: 0, atValue: 0, atAge: 127 };
+      min: null, max: null, clocks: 0, atKind: 0, atNote: 0, atValue: 0, atAge: 127, mode: -1, modeOrigin: -1 };
     if (payload.length >= 52) m.base = read(8);
     if (payload.length >= 89) {
       m.hasRange = true;
@@ -175,7 +178,23 @@
       m.max = read(8);
       m.clocks = r.u7(); m.atKind = r.u7(); m.atNote = r.u7(); m.atValue = r.u7(); m.atAge = r.u7();
     }
+    if (payload.length >= 91) {
+      const mode = r.u7(), origin = r.u7();
+      m.mode = mode === 127 ? -1 : mode;
+      m.modeOrigin = origin === 127 ? -1 : origin;
+    }
     return m;
+  }
+
+  // The column's current value for the header, as Column::ValueLabel in the JUCE editor:
+  // unipolar 0..100 %, a bipolar span ("+-12 st", "+-100%") in its unit around 0.5.
+  function valueLabel(target, base) {
+    const m = /^\+-\s*([0-9.]+)\s*(\S*)/.exec(target.spanText || '');
+    if (m && target.span > 0) {
+      const v = (base - 0.5) * parseFloat(m[1]) / target.span, sign = v < 0 ? '-' : '+';
+      return m[2].startsWith('%') ? `${sign}${Math.abs(v).toFixed(0)} %` : `${sign}${Math.abs(v).toFixed(1)} ${m[2]}`;
+    }
+    return `${(base * 100).toFixed(0)} %`;
   }
   // 1 running, 0 not, -1 unknown (free running or older firmware).
   function clockState(m, sync, gate) {
@@ -256,9 +275,9 @@
   return {
     MANUFACTURER, PROJECT, VERSION, MAX_FRAME, HEADER, MAX_PAYLOAD, BROADCAST, REPLY_BIT, NAK, MONITOR_FRAME,
     CMD, ERRORS, SOURCES, SHAPES, RANDOM_MODES, SYNCS, MIDI_DIVISIONS, GATE_DIVISIONS,
-    DEFAULT_MIDI_DIVISION, DEFAULT_GATE_DIVISION, PARAM, RATE_MAX, CELLS, MAX_DEPTH, MAX_FM, CAP,
+    DEFAULT_MIDI_DIVISION, DEFAULT_GATE_DIVISION, PARAM, RATE_MAX, CELLS, MAX_DEPTH, MAX_FM, CAP, CAP2,
     rateToHz, hzToRate, checksum, Writer, Reader, buildFrame, parseFrame, crc32,
     defaultPatch, bit, isEnabled, isActive, activeCount, serializePatch, patchCrc, divisionNames,
-    decodeMonitor, clockState, goalSpan, checkCompatibility, safePart,
+    decodeMonitor, valueLabel, clockState, goalSpan, checkCompatibility, safePart,
   };
 });

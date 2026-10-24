@@ -6,6 +6,11 @@
 #include "program.h"
 
 namespace mod {
+#if MOD_ON_DAISY_EXTENSIONS
+// Instrument mode reporting (PROTOCOL.md § 3.6): origin of the last mode change.
+constexpr uint8_t kModeUnknown = 127, kModeFromDevice = 0, kModeFromMidi = 1;
+#endif
+
 struct MonitorSnapshot {
     float source[kSources]{};
     float offset[kTargets]{};
@@ -15,6 +20,7 @@ struct MonitorSnapshot {
     float base[kTargets]{-1, -1, -1, -1, -1, -1, -1, -1}; // 0..1 before modulation; -1 = not reported
     float min[kSources]{}, max[kSources]{};               // range of each source in the monitor window
     uint8_t clocks = 0; // bit 0 MIDI clock, bit 1 gate 1, bit 2 gate 2 running
+    uint8_t mode = kModeUnknown, mode_origin = kModeUnknown; // instrument mode (Extensions::modes)
 #endif
 };
 
@@ -137,12 +143,18 @@ class Engine {
     // Audio IRQ, optional: the column's value before modulation, for the monitor only.
 #if MOD_ON_DAISY_EXTENSIONS
     void ReportBase(std::size_t target, float base) { base_[target] = base; }
+    // Audio IRQ, optional: the mode that sounds and where the last change came from.
+    void ReportMode(uint8_t mode, uint8_t origin) {
+        mode_ = mode;
+        mode_origin_ = origin;
+    }
     // Main loop: starts a new min/max window once a monitor frame has been taken. The
     // audio side resets its own accumulators when it sees the new epoch (no shared
     // write), so a window covers the ticks between two frames.
     void NextMonitorWindow() { range_epoch_.fetch_add(1, std::memory_order_relaxed); }
 #else
     void ReportBase(std::size_t, float) {}
+    void ReportMode(uint8_t, uint8_t) {}
 #endif
     float NotePressure(uint8_t note) const { return float(live_->PressureRaw(note)) * (1.0f / 127.0f); }
     float PressureCoeff() const { return midi_coeff_; }
@@ -231,6 +243,8 @@ class Engine {
 #if MOD_ON_DAISY_EXTENSIONS
         for(std::size_t i = 0; i < kTargets; ++i)
             m.base[i] = base_[i];
+        m.mode = mode_;
+        m.mode_origin = mode_origin_;
         const uint32_t epoch = range_epoch_.load(std::memory_order_relaxed);
         for(std::size_t i = 0; i < kSources; ++i) {
             if(epoch != range_seen_ || source_[i] < range_min_[i])
@@ -276,6 +290,7 @@ class Engine {
     float offset_[kTargets]{};
 #if MOD_ON_DAISY_EXTENSIONS
     float base_[kTargets]{-1, -1, -1, -1, -1, -1, -1, -1};
+    uint8_t mode_ = kModeUnknown, mode_origin_ = kModeUnknown; // audio only, like base_
     std::atomic<uint32_t> range_epoch_{0}; // written by the main loop only
     uint32_t range_seen_ = ~0u;            // audio only, like the accumulators
     float range_min_[kSources]{}, range_max_[kSources]{};

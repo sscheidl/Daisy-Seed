@@ -132,6 +132,33 @@ Befunde:
      sind bytegleich zum Übergabe-Paket.
    * Am Gerät `NICHT GEMESSEN`.
 
+### Am Gerät: `0.1.0-mod3` und JUCE-Editor vom Stand PR #29 (`GEMESSEN` 24.10.2026)
+
+Lokal unter Windows 11; Befehle vom Agenten, Bedienung und Beobachtung vom Betreiber.
+
+| Nr. | Ergebnis |
+| --- | --- |
+| IDENTIFY (`mod_probe.py`, 19:14) | `physical-modeling 0.1.0-mod3`, Fähigkeiten 122 (`0x7A`), Schema `942B2D07`; `targets` mit Level in Spalte 6; leere Matrix, Patch-CRC `C422B385` |
+| USB nach dem Flashen | zuerst Gerätemanager-Code 10 (`VID_0483 PID_5740`, ohne Name); nach Abziehen/Einstecken an J7 „Daisy Seed External“, OK |
+| E9b | `NICHT GEMESSEN`: Der Editor war mit dem eingebauten Simulator verbunden, nicht mit dem Kit (Simulatoren seither nur mit `--simulators`) |
+| E7b | **nicht bestanden** (vom Betreiber berichtet): Mit laufendem Studio One werden die Modulationen nicht durchgereicht. Die ältere Editor-Version (Stand PR #24) hat im Parallelbetrieb funktioniert. Reihenfolge und Windows-MIDI-Services-Einstellung noch nicht notiert; Ursache offen |
+
+Befunde: `mod_probe.py` fand unter Windows den Eingang nicht und brach bei `matrix` in der
+cp1252-Konsole ab (behoben in `bee9023`). Wünsche aus dem Test: aktueller Wert im
+Spaltenkopf und aktives Modell im Verbindungsbereich (umgesetzt in `0.1.0-mod4`, § 1d).
+
+## 1d. Aktives Modell und Spaltenwerte (`GEMESSEN` 24.10.2026, Host)
+
+* Firmware `0.1.0-mod4`: Fähigkeiten 2 (an IDENTIFY angehängt), `GET_MODE`, Monitor 91 Byte
+  (PROTOCOL.md § 3.6). Modultest `TestModes`, Physical-Modeling-Test `TestModel`
+  (Schalter → String & Reverb, CC28 → FM Voice mit Herkunft MIDI).
+* Bytegleich zur Übergabe (lokal gebaut, xPack GCC 13.2.1): Toy Piano v0.3 `6dd79871…`,
+  reguläres Physical Modeling `eb8f412a…`, ModBench `9f50a57b…` / `5cdeb0f6…` / `7f209c15…`.
+  `PhysicalModelingMod-v0.1.0.bin` (mod4): 171.828 Byte, SHA-256 `053aa6d4…`.
+* Editoren: Kerntest `TestModeAndValueLabels`, Browser-Codec-Test (91-Byte-Rahmen,
+  Spaltenwerte), JUCE-Selbsttest unter Windows (VS Build Tools 2022) bestanden.
+* Am Gerät: `NICHT GEMESSEN` (E18, E19, E9b).
+
 ## 1c. Korrekturauftrag nach der Review (`GEMESSEN` 24.10.2026, Host)
 
 Umgesetzt: Kompatibilitätsprüfung vor dem Laden (F1), Portfreigabe in allen Pfaden

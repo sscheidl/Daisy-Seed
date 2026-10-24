@@ -14,7 +14,7 @@ constexpr std::size_t kHeader = 8;         // 7D 4D 44 ver dev cmd seq len
 constexpr std::size_t kMaxPayload = kMaxFrame - 2 - kHeader - 1; // 109
 
 enum Command : uint8_t {
-    Identify = 0x01, GetTarget = 0x02, GetAllowed = 0x03,
+    Identify = 0x01, GetTarget = 0x02, GetAllowed = 0x03, GetMode = 0x04, // GetMode: extensions only
     GetMatrix = 0x10, SetMatrix = 0x11, SetCell = 0x12, ClearMatrix = 0x13,
     GetSource = 0x18, SetSource = 0x19, GetName = 0x1A, SetName = 0x1B,
     Store = 0x20, Recall = 0x21, GetSlotInfo = 0x22, SetPowerOn = 0x23,

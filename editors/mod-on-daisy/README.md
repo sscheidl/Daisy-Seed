@@ -84,6 +84,13 @@ seitdem stehen sie nicht mehr in der normalen Geräteliste.
     zeigt ein volles Band einen freien LFO über 5 Hz.
   * Abgedunkelt: Die Quelle hat keine aktive Verbindung; die Firmware berechnet sie dann
     nicht.
+  * **Modell** (oben neben dem Status): bei Physical Modeling ab `0.1.0-mod4` das Modell, das
+    gerade klingt, z. B. „Modell: Western Chords“; „(MIDI)“, wenn es zuletzt per CC28 gewählt
+    wurde. Der Tooltip nennt die Schalterstellung (Bank A = SW17 nicht gedrückt, B = gedrückt;
+    SW18 oben/Mitte/unten) und alle Modelle.
+  * **Spaltenköpfe**: Meldet das Instrument Grundwerte, steht unter dem Namen der **aktuelle
+    Wert** der Poti- bzw. CC-Stellung (z. B. „63 %“, Pitch in Halbtönen um die Mitte, Level
+    „+0 %“ = Verstärkung 1). Was Tiefe 100 bewirkt, steht im Tooltip und in der Zellenkarte.
   * **Ziele**: Der weiße Strich ist der **Grundwert** der Spalte vor der Modulation:
     die Poti- oder CC-Stellung, bei Physical Modeling „Level“ ein fester Wert 0,5
     (= Verstärkung 1, kein Poti; Poti 7 regelt weiter die Hallzeit). Das Band zeigt, wo
