@@ -166,9 +166,11 @@ editors/mod-on-daisy/
   **direkt** ein. Kodierung, Validierung und CRC sind dadurch dieselben wie in der
   Firmware. Die Validierung läuft vor dem Senden zusätzlich im Editor, zum Beispiel
   „9. Verbindung nicht möglich“.
-* **VST3 später**: Die Bedienoberfläche hängt nur von `core/` ab. Für das Plugin kommt
-  ein `AudioProcessor` hinzu, der den Patch als Plugin-State im Studio-One-Projekt
-  speichert und beim Laden zum Gerät sendet. Der Portzugriff im Plugin ist die
+* **VST3** (umgesetzt 24.10.2026, `src/plugin/Plugin.cpp`): Die Bedienoberfläche hängt nur
+  von `core/` ab. Ein `AudioProcessor` (Audio-Effekt, Ton unverändert) hält den Editor
+  dauerhaft, verbindet sich selbst, speichert den Patch als Plugin-State im
+  Studio-One-Projekt und sendet ihn beim Laden zum Gerät. Den Port hält das Plugin selbst;
+  Windows MIDI Services teilt ihn mit Studio One (E7b). Frühere Überlegung: Der Portzugriff im Plugin ist die
   wichtigste offene Frage (E10). Sie wird mit dem Ergebnis von H4 (TEST_PLAN) zu Beginn
   von Phase 3 entschieden.
 * **Tests**: `core/` wird mit einem simulierten Gerät getestet, das denselben

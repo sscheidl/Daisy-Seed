@@ -9,7 +9,7 @@ Verbindung zum Daisy läuft über USB-MIDI.
 | --- | --- |
 | **JUCE-Editor** ([`src/`](src/)) | **nutzbar**: Standalone für Windows (`.exe` aus der CI), Linux und macOS per CMake. Simulator nur für Entwicklung und Selbsttest (`--simulators`) |
 | **Browser-Editor** ([`web/`](web/)) | **nutzbar**: Schnellvariante für Chrome/Edge (Web MIDI), ohne Installation |
-| VST3 für Studio One | später; der JUCE-Editor ist dafür vorbereitet (Kern ohne GUI, [docs/GUI.md](docs/GUI.md) § 3) |
+| **VST3-Plugin** ([`src/plugin/`](src/plugin/)) | **neu, am Gerät noch nicht geprüft**: derselbe Editor in Studio One, Patch im Song gespeichert ([unten](#vst3-plugin-für-studio-one)) |
 
 Beide Fassungen lesen und schreiben dieselben `.modpatch`-Dateien.
 
@@ -144,50 +144,20 @@ seitdem stehen sie nicht mehr in der normalen Geräteliste.
 
 ### Studio One und der Editor gleichzeitig
 
-Unter Windows öffnet bisher nur **ein** Programm den Port „Daisy Seed External“.
-Studio One nimmt ihn exklusiv, sobald er dort aktiv ist. Das wurde am 23.10.2026 am Gerät
-beobachtet:
+**Stand 24.10.2026: geht** (Laufzettel E7b, Studio One zuerst, dann Editor). Mit den
+Windows MIDI Services öffnen beide Programme „Daisy Seed External“ gleichzeitig.
 
-* Ein schon verbundener Editor steuert weiter. Er bekommt aber keine Antworten und keine
-  Live-Daten mehr („keine Antwort vom Gerät“, „keine Live-Daten“).
-* Nach dem Trennen lässt sich nicht neu verbinden, solange Studio One den Port hält.
+* Voraussetzung ist Physical Modeling ab `0.1.0-mod4`. Studio One schickt per
+  Input-Monitoring alles, was vom Daisy kommt, an den Daisy zurück. Ältere Firmware hat
+  diese zurückgeschickten Antworten mit NAKs beantwortet; die endlosen NAK-Schleifen
+  verdrängten die Antworten an den Editor (Status rot). Seit mod4 ignoriert die Firmware
+  Antwortrahmen (PROTOCOL.md § 2, Schritt 2a).
+* **Toy Piano v0.3 hat diesen Schutz noch nicht.** Dort im Zweifel den Daisy-Eingang in
+  Studio One abschalten oder Input-Monitoring auf der Spur aus.
+* Noch nicht geprüft: umgekehrte Reihenfolge (erst Editor, dann Studio One).
 
-**Prüfung: Windows MIDI Services.** Mit den neuen Windows MIDI Services können mehrere
-Programme denselben Port gleichzeitig nutzen. Microsoft verteilt sie für Windows 11.
-Ob sie auf diesem Rechner schon aktiv sind, zeigt am zuverlässigsten der Versuch:
-
-1. Windows-Version notieren (`winver`) und die Windows-Updates einspielen.
-2. Daisy an J7, den Editor schließen.
-3. Studio One öffnen, „Daisy Seed External“ dort als Ein- und Ausgang aktiv lassen und
-   prüfen, dass Noten vom Daisy ankommen.
-4. Jetzt den Editor starten und **Verbinden**.
-5. Ergebnis notieren (Laufzettel E7b):
-   * **Geht**: Status grün, Live-Anzeige läuft, Änderungen werden bestätigt, und
-     Studio One empfängt weiter Noten. Dann laufen beide nebeneinander.
-   * **Geht nicht**: Der Editor meldet den Port als belegt.
-
-E7b in beiden Startreihenfolgen prüfen: erst Studio One, dann Editor – und umgekehrt.
-
-Geht es nicht, bleibt vorerst die Umgehung: den Daisy-Port in Studio One deaktivieren,
-solange der Editor läuft.
-
-**Spezifikation für ein späteres Paket „Durchleitung“** (nicht umgesetzt; erst nach
-einem negativen E7b-Ergebnis und eigener Freigabe):
-
-* Der Editor öffnet den physischen Daisy-Port allein. Studio One nutzt ein virtuelles
-  Portpaar (z. B. loopMIDI „Daisy via Editor“ hin und zurück).
-* Studio One → Daisy: Noten, CC, Pitchbend, Channel AT, Poly AT, Programmwechsel und
-  Echtzeit (Clock, Start, Stop, Continue) werden unverändert und ohne Pufferung
-  weitergereicht. SysEx mit Kennung `0x7D 0x4D 0x44` von Studio One wird verworfen.
-* Daisy → Studio One: alles außer Mod-on-Daisy-SysEx (Antworten und Monitorrahmen),
-  die beim Editor bleiben.
-* Keine Schleifen: Der Editor reicht nichts von einem Port auf denselben zurück; der
-  virtuelle Eingang ist nicht zugleich Ausgang.
-* Abnahme: Clock-Jitter und Latenz gegen direkten Anschluss messen, Notenverlust bei
-  dichter Folge 0, Editor-Bedienung gleichzeitig, Trennen und Neuverbinden ohne
-  hängende Noten.
-
-Der heutige JUCE-Port verwirft alles außer SysEx und ist **keine** Durchleitung.
+Die früher spezifizierte „Durchleitung“ über einen virtuellen Port ist damit nicht mehr
+nötig.
 
 ### Selbst bauen
 
@@ -238,6 +208,52 @@ Der Editor nutzt [JUCE](https://juce.com). JUCE steht unter der AGPLv3 oder eine
 kommerziellen JUCE-Lizenz. Für den eigenen Gebrauch spielt das keine Rolle. Bevor die
 `.exe` an andere weitergegeben wird, ist zu entscheiden, ob der Editor unter AGPLv3
 veröffentlicht oder eine JUCE-Lizenz genutzt wird.
+
+## VST3-Plugin für Studio One
+
+Derselbe Editor als Plugin „Mod on Daisy“ (Hersteller „Daisy-Seed“, Kategorie
+Fx/Tools). Es ist ein **Audio-Effekt, der den Ton unverändert durchlässt**; man legt ihn
+auf eine beliebige Spur, z. B. die Daisy-Spur.
+
+* **Verbindet sich selbst** mit „Daisy Seed External“, sobald das Plugin auf einer Spur
+  liegt, auch ohne geöffnetes Fenster. Nach „Trennen“ bleibt es getrennt, bis man
+  „Verbinden“ klickt. Steckt man das Kit neu ein, verbindet es wieder.
+* **Fenster schließen trennt nicht**: Verbindung, Live-Anzeige und Modellanzeige laufen
+  weiter, beim Öffnen ist alles wie zuvor.
+* **Patch im Projekt**: Studio One speichert den Patch mit dem Song. Beim Laden des Songs
+  zeigt das Plugin ihn sofort und **sendet ihn zum Gerät**, sobald es verbunden ist. Der
+  Patch im Gerät wird dabei ersetzt. Spalten, die auf dem Gerät etwas anderes bedeuten,
+  bleiben ausgeschaltet (wie „Ohne betroffene laden“).
+* Den Port teilt sich das Plugin mit Studio One (Windows MIDI Services, siehe oben).
+  Zwei Plugin-Instanzen im selben Song würden beide senden; nur eine verwenden.
+* Keine Simulatoren im Plugin.
+
+**Installieren** (Windows): Den Ordner `Mod on Daisy.vst3` nach
+`C:\Program Files\Common Files\VST3\` kopieren (Administratorrechte), in Studio One
+unter *Optionen → Orte → VST-Plug-Ins* neu scannen lassen.
+
+**Bauen:**
+
+```bash
+cmake -S editors/mod-on-daisy -B build/editor
+cmake --build build/editor --config Release --target ModOnDaisyPlugin_VST3
+```
+
+Das Plugin liegt unter `build/editor/ModOnDaisyPlugin_artefacts/Release/VST3/`. JUCE bringt
+die VST3-Schnittstelle mit, ein eigenes VST3-SDK ist nicht nötig.
+
+**Prüfen ohne Studio One** (`tests/plugin_check.cpp`): lädt das `.vst3` wie ein Host,
+prüft Effekt mit Stereo-Ein-/Ausgang, unveränderten Ton, den Projekt-State im Hin und
+Zurück zwischen zwei Instanzen und das Fenster. `MOD_ON_DAISY_NO_AUTOCONNECT=1` hält das
+Plugin dabei von einem angeschlossenen Kit fern:
+
+```bash
+cmake --build build/editor --config Release --target ModOnDaisyPluginCheck
+MOD_ON_DAISY_NO_AUTOCONNECT=1 build/editor/ModOnDaisyPluginCheck_artefacts/Release/ModOnDaisyPluginCheck "build/editor/ModOnDaisyPlugin_artefacts/Release/VST3/Mod on Daisy.vst3" editors/mod-on-daisy/web/tests/legacy-reverb.modpatch
+```
+
+Der Selbsttest des Standalone-Editors prüft zusätzlich den Weg „Patch aus dem Projekt,
+offline geladen, beim Verbinden zum Gerät gesendet“ gegen den Simulator.
 
 ## Browser-Editor
 

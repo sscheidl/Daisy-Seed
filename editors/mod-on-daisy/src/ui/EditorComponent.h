@@ -12,6 +12,8 @@
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <optional>
+#include <string>
 
 namespace editor::ui {
 class EditorComponent : public juce::Component, private juce::Timer, private juce::AsyncUpdater {
@@ -50,6 +52,19 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     // Set by the self-test: decides instead of the modal dialog.
     std::function<CompatChoice(const Compatibility&)> compat_decision;
 
+    // ------------------------------------------------------------------ for the VST3 plugin
+    // Connects on its own to the first Daisy port whenever one appears while offline,
+    // unless the user pressed "Trennen" (GUI.md § 3).
+    bool auto_connect = false;
+    // Called on the message thread whenever the patch text changes (plugin state).
+    std::function<void(const std::string&)> patch_changed;
+    // The patch as a .modpatch text, as "Datei speichern" writes it.
+    std::string PatchText() const;
+    // The patch stored in the project: shown at once, sent to the device when connected
+    // (now or at the next connection). Columns that mean something else on the device are
+    // left out without asking, as "Ohne betroffene laden" does.
+    void LoadProjectPatch(const std::string& text);
+
   private:
     struct Port {
         juce::String label;
@@ -70,6 +85,8 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     void ApplyLoaded(const LoadedPatch& loaded, const mod::Patch& patch);
     void ApplyDecision(const LoadedPatch& loaded, const Compatibility& compat, CompatChoice choice);
     void ReleasePort();
+    void AutoConnect();
+    void SendProjectPatch(const LoadedPatch& loaded);
 
     LookAndFeel look_;
     Model model_;
@@ -79,6 +96,11 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     std::vector<Port> ports_;
     bool with_simulators_ = false;
     bool manual_clock_ = false;
+    bool user_disconnected_ = false;              // "Trennen" pressed: no automatic reconnection
+    bool was_connected_ = false;                  // to notice the moment a connection is ready
+    std::optional<LoadedPatch> pending_project_;  // project patch waiting for a connection
+    std::string last_patch_text_;
+    juce::String auto_tried_;                     // port list of the last automatic attempt
     uint32_t now_ = 0, last_ports_ = 0;
     juce::int64 last_alert_ = 0;
     std::unique_ptr<juce::FileChooser> chooser_;

@@ -38,10 +38,13 @@ EditorComponent::EditorComponent(bool with_simulators)
     addAndMakeVisible(connect_);
     connect_.setColour(juce::TextButton::buttonColourId, colour::accent);
     connect_.onClick = [this] {
-        if(session_.State() != LinkState::Offline)
+        if(session_.State() != LinkState::Offline) {
+            user_disconnected_ = true; // the plugin stays offline until "Verbinden"
             Disconnect();
-        else
+        } else {
+            user_disconnected_ = false;
             ConnectTo(port_.getSelectedItemIndex());
+        }
     };
     addAndMakeVisible(status_);
     addAndMakeVisible(mode_);
@@ -251,7 +254,51 @@ void EditorComponent::timerCallback() {
         grid_.CheckStale();
         if(!port_.isPopupActive())
             RefreshPorts();
+        AutoConnect();
     }
+}
+
+// Plugin: connect once per change of the port list (start, kit plugged in, back from the
+// bootloader), so a busy port does not produce a new error every second.
+void EditorComponent::AutoConnect() {
+    if(!auto_connect || user_disconnected_ || session_.State() != LinkState::Offline || PortOpen())
+        return;
+    const juce::String list = PortNames().joinIntoString("|");
+    if(list == auto_tried_)
+        return;
+    auto_tried_ = list;
+    for(std::size_t i = 0; i < ports_.size(); ++i)
+        if(ports_[i].simulator < 0 && ports_[i].label.containsIgnoreCase("daisy")) {
+            port_.setSelectedItemIndex(int(i), juce::dontSendNotification);
+            ConnectTo(int(i));
+            return;
+        }
+}
+
+std::string EditorComponent::PatchText() const {
+    return SavePatch(model_, session_.Connected() ? &session_.Device() : nullptr);
+}
+
+void EditorComponent::LoadProjectPatch(const std::string& text) {
+    const LoadedPatch loaded = LoadPatch(text, model_);
+    if(!loaded.ok) {
+        Log(LogKind::Error, U("Patch im Projekt nicht lesbar: ") + U(loaded.error));
+        return;
+    }
+    if(session_.Connected()) {
+        SendProjectPatch(loaded);
+        return;
+    }
+    ApplyLoaded(loaded, loaded.patch); // shown offline at once
+    pending_project_ = loaded;
+    Log(LogKind::Info, U("Patch aus dem Projekt geladen; er geht beim Verbinden zum Gerät."));
+}
+
+// The project wins over what the device holds; mismatching columns stay off (F1, "safe").
+void EditorComponent::SendProjectPatch(const LoadedPatch& loaded) {
+    const Compatibility compat = CheckCompatibility(loaded, model_, session_.Device());
+    ApplyDecision(loaded, compat, compat.NeedsDecision() ? CompatChoice::Safe : CompatChoice::Force);
+    Log(LogKind::Ok, U("Patch aus dem Projekt zum Gerät gesendet."));
 }
 
 void EditorComponent::Advance(uint32_t now_ms) {
@@ -301,6 +348,20 @@ void EditorComponent::RefreshMode() {
 }
 
 void EditorComponent::RefreshAll() {
+    const bool connected = session_.Connected();
+    if(connected && !was_connected_ && pending_project_) { // the device state has just been read
+        const LoadedPatch project = std::move(*pending_project_);
+        pending_project_.reset();
+        SendProjectPatch(project);
+    }
+    was_connected_ = connected;
+    if(patch_changed) {
+        std::string text = PatchText();
+        if(text != last_patch_text_) {
+            last_patch_text_ = std::move(text);
+            patch_changed(last_patch_text_);
+        }
+    }
     const LinkState s = session_.State();
     status_.setText(U(session_.StatusText()), juce::dontSendNotification);
     const Health health = session_.LinkHealth();

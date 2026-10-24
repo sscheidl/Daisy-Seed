@@ -105,6 +105,11 @@ andere MIDI-Programme schließen, weil der Port nur einer Anwendung gehört.
 | E18 | M | Physical Modeling (`0.1.0-mod4`): SW17/SW18 durch alle sechs Stellungen, dann CC28 aus Studio One oder vom Keyboard | Oben neben dem Status steht „Modell: …“ passend zur Schalterstellung (Tooltip: Bank/SW18); nach CC28 „… (MIDI)“. Beide Editoren gleich |
 | E19 | M | Toy Piano v0.3 verbinden | Keine Modell-Anzeige; Spaltenköpfe zeigen weiter den Hub (Toy Piano meldet keine Grundwerte) |
 | E10 | M | `editor/ModOnDaisyEditor.html` in Chrome/Edge, SysEx erlauben, verbinden, eine Zelle ändern | Bestätigung mit Patch-CRC wie im JUCE-Editor |
+| P1 | M | VST3: `Mod on Daisy.vst3` nach `C:\Program Files\Common Files\VST3\` kopieren, Studio One neu scannen, „Mod on Daisy“ als Effekt auf eine Spur legen (Kit mit mod4 an J7, Daisy in Studio One aktiv) | Plugin erscheint unter Daisy-Seed; ohne das Fenster zu öffnen verbindet es sich (Fenster öffnen: Status grün, Modell angezeigt); Ton der Spur unverändert |
+| P2 | M | Im Plugin LFO 1 → Pitch +20 setzen, Fenster schließen, Noten spielen | Vibrato hörbar; Fenster wieder öffnen: alles wie zuvor, Status grün, Live-Anzeige läuft |
+| P3 | M | Song speichern, Studio One schließen, Kit aus- und einschalten (leere Matrix), Studio One und Song öffnen | Plugin verbindet sich und sendet den Song-Patch: Vibrato wieder da, Raster zeigt LFO 1 → Pitch +20 |
+| P4 | M | Im Plugin „Trennen“, dann Kit abziehen und wieder anstecken | Bleibt getrennt bis „Verbinden“; danach normal |
+| P5 | M | Standalone-Editor zusätzlich zum Plugin öffnen und verbinden | Beide grün; eine Änderung in einem erscheint im anderen nach „Vom Gerät laden“ |
 
 Ergebnisse in [VALIDATION.md](VALIDATION.md) § 1b (JUCE-Editor) bzw. § 1a
 (Browser-Editor) unter einem neuen Punkt „Am Gerät“.

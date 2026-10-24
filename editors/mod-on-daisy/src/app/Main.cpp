@@ -38,6 +38,7 @@ class SelfTest {
         PhysicalModeling();
         Corrections();
         Offline();
+        ProjectPatch();
         if(failures_)
             Say("FAIL: " + juce::String(failures_) + " checks");
         else
@@ -283,6 +284,29 @@ class SelfTest {
         Key(juce::KeyPress::pageDownKey);
         SELFTEST_CHECK(e_.GetModel().Depth(12) == -10);
         Say("PASS offline: editing without a device");
+    }
+
+    // VST3 plugin: a patch from the project, loaded while offline, is shown at once and
+    // replaces the device's state when the connection is ready; changes reach the host.
+    void ProjectPatch() {
+        Model& m = e_.GetModel();
+        std::string reported;
+        e_.patch_changed = [&reported](const std::string& t) { reported = t; };
+        e_.GetSession().EditDepth(1, 40, true); // LFO 1 -> Structure, offline
+        const std::string project = e_.PatchText();
+        e_.GetSession().EditDepth(1, 0);
+        e_.LoadProjectPatch(project);
+        e_.RefreshNow();
+        SELFTEST_CHECK(m.Depth(1) == 40 && reported.find("40") != std::string::npos);
+        e_.ConnectTo(PortIndex("Simulator: Physical Modeling")); // a fresh device: empty matrix
+        SELFTEST_CHECK(Settle());
+        e_.RefreshNow();
+        // The fresh device had an empty matrix: now it holds the project patch.
+        SELFTEST_CHECK(Settle() && InSync() && m.Depth(1) == 40 && m.Enabled(1));
+        SELFTEST_CHECK(e_.GetSimulator()->Device().CurrentPatch().depth[0][1] == 40);
+        e_.patch_changed = nullptr;
+        e_.Disconnect();
+        Say("PASS plugin: project patch shown offline, sent to the device on connecting");
     }
 
     EditorComponent& e_;
