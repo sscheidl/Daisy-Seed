@@ -114,3 +114,17 @@ Slöer port.
 The user observed an FV-1 marked “2211” in an opened Slöer pedal; the specific
 Slöer algorithm is still unknown. Reverb work can proceed independently of the
 instrument projects.
+
+## License
+
+Open source, decided on October 24, 2026:
+
+| Part | License |
+| --- | --- |
+| Everything of our own unless stated otherwise: firmware, the Mod on Daisy module, the browser editor (`editors/mod-on-daisy/web/`), `mod_probe.py`, scripts, docs | **MIT**, see [LICENSE](LICENSE) |
+| JUCE editor and VST3 plugin (`editors/mod-on-daisy/src/`, `tests/`, `CMakeLists.txt`) | **AGPLv3**, see [COPYING.AGPL-3.0.txt](editors/mod-on-daisy/COPYING.AGPL-3.0.txt). JUCE 9 is used under its AGPLv3 option; the MIT parts it includes stay MIT |
+| Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/LICENSES/`), Ambient Reverb (`effects/reverb/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
+
+The repository is public on GitHub; until this license was added it had none. Material
+that may not be redistributed (manufacturer documents, photos, analysis inputs) does not
+belong here; an audit of the content and history is still open.
