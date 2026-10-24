@@ -141,7 +141,7 @@ Lokal unter Windows 11; Befehle vom Agenten, Bedienung und Beobachtung vom Betre
 | IDENTIFY (`mod_probe.py`, 19:14) | `physical-modeling 0.1.0-mod3`, Fähigkeiten 122 (`0x7A`), Schema `942B2D07`; `targets` mit Level in Spalte 6; leere Matrix, Patch-CRC `C422B385` |
 | USB nach dem Flashen | zuerst Gerätemanager-Code 10 (`VID_0483 PID_5740`, ohne Name); nach Abziehen/Einstecken an J7 „Daisy Seed External“, OK |
 | E9b | `NICHT GEMESSEN`: Der Editor war mit dem eingebauten Simulator verbunden, nicht mit dem Kit (Simulatoren seither nur mit `--simulators`) |
-| E7b | **nicht bestanden** (vom Betreiber berichtet): Mit laufendem Studio One werden die Modulationen nicht durchgereicht. Die ältere Editor-Version (Stand PR #24) hat im Parallelbetrieb funktioniert. Reihenfolge und Windows-MIDI-Services-Einstellung noch nicht notiert; Ursache offen |
+| E7b | **nicht bestanden** (vom Betreiber berichtet): Mit laufendem Studio One werden die Modulationen nicht durchgereicht. Die ältere Editor-Version (Stand PR #24) hat im Parallelbetrieb funktioniert. **Ursache gefunden** (21:45–21:50, Studio One spielt, `mod_probe.py` parallel): Windows MIDI Services lässt beide Programme an den Port, Befehle kommen an und wirken (LFO 1 → Pitch hörbar). Studio One schickt aber alles vom Daisy per Input-Monitoring zurück; die Firmware beantwortete jeden zurückgeschickten Antwortrahmen mit NAK, das ergab endlose NAK-Schleifen (rund 500 Rahmen/s, `7F`-Rahmen mit festen Seq-Nummern), die die Antworten verdrängten. IDENTIFY kam meist noch durch, `MONITOR`, `GET_TARGET`, `SET_SOURCE` nicht. Behoben in `0.1.0-mod4` (PROTOCOL § 2, Schritt 2a) |
 
 Befunde: `mod_probe.py` fand unter Windows den Eingang nicht und brach bei `matrix` in der
 cp1252-Konsole ab (behoben in `bee9023`). Wünsche aus dem Test: aktueller Wert im
@@ -154,10 +154,13 @@ Spaltenkopf und aktives Modell im Verbindungsbereich (umgesetzt in `0.1.0-mod4`,
   (Schalter → String & Reverb, CC28 → FM Voice mit Herkunft MIDI).
 * Bytegleich zur Übergabe (lokal gebaut, xPack GCC 13.2.1): Toy Piano v0.3 `6dd79871…`,
   reguläres Physical Modeling `eb8f412a…`, ModBench `9f50a57b…` / `5cdeb0f6…` / `7f209c15…`.
-  `PhysicalModelingMod-v0.1.0.bin` (mod4): 171.828 Byte, SHA-256 `053aa6d4…`.
+  `PhysicalModelingMod-v0.1.0.bin` (mod4 ohne Rückkopplungsschutz): 171.828 Byte.
 * Editoren: Kerntest `TestModeAndValueLabels`, Browser-Codec-Test (91-Byte-Rahmen,
   Spaltenwerte), JUCE-Selbsttest unter Windows (VS Build Tools 2022) bestanden.
-* Am Gerät: `NICHT GEMESSEN` (E18, E19, E9b).
+* Rückkopplung: Antwortrahmen werden nie beantwortet; Modultest `TestEchoedReplies` schickt jeden
+  ausgehenden Rahmen zurück: 20 Monitorrahmen/s, kein NAK. `PhysicalModelingMod-v0.1.0.bin`
+  danach 171.684 Byte; die übrigen Images weiter bytegleich.
+* Am Gerät: `NICHT GEMESSEN` (E18, E19, E9b, E7b mit mod4).
 
 ## 1c. Korrekturauftrag nach der Review (`GEMESSEN` 24.10.2026, Host)
 

@@ -45,6 +45,13 @@ F0 7D 4D 44 <ver> <dev> <cmd> <seq> <len> <payload: len Bytes> <chk> F7
 
 1. Kopf `7D 4D 44` passt nicht → `false`, ans Instrument.
 2. `<dev>` ist nicht die eigene ID und nicht `0x7F` → verbraucht, keine Antwort.
+2a. `<cmd>` hat das Antwortbit (`0x40`–`0x7F`: Antwort, `NAK`, Monitorrahmen) → verbraucht,
+   **nie beantwortet**. Grund (Hardwaretest 24.10.2026): Studio One schickt mit
+   Input-Monitoring alles, was vom Daisy kommt, an den Daisy zurück. Ein NAK auf jeden
+   zurückgeschickten Rahmen ergab endlose NAK-Schleifen (gemessen rund 500 Rahmen/s), die
+   die Antworten an den Editor verdrängten. Mit `MOD_ON_DAISY_EXTENSIONS` umgesetzt
+   (Physical Modeling `0.1.0-mod4`); Toy Piano v0.3 und die Messfirmware haben die Regel
+   noch nicht, damit ihre Images unverändert bleiben.
 3. `<ver> ≠ 1` → `NAK 6`.
 4. Länge oder Prüfsumme falsch → `NAK 1` bzw. `NAK 2`.
 5. Sonst ausführen.
