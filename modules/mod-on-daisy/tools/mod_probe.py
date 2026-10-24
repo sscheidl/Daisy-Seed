@@ -20,6 +20,7 @@ The port defaults to the first one containing "Daisy"; use --port to choose.
 import argparse
 import csv
 import random
+import re
 import sys
 import time
 
@@ -179,10 +180,48 @@ def selftest():
                                [dict(rate=6000, shape=0, sync=0, gate=0, division=4, retrigger=0)] * 2,
                                rnd, '', fmt=2)
     assert crc32(default2) == 0xC422B385, hex(crc32(default2))
+    # Port pairing: Windows indices differ per direction (hardware test of 24.10.2026),
+    # ALSA appends client:port, macOS uses the plain name.
+    win_out = ['Microsoft GS Wavetable Synth 0', 'Tulip 1', 'Daisy Seed External 19']
+    win_in = ['Tulip 0', 'General MIDI Synth 17', 'Daisy Seed External 18']
+    assert matching_input('Daisy Seed External 19', win_out, win_in) == 'Daisy Seed External 18'
+    assert resolve_port('Daisy Seed External', win_out) == 'Daisy Seed External 19'
+    assert resolve_port('Daisy Seed External 18', win_out) == 'Daisy Seed External 19'
+    two_out, two_in = ['Daisy Seed External 3', 'Daisy Seed External 4'], ['Daisy Seed External 1', 'Daisy Seed External 2']
+    assert matching_input('Daisy Seed External 4', two_out, two_in) == 'Daisy Seed External 2'
+    alsa = ['Daisy Seed External:Daisy Seed External MIDI 1 20:0']
+    assert matching_input(alsa[0], alsa, alsa) == alsa[0]
+    assert matching_input('Daisy Seed External', ['Daisy Seed External'], ['Daisy Seed External']) == 'Daisy Seed External'
     print('selftest passed')
 
 
 # ---------------------------------------------------------------- device link
+def port_base(name):
+    # rtmidi decorates port names per platform: Windows appends an index that differs
+    # between inputs and outputs ('Daisy Seed External 18' / '... 19'), ALSA appends
+    # ':port client:port'. The base is the name without these decorations.
+    return re.sub(r'\s+\d+$', '', name.split(':')[0]).strip()
+
+
+def resolve_port(wanted, names):
+    # Exact name first, otherwise the first port with the same base name.
+    if wanted in names:
+        return wanted
+    return next((n for n in names if port_base(n) == port_base(wanted)), None)
+
+
+def matching_input(out_name, out_names, in_names):
+    # The k-th output of a base name pairs with the k-th input of that base name, so two
+    # kits with the same name keep their own ports.
+    base = port_base(out_name)
+    outs = [n for n in out_names if port_base(n) == base]
+    ins = [n for n in in_names if port_base(n) == base]
+    if not ins:
+        return next((n for n in in_names if out_name in n), None)
+    k = outs.index(out_name) if out_name in outs else 0
+    return ins[min(k, len(ins) - 1)]
+
+
 class Device:
     def __init__(self, port_name=None, device=0, timeout=0.25):
         import mido
@@ -190,10 +229,11 @@ class Device:
         names = mido.get_output_names()
         if port_name is None:
             port_name = next((n for n in names if 'Daisy' in n), None)
+        else:
+            port_name = resolve_port(port_name, names) or port_name
         if port_name is None:
             sys.exit('no MIDI port with "Daisy" in its name; use --port (see "ports")')
-        in_name = next((n for n in mido.get_input_names() if n.split(':')[0] == port_name.split(':')[0]
-                        or port_name in n), port_name)
+        in_name = matching_input(port_name, names, mido.get_input_names()) or port_name
         try:
             self.out = mido.open_output(port_name)
             self.inp = mido.open_input(in_name)
@@ -419,6 +459,9 @@ def cc_stats(dev):
 
 
 def main():
+    # The matrix printout uses non-ASCII cell marks; a Windows console defaults to cp1252.
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--port')
     p.add_argument('--device', type=int, default=0)
