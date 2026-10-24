@@ -177,10 +177,9 @@ editors/mod-on-daisy/
   `Controller` aus `modules/mod-on-daisy` auf dem Host nutzt. Dazu Verlust, Verzögerung
   und Verfälschung von Rahmen.
 * **JUCE-Version:** 9.0.4, fest in `CMakeLists.txt`.
-* `OFFEN` **Lizenz:** JUCE steht unter AGPLv3 oder einer kommerziellen JUCE-Lizenz.
-  Für den eigenen Gebrauch spielt das keine Rolle. Vor einer Weitergabe der `.exe` an
-  andere ist zu entscheiden, ob der Editor unter AGPLv3 steht oder eine JUCE-Lizenz
-  genutzt wird. Siehe README.
+* **Lizenz (entschieden 24.10.2026):** JUCE-Editor und Plugin unter **AGPLv3** (JUCE 9 unter
+  seiner AGPLv3-Option), Browser-Editor und der Rest des Repos unter MIT. Einzelheiten:
+  Editor-README § Lizenz.
 
 ## 4. Bewusst nicht in v0.1
 

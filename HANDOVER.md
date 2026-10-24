@@ -153,7 +153,7 @@ Punkte 1–4 sind in PR #33 umgesetzt (§ 3b).
 | Modularer Firmwarekern | Idee, [MODULAR_KERNEL_IDEA.md](docs/MODULAR_KERNEL_IDEA.md), GitHub-Milestone | ausgearbeiteten Plan schreiben, später |
 | Toy Piano v0.3 veröffentlichen | Entwurf wartet auf T1–T15 | entscheidet der Mensch |
 | Grundwerte für Toy Piano | absichtlich aus, damit v0.3 dem Entwurf entspricht | mit der nächsten Toy-Piano-Version (z. B. 0.3.1) einschalten |
-| JUCE-Lizenz | AGPLv3 oder JUCE-Lizenz | vor Weitergabe der `.exe` entscheiden |
+| Lizenz | **entschieden 24.10.2026**: Open Source; JUCE-Editor und VST3-Plugin AGPLv3, alles Eigene sonst MIT (README § License) | vor dem Öffentlichstellen des Repos Inhalt auf fremdes Material prüfen |
 | Speicher (QSPI) | nur spezifiziert (D8) | eigene Freigabe nötig |
 | Editor-Feinschliff | offen: Rückgängig/Wiederholen, Wahl beim Wiederverbinden, Schema-Cache | nach den Hardwaretests |
 | Nebulae als dritter Pilot, VST3 | geplant | später |

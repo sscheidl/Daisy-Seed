@@ -204,10 +204,18 @@ und stellt die `.exe` bereit. Sie startet nur von Hand: GitHub → Actions → *
 
 ### Lizenz
 
-Der Editor nutzt [JUCE](https://juce.com). JUCE steht unter der AGPLv3 oder einer
-kommerziellen JUCE-Lizenz. Für den eigenen Gebrauch spielt das keine Rolle. Bevor die
-`.exe` an andere weitergegeben wird, ist zu entscheiden, ob der Editor unter AGPLv3
-veröffentlicht oder eine JUCE-Lizenz genutzt wird.
+**Entschieden am 24.10.2026: Open Source.**
+
+* **JUCE-Editor und VST3-Plugin** (`src/`, `tests/`, `CMakeLists.txt`): **AGPLv3**, Text in
+  [COPYING.AGPL-3.0.txt](COPYING.AGPL-3.0.txt). JUCE 9 wird unter seiner AGPLv3-Option
+  genutzt; die kommerzielle JUCE-Lizenz ist damit nicht nötig. Wer die `.exe` oder das
+  Plugin weitergibt, muss den vollständigen Quellcode unter der AGPLv3 mitgeben oder
+  zugänglich machen.
+* **Browser-Editor** (`web/`): **MIT** wie der Rest des Repos ([LICENSE](../../LICENSE)).
+* Eingebundene MIT-Teile (Mod-on-Daisy-Header, Spaltentabellen der Instrumente) bleiben
+  MIT; MIT-Code darf in ein AGPL-Programm.
+* Die VST3-Schnittstelle (in JUCE enthalten) steht seit 2025 unter **MIT** (Steinberg).
+  Das VST-Logo wird nicht verwendet; dafür gälten Steinbergs eigene Regeln.
 
 ## VST3-Plugin für Studio One
 
