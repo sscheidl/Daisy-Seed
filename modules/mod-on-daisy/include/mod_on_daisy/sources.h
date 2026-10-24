@@ -60,6 +60,18 @@ class Smoother {
     float y_ = 0.0f;
 };
 
+#if MOD_ON_DAISY_EXTENSIONS
+// 2^x for |x| <= 2 without libm (audio side); relative error below 0.02 %.
+inline float Exp2Small(float x) {
+    x = x < -2.0f ? -2.0f : (x > 2.0f ? 2.0f : x);
+    const int i = int(x + 3.0f) - 3; // floor for x in [-2, 2]
+    const float f = x - float(i);
+    const float frac = 1.0f + f * (0.69589f + f * (0.22597f + f * 0.07806f)); // 2^f on [0, 1)
+    constexpr float kScale[5] = {0.25f, 0.5f, 1.0f, 2.0f, 4.0f};
+    return frac * kScale[i + 2];
+}
+#endif
+
 // Main-loop/initialization helpers (call libm).
 inline float SmoothingCoeff(float seconds, std::size_t samples, float sample_rate) {
     return 1.0f - std::exp(-float(samples) / (seconds * sample_rate));
@@ -128,6 +140,9 @@ class ClockFollower {
         return cycles - float(uint32_t(cycles)); // cycles >= 0
     }
     float PeriodSamples() const { return period_; }
+    // Samples since the last pulse; false before the first pulse.
+    bool HasReference() const { return have_reference_; }
+    float SinceSamples() const { return since_; }
     uint32_t Count() const { return count_; }
   private:
     float alpha_;

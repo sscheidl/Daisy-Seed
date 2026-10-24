@@ -24,5 +24,8 @@ struct Module {
         engine.Init(live, sample_rate, block_size);
         controller.Init(engine, live, info, sample_rate, block_size, device_id, diagnostics);
     }
+#if MOD_ON_DAISY_EXTENSIONS
+    void EnableExtensions(const Extensions& e) { controller.EnableExtensions(e); }
+#endif
 };
 }

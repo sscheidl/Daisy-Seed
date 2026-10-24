@@ -70,6 +70,9 @@ class Simulator : public Transport {
         }
     }
 
+    // What the simulated firmware switches on at start (extended monitor, LFO FM).
+    void EnableExtensions(const mod::Extensions& e) { module_->EnableExtensions(e); }
+
     const mod::Controller& Device() const { return module_->controller; }
     const mod::InstrumentInfo& Info() const { return info_; }
 

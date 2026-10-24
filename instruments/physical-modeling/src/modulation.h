@@ -17,7 +17,7 @@ inline float LevelGain(float x) { return 2.0f * x; }
 inline mod::InstrumentInfo MakeModInfo() {
     mod::InstrumentInfo info;
     info.key = "physical-modeling";
-    info.version = PHYSICAL_MODELING_VERSION "-mod2"; // mod2: Level column, base values
+    info.version = PHYSICAL_MODELING_VERSION "-mod3"; // mod2: Level column; mod3: monitor ranges, LFO FM
     info.targets[Frequency] = {"Pitch", "+-12 st", 0.25f, true, false}; // 0..1 = 48 semitones
     info.targets[Structure] = {"Structure", "100%", 1.0f, true, false};
     info.targets[Brightness] = {"Brightness", "100%", 1.0f, true, false};

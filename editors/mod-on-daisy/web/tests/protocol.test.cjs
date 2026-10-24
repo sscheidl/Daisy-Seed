@@ -46,4 +46,55 @@ assert.strictEqual(s.u14(), 16383);
 // Rate mapping as in RateToHz().
 assert(Math.abs(P.rateToHz(0) - 0.02) < 1e-9 && Math.abs(P.rateToHz(16383) - 20) < 1e-9);
 assert.strictEqual(P.hzToRate(P.rateToHz(9000)), 9000);
-console.log('PASS: browser codec matches the C++ reference (CRC E2340CC6, frame sizes, packing)');
+// Format 2 (LFO cross modulation): reference CRCs of test_mod.cpp / mod_probe.py.
+assert.strictEqual(P.patchCrc(P.defaultPatch(2)), 0xc422b385);
+const v2 = P.defaultPatch(2);
+v2.depth[0] = 35; v2.depth[6 * 8 + 4] = -60;
+v2.enabled = P.bit(0) | P.bit(6 * 8 + 4);
+v2.name = 'Vector';
+v2.lfo[0].fm = -37; v2.lfo[1].fm = 100;
+assert.strictEqual(P.serializePatch(v2).length, 111);
+assert.strictEqual(P.patchCrc(v2), 0x9d6e020e);
+
+// Monitor frames of all three sizes.
+const enc = (v) => { const x = Math.round(v * 8191) + 8192; return [x & 127, x >> 7]; };
+const plain = [...Array(18)].flatMap((_, i) => enc(i === 0 ? 0.5 : 0));
+assert.strictEqual(P.decodeMonitor(plain).hasRange, false);
+assert(Math.abs(P.decodeMonitor(plain).source[0] - 0.5) < 1e-3);
+const ext = [...plain, ...[...Array(8)].flatMap(() => enc(0.25)), ...[...Array(8)].flatMap(() => enc(-1)),
+  ...[...Array(8)].flatMap(() => enc(1)), 1, 2, 60, 90, 3];
+assert.strictEqual(ext.length, 89);
+const m = P.decodeMonitor(ext);
+const near = (a, b) => Math.abs(a - b) < 1e-3;
+assert(m.hasRange && near(m.base[3], 0.25) && near(m.min[0], -1) && near(m.max[7], 1));
+assert.deepStrictEqual([m.clocks, m.atKind, m.atNote, m.atValue, m.atAge], [1, 2, 60, 90, 3]);
+assert.strictEqual(P.clockState(m, 1, 0), 1);
+assert.strictEqual(P.clockState(m, 2, 0), 0);
+
+// Goal range: pot 0.1 / 0.5 / 0.9 with LFO +-1 at depth 50 -> 0..0.6 / 0..1 / 0.4..1.
+const targets = Array.from({ length: 8 }, () => ({ present: true, perVoice: false, span: 1, name: 'X' }));
+const gp = P.defaultPatch();
+gp.depth[1] = 50; gp.enabled = P.bit(1);
+for (const [base, lo, hi] of [[0.1, 0, 0.6], [0.5, 0, 1], [0.9, 0.4, 1]]) {
+  const mm = { ...m, base: [0, base, 0, 0, 0, 0, 0, 0] };
+  const g = P.goalSpan(gp, targets, mm, 1);
+  assert(Math.abs(g.lo - lo) < 1e-3 && Math.abs(g.hi - hi) < 1e-3, JSON.stringify(g));
+}
+
+// Compatibility: the review's Reverb file on the Level build.
+const dev = { key: 'physical-modeling', schema: 0x942b2d07, caps: 0x7a };
+const legacy = P.defaultPatch();
+legacy.depth[5 * 8 + 6] = -100; legacy.depth[1] = 30;
+legacy.enabled = P.bit(5 * 8 + 6) | P.bit(1);
+const now = ['Pitch', 'Structure', 'Brightness', 'Damping', 'Position', 'Excitation', 'Level', 'Dry/Wet'].map((name) => ({ present: true, name }));
+const old = now.map((t) => t.name); old[6] = 'Reverb';
+const c = P.checkCompatibility({ instrument_key: 'physical-modeling', schema_hash: 'E337FC28', columns: old, patch: legacy }, now, dev);
+assert(c.schemaChanged && c.needsDecision && c.affected === P.bit(5 * 8 + 6) && /Reverb/.test(c.notes[0]));
+assert(!P.isEnabled(P.safePart(legacy, c), 5 * 8 + 6) && P.isActive(P.safePart(legacy, c), 1));
+assert(!P.checkCompatibility({ instrument_key: 'physical-modeling', schema_hash: '942B2D07', columns: old, patch: legacy }, now, dev).needsDecision);
+assert(P.checkCompatibility({ patch: legacy }, now, dev).schemaUnknown);
+assert(P.checkCompatibility({ instrument_key: 'toy-piano', patch: legacy }, now, dev).keyMismatch);
+assert(P.checkCompatibility({ instrument_key: 'toy-piano', schema_hash: '0', patch: P.defaultPatch(), hasFm: true }, now,
+  { key: 'toy-piano', schema: 0, caps: 0x0a }).fmUnsupported);
+
+console.log('PASS: browser codec matches the C++ reference (CRC E2340CC6, format 2 9D6E020E, frame sizes, packing, monitor, goal span, compatibility)');

@@ -1,7 +1,8 @@
 #pragma once
 // LFO 1/2 and Random (GUI.md § 2.3): only the controls that fit the chosen sync
 // source are visible: rate and retrigger when free, division with MIDI clock,
-// gate input and cycles per pulse with a gate.
+// gate input and cycles per pulse with a gate. LFO 1/2 also get the cross modulation
+// from the other LFO (FM, free running only) when the device supports it.
 #include "../core/Session.h"
 #include "Theme.h"
 
@@ -34,14 +35,32 @@ class SourcePanel : public juce::Component {
         retrigger_.setButtonText("bei Note On");
         retrigger_.onClick = [this] { Edit(mod::ParamRetrigger, retrigger_.getToggleState() ? 1u : 0u); };
         hz_.setJustificationType(juce::Justification::centredRight);
+        fm_.setSliderStyle(juce::Slider::LinearHorizontal);
+        fm_.setTextBoxStyle(juce::Slider::TextBoxRight, false, 44, 22);
+        fm_.setRange(-mod::kMaxFm, mod::kMaxFm, 1);
+        fm_.setDoubleClickReturnValue(true, 0);
+        fm_.onValueChange = [this] { Edit(mod::ParamFm, unsigned(int(fm_.getValue()) + mod::kMaxFm)); };
+        clock_.setFont(juce::FontOptions(12.0f));
         for(juce::Component* c : std::initializer_list<juce::Component*>{&shape_, &rate_, &hz_, &division_, &gate_})
             addAndMakeVisible(c);
-        if(!random)
+        if(!random) {
             addAndMakeVisible(retrigger_);
-        for(auto* l : {&shape_label_, &sync_label_, &rate_label_, &division_label_, &gate_label_, &retrigger_label_}) {
-            l->setColour(juce::Label::textColourId, colour::muted);
-            addAndMakeVisible(l);
+            addChildComponent(fm_);
+            addChildComponent(fm_label_);
         }
+        addChildComponent(clock_);
+        for(auto* l : {&shape_label_, &sync_label_, &rate_label_, &division_label_, &gate_label_, &retrigger_label_,
+                       &fm_label_}) {
+            l->setColour(juce::Label::textColourId, colour::muted);
+            if(l != &fm_label_)
+                addAndMakeVisible(l);
+        }
+        fm_label_.setText(src == mod::Lfo1 ? U("FM ← L2") : U("FM ← L1"), juce::dontSendNotification);
+        const juce::String fm_tip = U("Quermodulation: ") + U(kSourceNames[1 - src])
+            + U(" verändert die Rate dieses LFOs, ±100 = ±2 Oktaven. Nur im freien Lauf; mit Clock oder Gate "
+                "bestimmt der Takt die Rate.");
+        fm_.setTooltip(fm_tip);
+        fm_label_.setTooltip(fm_tip);
         shape_label_.setText(random ? "Modus" : "Form", juce::dontSendNotification);
         sync_label_.setText("Sync", juce::dontSendNotification);
         rate_label_.setText("Rate", juce::dontSendNotification);
@@ -72,6 +91,8 @@ class SourcePanel : public juce::Component {
         division_.setSelectedId(int(model_.SourceParam(src_, mod::ParamDivision)) + 1, juce::dontSendNotification);
         gate_.setSelectedId(int(model_.SourceParam(src_, mod::ParamGate)) + 1, juce::dontSendNotification);
         retrigger_.setToggleState(model_.SourceParam(src_, mod::ParamRetrigger) != 0, juce::dontSendNotification);
+        if(src_ != mod::Random)
+            fm_.setValue(int(model_.SourceParam(src_, mod::ParamFm)) - mod::kMaxFm, juce::dontSendNotification);
         updating_ = false;
         const bool free = sync == mod::Free, gate = sync == mod::GateClock;
         for(juce::Component* c : std::initializer_list<juce::Component*>{&rate_, &hz_, &rate_label_})
@@ -83,7 +104,22 @@ class SourcePanel : public juce::Component {
         const bool retrig = free && src_ != mod::Random;
         retrigger_.setVisible(retrig);
         retrigger_label_.setVisible(retrig);
+        const bool fm = src_ != mod::Random && model_.HasFm();
+        fm_.setVisible(fm);
+        fm_label_.setVisible(fm);
+        fm_.setEnabled(free); // the value stays stored for a return to free running
+        clock_.setVisible(!free);
         resized();
+    }
+
+    // Live state of the clock a synced source follows, from the monitor (-1 unknown).
+    void SetClockState(int state) {
+        const bool midi = model_.SourceParam(src_, mod::ParamSync) == mod::MidiClock;
+        clock_.setText(state < 0 ? U("Takt: unbekannt") : state ? U(midi ? "MIDI-Clock läuft" : "Gate-Impulse kommen an")
+                                                                 : U(midi ? "Kein MIDI-Clock – LFO steht"
+                                                                          : "Keine Gate-Impulse – LFO steht"),
+                       juce::dontSendNotification);
+        clock_.setColour(juce::Label::textColourId, state == 0 ? colour::warn : colour::muted);
     }
 
     void paint(juce::Graphics& g) override { PaintCard(g, getLocalBounds(), U(kSourceNames[src_])); }
@@ -112,6 +148,10 @@ class SourcePanel : public juce::Component {
             gate_.setBounds(row(gate_label_));
         if(retrigger_.isVisible())
             retrigger_.setBounds(row(retrigger_label_));
+        if(fm_.isVisible())
+            fm_.setBounds(row(fm_label_));
+        if(clock_.isVisible())
+            clock_.setBounds(r.removeFromTop(20).withTrimmedLeft(72));
     }
 
     juce::ComboBox& Shape() { return shape_; }
@@ -119,6 +159,8 @@ class SourcePanel : public juce::Component {
     juce::ComboBox& Division() { return division_; }
     juce::ComboBox& Gate() { return gate_; }
     juce::Slider& Rate() { return rate_; }
+    juce::Slider& Fm() { return fm_; }
+    juce::String ClockText() const { return clock_.getText(); }
 
   private:
     void Edit(int param, unsigned value) {
@@ -133,8 +175,9 @@ class SourcePanel : public juce::Component {
     int division_sync_ = -1;
     juce::ComboBox shape_, division_, gate_;
     std::array<juce::TextButton, mod::kSyncCount> sync_;
-    juce::Slider rate_;
-    juce::Label hz_, shape_label_, sync_label_, rate_label_, division_label_, gate_label_, retrigger_label_;
+    juce::Slider rate_, fm_;
+    juce::Label hz_, shape_label_, sync_label_, rate_label_, division_label_, gate_label_, retrigger_label_, fm_label_,
+        clock_;
     juce::ToggleButton retrigger_;
 };
 }

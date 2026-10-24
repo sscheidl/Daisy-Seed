@@ -16,6 +16,9 @@ struct SourceConfig {
     uint8_t sync = Free;
     uint8_t gate = 0;
     uint8_t retrigger = 0;
+#if MOD_ON_DAISY_EXTENSIONS
+    float fm_octaves = 0.0f; // rate modulation by the other LFO: ±2 octaves at ±100 (Free only)
+#endif
 };
 struct Program {
     uint8_t count = 0;            // active global connections
@@ -59,6 +62,9 @@ inline Program Compile(const Patch& patch, const InstrumentInfo& info, float sam
     for(std::size_t i = 0; i < 2; ++i) {
         const LfoParams& l = patch.lfo[i];
         p.lfo[i] = CompileSource(l.rate, l.shape, l.sync, l.gate, l.division, l.retrigger, sample_rate);
+#if MOD_ON_DAISY_EXTENSIONS
+        p.lfo[i].fm_octaves = l.sync == Free ? float(l.fm) / 50.0f : 0.0f; // synced LFOs follow the clock
+#endif
     }
     const RandomParams& r = patch.random;
     p.random = CompileSource(r.rate, r.mode, r.sync, r.gate, r.division, 0, sample_rate);

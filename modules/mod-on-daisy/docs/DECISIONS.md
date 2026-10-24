@@ -41,6 +41,21 @@ Hüllkurven als Quellen, frei zuweisbare CCs, der Audio-Rate-Pfad, Transaktionen
 viele Einzelbefehle, die selbstbeschreibenden Quellen und das Triple-Buffering
 eines großen Programms. Das Konzept wird dadurch deutlich schlanker (siehe § 3).
 
+**Ergänzungen zu D3 (24.10.2026, Entscheidung Betreiber):**
+
+* **Aftertouch-Anzeige:** „Normalerweise ist entweder Channel AT oder Poly AT aktiv. Der
+  Editor soll die empfangenen Daten automatisch unter ‚Aftertouch‘ anzeigen. Unter der
+  Haube bleiben die Wege getrennt.“ Die Editoren zeigen deshalb eine gemeinsame Anzeige
+  „Aftertouch“ mit dem Zusatz „Kanal“ bzw. „Poly · Note“. Sie folgt der zuletzt
+  empfangenen Nachrichtenart, die das Gerät im erweiterten Monitor meldet (PROTOCOL
+  § 3.6). Die Zeilen 7 (Channel AT) und 8 (Poly AT) bleiben in der Matrix, in Patches
+  und im Audio-Weg unverändert getrennt und bearbeitbar; ein Punkt markiert die gerade
+  angezeigte Zeile. Firmware ohne diese Meldung bekommt keine erratene Automatik,
+  sondern den Hinweis „Kanal/Poly getrennt“.
+* **LFO-Quermodulation:** LFO 1 und LFO 2 können sich gegenseitig in der Rate modulieren
+  (Parameter `fm`, ±2 Oktaven, nur frei laufend). Das ist ein Quellparameter, keine
+  neue Zeile oder Spalte; die 8×8-Matrix bleibt unverändert (PROTOCOL § 3.6).
+
 ## 2. Technische Einwände
 
 Kein Einwand stellt eine Entscheidung grundsätzlich in Frage. Mehrere betreffen

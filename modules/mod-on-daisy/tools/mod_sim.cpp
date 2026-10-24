@@ -1,6 +1,6 @@
 // Host simulator of a Mod on Daisy device: the real Controller and Engine with an
 // instrument's column table, driven over stdin/stdout. Used by the browser
-// editor's end-to-end test; no hardware involved. Built with MOD_ON_DAISY_BASE_MONITOR=1.
+// editor's end-to-end test; no hardware involved. Built with MOD_ON_DAISY_EXTENSIONS=1.
 //
 //   mod_sim [toy-piano|physical-modeling|bench]
 //   stdin:  "S <hex>"  MIDI message (SysEx F0 … F7 or a short message)
@@ -52,6 +52,10 @@ int main(int argc, char** argv) {
     }
     static mod::Module module;
     module.Init(info, 48000.0f, 48);
+    // Like the firmware: only the Physical Modeling MOD build enables the extensions
+    // (extended monitor, LFO cross modulation); Toy Piano v0.3 and the bench do not.
+    if(which == "physical-modeling")
+        module.EnableExtensions({true, true});
     // Physical Modeling MOD=1 reports its pot positions (power-on defaults here) as
     // column base values; Toy Piano v0.3 and the bench report none (PROTOCOL.md § 3.3).
     float bases[mod::kTargets] = {-1, -1, -1, -1, -1, -1, -1, -1};

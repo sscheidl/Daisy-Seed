@@ -1,0 +1,33 @@
+{
+  "format": "mod-on-daisy-patch",
+  "version": 1,
+  "instrument_key": "physical-modeling",
+  "schema_hash": "E337FC28",
+  "name": "",
+  "columns": ["Pitch", "Structure", "Brightness", "Damping", "Position", "Excitation", "Reverb", "Dry/Wet"],
+  "depth": [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, -100, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0]
+  ],
+  "enabled": [
+    [false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, true, false],
+    [false, false, false, false, false, false, false, false],
+    [false, false, false, false, false, false, false, false]
+  ],
+  "lfo": [
+    {"rate": 6000, "shape": 0, "sync": 0, "gate": 0, "division": 4, "retrigger": 0},
+    {"rate": 6000, "shape": 0, "sync": 0, "gate": 0, "division": 4, "retrigger": 0}
+  ],
+  "random": {"rate": 8000, "mode": 0, "sync": 0, "gate": 0, "division": 4}
+}

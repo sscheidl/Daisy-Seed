@@ -307,6 +307,7 @@ void TestFaults() {
 void TestPhysicalModeling() {
     Rig rig(physical_modeling::MakeModInfo());
     rig.sim.bases = kSimInstruments[1].bases;
+    rig.sim.EnableExtensions(kSimInstruments[1].extensions);
     rig.sim.bases[1] = 0.9f; // Structure pot near the top
     CHECK(rig.Connect());
     CHECK(rig.session.Device().key == "physical-modeling");
@@ -315,7 +316,7 @@ void TestPhysicalModeling() {
     rig.session.EditDepth(Cell(mod::PolyAt, 2), 10);
     CHECK(rig.RunUntilIdle() && rig.InSync());
     CHECK(rig.model.columns[6].name == "Level" && !rig.model.columns[6].latched);
-    CHECK((rig.session.Device().caps & 0x10) != 0);
+    CHECK((rig.session.Device().caps & 0x70) == 0x70);
     // Base values (hardware test 2026-10-23: the pot positions decide where a modulation lands).
     rig.session.EditDepth(Cell(mod::ModWheel, 1), 50);
     rig.sim.Midi(0xB0, 1, 127); // wheel full: +0.5 on Structure
@@ -423,7 +424,338 @@ void TestPatchFile() {
     CHECK(!l.ok && l.error.find("ungültige") != std::string::npos);
     std::printf("PASS patch files: round trip, browser editor format, greyed cells off, refusals\n");
 }
+// Correction order 2026-10-24: extended monitor (F3), aftertouch (F6), LFO cross modulation.
+void TestExtendedMonitor() {
+    Rig rig(physical_modeling::MakeModInfo());
+    rig.sim.EnableExtensions(kSimInstruments[1].extensions);
+    CHECK(rig.Connect());
+    CHECK(rig.session.Device().ExtendedMonitor() && rig.session.Device().LfoFm());
+    CHECK(rig.model.patch.format == 2 && rig.InSync()); // the CRC covers the format
+    // LFO 1 saw on MIDI clock 1/32 at 150 BPM = 20 Hz: the 20 Hz samples alias, the
+    // window range does not (review: "20 Hz display range 0.000000").
+    rig.session.EditDepth(Cell(mod::Lfo1, 1), 50);
+    rig.session.EditSource(0, mod::ParamShape, mod::SawUp);
+    rig.session.EditSource(0, mod::ParamSync, mod::MidiClock);
+    rig.session.EditSource(0, mod::ParamDivision, 10);
+    CHECK(rig.RunUntilIdle() && rig.InSync());
+    rig.sim.Midi(0xFA, 0, 0);
+    float sample_low = 2, sample_high = -2;
+    int frames = rig.monitor_frames;
+    for(int t = 0; t < 2000; ++t) {
+        if(t % 17 == 0) // 24 PPQN at ~147 BPM
+            rig.sim.Midi(0xF8, 0, 0);
+        rig.Run(1);
+        if(t > 500 && rig.monitor_frames != frames) {
+            frames = rig.monitor_frames;
+            sample_low = std::fmin(sample_low, rig.last_monitor.source[0]);
+            sample_high = std::fmax(sample_high, rig.last_monitor.source[0]);
+        }
+    }
+    const MonitorValues& m = rig.last_monitor;
+    CHECK(m.has_range && m.max[0] - m.min[0] > 1.5f);
+    CHECK(m.min[0] <= m.source[0] && m.source[0] <= m.max[0]);
+    CHECK((m.clocks & 1) != 0); // MIDI clock running
+    rig.Run(5000);             // clock stopped
+    CHECK((rig.last_monitor.clocks & 1) == 0);
+    CHECK(rig.last_monitor.max[0] - rig.last_monitor.min[0] < 0.01f); // LFO holds without clock
+    rig.session.EditSource(0, mod::ParamSync, mod::Free); // back to free: the display runs again
+    rig.session.EditSource(0, mod::ParamRate, HzToRate(2.0f));
+    CHECK(rig.RunUntilIdle());
+    rig.Run(500);
+    CHECK(rig.last_monitor.max[0] - rig.last_monitor.min[0] > 0.1f);
+
+    // Aftertouch: one combined display, the device says which kind arrived.
+    rig.sim.Midi(0x90, 60, 100);
+    rig.sim.Midi(0xA0, 60, 90);
+    rig.Run(200);
+    CHECK(rig.last_monitor.at_kind == 2 && rig.last_monitor.at_note == 60 && rig.last_monitor.at_value == 90);
+    CHECK(rig.last_monitor.at_age < 127);
+    rig.sim.Midi(0xD0, 50, 0);
+    rig.Run(200);
+    CHECK(rig.last_monitor.at_kind == 1 && rig.last_monitor.at_value == 50);
+    rig.Run(3000);
+    CHECK(rig.last_monitor.at_age == 127); // old after ~2.5 s
+    std::printf("PASS extended monitor: window range on 20 Hz LFO, MIDI clock state, aftertouch kind/note/value\n");
+
+    // Toy Piano v0.3: no extensions, 36/52-byte frames, editor degrades.
+    Rig toy(toy_piano::MakeModInfo());
+    CHECK(toy.Connect());
+    CHECK(!toy.session.Device().ExtendedMonitor() && !toy.session.Device().LfoFm());
+    CHECK(toy.model.patch.format == 1 && toy.InSync());
+    toy.Run(300);
+    CHECK(toy.monitor_frames > 0 && !toy.last_monitor.has_range && toy.last_monitor.at_kind == 0);
+    std::printf("PASS extended monitor: Toy Piano v0.3 without extensions stays format 1, no range data\n");
 }
+
+void TestLfoFm() {
+    Rig rig(physical_modeling::MakeModInfo());
+    rig.sim.EnableExtensions(kSimInstruments[1].extensions);
+    CHECK(rig.Connect());
+    rig.session.EditSource(0, mod::ParamFm, unsigned(40 + mod::kMaxFm));
+    rig.session.EditSource(1, mod::ParamFm, unsigned(-25 + mod::kMaxFm));
+    CHECK(rig.RunUntilIdle() && rig.InSync());
+    CHECK(rig.sim.Device().CurrentPatch().lfo[0].fm == 40 && rig.sim.Device().CurrentPatch().lfo[1].fm == -25);
+    rig.model.patch.lfo[0].fm = 0; // forget locally; GET_SOURCE must bring it back
+    rig.session.Pull();
+    CHECK(rig.RunUntilIdle() && rig.model.patch.lfo[0].fm == 40 && rig.InSync());
+    // Upload carries fm; a file for a device without FM loses it, the CRCs still agree.
+    mod::Patch p = rig.model.patch;
+    p.lfo[1].fm = 70;
+    rig.session.Upload(p);
+    CHECK(rig.RunUntilIdle() && rig.InSync() && rig.sim.Device().CurrentPatch().lfo[1].fm == 70);
+    Rig toy(toy_piano::MakeModInfo());
+    CHECK(toy.Connect());
+    toy.session.Upload(p);
+    CHECK(toy.RunUntilIdle() && toy.InSync());
+    CHECK(toy.model.patch.format == 1 && toy.model.patch.lfo[1].fm == 0);
+    std::printf("PASS LFO FM: SET_SOURCE fm, GET_SOURCE read back, upload, dropped for Toy Piano v0.3\n");
+}
+
+// Review finding F5: silence must show, and recovery must reload the device state.
+void TestHealth() {
+    Rig rig(physical_modeling::MakeModInfo());
+    rig.sim.EnableExtensions(kSimInstruments[1].extensions);
+    CHECK(rig.Connect());
+    rig.Run(300);
+    CHECK(rig.session.LinkHealth() == Health::Ok);
+    rig.sim.drop_replies = 1; // e.g. Studio One took the input
+    rig.Run(1600);
+    CHECK(rig.session.LinkHealth() == Health::NoLiveData);
+    CHECK(rig.session.StatusText().find("keine Live-Daten") != std::string::npos);
+    rig.Run(3600);
+    CHECK(rig.session.LinkHealth() == Health::NoReplies);
+    CHECK(rig.session.StatusText().find("keine Antwort") != std::string::npos);
+    CHECK(rig.Logged("Keine Antwort vom Gerät seit 5 s"));
+    rig.session.EditDepth(Cell(mod::Lfo1, 1), 55);
+    rig.Run(5000);
+    int timeouts = 0;
+    for(const auto& l : rig.logs)
+        timeouts += l.second.find("keine Antwort") != std::string::npos ? 1 : 0;
+    CHECK(timeouts <= 2); // repeats within 3 s are shown once
+    rig.sim.drop_replies = 0;
+    CHECK(rig.RunUntilIdle());
+    rig.Run(500);
+    CHECK(rig.session.LinkHealth() == Health::Ok && rig.Logged("antwortet wieder"));
+    CHECK(rig.RunUntilIdle() && rig.InSync());
+
+    // A MIDI output that refuses to send ends the session instead of pretending.
+    Rig dead(toy_piano::MakeModInfo());
+    CHECK(dead.Connect());
+    struct Refuse : Transport {
+        bool Send(const uint8_t*, std::size_t) override { return false; }
+    } refuse;
+    dead.session.Connect(refuse, dead.now);
+    dead.Run(50);
+    CHECK(dead.session.State() == LinkState::Offline && dead.Logged("verweigert"));
+    std::printf("PASS health: no live data after 1.5 s, no replies after 5 s, deduplicated log, reload on "
+                "recovery, refused send disconnects\n");
+}
+
+// Review finding F7: what the transfer of zeros, clears and whole patches must do.
+void TestTransferRegressions() {
+    Rig rig(physical_modeling::MakeModInfo());
+    rig.sim.EnableExtensions(kSimInstruments[1].extensions);
+    CHECK(rig.Connect());
+    rig.session.EditDepth(Cell(mod::Lfo1, 1), 50);
+    CHECK(rig.RunUntilIdle() && rig.InSync());
+    int before = rig.wire.set_cell;
+    rig.session.EditDepth(Cell(mod::Lfo1, 1), 0); // +50 -> 0 is sent, not swallowed
+    CHECK(rig.RunUntilIdle() && rig.InSync() && rig.wire.set_cell > before);
+    CHECK(!rig.sim.Device().CurrentPatch().Active(0, 1));
+    rig.Run(100);
+    CHECK(rig.last_monitor.offset[1] == 0.0f);
+    before = rig.wire.set_cell;
+    rig.session.EditDepth(Cell(mod::Lfo1, 1), 0); // 0 -> 0: nothing to send
+    rig.Run(100);
+    CHECK(rig.wire.set_cell == before);
+    rig.session.EditDepth(Cell(mod::Lfo1, 1), 0); // zero, then another cell
+    rig.session.EditDepth(Cell(mod::Lfo2, 2), -20);
+    CHECK(rig.RunUntilIdle() && rig.InSync() && rig.sim.Device().CurrentPatch().depth[1][2] == -20);
+    // Zero while the previous value is still on the way.
+    rig.session.EditDepth(Cell(mod::Lfo2, 2), 60);
+    rig.Run(1);
+    rig.session.EditDepth(Cell(mod::Lfo2, 2), 0);
+    CHECK(rig.RunUntilIdle() && rig.InSync() && !rig.sim.Device().CurrentPatch().Active(1, 2));
+
+    mod::Patch file;
+    file.format = 2;
+    file.depth[0][1] = 40;
+    file.SetEnabled(0, 1, true);
+    file.lfo[0].rate = 12345;
+    file.lfo[0].fm = 30;
+    std::snprintf(file.name, sizeof(file.name), "FilePatch");
+    rig.session.Upload(file); // matrix, sources incl. fm and name
+    CHECK(rig.RunUntilIdle() && rig.InSync() && rig.sim.Device().CurrentCrc() == mod::PatchCrc(file));
+    rig.session.ClearMatrix(); // keeps sources and name
+    CHECK(rig.RunUntilIdle() && rig.InSync());
+    const mod::Patch cleared = rig.sim.Device().CurrentPatch();
+    CHECK(cleared.ActiveMask() == 0 && cleared.EnabledMask() == 0 && cleared.lfo[0].rate == 12345);
+    CHECK(cleared.lfo[0].fm == 30 && std::string(cleared.name) == "FilePatch");
+    mod::Patch empty;
+    empty.format = 2;
+    rig.session.Upload(empty); // the default patch, all zeros, is transferred completely
+    CHECK(rig.RunUntilIdle() && rig.InSync() && rig.sim.Device().CurrentCrc() == mod::PatchCrc(empty));
+
+    // Partial refusal: Poly AT x Excitation is not allowed; the device state wins.
+    mod::Patch refused = file;
+    refused.depth[mod::PolyAt][5] = 50;
+    refused.SetEnabled(mod::PolyAt, 5, true);
+    rig.session.Upload(refused);
+    CHECK(rig.RunUntilIdle() && rig.InSync());
+    CHECK(!rig.sim.Device().CurrentPatch().Active(mod::PolyAt, 5));
+
+    // No answer during a transfer: nothing is reported as confirmed.
+    rig.sim.drop_replies = 1;
+    rig.session.Upload(file);
+    rig.Run(3000);
+    CHECK(!rig.Logged("FilePatch bestätigt"));
+    rig.sim.drop_replies = 0;
+    CHECK(rig.RunUntilIdle());
+    rig.Run(300);
+    CHECK(rig.RunUntilIdle() && rig.InSync());
+
+    // Offline load, then connect: the device patch replaces the offline one.
+    rig.session.Disconnect("");
+    rig.session.Upload(file);
+    CHECK(rig.model.Crc() == mod::PatchCrc(file));
+    CHECK(rig.Connect() && rig.InSync());
+    std::printf("PASS transfer regressions: +50->0, 0->0, zero then other cell, zero in flight, upload with "
+                "fm, clear keeps sources/name, default patch, partial refusal, no answer, offline load\n");
+}
+
+// Review finding F1: a file whose columns mean something else must not load silently.
+void TestCompatibility() {
+    Rig rig(physical_modeling::MakeModInfo());
+    rig.sim.EnableExtensions(kSimInstruments[1].extensions);
+    CHECK(rig.Connect());
+    const DeviceInfo& device = rig.session.Device();
+
+    // The review's legacy-reverb.modpatch: mod1 schema, ModWheel -> Reverb -100.
+    auto legacy_info = physical_modeling::MakeModInfo();
+    legacy_info.targets[6] = {"Reverb", "100%", 1.0f, false, false};
+    Model legacy = rig.model;
+    legacy.patch = mod::Patch(); // "= mod::Patch{}" trips an internal error in GCC here
+    legacy.columns[6].name = "Reverb";
+    legacy.SetDepth(Cell(mod::ModWheel, 6), -100);
+    legacy.SetDepth(Cell(mod::Lfo1, 1), 30);
+    DeviceInfo legacy_device = device;
+    legacy_device.schema = mod::SchemaHash(legacy_info);
+    const std::string text = SavePatch(legacy, &legacy_device);
+    LoadedPatch f = LoadPatch(text, rig.model);
+    CHECK(f.ok && f.schema == Hex32(legacy_device.schema) && f.columns[6] == "Reverb");
+    Compatibility c = CheckCompatibility(f, rig.model, device);
+    CHECK(c.schema_changed && c.NeedsDecision());
+    CHECK(c.affected == Bit(Cell(mod::ModWheel, 6))); // Structure kept its meaning
+    CHECK(!c.notes.empty() && c.notes[0].find("Reverb") != std::string::npos
+          && c.notes[0].find("Level") != std::string::npos);
+    const mod::Patch safe = SafePart(f.patch, c);
+    CHECK(!safe.Enabled(mod::ModWheel, 6) && safe.depth[mod::ModWheel][6] == -100 && safe.Active(mod::Lfo1, 1));
+    rig.session.Upload(safe);
+    CHECK(rig.RunUntilIdle() && rig.InSync() && !rig.sim.Device().CurrentPatch().Active(mod::ModWheel, 6));
+
+    // Same schema: no question.
+    f = LoadPatch(SavePatch(rig.model, &device), rig.model);
+    CHECK(!CheckCompatibility(f, rig.model, device).NeedsDecision());
+    // No metadata (hand-written or very old file): active columns are unverifiable.
+    std::string bare = text;
+    bare.replace(bare.find("\"schema_hash\""), bare.find('\n', bare.find("\"schema_hash\"")) - bare.find("\"schema_hash\""),
+                 "\"schema_hash\": null,");
+    bare.replace(bare.find("\"columns\""), bare.find('\n', bare.find("\"columns\"")) - bare.find("\"columns\""),
+                 "\"columns\": [null, null, null, null, null, null, null, null],");
+    f = LoadPatch(bare, rig.model);
+    c = CheckCompatibility(f, rig.model, device);
+    CHECK(f.ok && c.schema_unknown && c.affected == (Bit(Cell(mod::ModWheel, 6)) | Bit(Cell(mod::Lfo1, 1))));
+    // Another instrument: everything is affected.
+    Model toy_model;
+    toy_model.columns[0].name = "Pitch";
+    toy_model.SetDepth(Cell(0, 0), 20);
+    DeviceInfo toy_device;
+    toy_device.key = "toy-piano";
+    f = LoadPatch(SavePatch(toy_model, &toy_device), rig.model);
+    c = CheckCompatibility(f, rig.model, device);
+    CHECK(c.key_mismatch && c.affected == Bit(Cell(0, 0)));
+    // Saved offline after an offline load: the file's origin is kept, not lost.
+    Model offline;
+    f = LoadPatch(text, offline);
+    offline.patch = f.patch;
+    offline.origin = f.Origin();
+    const LoadedPatch again = LoadPatch(SavePatch(offline, nullptr), offline);
+    CHECK(again.schema == f.schema && again.columns[6] == "Reverb" && again.instrument_key == f.instrument_key);
+    // FM in a file for a device without it.
+    Rig toy(toy_piano::MakeModInfo());
+    CHECK(toy.Connect());
+    Model fm_model = rig.model;
+    fm_model.patch.lfo[0].fm = 50;
+    DeviceInfo pm_as_toy = toy.session.Device();
+    f = LoadPatch(SavePatch(fm_model, &pm_as_toy), toy.model);
+    c = CheckCompatibility(f, toy.model, toy.session.Device());
+    CHECK(f.has_fm && c.fm_unsupported && SafePart(f.patch, c).lfo[0].fm == 0);
+    std::printf("PASS compatibility: legacy Reverb file (%s -> %s) flags only Level, safe load, same schema, "
+                "no metadata, other instrument, offline origin, FM unsupported\n",
+                Hex32(legacy_device.schema).c_str(), Hex32(device.schema).c_str());
+}
+// Acceptance of order item 4 (pot 0.1 / 0.5 / 0.9 with about +-0.5 LFO) and item 6
+// (aftertouch kinds, zero messages, first of two held notes, note off, all notes off).
+void TestGoalSpanAndAftertouch() {
+    const float expect[][3] = {{0.1f, 0.0f, 0.6f}, {0.5f, 0.0f, 1.0f}, {0.9f, 0.4f, 1.0f}};
+    for(const auto& e : expect) {
+        Rig rig(physical_modeling::MakeModInfo());
+        rig.sim.EnableExtensions(kSimInstruments[1].extensions);
+        rig.sim.bases = kSimInstruments[1].bases;
+        rig.sim.bases[1] = e[0];
+        CHECK(rig.Connect());
+        rig.session.EditDepth(Cell(mod::Lfo1, 1), 50);
+        rig.session.EditSource(0, mod::ParamRate, HzToRate(20.0f)); // a full cycle per window
+        CHECK(rig.RunUntilIdle());
+        rig.Run(500);
+        const GoalSpan g = GoalSpanOf(rig.model, rig.last_monitor, 1);
+        CHECK(g.has_base && std::fabs(g.lo - e[1]) < 0.03f && std::fabs(g.hi - e[2]) < 0.03f);
+        CHECK(g.clipped_low == (e[0] < 0.5f) && g.clipped_high == (e[0] > 0.5f) && !g.voice_part);
+        CHECK(g.lo <= rig.last_monitor.Result(1) + 1e-4f && rig.last_monitor.Result(1) <= g.hi + 1e-4f);
+        if(!(std::fabs(g.lo - e[1]) < 0.03f && std::fabs(g.hi - e[2]) < 0.03f))
+            std::fprintf(stderr, "  pot %.1f: %.3f .. %.3f\n", double(e[0]), double(g.lo), double(g.hi));
+    }
+
+    Rig rig(physical_modeling::MakeModInfo());
+    rig.sim.EnableExtensions(kSimInstruments[1].extensions);
+    CHECK(rig.Connect());
+    rig.Run(100);
+    CHECK(rig.last_monitor.at_kind == 0); // nothing received yet, matrix empty
+    rig.sim.Midi(0xD0, 0, 0);            // a zero message also decides the kind
+    rig.Run(100);
+    CHECK(rig.last_monitor.at_kind == 1 && rig.last_monitor.at_value == 0);
+    rig.sim.Midi(0x90, 60, 100);
+    rig.sim.Midi(0x90, 64, 100);
+    rig.sim.Midi(0xA0, 60, 127); // pressure on the first of two held notes
+    rig.Run(100);
+    CHECK(rig.last_monitor.at_kind == 2 && rig.last_monitor.at_note == 60 && rig.last_monitor.at_value == 127);
+    CHECK(rig.last_monitor.source[mod::PolyAt] < 0.01f); // the row keeps rule N1 (last note 64)
+    rig.sim.Midi(0x80, 60, 0); // released: no stale pressure
+    rig.Run(100);
+    CHECK(rig.last_monitor.at_kind == 2 && rig.last_monitor.at_value == 0);
+    rig.sim.Midi(0xA0, 64, 80);
+    rig.sim.Midi(0xD0, 30, 0); // both in one tick: the last one received decides
+    rig.Run(100);
+    CHECK(rig.last_monitor.at_kind == 1 && rig.last_monitor.at_value == 30);
+    rig.sim.Midi(0xA0, 64, 80);
+    rig.Run(100);
+    CHECK(rig.last_monitor.at_kind == 2 && rig.last_monitor.at_value == 80);
+    rig.sim.Midi(0xB0, 123, 0); // All Notes Off
+    rig.Run(100);
+    CHECK(rig.last_monitor.at_value == 0);
+    // A selected Channel AT cell stays the edited cell while the shown kind changes.
+    rig.model.selected = Cell(mod::ChannelAt, 2);
+    rig.session.EditDepth(rig.model.selected, 20);
+    rig.sim.Midi(0xA0, 64, 50);
+    rig.Run(50);
+    rig.session.EditDepth(rig.model.selected, 25);
+    CHECK(rig.RunUntilIdle() && rig.InSync() && rig.model.selected == Cell(mod::ChannelAt, 2));
+    CHECK(rig.sim.Device().CurrentPatch().depth[mod::ChannelAt][2] == 25 && !rig.model.Active(Cell(mod::PolyAt, 2)));
+    std::printf("PASS goal span (pot 0.1/0.5/0.9 +-0.5 -> 0..0.6 / 0..1 / 0.4..1, clipped) and aftertouch "
+                "(zero message, first of two notes, note off, both kinds, all notes off, editing stays put)\n");
+}
+}
+
 
 int main() {
     TestConnect();
@@ -436,6 +768,12 @@ int main() {
     TestFaults();
     TestPhysicalModeling();
     TestPatchFile();
+    TestExtendedMonitor();
+    TestLfoFm();
+    TestHealth();
+    TestTransferRegressions();
+    TestCompatibility();
+    TestGoalSpanAndAftertouch();
     if(failures) {
         std::fprintf(stderr, "FAIL: %d checks\n", failures);
         return 1;

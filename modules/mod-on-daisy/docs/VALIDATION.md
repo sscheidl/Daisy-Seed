@@ -1,6 +1,6 @@
 # Mod on Daisy — Validierung Phase 2
 
-**Stand:** 23. Oktober 2026 · Modul v0.1.0, Messfirmware ModBench v0.1.0
+**Stand:** 24. Oktober 2026 · Modul v0.1.0, Messfirmware ModBench v0.1.0
 **Umgebung:** Linux x86-64, GCC (Host), xPack ARM GCC 13.2.1-1.1, gepinnte libDaisy
 `f715e48`. Hardwareergebnisse werden vom Betreiber auf dem Seed3 Desktop Kit unter
 Windows ergänzt.
@@ -131,6 +131,39 @@ Befunde:
    * Toy Piano v0.3, die reguläre Physical-Modeling-Fassung und alle ModBench-Varianten
      sind bytegleich zum Übergabe-Paket.
    * Am Gerät `NICHT GEMESSEN`.
+
+## 1c. Korrekturauftrag nach der Review (`GEMESSEN` 24.10.2026, Host)
+
+Umgesetzt: Kompatibilitätsprüfung vor dem Laden (F1), Portfreigabe in allen Pfaden
+(F2), Bereichsanzeige für schnelle Quellen und Ziele mit Grundwert und Begrenzung
+(F3/F4), Verbindungszustand (F5), gemeinsame Aftertouch-Anzeige (Betreiberentscheidung),
+Regressionstests für Laden/Leeren/Nullsetzen (F7), dazu die LFO-Quermodulation.
+Firmware-Seite: erweiterter Monitor und `fm` hinter `MOD_ON_DAISY_EXTENSIONS`, zur
+Laufzeit nur im Physical-Modeling-Build `MOD=1` eingeschaltet (PROTOCOL § 3.6).
+
+| Kommando | Ergebnis |
+| --- | --- |
+| `make -C modules/mod-on-daisy test` | grün, auch Variante mit Erweiterungen (`test_mod_ext`): 89-Byte-Rahmen, Bereich, Taktzustand, Aftertouch, FM (LFO mit Quermodulation: 6 → 25 Zyklen in 10 s) |
+| `make -C modules/mod-on-daisy test-sanitize` | grün (ASan/UBSan) |
+| `make -C modules/mod-on-daisy test-thread` | grün, auch mit Erweiterungen; keine TSan-Meldung (Messfenster per atomarer Fensternummer) |
+| `make -C modules/mod-on-daisy test-editor` | grün: Browser gegen `mod_sim`, inkl. gezählter `close()`-Aufrufe (belegter Eingang, IDENTIFY-Zeitüberschreitung, Trennen), Kompatibilitätsdialog mit `legacy-reverb.modpatch`, Verbindungszustand, Bereich, Aftertouch, FM, Nullsetzen, Leeren, Standardpatch |
+| `node editors/mod-on-daisy/web/tests/protocol.test.cjs` | grün: Format-2-CRC `C422B385` / `9D6E020E` wie C++ und Python, Monitor 36/89 Byte, Zielbereich, Kompatibilität |
+| `make -C editors/mod-on-daisy test`, `test-sanitize` | grün: Kompatibilität (alte Datei `E337FC28` → Gerät `942B2D07`, nur Spalte Level betroffen), Verbindungszustand, Regressionen § 7, Zielbereich 0,1/0,5/0,9 ± 0,5 → 0…0,6 / 0…1 / 0,4…1, Aftertouch-Fälle (Wert 0, erste von zwei Noten, Note Off, All Notes Off, beide Arten, Bearbeitung bleibt bei der Zelle), FM |
+| JUCE-Selbsttest unter Xvfb | `PASS`, inkl. FM-Regler, Bereich, Taktzustand, Verbindungszustand, Kompatibilitätsfrage, Portfreigabe nach fehlgeschlagenem Verbinden |
+| `mod_probe.py selftest` | grün |
+| `make PROJECT=toy-piano test` | grün, Golden `52580874FA24361F` |
+| `make PROJECT=physical-modeling test`, `PROJECT=physical-modeling-mod test` | grün, Golden `37DE0BF9D93B81CE` in beiden Fassungen |
+| ARM-Builds (xPack 13.2.1-1.1) | bytegleich: `ToyPiano-v0.3.bin` `6dd79871…`, `PhysicalModeling-v0.1.0.bin` `eb8f412a…`, ModBench `9f50a57b…` / `5cdeb0f6…` / `7f209c15…`. Geändert nur die eigene Fassung `PhysicalModelingMod-v0.1.0.bin` (mod3): 170 312 Byte, `ccabdaa9…`, DTCM 110 352 B (Reserve 20 720); `check-firmware.py` und `check-physical-elf.py` bestanden |
+
+Der neue Regressionstest fand einen Fehler, der behoben ist: Lief eine Dateiübertragung
+in eine Zeitüberschreitung, hatte das Gerät einen Teil schon übernommen, der Editor
+zeigte aber die ganze Datei. Jetzt lädt der Editor den Gerätezustand neu, sobald das
+Gerät wieder etwas sendet.
+
+**Grenzen:** Alles oben lief gegen den Firmware-Code auf dem PC (Simulator, `mod_sim`).
+Am Gerät `NICHT GEMESSEN`: E7b (beide Reihenfolgen), E9b, E11–E17 und die
+Portfreigabe unter Windows. Der Zielbereich addiert die Fensterbereiche der Quellen; bei
+mehreren Verbindungen ist er der erreichbare, nicht der gemessene Bereich.
 
 ## 2. ARM-Build der Messfirmware (`GEMESSEN`)
 

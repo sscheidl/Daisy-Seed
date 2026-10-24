@@ -79,8 +79,8 @@ void TestIdentify() {
     char key[mod::kMaxKeyLength + 1]{}, version[13]{};
     id.Str(key, mod::kMaxKeyLength);
     id.Str(version, 12);
-    assert(std::strcmp(key, "physical-modeling") == 0 && std::strcmp(version, "0.1.0-mod2") == 0);
-    assert((r.back() & 0x10) != 0); // capability: base values in the monitor
+    assert(std::strcmp(key, "physical-modeling") == 0 && std::strcmp(version, "0.1.0-mod3") == 0);
+    assert(r.back() == (0x0A | 0x30 | 0x40)); // extended monitor and LFO cross modulation
     r = Request(mod::proto::GetAllowed, {});
     mod::proto::Reader allowed(r.data(), r.size());
     const uint64_t mask = allowed.Mask64();
@@ -203,7 +203,7 @@ void TestBaseMonitor() {
     assert(last);
     mod::proto::Frame f;
     assert(mod::proto::ParseHeader(last->data() + 1, last->size() - 2, f) == mod::proto::Parse::Ok);
-    assert(f.length == 52);
+    assert(f.length == 89); // extended monitor: base values, ranges, clocks, aftertouch
     mod::proto::Reader rd(f.payload, f.length);
     for(int i = 0; i < 18; ++i)
         rd.U14();

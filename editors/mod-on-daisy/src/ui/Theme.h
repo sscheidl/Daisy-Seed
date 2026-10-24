@@ -79,6 +79,52 @@ inline void PaintBaseMeter(juce::Graphics& g, juce::Rectangle<float> r, float ba
     g.fillRect(juce::Rectangle<float>(xb - 1.0f, r.getY() - 2.0f, 2.0f, r.getHeight() + 4.0f));
 }
 
+// Source meter with the range swept in the monitor window (extended monitor): a band
+// from min to max and a tick at the sampled value. Slow sources show a narrow band, so
+// the value stays readable; fast ones show the span they actually cover.
+inline void PaintSpanMeter(juce::Graphics& g, juce::Rectangle<float> r, float lo, float hi, float value, bool bipolar,
+                           Meter state) {
+    g.setColour(state == Meter::Idle || state == Meter::Stale ? colour::line.withAlpha(0.45f) : colour::line);
+    g.fillRoundedRectangle(r, 2.0f);
+    if(state == Meter::Idle || state == Meter::Stale)
+        return;
+    auto x = [&](float v) {
+        v = juce::jlimit(bipolar ? -1.0f : 0.0f, 1.0f, v);
+        return bipolar ? r.getCentreX() + v * r.getWidth() * 0.5f : r.getX() + v * r.getWidth();
+    };
+    const float x0 = x(lo), x1 = x(hi);
+    g.setColour(colour::accent.withAlpha(0.55f));
+    g.fillRect(juce::Rectangle<float>(x0, r.getY(), std::max(2.0f, x1 - x0), r.getHeight()));
+    if(bipolar) {
+        g.setColour(colour::muted);
+        g.fillRect(juce::Rectangle<float>(r.getCentreX() - 0.5f, r.getY() - 1, 1, r.getHeight() + 2));
+    }
+    g.setColour(colour::accent);
+    g.fillRect(juce::Rectangle<float>(x(value) - 1.0f, r.getY() - 1.0f, 2.0f, r.getHeight() + 2.0f));
+}
+
+// Column meter with a base value and the goal range (GoalSpanOf): band where the
+// modulation takes the column, white tick at the base value, red ends where 0 or 1 clip.
+inline void PaintGoalMeter(juce::Graphics& g, juce::Rectangle<float> r, float base, float lo, float hi, float result,
+                           bool clipped_low, bool clipped_high, bool stale) {
+    g.setColour(stale ? colour::line.withAlpha(0.45f) : colour::line);
+    g.fillRoundedRectangle(r, 2.0f);
+    auto x = [&](float v) { return r.getX() + r.getWidth() * juce::jlimit(0.0f, 1.0f, v); };
+    if(!stale) {
+        g.setColour(colour::accent.withAlpha(0.55f));
+        g.fillRect(juce::Rectangle<float>(x(lo), r.getY(), std::max(1.0f, x(hi) - x(lo)), r.getHeight()));
+        g.setColour(colour::err);
+        if(clipped_low)
+            g.fillRect(juce::Rectangle<float>(r.getX(), r.getY(), 2.0f, r.getHeight()));
+        if(clipped_high)
+            g.fillRect(juce::Rectangle<float>(r.getRight() - 2.0f, r.getY(), 2.0f, r.getHeight()));
+        g.setColour(colour::accent);
+        g.fillRect(juce::Rectangle<float>(x(result) - 1.0f, r.getY(), 2.0f, r.getHeight()));
+    }
+    g.setColour(colour::ink);
+    g.fillRect(juce::Rectangle<float>(x(base) - 1.0f, r.getY() - 2.0f, 2.0f, r.getHeight() + 4.0f));
+}
+
 // Horizontal meter: bipolar from the centre or unipolar from the left.
 inline void PaintMeter(juce::Graphics& g, juce::Rectangle<float> r, float value, bool bipolar,
                        Meter state = Meter::Live) {

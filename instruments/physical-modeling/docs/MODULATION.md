@@ -46,12 +46,22 @@ the reverb decay it replaced had little audible effect.
     plays. After Note Off the voice keeps ringing and glides back within 10 ms.
 * Poly AT on Level and Dry/Wet uses the most recent held note (last note).
 * **Base values for the editor**: this build reports each column's pot/CC position
-  before modulation in the monitor (`MOD_ON_DAISY_BASE_MONITOR=1`, protocol extension
-  in PROTOCOL.md § 3.3). Level reports its unity point 0.5. The editors show a tick at
-  the pot position and the span the modulation covers, so it is visible when a
+  before modulation in the monitor. Level reports its fixed unity point 0.5 (gain 1);
+  it is not a pot reading, pot 7 still sets the reverb decay. The editors show a tick
+  at the base value and the range the modulation covers, so it is visible when a
   modulation runs into 0 or 1. Requested in the hardware test of 23.10.2026.
-* IDENTIFY reports the version `0.1.0-mod2` (mod2: Level column and base values). The
-  image name stays `PhysicalModelingMod-v0.1.0.bin`; the regular build is unchanged.
+* **Extensions (mod3, correction order of 24.10.2026)**: built with
+  `MOD_ON_DAISY_EXTENSIONS=1` and switched on in `InitModulation()` with
+  `EnableExtensions({true, true})`:
+  * extended monitor (89 bytes): per-source min/max over the monitor window, clock
+    activity and the last received aftertouch kind/note/value/age;
+  * LFO cross modulation: each LFO's rate can follow the other LFO (`fm`, ±2 octaves,
+    free running only); patches are format 2 (111 bytes).
+  See PROTOCOL.md § 3.6. IDENTIFY capabilities `0x7A`. Nothing changes in the audio path
+  with `fm = 0`; the golden hash of the MOD build with an empty matrix is unchanged.
+* IDENTIFY reports the version `0.1.0-mod3` (mod2: Level column and base values; mod3:
+  extensions). The image name stays `PhysicalModelingMod-v0.1.0.bin`; the regular build
+  is unchanged.
 * `OFFEN`: In the chord models, Structure selects the chord for the whole part.
   A per-voice Structure there changes only the resonator settings, not the chord.
   Whether that is musically useful needs listening.
@@ -73,8 +83,8 @@ CC20–33, pitch bend, notes and the CPU telemetry on channel 16 CC119 are uncha
 
 | | Default | MOD=1 |
 | --- | ---: | ---: |
-| BIN | 137,784 B | 163,064 B |
-| DTCM static | 107,792 B (reserve 23,280) | 109,896 B (reserve 21,176) |
+| BIN | 137,784 B | 170,312 B (mod3, 24.10.2026) |
+| DTCM static | 107,792 B (reserve 23,280) | 110,352 B (reserve 20,720, mod3) |
 
 `scripts/check-physical-elf.py` passes for both (≥ 8 KiB DTCM reserve). Use the
 existing CPU telemetry (`tools/cpu_probe.py`, channel 16 CC119) to measure the
@@ -88,7 +98,7 @@ the port disabled.
 | Nr. | Step | Expected | Result |
 | --- | --- | --- | --- |
 | R1 | Flash, play keys, pots and model switches without a PC | exactly as v0.1.0 | |
-| R2 | `P identify`, `P matrix` | `physical-modeling`, `0.1.0-mod`; Poly AT under Excitation greyed | |
+| R2 | `P identify`, `P matrix` | `physical-modeling`, `0.1.0-mod3`, caps `0x7A`; Poly AT under Excitation greyed | |
 | R3 | `P lengths` | `frame lengths OK` | |
 | R4 | `P set-cell LFO1 2 40`, `P source LFO1 rate 9000` | brightness sweeps at about 0.9 Hz without zipper noise | |
 | R5 | `P set-cell MODWHEEL 7 100` | mod wheel opens Dry/Wet | |

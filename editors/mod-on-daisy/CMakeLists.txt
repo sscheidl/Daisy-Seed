@@ -29,7 +29,7 @@ endif()
 add_executable(mod_editor_core_tests tests/test_core.cpp)
 target_include_directories(mod_editor_core_tests PRIVATE "${MOD_MODULE_INCLUDE}")
 # The simulator sends column base values like the Physical Modeling MOD build.
-target_compile_definitions(mod_editor_core_tests PRIVATE MOD_ON_DAISY_BASE_MONITOR=1)
+target_compile_definitions(mod_editor_core_tests PRIVATE MOD_ON_DAISY_EXTENSIONS=1)
 target_compile_options(mod_editor_core_tests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8 /W4>)
 enable_testing()
 add_test(NAME editor_core COMMAND mod_editor_core_tests)
@@ -46,7 +46,7 @@ target_sources(ModOnDaisyEditor PRIVATE
 target_include_directories(ModOnDaisyEditor PRIVATE "${MOD_MODULE_INCLUDE}")
 target_compile_definitions(ModOnDaisyEditor PRIVATE
     MOD_EDITOR_VERSION="${PROJECT_VERSION}"
-    MOD_ON_DAISY_BASE_MONITOR=1
+    MOD_ON_DAISY_EXTENSIONS=1
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_JACK=0

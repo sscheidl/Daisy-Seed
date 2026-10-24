@@ -1,6 +1,6 @@
 # Übergabe — lokal weiterarbeiten
 
-**Stand:** 23. Oktober 2026, abends, Ende der Cloud-Sitzung. Ab jetzt wird lokal unter
+**Stand:** 24. Oktober 2026 (Korrekturauftrag umgesetzt, Cloud-Sitzung). Ab jetzt wird lokal unter
 Windows mit Claude Code und Codex weitergearbeitet, mit USB-Zugriff auf das Seed3
 Desktop Kit. Für einen neuen Chat genügt der Einstiegstext in § 7.
 
@@ -9,7 +9,7 @@ Desktop Kit. Für einen neuen Chat genügt der Einstiegstext in § 7.
 | Ort | Inhalt |
 | --- | --- |
 | `main` | PR #22 (Modul), #23 (Toy Piano v0.3, Physical Modeling `MOD=1`, Browser-Editor), #24 (JUCE-Editor, Übergabe), #27 (kostenbewusste CI) |
-| Branch **`ccr-352fb5fc-fxr9ox`** | zwei Commits **noch nicht auf `main`**: `67eb8da` Editor-Fixes aus dem ersten Hardwaretest, `70f1e4c` Physical Modeling mod2 (Level-Spalte) und Potistellungen in den Editoren. Per PR zusammenführen |
+| Branch **`ccr-352fb5fc-fxr9ox`** (PR #29) | **noch nicht auf `main`**: `67eb8da` Editor-Fixes aus dem ersten Hardwaretest, `70f1e4c` Physical Modeling mod2 (Level-Spalte, Potistellungen), dazu der Korrekturauftrag vom 24.10.2026 (Kompatibilitätsprüfung, Portfreigabe, Bereichsanzeige, Verbindungszustand, gemeinsame Aftertouch-Anzeige, Regressionstests) und die LFO-Quermodulation (mod3). Per PR zusammenführen |
 
 ```bash
 git fetch origin
@@ -29,7 +29,7 @@ git -C libDaisy submodule update --init --recursive --jobs 4
 | --- | --- | --- |
 | Mod on Daisy (Modul) | Kern, Host-Tests, Messfirmware, `mod_probe.py`, Protokoll 1.0; Erweiterung „Grundwerte im Monitor“ (optional, abwärtskompatibel) | `modules/mod-on-daisy/` |
 | Toy Piano v0.3 | Matrix integriert; mit leerer Matrix bitgleich zu v0.2; Release-**Entwurf** v0.3 auf GitHub; sendet noch keine Grundwerte | `instruments/toy-piano/` |
-| Physical Modeling + Matrix | eigene Fassung `MOD=1`, IDENTIFY `0.1.0-mod2`: Spalte 7 = **Level** (statt Reverb), meldet Potistellungen; reguläre Fassung bytegleich | `instruments/physical-modeling/` |
+| Physical Modeling + Matrix | eigene Fassung `MOD=1`, IDENTIFY `0.1.0-mod3`: Spalte 7 = **Level** (statt Reverb), meldet Grundwerte, erweiterter Monitor, LFO-Quermodulation (Fähigkeiten `0x7A`); reguläre Fassung bytegleich | `instruments/physical-modeling/` |
 | JUCE-Editor | Standalone (Windows-`.exe` aus der CI), Simulator, Selbsttest, Potistellungen in den Spaltenköpfen | `editors/mod-on-daisy/src/` |
 | Browser-Editor | Schnellvariante, gleiche Dateien und Anzeigen | `editors/mod-on-daisy/web/` |
 | Übergabe-Werkzeuge | Laufzettel, Paket-Skript, Agentenregeln | [HARDWARE_TEST_RUN.md](modules/mod-on-daisy/docs/HARDWARE_TEST_RUN.md), `scripts/hardware_test_package.py`, [AGENTS.md](AGENTS.md) |
@@ -43,8 +43,9 @@ Prüfwerte zum Wiedererkennen:
 | SHA-256 `ToyPiano-v0.3.bin` (= Release-Entwurf) | `6dd79871…` |
 | SHA-256 `PhysicalModeling-v0.1.0.bin` (regulär) | `eb8f412a…` |
 | SHA-256 `ModBench-v0.1.0.bin` / `-block256` / `-max64` | `9f50a57b…` / `5cdeb0f6…` / `7f209c15…` |
-| SHA-256 `PhysicalModelingMod-v0.1.0.bin` (mod2, Branch) | `bb9798a0…` |
+| SHA-256 `PhysicalModelingMod-v0.1.0.bin` (mod3, Branch) | `ccabdaa9…` |
 | Standard-Patch-CRC / Patch-Testvektor | `61C264C4` / `E2340CC6` |
+| dasselbe in Format 2 (mit LFO-Quermodulation) | `C422B385` / `9D6E020E` |
 
 ## 3. Hardwaretest: Stand
 
@@ -76,8 +77,9 @@ Ergebnisse: [VALIDATION.md](modules/mod-on-daisy/docs/VALIDATION.md) § 1b „Am
    (Entscheidung Betreiber).
 
 **Noch offen am Gerät:**
-* Physical Modeling mit Branch-Stand nachprüfen: E9b (Potistrich, Level), E7b (Windows
-  MIDI Services), R1–R7, R9, R10.
+* Physical Modeling mit Branch-Stand (`mod3`) nachprüfen: E9b (Grundwert, Level), E7b in
+  beiden Reihenfolgen (Windows MIDI Services), E11–E17 (Bereiche, Aftertouch, FM,
+  Kompatibilitätsfrage, Portfreigabe, Verbindungszustand), R1–R7, R9, R10.
 * Toy Piano T1–T15 und E1–E10 mit Toy Piano.
 * Messfirmware H1–H8, S0–S8.
 
@@ -90,7 +92,7 @@ Für den Test vom Branch neu bauen:
 | Thema | Stand | Nächster Schritt |
 | --- | --- | --- |
 | Studio One + Editor gleichzeitig | Windows gibt den Port einer Anwendung | E7b prüfen. Wenn Windows MIDI Services nicht hilft: Durchleitung im Editor (Editor hält den Daisy-Port, Studio One nutzt einen virtuellen Port, z. B. loopMIDI) — auf Wunsch umsetzen |
-| Branch → `main` | 2 Commits offen | PR anlegen, Codex-Review, mergen |
+| Branch → `main` | PR #29 offen | Review, mergen |
 | Toy Piano v0.3 veröffentlichen | Entwurf wartet auf T1–T15 | entscheidet der Mensch |
 | Grundwerte für Toy Piano | absichtlich aus, damit v0.3 dem Entwurf entspricht | mit der nächsten Toy-Piano-Version (z. B. 0.3.1) einschalten |
 | JUCE-Lizenz | AGPLv3 oder JUCE-Lizenz | vor Weitergabe der `.exe` entscheiden |
@@ -141,15 +143,15 @@ lokal unter Windows mit USB-Zugriff auf das Kit.
 Bitte zuerst lesen: HANDOVER.md, AGENTS.md, modules/mod-on-daisy/docs/HARDWARE_TEST_RUN.md
 und modules/mod-on-daisy/docs/VALIDATION.md § 1b.
 
-Stand: main enthält PR #22–#24 und #27. Der Branch ccr-352fb5fc-fxr9ox hat zwei
-Commits mehr: Editor-Fixes aus dem ersten Hardwaretest sowie Physical Modeling mod2
-(Spalte 7 = Level, Potistellungen im Monitor und in beiden Editoren). Am Gerät noch
-nicht nachgeprüft.
+Stand: main enthält PR #22–#24 und #27. Der Branch ccr-352fb5fc-fxr9ox (PR #29) hat
+mehr: Editor-Fixes aus dem ersten Hardwaretest, Physical Modeling mod2/mod3 (Spalte 7 =
+Level, Grundwerte, erweiterter Monitor, LFO-Quermodulation) und den Korrekturauftrag
+vom 24.10.2026 in beiden Editoren. Am Gerät noch nicht nachgeprüft.
 
 Nächste Aufgaben:
 1. Branch ccr-352fb5fc-fxr9ox auschecken, Host-Tests laufen lassen, PR nach main anlegen.
-2. PhysicalModelingMod neu bauen und mit dem neuen JUCE-Editor E9b und E7b aus dem
-   Laufzettel durchgehen (ich höre und bediene, du führst die Befehle aus und trägst
+2. PhysicalModelingMod neu bauen und mit dem neuen JUCE-Editor E9b, E7b und E11–E17 aus
+   dem Laufzettel durchgehen (ich höre und bediene, du führst die Befehle aus und trägst
    die Ergebnisse als GEMESSEN mit Datum ein).
 3. Je nach E7b: Studio-One-Koexistenz lösen (Windows MIDI Services oder Durchleitung
    über einen virtuellen Port im Editor).

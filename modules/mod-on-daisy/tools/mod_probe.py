@@ -31,7 +31,7 @@ CMD = dict(identify=0x01, get_target=0x02, get_allowed=0x03, get_matrix=0x10, se
            reset_stats=0x32, set_scenario=0x33)
 MONITOR_FRAME, NAK = 0x7E, 0x7F  # 0x70 is the reply to MONITOR
 SOURCES = ['LFO1', 'LFO2', 'RANDOM', 'CV1', 'CV2', 'MODWHEEL', 'CHAT', 'POLYAT']
-SOURCE_PARAMS = ['rate', 'shape', 'sync', 'gate', 'division', 'retrigger']
+SOURCE_PARAMS = ['rate', 'shape', 'sync', 'gate', 'division', 'retrigger', 'fm']  # fm: -100..100, LFO cross modulation (capability bit 6)
 ERRORS = {1: 'checksum', 2: 'length', 3: 'unknown command', 4: 'range', 5: 'busy', 6: 'version',
           7: 'limit of active connections', 8: 'cell not allowed', 9: 'not implemented', 10: 'storage',
           11: 'schema'}
@@ -137,9 +137,9 @@ def crc32(data):
     return zlib.crc32(bytes(data)) & 0xFFFFFFFF
 
 
-def serialize_patch(depth, enabled, lfo, rnd, name):
-    """Same byte layout as Serialize() in patch.h (109 bytes)."""
-    b = bytearray([1])
+def serialize_patch(depth, enabled, lfo, rnd, name, fmt=1):
+    """Same byte layout as Serialize() in patch.h (109 bytes; format 2: + fm of both LFOs)."""
+    b = bytearray([fmt])
     for s in range(8):
         for t in range(8):
             b.append(depth[s][t] & 0xFF)
@@ -149,6 +149,8 @@ def serialize_patch(depth, enabled, lfo, rnd, name):
                     l['retrigger']])
     b += bytes([rnd['rate'] & 0xFF, rnd['rate'] >> 8, rnd['mode'], rnd['sync'], rnd['gate'], rnd['division']])
     b += name.encode('ascii')[:16].ljust(16, b'\0')
+    if fmt == 2:
+        b += bytes([l.get('fm', 0) & 0xFF for l in lfo])
     return bytes(b)
 
 
@@ -169,6 +171,14 @@ def selftest():
     patch = serialize_patch(depth, enabled, lfo, rnd, 'Vector')
     assert len(patch) == 109
     assert crc32(patch) == 0xE2340CC6, hex(crc32(patch))
+    # Format 2 (LFO cross modulation), reference values of patch.h with MOD_ON_DAISY_EXTENSIONS.
+    lfo[0]['fm'], lfo[1]['fm'] = -37, 100
+    patch2 = serialize_patch(depth, enabled, lfo, rnd, 'Vector', fmt=2)
+    assert len(patch2) == 111 and crc32(patch2) == 0x9D6E020E, hex(crc32(patch2))
+    default2 = serialize_patch([[0] * 8 for _ in range(8)], [0] * 8,
+                               [dict(rate=6000, shape=0, sync=0, gate=0, division=4, retrigger=0)] * 2,
+                               rnd, '', fmt=2)
+    assert crc32(default2) == 0xC422B385, hex(crc32(default2))
     print('selftest passed')
 
 
@@ -374,6 +384,13 @@ def monitor(dev, seconds, rate=20):
             line += ' | CV raw ' + f'{values[16]:+.4f} {values[17]:+.4f}'
             if len(values) >= 26:
                 line += ' | base ' + ' '.join('--' if v < 0 else f'{v:.2f}' for v in values[18:26])
+            if len(data) >= 89:  # extended monitor: per-window range, clocks, aftertouch
+                lo, hi = values[26:34], values[34:42]
+                line += ' | range ' + ' '.join(f'{SOURCES[i][:4]}{lo[i]:+.2f}..{hi[i]:+.2f}' for i in range(3))
+                clocks, kind, note, value, age = data[84:89]
+                line += f' | clock {"M" if clocks & 1 else "-"}{"1" if clocks & 2 else "-"}{"2" if clocks & 4 else "-"}'
+                line += ' | AT ' + ('-' if kind == 0 else ('Kanal' if kind == 1 else f'Poly n{note}'))
+                line += f' {value} ({"alt" if age >= 127 else f"{age * 20} ms"})'
             print(line)
     dev.request(CMD['monitor'], bytes([0]))
     for i in range(2):
@@ -454,7 +471,8 @@ def main():
         r.u7()
         print(f'active {r.u7()}, patch CRC {r.u32():08X}')
     elif args.cmd == 'source':
-        value = Writer().u7(SOURCES.index(args.source)).u7(SOURCE_PARAMS.index(args.param)).u14(args.value)
+        raw = args.value + 100 if args.param == 'fm' else args.value  # fm is sent as fm + 100
+        value = Writer().u7(SOURCES.index(args.source)).u7(SOURCE_PARAMS.index(args.param)).u14(raw)
         dev.request(CMD['set_source'], bytes(value.data))
     elif args.cmd == 'scenario':
         dev.request(CMD['set_scenario'], bytes([args.number]))

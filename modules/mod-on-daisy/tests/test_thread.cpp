@@ -47,12 +47,16 @@ void TestTripleBuffer() {
 
 void TestModuleThreads() {
     Device d;
+#if MOD_ON_DAISY_EXTENSIONS
+    d.module.EnableExtensions({true, true}); // min/max windows cross the threads via an epoch
+#endif
     std::atomic<bool> stop{false};
     std::thread audio([&] {
         VoicePressure voice;
         float sink = 0;
         while(!stop.load(std::memory_order_relaxed)) {
             d.module.engine.SetHardware(0.3f, -0.2f, true, false);
+            d.module.engine.ReportBase(1, 0.4f);
             d.module.engine.Tick(48);
             for(std::size_t t = 0; t < kTargets; ++t)
                 sink += d.module.engine.ApplyVoice(t, 0.5f, voice.Process(d.module.engine, 60));
@@ -74,6 +78,10 @@ void TestModuleThreads() {
             d.Request(proto::Monitor, Bytes({25}));
         if(i % 64 == 0)
             d.Request(proto::ClearMatrix, {});
+#if MOD_ON_DAISY_EXTENSIONS
+        if(i % 50 == 0)
+            d.Request(proto::SetSource, Bytes({0, ParamFm, unsigned(i % 201) & 127, unsigned(i % 201) >> 7}));
+#endif
     }
     stop.store(true, std::memory_order_relaxed);
     audio.join();

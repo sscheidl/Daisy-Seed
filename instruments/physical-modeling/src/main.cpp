@@ -42,7 +42,10 @@ const mod::InstrumentInfo kModInfo = MakeModInfo();
 mod::adapter::UsbMidiSender mod_sender(midi);
 mod::VoicePressure voice_pressure[kVoices];
 
-void InitModulation(float sample_rate) { modulation.Init(kModInfo, sample_rate, kBlockSize); }
+void InitModulation(float sample_rate) {
+    modulation.Init(kModInfo, sample_rate, kBlockSize);
+    modulation.EnableExtensions({true, true}); // extended monitor, LFO cross modulation (mod3)
+}
 
 // Audio IRQ: global offsets into the parameter smoothing, Poly AT into the voices.
 void Modulate(size_t size) {
