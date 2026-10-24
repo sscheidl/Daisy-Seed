@@ -39,6 +39,7 @@ class Diagnostics {
 struct Extensions {
     bool monitor = false; // extended monitor frames: base values, ranges, clocks, aftertouch
     bool lfo_fm = false;  // LFO cross modulation, patch format 2
+    bool modes = false;   // instrument modes (InstrumentInfo::modes), needs `monitor`
 };
 #endif
 
@@ -140,7 +141,7 @@ class Controller {
             last_monitor_ms_ = now_ms;
             engine_->Monitor().Fetch();
             const MonitorSnapshot& m = engine_->Monitor().Front();
-            uint8_t payload[MOD_ON_DAISY_EXTENSIONS ? 89 : 36];
+            uint8_t payload[MOD_ON_DAISY_EXTENSIONS ? 91 : 36];
             proto::Writer w(payload, sizeof(payload));
             for(float v : m.source)
                 w.U14(proto::EncodeSigned(v));
@@ -158,6 +159,10 @@ class Controller {
                     w.U14(proto::EncodeSigned(v));
                 w.U7(m.clocks);
                 AppendAftertouch(w, now_ms);
+                if(ModesOn()) { // appended (91 bytes): active mode and its origin
+                    w.U7(m.mode);
+                    w.U7(m.mode_origin);
+                }
                 engine_->NextMonitorWindow(); // the next frame covers the ticks from here on
             }
 #endif
@@ -186,6 +191,9 @@ class Controller {
     uint32_t Schema() const { return schema_; }
     uint8_t DeviceId() const { return device_; }
     uint32_t RejectedFrames() const { return rejected_frames_; }
+#if MOD_ON_DAISY_EXTENSIONS
+    uint32_t IgnoredReplies() const { return ignored_replies_; } // echoed replies, never answered
+#endif
     uint32_t DroppedReplies() const { return dropped_replies_; }
     std::size_t PendingReplies() const { return tx_count_; }
 
@@ -220,6 +228,15 @@ class Controller {
         }
         if(f.device != device_ && !(f.device == proto::kBroadcast && f.command == proto::Identify))
             return true; // other device: consumed silently
+#if MOD_ON_DAISY_EXTENSIONS
+        // Replies, NAKs and monitor frames (reply bit set) are never answered: a DAW that
+        // echoes the port back (Studio One input monitoring) otherwise keeps a NAK ping-pong
+        // running that fills the reply queue (hardware test of 24.10.2026, PROTOCOL.md § 2).
+        if(f.command & proto::kReplyBit) {
+            ++ignored_replies_;
+            return true;
+        }
+#endif
         if(have_last_ && f.seq == last_seq_ && size == last_size_ && Same(body, size)) {
             Queue(last_reply_, last_reply_size_); // retry: same answer, not executed twice
             return true;
@@ -259,10 +276,12 @@ class Controller {
                 w.U32(schema_);
                 // monitor, diagnostics, Poly AT last note, base values in the monitor
 #if MOD_ON_DAISY_EXTENSIONS
-            // bit 4/5: base values and ranges in the monitor, bit 6: LFO cross modulation
-            w.U7(0x02 | (diagnostics_ ? 0x04 : 0) | 0x08 | ExtensionCaps());
+                // bit 4/5: base values and ranges in the monitor, bit 6: LFO cross modulation
+                w.U7(0x02 | (diagnostics_ ? 0x04 : 0) | 0x08 | ExtensionCaps());
+                if(ModesOn())
+                    w.U7(0x01); // capabilities 2, appended: bit 0 instrument modes
 #else
-            w.U7(0x02 | (diagnostics_ ? 0x04 : 0) | 0x08); // monitor, diagnostics, Poly AT last note
+                w.U7(0x02 | (diagnostics_ ? 0x04 : 0) | 0x08); // monitor, diagnostics, Poly AT last note
 #endif
                 return Ack(f, w);
             case proto::GetTarget: {
@@ -280,6 +299,20 @@ class Controller {
             case proto::GetAllowed:
                 w.Mask64(allowed_);
                 return Ack(f, w);
+#if MOD_ON_DAISY_EXTENSIONS
+            case proto::GetMode: {
+                if(!ModesOn())
+                    return Nak(f, ErrUnknown);
+                const unsigned m = r.U7();
+                if(!r.Ok() || !r.AtEnd() || m >= info_->mode_count)
+                    return Nak(f, ErrRange);
+                w.U7(m);
+                w.U7(info_->mode_count);
+                w.Str(info_->modes[m].name, kMaxModeText);
+                w.Str(info_->modes[m].hint, kMaxModeText);
+                return Ack(f, w);
+            }
+#endif
             case proto::GetMatrix: {
                 uint8_t depth[kCells];
                 for(std::size_t c = 0; c < kCells; ++c)
@@ -422,6 +455,10 @@ class Controller {
 #if MOD_ON_DAISY_EXTENSIONS
     unsigned ExtraSourceParams() const { return ext_.lfo_fm ? 1u : 0u; }
     uint8_t ExtensionCaps() const { return uint8_t((ext_.monitor ? 0x30 : 0) | (ext_.lfo_fm ? 0x40 : 0)); }
+    // Modes ride on the extended monitor frame and need a mode table.
+    bool ModesOn() const {
+        return ext_.modes && ext_.monitor && info_->modes && info_->mode_count > 0 && info_->mode_count <= kMaxModes;
+    }
 
     // Last received aftertouch for the editor's single "Aftertouch" display: the kind
     // follows the last message (also with value 0), independent of any matrix routing.
@@ -577,6 +614,7 @@ class Controller {
     Extensions ext_{};
     uint8_t at_kind_ = 0, at_note_ = 0;
     uint32_t at_count_ = 0, at_seen_ = 0, at_ms_ = 0; // main loop only
+    uint32_t ignored_replies_ = 0;
 #endif
     uint32_t rejected_frames_ = 0, dropped_replies_ = 0;
 };

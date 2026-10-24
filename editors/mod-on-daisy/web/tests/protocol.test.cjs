@@ -70,6 +70,16 @@ assert(m.hasRange && near(m.base[3], 0.25) && near(m.min[0], -1) && near(m.max[7
 assert.deepStrictEqual([m.clocks, m.atKind, m.atNote, m.atValue, m.atAge], [1, 2, 60, 90, 3]);
 assert.strictEqual(P.clockState(m, 1, 0), 1);
 assert.strictEqual(P.clockState(m, 2, 0), 0);
+assert.deepStrictEqual([m.mode, m.modeOrigin], [-1, -1]); // 89 bytes: no instrument mode
+const withMode = P.decodeMonitor([...ext, 4, 1]); // 91 bytes: Western Chords, from MIDI
+assert.deepStrictEqual([withMode.mode, withMode.modeOrigin], [4, 1]);
+assert.deepStrictEqual([P.decodeMonitor([...ext, 127, 127]).mode, P.decodeMonitor([...ext, 127, 127]).modeOrigin], [-1, -1]);
+
+// Column header values, as Column::ValueLabel in the JUCE editor.
+const pitch = { spanText: '+-12 st', span: 0.25 }, level = { spanText: '+-100%', span: 0.5 }, plainCol = { spanText: '100%', span: 1 };
+assert.deepStrictEqual([P.valueLabel(plainCol, 0.63), P.valueLabel(plainCol, 0), P.valueLabel(plainCol, 1)], ['63 %', '0 %', '100 %']);
+assert.deepStrictEqual([P.valueLabel(pitch, 0.5), P.valueLabel(pitch, 0.75), P.valueLabel(pitch, 0)], ['+0.0 st', '+12.0 st', '-24.0 st']);
+assert.deepStrictEqual([P.valueLabel(level, 0.5), P.valueLabel(level, 1)], ['+0 %', '+100 %']);
 
 // Goal range: pot 0.1 / 0.5 / 0.9 with LFO +-1 at depth 50 -> 0..0.6 / 0..1 / 0.4..1.
 const targets = Array.from({ length: 8 }, () => ({ present: true, perVoice: false, span: 1, name: 'X' }));
@@ -97,4 +107,4 @@ assert(P.checkCompatibility({ instrument_key: 'toy-piano', patch: legacy }, now,
 assert(P.checkCompatibility({ instrument_key: 'toy-piano', schema_hash: '0', patch: P.defaultPatch(), hasFm: true }, now,
   { key: 'toy-piano', schema: 0, caps: 0x0a }).fmUnsupported);
 
-console.log('PASS: browser codec matches the C++ reference (CRC E2340CC6, format 2 9D6E020E, frame sizes, packing, monitor, goal span, compatibility)');
+console.log('PASS: browser codec matches the C++ reference (CRC E2340CC6, format 2 9D6E020E, frame sizes, packing, monitor incl. mode, value labels, goal span, compatibility)');

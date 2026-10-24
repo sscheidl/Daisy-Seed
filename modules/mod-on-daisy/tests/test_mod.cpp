@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <new>
 #include <random>
+#include <string>
+#include <utility>
 
 // ---- allocation counter for the real-time paths (§ 2.3) ----
 static std::atomic<long> g_allocations{0};
@@ -953,6 +955,91 @@ void TestExtensions() {
     std::printf("extensions: format 2 + FM (%u -> %u cycles in 10 s), monitor ranges, clocks, aftertouch\n",
                 without, with);
 }
+
+// Hardware test 2026-10-24: Studio One echoed everything from the Daisy back to it; the
+// device NAKed every echoed reply and the NAKs looped (~500 frames/s), drowning the real
+// replies. With every outgoing frame echoed back, only the monitor frames may remain.
+void TestEchoedReplies() {
+    Device d;
+    d.module.EnableExtensions({true, true, true});
+    const Reply id = d.Request(proto::Identify, {});
+    assert(id.present);
+    std::vector<uint8_t> echo(d.out.frames[0], d.out.frames[0] + d.out.sizes[0]);
+    d.SendRaw(echo.data(), echo.size()); // the reply comes back as if it were a request
+    assert(!d.Collect().present && d.module.controller.IgnoredReplies() == 1);
+
+    d.Request(proto::Monitor, Bytes({20}));
+    unsigned frames = 0, naks = 0;
+    for(unsigned ms = 0; ms < 1000; ++ms) {
+        d.Ticks(1);
+        d.out.count = 0;
+        d.module.controller.Service(++d.now, d.out);
+        for(std::size_t k = 0; k < d.out.count; ++k) {
+            ++frames;
+            naks += Decode(d.out.frames[k], d.out.sizes[k]).frame.command == proto::kNak;
+            d.SendRaw(d.out.frames[k], d.out.sizes[k]); // Studio One input monitoring
+        }
+    }
+    assert(naks == 0 && frames >= 19 && frames <= 21); // 20 Hz monitor, nothing else
+    assert(d.Request(proto::GetMode, Bytes({0})).present); // requests are still answered
+    std::printf("echoed replies: ignored (%u monitor frames in 1 s, no NAK loop)\n", frames);
+}
+
+// Instrument modes (PROTOCOL.md § 3.6): capabilities 2, GET_MODE and two monitor bytes.
+void TestModes() {
+    static const ModeInfo kTwo[] = {{"Alpha", "Bank A, SW18 oben"}, {"Beta", "Bank B, SW18 unten"}};
+    // Without the switch, or without the extended monitor: no capabilities 2, GET_MODE unknown.
+    Device off;
+    off.info.modes = kTwo;
+    off.info.mode_count = 2;
+    off.module.EnableExtensions({true, true, false});
+    assert(off.Request(proto::Identify, {}).payload.back() == (0x0A | 0x30 | 0x40));
+    Reply nak = off.Request(proto::GetMode, Bytes({0}));
+    assert(nak.frame.command == proto::kNak && nak.payload[1] == proto::ErrUnknown);
+    Device no_monitor;
+    no_monitor.info.modes = kTwo;
+    no_monitor.info.mode_count = 2;
+    no_monitor.module.EnableExtensions({false, false, true});
+    assert(no_monitor.Request(proto::GetMode, Bytes({0})).frame.command == proto::kNak);
+
+    Device d;
+    d.info.modes = kTwo;
+    d.info.mode_count = 2;
+    d.module.EnableExtensions({true, true, true});
+    const Reply id = d.Request(proto::Identify, {});
+    assert(id.payload[id.payload.size() - 2] == (0x0A | 0x30 | 0x40) && id.payload.back() == 0x01);
+    Reply m = d.Request(proto::GetMode, Bytes({1}));
+    assert(m.frame.command == (proto::GetMode | 0x40));
+    proto::Reader r(m.payload.data(), m.payload.size());
+    char name[kMaxModeText + 1]{}, hint[kMaxModeText + 1]{};
+    assert(r.U7() == 1 && r.U7() == 2);
+    r.Str(name, kMaxModeText);
+    r.Str(hint, kMaxModeText);
+    assert(r.Ok() && r.AtEnd() && std::string(name) == "Beta" && std::string(hint) == "Bank B, SW18 unten");
+    assert(d.Request(proto::GetMode, Bytes({2})).frame.command == proto::kNak);
+    assert(d.Request(proto::GetMode, {}).frame.command == proto::kNak);
+
+    // Monitor: 91 bytes, unknown until reported, then mode and origin as the audio side set them.
+    d.Request(proto::Monitor, Bytes({20}));
+    Reply last;
+    auto run = [&](unsigned ms) {
+        for(unsigned i = 0; i < ms; ++i) {
+            d.Ticks(1);
+            d.out.count = 0;
+            d.module.controller.Service(++d.now, d.out);
+            if(d.out.count && Decode(d.out.frames[0], d.out.sizes[0]).frame.command == proto::MonitorFrame)
+                last = Decode(d.out.frames[0], d.out.sizes[0]);
+        }
+        assert(last.present && last.payload.size() == 91);
+        return std::make_pair(unsigned(last.payload[89]), unsigned(last.payload[90]));
+    };
+    assert(run(100) == std::make_pair(unsigned(kModeUnknown), unsigned(kModeUnknown)));
+    d.module.engine.ReportMode(1, kModeFromMidi);
+    assert(run(100) == std::make_pair(1u, unsigned(kModeFromMidi)));
+    d.module.engine.ReportMode(0, kModeFromDevice);
+    assert(run(100) == std::make_pair(0u, unsigned(kModeFromDevice)));
+    std::printf("modes: capabilities 2, GET_MODE, monitor bytes 89/90 (91-byte frames)\n");
+}
 #endif
 
 int main() {
@@ -976,6 +1063,8 @@ int main() {
     TestFuzz();
 #if MOD_ON_DAISY_EXTENSIONS
     TestExtensions();
+    TestModes();
+    TestEchoedReplies();
 #endif
     std::printf("All Mod on Daisy host tests passed.\n");
 }

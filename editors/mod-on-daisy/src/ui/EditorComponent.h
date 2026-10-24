@@ -16,14 +16,16 @@
 namespace editor::ui {
 class EditorComponent : public juce::Component, private juce::Timer, private juce::AsyncUpdater {
   public:
-    EditorComponent();
+    // with_simulators: the simulator ports are listed only for --selftest and --simulators;
+    // in normal use the list holds MIDI ports alone (hardware test of 24.10.2026).
+    explicit EditorComponent(bool with_simulators = false);
     ~EditorComponent() override;
 
     void paint(juce::Graphics&) override;
     void resized() override;
 
     // ------------------------------------------------------------------ for --selftest
-    // Port list entries: simulators first, then the MIDI outputs.
+    // Port list entries: simulators first (if enabled), then the MIDI outputs.
     juce::StringArray PortNames() const;
     void ConnectTo(int port_index);
     void Disconnect();
@@ -60,6 +62,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     void Advance(uint32_t now_ms);
     void RefreshPorts();
     void RefreshAll();
+    void RefreshMode();
     void RefreshCellEditor();
     void Log(LogKind kind, const juce::String& text);
     void OpenFileDialog();
@@ -74,6 +77,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     std::unique_ptr<Simulator> simulator_;
     std::unique_ptr<MidiPort> midi_;
     std::vector<Port> ports_;
+    bool with_simulators_ = false;
     bool manual_clock_ = false;
     uint32_t now_ = 0, last_ports_ = 0;
     juce::int64 last_alert_ = 0;
@@ -84,6 +88,8 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     juce::ComboBox port_;
     juce::TextButton connect_{"Verbinden"};
     juce::Label status_;
+    juce::Label mode_; // active instrument mode, e.g. "Modell: Western Chords"
+    int mode_index_ = -1, mode_origin_ = -1; // from the last monitor frame
     // grid card
     MatrixGrid grid_;
     juce::Label count_, hint_;

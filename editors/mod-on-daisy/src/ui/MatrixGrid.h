@@ -222,8 +222,12 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         g.drawText(col.present ? U(col.name) : U("—"), r.removeFromTop(20), juce::Justification::centred);
         g.setColour(colour::muted);
         g.setFont(juce::FontOptions(11.5f));
-        const juce::String span = col.present ? U(col.SpanLabel()) + (col.latched ? U(" · Anschlag") : U(""))
-                                              : U("nicht vorhanden");
+        // With a reported base value the header shows where the pot/CC stands; the span
+        // (what depth 100 means) moves to the tooltip.
+        const bool live = col.present && has_monitor_ && monitor_.HasBase(std::size_t(t));
+        const juce::String span = !col.present ? U("nicht vorhanden")
+                                               : (live ? U(col.ValueLabel(monitor_.base[t])) : U(col.SpanLabel()))
+                                                     + (col.latched ? U(" · Anschlag") : U(""));
         g.drawText(span, r.removeFromTop(16), juce::Justification::centred);
         if(col.present && has_monitor_ && monitor_.HasBase(std::size_t(t)) && monitor_.has_range) {
             const GoalSpan goal = GoalSpanOf(model_, monitor_, std::size_t(t));

@@ -59,8 +59,12 @@ the reverb decay it replaced had little audible effect.
     free running only); patches are format 2 (111 bytes).
   See PROTOCOL.md § 3.6. IDENTIFY capabilities `0x7A`. Nothing changes in the audio path
   with `fm = 0`; the golden hash of the MOD build with an empty matrix is unchanged.
-* IDENTIFY reports the version `0.1.0-mod3` (mod2: Level column and base values; mod3:
-  extensions). The image name stays `PhysicalModelingMod-v0.1.0.bin`; the regular build
+* **Active model (mod4, hardware test of 24.10.2026)**: the build reports which of the six
+  models sounds and whether the last change came from SW17/SW18 or from CC28, and names the
+  models with their switch positions (PROTOCOL.md § 3.6, `Extensions::modes`). The editors
+  show it in the connection area. Nothing changes in the audio path.
+* IDENTIFY reports the version `0.1.0-mod4` (mod2: Level column and base values; mod3:
+  extensions; mod4: active model). The image name stays `PhysicalModelingMod-v0.1.0.bin`; the regular build
   is unchanged.
 * `OFFEN`: In the chord models, Structure selects the chord for the whole part.
   A per-voice Structure there changes only the resonator settings, not the chord.

@@ -132,6 +132,49 @@ Befunde:
      sind bytegleich zum Übergabe-Paket.
    * Am Gerät `NICHT GEMESSEN`.
 
+### Am Gerät: `0.1.0-mod3` und JUCE-Editor vom Stand PR #29 (`GEMESSEN` 24.10.2026)
+
+Lokal unter Windows 11; Befehle vom Agenten, Bedienung und Beobachtung vom Betreiber.
+
+| Nr. | Ergebnis |
+| --- | --- |
+| IDENTIFY (`mod_probe.py`, 19:14) | `physical-modeling 0.1.0-mod3`, Fähigkeiten 122 (`0x7A`), Schema `942B2D07`; `targets` mit Level in Spalte 6; leere Matrix, Patch-CRC `C422B385` |
+| USB nach dem Flashen | zuerst Gerätemanager-Code 10 (`VID_0483 PID_5740`, ohne Name); nach Abziehen/Einstecken an J7 „Daisy Seed External“, OK |
+| E9b | `NICHT GEMESSEN`: Der Editor war mit dem eingebauten Simulator verbunden, nicht mit dem Kit (Simulatoren seither nur mit `--simulators`) |
+| E7b | **nicht bestanden** (vom Betreiber berichtet): Mit laufendem Studio One werden die Modulationen nicht durchgereicht. Die ältere Editor-Version (Stand PR #24) hat im Parallelbetrieb funktioniert. **Ursache gefunden** (21:45–21:50, Studio One spielt, `mod_probe.py` parallel): Windows MIDI Services lässt beide Programme an den Port, Befehle kommen an und wirken (LFO 1 → Pitch hörbar). Studio One schickt aber alles vom Daisy per Input-Monitoring zurück; die Firmware beantwortete jeden zurückgeschickten Antwortrahmen mit NAK, das ergab endlose NAK-Schleifen (rund 500 Rahmen/s, `7F`-Rahmen mit festen Seq-Nummern), die die Antworten verdrängten. IDENTIFY kam meist noch durch, `MONITOR`, `GET_TARGET`, `SET_SOURCE` nicht. Behoben in `0.1.0-mod4` (PROTOCOL § 2, Schritt 2a) |
+
+Befunde: `mod_probe.py` fand unter Windows den Eingang nicht und brach bei `matrix` in der
+cp1252-Konsole ab (behoben in `bee9023`). Wünsche aus dem Test: aktueller Wert im
+Spaltenkopf und aktives Modell im Verbindungsbereich (umgesetzt in `0.1.0-mod4`, § 1d).
+
+### Am Gerät: `0.1.0-mod4` und JUCE-Editor von PR #33 (`GEMESSEN` 24.10.2026, ab 21:55)
+
+Image `PhysicalModelingMod-v0.1.0.bin` SHA-256 `9517db27…`, vom Betreiber mit dem Daisy Web
+Programmer geflasht. Studio One lief und spielte das Kit (Daisy als Ein- und Ausgang).
+
+| Nr. | Ergebnis |
+| --- | --- |
+| `mod_probe.py` parallel zu Studio One (Agent) | IDENTIFY 3/3: `0.1.0-mod4`, Fähigkeiten 122, Fähigkeiten 2 = 1; `modes`: alle sechs Modelle mit Bankhinweis; Monitor 61 Rahmen in 3 s; Grundwerte = Potistellungen; MIDI-Clock aus Studio One erkannt; Modell 3 (FM Voice), Herkunft Gerät |
+| E7b | **bestanden** in der Reihenfolge erst Studio One, dann Editor (vom Betreiber berichtet): Status grün, Modulation hörbar, Änderungen mit Patch-CRC bestätigt. Umgekehrte Reihenfolge: `NICHT GEMESSEN` |
+| E9b | Spaltenwerte und Strich folgen den Potis (vom Betreiber berichtet). Modwheel → Level −100: `NICHT GEMESSEN` |
+| E18 | Modell wechselt mit SW17/SW18 (vom Betreiber berichtet). CC28 mit „(MIDI)“: `NICHT GEMESSEN` |
+| E19, E11–E17, R1–R7, R9, R10 | `NICHT GEMESSEN` |
+
+## 1d. Aktives Modell und Spaltenwerte (`GEMESSEN` 24.10.2026, Host)
+
+* Firmware `0.1.0-mod4`: Fähigkeiten 2 (an IDENTIFY angehängt), `GET_MODE`, Monitor 91 Byte
+  (PROTOCOL.md § 3.6). Modultest `TestModes`, Physical-Modeling-Test `TestModel`
+  (Schalter → String & Reverb, CC28 → FM Voice mit Herkunft MIDI).
+* Bytegleich zur Übergabe (lokal gebaut, xPack GCC 13.2.1): Toy Piano v0.3 `6dd79871…`,
+  reguläres Physical Modeling `eb8f412a…`, ModBench `9f50a57b…` / `5cdeb0f6…` / `7f209c15…`.
+  `PhysicalModelingMod-v0.1.0.bin` (mod4 ohne Rückkopplungsschutz): 171.828 Byte.
+* Editoren: Kerntest `TestModeAndValueLabels`, Browser-Codec-Test (91-Byte-Rahmen,
+  Spaltenwerte), JUCE-Selbsttest unter Windows (VS Build Tools 2022) bestanden.
+* Rückkopplung: Antwortrahmen werden nie beantwortet; Modultest `TestEchoedReplies` schickt jeden
+  ausgehenden Rahmen zurück: 20 Monitorrahmen/s, kein NAK. `PhysicalModelingMod-v0.1.0.bin`
+  danach 171.684 Byte; die übrigen Images weiter bytegleich.
+* Am Gerät: `NICHT GEMESSEN` (E18, E19, E9b, E7b mit mod4).
+
 ## 1c. Korrekturauftrag nach der Review (`GEMESSEN` 24.10.2026, Host)
 
 Umgesetzt: Kompatibilitätsprüfung vor dem Laden (F1), Portfreigabe in allen Pfaden

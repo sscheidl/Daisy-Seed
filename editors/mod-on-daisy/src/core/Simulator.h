@@ -17,6 +17,9 @@ class Simulator : public Transport {
     uint32_t latency_ms = 1;
     // Pot positions the simulated instrument reports as column base values; -1 = none.
     std::array<float, mod::kTargets> bases{-1, -1, -1, -1, -1, -1, -1, -1};
+    // Instrument mode the simulated instrument reports (Extensions::modes); -1 = none.
+    int mode = -1;
+    uint8_t mode_origin = 0; // mod::kModeFromDevice
 
     explicit Simulator(const mod::InstrumentInfo& info, uint32_t seed = 1) : info_(info), rng_(seed | 1) {
         module_->Init(info_, kSampleRate, kBlock);
@@ -52,6 +55,8 @@ class Simulator : public Transport {
             }
             for(std::size_t t = 0; t < mod::kTargets; ++t)
                 module_->engine.ReportBase(t, bases[t]);
+            if(mode >= 0)
+                module_->engine.ReportMode(uint8_t(mode), mode_origin);
             module_->engine.Tick(kBlock);
             module_->controller.Service(now_, sender_);
             for(std::vector<uint8_t>& m : sender_.sent) {
@@ -70,7 +75,7 @@ class Simulator : public Transport {
         }
     }
 
-    // What the simulated firmware switches on at start (extended monitor, LFO FM).
+    // What the simulated firmware switches on at start (extended monitor, LFO FM, modes).
     void EnableExtensions(const mod::Extensions& e) { module_->EnableExtensions(e); }
 
     const mod::Controller& Device() const { return module_->controller; }

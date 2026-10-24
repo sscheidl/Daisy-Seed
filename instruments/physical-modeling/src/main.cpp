@@ -41,10 +41,12 @@ mod::Module modulation;
 const mod::InstrumentInfo kModInfo = MakeModInfo();
 mod::adapter::UsbMidiSender mod_sender(midi);
 mod::VoicePressure voice_pressure[kVoices];
+uint8_t model_origin = mod::kModeUnknown; // audio IRQ only: switches or CC28 (mod4)
 
 void InitModulation(float sample_rate) {
     modulation.Init(kModInfo, sample_rate, kBlockSize);
-    modulation.EnableExtensions({true, true}); // extended monitor, LFO cross modulation (mod3)
+    // extended monitor, LFO cross modulation (mod3), active model (mod4)
+    modulation.EnableExtensions({true, true, true});
 }
 
 // Audio IRQ: global offsets into the parameter smoothing, Poly AT into the voices.
@@ -93,8 +95,12 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
 #endif
     for(unsigned i = 0; i < 8; ++i) synth->parameters.Pot(i, hw.pot[i].Value());
     unsigned model;
-    if(model_switch.Process(hw.tog_sw17.Pressed(), hw.tog_sw18.Read(), model))
+    if(model_switch.Process(hw.tog_sw17.Pressed(), hw.tog_sw18.Read(), model)) {
         synth->parameters.SelectModel(model);
+#if PHYSICAL_MODELING_MOD
+        model_origin = mod::kModeFromDevice;
+#endif
+    }
     for(unsigned i = 0; i < kNotes.size(); ++i) {
         const uint32_t bit = 1u << i;
         if(hw.button[i].RisingEdge() && !(held & bit)) {
@@ -106,8 +112,16 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     // Leave queued MIDI intact when the DSP FIFO cannot accept an entire batch.
     if(synth->PendingNotes() <= 192) {
         MidiMessage message;
-        for(unsigned i = 0; i < 32 && midi_in.Pop(message); ++i) HandleMidi(*synth, message);
+        for(unsigned i = 0; i < 32 && midi_in.Pop(message); ++i) {
+#if PHYSICAL_MODELING_MOD
+            if((message.status & 0xf0) == 0xb0 && message.data1 == 28) model_origin = mod::kModeFromMidi;
+#endif
+            HandleMidi(*synth, message);
+        }
     }
+#if PHYSICAL_MODELING_MOD
+    modulation.engine.ReportMode(uint8_t(synth->ModelIndex()), model_origin); // the model that sounds
+#endif
     led_mask.store(held, std::memory_order_relaxed);
     synth->Process(out[0], out[1], size);
     cpu_meter.End();

@@ -102,6 +102,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
   <label>Eingang <select id="inPort"><option value="">–</option></select></label>
   <button id="connect" class="primary">Verbinden</button>
   <span id="status" class="pill">offline</span>
+  <span id="mode" class="pill" hidden></span>
 </header>
 <main>
   <section class="card">
@@ -584,6 +585,16 @@ function onMonitor(payload) {
   state.monitor = P.decodeMonitor(payload);
   renderMonitor();
   renderClocks();
+  renderMode();
+}
+// The model that sounds, in the connection area (hardware test 24.10.2026).
+function renderMode() {
+  const el = $('mode'), d = state.link ? state.device : null, m = state.monitor;
+  const mode = d && m && d.modes && m.mode >= 0 ? d.modes[m.mode] : null;
+  el.hidden = !(d && d.caps2 & P.CAP2.modes);
+  el.textContent = mode ? `Modell: ${mode.name}${m.modeOrigin === 1 ? ' (MIDI)' : ''}` : 'Modell: …';
+  el.title = (mode ? `${mode.name} – am Gerät: ${mode.hint}` + (m.modeOrigin === 1 ? '\nZuletzt per MIDI (CC28) gewählt; die Schalter stehen evtl. anders.' : '') : '')
+    + (d && d.modes ? '\nAlle Modelle:' + d.modes.map((x) => `\n  ${x.name} – ${x.hint}`).join('') : '');
 }
 const setPos = (el, from, to) => { el.style.left = from * 100 + '%'; el.style.width = Math.max(0, to - from) * 100 + '%'; };
 function sourceUsed(s) { for (let t = 0; t < 8; ++t) if (P.isActive(state.patch, s * 8 + t)) return true; return false; }
@@ -612,7 +623,10 @@ function renderMonitor() {
     const t = +th.dataset.target, meter = th.querySelector('.meter');
     meter.classList.toggle('stale', stale);
     if (!m) { meter.classList.remove('based', 'ranged', 'cliplo', 'cliphi'); return setPos(meter.querySelector('i'), 0.5, 0.5); }
-    const g = P.goalSpan(state.patch, state.targets, m, t);
+    const g = P.goalSpan(state.patch, state.targets, m, t), col = state.targets[t];
+    if (col.present) // current value instead of the fixed span once the device reports it
+      th.querySelector('.span').textContent = (g.hasBase ? P.valueLabel(col, m.base[t]) : col.spanText.replace('+-', '±'))
+        + (col.latched ? ' · Anschlag' : '');
     meter.classList.toggle('based', g.hasBase);
     meter.classList.toggle('ranged', g.hasBase);
     meter.classList.toggle('cliplo', g.clippedLow);
@@ -720,6 +734,7 @@ function disconnect(reason) {
   state.unconfirmed = false;
   pendingCells.clear(); pendingSources.clear();
   clearMonitor(); // no old values after the device is gone
+  renderMode();
   setStatus(reason || 'offline', reason ? 'err' : '');
   $('connect').textContent = 'Verbinden';
   $('pullBtn').disabled = true;
@@ -786,12 +801,21 @@ async function connectLink(out, inp) {
     const f = await link.request(P.CMD.identify, [], P.BROADCAST);
     const r = new P.Reader(f.payload);
     const info = { protocol: `${r.u7()}.${r.u7()}`, module: `${r.u7()}.${r.u7()}.${r.u7()}`, key: r.str(), version: r.str(),
-      maxActive: r.u7(), tickHz: r.u14(), slots: r.u7(), schema: r.u32(), caps: r.u7(), device: f.device };
+      maxActive: r.u7(), tickHz: r.u14(), slots: r.u7(), schema: r.u32(), caps: r.u7(),
+      caps2: r.pos < f.payload.length ? r.u7() : 0, device: f.device, modes: [] }; // caps2: newer firmware
     if (!info.protocol.startsWith('1.')) throw new Error('Protokollversion ' + info.protocol + ' wird nicht unterstützt');
     state.device = info;
     state.maxActive = info.maxActive;
     state.origin = null;
     await pull(true);
+    if (info.caps2 & P.CAP2.modes) { // names of the instrument modes (PROTOCOL.md § 3.6)
+      for (let i = 0, count = 1; i < count; ++i) {
+        const g = new P.Reader((await link.request(P.CMD.getMode, [i])).payload);
+        g.u7();
+        count = Math.min(32, g.u7());
+        info.modes[i] = { name: g.str(), hint: g.str() };
+      }
+    }
     state.statusBase = `${info.key} ${info.version} · ID ${info.device}`;
     setStatus(state.statusBase, 'ok');
     $('deviceInfo').textContent = `${info.key} ${info.version}, Mod on Daisy ${info.module}, Protokoll ${info.protocol}, Tick ${info.tickHz} Hz, Schema ${info.schema.toString(16).toUpperCase().padStart(8, '0')}. Speicherplätze im Gerät: ${info.slots ? info.slots : 'noch keine (Patches als Datei sichern)'}.`;
