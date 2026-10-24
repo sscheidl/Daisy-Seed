@@ -110,6 +110,30 @@ integrierten Seed-Haube. Lage und Werkzeuglänge bleiben vorläufig. Der
 herausnehmbare isolierende Druckstift ist eine Passstudie und vor Anwendung
 am tatsächlichen Modul abzugleichen.
 
+## Überstand der Potis und Kippschalter
+
+Die obere Acrylfläche liegt nominal 11,15 mm über PCB. Die
+[Hersteller-Stückliste](https://daisy.nyc3.cdn.digitaloceanspaces.com/products/seed-3-desktop/Seed3-DevKit-Desktop_Rev4-bom.csv)
+nennt für VR1–VR8 `RV09AF-40-25K-B10K-0085`. Die
+[Alpha-Standardzeichnung](https://www.taiwanalpha.com/downloads?id=72&target=products)
+zeigt bei der vertikalen 25K-Ausführung L = 25 ± 0,5 mm ab Auflageebene bis
+Wellenende. Daraus folgt **13,85 mm nominaler Wellenüberstand**, ohne
+zusätzlichen aufgesteckten Knopf. Die kundenspezifische Endung `-0085` ist mit
+dieser allgemeinen Zeichnung nicht gesondert nachgewiesen.
+
+Die beiden Dailywell-Schalter sind laut BOM `2MS1T1B1M2QE` und
+`2MS3T1B1M2QE`. Mit 8,64 mm Körperhöhe, 5,59 mm B1-Hülse und 9,40 mm T1-Hebel
+aus der [Dailywell-Zeichnung](https://lv.mouser.com/datasheet/2/979/dailywell_10012019_2M_Series-1660477.pdf)
+ergibt sich bei unmittelbar auf dem PCB sitzendem Gehäuse eine nominale
+Spitzenhöhe von 23,63 mm, also **12,48 mm über Acryl**. Hebelstellung,
+tatsächlicher Gehäusesitz und die Definition der Spitzenhöhe im gekippten
+Zustand beeinflussen das reale Maß.
+
+Alle Überstände: **rechnerisch aus Nennmaßen, Hardware NICHT GEMESSEN**.
+Die V3-Vorschauen wurden am 24.10.2026 entsprechend berichtigt: Zuvor waren
+Potiwellen mit nur 15 mm Gesamthöhe und Schalter mit 20,59 mm dargestellt.
+Die Gehäuse-STL und die 11,15-mm-Bedienebene ändern sich dadurch nicht.
+
 ## Unterseitige Freiräume und Prüfstand
 
 Die neue Haut liegt teilweise tiefer als die frühere Acrylplatte. Deshalb

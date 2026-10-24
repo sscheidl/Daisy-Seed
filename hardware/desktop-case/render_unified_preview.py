@@ -90,7 +90,9 @@ for p in C['jacks']:
     cyl('Jack nut on lower layer',p['x'],p['y'],S['lower_top'],4.1,1.8,metal,32)
 for p in B['pots']:
     cube('Pot housing schematic',p['x']-4.5,p['y']-5.3,PCB,9,10.6,7,metal)
-    cyl('Pot shaft schematic',p['x'],p['y'],PCB+7,3,8,black)
+    # BOM RV09AF-40-25K: standard Alpha L=25 mm from seating plane to tip.
+    # The custom -0085 execution and physical seating remain unmeasured.
+    cyl('Pot shaft nominal L25, seating unmeasured',p['x'],p['y'],PCB+7,3,25-7,black)
     text(p['ref'],p['x'],68,S['lower_top']+.16)
 for p in B['buttons']:
     cube('Switch body',p['x']-3,p['y']-3,PCB,6,6,3.5,black)
@@ -104,9 +106,11 @@ for p in B['leds']:
     cube('Unlit LED schematic',p['x']-.8,p['y']-.4,PCB,1.6,.8,.7,grey)
 for p in B['toggles']:
     # Mounting Z is deliberately provisional until the M2 seating datum is confirmed.
-    cyl('Toggle barrel schematic',p['x'],p['y'],PCB+7,2.4,5.59,metal)
+    # Dailywell 2MSxT1B1M2: nominal body 8.64, B1 5.59, T1 9.40 mm.
+    # Assume the body base seats directly on PCB; the drawing stays schematic.
+    cyl('Toggle barrel nominal, seating unmeasured',p['x'],p['y'],PCB+8.64,2.4,5.59,metal)
     cyl('10-48 switch nut schematic',p['x'],p['y'],S['lower_top'],3.5,1.8,metal,6)
-    cyl('Toggle lever schematic',p['x'],p['y'],PCB+12.59,1.3,8,metal)
+    cyl('Toggle lever nominal, shown upright',p['x'],p['y'],PCB+8.64+5.59,1.3,9.4,metal)
     text(p['ref'],p['x'],86,S['lower_top']+.16)
 for p in C['service_positions_provisional']:
     text(p['name'],p['x']+7,p['y']+1,PCB+16+2.42,1.8)
