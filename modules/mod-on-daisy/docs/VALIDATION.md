@@ -175,6 +175,18 @@ Programmer geflasht. Studio One lief und spielte das Kit (Daisy als Ein- und Aus
   danach 171.684 Byte; die übrigen Images weiter bytegleich.
 * Am Gerät: `NICHT GEMESSEN` (E18, E19, E9b, E7b mit mod4).
 
+## 1e. VST3-Plugin (`GEMESSEN` 24.10.2026, Host)
+
+* Gebaut unter Windows 11 mit VS Build Tools 2022 und JUCE 9.0.4 (VST3-Schnittstelle aus
+  JUCE, kein separates SDK): `Mod on Daisy.vst3`, Hersteller Daisy-Seed, Fx|Tools.
+* `ModOnDaisyPluginCheck` (lädt das `.vst3` wie ein Host, ohne Kit-Verbindung): ein
+  Effekt, Stereo ein/aus, Ton bitgleich durchgereicht, Projekt-State ist der `.modpatch`-
+  Text und übersteht das Hin und Zurück in eine zweite Instanz, Fenster öffnet zweimal.
+  Alle Prüfungen bestanden.
+* Selbsttest des Standalone-Editors: neuer Schritt „Patch aus dem Projekt offline geladen,
+  beim Verbinden zum Gerät gesendet“ gegen den Simulator bestanden; Kerntest bestanden.
+* In Studio One und am Kit: `NICHT GEMESSEN` (Laufzettel P1–P5).
+
 ## 1c. Korrekturauftrag nach der Review (`GEMESSEN` 24.10.2026, Host)
 
 Umgesetzt: Kompatibilitätsprüfung vor dem Laden (F1), Portfreigabe in allen Pfaden
