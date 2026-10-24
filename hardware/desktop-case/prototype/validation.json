@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-24",
+  "kind": "digital geometry checks",
+  "hardware": "NICHT GEMESSEN",
+  "parts": {
+    "tray": {
+      "watertight": true,
+      "components": 1,
+      "size_mm": [
+        215.0,
+        129.0,
+        19.4
+      ],
+      "volume_cm3": 98.14,
+      "triangles": 4234
+    },
+    "overlay-frame": {
+      "watertight": true,
+      "components": 1,
+      "size_mm": [
+        215.0,
+        129.0,
+        2.4
+      ],
+      "volume_cm3": 21.005,
+      "triangles": 4128
+    },
+    "fit-coupon": {
+      "watertight": true,
+      "components": 1,
+      "size_mm": [
+        62.0,
+        24.0,
+        2.4
+      ],
+      "volume_cm3": 2.966,
+      "triangles": 1100
+    }
+  },
+  "checks": {
+    "pcb_tray_collision_mm3": 0,
+    "tray_frame_collision_mm3": 0,
+    "cap_envelopes_clear": 16,
+    "leds_clear": 16,
+    "source_revisions_compared": 4
+  },
+  "design_mm": {
+    "floor": 2.8,
+    "wall": 2.4,
+    "pcb_bottom": 8.8,
+    "pcb_top": 10.4,
+    "frame_underside": 19.4,
+    "frame_top": 21.799999999999997,
+    "knob_opening": 14.0,
+    "acrylic_optional": 1.0,
+    "paper_allowance": 0.15
+  },
+  "source_sha256": {
+    "board.json": "a3c9ca574f9752d44fceedb0dc7b4c1f68bf2604621fdd974da3a39d514b8f40",
+    "build_case.py": "7c50b5c00a6d8e7539bea0ce9c5c7d98c6bd82b3cf10a5ae71cf629e7bb344c6"
+  },
+  "artifact_sha256": {
+    "clear-cover-cut.svg": "ebd65ccc28e3f7a58712376a71d79a608af252e2c8e020ac3204dc79b02a5f31",
+    "fit-coupon.stl": "d805a916f56fa05a873b7efa942c60eb331e812b6c20cc762104399a52749e0d",
+    "overlay-frame.stl": "63339eaae29df290ef492cf60b3e115396086d7056a68e561d1375b6171c99a3",
+    "paper-master-a4.pdf": "c67cb1a9bd62477e764b8503956a1e1c6417fec86c9c3900707f04289b5f2608",
+    "tray.stl": "8cfd84a6207dd1a52ae0a05ca4cd33b63580390fb95278203ac87d771df0273b"
+  }
+}

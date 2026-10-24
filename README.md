@@ -93,6 +93,10 @@ and a shared effect chain have not been implemented.
 
 ## Documentation and next steps
 
+* [Basic desktop case and Paper on Daisy carrier](hardware/desktop-case/):
+  printable tray/frame prototype, transparent-cover contours and a 1:1 A4 fit
+  template based on the official PCB data; physical fit and cable relief untested.
+
 * **[Handover](HANDOVER.md)** (state, local setup, hardware test run sheet, open decisions)
   and the [agent rules](AGENTS.md).
 * [Build and toolchain](docs/BUILD.md), [hardware](docs/HARDWARE.md), and [flashing](docs/FLASHING.md).
