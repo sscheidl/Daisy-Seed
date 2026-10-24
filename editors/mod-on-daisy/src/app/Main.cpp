@@ -1,5 +1,6 @@
 // Mod on Daisy Editor, JUCE standalone (GUI.md § 3, D6: Windows first, VST3 later).
-//   ModOnDaisyEditor                      normal start
+//   ModOnDaisyEditor                      normal start, MIDI ports only
+//   ModOnDaisyEditor --simulators         also lists the simulators (development, no Daisy)
 //   ModOnDaisyEditor --selftest <dir>     drives the window against the simulator, checks
 //                                         the device CRC after every step, writes screenshots
 #include "../ui/EditorComponent.h"
@@ -11,10 +12,10 @@ using editor::ui::EditorComponent;
 
 class MainWindow : public juce::DocumentWindow {
   public:
-    explicit MainWindow(const juce::String& name)
+    MainWindow(const juce::String& name, bool with_simulators)
         : DocumentWindow(name, ui::colour::bg, DocumentWindow::allButtons) {
         setUsingNativeTitleBar(true);
-        setContentOwned(new EditorComponent(), true);
+        setContentOwned(new EditorComponent(with_simulators), true);
         setResizable(true, true);
         setResizeLimits(1100, 860, 4000, 3000);
         centreWithSize(getWidth(), getHeight());
@@ -296,9 +297,10 @@ class Application : public juce::JUCEApplication {
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const juce::String& command_line) override {
-        window_ = std::make_unique<MainWindow>(getApplicationName() + " " + getApplicationVersion());
         const juce::StringArray args = juce::StringArray::fromTokens(command_line, true);
         const int i = args.indexOf("--selftest");
+        window_ = std::make_unique<MainWindow>(getApplicationName() + " " + getApplicationVersion(),
+                                               i >= 0 || args.contains("--simulators"));
         if(i >= 0) {
             const juce::File dir = juce::File::getCurrentWorkingDirectory().getChildFile(
                 args[i + 1].isEmpty() ? juce::String("selftest") : args[i + 1].unquoted());

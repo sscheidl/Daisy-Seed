@@ -15,8 +15,9 @@ juce::Colour LogColour(LogKind k) {
 }
 }
 
-EditorComponent::EditorComponent()
-    : session_(model_, uint32_t(juce::Random::getSystemRandom().nextInt())), grid_(model_, session_) {
+EditorComponent::EditorComponent(bool with_simulators)
+    : session_(model_, uint32_t(juce::Random::getSystemRandom().nextInt())), grid_(model_, session_),
+      with_simulators_(with_simulators) {
     setLookAndFeel(&look_);
     session_.changed = [this] { triggerAsyncUpdate(); };
     session_.log = [this](LogKind k, const std::string& text) { Log(k, U(text)); };
@@ -28,7 +29,7 @@ EditorComponent::EditorComponent()
     };
 
     addAndMakeVisible(port_);
-    port_.setTooltip(U("Gerät: Simulator oder MIDI-Port des Daisy („Daisy Seed External“)"));
+    port_.setTooltip(U("Gerät: MIDI-Port des Daisy („Daisy Seed External“)"));
     addAndMakeVisible(connect_);
     connect_.setColour(juce::TextButton::buttonColourId, colour::accent);
     connect_.onClick = [this] {
@@ -112,7 +113,8 @@ EditorComponent::EditorComponent()
 
     RefreshPorts();
     RefreshAll();
-    Log(LogKind::Info, U("Nicht verbunden. Ohne Gerät lässt sich offline bearbeiten oder ein Simulator wählen."));
+    Log(LogKind::Info, with_simulators_ ? U("Nicht verbunden. Ohne Gerät lässt sich offline bearbeiten oder ein Simulator wählen.")
+                                        : U("Nicht verbunden. Ohne Gerät lässt sich offline bearbeiten."));
     setSize(1220, 920);
     startTimer(10);
 }
@@ -128,7 +130,7 @@ void EditorComponent::RefreshPorts() {
     const auto outs = juce::MidiOutput::getAvailableDevices();
     const auto ins = juce::MidiInput::getAvailableDevices();
     std::vector<Port> ports;
-    for(int i = 0; i < int(std::size(kSimInstruments)); ++i)
+    for(int i = 0; with_simulators_ && i < int(std::size(kSimInstruments)); ++i)
         ports.push_back({U(kSimInstruments[i].label), i, {}, {}});
     for(const auto& out : outs) {
         // The input with the same name, else one that also says "Daisy".
@@ -161,16 +163,20 @@ void EditorComponent::RefreshPorts() {
     if(same)
         return;
     const juce::String previous = port_.getText();
+    // While offline, a Daisy that appears later replaces a non-Daisy suggestion (the kit is
+    // often plugged in or leaves the bootloader after the editor started).
+    const bool keep = midi_ || simulator_ || previous.containsIgnoreCase("daisy");
     ports_ = std::move(ports);
     port_.clear(juce::dontSendNotification);
-    int choose = 0;
+    int same_label = -1, daisy = -1;
     for(std::size_t i = 0; i < ports_.size(); ++i) {
         port_.addItem(ports_[i].label, int(i) + 1);
-        if(ports_[i].label == previous)
-            choose = int(i);
-        else if(previous.isEmpty() && ports_[i].simulator < 0 && ports_[i].label.containsIgnoreCase("daisy"))
-            choose = int(i); // a connected Daisy is the first suggestion
+        if(same_label < 0 && previous.isNotEmpty() && ports_[i].label == previous)
+            same_label = int(i);
+        if(daisy < 0 && ports_[i].simulator < 0 && ports_[i].label.containsIgnoreCase("daisy"))
+            daisy = int(i); // a connected Daisy is the first suggestion
     }
+    const int choose = (keep && same_label >= 0) ? same_label : daisy >= 0 ? daisy : std::max(same_label, 0);
     port_.setSelectedItemIndex(choose, juce::dontSendNotification);
 }
 

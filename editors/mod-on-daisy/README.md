@@ -7,7 +7,7 @@ Verbindung zum Daisy läuft über USB-MIDI.
 
 | Fassung | Stand |
 | --- | --- |
-| **JUCE-Editor** ([`src/`](src/)) | **nutzbar**: Standalone für Windows (`.exe` aus der CI), Linux und macOS per CMake. Mit eingebautem Simulator |
+| **JUCE-Editor** ([`src/`](src/)) | **nutzbar**: Standalone für Windows (`.exe` aus der CI), Linux und macOS per CMake. Simulator nur für Entwicklung und Selbsttest (`--simulators`) |
 | **Browser-Editor** ([`web/`](web/)) | **nutzbar**: Schnellvariante für Chrome/Edge (Web MIDI), ohne Installation |
 | VST3 für Studio One | später; der JUCE-Editor ist dafür vorbereitet (Kern ohne GUI, [docs/GUI.md](docs/GUI.md) § 3) |
 
@@ -35,13 +35,17 @@ Dann „Weitere Informationen“ und „Trotzdem ausführen“ wählen.
 2. **Studio One schließen** oder dort den Port „Daisy Seed External“ deaktivieren.
    Unter Windows kann nur eine Anwendung den Port öffnen. Ist er belegt, sagt der
    Editor das.
-3. Oben das Gerät wählen (ein Daisy-Port wird vorgeschlagen) und **Verbinden** klicken.
-   Der Editor liest Instrument, Spalten und den aktuellen Zustand vom Gerät.
+3. Oben das Gerät wählen (ein Daisy-Port wird vorgeschlagen, auch wenn das Kit erst nach
+   dem Start des Editors erscheint) und **Verbinden** klicken. Der Editor liest Instrument,
+   Spalten und den aktuellen Zustand vom Gerät.
 
-**Ohne Daisy:** „Simulator: Toy Piano“ oder „Simulator: Physical Modeling“ wählen. Das
-ist der Controller- und Engine-Code der Firmware, auf dem PC übersetzt. Er antwortet wie
-das Gerät, und die LFO- und Random-Anzeigen bewegen sich. Ein Simulator-Patch lässt sich
-als Datei speichern und später ins echte Gerät laden.
+**Ohne Daisy:** Die Liste enthält nur MIDI-Ports; ohne Gerät lässt sich offline bearbeiten.
+Die Simulatoren („Simulator: Toy Piano“, „Simulator: Physical Modeling“) erscheinen nur mit
+`"Mod on Daisy Editor" --simulators` und im Selbsttest. Sie sind der Controller- und
+Engine-Code der Firmware, auf dem PC übersetzt, und melden sich wie das Gerät
+(z. B. `physical-modeling 0.1.0-mod3`), haben aber keine Potis. Im Hardwaretest vom
+24.10.2026 war deshalb nicht zu erkennen, dass der Simulator statt des Kits verbunden war;
+seitdem stehen sie nicht mehr in der normalen Geräteliste.
 
 * **Raster**:
   * Zeilen sind die 8 Quellen, Spalten die Ziele des Instruments. Unter jedem
