@@ -6,6 +6,15 @@ angeschraubte Raster aus [V2](CLOSED_V2.md) durch **ein einziges Druckteil**.
 Die Bodenwanne bleibt abnehmbar. Beide 1-mm-Acrylplatten für die
 Papierbeschriftung bleiben erhalten.
 
+**Die Bedienfläche ist eben:** Untere Acrylplatte, Papier und obere Acrylplatte
+liegen jeweils in einer einzigen Ebene. Tasterkappen, Potiwellen und
+Kippschalter ragen durch einzelne Öffnungen. Das Papier läuft jetzt auch
+zwischen allen Tasten durch; das große gemeinsame Tastenfenster bleibt nur
+als alternative Papierkontur für einen einfacheren Zuschnitt erhalten.
+Die erhöhten Druckhauben über Seed und den hohen Buchsen unterbrechen die
+ebene Fläche weiterhin. Eine rechteckige Acrylfläche über dem gesamten
+Board einschließlich dieser Bereiche passt auf der aktuellen Höhe nicht.
+
 ![V3 mit durchgehendem Träger, Elektronik und Kappen schematisch](unified-v3/unified-v3-preview.png)
 
 ## Was zusammengehört
@@ -75,7 +84,9 @@ Die sechs senkrechten 3,5-mm-Buchsen gehen mit ihren Gehäusen durch den
 Druckträger. Ihre Muttern klemmen nur die untere Acrylplatte auf der
 nominalen 9-mm-Gehäuseschulter. Auch die beiden Kippschalter sind dort zur
 zusätzlichen Verschraubung vorgesehen; deren tatsächliche Schulterhöhe bleibt
-offen. Die obere Acrylplatte hat größere Mutterfenster. Für die Gewinde-
+offen. Der direkte PCB-Sitz von Potis und Schaltern ist vom Nutzer bestätigt
+(24.10.2026); daraus folgt keine gemessene Bauteilhöhe. Die obere Acrylplatte
+hat größere Mutterfenster. Für die Gewinde-
 und Bauteilquellen gilt die [Maßgrundlage in V2](CLOSED_V2.md).
 
 Zum Papierwechsel werden die vier Knurlies gelöst und die obere Klarplatte
@@ -95,8 +106,17 @@ behindern; Haltekraft auf dem Betätiger kommt von der Kappe selbst.
 
 Weil der neue Druckträger undurchsichtig ist, enthält er zusätzlich
 16 senkrechte Ø-4,8-mm-Sichtöffnungen über den LEDs. Die Acrylschichten
-darüber bleiben klar, und das Papier erhält weiterhin das gemeinsame
-Taster-/LED-Fenster. Sichtbarkeit bei schrägem Blick ist NICHT GEMESSEN.
+darüber bleiben klar. Das Papier hat einzelne Kappen- und LED-Ausschnitte
+und liegt auf der unteren Acrylplatte auch zwischen den Tastern vollflächig
+auf. Die Tasterführung sitzt darunter im Druckträger. Papier und obere
+Klarplatte sind nicht in einzelne Segmente aufgeteilt. Sichtbarkeit bei
+schrägem Blick sowie Passung der Papierkanten sind NICHT GEMESSEN.
+
+Die alternative Kontur `paper-overlay-fast-change.svg` behält das frühere
+gemeinsame Taster-/LED-Fenster bei. Die Hauptkontur `paper-overlay.svg` und
+die Ansichtsgeometrie verwenden die neue Fläche mit Einzellöchern. LED-
+Ausschnitte sind nur im undurchsichtigen Papier und Druckträger erforderlich,
+nicht in den transparenten Acrylplatten.
 
 Die montierte Kappenhöhe ist weiterhin **nur mit 13 mm angenommen**.
 Bei 0,25 mm nominalem Hub bleiben rechnerisch 1,6 mm gedrückter Überstand.
@@ -151,8 +171,11 @@ Digital geprüft am 24.10.2026:
   genau eine zusammenhängende Komponente; darunter der komplette Druckträger.
 - Zehn Paarungen der fünf montierten Gehäuse-/Plattenteile überschneidungsfrei.
 - Alle fünf Teile frei von den nominalen seitlichen Anschluss-Zugangsvolumen.
+- Papierkontur in der Draufsicht vollständig von der unteren Acrylfläche
+  unterstützt; keine frei über einem ihrer Ausschnitte liegenden Papierbereiche.
 - Alle 16 Kappen-Hüllflächen frei durch Träger und beide Acrylschichten.
-- Alle 16 senkrechten LED-Sichtöffnungen frei.
+- Alle 16 Kappen-Hüllflächen auch frei durch die neue Papierkontur.
+- Alle 16 senkrechten LED-Sichtöffnungen in Träger und Papier frei.
 - 28 nominale Hüllkörper für Kondensatoren, Potis, senkrechte Buchsen und
   Metallpfosten ohne Überschneidung mit dem Träger.
 - Rechnerisches Gewindebudget und Abstand der unteren Schraubenenden geprüft.
@@ -172,7 +195,8 @@ Die aktuelle Ausgabe liegt unter [unified-v3/](unified-v3/).
 | --- | --- |
 | `tray.stl`, `unified-carrier.stl` | Die zwei großen Druckteile |
 | `lower-acrylic-1mm.svg`, `upper-acrylic-1mm.svg` | Acryl-Schnittkonturen, mm |
-| `paper-overlay.svg` | Wechselbare Papierbeschriftung, Schnittkontur |
+| `paper-overlay.svg` | Durchlaufendes Papier mit einzelnen Kappen-/LED-Ausschnitten |
+| `paper-overlay-fast-change.svg` | Alternative mit gemeinsamem Tasterfenster |
 | `*-reference.stl` | Reine Ansichtsgeometrie für Acryl/Papier, kein Druckersatz |
 | `H2-S9-cap-height-gauge.stl`, `guide-clearance-coupon.stl` | Kleine Passproben |
 | `removable-service-tool-fit-study.stl` | Unbestätigte Service-Werkzeuglänge |

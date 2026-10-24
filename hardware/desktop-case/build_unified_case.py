@@ -63,6 +63,16 @@ def guide_section():
     return section
 
 
+def paper_section(fast_change=False):
+    section = layer_section('upper')
+    if fast_change:
+        return section-b.rectangle(*b.KEY_WINDOW)
+    # Keep paper between keys. Clear acrylic needs no LED holes.
+    for p in b.BOARD['leds']:
+        section -= v2.circle(p['x'],p['y'],LED_APERTURE)
+    return section
+
+
 def skin_section():
     section = b.rounded_rectangle(-9,-9,215,129,3)
     for x in b.AUDIO_AXES:
@@ -133,8 +143,7 @@ def build():
     previous = v2.build()
     for name in ['removable-service-tool-fit-study','guide-clearance-coupon','H2-S9-cap-height-gauge']:
         parts[name] = previous[name]
-    paper = layer_section('upper')-b.rectangle(*b.KEY_WINDOW)
-    parts['paper-reference'] = (v2.extrude(paper,0,C['paper']),DECK_TOP+1)
+    parts['paper-reference'] = (v2.extrude(paper_section(),0,C['paper']),DECK_TOP+1)
     return parts
 
 
@@ -159,13 +168,15 @@ def verify(parts):
         assert overlap<1e-4,(a,d,overlap)
     for name in main:
         assert (assembly[name]^v2.port_cuts()).volume()<1e-4,(name,'port blocked')
+    assert (paper_section()-layer_section('lower')).area()<1e-5,'Paper extends over lower acrylic openings'
     for p in b.BOARD['buttons']:
         swept = b.box(p['x']-2.8,p['y']-2.8,PCB+4,5.6,5.6,15)
-        for name in ['unified-carrier','lower-acrylic-reference','upper-acrylic-reference']:
+        for name in ['unified-carrier','lower-acrylic-reference','upper-acrylic-reference','paper-reference']:
             assert (assembly[name]^swept).volume()<1e-4,(name,p['ref'])
     for p in b.BOARD['leds']:
         sight = b.cylinder(p['x'],p['y'],PCB,LED_APERTURE/2-.01,24)
-        assert (assembly['unified-carrier']^sight).volume()<1e-4,('LED blocked',p['ref'])
+        for name in ['unified-carrier','paper-reference']:
+            assert (assembly[name]^sight).volume()<1e-4,('LED blocked',name,p['ref'])
     # Check nominal component envelopes in addition to connector access sweeps.
     envelopes = []
     for x,y in CAPACITORS:
@@ -192,12 +203,13 @@ def verify(parts):
     report['checks'] = ['Eight closed, consistently wound, single-component bodies',
         'Unified carrier is exactly one connected solid',f'{len(pairs)} assembly collision pairs clear',
         'All five assembly solids clear nominal connector access sweeps',
-        'All 16 key clearance envelopes pass through carrier and both acrylics',
-        'All 16 LED vertical apertures clear',
+        'The entire paper contour is supported by the lower acrylic in plan view',
+        'All 16 key clearance envelopes pass through carrier, paper and both acrylics',
+        'All 16 LED vertical apertures clear through carrier and paper',
         f'{len(envelopes)} nominal capacitor, pot, jack and metal-post envelopes clear the carrier',
         'Conservative Knurlie grip 3.05 mm; opposing lower-post screws have 1.2 mm gap']
     report['unresolved'] = ['Actual cap seating height, friction, release and guide tolerances',
-        'Actual toggle body/shoulder elevation and included nuts/washers',
+        'Actual toggle shoulder elevation and included nuts/washers; direct PCB seating confirmed by user',
         'Seed seating/transform, provisional service positions and tool length',
         'Full component and plug models, all revision-dependent component envelopes',
         'Metal post/shim/thread tolerances; only 0.05 mm reserve above 3 mm nominal grip target',
@@ -232,7 +244,8 @@ def main():
         mesh=b.mesh_of(solid); mesh.apply_translation((0,0,-mesh.bounds[0,2])); mesh.export(args.output/f'{name}.stl')
     for kind in ['lower','upper']:
         b.contour_svg(layer_section(kind),args.output/f'{kind}-acrylic-1mm.svg')
-    b.contour_svg(layer_section('upper')-b.rectangle(*b.KEY_WINDOW),args.output/'paper-overlay.svg')
+    b.contour_svg(paper_section(),args.output/'paper-overlay.svg')
+    b.contour_svg(paper_section(fast_change=True),args.output/'paper-overlay-fast-change.svg')
     pdf(args.output/'acrylic-fit-study-a4.pdf')
     report['artifact_sha256'] = {p.name:hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted(args.output.iterdir()) if p.suffix in ['.stl','.svg','.pdf']}
