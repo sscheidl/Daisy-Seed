@@ -1,11 +1,15 @@
 # Desktop-Gehäuse / Paper on Daisy
 
-**Aktueller Entwurf: [geschlossene Konstruktion V2 mit Metallpfosten und zwei
-Acrylplatten](CLOSED_V2.md).** V2 ersetzt den offenen Ansatz unten: vier
-Knurlies M3 an den PCB-Bohrungen, separat befestigte Buchsen und Kippschalter,
-abgedecktes Seed-Modul und austauschbares Tastenraster. Die Höhenstudie ist
-digital geprüft; montierte Kappenhöhe und weitere Hardware-Passmaße sind
+**Aktueller Entwurf: [durchgehender Druckträger V3](UNIFIED_V3.md).**
+Ein Druckteil verbindet Bedienfläche, Seed-/Buchsenhauben und das angeformte
+Tasterraster. Darauf liegen weiterhin zwei 1-mm-Acrylplatten mit Papier,
+getragen von Metallpfosten und über vier M3-Knurlies lösbar. Buchsen- und
+Schaltermuttern befestigen nur die untere Acrylplatte. Geometrie digital
+geprüft; Kappenhöhe, Pfostentoleranzen, Festigkeit und Passung am Board
 NICHT GEMESSEN. Noch keine Fertigungsfreigabe.
+
+Die [V2 mit getrennten Hauben und Raster](CLOSED_V2.md) bleibt als frühere
+Konstruktionsstudie erhalten.
 
 ## Erster Entwurf V1 (Referenz)
 
