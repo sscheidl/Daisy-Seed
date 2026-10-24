@@ -122,7 +122,7 @@
     "build_unified_case.py": "7d56f7d22c8a8d4b58b7334d8e8b3145093f916c8ff5c7c173e2db9ee742500a",
     "build_closed_case.py": "c5671fa40309d10558cba7bcc69975ac0426983518d64f9203263267e706651c",
     "closed-mechanics.json": "ab977138259b4ca7a68e6ea24dcad02508e9aa8f0c7182f176ab7d9a1c2d9e69",
-    "board.json": "a3c9ca574f9752d44fceedb0dc7b4c1f68bf2604621fdd974da3a39d514b8f40",
+    "board.json": "682bb5a19be77304ab51440a7e5094b03588777913881f96e2eff6a2d16baa1c",
     "build_case.py": "7c50b5c00a6d8e7539bea0ce9c5c7d98c6bd82b3cf10a5ae71cf629e7bb344c6"
   },
   "artifact_sha256": {
