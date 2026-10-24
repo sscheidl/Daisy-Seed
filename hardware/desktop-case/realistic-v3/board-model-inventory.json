@@ -1,0 +1,2368 @@
+{
+  "kicad_version": "10.0.6",
+  "source_commit": "987297fb7c9a8c58721ef40abf6d6eedd1fcda2a",
+  "source_board_sha256": "bb9c37d795268f830b6ceeaa0dc6b952a4b547a3f253c8ff4d3251e62035aa68",
+  "components": [
+    {
+      "ref": "R98",
+      "footprint": "R_1206_3216Metric",
+      "x": 17.5,
+      "y": 32.5,
+      "rotation": -90.0,
+      "models": [
+        "R_1206_3216Metric.step"
+      ]
+    },
+    {
+      "ref": "R91",
+      "footprint": "R_0603_1608Metric",
+      "x": 147.8,
+      "y": 35.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "FD3",
+      "footprint": "Fiducial_1mm_Mask2mm",
+      "x": 185.4,
+      "y": 106.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R67",
+      "footprint": "R_0603_1608Metric",
+      "x": 129.6,
+      "y": 34.6,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J10",
+      "footprint": "57PC5F",
+      "x": 184.8,
+      "y": 68.3,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "R7",
+      "footprint": "R_0603_1608Metric",
+      "x": 104.8,
+      "y": 38.2,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C22",
+      "footprint": "C_0603_1608Metric",
+      "x": 167.2,
+      "y": 80.0,
+      "rotation": 90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "U6",
+      "footprint": "SOIC-8_3.9x4.9mm_P1.27mm",
+      "x": 90.435,
+      "y": 32.875,
+      "rotation": -90.0,
+      "models": [
+        "SOIC-8_3.9x4.9mm_P1.27mm.step"
+      ]
+    },
+    {
+      "ref": "C47",
+      "footprint": "C_0603_1608Metric",
+      "x": 178.2,
+      "y": 63.4,
+      "rotation": 90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "U9",
+      "footprint": "SOIC-8_3.9x4.9mm_P1.27mm",
+      "x": 31.975,
+      "y": 53.5,
+      "rotation": 0.0,
+      "models": [
+        "SOIC-8_3.9x4.9mm_P1.27mm.step"
+      ]
+    },
+    {
+      "ref": "C6",
+      "footprint": "C_0603_1608Metric",
+      "x": 82.02625,
+      "y": 47.2875,
+      "rotation": 0.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R50",
+      "footprint": "R_0603_1608Metric",
+      "x": 7.75,
+      "y": 77.825,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J8",
+      "footprint": "57PC5F",
+      "x": 184.8,
+      "y": 44.3,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "R90",
+      "footprint": "R_0603_1608Metric",
+      "x": 144.6,
+      "y": 35.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R2",
+      "footprint": "R_0603_1608Metric",
+      "x": 13.4,
+      "y": 44.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "H1",
+      "footprint": "MountingHole_3.5mm_Pad",
+      "x": 5.0,
+      "y": 5.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "C24",
+      "footprint": "C_0603_1608Metric",
+      "x": 174.4,
+      "y": 73.4,
+      "rotation": 90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "RV1",
+      "footprint": "Rotary Pot RK10J",
+      "x": 191.325,
+      "y": 91.6,
+      "rotation": -90.0,
+      "models": []
+    },
+    {
+      "ref": "C12",
+      "footprint": "CP_Elec_4x5.8",
+      "x": 60.5,
+      "y": 31.75,
+      "rotation": 0.0,
+      "models": [
+        "CP_Elec_4x5.8.step"
+      ]
+    },
+    {
+      "ref": "R49",
+      "footprint": "R_0603_1608Metric",
+      "x": 91.50375,
+      "y": 28.10875,
+      "rotation": 180.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R97",
+      "footprint": "R_1206_3216Metric",
+      "x": 17.5,
+      "y": 24.5,
+      "rotation": -90.0,
+      "models": [
+        "R_1206_3216Metric.step"
+      ]
+    },
+    {
+      "ref": "LOGO1",
+      "footprint": "OSHW-Logo2_14.6x12mm_SilkScreen",
+      "x": 117.35,
+      "y": 44.5,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "VR7",
+      "footprint": "9MM_SNAP-IN_POT_SILK",
+      "x": 150.7975,
+      "y": 56.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "C14",
+      "footprint": "C_0603_1608Metric",
+      "x": 102.0,
+      "y": 26.6,
+      "rotation": 0.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R39",
+      "footprint": "R_0603_1608Metric",
+      "x": 102.8,
+      "y": 78.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D15",
+      "footprint": "LED_0603_1608Metric",
+      "x": 142.714286,
+      "y": 94.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R24",
+      "footprint": "R_0603_1608Metric",
+      "x": 112.2,
+      "y": 100.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R36",
+      "footprint": "R_0603_1608Metric",
+      "x": 90.4,
+      "y": 78.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J_GATE_IN2",
+      "footprint": "S_JACK",
+      "x": 122.4,
+      "y": 31.4,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R5",
+      "footprint": "R_0603_1608Metric",
+      "x": 106.0,
+      "y": 27.4,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R83",
+      "footprint": "R_0603_1608Metric",
+      "x": 3.3,
+      "y": 25.9,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R51",
+      "footprint": "R_0603_1608Metric",
+      "x": 5.25,
+      "y": 77.825,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "U5",
+      "footprint": "SOIC-16_3.9x9.9mm_P1.27mm",
+      "x": 56.0,
+      "y": 91.0,
+      "rotation": 180.0,
+      "models": [
+        "SOIC-16_3.9x9.9mm_P1.27mm.step"
+      ]
+    },
+    {
+      "ref": "C49",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 6.2,
+      "y": 59.4,
+      "rotation": 180.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "R57",
+      "footprint": "R_0603_1608Metric",
+      "x": 90.23375,
+      "y": 37.63375,
+      "rotation": 180.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D5",
+      "footprint": "LED_0603_1608Metric",
+      "x": 118.142857,
+      "y": 78.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "U12",
+      "footprint": "SOIC-16_3.9x9.9mm_P1.27mm",
+      "x": 75.2,
+      "y": 45.0,
+      "rotation": -90.0,
+      "models": [
+        "SOIC-16_3.9x9.9mm_P1.27mm.step"
+      ]
+    },
+    {
+      "ref": "VR3",
+      "footprint": "9MM_SNAP-IN_POT_SILK",
+      "x": 89.6815,
+      "y": 56.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R70",
+      "footprint": "R_0603_1608Metric",
+      "x": 127.4,
+      "y": 94.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C18",
+      "footprint": "C_0805_2012Metric",
+      "x": 19.6,
+      "y": 50.225,
+      "rotation": 180.0,
+      "models": [
+        "C_0805_2012Metric.step"
+      ]
+    },
+    {
+      "ref": "R16",
+      "footprint": "R_0603_1608Metric",
+      "x": 124.4,
+      "y": 84.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "U4",
+      "footprint": "SOIC-16_3.9x9.9mm_P1.27mm",
+      "x": 55.925,
+      "y": 103.095,
+      "rotation": 180.0,
+      "models": [
+        "SOIC-16_3.9x9.9mm_P1.27mm.step"
+      ]
+    },
+    {
+      "ref": "C2",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 32.5,
+      "y": 36.5,
+      "rotation": 90.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "D10",
+      "footprint": "LED_0603_1608Metric",
+      "x": 81.285714,
+      "y": 94.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C31",
+      "footprint": "C_0603_1608Metric",
+      "x": 34.0,
+      "y": 49.995,
+      "rotation": 180.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "VR5",
+      "footprint": "9MM_SNAP-IN_POT_SILK",
+      "x": 120.2395,
+      "y": 56.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "C37",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 23.0,
+      "y": 20.5,
+      "rotation": 0.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "D11",
+      "footprint": "LED_0603_1608Metric",
+      "x": 93.571429,
+      "y": 94.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R93",
+      "footprint": "R_0603_1608Metric",
+      "x": 48.2,
+      "y": 37.6,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "SW17",
+      "footprint": "TOGGLE_ON-ON",
+      "x": 45.5675,
+      "y": 96.335,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "R38",
+      "footprint": "R_0603_1608Metric",
+      "x": 100.8,
+      "y": 37.4,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D20",
+      "footprint": "D_SOD-323F",
+      "x": 75.5,
+      "y": 15.0,
+      "rotation": 90.0,
+      "models": [
+        "D_SOD-323F.step"
+      ]
+    },
+    {
+      "ref": "U3",
+      "footprint": "SOIC-8_3.9x4.9mm_P1.27mm",
+      "x": 56.0,
+      "y": 38.8,
+      "rotation": 0.0,
+      "models": [
+        "SOIC-8_3.9x4.9mm_P1.27mm.step"
+      ]
+    },
+    {
+      "ref": "R52",
+      "footprint": "R_0603_1608Metric",
+      "x": 15.5,
+      "y": 77.825,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "FD1",
+      "footprint": "Fiducial_1mm_Mask2mm",
+      "x": 14.77,
+      "y": 105.86,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "S1",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 69.0,
+      "y": 85.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "VR1",
+      "footprint": "9MM_SNAP-IN_POT_SILK",
+      "x": 59.1235,
+      "y": 56.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "S12",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 105.857143,
+      "y": 101.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R17",
+      "footprint": "R_0603_1608Metric",
+      "x": 134.3875,
+      "y": 33.015,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C7",
+      "footprint": "C_0603_1608Metric",
+      "x": 51.2,
+      "y": 94.775,
+      "rotation": 90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D2",
+      "footprint": "LED_0603_1608Metric",
+      "x": 81.285714,
+      "y": 78.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R21",
+      "footprint": "R_0603_1608Metric",
+      "x": 149.2,
+      "y": 84.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "S9",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 69.0,
+      "y": 101.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "J_CV_OUT_1",
+      "footprint": "S_JACK",
+      "x": 82.0,
+      "y": 15.8,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R42",
+      "footprint": "R_0603_1608Metric",
+      "x": 139.6,
+      "y": 78.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "S5",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 118.142857,
+      "y": 85.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R22",
+      "footprint": "R_0603_1608Metric",
+      "x": 63.0,
+      "y": 100.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R92",
+      "footprint": "R_0603_1608Metric",
+      "x": 147.8,
+      "y": 38.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C10",
+      "footprint": "CP_Elec_4x5.8",
+      "x": 161.2,
+      "y": 41.0,
+      "rotation": 180.0,
+      "models": [
+        "CP_Elec_4x5.8.step"
+      ]
+    },
+    {
+      "ref": "R43",
+      "footprint": "R_0603_1608Metric",
+      "x": 65.8,
+      "y": 78.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R23",
+      "footprint": "R_0603_1608Metric",
+      "x": 132.8,
+      "y": 40.0,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R94",
+      "footprint": "R_0603_1608Metric",
+      "x": 49.8,
+      "y": 37.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R60",
+      "footprint": "R_0603_1608Metric",
+      "x": 92.77375,
+      "y": 38.58625,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C9",
+      "footprint": "CP_Elec_4x5.8",
+      "x": 143.4,
+      "y": 40.0,
+      "rotation": 180.0,
+      "models": [
+        "CP_Elec_4x5.8.step"
+      ]
+    },
+    {
+      "ref": "D4",
+      "footprint": "LED_0603_1608Metric",
+      "x": 105.857143,
+      "y": 78.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R74",
+      "footprint": "R_0603_1608Metric",
+      "x": 30.6,
+      "y": 85.2,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R9",
+      "footprint": "R_1206_3216Metric",
+      "x": 12.6,
+      "y": 55.6,
+      "rotation": -90.0,
+      "models": [
+        "R_1206_3216Metric.step"
+      ]
+    },
+    {
+      "ref": "J_GATE_IN1",
+      "footprint": "S_JACK",
+      "x": 122.4,
+      "y": 15.8,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "D1",
+      "footprint": "LED_0603_1608Metric",
+      "x": 69.0,
+      "y": 78.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "A1",
+      "footprint": "Electrosmith_Daisy_Seed",
+      "x": 2.795,
+      "y": 81.295,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "R54",
+      "footprint": "R_0603_1608Metric",
+      "x": 10.5,
+      "y": 77.825,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R40",
+      "footprint": "R_0603_1608Metric",
+      "x": 115.0,
+      "y": 78.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R27",
+      "footprint": "R_0603_1608Metric",
+      "x": 87.6,
+      "y": 100.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C1",
+      "footprint": "C_0603_1608Metric",
+      "x": 167.4,
+      "y": 45.4,
+      "rotation": -90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D12",
+      "footprint": "LED_0603_1608Metric",
+      "x": 105.857143,
+      "y": 94.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D9",
+      "footprint": "LED_0603_1608Metric",
+      "x": 69.0,
+      "y": 94.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R89",
+      "footprint": "R_0603_1608Metric",
+      "x": 157.0,
+      "y": 40.2,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J_CV_OUT_2",
+      "footprint": "S_JACK",
+      "x": 82.0,
+      "y": 31.4,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R1",
+      "footprint": "R_0603_1608Metric",
+      "x": 13.4,
+      "y": 38.8,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C32",
+      "footprint": "C_0603_1608Metric",
+      "x": 55.025,
+      "y": 80.8,
+      "rotation": 0.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "VR4",
+      "footprint": "9MM_SNAP-IN_POT_SILK",
+      "x": 104.9605,
+      "y": 56.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "U15",
+      "footprint": "SOIC-8_3.9x4.9mm_P1.27mm",
+      "x": 152.4,
+      "y": 35.6,
+      "rotation": 180.0,
+      "models": [
+        "SOIC-8_3.9x4.9mm_P1.27mm.step"
+      ]
+    },
+    {
+      "ref": "C23",
+      "footprint": "C_0603_1608Metric",
+      "x": 19.775,
+      "y": 48.425,
+      "rotation": 180.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C28",
+      "footprint": "C_0603_1608Metric",
+      "x": 167.2,
+      "y": 70.4,
+      "rotation": 90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R25",
+      "footprint": "R_0603_1608Metric",
+      "x": 75.6,
+      "y": 100.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R30",
+      "footprint": "R_0603_1608Metric",
+      "x": 100.0,
+      "y": 100.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D7",
+      "footprint": "LED_0603_1608Metric",
+      "x": 142.714286,
+      "y": 78.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R28",
+      "footprint": "R_0603_1608Metric",
+      "x": 136.8,
+      "y": 100.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R29",
+      "footprint": "R_0603_1608Metric",
+      "x": 167.4,
+      "y": 42.2,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R102",
+      "footprint": "R_0603_1608Metric",
+      "x": 61.4425,
+      "y": 36.4,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C19",
+      "footprint": "C_0603_1608Metric",
+      "x": 98.8,
+      "y": 30.8,
+      "rotation": -90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D18",
+      "footprint": "D_SOD-323F",
+      "x": 48.5,
+      "y": 62.5,
+      "rotation": 180.0,
+      "models": [
+        "D_SOD-323F.step"
+      ]
+    },
+    {
+      "ref": "S3",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 93.571429,
+      "y": 85.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R86",
+      "footprint": "R_0603_1608Metric",
+      "x": 26.5,
+      "y": 52.5,
+      "rotation": 180.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C26",
+      "footprint": "C_0603_1608Metric",
+      "x": 47.4,
+      "y": 35.2,
+      "rotation": 0.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R87",
+      "footprint": "R_0603_1608Metric",
+      "x": 19.0,
+      "y": 46.025,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "S15",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 142.714286,
+      "y": 101.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "C35",
+      "footprint": "C_0805_2012Metric",
+      "x": 9.7,
+      "y": 20.9,
+      "rotation": 0.0,
+      "models": [
+        "C_0805_2012Metric.step"
+      ]
+    },
+    {
+      "ref": "R3",
+      "footprint": "R_0603_1608Metric",
+      "x": 165.6,
+      "y": 45.4,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R101",
+      "footprint": "R_0603_1608Metric",
+      "x": 65.6,
+      "y": 31.8,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C46",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 6.2,
+      "y": 52.2,
+      "rotation": 180.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "U8",
+      "footprint": "TSSOP-28_4.4x9.7mm_P0.65mm",
+      "x": 59.0,
+      "y": 74.8,
+      "rotation": 180.0,
+      "models": [
+        "TSSOP-28_4.4x9.7mm_P0.65mm.step"
+      ]
+    },
+    {
+      "ref": "R10",
+      "footprint": "R_0603_1608Metric",
+      "x": 178.0,
+      "y": 37.6,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R37",
+      "footprint": "R_0603_1608Metric",
+      "x": 102.4,
+      "y": 40.6,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J_CV_IN_1",
+      "footprint": "S_JACK",
+      "x": 112.3,
+      "y": 15.8,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R53",
+      "footprint": "R_0603_1608Metric",
+      "x": 13.0,
+      "y": 77.825,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R34",
+      "footprint": "R_0603_1608Metric",
+      "x": 102.0,
+      "y": 28.2,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R56",
+      "footprint": "R_0603_1608Metric",
+      "x": 90.23375,
+      "y": 39.22125,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "U2",
+      "footprint": "SOIC-8_3.9x4.9mm_P1.27mm",
+      "x": 102.4,
+      "y": 32.8,
+      "rotation": 90.0,
+      "models": [
+        "SOIC-8_3.9x4.9mm_P1.27mm.step"
+      ]
+    },
+    {
+      "ref": "R32",
+      "footprint": "R_0603_1608Metric",
+      "x": 160.2,
+      "y": 37.0,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J5",
+      "footprint": "Jack_3.5mm_CUI_SJ-3523-SMT_Horizontal",
+      "x": 173.6,
+      "y": 102.2,
+      "rotation": 180.0,
+      "models": []
+    },
+    {
+      "ref": "J2",
+      "footprint": "Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal",
+      "x": 132.285,
+      "y": 20.235,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "S2",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 81.285714,
+      "y": 85.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R33",
+      "footprint": "R_0603_1608Metric",
+      "x": 102.0,
+      "y": 25.0,
+      "rotation": 180.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C8",
+      "footprint": "C_0603_1608Metric",
+      "x": 51.2,
+      "y": 106.8,
+      "rotation": 90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D13",
+      "footprint": "LED_0603_1608Metric",
+      "x": 118.142857,
+      "y": 94.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "Q2",
+      "footprint": "SOT-23",
+      "x": 129.6,
+      "y": 37.4,
+      "rotation": -90.0,
+      "models": [
+        "SOT-23.step"
+      ]
+    },
+    {
+      "ref": "S14",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 130.428571,
+      "y": 101.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "C17",
+      "footprint": "C_0603_1608Metric",
+      "x": 60.6,
+      "y": 38.8,
+      "rotation": -90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D16",
+      "footprint": "LED_0603_1608Metric",
+      "x": 155.0,
+      "y": 94.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C43",
+      "footprint": "CP_Elec_4x5.8",
+      "x": 48.9,
+      "y": 42.1,
+      "rotation": 180.0,
+      "models": [
+        "CP_Elec_4x5.8.step"
+      ]
+    },
+    {
+      "ref": "J7",
+      "footprint": "GCT_USB4110GFA",
+      "x": 6.0,
+      "y": 41.09,
+      "rotation": -90.0,
+      "models": [
+        "USB4110GFA.step"
+      ]
+    },
+    {
+      "ref": "L2",
+      "footprint": "L_TDK_VLS6045EX_VLS6045AF",
+      "x": 11.2,
+      "y": 25.4,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "R20",
+      "footprint": "R_0603_1608Metric",
+      "x": 136.8,
+      "y": 84.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "H2",
+      "footprint": "MountingHole_3.5mm_Pad",
+      "x": 5.0,
+      "y": 106.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "U14",
+      "footprint": "SOT-23-6",
+      "x": 13.9501,
+      "y": 41.4,
+      "rotation": 0.0,
+      "models": [
+        "SOT-23-6.step"
+      ]
+    },
+    {
+      "ref": "S10",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 81.285714,
+      "y": 101.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "VR6",
+      "footprint": "9MM_SNAP-IN_POT_SILK",
+      "x": 135.5185,
+      "y": 56.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "C39",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 23.0,
+      "y": 36.5,
+      "rotation": 0.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "R78",
+      "footprint": "R_0603_1608Metric",
+      "x": 172.74,
+      "y": 80.0,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J_CV_IN_2",
+      "footprint": "S_JACK",
+      "x": 112.3,
+      "y": 31.4,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "D6",
+      "footprint": "LED_0603_1608Metric",
+      "x": 130.428571,
+      "y": 78.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R19",
+      "footprint": "R_0603_1608Metric",
+      "x": 135.975,
+      "y": 40.0,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R31",
+      "footprint": "R_0603_1608Metric",
+      "x": 148.8,
+      "y": 100.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "Q1",
+      "footprint": "SOT-23",
+      "x": 134.3875,
+      "y": 37.46,
+      "rotation": -90.0,
+      "models": [
+        "SOT-23.step"
+      ]
+    },
+    {
+      "ref": "SW18",
+      "footprint": "TOGGLE_ON_OFF_ON",
+      "x": 32.07375,
+      "y": 96.335,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "R66",
+      "footprint": "R_0603_1608Metric",
+      "x": 129.6,
+      "y": 33.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R84",
+      "footprint": "R_0603_1608Metric",
+      "x": 6.0,
+      "y": 31.0,
+      "rotation": 180.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J4",
+      "footprint": "Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal",
+      "x": 31.8,
+      "y": 20.2,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "R59",
+      "footprint": "R_0603_1608Metric",
+      "x": 178.2,
+      "y": 26.175,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R55",
+      "footprint": "R_0603_1608Metric",
+      "x": 93.9,
+      "y": 27.3,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D8",
+      "footprint": "LED_0603_1608Metric",
+      "x": 155.0,
+      "y": 78.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C34",
+      "footprint": "C_0603_1608Metric",
+      "x": 178.2,
+      "y": 70.0,
+      "rotation": -90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R6",
+      "footprint": "R_0603_1608Metric",
+      "x": 178.2,
+      "y": 16.575,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C5",
+      "footprint": "C_0603_1608Metric",
+      "x": 57.6,
+      "y": 35.2,
+      "rotation": 0.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R58",
+      "footprint": "R_0603_1608Metric",
+      "x": 102.8,
+      "y": 94.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R48",
+      "footprint": "R_0603_1608Metric",
+      "x": 91.50375,
+      "y": 26.52125,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D19",
+      "footprint": "D_SOD-323F",
+      "x": 44.5,
+      "y": 62.5,
+      "rotation": 180.0,
+      "models": [
+        "D_SOD-323F.step"
+      ]
+    },
+    {
+      "ref": "C15",
+      "footprint": "C_0603_1608Metric",
+      "x": 100.8,
+      "y": 39.0,
+      "rotation": 0.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "H3",
+      "footprint": "MountingHole_3.5mm_Pad",
+      "x": 192.0,
+      "y": 5.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "C4",
+      "footprint": "C_0603_1608Metric",
+      "x": 64.6,
+      "y": 36.4,
+      "rotation": 180.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R88",
+      "footprint": "R_0603_1608Metric",
+      "x": 20.6,
+      "y": 46.025,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R47",
+      "footprint": "R_0603_1608Metric",
+      "x": 90.4,
+      "y": 94.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "U1",
+      "footprint": "HVSSOP-8-1EP_3x3mm_P0.65mm_EP1.57x1.89mm",
+      "x": 169.87,
+      "y": 78.01,
+      "rotation": -90.0,
+      "models": []
+    },
+    {
+      "ref": "R8",
+      "footprint": "R_0603_1608Metric",
+      "x": 103.2,
+      "y": 38.2,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R69",
+      "footprint": "R_0603_1608Metric",
+      "x": 115.0,
+      "y": 94.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "VR8",
+      "footprint": "9MM_SNAP-IN_POT_SILK",
+      "x": 166.0765,
+      "y": 56.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R103",
+      "footprint": "R_0603_1608Metric",
+      "x": 50.575,
+      "y": 35.2,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C29",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 172.8,
+      "y": 86.6,
+      "rotation": -90.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "C36",
+      "footprint": "C_0603_1608Metric",
+      "x": 3.3,
+      "y": 22.6,
+      "rotation": 90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C30",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 165.4,
+      "y": 86.6,
+      "rotation": -90.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "R73",
+      "footprint": "R_0603_1608Metric",
+      "x": 128.2,
+      "y": 40.0,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J11",
+      "footprint": "57PC5F",
+      "x": 184.8,
+      "y": 20.3,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "C42",
+      "footprint": "CP_Elec_4x5.8",
+      "x": 68.75,
+      "y": 36.75,
+      "rotation": -90.0,
+      "models": [
+        "CP_Elec_4x5.8.step"
+      ]
+    },
+    {
+      "ref": "R13",
+      "footprint": "R_0603_1608Metric",
+      "x": 87.4,
+      "y": 84.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "U11",
+      "footprint": "DIP-6_W7.62mm",
+      "x": 177.205,
+      "y": 46.74,
+      "rotation": 180.0,
+      "models": [
+        "DIP-6_W7.62mm.step"
+      ]
+    },
+    {
+      "ref": "QR1",
+      "footprint": "qr-seed3-desktop-redirect-medium",
+      "x": 16.4,
+      "y": 6.7,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R75",
+      "footprint": "R_0603_1608Metric",
+      "x": 33.6,
+      "y": 85.2,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D3",
+      "footprint": "LED_0603_1608Metric",
+      "x": 93.571429,
+      "y": 78.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "MICRO_SD7",
+      "footprint": "TF-01A",
+      "x": 8.275,
+      "y": 92.7,
+      "rotation": -90.0,
+      "models": [
+        "TF-01A.step"
+      ]
+    },
+    {
+      "ref": "S8",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 155.0,
+      "y": 85.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R76",
+      "footprint": "R_0603_1608Metric",
+      "x": 104.4,
+      "y": 27.4,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R14",
+      "footprint": "R_0603_1608Metric",
+      "x": 99.8,
+      "y": 84.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C20",
+      "footprint": "C_0603_1608Metric",
+      "x": 94.33,
+      "y": 35.4,
+      "rotation": -90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R45",
+      "footprint": "R_0603_1608Metric",
+      "x": 65.8,
+      "y": 94.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R96",
+      "footprint": "R_0603_1608Metric",
+      "x": 46.6,
+      "y": 37.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C38",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 23.0,
+      "y": 28.5,
+      "rotation": 0.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "R100",
+      "footprint": "R_0603_1608Metric",
+      "x": 47.5,
+      "y": 31.8,
+      "rotation": 180.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "D14",
+      "footprint": "LED_0603_1608Metric",
+      "x": 130.428571,
+      "y": 94.0,
+      "rotation": 180.0,
+      "models": [
+        "LED_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R77",
+      "footprint": "R_0603_1608Metric",
+      "x": 167.2,
+      "y": 76.8,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R99",
+      "footprint": "R_1206_3216Metric",
+      "x": 36.5,
+      "y": 42.0,
+      "rotation": 0.0,
+      "models": [
+        "R_1206_3216Metric.step"
+      ]
+    },
+    {
+      "ref": "R62",
+      "footprint": "R_0603_1608Metric",
+      "x": 63.8,
+      "y": 38.8,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R12",
+      "footprint": "R_0603_1608Metric",
+      "x": 75.2,
+      "y": 84.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R71",
+      "footprint": "R_0603_1608Metric",
+      "x": 139.6,
+      "y": 94.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R44",
+      "footprint": "R_0603_1608Metric",
+      "x": 151.8,
+      "y": 78.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R72",
+      "footprint": "R_0603_1608Metric",
+      "x": 151.8,
+      "y": 94.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "S7",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 142.714286,
+      "y": 85.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R35",
+      "footprint": "R_0603_1608Metric",
+      "x": 78.2,
+      "y": 78.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C25",
+      "footprint": "C_0603_1608Metric",
+      "x": 146.2,
+      "y": 35.6,
+      "rotation": 90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R11",
+      "footprint": "R_0603_1608Metric",
+      "x": 62.8,
+      "y": 84.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R61",
+      "footprint": "R_0603_1608Metric",
+      "x": 65.4,
+      "y": 38.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R80",
+      "footprint": "R_0603_1608Metric",
+      "x": 167.2,
+      "y": 73.575,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C41",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 40.5,
+      "y": 36.5,
+      "rotation": 90.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "C16",
+      "footprint": "CP_Elec_6.3x7.7",
+      "x": 20.5,
+      "y": 55.0,
+      "rotation": 180.0,
+      "models": [
+        "CP_Elec_6.3x7.7.step"
+      ]
+    },
+    {
+      "ref": "R79",
+      "footprint": "R_0603_1608Metric",
+      "x": 174.4,
+      "y": 76.6,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "FD2",
+      "footprint": "Fiducial_1mm_Mask2mm",
+      "x": 2.0011,
+      "y": 11.0036,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "U10",
+      "footprint": "SOT-223-3_TabPin2",
+      "x": 27.5,
+      "y": 45.75,
+      "rotation": -90.0,
+      "models": [
+        "SOT-223.step"
+      ]
+    },
+    {
+      "ref": "C13",
+      "footprint": "C_0603_1608Metric",
+      "x": 158.6,
+      "y": 37.0,
+      "rotation": 90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R63",
+      "footprint": "R_0603_1608Metric",
+      "x": 62.2,
+      "y": 38.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "S4",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 105.857143,
+      "y": 85.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "D17",
+      "footprint": "D_SOD-323F",
+      "x": 6.8,
+      "y": 22.5,
+      "rotation": -90.0,
+      "models": [
+        "D_SOD-323F.step"
+      ]
+    },
+    {
+      "ref": "R46",
+      "footprint": "R_0603_1608Metric",
+      "x": 78.2,
+      "y": 94.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R68",
+      "footprint": "R_0603_1608Metric",
+      "x": 131.0,
+      "y": 40.0,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R81",
+      "footprint": "R_0603_1608Metric",
+      "x": 6.0,
+      "y": 29.4,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C11",
+      "footprint": "CP_Elec_4x5.8",
+      "x": 52.4,
+      "y": 31.75,
+      "rotation": 180.0,
+      "models": [
+        "CP_Elec_4x5.8.step"
+      ]
+    },
+    {
+      "ref": "R18",
+      "footprint": "R_0603_1608Metric",
+      "x": 134.3875,
+      "y": 34.6025,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C40",
+      "footprint": "C_0603_1608Metric",
+      "x": 23.0,
+      "y": 43.25,
+      "rotation": -90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R4",
+      "footprint": "R_0603_1608Metric",
+      "x": 178.2,
+      "y": 60.2,
+      "rotation": 90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "S16",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 155.0,
+      "y": 101.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "D21",
+      "footprint": "D_SOD-323F",
+      "x": 175.13,
+      "y": 51.225,
+      "rotation": 180.0,
+      "models": [
+        "D_SOD-323F.step"
+      ]
+    },
+    {
+      "ref": "C3",
+      "footprint": "C_0603_1608Metric",
+      "x": 150.2,
+      "y": 39.2,
+      "rotation": 180.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "VR2",
+      "footprint": "9MM_SNAP-IN_POT_SILK",
+      "x": 74.4025,
+      "y": 56.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "S11",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 93.571429,
+      "y": 101.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "C33",
+      "footprint": "C_0805_2012Metric",
+      "x": 9.6,
+      "y": 30.1,
+      "rotation": 0.0,
+      "models": [
+        "C_0805_2012Metric.step"
+      ]
+    },
+    {
+      "ref": "J3",
+      "footprint": "Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal",
+      "x": 54.285,
+      "y": 20.235,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "H4",
+      "footprint": "MountingHole_3.5mm_Pad",
+      "x": 192.0,
+      "y": 106.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R85",
+      "footprint": "R_0603_1608Metric",
+      "x": 157.0,
+      "y": 37.0,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "S13",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 118.142857,
+      "y": 101.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "D25",
+      "footprint": "D_SOD-323F",
+      "x": 75.5,
+      "y": 20.5,
+      "rotation": -90.0,
+      "models": [
+        "D_SOD-323F.step"
+      ]
+    },
+    {
+      "ref": "C27",
+      "footprint": "C_0603_1608Metric",
+      "x": 51.4,
+      "y": 37.6,
+      "rotation": -90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "U7",
+      "footprint": "SOT-23-5",
+      "x": 6.0,
+      "y": 26.5,
+      "rotation": -90.0,
+      "models": [
+        "SOT-23-5.step"
+      ]
+    },
+    {
+      "ref": "R26",
+      "footprint": "R_0603_1608Metric",
+      "x": 124.4,
+      "y": 100.8,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R41",
+      "footprint": "R_0603_1608Metric",
+      "x": 127.4,
+      "y": 78.0,
+      "rotation": 0.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "C21",
+      "footprint": "C_0603_1608Metric",
+      "x": 172.74,
+      "y": 76.6,
+      "rotation": -90.0,
+      "models": [
+        "C_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "R82",
+      "footprint": "R_0603_1608Metric",
+      "x": 4.9,
+      "y": 22.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "J1",
+      "footprint": "Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal",
+      "x": 154.685,
+      "y": 20.235,
+      "rotation": 90.0,
+      "models": []
+    },
+    {
+      "ref": "R15",
+      "footprint": "R_0603_1608Metric",
+      "x": 112.0,
+      "y": 84.6,
+      "rotation": -90.0,
+      "models": [
+        "R_0603_1608Metric.step"
+      ]
+    },
+    {
+      "ref": "S6",
+      "footprint": "TL1105SPF250Q_SILK",
+      "x": 130.428571,
+      "y": 85.0,
+      "rotation": 0.0,
+      "models": []
+    },
+    {
+      "ref": "R95",
+      "footprint": "R_1206_3216Metric",
+      "x": 12.6,
+      "y": 50.8,
+      "rotation": -90.0,
+      "models": [
+        "R_1206_3216Metric.step"
+      ]
+    }
+  ],
+  "model_sha256": {
+    "R_1206_3216Metric.step": "f5d1ea5c47935091292bd1c6c698e0df88d3d4bbf92bf66b4c97e49df5be9ebc",
+    "R_0603_1608Metric.step": "1875571c326d0d9e96f36b4efeb8094068ef7619f0a449c781caf0b49c2e5861",
+    "C_0603_1608Metric.step": "4857b3dc717675bf1fb22edda622ac3b3ae03cf44d81eefaf3fa3ba3a86d84c1",
+    "SOIC-8_3.9x4.9mm_P1.27mm.step": "07f46cff378d30e6c27dfd5a03092c795323f86d91c71fc7e743f4f418dc553a",
+    "CP_Elec_4x5.8.step": "0c6dd82a7bb86ef54615d5eaa9561aee3c07a454313148e9bee2ac991dff2ee1",
+    "LED_0603_1608Metric.step": "98343205ec260ec165026ba2d44329a23096779ac36c553ea84aa7b370242e6d",
+    "SOIC-16_3.9x9.9mm_P1.27mm.step": "d5eeddb4c0b304dc61950919b126fc61d7586abd5f16ab71a2a79759ec6498bf",
+    "CP_Elec_6.3x7.7.step": "c2a2efc3a0562b25c21f2b732dd2d6f0c3ff67148e12d40edff0e8fbdf71989b",
+    "C_0805_2012Metric.step": "9a669c1a2f1ea25b88b401acef6efeaa80a067bd7da9db6993de719a7fbe155c",
+    "D_SOD-323F.step": "be5930ed2efe5eca953bd400465c68e8d6fe18bbed65f5a40cb96114f48e8ca0",
+    "TSSOP-28_4.4x9.7mm_P0.65mm.step": "0da3bcc5863b5b295ec337129525942b8ff4242bfc7462229dc96d0b183b0508",
+    "SOT-23.step": "dd5d1711204e1d8d26cd11490923bd84340820baa69538c385a4300ec2539bc0",
+    "USB4110GFA.step": "fa161d7d7fc808ceecbd7a3d842de494d0bfdb736fba086b9d364266e12560be",
+    "SOT-23-6.step": "c9fe686b4d1b56927a41fa84a9bc1efb61d8a45a123a3db43bcaa05c2891d635",
+    "DIP-6_W7.62mm.step": "a4460ddeadf04a1914d6bacbeb5b59d684aa99d513b0a3b223dbfdd0c77830c1",
+    "TF-01A.step": "beaa621cd06ec90f57026be6afc7c98b55884cc29014761ac43d8f271eb70b3f",
+    "SOT-223.step": "77ad6dbacc493cb619c728f26d2ddcf461eb0feb6b977b47d01d51e67016f654",
+    "SOT-23-5.step": "720a6eab0024069bbee68e7cb4c3ff1149468a34611225cdc852662c5d0ec2b7"
+  },
+  "imported_model_footprints": 186,
+  "missing_model_refs": [
+    "FD3",
+    "J10",
+    "J8",
+    "H1",
+    "RV1",
+    "LOGO1",
+    "VR7",
+    "J_GATE_IN2",
+    "VR3",
+    "VR5",
+    "SW17",
+    "FD1",
+    "S1",
+    "VR1",
+    "S12",
+    "S9",
+    "J_CV_OUT_1",
+    "S5",
+    "J_GATE_IN1",
+    "A1",
+    "J_CV_OUT_2",
+    "VR4",
+    "S3",
+    "S15",
+    "J_CV_IN_1",
+    "J5",
+    "J2",
+    "S2",
+    "S14",
+    "L2",
+    "H2",
+    "S10",
+    "VR6",
+    "J_CV_IN_2",
+    "SW18",
+    "J4",
+    "H3",
+    "U1",
+    "VR8",
+    "J11",
+    "QR1",
+    "S8",
+    "S7",
+    "FD2",
+    "S4",
+    "S16",
+    "VR2",
+    "S11",
+    "J3",
+    "H4",
+    "S13",
+    "J1",
+    "S6"
+  ],
+  "seed3_fbx_sha256": "0bfeef929495de2b55715db5178b1817f4db20a65999788f6b51e0dbe03e18f5"
+}

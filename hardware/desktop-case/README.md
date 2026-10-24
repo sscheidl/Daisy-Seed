@@ -8,6 +8,9 @@ Schaltermuttern befestigen nur die untere Acrylplatte. Geometrie digital
 geprüft; Kappenhöhe, Pfostentoleranzen, Festigkeit und Passung am Board
 NICHT GEMESSEN. Noch keine Fertigungsfreigabe.
 
+Eine [detaillierte Baugruppenansicht mit KiCad-Bestückung, Seed3-Modell,
+Materialien und GLB-/STL-Export](REALISTIC_RENDER.md) ergänzt den CAD-Entwurf.
+
 Die [V2 mit getrennten Hauben und Raster](CLOSED_V2.md) bleibt als frühere
 Konstruktionsstudie erhalten.
 
