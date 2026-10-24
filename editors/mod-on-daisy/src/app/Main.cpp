@@ -35,6 +35,7 @@ class SelfTest {
         log_.replaceWithText({});
         ToyPiano();
         PhysicalModeling();
+        Corrections();
         Offline();
         if(failures_)
             Say("FAIL: " + juce::String(failures_) + " checks");
@@ -182,6 +183,7 @@ class SelfTest {
         SELFTEST_CHECK(Settle() && e_.GetSession().Device().key == "physical-modeling");
         Model& m = e_.GetModel();
         SELFTEST_CHECK(m.columns[5].name == "Excitation" && !m.Allowed(7 * 8 + 5));
+        SELFTEST_CHECK(m.columns[6].name == "Level"); // replaced the reverb decay (mod2)
         auto& grid = e_.Grid();
         const int cells[][3] = {{0, 2, 40}, {1, 1, -30}, {2, 4, 25}, {6, 6, 60}, {7, 2, 70}, {7, 0, 12}};
         for(const auto& c : cells) {
@@ -194,6 +196,83 @@ class SelfTest {
         grid.Select(7 * 8 + 2);
         Shot("juce-editor-physical-modeling.png");
         Say("PASS physical-modeling: columns, Poly AT per voice, Excitation greyed out");
+    }
+
+    // Correction order 2026-10-24 in the real window: FM, ranges, aftertouch, health,
+    // compatibility question, port release.
+    void Corrections() {
+        e_.ConnectTo(PortIndex("Simulator: Physical Modeling"));
+        SELFTEST_CHECK(Settle() && e_.GetSession().Device().LfoFm());
+        Model& m = e_.GetModel();
+        Simulator& sim = *e_.GetSimulator();
+        ui::SourcePanel& lfo1 = e_.Source(0);
+        SELFTEST_CHECK(lfo1.Fm().isVisible() && lfo1.Fm().isEnabled() && !e_.Source(2).Fm().isVisible());
+        lfo1.Fm().setValue(35, juce::sendNotificationSync);
+        e_.Source(1).Rate().setValue(HzToRate(9.0f), juce::sendNotificationSync);
+        e_.GetSession().EditDepth(0 * 8 + 1, 50);
+        e_.GetSession().EditDepth(1 * 8 + 1, 20);
+        lfo1.Rate().setValue(HzToRate(20.0f), juce::sendNotificationSync);
+        SELFTEST_CHECK(Settle() && InSync() && sim.Device().CurrentPatch().lfo[0].fm == 35);
+        sim.Midi(0x90, 60, 100);
+        sim.Midi(0xA0, 60, 96);
+        e_.Step(300);
+        SELFTEST_CHECK(e_.Grid().Monitor().has_range && e_.Grid().Monitor().at_kind == 2);
+        SELFTEST_CHECK(e_.Grid().Monitor().max[0] - e_.Grid().Monitor().min[0] > 1.5f);
+        e_.Grid().Select(0 * 8 + 1);
+        Shot("juce-editor-ranges.png");
+        lfo1.Sync(mod::MidiClock).onClick();
+        SELFTEST_CHECK(Settle() && !lfo1.Fm().isEnabled() && m.patch.lfo[0].fm == 35);
+        e_.Step(200);
+        SELFTEST_CHECK(lfo1.ClockText().contains(ui::U("Kein MIDI-Clock")));
+        lfo1.Sync(mod::Free).onClick();
+        SELFTEST_CHECK(Settle() && lfo1.Fm().isEnabled());
+        Say("PASS corrections: LFO FM slider, ranges, aftertouch kind, clock state");
+
+        // Health: replies lost (port taken by another application), then back.
+        sim.drop_replies = 1;
+        e_.Step(1700);
+        e_.RefreshNow();
+        SELFTEST_CHECK(e_.GetSession().StatusText().find("keine Live-Daten") != std::string::npos);
+        e_.Step(3600);
+        e_.RefreshNow();
+        SELFTEST_CHECK(e_.GetSession().StatusText().find("keine Antwort") != std::string::npos);
+        Shot("juce-editor-no-replies.png");
+        sim.drop_replies = 0;
+        SELFTEST_CHECK(Settle() && e_.GetSession().LinkHealth() == Health::Ok && InSync());
+        Say("PASS corrections: health no live data / no replies / recovered");
+
+        // Compatibility: a Toy Piano file on Physical Modeling asks; cancel changes nothing,
+        // safe load switches the affected connections off.
+        Model toy;
+        toy.columns[0].name = "Pitch";
+        toy.SetDepth(0, 30);
+        DeviceInfo toy_device;
+        toy_device.key = "toy-piano";
+        const juce::File file = dir_.getChildFile("selftest-toy.modpatch");
+        file.replaceWithText(ui::U(SavePatch(toy, &toy_device)));
+        int asked = 0;
+        e_.compat_decision = [&](const Compatibility& c) {
+            ++asked;
+            SELFTEST_CHECK(c.key_mismatch && c.affected == Bit(0));
+            return ui::EditorComponent::CompatChoice::Cancel;
+        };
+        const uint32_t before = m.Crc();
+        e_.LoadFile(file);
+        SELFTEST_CHECK(Settle() && asked == 1 && m.Crc() == before && InSync());
+        e_.compat_decision = [](const Compatibility&) { return ui::EditorComponent::CompatChoice::Safe; };
+        e_.LoadFile(file);
+        SELFTEST_CHECK(Settle() && InSync() && !m.Enabled(0) && m.Depth(0) == 30);
+        e_.compat_decision = nullptr;
+        Say("PASS corrections: compatibility question (cancel, safe load)");
+
+        // A session that gives up releases the port at once (review F2).
+        e_.ConnectTo(PortIndex("Simulator: Physical Modeling"));
+        e_.GetSimulator()->drop_replies = 1;
+        for(int i = 0; i < 3000 && e_.GetSession().State() != LinkState::Offline; ++i)
+            e_.Step(1);
+        e_.Step(1);
+        SELFTEST_CHECK(e_.GetSession().State() == LinkState::Offline && !e_.PortOpen());
+        Say("PASS corrections: no answer to IDENTIFY releases the port");
     }
 
     void Offline() {

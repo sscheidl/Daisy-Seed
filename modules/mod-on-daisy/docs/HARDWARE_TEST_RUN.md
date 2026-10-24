@@ -1,6 +1,7 @@
 # Laufzettel Hardwaretest — Mod on Daisy, Toy Piano v0.3, Physical Modeling, Editoren
 
-**Stand:** 23. Oktober 2026. Ausgeführt wird lokal unter Windows am Seed3 Desktop Kit.
+**Stand:** 24. Oktober 2026 (Korrekturauftrag: E7b in zwei Reihenfolgen, E11–E17
+neu). Ausgeführt wird lokal unter Windows am Seed3 Desktop Kit.
 Die Firmware-Images und Werkzeuge sind gebaut und auf dem Host getestet. Am Gerät
 wurde noch nichts gemessen.
 
@@ -92,6 +93,15 @@ andere MIDI-Programme schließen, weil der Port nur einer Anwendung gehört.
 | E7 | M | Studio One mit aktivem Daisy-Port öffnen, dann im Editor **Verbinden** | klare Meldung „… belegt (z. B. Studio One) …“, kein Absturz |
 | E8 | M | Während der Verbindung das USB-Kabel an J7 ziehen, wieder stecken, **Verbinden** | „Gerät getrennt“, offline weiter bearbeitbar; danach Zustand vom Gerät geladen |
 | E9 | M | Physical Modeling: verbinden, Poly AT → Brightness +70, Akkord halten, eine Taste drücken | Poly AT × Excitation schraffiert; nur die gedrückte Stimme ändert sich |
+| E9b | M | Physical Modeling (`0.1.0-mod3`): Potis drehen, Modwheel → Level −100 | Spaltenköpfe zeigen einen weißen Strich am Grundwert, der dem Poti folgt; bei Level steht er fest bei 0,5. Spalte 7 heißt „Level“, das Modwheel blendet bis Stille aus |
+| E7b | M | Mehrere Programme pro Port prüfen (Windows MIDI Services), siehe [Editor-README](../../../editors/mod-on-daisy/README.md#studio-one-und-der-editor-gleichzeitig). **Beide Reihenfolgen**: (a) erst Studio One, dann Editor; (b) erst Editor, dann Studio One | Ergebnis je Reihenfolge notieren: gehen beide gleichzeitig? Bei (b): bekommt Studio One Noten, bleibt der Editor grün? |
+| E11 | M | Physical Modeling, LFO 1 → Structure +50, LFO 1 frei auf 20 Hz, dann MIDI-Clock 150 BPM 1/32 aus Studio One | LFO-1-Balken zeigt ein breites Band (nicht einen stehenden Wert); Spaltenkopf Structure zeigt den Bereich um den Grundwert, rote Enden, wenn er an 0 oder 1 anstößt. Clock stoppen: Zeile „Takt“ meldet „Kein MIDI-Clock – LFO steht“, das Band schrumpft |
+| E12 | M | Potis Structure auf ca. 10 %, 50 %, 90 %, jeweils mit LFO ±50 | Bereich ungefähr 0…0,6 / 0…1 / 0,4…1, begrenzte Enden rot; Klang passt zur Anzeige |
+| E13 | M | Keyboard nur mit Channel AT, dann nur mit Poly AT; bei Poly AT zwei Tasten halten und nur auf die **erste** drücken; loslassen | Anzeige „Aftertouch · Kanal“ bzw. „Poly · Note“, Punkt an der passenden Zeile; bei der ersten von zwei Tasten zeigt sie deren Druck; nach dem Loslassen 0. Klangwirkung wie bisher |
+| E14 | M | LFO 2 langsam (0,3 Hz) → nichts; LFO 1 → Pitch +20, „FM ← L2“ auf +60 | LFO 1 wird periodisch schneller und langsamer (hörbar am Vibrato). Bei LFO 1 auf MIDI-Clock ist der FM-Regler gesperrt |
+| E15 | M | Datei `legacy-reverb.modpatch` (aus `editors/mod-on-daisy/web/tests/`) im verbundenen Editor öffnen | Frage „Patch passt nicht genau …“ nennt „Reverb → Level“; „Abbrechen“ ändert nichts; „Ohne betroffene laden“ lässt Modwheel → Level ausgeschaltet |
+| E16 | M | Studio One belegt den Port, dann im Editor **Verbinden**; danach Studio One schließen und erneut **Verbinden** (beide Editoren) | Erster Versuch: klare Meldung, Port wird freigegeben; zweiter Versuch verbindet ohne Neustart des Editors |
+| E17 | M | Verbunden, dann in Studio One den Daisy-Eingang aktivieren (falls möglich) oder Kabel ziehen | Status wird nach ca. 1,5 s gelb „keine Live-Daten“, nach 5 s rot „keine Antwort“, eine Meldung im Log; nach Wiederherstellung grün und „Zustand wird neu geladen“ |
 | E10 | M | `editor/ModOnDaisyEditor.html` in Chrome/Edge, SysEx erlauben, verbinden, eine Zelle ändern | Bestätigung mit Patch-CRC wie im JUCE-Editor |
 
 Ergebnisse in [VALIDATION.md](VALIDATION.md) § 1b (JUCE-Editor) bzw. § 1a

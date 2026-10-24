@@ -34,6 +34,14 @@ class Diagnostics {
     virtual bool SetScenario(uint8_t scenario) = 0;
 };
 
+#if MOD_ON_DAISY_EXTENSIONS
+// Run-time switches for the compiled-in extensions (types.h).
+struct Extensions {
+    bool monitor = false; // extended monitor frames: base values, ranges, clocks, aftertouch
+    bool lfo_fm = false;  // LFO cross modulation, patch format 2
+};
+#endif
+
 class Controller {
   public:
     void Init(Engine& engine, LiveState& live, const InstrumentInfo& info, float sample_rate,
@@ -50,6 +58,17 @@ class Controller {
         Commit(Patch{});
     }
 
+#if MOD_ON_DAISY_EXTENSIONS
+    // Call once after Init. With LFO FM the device works with patch format 2.
+    void EnableExtensions(const Extensions& e) {
+        ext_ = e;
+        Patch p{};
+        p.format = e.lfo_fm ? 2 : 1;
+        Commit(p);
+    }
+    const Extensions& EnabledExtensions() const { return ext_; }
+#endif
+
     // Returns true if Mod on Daisy consumed the message. Notes are only observed.
     bool HandleMidi(const MidiMessage& m) {
         switch(m.status & 0xF0) {
@@ -60,7 +79,12 @@ class Controller {
                 else
                     live_->NoteOff(m.data0);
                 return false;
-            case 0xA0: live_->PolyPressure(m.data0, m.data1); return true;
+            case 0xA0:
+                live_->PolyPressure(m.data0, m.data1);
+#if MOD_ON_DAISY_EXTENSIONS
+                NoteAftertouch(kAtPoly, m.data0);
+#endif
+                return true;
             case 0xB0:
                 if(m.data0 == 1) {
                     live_->ModWheel(m.data1);
@@ -69,7 +93,12 @@ class Controller {
                 if(m.data0 == 120 || m.data0 == 123)
                     live_->AllNotesOff(); // All Sound/Notes Off: observed, passed on
                 return false;
-            case 0xD0: live_->ChannelPressure(m.data0); return true;
+            case 0xD0:
+                live_->ChannelPressure(m.data0);
+#if MOD_ON_DAISY_EXTENSIONS
+                NoteAftertouch(kAtChannel, 0);
+#endif
+                return true;
             default: break;
         }
         switch(m.status) {
@@ -101,11 +130,17 @@ class Controller {
             MarkSent(now_ms);
             return;
         }
+#if MOD_ON_DAISY_EXTENSIONS
+        if(at_count_ != at_seen_) { // timestamp of the last aftertouch message
+            at_seen_ = at_count_;
+            at_ms_ = now_ms;
+        }
+#endif
         if(monitor_rate_ && now_ms - last_monitor_ms_ >= 1000u / monitor_rate_) {
             last_monitor_ms_ = now_ms;
             engine_->Monitor().Fetch();
             const MonitorSnapshot& m = engine_->Monitor().Front();
-            uint8_t payload[36];
+            uint8_t payload[MOD_ON_DAISY_EXTENSIONS ? 89 : 36];
             proto::Writer w(payload, sizeof(payload));
             for(float v : m.source)
                 w.U14(proto::EncodeSigned(v));
@@ -113,6 +148,19 @@ class Controller {
                 w.U14(proto::EncodeSigned(v));
             for(float v : m.cv_raw)
                 w.U14(proto::EncodeSigned(v));
+#if MOD_ON_DAISY_EXTENSIONS
+            if(ext_.monitor) { // appended (89 bytes): clients reading 36 bytes are unaffected
+                for(float v : m.base)
+                    w.U14(proto::EncodeSigned(v));
+                for(float v : m.min)
+                    w.U14(proto::EncodeSigned(v));
+                for(float v : m.max)
+                    w.U14(proto::EncodeSigned(v));
+                w.U7(m.clocks);
+                AppendAftertouch(w, now_ms);
+                engine_->NextMonitorWindow(); // the next frame covers the ticks from here on
+            }
+#endif
             uint8_t frame[proto::kMaxFrame];
             const std::size_t size = proto::BuildFrame(frame, device_, proto::MonitorFrame, 0, payload, w.Size());
             out.Send(frame, size);
@@ -209,7 +257,13 @@ class Controller {
                 w.U14(unsigned(sample_rate_ / float(block_size_) + 0.5f));
                 w.U7(0); // preset slots: storage not implemented (D8)
                 w.U32(schema_);
-                w.U7(0x02 | (diagnostics_ ? 0x04 : 0) | 0x08); // monitor, diagnostics, Poly AT last note
+                // monitor, diagnostics, Poly AT last note, base values in the monitor
+#if MOD_ON_DAISY_EXTENSIONS
+            // bit 4/5: base values and ranges in the monitor, bit 6: LFO cross modulation
+            w.U7(0x02 | (diagnostics_ ? 0x04 : 0) | 0x08 | ExtensionCaps());
+#else
+            w.U7(0x02 | (diagnostics_ ? 0x04 : 0) | 0x08); // monitor, diagnostics, Poly AT last note
+#endif
                 return Ack(f, w);
             case proto::GetTarget: {
                 const unsigned t = r.U7();
@@ -281,11 +335,19 @@ class Controller {
                     const LfoParams& p = patch_.lfo[s];
                     w.U14(p.rate); w.U7(p.shape); w.U7(p.sync); w.U7(p.gate); w.U7(p.division); w.U7(p.retrigger);
                 }
+#if MOD_ON_DAISY_EXTENSIONS
+                if(ext_.lfo_fm) // appended: fm + 100 (Random: 100 = none)
+                    w.U14(unsigned((s == Random ? 0 : patch_.lfo[s].fm) + kMaxFm));
+#endif
                 return Ack(f, w);
             }
             case proto::SetSource: {
                 const unsigned s = r.U7(), param = r.U7(), value = r.U14();
+#if MOD_ON_DAISY_EXTENSIONS
+                if(!r.Ok() || !r.AtEnd() || s > Random || param >= kSourceParamCount + ExtraSourceParams())
+#else
                 if(!r.Ok() || !r.AtEnd() || s > Random || param >= kSourceParamCount)
+#endif
                     return Nak(f, ErrRange);
                 Patch p = patch_;
                 if(!SetSourceParam(p, s, param, value))
@@ -357,6 +419,33 @@ class Controller {
         }
     }
 
+#if MOD_ON_DAISY_EXTENSIONS
+    unsigned ExtraSourceParams() const { return ext_.lfo_fm ? 1u : 0u; }
+    uint8_t ExtensionCaps() const { return uint8_t((ext_.monitor ? 0x30 : 0) | (ext_.lfo_fm ? 0x40 : 0)); }
+
+    // Last received aftertouch for the editor's single "Aftertouch" display: the kind
+    // follows the last message (also with value 0), independent of any matrix routing.
+    static constexpr uint8_t kAtNone = 0, kAtChannel = 1, kAtPoly = 2;
+    void NoteAftertouch(uint8_t kind, uint8_t note) {
+        at_kind_ = kind;
+        at_note_ = note & 127;
+        ++at_count_;
+    }
+    // u7 kind · u7 note · u7 value (current: Poly 0 after Note Off) · u7 age in 20 ms (127 = old)
+    void AppendAftertouch(proto::Writer& w, uint32_t now_ms) const {
+        uint8_t value = 0;
+        if(at_kind_ == kAtChannel)
+            value = live_->ChannelPressureRaw();
+        else if(at_kind_ == kAtPoly)
+            value = live_->Held(at_note_) ? live_->PressureRaw(at_note_) : 0;
+        const uint32_t age = at_kind_ == kAtNone ? 127u : (now_ms - at_ms_) / 20u;
+        w.U7(at_kind_);
+        w.U7(at_note_);
+        w.U7(value);
+        w.U7(age > 127u ? 127u : age);
+    }
+#endif
+
     static bool SetSourceParam(Patch& p, unsigned s, unsigned param, unsigned value) {
         uint16_t* rate;
         uint8_t *shape, *sync, *gate, *division, *retrigger = nullptr;
@@ -387,6 +476,13 @@ class Controller {
                     return false;
                 *retrigger = uint8_t(value > 255 ? 255 : value);
                 break;
+#if MOD_ON_DAISY_EXTENSIONS
+            case ParamFm: // only reachable with ext_.lfo_fm (ExtraSourceParams)
+                if(s == Random || value > unsigned(2 * kMaxFm))
+                    return false;
+                p.lfo[s].fm = int8_t(int(value) - kMaxFm);
+                break;
+#endif
             default: return false;
         }
         return s == Random ? ValidateSource(p.random) == Status::Ok : ValidateSource(p.lfo[s]) == Status::Ok;
@@ -477,6 +573,11 @@ class Controller {
     uint32_t last_send_ms_ = 0, last_monitor_ms_ = 0, monitor_since_ = 0;
     bool sent_once_ = false, monitor_renewed_ = false;
     uint8_t monitor_rate_ = 0;
+#if MOD_ON_DAISY_EXTENSIONS
+    Extensions ext_{};
+    uint8_t at_kind_ = 0, at_note_ = 0;
+    uint32_t at_count_ = 0, at_seen_ = 0, at_ms_ = 0; // main loop only
+#endif
     uint32_t rejected_frames_ = 0, dropped_replies_ = 0;
 };
 }

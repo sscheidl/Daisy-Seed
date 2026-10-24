@@ -20,6 +20,7 @@ The port defaults to the first one containing "Daisy"; use --port to choose.
 import argparse
 import csv
 import random
+import re
 import sys
 import time
 
@@ -31,7 +32,7 @@ CMD = dict(identify=0x01, get_target=0x02, get_allowed=0x03, get_matrix=0x10, se
            reset_stats=0x32, set_scenario=0x33)
 MONITOR_FRAME, NAK = 0x7E, 0x7F  # 0x70 is the reply to MONITOR
 SOURCES = ['LFO1', 'LFO2', 'RANDOM', 'CV1', 'CV2', 'MODWHEEL', 'CHAT', 'POLYAT']
-SOURCE_PARAMS = ['rate', 'shape', 'sync', 'gate', 'division', 'retrigger']
+SOURCE_PARAMS = ['rate', 'shape', 'sync', 'gate', 'division', 'retrigger', 'fm']  # fm: -100..100, LFO cross modulation (capability bit 6)
 ERRORS = {1: 'checksum', 2: 'length', 3: 'unknown command', 4: 'range', 5: 'busy', 6: 'version',
           7: 'limit of active connections', 8: 'cell not allowed', 9: 'not implemented', 10: 'storage',
           11: 'schema'}
@@ -137,9 +138,9 @@ def crc32(data):
     return zlib.crc32(bytes(data)) & 0xFFFFFFFF
 
 
-def serialize_patch(depth, enabled, lfo, rnd, name):
-    """Same byte layout as Serialize() in patch.h (109 bytes)."""
-    b = bytearray([1])
+def serialize_patch(depth, enabled, lfo, rnd, name, fmt=1):
+    """Same byte layout as Serialize() in patch.h (109 bytes; format 2: + fm of both LFOs)."""
+    b = bytearray([fmt])
     for s in range(8):
         for t in range(8):
             b.append(depth[s][t] & 0xFF)
@@ -149,6 +150,8 @@ def serialize_patch(depth, enabled, lfo, rnd, name):
                     l['retrigger']])
     b += bytes([rnd['rate'] & 0xFF, rnd['rate'] >> 8, rnd['mode'], rnd['sync'], rnd['gate'], rnd['division']])
     b += name.encode('ascii')[:16].ljust(16, b'\0')
+    if fmt == 2:
+        b += bytes([l.get('fm', 0) & 0xFF for l in lfo])
     return bytes(b)
 
 
@@ -169,10 +172,56 @@ def selftest():
     patch = serialize_patch(depth, enabled, lfo, rnd, 'Vector')
     assert len(patch) == 109
     assert crc32(patch) == 0xE2340CC6, hex(crc32(patch))
+    # Format 2 (LFO cross modulation), reference values of patch.h with MOD_ON_DAISY_EXTENSIONS.
+    lfo[0]['fm'], lfo[1]['fm'] = -37, 100
+    patch2 = serialize_patch(depth, enabled, lfo, rnd, 'Vector', fmt=2)
+    assert len(patch2) == 111 and crc32(patch2) == 0x9D6E020E, hex(crc32(patch2))
+    default2 = serialize_patch([[0] * 8 for _ in range(8)], [0] * 8,
+                               [dict(rate=6000, shape=0, sync=0, gate=0, division=4, retrigger=0)] * 2,
+                               rnd, '', fmt=2)
+    assert crc32(default2) == 0xC422B385, hex(crc32(default2))
+    # Port pairing: Windows indices differ per direction (hardware test of 24.10.2026),
+    # ALSA appends client:port, macOS uses the plain name.
+    win_out = ['Microsoft GS Wavetable Synth 0', 'Tulip 1', 'Daisy Seed External 19']
+    win_in = ['Tulip 0', 'General MIDI Synth 17', 'Daisy Seed External 18']
+    assert matching_input('Daisy Seed External 19', win_out, win_in) == 'Daisy Seed External 18'
+    assert resolve_port('Daisy Seed External', win_out) == 'Daisy Seed External 19'
+    assert resolve_port('Daisy Seed External 18', win_out) == 'Daisy Seed External 19'
+    two_out, two_in = ['Daisy Seed External 3', 'Daisy Seed External 4'], ['Daisy Seed External 1', 'Daisy Seed External 2']
+    assert matching_input('Daisy Seed External 4', two_out, two_in) == 'Daisy Seed External 2'
+    alsa = ['Daisy Seed External:Daisy Seed External MIDI 1 20:0']
+    assert matching_input(alsa[0], alsa, alsa) == alsa[0]
+    assert matching_input('Daisy Seed External', ['Daisy Seed External'], ['Daisy Seed External']) == 'Daisy Seed External'
     print('selftest passed')
 
 
 # ---------------------------------------------------------------- device link
+def port_base(name):
+    # rtmidi decorates port names per platform: Windows appends an index that differs
+    # between inputs and outputs ('Daisy Seed External 18' / '... 19'), ALSA appends
+    # ':port client:port'. The base is the name without these decorations.
+    return re.sub(r'\s+\d+$', '', name.split(':')[0]).strip()
+
+
+def resolve_port(wanted, names):
+    # Exact name first, otherwise the first port with the same base name.
+    if wanted in names:
+        return wanted
+    return next((n for n in names if port_base(n) == port_base(wanted)), None)
+
+
+def matching_input(out_name, out_names, in_names):
+    # The k-th output of a base name pairs with the k-th input of that base name, so two
+    # kits with the same name keep their own ports.
+    base = port_base(out_name)
+    outs = [n for n in out_names if port_base(n) == base]
+    ins = [n for n in in_names if port_base(n) == base]
+    if not ins:
+        return next((n for n in in_names if out_name in n), None)
+    k = outs.index(out_name) if out_name in outs else 0
+    return ins[min(k, len(ins) - 1)]
+
+
 class Device:
     def __init__(self, port_name=None, device=0, timeout=0.25):
         import mido
@@ -180,10 +229,11 @@ class Device:
         names = mido.get_output_names()
         if port_name is None:
             port_name = next((n for n in names if 'Daisy' in n), None)
+        else:
+            port_name = resolve_port(port_name, names) or port_name
         if port_name is None:
             sys.exit('no MIDI port with "Daisy" in its name; use --port (see "ports")')
-        in_name = next((n for n in mido.get_input_names() if n.split(':')[0] == port_name.split(':')[0]
-                        or port_name in n), port_name)
+        in_name = matching_input(port_name, names, mido.get_input_names()) or port_name
         try:
             self.out = mido.open_output(port_name)
             self.inp = mido.open_input(in_name)
@@ -365,11 +415,23 @@ def monitor(dev, seconds, rate=20):
         while dev.monitor:
             _, data = dev.monitor.pop(0)
             r = Reader(data)
-            values = [signed(r.u14()) for _ in range(18)]
+            # 18 values, plus 8 column base values (pot/CC position) when the
+            # instrument reports them (52 bytes, IDENTIFY capability bit 4).
+            values = [signed(r.u14()) for _ in range(len(data) // 2)]
             raw[0].append(values[16])
             raw[1].append(values[17])
-            print(' '.join(f'{SOURCES[i][:5]}={values[i]:+.3f}' for i in range(8)),
-                  '| CV raw', f'{values[16]:+.4f} {values[17]:+.4f}')
+            line = ' '.join(f'{SOURCES[i][:5]}={values[i]:+.3f}' for i in range(8))
+            line += ' | CV raw ' + f'{values[16]:+.4f} {values[17]:+.4f}'
+            if len(values) >= 26:
+                line += ' | base ' + ' '.join('--' if v < 0 else f'{v:.2f}' for v in values[18:26])
+            if len(data) >= 89:  # extended monitor: per-window range, clocks, aftertouch
+                lo, hi = values[26:34], values[34:42]
+                line += ' | range ' + ' '.join(f'{SOURCES[i][:4]}{lo[i]:+.2f}..{hi[i]:+.2f}' for i in range(3))
+                clocks, kind, note, value, age = data[84:89]
+                line += f' | clock {"M" if clocks & 1 else "-"}{"1" if clocks & 2 else "-"}{"2" if clocks & 4 else "-"}'
+                line += ' | AT ' + ('-' if kind == 0 else ('Kanal' if kind == 1 else f'Poly n{note}'))
+                line += f' {value} ({"alt" if age >= 127 else f"{age * 20} ms"})'
+            print(line)
     dev.request(CMD['monitor'], bytes([0]))
     for i in range(2):
         if raw[i]:
@@ -397,6 +459,9 @@ def cc_stats(dev):
 
 
 def main():
+    # The matrix printout uses non-ASCII cell marks; a Windows console defaults to cp1252.
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--port')
     p.add_argument('--device', type=int, default=0)
@@ -449,7 +514,8 @@ def main():
         r.u7()
         print(f'active {r.u7()}, patch CRC {r.u32():08X}')
     elif args.cmd == 'source':
-        value = Writer().u7(SOURCES.index(args.source)).u7(SOURCE_PARAMS.index(args.param)).u14(args.value)
+        raw = args.value + 100 if args.param == 'fm' else args.value  # fm is sent as fm + 100
+        value = Writer().u7(SOURCES.index(args.source)).u7(SOURCE_PARAMS.index(args.param)).u14(raw)
         dev.request(CMD['set_source'], bytes(value.data))
     elif args.cmd == 'scenario':
         dev.request(CMD['set_scenario'], bytes([args.number]))

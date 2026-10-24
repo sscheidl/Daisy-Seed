@@ -9,6 +9,7 @@
 #include "MidiPort.h"
 #include "SourcePanel.h"
 #include "Theme.h"
+#include <functional>
 #include <iterator>
 #include <memory>
 
@@ -41,6 +42,11 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     juce::TextEditor& NameField() { return name_; }
     // Applies pending view updates at once (the self-test has no message loop).
     void RefreshNow() { handleUpdateNowIfNeeded(); }
+    bool PortOpen() const { return midi_ || simulator_; }
+    // Answer to the compatibility question when loading a file (the dialog's buttons).
+    enum class CompatChoice { Cancel = 0, Safe = 1, Force = 2 };
+    // Set by the self-test: decides instead of the modal dialog.
+    std::function<CompatChoice(const Compatibility&)> compat_decision;
 
   private:
     struct Port {
@@ -58,7 +64,9 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     void Log(LogKind kind, const juce::String& text);
     void OpenFileDialog();
     void SaveFileDialog();
-    void ApplyLoaded(const LoadedPatch& loaded);
+    void ApplyLoaded(const LoadedPatch& loaded, const mod::Patch& patch);
+    void ApplyDecision(const LoadedPatch& loaded, const Compatibility& compat, CompatChoice choice);
+    void ReleasePort();
 
     LookAndFeel look_;
     Model model_;

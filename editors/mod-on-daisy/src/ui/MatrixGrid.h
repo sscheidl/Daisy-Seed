@@ -9,6 +9,10 @@ namespace editor::ui {
 class MatrixGrid : public juce::Component, public juce::TooltipClient {
   public:
     static constexpr int kRowHeader = 124, kColHeader = 58, kGap = 4;
+    // Firmware without the extended monitor: above a quarter of the monitor rate a sampled
+    // free LFO looks frozen (20 Hz sampled at 20 Hz shows one value), so the meter shows a
+    // band instead. With the extended monitor the device reports the swept range itself.
+    static constexpr float kFastHz = float(Session::kMonitorRate) / 4.0f;
 
     std::function<void(int cell)> selected; // selection changed
 
@@ -26,6 +30,15 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         has_monitor_ = false;
         repaint();
     }
+    // Called about once a second: shows when the live data stops arriving.
+    void CheckStale() {
+        if(Stale() != painted_stale_)
+            repaint();
+    }
+    // The session decides (1.5 s without monitor frames, 5 s without anything).
+    bool Stale() const { return session_.Connected() && (!has_monitor_ || session_.LinkHealth() != Health::Ok); }
+    const MonitorValues& Monitor() const { return monitor_; }
+    bool HasMonitor() const { return has_monitor_; }
 
     juce::Rectangle<int> CellBounds(int cell) const {
         const float w = float(getWidth() - kRowHeader - 7 * kGap) / 8.0f;
@@ -52,6 +65,16 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
     }
 
     void paint(juce::Graphics& g) override {
+        painted_stale_ = Stale();
+        const juce::Rectangle<int> corner(0, 0, kRowHeader - 10, kColHeader - 8);
+        if(painted_stale_) {
+            g.setColour(colour::warn);
+            g.setFont(juce::FontOptions(11.5f));
+            g.drawFittedText(U(session_.LinkHealth() == Health::NoReplies ? "keine Antwort vom Gerät" : "keine Live-Daten"),
+                             corner, juce::Justification::bottomLeft, 2);
+        } else if(session_.Connected()) {
+            PaintAftertouch(g, corner);
+        }
         for(int t = 0; t < int(mod::kTargets); ++t)
             PaintColumnHeader(g, t);
         for(int s = 0; s < int(mod::kSources); ++s)
@@ -128,7 +151,55 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
     }
 
     juce::String getTooltip() override {
-        const int cell = CellAt(getMouseXYRelative());
+        const juce::Point<int> p = getMouseXYRelative();
+        const int cell = CellAt(p);
+        if(cell == kNoCell && p.x < kRowHeader && p.y > kColHeader) {
+            const int s = juce::jlimit(0, int(mod::kSources) - 1, (p.y - kColHeader) * int(mod::kSources)
+                                                                     / std::max(1, getHeight() - kColHeader));
+            switch(SourceMeter(s)) {
+                case Meter::Idle: return U("Keine aktive Verbindung: die Quelle wird nicht berechnet, die Anzeige ruht.");
+                case Meter::Fast: return U("Schneller als die Live-Anzeige (20 Bilder/s): Band statt Wert. Diese "
+                                           "Firmware meldet den durchlaufenen Bereich nicht.");
+                case Meter::Stale: return U("Keine Live-Daten vom Gerät. Ist der Port von einer anderen Anwendung belegt?");
+                case Meter::Live: break;
+            }
+            juce::String tip = U(kSourceNames[s]) + ": " + juce::String(monitor_.source[s], 2);
+            if(monitor_.has_range)
+                tip << U(" (Bereich der letzten 50 ms ") << juce::String(monitor_.min[s], 2) << U(" … ")
+                    << juce::String(monitor_.max[s], 2) << U(": Band; Strich: aktueller Wert)");
+            if(s <= mod::Random && model_.SourceParam(s, mod::ParamSync) != mod::Free)
+                tip << "\n" << U(ClockText(s));
+            return tip;
+        }
+        if(cell == kNoCell && p.x < kRowHeader && p.y < kColHeader)
+            return U(AftertouchTip());
+        if(cell == kNoCell && p.y < kColHeader && p.x >= kRowHeader) {
+            const int t = juce::jlimit(0, int(mod::kTargets) - 1, (p.x - kRowHeader) * int(mod::kTargets)
+                                                                     / std::max(1, getWidth() - kRowHeader));
+            const Column& col = model_.columns[std::size_t(t)];
+            if(!col.present)
+                return U("Das Instrument hat hier kein Ziel.");
+            juce::String tip = U(col.name) + U(": Tiefe 100 = ") + U(col.SpanLabel());
+            const GoalSpan span = GoalSpanOf(model_, monitor_, std::size_t(t));
+            if(has_monitor_ && span.has_base) {
+                tip << U("\nGrundwert ") << juce::String(monitor_.base[t], 2)
+                    << U(" (weißer Strich: Poti, CC oder fester Wert des Instruments, vor der Modulation)")
+                    << U("\nSollwert jetzt ") << juce::String(monitor_.Result(std::size_t(t)), 2) << U(", Bereich ")
+                    << juce::String(span.lo, 2) << U(" … ") << juce::String(span.hi, 2)
+                    << (span.clipped_low || span.clipped_high ? U(" (rote Enden: bei 0 bzw. 1 begrenzt)") : U(""));
+            } else if(has_monitor_) {
+                tip << U("\nGlobaler Offset ") << juce::String(monitor_.offset[t], 2)
+                    << U(" (das Instrument meldet keinen Grundwert)");
+            }
+            if(has_monitor_)
+                tip << U("\nSollwert vor der Glättung im Instrument, nur der globale Anteil.");
+            if(span.voice_part)
+                tip << U(" Poly AT wirkt hier zusätzlich pro Stimme und ist nicht enthalten.");
+            if(col.latched)
+                tip << U("\nWird beim Anschlag übernommen: Änderungen wirken ab der nächsten Note, klingende Noten "
+                         "bleiben, wie sie angeschlagen wurden.");
+            return tip;
+        }
         if(cell == kNoCell)
             return {};
         if(!model_.Allowed(cell))
@@ -154,9 +225,16 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         const juce::String span = col.present ? U(col.SpanLabel()) + (col.latched ? U(" · Anschlag") : U(""))
                                               : U("nicht vorhanden");
         g.drawText(span, r.removeFromTop(16), juce::Justification::centred);
-        if(col.present)
-            PaintMeter(g, r.removeFromTop(8).reduced(6, 2).toFloat(), has_monitor_ ? monitor_.offset[t] : 0.0f,
-                       true);
+        if(col.present && has_monitor_ && monitor_.HasBase(std::size_t(t)) && monitor_.has_range) {
+            const GoalSpan goal = GoalSpanOf(model_, monitor_, std::size_t(t));
+            PaintGoalMeter(g, r.removeFromTop(8).reduced(6, 2).toFloat(), monitor_.base[t], goal.lo, goal.hi,
+                           monitor_.Result(std::size_t(t)), goal.clipped_low, goal.clipped_high, Stale());
+        } else if(col.present && has_monitor_ && monitor_.HasBase(std::size_t(t)))
+            PaintBaseMeter(g, r.removeFromTop(8).reduced(6, 2).toFloat(), monitor_.base[t],
+                           monitor_.Result(std::size_t(t)), Stale());
+        else if(col.present)
+            PaintMeter(g, r.removeFromTop(8).reduced(6, 2).toFloat(), has_monitor_ ? monitor_.offset[t] : 0.0f, true,
+                       Stale() ? Meter::Stale : Meter::Live);
     }
 
     void PaintRowHeader(juce::Graphics& g, int s) {
@@ -165,9 +243,96 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         r = r.withSizeKeepingCentre(r.getWidth(), 30);
         g.setColour(colour::ink);
         g.setFont(juce::FontOptions(13.0f, juce::Font::bold));
-        g.drawText(U(kSourceNames[s]), r.removeFromTop(18), juce::Justification::centredLeft);
-        PaintMeter(g, r.removeFromTop(8).withTrimmedTop(2).toFloat(), has_monitor_ ? monitor_.source[s] : 0.0f,
-                   s < mod::ModWheel);
+        juce::Rectangle<int> title = r.removeFromTop(18);
+        g.drawText(U(kSourceNames[s]), title, juce::Justification::centredLeft);
+        // The kind the shared aftertouch display follows; both rows stay editable.
+        if((s == mod::ChannelAt || s == mod::PolyAt) && !Stale() && ShownAftertouch() == (s == mod::ChannelAt ? 1 : 2)) {
+            g.setColour(colour::accent);
+            g.fillEllipse(float(title.getRight() - 8), float(title.getCentreY() - 3), 6.0f, 6.0f);
+        }
+        const juce::Rectangle<float> bar = r.removeFromTop(8).withTrimmedTop(2).toFloat();
+        const Meter state = SourceMeter(s);
+        if(has_monitor_ && monitor_.has_range)
+            PaintSpanMeter(g, bar, monitor_.min[s], monitor_.max[s], monitor_.source[s], s < mod::ModWheel, state);
+        else
+            PaintMeter(g, bar, has_monitor_ ? monitor_.source[s] : 0.0f, s < mod::ModWheel, state);
+        if(s <= mod::Random && session_.Connected() && session_.Device().ExtendedMonitor()
+           && model_.SourceParam(s, mod::ParamSync) != mod::Free && !ClockRunning(s)) {
+            g.setColour(colour::warn);
+            g.setFont(juce::FontOptions(10.5f));
+            g.drawText(U("kein Takt"), juce::Rectangle<int>(0, int(bar.getBottom()), kRowHeader - 10, 12),
+                       juce::Justification::centredLeft);
+        }
+    }
+
+    // ------------------------------------------------------------------ aftertouch, clock
+    // 1 channel, 2 poly, 0 none or unknown (older firmware).
+    int ShownAftertouch() const { return has_monitor_ && monitor_.has_range ? monitor_.at_kind : 0; }
+
+    void PaintAftertouch(juce::Graphics& g, juce::Rectangle<int> r) {
+        r = r.withTrimmedTop(r.getHeight() - 34);
+        g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
+        g.setColour(colour::ink);
+        juce::Rectangle<int> line = r.removeFromTop(16);
+        g.drawText(U("Aftertouch"), line, juce::Justification::centredLeft);
+        g.setFont(juce::FontOptions(11.0f));
+        g.setColour(colour::muted);
+        const bool known = has_monitor_ && monitor_.has_range;
+        const int kind = ShownAftertouch();
+        juce::String detail = !known ? U("Kanal/Poly getrennt") : kind == 0 ? U("—")
+            : kind == 1 ? U("Kanal")
+                        : U("Poly · ") + NoteName(monitor_.at_note);
+        g.drawText(detail, line.withTrimmedLeft(66), juce::Justification::centredLeft);
+        const bool fresh = known && kind != 0 && monitor_.at_age < 127;
+        PaintMeter(g, r.removeFromTop(8).withTrimmedTop(2).toFloat(), float(known ? monitor_.at_value : 0) / 127.0f,
+                   false, fresh ? Meter::Live : Meter::Idle);
+    }
+
+    static juce::String NoteName(int note) { // C4 = 60, as in most DAWs
+        static const char* const names[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+        return juce::String(names[note % 12]) + juce::String(note / 12 - 1);
+    }
+
+    std::string AftertouchTip() const {
+        if(!has_monitor_ || !monitor_.has_range)
+            return "Aftertouch: Diese Firmware meldet nicht, welche Art zuletzt kam. Kanal-AT und Poly AT stehen "
+                   "getrennt in ihren Zeilen (eingeschränkte Anzeige).";
+        std::string tip = "Aftertouch folgt automatisch der zuletzt empfangenen Art (auch bei Wert 0). Kanal-AT und "
+                          "Poly AT bleiben technisch getrennte Zeilen; der Punkt markiert die angezeigte.";
+        if(monitor_.at_kind == 2)
+            tip += "\nPoly: zuletzt adressierte Note, solange sie gehalten wird. Globale Ziele nutzen weiter die "
+                   "zuletzt gespielte Note (Zeile Poly AT).";
+        if(monitor_.at_age == 127)
+            tip += "\nSeit über 2,5 s keine neue Aftertouch-Nachricht.";
+        return tip;
+    }
+
+    bool ClockRunning(int s) const { // unknown counts as running: not claimed either way
+        return !has_monitor_
+            || monitor_.ClockState(model_.SourceParam(s, mod::ParamSync), model_.SourceParam(s, mod::ParamGate)) != 0;
+    }
+    std::string ClockText(int s) const {
+        if(!has_monitor_ || !monitor_.has_range)
+            return "Taktzustand unbekannt (Firmware ohne erweiterten Monitor).";
+        const bool midi = model_.SourceParam(s, mod::ParamSync) == mod::MidiClock;
+        return ClockRunning(s) ? (midi ? "MIDI-Clock läuft." : "Gate-Impulse kommen an.")
+                               : (midi ? "Kein MIDI-Clock: der LFO steht." : "Keine Gate-Impulse: der LFO steht.");
+    }
+
+    Meter SourceMeter(int s) const {
+        if(Stale())
+            return Meter::Stale;
+        bool used = false;
+        for(int t = 0; t < int(mod::kTargets); ++t)
+            used = used || model_.Active(s * 8 + t);
+        if(!used)
+            return Meter::Idle;
+        if(has_monitor_ && monitor_.has_range)
+            return Meter::Live; // the band shows the real range for every sync mode
+        if(s <= mod::Random && model_.SourceParam(s, mod::ParamSync) == mod::Free
+           && RateToHz(model_.SourceParam(s, mod::ParamRate)) > kFastHz)
+            return Meter::Fast;
+        return Meter::Live;
     }
 
     void PaintCell(juce::Graphics& g, int c) {
@@ -225,7 +390,9 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         m.addItem(1, "Auf 0 setzen");
         m.addItem(2, "Invertieren", model_.Depth(cell) != 0);
         m.addItem(3, model_.Enabled(cell) ? "Ausschalten" : "Einschalten", model_.Depth(cell) != 0);
-        m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(this),
+        m.setLookAndFeel(&getLookAndFeel()); // the app's colours, not the platform default
+        // At the mouse pointer, as context menus open everywhere else.
+        m.showMenuAsync(juce::PopupMenu::Options().withMousePosition(),
                         [safe = juce::Component::SafePointer<MatrixGrid>(this), cell](int id) {
                             if(!safe)
                                 return;
@@ -243,7 +410,7 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
     Model& model_;
     Session& session_;
     MonitorValues monitor_;
-    bool has_monitor_ = false;
+    bool has_monitor_ = false, painted_stale_ = false;
     int drag_cell_ = kNoCell, drag_start_ = 0;
 };
 }

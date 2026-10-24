@@ -67,11 +67,21 @@ void Synth::Render(float* left, float* right) {
         wet_left[i] = left[i]; wet_right[i] = right[i];
     }
     reverb_.Process(wet_left, wet_right, kQuantum);
+#if PHYSICAL_MODELING_MOD
+    // Level column (Mod on Daisy): exactly 1 with an empty matrix, so master * 1 is unchanged.
+    const float level = parameters.Level();
+    for(size_t i = 0; i < kQuantum; ++i) {
+        left[i] = Output(Mix(left[i], wet_left[i], parameters.Get(Wet)) * level, parameters.Get(Master));
+        const float dry_right = ModelIndex() == 5 ? -right[i] : right[i];
+        right[i] = Output(Mix(dry_right, wet_right[i], parameters.Get(Wet)) * level, parameters.Get(Master));
+    }
+#else
     for(size_t i = 0; i < kQuantum; ++i) {
         left[i] = Output(Mix(left[i], wet_left[i], parameters.Get(Wet)), parameters.Get(Master));
         const float dry_right = ModelIndex() == 5 ? -right[i] : right[i];
         right[i] = Output(Mix(dry_right, wet_right[i], parameters.Get(Wet)), parameters.Get(Master));
     }
+#endif
 }
 void Synth::Process(float* left, float* right, size_t size) {
     // Hardware provides exactly 48 samples; reject malformed callback lengths safely.

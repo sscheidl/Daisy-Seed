@@ -1,6 +1,6 @@
 # Mod on Daisy — Validierung Phase 2
 
-**Stand:** 23. Oktober 2026 · Modul v0.1.0, Messfirmware ModBench v0.1.0
+**Stand:** 24. Oktober 2026 · Modul v0.1.0, Messfirmware ModBench v0.1.0
 **Umgebung:** Linux x86-64, GCC (Host), xPack ARM GCC 13.2.1-1.1, gepinnte libDaisy
 `f715e48`. Hardwareergebnisse werden vom Betreiber auf dem Seed3 Desktop Kit unter
 Windows ergänzt.
@@ -76,7 +76,94 @@ Rahmengrößen 95/100 Byte. Das Gerät startet mit der Standard-Patch-CRC `61C26
 * **Dateien**: Eine vom JUCE-Editor gespeicherte Datei ergibt im Browser-Editor dieselbe
   Patch-CRC (`506290C2`), eine Datei des Browser-Editors lädt im Kern unverändert.
 * **Windows** (MSVC): Build, Kerntest und Selbsttest laufen in der CI
-  (`.github/workflows/editor.yml`). Am echten Daisy unter Windows: `NICHT GEMESSEN`.
+  (`.github/workflows/editor.yml`).
+
+### Am Gerät: JUCE-Editor mit `PhysicalModelingMod-v0.1.0.bin` (`GEMESSEN` 23.10.2026)
+
+Vom Betreiber unter Windows mit `ModOnDaisyEditor.exe` (Stand PR #24) beobachtet und
+berichtet. Die Fehler sind auf dem Host nachvollzogen.
+
+| Nr. | Ergebnis |
+| --- | --- |
+| E1 | bestanden: Verbindung über „Daisy Seed External“, Status `physical-modeling 0.1.0-mod · ID 0`, alle 8 Spalten |
+| E2–E8 | bestanden bis auf die Befunde unten; Patch-CRC bestätigt (z. B. `09EC4D1C` bei 7 Verbindungen) |
+| E9 | Poly AT → Brightness bestätigt; Poly AT × Excitation schraffiert |
+| R8 | MIDI-Clock synchronisiert die LFOs |
+| übrige R | `NICHT GEMESSEN` |
+
+Befunde:
+
+1. **Kontextmenü** öffnete immer an derselben Stelle statt am Mauszeiger und in den
+   Standardfarben. Behoben: Das Menü öffnet am Mauszeiger, in den Farben der App.
+2. **Schnelle LFOs**: Bei hoher Rate schien die Anzeige hängen zu bleiben. Ursache ist
+   Aliasing: Die Live-Anzeige kommt mit 20 Bildern/s, ein 20-Hz-LFO wird dann immer an
+   derselben Phase abgetastet. Behoben: Über 5 Hz zeigt der Balken ein Band statt eines
+   scheinbar stehenden Werts.
+3. **Studio One** öffnet den Daisy-Port exklusiv.
+   * Der Editor steuert weiter, solange er verbunden bleibt, erhält aber keine Antworten
+     und keine Live-Daten mehr („keine Antwort vom Gerät“).
+   * Nach dem Trennen ist kein neues Verbinden möglich, solange Studio One den Port hält.
+     Einmal war das Gerät 1–2 s lang wieder sichtbar; der Mechanismus ist unbekannt.
+   * Teilweise behoben: Die Meldung nennt die wahrscheinliche Ursache, und der Editor
+     zeigt „keine Live-Daten“, statt eingefrorene Balken. Die eigentliche Lösung (H4/E7)
+     ist offen.
+4. **LFO-Anzeige im MIDI-Clock-Modus**, auch nach dem Zurückschalten auf Frei, blieb aus.
+   * Im Simulator mit dem Firmware-Code laufen die Werte im Clock-Modus und danach im
+     Frei-Modus weiter; bei Clock-Stopp hält der LFO wie vorgesehen (N4).
+   * Wahrscheinlichste Ursache ist Befund 3: Studio One als Clock-Quelle hält den
+     Eingang, dann kommen keine Live-Daten an.
+   * Außerdem berechnet die Firmware Quellen ohne aktive Verbindung nicht. Ihre Balken
+     sind jetzt abgedunkelt; der Tooltip erklärt das.
+5. **„Vom Gerät laden“** zeigte keine erkennbare Wirkung. Das ist richtig, solange
+   nichts anderes das Gerät geändert hat. Jetzt meldet der Editor „Zustand vom Gerät
+   geladen (Patch-CRC …)“, und der Tooltip erklärt den Knopf.
+6. **Spalte „Reverb“** (Hallzeit) wirkt kaum. Auf Entscheidung des Betreibers ist
+   Spalte 7 jetzt **Level** (Ausgangspegel 0…2, mit leerer Matrix genau 1); IDENTIFY
+   meldet `0.1.0-mod2`. Host: Modwheel → Level −100 blendet bis Stille aus; der
+   Golden-Hash der leeren Matrix ist unverändert. Am Gerät `NICHT GEMESSEN`.
+7. **Potistellungen** wurden nicht angezeigt. Je nach Stellung wirkt dieselbe Modulation
+   anders, weil der Offset zum Potiwert addiert und auf 0…1 begrenzt wird.
+   * Umgesetzt als abwärtskompatible Protokollerweiterung: Grundwerte hinten im
+     Monitor-Rahmen (52 statt 36 Byte), Fähigkeit Bit 4. Eingeschaltet nur im
+     Physical-Modeling-Build `MOD=1`.
+   * Beide Editoren zeigen die Potistellung als Strich und den Weg der Modulation als
+     Balken; `mod_probe.py monitor` druckt sie mit.
+   * Toy Piano v0.3, die reguläre Physical-Modeling-Fassung und alle ModBench-Varianten
+     sind bytegleich zum Übergabe-Paket.
+   * Am Gerät `NICHT GEMESSEN`.
+
+## 1c. Korrekturauftrag nach der Review (`GEMESSEN` 24.10.2026, Host)
+
+Umgesetzt: Kompatibilitätsprüfung vor dem Laden (F1), Portfreigabe in allen Pfaden
+(F2), Bereichsanzeige für schnelle Quellen und Ziele mit Grundwert und Begrenzung
+(F3/F4), Verbindungszustand (F5), gemeinsame Aftertouch-Anzeige (Betreiberentscheidung),
+Regressionstests für Laden/Leeren/Nullsetzen (F7), dazu die LFO-Quermodulation.
+Firmware-Seite: erweiterter Monitor und `fm` hinter `MOD_ON_DAISY_EXTENSIONS`, zur
+Laufzeit nur im Physical-Modeling-Build `MOD=1` eingeschaltet (PROTOCOL § 3.6).
+
+| Kommando | Ergebnis |
+| --- | --- |
+| `make -C modules/mod-on-daisy test` | grün, auch Variante mit Erweiterungen (`test_mod_ext`): 89-Byte-Rahmen, Bereich, Taktzustand, Aftertouch, FM (LFO mit Quermodulation: 6 → 25 Zyklen in 10 s) |
+| `make -C modules/mod-on-daisy test-sanitize` | grün (ASan/UBSan) |
+| `make -C modules/mod-on-daisy test-thread` | grün, auch mit Erweiterungen; keine TSan-Meldung (Messfenster per atomarer Fensternummer) |
+| `make -C modules/mod-on-daisy test-editor` | grün: Browser gegen `mod_sim`, inkl. gezählter `close()`-Aufrufe (belegter Eingang, IDENTIFY-Zeitüberschreitung, Trennen), Kompatibilitätsdialog mit `legacy-reverb.modpatch`, Verbindungszustand, Bereich, Aftertouch, FM, Nullsetzen, Leeren, Standardpatch |
+| `node editors/mod-on-daisy/web/tests/protocol.test.cjs` | grün: Format-2-CRC `C422B385` / `9D6E020E` wie C++ und Python, Monitor 36/89 Byte, Zielbereich, Kompatibilität |
+| `make -C editors/mod-on-daisy test`, `test-sanitize` | grün: Kompatibilität (alte Datei `E337FC28` → Gerät `942B2D07`, nur Spalte Level betroffen), Verbindungszustand, Regressionen § 7, Zielbereich 0,1/0,5/0,9 ± 0,5 → 0…0,6 / 0…1 / 0,4…1, Aftertouch-Fälle (Wert 0, erste von zwei Noten, Note Off, All Notes Off, beide Arten, Bearbeitung bleibt bei der Zelle), FM |
+| JUCE-Selbsttest unter Xvfb | `PASS`, inkl. FM-Regler, Bereich, Taktzustand, Verbindungszustand, Kompatibilitätsfrage, Portfreigabe nach fehlgeschlagenem Verbinden |
+| `mod_probe.py selftest` | grün |
+| `make PROJECT=toy-piano test` | grün, Golden `52580874FA24361F` |
+| `make PROJECT=physical-modeling test`, `PROJECT=physical-modeling-mod test` | grün, Golden `37DE0BF9D93B81CE` in beiden Fassungen |
+| ARM-Builds (xPack 13.2.1-1.1) | bytegleich: `ToyPiano-v0.3.bin` `6dd79871…`, `PhysicalModeling-v0.1.0.bin` `eb8f412a…`, ModBench `9f50a57b…` / `5cdeb0f6…` / `7f209c15…`. Geändert nur die eigene Fassung `PhysicalModelingMod-v0.1.0.bin` (mod3): 170 312 Byte, `ccabdaa9…`, DTCM 110 352 B (Reserve 20 720); `check-firmware.py` und `check-physical-elf.py` bestanden |
+
+Der neue Regressionstest fand einen Fehler, der behoben ist: Lief eine Dateiübertragung
+in eine Zeitüberschreitung, hatte das Gerät einen Teil schon übernommen, der Editor
+zeigte aber die ganze Datei. Jetzt lädt der Editor den Gerätezustand neu, sobald das
+Gerät wieder etwas sendet.
+
+**Grenzen:** Alles oben lief gegen den Firmware-Code auf dem PC (Simulator, `mod_sim`).
+Am Gerät `NICHT GEMESSEN`: E7b (beide Reihenfolgen), E9b, E11–E17 und die
+Portfreigabe unter Windows. Der Zielbereich addiert die Fensterbereiche der Quellen; bei
+mehreren Verbindungen ist er der erreichbare, nicht der gemessene Bereich.
 
 ## 2. ARM-Build der Messfirmware (`GEMESSEN`)
 

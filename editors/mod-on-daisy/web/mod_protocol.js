@@ -31,8 +31,10 @@
   const MIDI_DIVISIONS = ['4 Takte', '2 Takte', '1 Takt', '1/2', '1/4', '1/4T', '1/8', '1/8T', '1/16', '1/16T', '1/32'];
   const GATE_DIVISIONS = ['1/4', '1/2', '1/1', '2/1', '4/1'];
   const DEFAULT_MIDI_DIVISION = 4, DEFAULT_GATE_DIVISION = 2;
-  const PARAM = { rate: 0, shape: 1, sync: 2, gate: 3, division: 4, retrigger: 5 };
-  const RATE_MAX = 16383, CELLS = 64, MAX_DEPTH = 100;
+  // fm (LFO cross modulation, IDENTIFY capability bit 6) travels as fm + 100.
+  const PARAM = { rate: 0, shape: 1, sync: 2, gate: 3, division: 4, retrigger: 5, fm: 6 };
+  const RATE_MAX = 16383, CELLS = 64, MAX_DEPTH = 100, MAX_FM = 100;
+  const CAP = { monitor: 0x02, diagnostics: 0x04, polyAtLastNote: 0x08, baseMonitor: 0x10, extendedMonitor: 0x20, lfoFm: 0x40 };
 
   const rateToHz = (r) => 0.02 * Math.pow(1000, Math.min(RATE_MAX, Math.max(0, r)) / RATE_MAX);
   const hzToRate = (hz) => Math.round(Math.log(hz / 0.02) / Math.log(1000) * RATE_MAX);
@@ -125,11 +127,13 @@
     return (c ^ 0xffffffff) >>> 0;
   }
 
-  function defaultPatch() {
+  // Format 1: 109 bytes; format 2 (devices with LFO cross modulation) adds fm: 111 bytes.
+  function defaultPatch(format = 1) {
     return {
+      format,
       depth: new Array(CELLS).fill(0),     // index = 8 * source + target, -100 … +100
       enabled: 0n,                          // BigInt, bit 8 * source + target
-      lfo: [0, 1].map(() => ({ rate: 6000, shape: 0, sync: 0, gate: 0, division: DEFAULT_MIDI_DIVISION, retrigger: 0 })),
+      lfo: [0, 1].map(() => ({ rate: 6000, shape: 0, sync: 0, gate: 0, division: DEFAULT_MIDI_DIVISION, retrigger: 0, fm: 0 })),
       random: { rate: 8000, mode: 0, sync: 0, gate: 0, division: DEFAULT_MIDI_DIVISION },
       name: '',
     };
@@ -139,26 +143,122 @@
   const isActive = (patch, cell) => isEnabled(patch, cell) && patch.depth[cell] !== 0;
   const activeCount = (patch) => patch.depth.reduce((n, d, cell) => n + (isActive(patch, cell) ? 1 : 0), 0);
 
-  // Byte layout of Serialize() in patch.h (109 bytes).
+  // Byte layout of Serialize() in patch.h (109 bytes, format 2: 111).
   function serializePatch(p) {
-    const b = [1];
+    const format = p.format || 1;
+    const b = [format];
     for (let i = 0; i < CELLS; ++i) b.push(p.depth[i] & 0xff);
     for (let s = 0; s < 8; ++s) b.push(Number((p.enabled >> BigInt(8 * s)) & 0xffn));
     for (const l of p.lfo) b.push(l.rate & 0xff, l.rate >> 8, l.shape, l.sync, l.gate, l.division, l.retrigger);
     const r = p.random;
     b.push(r.rate & 0xff, r.rate >> 8, r.mode, r.sync, r.gate, r.division);
     for (let i = 0; i < 16; ++i) b.push(i < p.name.length ? p.name.charCodeAt(i) & 127 : 0);
+    if (format === 2) b.push((p.lfo[0].fm || 0) & 0xff, (p.lfo[1].fm || 0) & 0xff);
     return b;
   }
   const patchCrc = (p) => crc32(serializePatch(p));
 
   const divisionNames = (sync) => (sync === 2 ? GATE_DIVISIONS : MIDI_DIVISIONS);
 
+  // Monitor frame (PROTOCOL.md § 3.3): 36 bytes plain, 52 with base values, 89 extended
+  // (range per source over the window, clock activity, last aftertouch).
+  const s14 = (v) => ((v & 16383) - 8192) / 8191;
+  function decodeMonitor(payload) {
+    const r = new Reader(payload);
+    const read = (n) => Array.from({ length: n }, () => s14(r.u14()));
+    const m = { source: read(8), offset: read(8), cv: read(2), base: new Array(8).fill(-1), hasRange: false,
+      min: null, max: null, clocks: 0, atKind: 0, atNote: 0, atValue: 0, atAge: 127 };
+    if (payload.length >= 52) m.base = read(8);
+    if (payload.length >= 89) {
+      m.hasRange = true;
+      m.min = read(8);
+      m.max = read(8);
+      m.clocks = r.u7(); m.atKind = r.u7(); m.atNote = r.u7(); m.atValue = r.u7(); m.atAge = r.u7();
+    }
+    return m;
+  }
+  // 1 running, 0 not, -1 unknown (free running or older firmware).
+  function clockState(m, sync, gate) {
+    if (!m || !m.hasRange || sync === 0) return -1;
+    return m.clocks & (sync === 1 ? 1 : gate === 0 ? 2 : 4) ? 1 : 0;
+  }
+
+  // Goal range of a column over the last monitor window, as GoalSpanOf() in the JUCE
+  // editor: interval arithmetic over the active connections (gain = depth/100 * span),
+  // around the base value, clamped to 0..1. Poly AT on per-voice columns is left out.
+  function goalSpan(patch, targets, m, t) {
+    const col = targets[t];
+    let lo = 0, hi = 0, voicePart = false;
+    for (let s = 0; s < 8; ++s) {
+      const cell = s * 8 + t;
+      if (!isActive(patch, cell)) continue;
+      if (s === 7 && col.perVoice) { voicePart = true; continue; }
+      const gain = patch.depth[cell] / MAX_DEPTH * (col.span ?? 1);
+      const a = gain * (m.hasRange ? m.min[s] : m.source[s]), b = gain * (m.hasRange ? m.max[s] : m.source[s]);
+      lo += Math.min(a, b); hi += Math.max(a, b);
+    }
+    if (!m.hasRange) lo = hi = m.offset[t];
+    const hasBase = m.base[t] >= 0;
+    let clippedLow = false, clippedHigh = false;
+    if (hasBase) {
+      lo += m.base[t]; hi += m.base[t];
+      clippedLow = lo < 0; clippedHigh = hi > 1;
+      lo = Math.max(0, Math.min(1, lo)); hi = Math.max(0, Math.min(1, hi));
+    }
+    return { lo, hi, hasBase, clippedLow, clippedHigh, voicePart };
+  }
+
+  // Before a file reaches a device (review F1): which active connections would land on a
+  // column that means something else, as CheckCompatibility() in the JUCE editor.
+  // file: { instrument_key, schema_hash, columns, patch, hasFm }; device: IDENTIFY info.
+  function checkCompatibility(file, targets, device) {
+    const c = { keyMismatch: false, schemaChanged: false, schemaUnknown: false, fmUnsupported: false, affected: 0n, notes: [] };
+    const p = file.patch;
+    let active = 0n;
+    for (let cell = 0; cell < CELLS; ++cell) if (isActive(p, cell)) active |= bit(cell);
+    const hex = device.schema.toString(16).toUpperCase().padStart(8, '0');
+    if (file.instrument_key && file.instrument_key !== device.key) {
+      c.keyMismatch = true;
+      c.affected = active;
+      c.notes.push(`Die Datei ist für „${file.instrument_key}“, verbunden ist „${device.key}“.`);
+    } else if (!file.schema_hash || String(file.schema_hash).toUpperCase() !== hex) {
+      c.schemaUnknown = !file.schema_hash;
+      c.schemaChanged = !!file.schema_hash;
+      for (let t = 0; t < 8; ++t) {
+        let column = 0n;
+        for (let s = 0; s < 8; ++s) column |= active & bit(s * 8 + t);
+        if (!column) continue;
+        const now = targets[t], was = file.columns ? file.columns[t] : null;
+        if (!was) {
+          c.affected |= column;
+          c.notes.push(`Spalte ${t + 1} (jetzt „${now.name}“): Bedeutung in der Datei unbekannt.`);
+        } else if (!now.present || was !== now.name) {
+          c.affected |= column;
+          c.notes.push(`Spalte ${t + 1}: Datei „${was}“ → Gerät „${now.present ? now.name : 'kein Ziel'}“.`);
+        }
+      }
+    }
+    if (file.hasFm && !(device.caps & CAP.lfoFm)) {
+      c.fmUnsupported = true;
+      c.notes.push('Das Gerät kennt keine LFO-Quermodulation; sie wird auf 0 gesetzt.');
+    }
+    c.needsDecision = c.keyMismatch || c.affected !== 0n || c.fmUnsupported;
+    return c;
+  }
+  // "Ohne betroffene laden": affected connections switched off (depth kept), FM removed.
+  function safePart(patch, c) {
+    const p = { ...patch, lfo: patch.lfo.map((l) => ({ ...l })), depth: patch.depth.slice() };
+    p.enabled = patch.enabled & ~c.affected;
+    if (c.fmUnsupported) p.lfo.forEach((l) => { l.fm = 0; });
+    return p;
+  }
+
   return {
     MANUFACTURER, PROJECT, VERSION, MAX_FRAME, HEADER, MAX_PAYLOAD, BROADCAST, REPLY_BIT, NAK, MONITOR_FRAME,
     CMD, ERRORS, SOURCES, SHAPES, RANDOM_MODES, SYNCS, MIDI_DIVISIONS, GATE_DIVISIONS,
-    DEFAULT_MIDI_DIVISION, DEFAULT_GATE_DIVISION, PARAM, RATE_MAX, CELLS, MAX_DEPTH,
+    DEFAULT_MIDI_DIVISION, DEFAULT_GATE_DIVISION, PARAM, RATE_MAX, CELLS, MAX_DEPTH, MAX_FM, CAP,
     rateToHz, hzToRate, checksum, Writer, Reader, buildFrame, parseFrame, crc32,
     defaultPatch, bit, isEnabled, isActive, activeCount, serializePatch, patchCrc, divisionNames,
+    decodeMonitor, clockState, goalSpan, checkCompatibility, safePart,
   };
 });

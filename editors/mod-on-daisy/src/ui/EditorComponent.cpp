@@ -2,7 +2,7 @@
 
 namespace editor::ui {
 namespace {
-constexpr int kHeader = 56, kCellCard = 300, kSourcesHeight = 214, kFooter = 56, kPad = 14;
+constexpr int kHeader = 56, kCellCard = 300, kSourcesHeight = 250, kFooter = 56, kPad = 14;
 
 juce::Colour LogColour(LogKind k) {
     switch(k) {
@@ -20,7 +20,12 @@ EditorComponent::EditorComponent()
     setLookAndFeel(&look_);
     session_.changed = [this] { triggerAsyncUpdate(); };
     session_.log = [this](LogKind k, const std::string& text) { Log(k, U(text)); };
-    session_.monitor = [this](const MonitorValues& m) { grid_.SetMonitor(m); };
+    session_.monitor = [this](const MonitorValues& m) {
+        grid_.SetMonitor(m);
+        for(int i = 0; i < 3; ++i)
+            sources_[std::size_t(i)]->SetClockState(
+                m.ClockState(model_.SourceParam(i, mod::ParamSync), model_.SourceParam(i, mod::ParamGate)));
+    };
 
     addAndMakeVisible(port_);
     port_.setTooltip(U("Gerät: Simulator oder MIDI-Port des Daisy („Daisy Seed External“)"));
@@ -95,7 +100,13 @@ EditorComponent::EditorComponent()
     open_.onClick = [this] { OpenFileDialog(); };
     save_.onClick = [this] { SaveFileDialog(); };
     clear_.onClick = [this] { session_.ClearMatrix(); };
-    pull_.onClick = [this] { session_.Pull(); };
+    pull_.setTooltip(U("Liest Matrix, Quellen und Name neu vom Gerät, z. B. nach Änderungen mit einem anderen "
+                       "Programm. Ohne solche Änderungen bleibt alles gleich."));
+    pull_.onClick = [this] {
+        session_.Pull(false, [this] {
+            Log(LogKind::Ok, U("Zustand vom Gerät geladen (Patch-CRC ") + U(Hex32(model_.Crc())) + ").");
+        });
+    };
     addAndMakeVisible(log_);
     log_.setFont(juce::FontOptions(13.0f));
 
@@ -135,11 +146,13 @@ void EditorComponent::RefreshPorts() {
     bool same = ports.size() == ports_.size();
     for(std::size_t i = 0; same && i < ports.size(); ++i)
         same = ports[i].label == ports_[i].label && ports[i].out.identifier == ports_[i].out.identifier;
-    if(midi_) { // the open port vanished: unplugged
-        bool present = false;
+    if(midi_) { // the open output or input vanished: unplugged
+        bool out_present = false, in_present = false;
         for(const auto& out : outs)
-            present = present || out.identifier == midi_->Output().identifier;
-        if(!present) {
+            out_present = out_present || out.identifier == midi_->Output().identifier;
+        for(const auto& in : ins)
+            in_present = in_present || in.identifier == midi_->Input().identifier;
+        if(!out_present || !in_present) {
             Disconnect();
             session_.Disconnect(U("Gerät getrennt").toStdString());
             Log(LogKind::Error, U("Die Verbindung zum Daisy ist abgerissen. Bearbeitung geht offline weiter."));
@@ -176,6 +189,8 @@ void EditorComponent::ConnectTo(int index) {
     if(p.simulator >= 0) {
         simulator_ = std::make_unique<Simulator>(kSimInstruments[p.simulator].make(),
                                                  uint32_t(juce::Random::getSystemRandom().nextInt()));
+        simulator_->bases = kSimInstruments[p.simulator].bases;
+        simulator_->EnableExtensions(kSimInstruments[p.simulator].extensions);
         session_.Connect(*simulator_, now_);
     } else {
         juce::String error;
@@ -192,10 +207,7 @@ void EditorComponent::ConnectTo(int index) {
 
 void EditorComponent::Disconnect() {
     session_.Disconnect("");
-    grid_.ClearMonitor();
-    simulator_.reset();
-    midi_.reset();
-    RefreshAll();
+    ReleasePort();
 }
 
 // ------------------------------------------------------------------ clock
@@ -222,6 +234,7 @@ void EditorComponent::timerCallback() {
     Advance(now);
     if(now - last_ports_ >= 1000) {
         last_ports_ = now;
+        grid_.CheckStale();
         if(!port_.isPopupActive())
             RefreshPorts();
     }
@@ -235,6 +248,17 @@ void EditorComponent::Advance(uint32_t now_ms) {
         for(const std::vector<uint8_t>& m : midi_->Take())
             session_.OnMessage(m.data(), m.size());
     session_.Tick(now_);
+    // The session gave up (no answer to IDENTIFY, refused send, wrong protocol): the
+    // port is released at once, so another application or a new attempt can open it.
+    if(session_.State() == LinkState::Offline && (midi_ || simulator_))
+        ReleasePort();
+}
+
+void EditorComponent::ReleasePort() {
+    grid_.ClearMonitor();
+    simulator_.reset();
+    midi_.reset();
+    RefreshAll();
 }
 
 // ------------------------------------------------------------------ view
@@ -243,8 +267,10 @@ void EditorComponent::handleAsyncUpdate() { RefreshAll(); }
 void EditorComponent::RefreshAll() {
     const LinkState s = session_.State();
     status_.setText(U(session_.StatusText()), juce::dontSendNotification);
+    const Health health = session_.LinkHealth();
     status_.setColour(juce::Label::textColourId,
-                      s == LinkState::Connected ? colour::ok
+                      s == LinkState::Connected ? (health == Health::Ok ? colour::ok
+                                                   : health == Health::NoLiveData ? colour::warn : colour::err)
                                                 : (session_.StatusText() == "offline" ? colour::muted : colour::err));
     status_.setColour(juce::Label::outlineColourId, status_.findColour(juce::Label::textColourId));
     connect_.setButtonText(s == LinkState::Offline ? "Verbinden" : "Trennen");
@@ -428,24 +454,58 @@ bool EditorComponent::LoadFile(const juce::File& file) {
         Log(LogKind::Error, U(loaded.error));
         return false;
     }
-    const std::string& device = session_.Device().key;
-    if(session_.Connected() && !loaded.instrument_key.empty() && loaded.instrument_key != device) {
-        juce::AlertWindow::showOkCancelBox(
-            juce::MessageBoxIconType::WarningIcon, U("Anderes Instrument"),
-            U("Die Datei ist für „") + U(loaded.instrument_key) + U("“, verbunden ist „") + U(device)
-                + U("“. Trotzdem laden?"),
-            "Laden", "Abbrechen", this, juce::ModalCallbackFunction::create([this, loaded](int result) {
-                if(result == 1)
-                    ApplyLoaded(loaded);
-            }));
+    if(!session_.Connected()) { // offline: nothing to compare with; the file's origin is kept
+        ApplyLoaded(loaded, loaded.patch);
+        return true;
+    }
+    // Review finding F1: columns that mean something else on this device are not
+    // transferred silently.
+    const Compatibility compat = CheckCompatibility(loaded, model_, session_.Device());
+    if(!compat.NeedsDecision()) {
+        ApplyLoaded(loaded, loaded.patch);
+        return true;
+    }
+    if(compat_decision) { // self-test: answers without a modal window
+        ApplyDecision(loaded, compat, compat_decision(compat));
         return false;
     }
-    ApplyLoaded(loaded);
-    return true;
+    juce::String text;
+    for(const std::string& note : compat.notes)
+        text << U("• ") << U(note) << "\n";
+    text << U("\n„Ohne betroffene laden“ schaltet die betroffenen Verbindungen aus (Tiefe bleibt erhalten) und "
+              "lädt alles andere.");
+    auto* w = new juce::AlertWindow(U("Patch passt nicht genau zu diesem Gerät"), text,
+                                    juce::MessageBoxIconType::WarningIcon, this);
+    w->setLookAndFeel(&look_);
+    w->addButton(U("Ohne betroffene laden"), int(CompatChoice::Safe), juce::KeyPress(juce::KeyPress::returnKey));
+    w->addButton(U("Trotzdem vollständig"), int(CompatChoice::Force));
+    w->addButton(U("Abbrechen"), int(CompatChoice::Cancel), juce::KeyPress(juce::KeyPress::escapeKey));
+    w->enterModalState(true, juce::ModalCallbackFunction::create([this, loaded, compat](int result) {
+                           ApplyDecision(loaded, compat, CompatChoice(result));
+                       }),
+                       true);
+    return false;
 }
 
-void EditorComponent::ApplyLoaded(const LoadedPatch& loaded) {
-    session_.Upload(loaded.patch);
+void EditorComponent::ApplyDecision(const LoadedPatch& loaded, const Compatibility& compat, CompatChoice choice) {
+    if(choice == CompatChoice::Cancel) {
+        Log(LogKind::Info, U("Laden abgebrochen, das Gerät bleibt unverändert."));
+        return;
+    }
+    if(choice == CompatChoice::Safe) {
+        int off = 0;
+        for(int c = 0; c < kCells; ++c)
+            off += (compat.affected & Bit(c)) ? 1 : 0;
+        Log(LogKind::Warn, U("Geladen ohne ") + juce::String(off) + U(" betroffene Verbindung(en)."));
+        ApplyLoaded(loaded, SafePart(loaded.patch, compat));
+    } else {
+        ApplyLoaded(loaded, loaded.patch);
+    }
+}
+
+void EditorComponent::ApplyLoaded(const LoadedPatch& loaded, const mod::Patch& patch) {
+    session_.Upload(patch);
+    model_.origin = session_.Connected() ? FileOrigin{} : loaded.Origin();
     RefreshAll();
 }
 }

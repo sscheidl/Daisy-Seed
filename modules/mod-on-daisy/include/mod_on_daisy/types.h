@@ -4,6 +4,16 @@
 #include <cstddef>
 #include <cstdint>
 
+// Optional extensions, compiled in only with -DMOD_ON_DAISY_EXTENSIONS=1 and then
+// switched on per instrument at run time (Module::EnableExtensions):
+//   * extended monitor: column base values, source minimum/maximum per monitor
+//     interval, clock activity and the last received aftertouch (PROTOCOL.md § 3.3)
+//   * LFO cross modulation: each LFO's rate modulated by the other (patch format 2)
+// Without the switch the code is absent, so images built without it stay unchanged.
+#ifndef MOD_ON_DAISY_EXTENSIONS
+#define MOD_ON_DAISY_EXTENSIONS 0
+#endif
+
 namespace mod {
 constexpr uint8_t kVersionMajor = 0, kVersionMinor = 1, kVersionPatch = 0;
 

@@ -4,6 +4,7 @@
 // counterpart of the core tests, which can also lose, corrupt and delay frames.
 #include "Session.h"
 #include "mod_on_daisy/module.h"
+#include <array>
 #include <deque>
 #include <memory>
 #include <vector>
@@ -14,6 +15,8 @@ class Simulator : public Transport {
     // Fault injection, each a probability 0..1 per message; latency in ms each way.
     double drop_requests = 0, drop_replies = 0, corrupt_replies = 0;
     uint32_t latency_ms = 1;
+    // Pot positions the simulated instrument reports as column base values; -1 = none.
+    std::array<float, mod::kTargets> bases{-1, -1, -1, -1, -1, -1, -1, -1};
 
     explicit Simulator(const mod::InstrumentInfo& info, uint32_t seed = 1) : info_(info), rng_(seed | 1) {
         module_->Init(info_, kSampleRate, kBlock);
@@ -47,6 +50,8 @@ class Simulator : public Transport {
                 Receive(inbox_.front().bytes);
                 inbox_.pop_front();
             }
+            for(std::size_t t = 0; t < mod::kTargets; ++t)
+                module_->engine.ReportBase(t, bases[t]);
             module_->engine.Tick(kBlock);
             module_->controller.Service(now_, sender_);
             for(std::vector<uint8_t>& m : sender_.sent) {
@@ -64,6 +69,9 @@ class Simulator : public Transport {
             }
         }
     }
+
+    // What the simulated firmware switches on at start (extended monitor, LFO FM).
+    void EnableExtensions(const mod::Extensions& e) { module_->EnableExtensions(e); }
 
     const mod::Controller& Device() const { return module_->controller; }
     const mod::InstrumentInfo& Info() const { return info_; }
