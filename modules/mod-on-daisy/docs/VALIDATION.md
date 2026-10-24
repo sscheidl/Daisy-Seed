@@ -147,6 +147,19 @@ Befunde: `mod_probe.py` fand unter Windows den Eingang nicht und brach bei `matr
 cp1252-Konsole ab (behoben in `bee9023`). Wünsche aus dem Test: aktueller Wert im
 Spaltenkopf und aktives Modell im Verbindungsbereich (umgesetzt in `0.1.0-mod4`, § 1d).
 
+### Am Gerät: `0.1.0-mod4` und JUCE-Editor von PR #33 (`GEMESSEN` 24.10.2026, ab 21:55)
+
+Image `PhysicalModelingMod-v0.1.0.bin` SHA-256 `9517db27…`, vom Betreiber mit dem Daisy Web
+Programmer geflasht. Studio One lief und spielte das Kit (Daisy als Ein- und Ausgang).
+
+| Nr. | Ergebnis |
+| --- | --- |
+| `mod_probe.py` parallel zu Studio One (Agent) | IDENTIFY 3/3: `0.1.0-mod4`, Fähigkeiten 122, Fähigkeiten 2 = 1; `modes`: alle sechs Modelle mit Bankhinweis; Monitor 61 Rahmen in 3 s; Grundwerte = Potistellungen; MIDI-Clock aus Studio One erkannt; Modell 3 (FM Voice), Herkunft Gerät |
+| E7b | **bestanden** in der Reihenfolge erst Studio One, dann Editor (vom Betreiber berichtet): Status grün, Modulation hörbar, Änderungen mit Patch-CRC bestätigt. Umgekehrte Reihenfolge: `NICHT GEMESSEN` |
+| E9b | Spaltenwerte und Strich folgen den Potis (vom Betreiber berichtet). Modwheel → Level −100: `NICHT GEMESSEN` |
+| E18 | Modell wechselt mit SW17/SW18 (vom Betreiber berichtet). CC28 mit „(MIDI)“: `NICHT GEMESSEN` |
+| E19, E11–E17, R1–R7, R9, R10 | `NICHT GEMESSEN` |
+
 ## 1d. Aktives Modell und Spaltenwerte (`GEMESSEN` 24.10.2026, Host)
 
 * Firmware `0.1.0-mod4`: Fähigkeiten 2 (an IDENTIFY angehängt), `GET_MODE`, Monitor 91 Byte
