@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-24",
+  "hardware": "NICHT GEMESSEN",
+  "print_source_parts_unchanged_and_closed": [
+    "tray",
+    "unified-carrier",
+    "lower-acrylic-reference",
+    "paper-reference",
+    "upper-acrylic-reference"
+  ],
+  "assembly_stl_extents_mm": [
+    215.0,
+    129.0,
+    39.8
+  ],
+  "assembly_stl_merged_watertight": false,
+  "assembly_stl_note": "Visualization only: touching layers retain their own coincident interface faces",
+  "glb_extents_metres": [
+    0.21500001,
+    0.0398,
+    0.12900001
+  ],
+  "glb_meshes": 742,
+  "render_resolution": [
+    2400,
+    1600
+  ],
+  "source_and_artifact_hashes_verified": true,
+  "visual_review": "Separate manual inspection of all three images required"
+}
