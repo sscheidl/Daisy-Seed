@@ -66,7 +66,10 @@ reply    F0 7D 42 4C 01 41 F7
 
 * Only this exact byte sequence is accepted: no checksum, but a fixed length and the
   four-byte "BOOT" word, so a truncated or damaged frame does nothing.
-* The firmware answers before the reset and waits 20 ms for the transfer. The reply
+* The reply means **request accepted**, not that DFU is already running: the
+  firmware answers before the reset (the Looper possibly long before, while it
+  finishes card I/O) and waits 20 ms for the transfer. Only the DFU device
+  appearing on the computer shows the bootloader. The reply
   is never a request, so a DAW that echoes MIDI back to the kit cannot cause a loop.
 * Old firmware without this module ignores the request; the editors report "no
   answer" after 2 s and point to the keys or the buttons.

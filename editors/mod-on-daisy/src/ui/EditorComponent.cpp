@@ -377,8 +377,10 @@ void EditorComponent::FinishFirmwareUpdate(BootRequest::Result result) {
     boot_port_.reset();
     if(result == BootRequest::Result::Acknowledged) {
         Disconnect(); // the port disappears with the reset; no "connection lost" message
-        Log(LogKind::Ok, U("Das Kit ist im Update-Modus. Firmware jetzt mit dem Daisy Web Programmer oder "
-                           "„make program-dfu“ laden."));
+        // The reply confirms that the request was accepted, not the DFU entry itself.
+        Log(LogKind::Ok, U("Anfrage angenommen: Das Kit startet in den Update-Modus (alle LEDs an, der Looper "
+                           "erst nach laufender Kartenarbeit). Sobald es als DFU-Gerät erscheint, Firmware mit "
+                           "dem Daisy Web Programmer oder „make program-dfu“ laden."));
     } else {
         Log(LogKind::Warn, U("Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S9 und S16 fünf "
                              "Sekunden halten oder RESET und BOOT verwenden (docs/FLASHING.md)."));

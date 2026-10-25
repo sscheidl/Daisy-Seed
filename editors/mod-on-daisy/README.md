@@ -45,7 +45,9 @@ sendet der Editor eine eigene SysEx-Nachricht an den gewählten Port
 ([common/bootloader](../../common/bootloader/README.md)); das geht mit jeder Firmware dieses
 Repositorys (alle Instrumente und Effekte haben USB-MIDI an J7), auch ohne
 Mod-on-Daisy-Verbindung, z. B. mit Nebulae, Looper oder Ambient Reverb. Das Kit
-antwortet, alle 16 LEDs leuchten, und der Bootloader wartet ohne Zeitlimit. Danach die
+antwortet, sobald es die Anfrage angenommen hat; die Antwort ist noch kein Nachweis des
+DFU-Eintritts. Danach leuchten alle 16 LEDs, und der Bootloader wartet ohne Zeitlimit
+(der Looper beendet vorher laufende Kartenarbeit). Danach die
 Firmware mit dem [Daisy Web Programmer](https://flash.daisy.audio/) oder `make program-dfu`
 laden ([docs/FLASHING.md](../../docs/FLASHING.md)). Kommt nach 2 s keine Antwort, kennt
 die Firmware den Befehl noch nicht: dann S9 und S16 fünf Sekunden halten oder RESET und

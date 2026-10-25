@@ -522,8 +522,9 @@ class MainWindow(QMainWindow):
                 if payload is not None:
                     self._log(f"Card reader: {payload.state}")
             elif kind == "bootloader":
-                self._log("The kit restarts into the Daisy bootloader (all 16 LEDs on). Flash the "
-                          "new firmware with the Daisy Web Programmer or make program-dfu.")
+                # ACK c=BOOT confirms the accepted request, not the DFU entry itself.
+                self._log("Request accepted: the kit restarts into the Daisy bootloader. Once it "
+                          "appears as DFU device, flash with the Daisy Web Programmer or make program-dfu.")
             elif kind == "log":
                 self._log(str(payload))
         if board_changed:
