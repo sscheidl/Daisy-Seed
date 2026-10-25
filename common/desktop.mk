@@ -18,6 +18,14 @@ C_INCLUDES += -I$(BOOTLOADER_DIR)
 
 include $(SYSTEM_FILES_DIR)/Makefile
 
+# Variant directories (build/mod, build/ambient, build/fx-*, build/b256-max8): libDaisy
+# creates $(BUILD_DIR) with a plain mkdir, which fails on a fresh checkout without build/.
+ifneq ($(filter build/%,$(BUILD_DIR)),)
+$(BUILD_DIR): | build
+build:
+	mkdir -p build
+endif
+
 .PHONY: libs
 libs:
 	"$(MAKE)" -C $(LIBDAISY_DIR)
