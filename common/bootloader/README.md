@@ -14,27 +14,43 @@ arrives or the kit is power-cycled.
 
 ## Triggers
 
-| Trigger | Where | Detail |
+Every firmware of this repository behaves the same:
+
+| Trigger | Detail |
+| --- | --- |
+| **S9 + S16** held together, with no other key, for **5 s** | The outer keys of the second row. Another key, or a release, restarts the timer; release both for another attempt. |
+| USB-MIDI SysEx on J7 | Sent by the HTML editor, the JUCE app and the VST3 plugin (**Firmware-Update …**). All instruments, effects and the Mod bench enumerate as USB-MIDI device on J7; Looper and Ambient Reverb use it only for this request so far. |
+| DDP command `BOOT` | Only the diagnostic firmware, whose USB port is a COM port (CDC) instead of MIDI: button **Firmware update mode …** in the Windows diagnostics app ([protocol](../../diagnostics/protocol/PROTOCOL.md)). |
+
+S9 and S16 are easy to find with the case closed. They are not free in every app;
+their own press action still runs and is lost with the reset anyway:
+
+| App | S9 | S16 |
 | --- | --- | --- |
-| **S13 + S14** held together, with no other key, for **3 s** | all apps except the diagnostic firmware | Released and pressed again for another attempt. Another key, or a release, restarts the timer. |
-| USB-MIDI SysEx on J7 | apps with USB-MIDI: Toy Piano, Physical Modeling (both builds), Nebulae, Mod bench | Sent by the HTML editor, the JUCE app and the VST3 plugin (**Firmware-Update …**) |
-| DDP command `BOOT` | diagnostic firmware (USB CDC) | Button **Firmware update mode …** in the Windows diagnostics app; see [its protocol](../../diagnostics/protocol/PROTOCOL.md) |
+| Toy Piano, Physical Modeling | C5 (one-shot) | C6 (one-shot) |
+| Nebulae KEYBOARD / SAMPLE / NEBULAE | C5 / slot 9 / reserved | C6 / slot 16 / reserved |
+| Looper | selects Sound on Sound | no function |
+| Ambient Reverb | no function | sustain |
+| Mod bench | scenario 8 | no function |
+| Diagnostics | key test | key test |
 
-S13 and S14 (the 5th and 6th key of the second row) have no function in the Looper,
-Ambient Reverb and the Nebulae function mode. In the note layouts they are G5 and A5;
-Toy Piano and Physical Modeling play them as one-shots, so holding them does nothing
-musically. In the Nebulae KEYBOARD mode a held G5+A5 dyad does sustain: do not hold
-exactly these two keys alone for 3 s there unless an update is intended.
-
-The diagnostic firmware is a key tester and has no key gesture.
+The instruments are meant to be played over MIDI; the panel keys serve development
+and tests. A held C5+C6 octave in the Nebulae KEYBOARD mode for 5 s, with no other
+key, therefore enters update mode as well. If the hold is released early, the press
+actions above stay in effect (for example the Looper mode).
 
 Before the reset every app lights **all 16 LEDs** (D1–D16). The PCA9685 LED driver
 keeps them on through the MCU reset, so the panel shows "update mode" while the
 bootloader waits; the next application's `hw.Init()` turns them off. This is the
 expected behaviour of the driver; it has not been checked on hardware yet.
 
-The Looper first finishes a running card write or import, then resets. Changes
-from the last 2 s may still be unsaved (`LoopStore::kSaveDelayMs`).
+Two apps protect their storage:
+
+* The Looper finishes a running card write or import first, then resets. It answers
+  a SysEx request at once, because a long write can exceed the editor's 2 s wait.
+  Changes from the last 2 s may still be unsaved (`LoopStore::kSaveDelayMs`).
+* The card-reader build of the diagnostics ignores both `BOOT` and the keys while
+  Windows owns the SD card.
 
 ## SysEx format
 
@@ -61,7 +77,7 @@ reply    F0 7D 42 4C 01 41 F7
 
 ```cpp
 #include "bootloader_daisy.h" // + "bootloader_midi.h" for MidiUsbHandler events
-bootloader::KeyCombo boot_keys;   // control/audio context only
+bootloader::KeyCombo boot_keys;   // control/audio context only (S9+S16, 5 s)
 bootloader::Request boot_request; // lock-free flag to the main loop
 
 // Audio callback or control timer, with the debounced held-key mask (bit 0 = S1):
@@ -96,6 +112,6 @@ make -C common/bootloader test
 
 Host tests cover the frame bytes, body and stream matching (truncated, longer,
 corrupted, interrupted, echoed reply, Mod on Daisy frames, real-time bytes), the
-3 s gesture (extra keys, bounce, release, counter wrap) and the service order
+5 s gesture (extra keys, bounce, release, counter wrap) and the service order
 (reply before reset, one reset, LEDs). Each app's callback tests drive both triggers
 through its production `main.cpp` with a fake `ResetToBootloader()`.

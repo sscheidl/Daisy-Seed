@@ -102,28 +102,29 @@ void TestMatcher() {
 }
 
 void TestKeys() {
-    constexpr uint32_t s13 = 1u << 12, s14 = 1u << 13, s1 = 1u, s16 = 1u << 15;
-    assert(bootloader::kKeyMask == (s13 | s14));
+    constexpr uint32_t s9 = 1u << 8, s16 = 1u << 15, s1 = 1u, s13 = 1u << 12;
+    constexpr uint32_t pair = s9 | s16;
+    assert(bootloader::kKeyMask == pair && bootloader::kHoldMs == 5000);
     bootloader::KeyCombo combo;
     uint32_t t = 1000;
-    // Held alone: nothing before 3 s, exactly once at 3 s.
-    assert(!combo.Process(s13 | s14, t));
+    // Held alone: nothing before 5 s, exactly once at 5 s.
+    assert(!combo.Process(pair, t));
     assert(combo.Holding());
     for(uint32_t ms = 1; ms < bootloader::kHoldMs; ++ms)
-        assert(!combo.Process(s13 | s14, t + ms));
-    assert(combo.Process(s13 | s14, t + bootloader::kHoldMs));
+        assert(!combo.Process(pair, t + ms));
+    assert(combo.Process(pair, t + bootloader::kHoldMs));
     assert(!combo.Holding());
     for(uint32_t ms = 1; ms < 10000; ms += 7)
-        assert(!combo.Process(s13 | s14, t + bootloader::kHoldMs + ms)); // still held: once
+        assert(!combo.Process(pair, t + bootloader::kHoldMs + ms)); // still held: once
     // Released and pressed again: a new full hold is needed.
     t = 20000;
     assert(!combo.Process(0, t));
-    assert(!combo.Process(s13 | s14, t + 1));
-    assert(!combo.Process(s13 | s14, t + 1 + bootloader::kHoldMs - 1));
-    assert(combo.Process(s13 | s14, t + 1 + bootloader::kHoldMs));
+    assert(!combo.Process(pair, t + 1));
+    assert(!combo.Process(pair, t + 1 + bootloader::kHoldMs - 1));
+    assert(combo.Process(pair, t + 1 + bootloader::kHoldMs));
 
     // One key alone, or the pair plus any other key, never fires.
-    for(uint32_t other : {s13, s14, s13 | s14 | s1, s13 | s14 | s16, 0xFFFFu}) {
+    for(uint32_t other : {s9, s16, pair | s1, pair | s13, 0xFFFFu}) {
         bootloader::KeyCombo c;
         for(uint32_t ms = 0; ms <= 2 * bootloader::kHoldMs; ++ms)
             assert(!c.Process(other, 50000 + ms));
@@ -131,24 +132,24 @@ void TestKeys() {
     // A third key during the hold restarts the timer; so does a short release.
     bootloader::KeyCombo c;
     t = 70000;
-    assert(!c.Process(s13 | s14, t));
-    assert(!c.Process(s13 | s14 | s1, t + 2000));
-    assert(!c.Process(s13 | s14, t + 2001));
-    assert(!c.Process(s13 | s14, t + 2001 + bootloader::kHoldMs - 1));
-    assert(c.Process(s13 | s14, t + 2001 + bootloader::kHoldMs));
+    assert(!c.Process(pair, t));
+    assert(!c.Process(pair | s1, t + 4000));
+    assert(!c.Process(pair, t + 4001));
+    assert(!c.Process(pair, t + 4001 + bootloader::kHoldMs - 1));
+    assert(c.Process(pair, t + 4001 + bootloader::kHoldMs));
     bootloader::KeyCombo d;
-    assert(!d.Process(s13 | s14, t));
-    assert(!d.Process(s14, t + 2500)); // S13 bounced off for one tick
-    assert(!d.Process(s13 | s14, t + 2501));
-    assert(!d.Process(s13 | s14, t + 3500));
-    assert(d.Process(s13 | s14, t + 2501 + bootloader::kHoldMs));
+    assert(!d.Process(pair, t));
+    assert(!d.Process(s16, t + 4500)); // S9 bounced off for one tick
+    assert(!d.Process(pair, t + 4501));
+    assert(!d.Process(pair, t + 5500));
+    assert(d.Process(pair, t + 4501 + bootloader::kHoldMs));
 
     // The millisecond counter may wrap during the hold.
     bootloader::KeyCombo w;
     const uint32_t start = 0xFFFFFFFFu - 1000;
-    assert(!w.Process(s13 | s14, start));
-    assert(!w.Process(s13 | s14, start + 2999)); // wrapped
-    assert(w.Process(s13 | s14, start + 3000));
+    assert(!w.Process(pair, start));
+    assert(!w.Process(pair, start + 4999)); // wrapped
+    assert(w.Process(pair, start + 5000));
 }
 
 void TestService() {
@@ -203,5 +204,5 @@ int main() {
     TestMatcher();
     TestKeys();
     TestService();
-    std::puts("PASS: bootloader entry format, SysEx body/stream matching, S13+S14 3 s gesture, service/reply/reset");
+    std::puts("PASS: bootloader entry format, SysEx body/stream matching, S9+S16 5 s gesture, service/reply/reset");
 }

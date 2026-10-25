@@ -102,7 +102,8 @@ independently from those descriptions.
   frames), the post-roll crossfade switches in under a 384-frame jump crossfade.
 
 Not in v0.3: effects, input saturation and mix curves, Freeze, clock-synced
-slices, 1V/Oct and CV, the encoder range modes, WAV export, MIDI.
+slices, 1V/Oct and CV, the encoder range modes, WAV export, MIDI control. J7 is a
+USB-MIDI device, so far only for the firmware update request.
 
 **Decided for Frippertronics (2026-10-20),** following manual v1.1.0 rather than
 the analyzed code, whose behavior is still OPEN (analysis section 8); both are
@@ -137,7 +138,7 @@ Size, Slice, Skip and Decay.
 | S7 | Seam: window ↔ crossfade | on for crossfade |
 | S8 | Import the next WAV file from `looper/loops/` (undoable) | card: off = none, dim = ready, blinking = saving or loading, fast = error |
 | S9–S12 | Sound on Sound, Replace, Frippertronics, Resample | on for the selected mode |
-| S13 + S14, 3 s | Firmware update mode: after a running card write, all LEDs on, Daisy bootloader ([details](../../common/bootloader/README.md)) | all on |
+| S9 + S16, 5 s | Firmware update mode: after a running card write, all LEDs on, Daisy bootloader ([details](../../common/bootloader/README.md)); S9 selects Sound on Sound first | all on |
 | VR1 (pot 0) | Varispeed −24…+36 semitones, whole semitones, unity at 40 % | |
 | VR2 (pot 1) | Inertia 0…1 | |
 | pot 2 | Inertial Slope (centre lags both directions) | |

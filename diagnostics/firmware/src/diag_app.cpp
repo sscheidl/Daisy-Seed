@@ -94,6 +94,12 @@ void App::Step(uint32_t now) {
     stats_.rx_bad = parser_.bad_crc + parser_.bad_format + parser_.overflow + rx_.Overflow();
 
     const Inputs inputs = board_.ReadInputs();
+    // The key gesture of all apps (common/bootloader). Ignored while Windows owns
+    // the card; it needs a new 5 s hold after the card is returned.
+    if(boot_keys_.Process(inputs.buttons, now) && board_.SdTestAllowed() && !boot_pending_) {
+        boot_pending_ = true;
+        boot_since_ = now;
+    }
 
     // LEDs: commanded state only, there is no optical feedback.
     const uint16_t leds = ComputeLeds(session_.settings, now, inputs.buttons);

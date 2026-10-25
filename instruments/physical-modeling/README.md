@@ -74,7 +74,7 @@ The Firmware CI matrix provides `PhysicalModeling-v0.1.0.bin`, `.elf`, `.map` an
 Use the **existing external Daisy bootloader**, following
 [FLASHING](../../docs/FLASHING.md) and [HARDWARE_TEST](docs/HARDWARE_TEST.md).
 Flash only the application BIN. A working compatible bootloader needs no
-reinstallation. For an update, hold **S13 + S14** for 3 s or use **Firmware-Update …**
+reinstallation. For an update, hold **S9 + S16** for 5 s or use **Firmware-Update …**
 in the editor (both builds): all LEDs light up and the bootloader waits
 ([details](../../common/bootloader/README.md)). The user reports successful flashing and functional listening
 tests with S1 (Studio One). The authorized six-model hardware CPU capture recorded

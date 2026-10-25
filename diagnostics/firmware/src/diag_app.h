@@ -3,6 +3,7 @@
 // main.cpp supplies the hardware through the Board and UsbSink interfaces.
 #pragma once
 #include "ddp.h"
+#include "bootloader_entry.h"
 #include "diag_core.h"
 #include "ring_buffer.h"
 
@@ -103,6 +104,7 @@ class App {
     bool keepalive_after_block_ = false;
     bool boot_pending_ = false;
     uint32_t boot_since_ = 0;
+    bootloader::KeyCombo boot_keys_;  // S9+S16 for 5 s, as in every app
 };
 
 } // namespace diag

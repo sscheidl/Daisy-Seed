@@ -38,10 +38,11 @@ Only install a bootloader when it is missing or the wrong variant. Do not repeat
 
 1. Connect and power the kit through **J7 on the Desktop carrier**.
 2. Put the kit into update mode. Without touching the Seed3 buttons:
+   * any firmware of this repository, including the diagnostics: hold **S9 + S16**
+     (outer keys of the second row) for 5 s;
    * diagnostic firmware running: **Firmware update mode …** in the Windows app
      (DDP `BOOT`);
-   * an instrument or effect of this repository running: hold **S13 + S14** for
-     3 s, or **Firmware-Update …** in the Mod on Daisy editor
+   * an instrument or effect running: **Firmware-Update …** in the Mod on Daisy editor
      ([../../docs/FLASHING.md](../../docs/FLASHING.md)).
 
    All 16 LEDs light up and the bootloader waits without a time limit.

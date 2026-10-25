@@ -30,8 +30,8 @@ hold BOOT while pressing RESET, then choose **v6.x (external)** in the
 
 1. Connect the computer to **J7 on the Desktop carrier**, above the Seed3.
 2. Put the kit into update mode: with a firmware of this repository running, hold
-   **S13 + S14** for 3 s (instruments and effects) or click **Firmware update mode …**
-   in this application (diagnostic firmware). All 16 LEDs light up and the bootloader
+   **S9 + S16** for 5 s (every firmware of this repository) or click **Firmware update
+   mode …** in this application (diagnostic firmware). All 16 LEDs light up and the bootloader
    waits without a time limit. Otherwise press and release **RESET**, then press
    **BOOT** within about two seconds; the USR LED blinks quickly, then pulses slowly
    while the bootloader waits.

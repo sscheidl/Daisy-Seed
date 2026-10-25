@@ -38,7 +38,7 @@ std::atomic<uint32_t> key_scenario{0xFF}; // S1..S9 pressed: scenario 0..8
 mod::TripleBuffer<mod::Stats> stats_box;
 uint8_t current_scenario = 1;
 uint32_t midi_lost = 0, dispatch_max = 0, service_max = 0;
-// Software entry into the Daisy bootloader: S13+S14 for 3 s, or SysEx over J7.
+// Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 bootloader::KeyCombo boot_keys; // audio callback only
 bootloader::Request boot_request;
 static_assert(std::atomic<int8_t>::is_always_lock_free && std::atomic<uint32_t>::is_always_lock_free);

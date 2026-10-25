@@ -128,7 +128,8 @@ command was added do not advertise it. The firmware sends the ACK, waits up to 5
 all 16 LEDs and resets through libDaisy's `DAISY_INFINITE_TIMEOUT` mode
 ([common/bootloader](../../common/bootloader/README.md)). The CDC port then
 disappears; the bootloader appears as DFU device `0483:DF11`. Hosts without `boot`
-in `caps` do not offer the command.
+in `caps` do not offer the command. Holding S9 + S16 for 5 s on the kit does the
+same without a host and without a reply; the stream simply ends.
 
 ### ST — complete state
 

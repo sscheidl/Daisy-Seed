@@ -380,7 +380,7 @@ void EditorComponent::FinishFirmwareUpdate(BootRequest::Result result) {
         Log(LogKind::Ok, U("Das Kit ist im Update-Modus. Firmware jetzt mit dem Daisy Web Programmer oder "
                            "„make program-dfu“ laden."));
     } else {
-        Log(LogKind::Warn, U("Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S13 und S14 drei "
+        Log(LogKind::Warn, U("Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S9 und S16 fünf "
                              "Sekunden halten oder RESET und BOOT verwenden (docs/FLASHING.md)."));
     }
     RefreshAll();

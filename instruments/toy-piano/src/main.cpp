@@ -33,7 +33,7 @@ const mod::InstrumentInfo kModInfo = toy_piano::MakeModInfo();
 mod::adapter::UsbMidiSender mod_sender(usb_midi);
 mod::VoicePressure voice_pressure[toy_piano::kNumVoices];
 bool modulating = false; // audio callback only
-// Software entry into the Daisy bootloader: S13+S14 for 3 s, or SysEx over J7.
+// Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 bootloader::KeyCombo boot_keys; // audio callback only
 bootloader::Request boot_request;
 static_assert(std::atomic<uint32_t>::is_always_lock_free, "LED mailbox must be lock-free");

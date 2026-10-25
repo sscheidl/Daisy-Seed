@@ -398,8 +398,24 @@ void TestBootloader() {
     CHECK(r.board.bootloader_entries == 1);
 }
 
+// The key gesture of every app: S9+S16 alone for 5 s, also without a host.
+void TestBootloaderKeys() {
+    Rig r;
+    r.board.inputs.buttons = (1u << 8) | (1u << 15) | 1u;  // with S1: never
+    r.Run(6000);
+    CHECK(r.board.bootloader_entries == 0);
+    r.board.inputs.buttons = (1u << 8) | (1u << 15);
+    r.Run(4999);
+    CHECK(r.board.bootloader_entries == 0);
+    r.Run(2);
+    CHECK(r.board.bootloader_entries == 1);
+    r.Run(10000);  // still held: once
+    CHECK(r.board.bootloader_entries == 1);
+}
+
 int main() {
     TestBootloader();
+    TestBootloaderKeys();
     TestSilentUntilHello();
     TestHandshakeAndRate();
     TestImmediateFrameOnChange();

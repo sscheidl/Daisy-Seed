@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Daisy Seed3 Desktop Dev Kit, libDaisy commit in README. No GUI or storage writes.
+// USB-MIDI on J7 so far only for the bootloader request.
 #include "wet_path.hpp"
 #include "version.h"
 const char ambient_reverb_firmware_version[] =
     "AMBIENT-REVERB-VERSION=" AMBIENT_REVERB_VERSION;
 #include "desktop_devkit.h"
 #include "bootloader_daisy.h"
+#include "bootloader_midi.h"
+#include "usbd_core.h"
 #include <atomic>
 #include <cmath>
 using namespace daisy;
@@ -21,9 +24,13 @@ static std::atomic<uint32_t> uiState{0};
 static unsigned controlCountdown = 0, controlInterval = 1;
 static float knobs[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
 static uint32_t downMask = 0;
-// Software entry into the Daisy bootloader: S13+S14 (reserved keys) for 3 s.
+// Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 static bootloader::KeyCombo bootKeys; // audio callback only
 static bootloader::Request bootRequest;
+// libDaisy's USB device state for the external port (J7 on the carrier).
+extern "C" USBD_HandleTypeDef hUsbDeviceHS;
+// USB-MIDI on J7. Parameter control and presets are not implemented yet.
+static MidiUsbHandler usbMidi;
 static int widthPosition = Switch3::POS_CENTER, widthCandidate = Switch3::POS_CENTER;
 static unsigned widthStable = 0;
 static bool legacyMono = false;
@@ -162,6 +169,19 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
     if (elapsed > budgetCycles)
         overruns.fetch_add(1, std::memory_order_relaxed);
 }
+// Main loop only: the bootloader request; other messages are ignored for now.
+static void ServiceUsbMidi() {
+    usbMidi.Listen(); // restarts reception after an overflow
+    while (usbMidi.HasEvents())
+        if (bootloader::IsRequest(usbMidi.PopEvent()))
+            bootRequest.Set(bootloader::Request::kSysEx);
+}
+static void ServiceBootloader() {
+    bootloader::Service(bootRequest, hw, [](uint8_t *bytes, size_t size) {
+        if (hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
+            usbMidi.SendMessage(bytes, size);
+    });
+}
 int main() {
     asm volatile("" : : "r"(ambient_reverb_firmware_version)); // Keep the version in the BIN.
     hw.Init();
@@ -185,6 +205,10 @@ int main() {
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CYCCNT = 0;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+    MidiUsbHandler::Config usbConfig;
+    usbConfig.transport_config.periph = MidiUsbTransport::Config::EXTERNAL;
+    usbMidi.Init(usbConfig);
+    usbMidi.StartReceive();
     hw.seed.StartAudio(AudioCallback);
     while (true) {
         // Controls are serviced in the callback; no cross-thread DSP parameter writes.
@@ -195,7 +219,8 @@ int main() {
             RenderLeds(ui);
             previousUi = ui;
         }
-        bootloader::Service(bootRequest, hw);
+        ServiceUsbMidi();
+        ServiceBootloader();
         // Inspect maximumCycles / overruns in a debugger for on-board CPU evidence.
     }
 }

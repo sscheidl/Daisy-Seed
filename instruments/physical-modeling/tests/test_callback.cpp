@@ -82,16 +82,16 @@ int main() {
     request(64); tick(1); ServiceCpuTelemetry(); assert(midi.sent.size()==replies);
     hUsbDeviceHS.dev_state=0; request(1); tick(1); ServiceCpuTelemetry();
     assert(midi.sent.size()==replies && !cpu_reply_pending); // Offline: no TX/blocking.
-    // Bootloader entry: S13+S14 alone for 3 s (no reply), or the SysEx request (answered).
+    // Bootloader entry: S9+S16 alone for 5 s (no reply), or the SysEx request (answered).
     using daisy::System;
     for(auto& key:hw.pressed) key=false;
     tick(8); ServiceBootloader(); assert(System::bootloader_resets==0);
-    hw.pressed[12]=hw.pressed[13]=true;
-    tick(2990); ServiceBootloader(); assert(System::bootloader_resets==0);
+    hw.pressed[8]=hw.pressed[15]=true;
+    tick(4990); ServiceBootloader(); assert(System::bootloader_resets==0);
     tick(20); ServiceBootloader();
     assert(System::bootloader_resets==1 && System::bootloader_mode==System::DAISY_INFINITE_TIMEOUT);
     assert(midi.sent.size()==replies);
-    hw.pressed[12]=hw.pressed[13]=false; tick(8);
+    hw.pressed[8]=hw.pressed[15]=false; tick(8);
     hUsbDeviceHS.dev_state=USBD_STATE_CONFIGURED;
     daisy::MidiEvent boot; boot.type=daisy::SystemCommon; boot.sc_type=daisy::SystemExclusive;
     std::copy(std::begin(bootloader::kRequestBody),std::end(bootloader::kRequestBody),boot.sysex_data);
@@ -103,7 +103,7 @@ int main() {
     boot.sysex_message_len--; midi.incoming.push_back(boot); // truncated: ignored
     ServiceMidi(); ServiceBootloader(); assert(System::bootloader_resets==2);
     hUsbDeviceHS.dev_state=0;
-    puts("PASS bootloader entry: S13+S14 3 s, SysEx request with reply, truncated SysEx ignored");
+    puts("PASS bootloader entry: S9+S16 5 s, SysEx request with reply, truncated SysEx ignored");
     puts("PASS CPU average/peak, reset, overruns, timer wrap, coherent MIDI telemetry outside audio and offline guard");
     puts("PASS production callback: all keys/LEDs, switches, USB CC/bend, 300-event backpressure, no MIDI echo");
 }

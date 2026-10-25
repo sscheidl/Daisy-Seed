@@ -1051,7 +1051,7 @@ async function firmwareUpdate() {
     if (acked && state.link) disconnect(); // the port disappears with the reset
     else if (!link) closePorts(out, inp);
     if (acked) log('Das Kit ist im Update-Modus. Firmware jetzt mit dem Daisy Web Programmer oder „make program-dfu“ laden.', 'ok');
-    else log('Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S13 und S14 drei Sekunden halten oder RESET und BOOT verwenden (docs/FLASHING.md).', 'warn');
+    else log('Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S9 und S16 fünf Sekunden halten oder RESET und BOOT verwenden (docs/FLASHING.md).', 'warn');
   } finally {
     updating = false;
     $('updateBtn').disabled = false;

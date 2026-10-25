@@ -110,7 +110,7 @@ and the external Daisy DFU bootloader:
 1. Only if the appropriate bootloader is missing: install it once through the
    USB-C connector **on the Seed3 module**.
 2. For normal use and firmware updates: use **J7 on the Desktop carrier**. Hold
-   **S13 + S14** for 3 s (or click **Firmware-Update …** in the editor): all LEDs
+   **S9 + S16** for 5 s (or click **Firmware-Update …** in the editor): all LEDs
    light up and the bootloader waits without a time limit. Select the BIN under
    Custom in the [Daisy Web Programmer](https://flash.daisy.audio/). Firmware older
    than this entry, or a hung one, still needs RESET then BOOT within about two seconds.

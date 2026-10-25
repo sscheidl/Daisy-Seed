@@ -31,7 +31,7 @@ bool usb_ready=false, mounted=false;
 bool sent_notes[128]{};
 // Inspect through a debugger; values are NOT measurements until run on hardware.
 volatile uint32_t callback_peak_cycles=0, callback_overruns=0;
-// Software entry into the Daisy bootloader: S13+S14 for 3 s, or SysEx over J7.
+// Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 bootloader::KeyCombo boot_keys;     // control timer only
 bootloader::SysExMatcher boot_sysex; // USB interrupt only
 bootloader::Request boot_request;

@@ -169,11 +169,12 @@ failure can hang main/LED service; the audio interrupt continues independently.
 
 ## Firmware update mode
 
-Hold **S13 + S14**, and no other key, for 3 s, or send the bootloader SysEx from the
+Hold **S9 + S16**, and no other key, for 5 s, or send the bootloader SysEx from the
 Mod on Daisy editor (**Firmware-Update …**): all LEDs light up and the kit restarts into
 the Daisy bootloader ([details](../../common/bootloader/README.md),
-[FLASHING.md](../../docs/FLASHING.md)). In KEYBOARD mode these keys are G5 and A5, so
-a held dyad of exactly these two notes for 3 s enters update mode as well.
+[FLASHING.md](../../docs/FLASHING.md)). In KEYBOARD mode these keys are C5 and C6, so
+a held octave of exactly these two notes for 5 s enters update mode as well; in
+SAMPLE mode they load slots 9 and 16 first.
 
 ## USB MIDI on carrier J7
 

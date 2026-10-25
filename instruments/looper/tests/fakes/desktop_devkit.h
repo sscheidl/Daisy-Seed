@@ -2,6 +2,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
+#include <vector>
 #define DSY_SYSTEM_H
 #define DSY_SDRAM_BSS
 namespace daisy {
@@ -33,6 +35,49 @@ struct AudioHandle {
 };
 struct SaiHandle {
     struct Config { enum class SampleRate { SAI_48KHZ }; };
+};
+// USB MIDI: the firmware polls events and sends raw 3-byte messages. The fake
+// feeds scripted events in and records every message handed to SendMessage().
+// Names as in libDaisy's MidiEvent.h. Only the bootloader request is used so far.
+enum MidiMessageType { NoteOff, NoteOn, PolyphonicKeyPressure, ControlChange, ProgramChange,
+                       ChannelPressure, PitchBend, SystemCommon, SystemRealTime, ChannelMode, MessageLast };
+enum SystemCommonType { SystemExclusive, MTCQuarterFrame, SongPositionPointer, SongSelect };
+enum SystemRealTimeType { TimingClock, SRTUndefined0, Start, Continue, Stop };
+enum ChannelModeType { AllSoundOff, ResetAllControllers, LocalControl, AllNotesOff };
+struct NoteOnEvent { int channel; uint8_t note, velocity; };
+struct MidiEvent {
+    MidiMessageType type = NoteOn;
+    int channel = 0;
+    uint8_t data[2] = {0, 0};
+    uint8_t sysex_data[128] = {};
+    uint8_t sysex_message_len = 0;
+    SystemCommonType sc_type = SystemExclusive;
+    SystemRealTimeType srt_type = TimingClock;
+    ChannelModeType cm_type = AllSoundOff;
+    NoteOnEvent AsNoteOn() { return {channel, data[0], data[1]}; }
+};
+struct MidiUsbTransport {
+    struct Config {
+        enum Periph { INTERNAL, EXTERNAL, HOST };
+        Periph periph = INTERNAL;
+    };
+};
+struct MidiUsbHandler {
+    struct Config { MidiUsbTransport::Config transport_config; };
+    std::deque<MidiEvent> incoming;
+    std::vector<std::vector<uint8_t>> sent;
+    MidiUsbTransport::Config::Periph periph = MidiUsbTransport::Config::INTERNAL;
+    bool receiving = false;
+    void Init(Config config) { periph = config.transport_config.periph; }
+    void StartReceive() { receiving = true; }
+    void Listen() {}
+    bool HasEvents() const { return !incoming.empty(); }
+    MidiEvent PopEvent() {
+        MidiEvent event = incoming.front();
+        incoming.pop_front();
+        return event;
+    }
+    void SendMessage(uint8_t* bytes, std::size_t size) { sent.emplace_back(bytes, bytes + size); }
 };
 namespace desktop_devkit {
 struct Hardware {

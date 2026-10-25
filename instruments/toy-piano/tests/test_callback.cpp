@@ -184,7 +184,7 @@ daisy::MidiEvent SysEx(const uint8_t* body, std::size_t size) {
     return event;
 }
 
-// Software bootloader entry: S13+S14 alone for 3 s, or the SysEx request over J7.
+// Software bootloader entry: S9+S16 alone for 5 s, or the SysEx request over J7.
 void TestBootloader() {
     using daisy::System;
     hw.pressed.fill(false);
@@ -192,13 +192,13 @@ void TestBootloader() {
     ServiceBootloader();
     assert(System::bootloader_resets == 0);
 
-    // With a third key held the pair never fires; once alone, it takes 3 s.
-    hw.pressed[12] = hw.pressed[13] = hw.pressed[0] = true;
-    Tick(4000);
+    // With a third key held the pair never fires; once alone, it takes 5 s.
+    hw.pressed[8] = hw.pressed[15] = hw.pressed[0] = true;
+    Tick(6000);
     ServiceBootloader();
     assert(System::bootloader_resets == 0);
     hw.pressed[0] = false;
-    Tick(2990);
+    Tick(4990);
     ServiceBootloader();
     assert(System::bootloader_resets == 0);
     Tick(20);

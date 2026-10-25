@@ -35,7 +35,7 @@ std::atomic<uint32_t> cpu_request{0};
 SpscQueue<CpuSnapshot, 4> cpu_snapshots;
 bool cpu_reply_pending = false; // Main loop only; at most one outstanding request.
 uint32_t held = 0;
-// Software entry into the Daisy bootloader: S13+S14 for 3 s, or SysEx over J7.
+// Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 bootloader::KeyCombo boot_keys; // audio callback only
 bootloader::Request boot_request;
 static_assert(std::atomic<uint32_t>::is_always_lock_free);

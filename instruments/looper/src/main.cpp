@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Looper for the Daisy Seed3 Desktop Dev Kit, libDaisy commit in the repository
 // README. Engine with loop modes and Slice/Skip, loop persistence and WAV import
-// on the microSD card; no MIDI or effects.
+// on the microSD card; no effects. USB-MIDI on J7 so far only for the bootloader request.
 #include "card_volume.h"
 #include "loop_store.h"
 #include "looper_engine.h"
@@ -9,9 +9,12 @@
 const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
 #include "desktop_devkit.h"
 #include "bootloader_daisy.h"
+#include "bootloader_midi.h"
+#include "usbd_core.h"
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <iterator>
 #include <memory>
 using namespace daisy;
 
@@ -52,9 +55,14 @@ static uint32_t downMask = 0;
 static std::atomic<uint32_t> uiState{0}, maximumCycles{0}, overruns{0};
 static uint32_t budgetCycles = 0;
 static float settled[knobs::Decay + 1] = {-1, -1, -1, -1, -1, -1, -1, -1};
-// Software entry into the Daisy bootloader: S13+S14 (no looper function) for 3 s.
+// Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 static bootloader::KeyCombo bootKeys;  // audio callback only
 static bootloader::Request bootRequest;
+
+// libDaisy's USB device state for the external port (J7 on the carrier).
+extern "C" USBD_HandleTypeDef hUsbDeviceHS;
+// USB-MIDI on J7. Notes and CCs are ignored until the looper gets MIDI control.
+static MidiUsbHandler usbMidi;
 
 // microSD: loop.wav is saved from the main loop and recalled at power-up;
 // S8 imports the next WAV file of 0:/looper/loops. The transfer buffer must be
@@ -284,6 +292,25 @@ static void ServiceStorage(uint32_t now) {
     store.Service(view, port, now);
 }
 
+static void SendMidi(uint8_t* bytes, size_t size) {
+    if (hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
+        usbMidi.SendMessage(bytes, size);
+}
+
+// Main loop. A SysEx request is answered at once, because a card write may hold
+// the reset back for longer than an editor waits for the reply.
+static void ServiceUsbMidi() {
+    usbMidi.Listen();  // restarts reception after an overflow
+    while (usbMidi.HasEvents()) {
+        if (!bootloader::IsRequest(usbMidi.PopEvent()))
+            continue;
+        uint8_t ack[sizeof(bootloader::kAck)];
+        std::copy(std::begin(bootloader::kAck), std::end(bootloader::kAck), ack);
+        SendMidi(ack, sizeof(ack));
+        bootRequest.Set(bootloader::Request::kKeys);  // already answered
+    }
+}
+
 // Main loop: a pending request waits until no card write or import is running.
 static void ServiceBootloader() {
     if (!storageReady || !store.Active())
@@ -353,11 +380,16 @@ int main() {
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CYCCNT = 0;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+    MidiUsbHandler::Config usbConfig;
+    usbConfig.transport_config.periph = MidiUsbTransport::Config::EXTERNAL;
+    usbMidi.Init(usbConfig);
+    usbMidi.StartReceive();
     hw.seed.StartAudio(AudioCallback);
     uint32_t shown = ~0u, ledsAt = 0;
     while (true) {
         const uint32_t now = System::GetNow();
         ServiceStorage(now);
+        ServiceUsbMidi();
         ServiceBootloader();
         if (now - ledsAt >= 10) {
             ledsAt = now;

@@ -97,7 +97,7 @@ and a shared effect chain have not been implemented.
 * **[Handover](HANDOVER.md)** (state, local setup, hardware test run sheet, open decisions)
   and the [agent rules](AGENTS.md).
 * [Build and toolchain](docs/BUILD.md), [hardware](docs/HARDWARE.md), and [flashing](docs/FLASHING.md);
-  updates without BOOT/RESET: hold S13+S14 for 3 s or use the editor ([common/bootloader](common/bootloader/README.md)).
+  updates without BOOT/RESET: hold S9+S16 for 5 s or use the editor ([common/bootloader](common/bootloader/README.md)).
 * [Toy Piano controls and hardware test](instruments/toy-piano/README.md),
   [USB MIDI](instruments/toy-piano/docs/MIDI.md),
   [changelog](instruments/toy-piano/CHANGELOG.md), and [validation report](instruments/toy-piano/docs/VALIDATION.md).

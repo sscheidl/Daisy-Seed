@@ -3,11 +3,11 @@
 ## Unreleased
 
 * **Firmware updates without BOOT/RESET** ([common/bootloader](../../common/bootloader/README.md)):
-  holding S13+S14 alone for 3 s, or the USB-MIDI SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7`
+  holding S9+S16 alone for 5 s, or the USB-MIDI SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7`
   (answered with `F0 7D 42 4C 01 41 F7`), lights all LEDs and restarts into the Daisy
   bootloader with `DAISY_INFINITE_TIMEOUT`. The control timer only runs the key timer; the raw USB-MIDI parser
   matches the SysEx in the USB interrupt.
-* In KEYBOARD mode S13+S14 are G5+A5: a held dyad of exactly these two keys for 3 s
+* In KEYBOARD mode S9+S16 are C5+C6: a held octave of exactly these two keys for 5 s
   enters update mode.
 
 ## 0.1.0 - 2026-10-19

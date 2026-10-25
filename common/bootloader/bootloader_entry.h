@@ -3,7 +3,7 @@
 // apps. Two triggers request it; the main loop then calls bootloader::Enter()
 // (bootloader_daisy.h). This header has no libDaisy dependency and is host-tested.
 //
-//   * Keys: S13 and S14, and no other key, held together for 3 s.
+//   * Keys: S9 and S16, and no other key, held together for 5 s.
 //   * USB-MIDI SysEx: F0 7D 42 4C 01 01 42 4F 4F 54 F7 ("BL", ENTER, "BOOT").
 //     The firmware answers F0 7D 42 4C 01 41 F7 before it resets.
 //
@@ -14,10 +14,11 @@
 
 namespace bootloader {
 
-// S13 and S14 (bit 0 = S1). They have no function in Looper, Ambient Reverb or
-// the Nebulae function mode; in the note instruments they are G5 and A5.
-constexpr uint32_t kKeyMask = (1u << 12) | (1u << 13);
-constexpr uint32_t kHoldMs = 3000;
+// S9 and S16 (bit 0 = S1): the outer keys of the second row, easy to find with the
+// case closed. Their own press actions still run (a loop mode, sustain, C5/C6); the
+// reset follows only after 5 s of holding exactly this pair (README.md).
+constexpr uint32_t kKeyMask = (1u << 8) | (1u << 15);
+constexpr uint32_t kHoldMs = 5000;
 
 // 0x7D: non-commercial manufacturer ID, shared with Mod on Daisy ("MD", 4D 44).
 // "BL" (42 4C) keeps the two protocols apart.
@@ -73,7 +74,7 @@ class SysExMatcher {
 };
 
 // Key gesture. Call with the debounced held-key mask (bit 0 = S1) and a
-// millisecond clock, once per control tick. Returns true once when S13+S14 have
+// millisecond clock, once per control tick. Returns true once when S9+S16 have
 // been held alone for kHoldMs; the keys must be released before it can fire again.
 class KeyCombo {
   public:
