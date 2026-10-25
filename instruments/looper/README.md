@@ -7,7 +7,7 @@ behavioral reference. Validation details: [docs/VALIDATION.md](docs/VALIDATION.m
 first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.3.1.bin
+make PROJECT=looper -j4            # firmware: build/Looper-v0.3.2.bin
 make PROJECT=looper test           # host engine and production-callback tests
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```
@@ -170,12 +170,22 @@ A FAT32 card holds a folder `looper/` (created when missing):
   case (at most 32 files, names shorter than 96 characters, hidden files
   skipped). Accepted: 16- or 24-bit PCM or 32-bit float, also
   WAVE_FORMAT_EXTENSIBLE, mono (duplicated) or up to 8 channels (the first two
-  are used), exactly 48 kHz, at most 87 s. Every chunk is checked against the
-  file size and the length against the buffer before anything is written.
+  are used), 48 kHz or 44.1 kHz, at most 87 s. Every chunk is checked against
+  the file size and the length (after conversion) against the buffer before
+  anything is written.
   The file is read into the other buffer while the loop keeps playing, then the
   engine switches with a 10 ms fade; undo returns the previous loop. While a
   file loads, record, undo and erase are ignored. Rejected files and a busy
   engine (recording, resampling) are shown with a fast-blinking S8 LED.
+* **44.1 kHz files** (v0.3.2) are converted to 48 kHz while they load: a
+  64-tap polyphase windowed-sinc filter (ratio 160/147), flat to 17 kHz within
+  0.001 dB, −0.1 dB at 19 kHz, −3.3 dB at 20 kHz, images below −90 dB. The file
+  is treated as one loop period, so the seam stays as clean as in the file. The
+  looper itself always runs at 48 kHz (libDaisy's audio clock has no 44.1 kHz
+  setting). The conversion runs in steps of 4,096 input frames per main-loop
+  pass, so a long file loads more slowly than a 48 kHz one (load time on the
+  board: NICHT GEMESSEN). The filter table (40 KB) lives in SDRAM. Other rates
+  (32, 88.2, 96 kHz …) are still rejected.
 
 All card access runs in the main loop. The audio callback only publishes a
 snapshot of the engine state (sequence lock) and answers import requests, so

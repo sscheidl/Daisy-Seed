@@ -68,6 +68,8 @@ static MidiUsbHandler usbMidi;
 // S8 imports the next WAV file of 0:/looper/loops. The transfer buffer must be
 // reachable by the SDMMC IDMA, which cannot access DTCM.
 alignas(32) static uint8_t DSY_SDRAM_BSS transfer[32768];
+// Filter phases for importing 44.1 kHz files (40 KB; DTCM has no room for it).
+static float DSY_SDRAM_BSS resampleTable[looper::resample::kTableSize];
 static looper::LoopStore store;
 static bool storageReady = false;
 static std::atomic<bool> cardPresent{false}, importRequested{false};
@@ -278,8 +280,10 @@ static void InitStorage() {
     storageReady = looper::InitCard(&CardPresent) &&
                    store.Init(&looper::CardVolume(), transfer, sizeof(transfer), LOOPER_BUFFER_FRAMES,
                               "0:/looper");
-    if (storageReady)
+    if (storageReady) {
+        store.EnableResampling(resampleTable, looper::resample::kTableSize);
         store.Recall(engine);
+    }
     PublishSnapshot();
 }
 

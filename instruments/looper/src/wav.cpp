@@ -58,7 +58,7 @@ const char* Describe(Error error) {
     case Error::NoData: return "no data chunk";
     case Error::Truncated: return "truncated chunk";
     case Error::Unsupported: return "unsupported sample format";
-    case Error::SampleRate: return "sample rate is not 48 kHz";
+    case Error::SampleRate: return "sample rate is not 44.1 or 48 kHz";
     case Error::Empty: return "no audio frames";
     case Error::TooLong: return "longer than the loop buffer";
     }
@@ -132,15 +132,18 @@ Error Parse(Source& source, uint32_t maxFrames, Info& info) {
     if ((!pcm && !flt) || info.channels == 0 || info.channels > kMaxChannels ||
         info.blockAlign != uint32_t(info.channels) * (info.bits / 8))
         return Error::Unsupported;
-    if (info.sampleRate != kSampleRate)
+    if (info.sampleRate != kSampleRate && info.sampleRate != kSampleRate44)
         return Error::SampleRate;
     const uint64_t frames = dataBytes / info.blockAlign;
     if (frames == 0)
         return Error::Empty;
-    if (frames > maxFrames)
+    const bool convert = info.sampleRate == kSampleRate44;
+    const uint64_t output = convert ? frames * resample::kUp / resample::kDown : frames;
+    if (output > maxFrames)
         return Error::TooLong;
     info.frames = uint32_t(frames);
-    if (info.hasLoop && (info.loopLength == 0 || info.tailLength > kTailFrames ||
+    info.outputFrames = uint32_t(output);
+    if (info.hasLoop && (convert || info.loopLength == 0 || info.tailLength > kTailFrames ||
                          uint64_t(info.loopLength) + info.tailLength != frames))
         info.hasLoop = false;  // not ours or inconsistent: a plain loop
     return Error::None;

@@ -7,7 +7,7 @@ skipped one.
 
 ## 0. Prepare
 
-- [ ] Build or download `Looper-v0.3.0.bin` and note its SHA-256. The PR CI
+- [ ] Build or download `Looper-v0.3.2.bin` and note its SHA-256. The PR CI
       artifact and a local build of the same commit must match.
 - [ ] Flash it through the external Daisy bootloader as in
       [docs/FLASHING.md](../../../docs/FLASHING.md) (`PROJECT=looper`). Do not
@@ -95,7 +95,9 @@ Record: board revision, binary SHA-256, source, input level, monitoring.
 ## 7. microSD
 
 Use a FAT32 card. Put a few WAV files (48 kHz; 16/24-bit or float; mono or
-stereo; one longer than 87 s; one at 44.1 kHz) into a folder `looper/loops/`.
+stereo; one longer than 87 s; one at 96 kHz) into a folder `looper/loops/`, plus
+the same short loop once at 48 kHz and once at 44.1 kHz, and one 44.1 kHz file
+of about 80 s.
 
 - [ ] Without a card the S8 LED is off and everything else works.
 - [ ] With a card the S8 LED is dim after boot.
@@ -108,8 +110,12 @@ stereo; one longer than 87 s; one at 44.1 kHz) into a folder `looper/loops/`.
       available right after boot.
 - [ ] Erase, wait 3 s, power-cycle: the looper starts empty.
 - [ ] S8 loads the files of `looper/loops/` in name order, one per press; the
-      loop switches with a short fade. S3 returns the previous loop. The 44.1 kHz
+      loop switches with a short fade. S3 returns the previous loop. The 96 kHz
       file and the over-long file make the S8 LED blink fast and change nothing.
+- [ ] The 44.1 kHz loop plays at the same pitch and tempo as its 48 kHz twin,
+      sounds the same (no dullness, no hiss or whistle), and its seam is as clean.
+      Note how long the 80 s file at 44.1 kHz takes to load; audio keeps running
+      and D16 stays off meanwhile.
 - [ ] Pull the card while it is saving: no crash, LED off; insert it again: the
       next change is saved.
 - [ ] Check `looper/loop.wav` on a computer: it plays as a 32-bit float stereo
