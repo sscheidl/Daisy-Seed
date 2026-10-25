@@ -56,7 +56,7 @@ Do not repeat `program-boot` for ordinary firmware updates.
    firmware (which has its own button), the editor button. The Looper first finishes
    a running card write.
 3. Connect with the [Daisy Web Programmer](https://flash.daisy.audio/), choose Custom
-   and select **`instruments/toy-piano/build/ToyPiano-v0.3.1.bin`**. Alternatively:
+   and select **`instruments/toy-piano/build/ToyPiano-v0.4.bin`**. Alternatively:
 
    ```bash
    make PROJECT=toy-piano program-dfu

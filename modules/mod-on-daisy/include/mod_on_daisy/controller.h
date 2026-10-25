@@ -191,7 +191,7 @@ class Controller {
     uint32_t Schema() const { return schema_; }
     uint8_t DeviceId() const { return device_; }
     uint32_t RejectedFrames() const { return rejected_frames_; }
-#if MOD_ON_DAISY_EXTENSIONS
+#if MOD_ON_DAISY_IGNORE_REPLIES
     uint32_t IgnoredReplies() const { return ignored_replies_; } // echoed replies, never answered
 #endif
     uint32_t DroppedReplies() const { return dropped_replies_; }
@@ -228,7 +228,7 @@ class Controller {
         }
         if(f.device != device_ && !(f.device == proto::kBroadcast && f.command == proto::Identify))
             return true; // other device: consumed silently
-#if MOD_ON_DAISY_EXTENSIONS
+#if MOD_ON_DAISY_IGNORE_REPLIES
         // Replies, NAKs and monitor frames (reply bit set) are never answered: a DAW that
         // echoes the port back (Studio One input monitoring) otherwise keeps a NAK ping-pong
         // running that fills the reply queue (hardware test of 24.10.2026, PROTOCOL.md § 2).
@@ -614,7 +614,9 @@ class Controller {
     Extensions ext_{};
     uint8_t at_kind_ = 0, at_note_ = 0;
     uint32_t at_count_ = 0, at_seen_ = 0, at_ms_ = 0; // main loop only
-    uint32_t ignored_replies_ = 0;
+#endif
+#if MOD_ON_DAISY_IGNORE_REPLIES
+    uint32_t ignored_replies_ = 0; // same place as before, so extension images stay unchanged
 #endif
     uint32_t rejected_frames_ = 0, dropped_replies_ = 0;
 };

@@ -16,6 +16,8 @@ test: $(HEADERS)
 	MOD_FUZZ_ROUNDS=20000 ./build/host/test_mod_64
 	$(HOST_CXX) $(HOST_FLAGS) -DMOD_ON_DAISY_EXTENSIONS=1 $(HOST_INCLUDES) tests/test_mod.cpp -o build/host/test_mod_ext
 	MOD_FUZZ_ROUNDS=20000 ./build/host/test_mod_ext
+	$(HOST_CXX) $(HOST_FLAGS) -DMOD_ON_DAISY_IGNORE_REPLIES=1 $(HOST_INCLUDES) tests/test_mod.cpp -o build/host/test_mod_echo
+	MOD_FUZZ_ROUNDS=20000 ./build/host/test_mod_echo
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_bench.cpp -o build/host/test_bench
 	./build/host/test_bench
 	$(HOST_CXX) $(HOST_FLAGS) $(STRESS_FLAGS) $(HOST_INCLUDES) tests/test_bench.cpp -o build/host/test_bench_64

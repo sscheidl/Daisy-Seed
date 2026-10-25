@@ -173,6 +173,10 @@ Programmer geflasht. Studio One lief und spielte das Kit (Daisy als Ein- und Aus
 * Rückkopplung: Antwortrahmen werden nie beantwortet; Modultest `TestEchoedReplies` schickt jeden
   ausgehenden Rahmen zurück: 20 Monitorrahmen/s, kein NAK. `PhysicalModelingMod-v0.1.0.bin`
   danach 171.684 Byte; die übrigen Images weiter bytegleich.
+* Toy Piano v0.4 (`GEMESSEN` 25.10.2026, Host/ARM unter Windows): dieselbe Regel einzeln mit
+  `MOD_ON_DAISY_IGNORE_REPLIES=1`; Modultest zusätzlich in dieser Variante (`test_mod_echo`),
+  Toy-Piano-Test über den USB-Pfad: 20 Monitorrahmen/s, kein NAK. Übrige Images bytegleich zu
+  `main` (Physical Modeling mod `9517db27…`). Am Gerät `NICHT GEMESSEN`.
 * Am Gerät: `NICHT GEMESSEN` (E18, E19, E9b, E7b mit mod4).
 
 ## 1e. VST3-Plugin (`GEMESSEN` 24.10.2026, Host)

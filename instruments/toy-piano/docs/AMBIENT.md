@@ -68,7 +68,7 @@ Callback-Last; Werte über 100 % bleiben erhalten. `ticks` zählt Blöcke,
 gemessen und bleiben null. Snapshot-Publikation erfolgt nach dem Messintervall.
 Alle Meterzugriffe liegen im Audio-Thread; Main erhält zusammenhängende Snapshots
 über den vorhandenen Triple-Buffer. Reset wird im nächsten Callback übernommen.
-Die SysEx-Antwortschleifensperre ist hier eingeschaltet; v0.3 bleibt unverändert.
+Die SysEx-Antwortschleifensperre ist hier eingeschaltet, ebenso im Toy Piano ab v0.4.
 
 ## Build und Abnahme
 

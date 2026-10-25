@@ -1,4 +1,4 @@
-# Toy Piano v0.3
+# Toy Piano v0.4
 
 Project ID: `toy-piano` · [All instruments and effects](../../README.md)
 

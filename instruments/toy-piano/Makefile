@@ -11,6 +11,10 @@ C_DEFS = $(FX_DEFS)
 FX_SOURCES = ../../effects/reverb/src/ambient_reverb.cpp ../../effects/reverb/src/wet_path.cpp
 else
 TARGET = ToyPiano-v$(VERSION)
+# v0.4: all Mod on Daisy extensions as in Physical Modeling MOD (extended monitor with
+# pot positions, LFO cross modulation) and with them the echo guard (PROTOCOL.md § 2, 2a).
+MOD_DEFS = -DMOD_ON_DAISY_EXTENSIONS=1
+C_DEFS = $(MOD_DEFS)
 endif
 CPP_SOURCES = src/main.cpp src/toy_piano.cpp $(FX_SOURCES)
 MOD_ON_DAISY = ../../modules/mod-on-daisy
@@ -27,7 +31,7 @@ version:
 	@echo $(VERSION)
 HOST_CXX ?= g++
 HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -pthread
-HOST_INCLUDES = -Isrc -I$(BOOTLOADER_DIR) -I$(DAISYSP_DIR)/Source -I$(LIBDAISY_DIR)/src -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+HOST_INCLUDES = $(MOD_DEFS) -Isrc -I$(BOOTLOADER_DIR) -I$(DAISYSP_DIR)/Source -I$(LIBDAISY_DIR)/src -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 ifeq ($(AMBIENT),1)
 test:
 	mkdir -p build/host/ambient

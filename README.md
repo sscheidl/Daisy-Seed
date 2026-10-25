@@ -9,7 +9,7 @@ share the pinned libraries, toolchain, and board build configuration.
 
 | Project | Directory | Status |
 | --- | --- | --- |
-| [Toy Piano v0.3.1](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3 hardware test pending |
+| [Toy Piano v0.4](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); v0.4 has the full Mod on Daisy panel like Physical Modeling (pot positions, extended monitor, LFO cross modulation) and ignores echoed replies (Studio One input monitoring); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3/v0.4 hardware test pending |
 | [Toy Piano + Ambient Reverb v0.1.2](instruments/toy-piano/docs/AMBIENT.md) | `instruments/toy-piano/` (`AMBIENT=1`) | Separate `toy-piano-ambient` build: six reverb modes including Shimmer, Stretch, physical transpose/decay, existing matrix/editor contract and callback diagnostics; host/sanitizer/ARM checks pass, hardware untested |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings, six models and global reverb; user-confirmed hardware/MIDI behavior and measured CPU headroom; model-switch spikes accepted as a known limitation ([results](instruments/physical-modeling/docs/HARDWARE_PLAYING_2026-10-22.md)) |
 | [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build without Mod on Daisy code, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
@@ -81,7 +81,7 @@ make test-release
 
 Toy Piano is the default when `PROJECT=` is omitted. You can also build it from
 its directory with `make -C instruments/toy-piano`. Its image is
-**`instruments/toy-piano/build/ToyPiano-v0.3.1.bin`**. The version is defined in
+**`instruments/toy-piano/build/ToyPiano-v0.4.bin`**. The version is defined in
 `instruments/toy-piano/src/version.h`; `make -s version` prints it. Builds for
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
