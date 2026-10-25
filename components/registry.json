@@ -78,6 +78,15 @@
         "name": "SEED_FX_CONTRACT_VERSION"
       }
     },
+    "bootloader-entry": {
+      "kind": "control",
+      "source": "common/bootloader",
+      "version": {
+        "type": "macro",
+        "path": "common/bootloader/bootloader_entry.h",
+        "name": "BOOTLOADER_ENTRY_VERSION"
+      }
+    },
     "mod-on-daisy": {
       "kind": "control",
       "source": "modules/mod-on-daisy",
@@ -95,7 +104,8 @@
       "kind": "panel",
       "source": "editors/mod-on-daisy/src",
       "depends": [
-        "mod-on-daisy"
+        "mod-on-daisy",
+        "bootloader-entry"
       ],
       "version": {
         "type": "cmake",
@@ -106,7 +116,8 @@
       "kind": "panel",
       "source": "editors/mod-on-daisy/src/plugin",
       "depends": [
-        "mod-on-daisy"
+        "mod-on-daisy",
+        "bootloader-entry"
       ],
       "version": {
         "type": "cmake",
@@ -117,7 +128,8 @@
       "kind": "panel",
       "source": "editors/mod-on-daisy/web",
       "depends": [
-        "mod-on-daisy"
+        "mod-on-daisy",
+        "bootloader-entry"
       ],
       "version": {
         "type": "javascript",
@@ -146,7 +158,8 @@
       "marker": "TOYPIANO-FW-VERSION=",
       "components": [
         "toy-piano",
-        "mod-on-daisy"
+        "mod-on-daisy",
+        "bootloader-entry"
       ],
       "panels": [
         "mod-editor-web",
@@ -161,7 +174,8 @@
       "marker": "PHYSICAL-MODELING-VERSION=",
       "components": [
         "physical-modeling",
-        "torus-reverb"
+        "torus-reverb",
+        "bootloader-entry"
       ],
       "panels": []
     },
@@ -174,7 +188,8 @@
       "components": [
         "physical-modeling",
         "torus-reverb",
-        "mod-on-daisy"
+        "mod-on-daisy",
+        "bootloader-entry"
       ],
       "panels": [
         "mod-editor-web",
@@ -195,7 +210,8 @@
         "physical-modeling",
         "torus-reverb",
         "mod-on-daisy",
-        "fx-contract"
+        "fx-contract",
+        "bootloader-entry"
       ],
       "panels": [
         "mod-editor-web",
@@ -216,7 +232,8 @@
         "physical-modeling",
         "ambient-reverb-fx",
         "mod-on-daisy",
-        "fx-contract"
+        "fx-contract",
+        "bootloader-entry"
       ],
       "panels": [
         "mod-editor-web",
@@ -230,7 +247,8 @@
       "image": "NebulaeOnDaisy",
       "marker": "NEBULAE-FW-VERSION=",
       "components": [
-        "nebulae"
+        "nebulae",
+        "bootloader-entry"
       ],
       "panels": []
     },
@@ -240,7 +258,8 @@
       "image": "Looper",
       "marker": "LOOPER-VERSION=",
       "components": [
-        "looper"
+        "looper",
+        "bootloader-entry"
       ],
       "panels": []
     },
@@ -250,7 +269,8 @@
       "image": "AmbientReverb",
       "marker": "AMBIENT-REVERB-VERSION=",
       "components": [
-        "ambient-reverb"
+        "ambient-reverb",
+        "bootloader-entry"
       ],
       "panels": []
     },
@@ -264,7 +284,8 @@
       "image": "ModBench",
       "marker": "MOD-BENCH-VERSION=",
       "components": [
-        "mod-on-daisy"
+        "mod-on-daisy",
+        "bootloader-entry"
       ],
       "panels": [
         "mod-editor-web",
@@ -286,7 +307,8 @@
         "ambient-reverb-fx",
         "mod-on-daisy",
         "callback-diagnostics",
-        "fx-contract"
+        "fx-contract",
+        "bootloader-entry"
       ],
       "panels": [
         "mod-editor-web",

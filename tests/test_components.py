@@ -95,6 +95,21 @@ class ComponentTests(unittest.TestCase):
         suites = selection.select_suites(['instruments/physical-modeling/torus/dsp/fx/reverb.h'])
         self.assertTrue(suites['fx'] and suites['physical'])
 
+    def test_bootloader_entry(self):
+        # Every firmware product embeds the shared bootloader entry with its own version;
+        # the panels that send its request depend on it.
+        data = manifest.load_registry()
+        self.assertEqual(manifest.read_version(data['components']['bootloader-entry']['version']), '1.0.0')
+        for name in data['products']:
+            ids = [item['id'] for item in manifest.describe_product(name)['components']]
+            self.assertIn('bootloader-entry', ids, name)
+        for panel in ('mod-editor-web', 'mod-editor-juce', 'mod-editor-vst3'):
+            self.assertIn('bootloader-entry', data['components'][panel]['depends'])
+        suites = selection.select_suites(['common/bootloader/bootloader_entry.h'])
+        for key in ('bootloader', 'toy', 'physical', 'granular', 'looper', 'reverb', 'mod',
+                    'diagnostics', 'submodules'):
+            self.assertTrue(suites[key], key)
+
 
 if __name__ == '__main__':
     unittest.main()

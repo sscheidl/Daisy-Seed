@@ -12,6 +12,10 @@
 #include <cstddef>
 #include <cstdint>
 
+// Component version for the manifest (components/registry.json), three-part SemVer.
+// The SysEx frame keeps its own version byte (kVersion).
+#define BOOTLOADER_ENTRY_VERSION "1.0.0"
+
 namespace bootloader {
 
 // S9 and S16 (bit 0 = S1): the outer keys of the second row, easy to find with the
