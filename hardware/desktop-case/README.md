@@ -1,5 +1,9 @@
 # Desktop-Gehäuse / Paper on Daisy
 
+**V4, Stufe 1:** [Funktionsproben C1–C7](v4/COUPONS.md), mit optionalem
+LED-Lichtleitervergleich und zentralen Nennmaßen. Erst Coupons messen,
+dann über das vollständige Gehäuse entscheiden. Hardware NICHT GEMESSEN.
+
 **Aktuelle Fehlerprüfung 25.10.2026:** Der [Vergleich von V3 und Claudes
 Gegenentwurf](DESIGN_REVIEW_2026-10-25.md) findet offene Anschlussabstützung,
 fehlende Kappenrückhaltung und weitere konkrete Maß-/Zugangsprobleme.

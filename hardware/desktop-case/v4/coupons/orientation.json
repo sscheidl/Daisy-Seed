@@ -1,0 +1,2954 @@
+{
+  "hardware": "NICHT GEMESSEN",
+  "frame": "RH: +X right/MIDI, +Y rear/audio, +Z up. Add installed_z_offset for PCB-top Z=0; no XY reflection on import.",
+  "oracle": "Actual STL solid-angle witnesses, functional PCB references and Y-reflection negative controls; no CAD generator imports",
+  "parts": {
+    "C1-A2-upper": {
+      "sha256": "3f56dfd7f4e19ad080b96498a9b03d6e7c5bf2c71c144eb67cf4c35c41e06960",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            21.25,
+            -5.6,
+            20.88
+          ],
+          "material_mm": [
+            22.05,
+            -5.6,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            21.25,
+            -4.0,
+            20.88
+          ],
+          "material_mm": [
+            22.05,
+            -4.0,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            22.85,
+            -4.0,
+            20.88
+          ],
+          "material_mm": [
+            23.650000000000002,
+            -4.0,
+            20.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_mm": [
+            39.915,
+            -2.5,
+            10
+          ],
+          "material_mm": [
+            51,
+            -2.5,
+            10
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        }
+      ],
+      "passed": true
+    },
+    "C1-A2-strip": {
+      "sha256": "6f62b91d0a2f43370fe0a8178c76aca78a0dcedede30e632f3642e183d9b811d",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            21.25,
+            -5.6,
+            1.88
+          ],
+          "material_mm": [
+            22.05,
+            -5.6,
+            1.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            21.25,
+            -4.0,
+            1.88
+          ],
+          "material_mm": [
+            22.05,
+            -4.0,
+            1.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            22.85,
+            -4.0,
+            1.88
+          ],
+          "material_mm": [
+            23.650000000000002,
+            -4.0,
+            1.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_mm": [
+            39.915,
+            -2.5,
+            6
+          ],
+          "material_mm": [
+            51,
+            -2.5,
+            6
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C1-B2": {
+      "sha256": "eeabb94e8ade57be4424d9bdd385c6a2fffd634ac6a3c267ab8af23816a41d14",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            21.25,
+            -5.6,
+            20.88
+          ],
+          "material_mm": [
+            22.05,
+            -5.6,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            21.25,
+            -4.0,
+            20.88
+          ],
+          "material_mm": [
+            22.05,
+            -4.0,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            22.85,
+            -4.0,
+            20.88
+          ],
+          "material_mm": [
+            23.650000000000002,
+            -4.0,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_mm": [
+            39.915,
+            -2.5,
+            10
+          ],
+          "material_mm": [
+            51,
+            -2.5,
+            10
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C1-A3-upper": {
+      "sha256": "5dae58901fe4a00c1673c57e12a79ac68021d708f0ee35309c535dcca6686913",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            21.25,
+            -4.6,
+            20.88
+          ],
+          "material_mm": [
+            22.05,
+            -4.6,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            21.25,
+            -3.0,
+            20.88
+          ],
+          "material_mm": [
+            22.05,
+            -3.0,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            22.85,
+            -3.0,
+            20.88
+          ],
+          "material_mm": [
+            23.650000000000002,
+            -3.0,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_mm": [
+            39.915,
+            -2.0,
+            10
+          ],
+          "material_mm": [
+            51,
+            -2.0,
+            10
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C1-A3-strip": {
+      "sha256": "e997d053622d8fed6da192379218af356f959293bf219adcfb0486d7a4f5d70e",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            21.25,
+            -4.6,
+            1.88
+          ],
+          "material_mm": [
+            22.05,
+            -4.6,
+            1.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            21.25,
+            -3.0,
+            1.88
+          ],
+          "material_mm": [
+            22.05,
+            -3.0,
+            1.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            22.85,
+            -3.0,
+            1.88
+          ],
+          "material_mm": [
+            23.650000000000002,
+            -3.0,
+            1.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_mm": [
+            39.915,
+            -2.0,
+            6
+          ],
+          "material_mm": [
+            51,
+            -2.0,
+            6
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C1-B3": {
+      "sha256": "f3bb429255ff9db92998b2ac21a53ac1791a1fd3b3d9b2f56e00d0e50a46028d",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            21.25,
+            -4.6,
+            20.88
+          ],
+          "material_mm": [
+            22.05,
+            -4.6,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            21.25,
+            -3.0,
+            20.88
+          ],
+          "material_mm": [
+            22.05,
+            -3.0,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            22.85,
+            -3.0,
+            20.88
+          ],
+          "material_mm": [
+            23.650000000000002,
+            -3.0,
+            20.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_mm": [
+            39.915,
+            -2.0,
+            10
+          ],
+          "material_mm": [
+            51,
+            -2.0,
+            10
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "rear jack J4 / center web",
+          "opening_winding": -0.0,
+          "material_winding": -0.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-S-carrier": {
+      "sha256": "5af11bc5980723059c6056c221515358a448232b608e51d7a4e30e60d57055d3",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            80.2,
+            -71.14999999999999,
+            5.88
+          ],
+          "material_mm": [
+            81.0,
+            -71.14999999999999,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            80.2,
+            -69.55,
+            5.88
+          ],
+          "material_mm": [
+            81.0,
+            -69.55,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            81.8,
+            -69.55,
+            5.88
+          ],
+          "material_mm": [
+            82.6,
+            -69.55,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "S1 / between keys",
+          "opening_mm": [
+            69,
+            -85,
+            8.5
+          ],
+          "material_mm": [
+            74,
+            -85,
+            8.5
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_mm": [
+            69,
+            -78,
+            8.5
+          ],
+          "material_mm": [
+            72,
+            -78,
+            8.5
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "S1 / between keys",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-S-lower": {
+      "sha256": "2aba080ad29c51277f18257551afcb1c7308a2019c5687dac70bed4a5d19e544",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            80.2,
+            -71.14999999999999,
+            9.88
+          ],
+          "material_mm": [
+            81.0,
+            -71.14999999999999,
+            9.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            80.2,
+            -69.55,
+            9.88
+          ],
+          "material_mm": [
+            81.0,
+            -69.55,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            81.8,
+            -69.55,
+            9.88
+          ],
+          "material_mm": [
+            82.6,
+            -69.55,
+            9.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-S-upper": {
+      "sha256": "8f842dc73f3461f9b04d8d117c61c56f66e26e3a47a5369af1bb8e3e1e46e794",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            80.2,
+            -71.14999999999999,
+            11.030000000000001
+          ],
+          "material_mm": [
+            81.0,
+            -71.14999999999999,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            80.2,
+            -69.55,
+            11.030000000000001
+          ],
+          "material_mm": [
+            81.0,
+            -69.55,
+            11.030000000000001
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            81.8,
+            -69.55,
+            11.030000000000001
+          ],
+          "material_mm": [
+            82.6,
+            -69.55,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-S-sleeve-1": {
+      "sha256": "a009aebba39c4b87d0a2bfd6211cb67d3091d61e85a19d9598fa84ca5be0f089",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            65.3,
+            -85.3,
+            8.48
+          ],
+          "material_mm": [
+            72.7,
+            -85,
+            8.48
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-S-sleeve-2": {
+      "sha256": "289ae8c9f6982a4812f62b36b3757d9eab55a74a13209af3f43d052c19737333",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            77.58571428569999,
+            -85.3,
+            8.48
+          ],
+          "material_mm": [
+            84.9857142857,
+            -85,
+            8.48
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-S-sleeve-3": {
+      "sha256": "dbef765b5a25038dbf3c52dacb611f6850fd01c718ea9cc80bc0b7ec2c1c51c7",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            89.87142857139999,
+            -85.3,
+            8.48
+          ],
+          "material_mm": [
+            97.2714285714,
+            -85,
+            8.48
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-R-carrier": {
+      "sha256": "44f6865b98f02beda54ed2f2f0bcd80bdd9e0cd4e976a4fff55dccfa330a41cb",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            80.2,
+            -71.14999999999999,
+            5.88
+          ],
+          "material_mm": [
+            81.0,
+            -71.14999999999999,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            80.2,
+            -69.55,
+            5.88
+          ],
+          "material_mm": [
+            81.0,
+            -69.55,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            81.8,
+            -69.55,
+            5.88
+          ],
+          "material_mm": [
+            82.6,
+            -69.55,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "S1 / between keys",
+          "opening_mm": [
+            69,
+            -85,
+            8.5
+          ],
+          "material_mm": [
+            74,
+            -85,
+            8.5
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_mm": [
+            69,
+            -78,
+            8.5
+          ],
+          "material_mm": [
+            72,
+            -78,
+            8.5
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "S1 / between keys",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-R-lower": {
+      "sha256": "5922a90b40e07d70e57f24f2da81faae07004b413cee11651879fd0d8a8be0ac",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            80.2,
+            -71.14999999999999,
+            9.88
+          ],
+          "material_mm": [
+            81.0,
+            -71.14999999999999,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            80.2,
+            -69.55,
+            9.88
+          ],
+          "material_mm": [
+            81.0,
+            -69.55,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            81.8,
+            -69.55,
+            9.88
+          ],
+          "material_mm": [
+            82.6,
+            -69.55,
+            9.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-R-upper": {
+      "sha256": "00deece3dc353e26afac8dc873f3f232c564c3082af5fdbb69226476bf463041",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            80.2,
+            -71.14999999999999,
+            11.030000000000001
+          ],
+          "material_mm": [
+            81.0,
+            -71.14999999999999,
+            11.030000000000001
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            80.2,
+            -69.55,
+            11.030000000000001
+          ],
+          "material_mm": [
+            81.0,
+            -69.55,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            81.8,
+            -69.55,
+            11.030000000000001
+          ],
+          "material_mm": [
+            82.6,
+            -69.55,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-R-sleeve-1": {
+      "sha256": "4fccd46b73dbb43d1b10a9fd5c1d3b444a800990a59a556c7d4c04927b93185a",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            65.3,
+            -85.3,
+            8.48
+          ],
+          "material_mm": [
+            72.7,
+            -85,
+            8.48
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-R-sleeve-2": {
+      "sha256": "c73f2145a80c161d75fbbe485976e83e76e229516e84ebb7b9b09ee64aacfe18",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            77.58571428569999,
+            -85.3,
+            8.48
+          ],
+          "material_mm": [
+            84.9857142857,
+            -85,
+            8.48
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-R-sleeve-3": {
+      "sha256": "b8b997a30feeb2bcefe7fe56f8a1f526c203c1a9770c149ad997779ce7163294",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            89.87142857139999,
+            -85.3,
+            8.48
+          ],
+          "material_mm": [
+            97.2714285714,
+            -85,
+            8.48
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C3-X199": {
+      "sha256": "4e8c68baa19716b08f45e0ea019d010b6242ed2e0ac15b3f8a432147994b45ff",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            189.2,
+            -79.14999999999999,
+            -13.52
+          ],
+          "material_mm": [
+            190.0,
+            -79.14999999999999,
+            -13.52
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            189.2,
+            -77.55,
+            -13.52
+          ],
+          "material_mm": [
+            190.0,
+            -77.55,
+            -13.52
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            190.79999999999998,
+            -77.55,
+            -13.52
+          ],
+          "material_mm": [
+            191.6,
+            -77.55,
+            -13.52
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "right wheel window / closed roof",
+          "opening_mm": [
+            198.75,
+            -91.6,
+            2
+          ],
+          "material_mm": [
+            198.75,
+            -91.6,
+            8
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "right wheel window / closed roof",
+          "opening_winding": -0.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C3-X200": {
+      "sha256": "2d598723c6de3bb614978fcde78a744012f5cea6b3b13da893adce07c6837f95",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            189.2,
+            -79.14999999999999,
+            -13.52
+          ],
+          "material_mm": [
+            190.0,
+            -79.14999999999999,
+            -13.52
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            189.2,
+            -77.55,
+            -13.52
+          ],
+          "material_mm": [
+            190.0,
+            -77.55,
+            -13.52
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            190.79999999999998,
+            -77.55,
+            -13.52
+          ],
+          "material_mm": [
+            191.6,
+            -77.55,
+            -13.52
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "right wheel window / closed roof",
+          "opening_mm": [
+            199.75,
+            -91.6,
+            2
+          ],
+          "material_mm": [
+            199.75,
+            -91.6,
+            8
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "right wheel window / closed roof",
+          "opening_winding": -0.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C4-J7-cradle": {
+      "sha256": "7896a8a1399db8b1781113116e646129cfeec667850dffbd388d4ff903e1620c",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            24.919999999999998,
+            -54.040000000000006,
+            1.38
+          ],
+          "material_mm": [
+            25.72,
+            -54.040000000000006,
+            1.38
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            24.919999999999998,
+            -52.440000000000005,
+            1.38
+          ],
+          "material_mm": [
+            25.72,
+            -52.440000000000005,
+            1.38
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            26.52,
+            -52.440000000000005,
+            1.38
+          ],
+          "material_mm": [
+            27.32,
+            -52.440000000000005,
+            1.38
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": -0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C4-J7-bridge": {
+      "sha256": "8280e1f7f25ed7cee77f65785f57a1e2dcd6959b3b513356a65ec8afa4615cd9",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            24.919999999999998,
+            -54.040000000000006,
+            4.9399999999999995
+          ],
+          "material_mm": [
+            25.72,
+            -54.040000000000006,
+            4.9399999999999995
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            24.919999999999998,
+            -52.440000000000005,
+            4.9399999999999995
+          ],
+          "material_mm": [
+            25.72,
+            -52.440000000000005,
+            4.9399999999999995
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            26.52,
+            -52.440000000000005,
+            4.9399999999999995
+          ],
+          "material_mm": [
+            27.32,
+            -52.440000000000005,
+            4.9399999999999995
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": -0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": -0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C4-S-cradle": {
+      "sha256": "4b6af28ba95545bb189a1398546fe5309fff12b9fd588462a5e2c036c8009945",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            25.32,
+            -86.65,
+            10.38
+          ],
+          "material_mm": [
+            26.12,
+            -86.65,
+            10.38
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            25.32,
+            -85.05000000000001,
+            10.38
+          ],
+          "material_mm": [
+            26.12,
+            -85.05000000000001,
+            10.38
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            26.92,
+            -85.05000000000001,
+            10.38
+          ],
+          "material_mm": [
+            27.720000000000002,
+            -85.05000000000001,
+            10.38
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": -0.0,
+          "material_winding": -0.0
+        }
+      ],
+      "passed": true
+    },
+    "C4-S-bridge": {
+      "sha256": "69b3494ab620178cd9fc6108f0384cbd6c1def89895307dd818af84c00f8c02a",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            25.32,
+            -86.65,
+            13.839999999999998
+          ],
+          "material_mm": [
+            26.12,
+            -86.65,
+            13.839999999999998
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            25.32,
+            -85.05000000000001,
+            13.839999999999998
+          ],
+          "material_mm": [
+            26.12,
+            -85.05000000000001,
+            13.839999999999998
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            26.92,
+            -85.05000000000001,
+            13.839999999999998
+          ],
+          "material_mm": [
+            27.720000000000002,
+            -85.05000000000001,
+            13.839999999999998
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": -0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": -0.0,
+          "material_winding": -0.0
+        }
+      ],
+      "passed": true
+    },
+    "C5-floor": {
+      "sha256": "8dffec3ef16a6109892a579466085da631482d8cb27b6c8b7c516988d75718d8",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            14.7,
+            14.85,
+            -13.52
+          ],
+          "material_mm": [
+            15.5,
+            14.85,
+            -13.52
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            14.7,
+            16.45,
+            -13.52
+          ],
+          "material_mm": [
+            15.5,
+            16.45,
+            -13.52
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            16.3,
+            16.45,
+            -13.52
+          ],
+          "material_mm": [
+            17.1,
+            16.45,
+            -13.52
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C5-PCB-dummy": {
+      "sha256": "3b2cd640be75408fb3114e26b2fa26d85b97161d9c1f6cb8be1f1c51a4e1f92b",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            25.2,
+            0.8500000000000001,
+            -0.5200000000000001
+          ],
+          "material_mm": [
+            26.0,
+            0.8500000000000001,
+            -0.5200000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            25.2,
+            2.45,
+            -0.5200000000000001
+          ],
+          "material_mm": [
+            26.0,
+            2.45,
+            -0.5200000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            26.8,
+            2.45,
+            -0.5200000000000001
+          ],
+          "material_mm": [
+            27.6,
+            2.45,
+            -0.5200000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        }
+      ],
+      "passed": true
+    },
+    "C5-carrier": {
+      "sha256": "5914c2090f3e04dc4bbc2275119e89e46d39bb64124f3dfb2f987e6447c5a2b0",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            14.2,
+            7.85,
+            6.48
+          ],
+          "material_mm": [
+            15.0,
+            7.85,
+            6.48
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            14.2,
+            9.45,
+            6.48
+          ],
+          "material_mm": [
+            15.0,
+            9.45,
+            6.48
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            15.799999999999999,
+            9.45,
+            6.48
+          ],
+          "material_mm": [
+            16.599999999999998,
+            9.45,
+            6.48
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C5-lower": {
+      "sha256": "c45d142d215308a4c0b687ad984afc4f20b7e4e39b5f7f360a7c0927d781a23d",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            14.2,
+            7.85,
+            9.88
+          ],
+          "material_mm": [
+            15.0,
+            7.85,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            14.2,
+            9.45,
+            9.88
+          ],
+          "material_mm": [
+            15.0,
+            9.45,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            15.799999999999999,
+            9.45,
+            9.88
+          ],
+          "material_mm": [
+            16.599999999999998,
+            9.45,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C5-upper": {
+      "sha256": "f04921f773f555fd410ff96129add8ea80f32143ecb67e72350d07d910125b52",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            14.2,
+            7.85,
+            11.030000000000001
+          ],
+          "material_mm": [
+            15.0,
+            7.85,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            14.2,
+            9.45,
+            11.030000000000001
+          ],
+          "material_mm": [
+            15.0,
+            9.45,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            15.799999999999999,
+            9.45,
+            11.030000000000001
+          ],
+          "material_mm": [
+            16.599999999999998,
+            9.45,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C6-O": {
+      "sha256": "a8735837366ca31b5c64d01e136200665a6c00e6ccbdc7be99745aeb83852631",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            87.2,
+            -73.14999999999999,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -73.14999999999999,
+            5.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            87.2,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            88.8,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            89.6,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_mm": [
+            69,
+            -85,
+            8.75
+          ],
+          "material_mm": [
+            74,
+            -85,
+            8.75
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_mm": [
+            69,
+            -78,
+            8.75
+          ],
+          "material_mm": [
+            72,
+            -78,
+            8.75
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_winding": -0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C6-A1": {
+      "sha256": "d0354c618b220fe2ac79f00cced011dd21f1cd90520dbc5381fbecda2a7f4218",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            87.2,
+            -73.14999999999999,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -73.14999999999999,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            87.2,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            88.8,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            89.6,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_mm": [
+            69,
+            -85,
+            8.75
+          ],
+          "material_mm": [
+            74,
+            -85,
+            8.75
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_mm": [
+            69,
+            -78,
+            8.75
+          ],
+          "material_mm": [
+            72,
+            -78,
+            8.75
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        }
+      ],
+      "passed": true
+    },
+    "C6-A2": {
+      "sha256": "50b77ceb8bc43430973f77e263315c5cceba291423c97bc87b6af1bb7bd107a5",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            87.2,
+            -73.14999999999999,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -73.14999999999999,
+            5.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            87.2,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            88.8,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            89.6,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_mm": [
+            69,
+            -85,
+            8.75
+          ],
+          "material_mm": [
+            74,
+            -85,
+            8.75
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_mm": [
+            69,
+            -78,
+            8.75
+          ],
+          "material_mm": [
+            72,
+            -78,
+            8.75
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        }
+      ],
+      "passed": true
+    },
+    "C6-A3": {
+      "sha256": "7ff5af4f81c5f45ac2941bc19b32b8288fb5e8f3b6ff0915be0994c2781d785b",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            87.2,
+            -73.14999999999999,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -73.14999999999999,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            87.2,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            88.8,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            89.6,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_mm": [
+            69,
+            -85,
+            8.75
+          ],
+          "material_mm": [
+            74,
+            -85,
+            8.75
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_mm": [
+            69,
+            -78,
+            8.75
+          ],
+          "material_mm": [
+            72,
+            -78,
+            8.75
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        }
+      ],
+      "passed": true
+    },
+    "C6-B": {
+      "sha256": "5d174acf6ac6d419f1f89f77cf54f8ca84ea1d4776f524ee1c26d894268d7542",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            87.2,
+            -73.14999999999999,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -73.14999999999999,
+            5.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            87.2,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            88.0,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            88.8,
+            -71.55,
+            5.88
+          ],
+          "material_mm": [
+            89.6,
+            -71.55,
+            5.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_mm": [
+            69,
+            -85,
+            8.75
+          ],
+          "material_mm": [
+            74,
+            -85,
+            8.75
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_mm": [
+            69,
+            -78,
+            8.75
+          ],
+          "material_mm": [
+            72,
+            -78,
+            8.75
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": -0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "S1 / web",
+          "opening_winding": -0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "D1 behind S1",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C6-lower-dummy": {
+      "sha256": "c336199294c85a1cb1c516a9c3e70c57e99143f9a1f7c5d9024e3df0e2265e84",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            87.2,
+            -73.14999999999999,
+            9.88
+          ],
+          "material_mm": [
+            88.0,
+            -73.14999999999999,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            87.2,
+            -71.55,
+            9.88
+          ],
+          "material_mm": [
+            88.0,
+            -71.55,
+            9.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            88.8,
+            -71.55,
+            9.88
+          ],
+          "material_mm": [
+            89.6,
+            -71.55,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C6-upper-dummy": {
+      "sha256": "079a2ba3230e00a40718b966cf01480c3b670200efd74754f42d7e696281301e",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            87.2,
+            -73.14999999999999,
+            11.030000000000001
+          ],
+          "material_mm": [
+            88.0,
+            -73.14999999999999,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            87.2,
+            -71.55,
+            11.030000000000001
+          ],
+          "material_mm": [
+            88.0,
+            -71.55,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            88.8,
+            -71.55,
+            11.030000000000001
+          ],
+          "material_mm": [
+            89.6,
+            -71.55,
+            11.030000000000001
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": -0.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C7-F": {
+      "sha256": "707f301155fa4ec421e79e1ad9f09f3600b980d14b03eeda3584b1de39c5e40a",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            61.7,
+            -3.1500000000000004,
+            -13.52
+          ],
+          "material_mm": [
+            62.5,
+            -3.1500000000000004,
+            -13.52
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            61.7,
+            -1.55,
+            -13.52
+          ],
+          "material_mm": [
+            62.5,
+            -1.55,
+            -13.52
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            63.300000000000004,
+            -1.55,
+            -13.52
+          ],
+          "material_mm": [
+            64.10000000000001,
+            -1.55,
+            -13.52
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    },
+    "C7-A": {
+      "sha256": "7c5fae0acdcc62e706b38f7044ffd9c1eea76a0c35afa380ac6d3d8147582f30",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            162.2,
+            -3.1500000000000004,
+            -13.52
+          ],
+          "material_mm": [
+            163.0,
+            -3.1500000000000004,
+            -13.52
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            162.2,
+            -1.55,
+            -13.52
+          ],
+          "material_mm": [
+            163.0,
+            -1.55,
+            -13.52
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            163.79999999999998,
+            -1.55,
+            -13.52
+          ],
+          "material_mm": [
+            164.6,
+            -1.55,
+            -13.52
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 0.0,
+          "material_winding": -0.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 0.0,
+          "material_winding": 0.0
+        }
+      ],
+      "passed": true
+    }
+  },
+  "passed": true
+}
