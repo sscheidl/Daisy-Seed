@@ -3,16 +3,20 @@
 **Korrigierter Export RH-2026-10-25:** Frühere Druckdateien sind wegen
 Spiegelung zurückgezogen. [Ursache, Zweitprüfung und Ersatzpaket](ORIENTATION_FIX.md).
 
+**ACCESS-2026-10-25:** [Rad und Kopfhörerzugang](RIGHT_ACCESS.md) sind
+zusätzlich korrigiert: niedriger RK10J, seitliche Grifföffnung und Freiraum
+für einen vollständig eingesteckten Ø10-mm-Steckerkörper.
+
 **Stand 24.10.2026: CAD-Passstudie. Hardware, Festigkeit und Druckbarkeit am
 Prototyp NICHT GEMESSEN.** V3 ersetzt die getrennten Hauben und das separat
 angeschraubte Raster aus [V2](CLOSED_V2.md) durch **ein einziges Druckteil**.
 Die Bodenwanne bleibt abnehmbar. Beide 1-mm-Acrylplatten für die
 Papierbeschriftung bleiben erhalten.
 
-> **Befund 25.10.2026: `tray.stl` und `unified-carrier.stl` sind
-> spiegelverkehrt und so nicht druckbar.** Acryl-/Papier-SVGs und Renderbilder
-> sind richtig orientiert. Siehe
-> [Befund: Druckteile gespiegelt](#befund-druckteile-gespiegelt).
+> **Frühere Exporte zurückgezogen:** Die Spiegelung von `tray.stl` und
+> `unified-carrier.stl` ist im aktuellen Stand korrigiert und unabhängig
+> geprüft. Der [ursprüngliche Befund](#befund-druckteile-gespiegelt) bleibt
+> unten als Fehlerdokumentation erhalten.
 
 **Die Bedienfläche ist eben:** Untere Acrylplatte, Papier und obere Acrylplatte
 liegen jeweils in einer einzigen Ebene. Tasterkappen, Potiwellen und
@@ -160,7 +164,8 @@ Zustand beeinflussen das reale Maß.
 Alle Überstände: **rechnerisch aus Nennmaßen, Hardware NICHT GEMESSEN**.
 Die V3-Vorschauen wurden am 24.10.2026 entsprechend berichtigt: Zuvor waren
 Potiwellen mit nur 15 mm Gesamthöhe und Schalter mit 20,59 mm dargestellt.
-Die Gehäuse-STL und die 11,15-mm-Bedienebene ändern sich dadurch nicht.
+Die 11,15-mm-Bedienebene ändert sich dadurch nicht. Die spätere ACCESS-
+Korrektur verändert die Ausschnitte rechts, siehe oben.
 
 ## Unterseitige Freiräume und Prüfstand
 
@@ -197,6 +202,10 @@ den großen Passprototyp beauftragen.
 
 ## Befund: Druckteile gespiegelt
 
+**Historischer Befund zum zurückgezogenen Export vor `RH-2026-10-25`.**
+Die folgende Beschreibung dokumentiert den damaligen Fehler. Die Korrektur
+ist inzwischen umgesetzt; siehe [Nachweise](ORIENTATION_FIX.md).
+
 **Digital geprüft am 25.10.2026, nicht korrigiert.** Die Druckteile
 `tray.stl` und `unified-carrier.stl` übernehmen die KiCad-Koordinaten
 unverändert (y in der Draufsicht nach unten) und legen Z nach oben. Das
@@ -225,10 +234,10 @@ Nicht betroffen:
   `render_realistic_case.py` die importierten STLs mit `v.co.y *= -1`
   spiegeln. Die Bilder verdecken den Fehler der Druckteile daher.
 
-Korrektur, noch nicht umgesetzt: beim STL-Export y spiegeln (y → −y) und die
+Die inzwischen umgesetzte Korrektur: beim STL-Export y spiegeln (y → −y) und die
 Dreiecks-Umlaufrichtung umkehren; danach die Spiegelung in beiden
-Render-Skripten entfernen und die Wandöffnungen erneut gegen KiCad prüfen. Bis dahin
-`tray.stl` und `unified-carrier.stl` nicht drucken.
+Render-Skripten entfernen und die Wandöffnungen erneut gegen KiCad prüfen.
+Die alten Dateien bleiben zurückgezogen.
 
 ## Dateien und Reproduktion
 

@@ -18,6 +18,7 @@ import build_closed_case as v2
 
 ROOT = Path(__file__).resolve().parent
 C = v2.C
+A = json.loads((ROOT/'right-controls.json').read_text())
 PCB = v2.PCB_TOP
 DECK_TOP = v2.LOWER_Z
 SKIN = 2.4
@@ -48,6 +49,7 @@ def layer_section(kind):
     for p in b.BOARD['toggles']:
         section -= v2.circle(p['x'],p['y'],C['toggle_lower_hole'] if kind=='lower' else C['toggle_upper_hole'])
     section -= v2.circle(191.325,91.6,16)
+    section -= b.rectangle(*A['side_cut_source_xywh'])
     for p in b.BOARD['mounts']:
         section -= v2.circle(p['x'],p['y'],3.4)
     return section
@@ -91,9 +93,17 @@ def skin_section():
     for p in b.BOARD['toggles']:
         section -= b.rectangle(p['x']-4,p['y']-6.5,8,13)
     section -= v2.circle(191.325,91.6,16)
+    section -= b.rectangle(*A['side_cut_source_xywh'])
     for p in b.BOARD['mounts']:
         section -= v2.circle(p['x'],p['y'],3.4)
     return section
+
+
+def access_cuts():
+    x,y,w,d=A['side_cut_source_xywh']
+    bottom=PCB+A['side_cut_bottom_above_pcb']
+    top=PCB+A['side_cut_top_above_pcb']
+    return v2.port_cuts(headphone_access=A)+b.box(x,y,bottom,w,d,top-bottom)
 
 
 def build():
@@ -105,7 +115,7 @@ def build():
         tray -= b.cylinder(p['x'],p['y'],-.1,3.2,1.5)
     for x,y,w,d in b.tie_slots():
         tray -= b.box(x,y,-1,w,d,b.FLOOR+2)
-    tray -= v2.port_cuts()
+    tray -= access_cuts()
 
     deck = v2.extrude(skin_section(),DECK_BOTTOM,SKIN)
     deck += v2.extrude(guide_section(),v2.GUIDE_Z,3)
@@ -135,7 +145,7 @@ def build():
         seed -= b.cylinder(p['x'],p['y'],v2.SERVICE_Z-3.6,1.5,8)
     for x in range(27,49,5):
         seed -= b.box(x,65,v2.SERVICE_Z-1,2,16,5)
-    deck = b.union([deck,rear,midi,seed])-v2.port_cuts()
+    deck = b.union([deck,rear,midi,seed])-access_cuts()
 
     parts = {'tray':(tray,0),'unified-carrier':(deck,v2.GUIDE_Z),
              'lower-acrylic-reference':(v2.extrude(layer_section('lower'),0,1),DECK_TOP),
@@ -153,7 +163,8 @@ def installed(parts):
 
 
 def verify(parts):
-    report = {'date':'2026-10-25','hardware':'NICHT GEMESSEN','stl_frame':b.STL_FRAME,'manufacturing_ready':False,'parts':{}}
+    report = {'date':'2026-10-25','hardware':'NICHT GEMESSEN','stl_frame':b.STL_FRAME,
+              'access_revision':A['revision'],'manufacturing_ready':False,'parts':{}}
     for name,(solid,z) in parts.items():
         mesh = b.mesh_of(solid)
         assert mesh.is_watertight and mesh.is_winding_consistent,name
@@ -167,7 +178,7 @@ def verify(parts):
         overlap = (assembly[a]^assembly[d]).volume()
         assert overlap<1e-4,(a,d,overlap)
     for name in main:
-        assert (assembly[name]^v2.port_cuts()).volume()<1e-4,(name,'port blocked')
+        assert (assembly[name]^access_cuts()).volume()<1e-4,(name,'port blocked')
     assert (paper_section()-layer_section('lower')).area()<1e-5,'Paper extends over lower acrylic openings'
     for p in b.BOARD['buttons']:
         swept = b.box(p['x']-2.8,p['y']-2.8,PCB+4,5.6,5.6,15)
@@ -215,7 +226,7 @@ def verify(parts):
         'Metal post/shim/thread tolerances; only 0.05 mm reserve above 3 mm nominal grip target',
         'Thin local seats/pocket roofs, support removal, printed strength and thermal behaviour']
     report['source_sha256'] = {p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in
-        [Path(__file__),ROOT/'build_closed_case.py',ROOT/'closed-mechanics.json',ROOT/'board.json',ROOT/'build_case.py']}
+        [Path(__file__),ROOT/'build_closed_case.py',ROOT/'closed-mechanics.json',ROOT/'board.json',ROOT/'build_case.py',ROOT/'right-controls.json']}
     return report
 
 

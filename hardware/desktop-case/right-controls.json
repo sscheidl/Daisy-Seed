@@ -1,0 +1,26 @@
+{
+  "revision": "ACCESS-2026-10-25",
+  "status": "Nominal drawing dimensions and CAD access envelopes; hardware NICHT GEMESSEN",
+  "wheel_part": "Alps Alpine RK10J12R0A0B",
+  "wheel_center_source_xy": [191.325, 91.6],
+  "wheel_diameter": 14.0,
+  "wheel_top_above_pcb": 2.5,
+  "wheel_disk_thickness": 1.0,
+  "side_cut_source_xywh": [183.0, 86.0, 25.0, 15.0],
+  "side_cut_bottom_above_pcb": -4.0,
+  "side_cut_top_above_pcb": 13.0,
+  "headphone_part": "Same Sky SJ-3523-SMT-TR",
+  "headphone_body_source_xywh": [170.6, 93.7, 6.0, 14.5],
+  "headphone_body_height": 6.0,
+  "headphone_socket_face_source_xy": [173.6, 110.7],
+  "headphone_axis_above_pcb": 2.5,
+  "headphone_front_cut_source_xywh": [166.6, 108.0, 14.0, 15.0],
+  "headphone_cut_bottom_above_pcb": -3.0,
+  "headphone_cut_height": 11.0,
+  "sources": {
+    "wheel_product": "https://tech.alpsalpine.com/e/products/detail/RK10J12R0A0B/",
+    "wheel_drawing": "https://tech.alpsalpine.com/assets/catalog/product-catalog-rv-03.en.pdf",
+    "headphone_drawing": "https://datasheet.octopart.com/SJ-3523-SMT-CUI-datasheet-96684.pdf",
+    "positions": "Manufacturer Rev4 KiCad, commit 987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+  }
+}

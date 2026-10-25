@@ -113,7 +113,7 @@ def layer_section(layer):
     return section
 
 
-def port_cuts(zmax=45):
+def port_cuts(zmax=45,headphone_access=None):
     cuts = []
     for x in b.AUDIO_AXES:
         # Rear sockets; only an access aperture, no assumed ferrule clamping.
@@ -124,8 +124,13 @@ def port_cuts(zmax=45):
                     .rotate((0, 90, 0)).translate((193, y, PCB_TOP+10)))
     cuts += [b.box(-11, 33.5, PCB_TOP-.5, 15, 15.2, 8),
              b.box(-11, 67.5, PCB_TOP+5, 15, 15, 9),
-             b.box(-11, 83, PCB_TOP-1, 15, 22, 7),
-             b.box(167, 108, PCB_TOP-.5, 14, 14, 9)]
+             b.box(-11, 83, PCB_TOP-1, 15, 22, 7)]
+    if headphone_access:
+        x,y,w,d=headphone_access['headphone_front_cut_source_xywh']
+        cuts.append(b.box(x,y,PCB_TOP+headphone_access['headphone_cut_bottom_above_pcb'],
+            w,d,headphone_access['headphone_cut_height']))
+    else:
+        cuts.append(b.box(167,108,PCB_TOP-.5,14,14,9))
     return b.union(cuts)
 
 

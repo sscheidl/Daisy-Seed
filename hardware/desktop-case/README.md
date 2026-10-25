@@ -5,6 +5,10 @@ Druck-STLs und ZIP-Pakete nicht verwenden.** Alle V1/V2/V3-STLs sind neu
 exportiert und unabhängig geprüft. Render und Druckdateien benutzen jetzt
 denselben physischen Koordinatenraum.
 
+**Aktuelle V3 zusätzlich mit [seitlichem Radzugang und erweiterter
+Kopfhöreröffnung](RIGHT_ACCESS.md)** (`ACCESS-2026-10-25`). Die frühere
+10-mm-Höhenannahme für das Lautstärkerad ist korrigiert.
+
 **Aktueller Entwurf: [durchgehender Druckträger V3](UNIFIED_V3.md).**
 Ein Druckteil verbindet Bedienfläche, Seed-/Buchsenhauben und das angeformte
 Tasterraster. Darauf liegen weiterhin zwei 1-mm-Acrylplatten mit Papier,

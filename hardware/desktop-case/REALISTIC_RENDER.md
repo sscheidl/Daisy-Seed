@@ -4,7 +4,12 @@
 nicht mehr. Sie laden unmittelbar die korrigierten Druckdateien.
 Alte ZIP-Pakete sind zurückgezogen; [Nachweis und Ersatz](ORIENTATION_FIX.md).
 
-**Stand 24.10.2026: digitale Visualisierung. Hardware NICHT GEMESSEN.**
+**ACCESS-2026-10-25:** Das Rad ist jetzt mit 2,5 mm statt der falschen
+10-mm-Annahme dargestellt. J5 folgt dem tatsächlichen Footprint; seitlicher
+Griffausschnitt und größerer Steckerkörper-Freiraum sind
+[gesondert geprüft](RIGHT_ACCESS.md).
+
+**Stand 25.10.2026: digitale Visualisierung. Hardware NICHT GEMESSEN.**
 Die vorhandene Konstruktion aus [V3](UNIFIED_V3.md) wird mit detaillierterer
 Bestückung und Materialien dargestellt. Das Rendering ändert weder die
 Druckteile noch die Acrylkonturen und ist keine Fertigungsfreigabe.
@@ -79,6 +84,7 @@ gespeichert.
 | `case-realistic-studio.png` | Perspektivische Gesamtansicht |
 | `case-realistic-rear.png` | Rückseite und seitliche Anschlüsse |
 | `case-realistic-exploded.png` | Aufbau mit angehobenen Deckschichten |
+| `case-realistic-right-access.png` | Detail mit generischem Ø10-mm-Stecker und Ø14-mm-Finger-Prüfkörper, nur in dieser Ansicht |
 | `case-assembly-view.stl` | Gehäuse, beide Acrylplatten und Papier in Montageposition; **mm**, reine Ansichtsdatei |
 | `desktop-case-assembly.glb` | Vollständige farbige Baugruppe zum Drehen und Ausblenden von Teilen; glTF-Einheit **Meter** |
 | `desktop-case-realistic.blend` | Editierbare Blender-Szene, Arbeitsmaßstab **1 Einheit = 1 mm** |
@@ -116,6 +122,7 @@ Bibliothek ausgegeben.
 & 'C:/Program Files/KiCad/10.0/bin/python.exe' hardware/desktop-case/prepare_render_board.py
 .tools/case/Scripts/python.exe hardware/desktop-case/compact_render_board.py
 .tools/case/Scripts/python.exe hardware/desktop-case/check_stl_orientation.py
+.tools/case/Scripts/python.exe hardware/desktop-case/check_right_access.py
 & 'C:/Program Files/Blender Foundation/Blender 5.2/blender.exe' --background --python hardware/desktop-case/render_realistic_case.py
 .tools/case/Scripts/python.exe hardware/desktop-case/validate_realistic_case.py
 ```
@@ -128,11 +135,11 @@ Kollisionsprüfungen bleiben im V3-Prüfmanifest dokumentiert. Die neue
 Visualisierung bescheinigt keine vollständige Kollisionsfreiheit aller
 Bestückungsteile oder Passung am realen Board.
 
-**Digital geprüft am 24.10.2026:** Alle fünf verwendeten Gehäuse-/Schicht-STLs
+**Digital geprüft am 25.10.2026:** Alle fünf verwendeten Gehäuse-/Schicht-STLs
 stimmen mit den geprüften V3-Dateien überein und sind einzeln geschlossen.
 Montage-STL: 215 × 129 × 39,8 mm. GLB: 0,215 × 0,0398 × 0,129 m in dessen
-Y-oben-System. Quellen-/Ausgabe-Hashes und alle drei Bildgrößen bestätigt.
-Gesamt-, Rück- und Explosionsansicht wurden nach dem finalen Render visuell
+Y-oben-System. Quellen-/Ausgabe-Hashes und alle vier Bildgrößen bestätigt.
+Gesamt-, Rück-, Explosions- und rechte Detailansicht wurden nach dem finalen Render visuell
 geprüft. Papier-/Tasterhöhe, Passform und Belastbarkeit bleiben NICHT GEMESSEN.
 
 **Ergänzung 25.10.2026:** Alle fünf korrigierten Druck-STLs und GLB-Teile

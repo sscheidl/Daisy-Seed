@@ -19,9 +19,10 @@ PARTS=ROOT/'unified-v3'
 REF=ROOT.parents[1]/'build/case-reference'
 B=json.loads((ROOT/'board.json').read_text())
 C=json.loads((ROOT/'closed-mechanics.json').read_text())
+A=json.loads((ROOT/'right-controls.json').read_text())
 R=json.loads((PARTS/'validation.json').read_text()); S=R['stack_mm']; PCB=S['pcb_top']
 assert R.get('stl_frame',{}).get('revision')=='RH-2026-10-25','Withdrawn STL export revision'
-VIEWS=set(sys.argv[sys.argv.index('--')+1:]) if '--' in sys.argv else {'studio','rear','exploded'}
+VIEWS=set(sys.argv[sys.argv.index('--')+1:]) if '--' in sys.argv else {'studio','rear','exploded','access'}
 bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete(use_global=False)
 bpy.context.scene.unit_settings.system='NONE'
 bpy.context.scene.unit_settings.scale_length=1
@@ -252,8 +253,14 @@ for j,y in enumerate([20.3,44.3,68.3]):
         socket=ring(f'DIN {j} pin socket',0,0,0,.85,.55,.35,steel,n=32)
         electronics.append(horizontal(socket,'side',199.25,y+4*math.cos(theta),PCB+10+4*math.sin(theta)))
 
-electronics.append(cube('Headphone jack envelope approximation',167,102,PCB,14,9,6,black,.2))
-electronics.append(cyl('Headphone wheel approximate',191.325,91.6,PCB+6.5,7,3.5,black,128))
+x,y,w,d=A['headphone_body_source_xywh']
+electronics.append(cube('J5 SJ-3523-SMT body nominal',x,y,PCB,w,d,A['headphone_body_height'],black,.15))
+collar=ring('J5 open socket collar nominal',0,0,0,2.5,1.8,2.5,black)
+collar.location=(173.6,-108.2,PCB+A['headphone_axis_above_pcb'])
+collar.rotation_euler.x=math.pi/2
+electronics.append(collar)
+electronics.append(cyl('RV1 low profile body nominal',191.325,91.6,PCB,5.2,1.5,black))
+electronics.append(ring('RV1 RK10J12R0A0B disk nominal 14x1mm',191.325,91.6,PCB+1.5,7,.5,1,black,n=128,flutes=64))
 label('DAISY',8,32,S['lower_top']+.155,3.2)
 label('DESKTOP',8,37,S['lower_top']+.155,1.7)
 for p in C['service_positions_provisional']:
@@ -301,6 +308,7 @@ aim((98,-55,18))
 for o in bpy.context.scene.objects: o.select_set(False)
 assembly=[o for o in bpy.context.scene.objects if o.type in ['MESH','FONT'] and o!=ground]
 report=dict(date='2026-10-25',stl_frame=R['stl_frame'],hardware='NICHT GEMESSEN',model_purpose='Assembly visualization; only original case STLs are print parts',
+    access_revision=A['revision'],wheel_top_above_pcb=A['wheel_top_above_pcb'],
     units='mm in STL and blend, metres in GLB',devices=devices,
     native_kicad_model_footprints=186,seed_module_pcb_top_above_desktop_assumed=9,
     imported_board_bounds_mm=board_bounds,
@@ -348,6 +356,20 @@ scene.unit_settings.scale_length=.001
 if 'studio' in VIEWS: render('case-realistic-studio')
 if 'rear' in VIEWS:
     camera.location=(440,390,310); aim((98,-51,18)); render('case-realistic-rear')
+if 'access' in VIEWS:
+    # Explicit design gauges, shown only in this image, never in print/GLB exports.
+    gauges=[]
+    body=ring('Illustrative fully seated plug body OD10mm',0,0,0,5,.1,18,black)
+    gauges.append(horizontal(body,'rear',173.6,110.7,PCB+2.5))
+    cable=ring('Illustrative headphone cable',0,0,0,1.8,.1,15,black)
+    gauges.append(horizontal(cable,'rear',173.6,128.7,PCB+2.5))
+    finger_mat=material('Translucent OD14 fingertip design gauge',(.16,.48,.62),.18,0,.65)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=32,ring_count=16,radius=7,location=(205.2,-93.8,19.9))
+    fingertip=bpy.context.object; fingertip.name='OD14 fingertip gauge, not a real hand model'
+    fingertip.data.materials.append(finger_mat); gauges.append(fingertip)
+    camera.location=(355,-265,155); camera.data.lens=105; aim((185,-103,17))
+    render('case-realistic-right-access')
+    for o in gauges: bpy.data.objects.remove(o,do_unlink=True)
 if 'exploded' in VIEWS:
     for name,delta in [('unified-carrier',28),('lower-acrylic-reference',64),('paper-reference',81),('upper-acrylic-reference',98)]:
         objects[name].location.z+=delta
@@ -358,7 +380,8 @@ if 'exploded' in VIEWS:
     render('case-realistic-exploded')
 report['source_sha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in
     [Path(__file__),ROOT/'prepare_render_board.py',ROOT/'compact_render_board.py',
-     ROOT/'check_stl_orientation.py',ROOT/'validate_realistic_case.py',PARTS/'validation.json']}
+     ROOT/'check_stl_orientation.py',ROOT/'validate_realistic_case.py',ROOT/'check_right_access.py',
+     ROOT/'right-controls.json',PARTS/'validation.json']}
 report['artifact_sha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(OUT.iterdir())
     if p.name.startswith(('desktop-case-','case-realistic-','case-assembly-')) and p.suffix in ['.glb','.stl','.blend','.png']}
 (OUT/'render-manifest.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8',newline='\n')

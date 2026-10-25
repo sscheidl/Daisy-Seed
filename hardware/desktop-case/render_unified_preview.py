@@ -119,7 +119,7 @@ for x in [39.915,62.4,140.4,162.8]:
 for y in [20.3,44.3,68.3]:
     cube('DIN jack schematic',179.8,y-10,PCB,17,20,20,black)
 cube('Seed module schematic',1.4,64.7,PCB+7.4,51.15,18,1.6,pcbmat)
-cyl('Headphone level wheel',191.325,91.6,PCB,7,10,black)
+cyl('Headphone level wheel nominal top 2.5mm',191.325,91.6,PCB,7,2.5,black)
 
 scene=bpy.context.scene; scene.render.engine='CYCLES'; scene.cycles.samples=24
 scene.cycles.use_denoising=True; scene.render.resolution_x=1700; scene.render.resolution_y=1100

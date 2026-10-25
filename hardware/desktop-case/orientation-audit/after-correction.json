@@ -158,7 +158,7 @@
       "passed": true
     },
     "unified-v3/tray.stl": {
-      "sha256": "179f16b5390143c533c32ec25a8b88b23b791d8b8a7d58d3b534830b875458bf",
+      "sha256": "ff00729f5229fd97a5fa565eaf3724cd69f91f1744b55c7cc700453a98064233",
       "closed": true,
       "outward_normals": true,
       "bounds_mm": [
@@ -242,7 +242,7 @@
       "passed": true
     },
     "unified-v3/unified-carrier.stl": {
-      "sha256": "f401e8c13f7c52894e6b9ceecbd19364dc7aad9afd44acccf6224329c8c73bdd",
+      "sha256": "9cd260c57b1e73d685c332a99edee08132ae08cb4c98dd355084941f9999b4d1",
       "closed": true,
       "outward_normals": true,
       "bounds_mm": [

@@ -9,6 +9,8 @@
   },
   "hardware": "NICHT GEMESSEN",
   "model_purpose": "Assembly visualization; only original case STLs are print parts",
+  "access_revision": "ACCESS-2026-10-25",
+  "wheel_top_above_pcb": 2.5,
   "units": "mm in STL and blend, metres in GLB",
   "devices": [
     "NVIDIA GeForce RTX 5060 Ti"
@@ -213,7 +215,7 @@
         0.0,
         0.0
       ],
-      "vertices": 1706
+      "vertices": 1714
     },
     "unified-carrier": {
       "location_mm": [
@@ -221,7 +223,7 @@
         0.0,
         20.399999618530273
       ],
-      "vertices": 7512
+      "vertices": 7440
     },
     "lower-acrylic-reference": {
       "location_mm": [
@@ -229,7 +231,7 @@
         0.0,
         23.399999618530273
       ],
-      "vertices": 2890
+      "vertices": 2796
     },
     "paper-reference": {
       "location_mm": [
@@ -237,7 +239,7 @@
         0.0,
         24.399999618530273
       ],
-      "vertices": 4690
+      "vertices": 4596
     },
     "upper-acrylic-reference": {
       "location_mm": [
@@ -245,23 +247,26 @@
         0.0,
         24.564998626708984
       ],
-      "vertices": 2642
+      "vertices": 2548
     }
   },
   "source_sha256": {
-    "render_realistic_case.py": "485e546f3ce866a1a51adad4f299375a097e999655fe13ae694c5c06a7cdb219",
+    "render_realistic_case.py": "35bbed12571a74d4703d079ba274a996c773ee83c9eef84dc0ff9385ca4b01df",
     "prepare_render_board.py": "bbccf80dc53254cbe93cb0a5341e0144d197f7238f9a1308da2d98b7501b5eae",
     "compact_render_board.py": "61d9aba073a40de60a62409ee63e28821f12e68e8ebe5ea6f5e37e51a7b120c6",
     "check_stl_orientation.py": "a41ad22add01e13066c1d42fcc8bac4af6ab74b3a727a87329804eed65fd67a5",
-    "validate_realistic_case.py": "d95257948e6370c99e2ddc06a71234a19bc89959fd8a44eb86d66b31b99bccfe",
-    "validation.json": "d8c46173f04be8376822aa6484fb9def0e9eaacb43321c9a5b64f6791c8e2f30"
+    "validate_realistic_case.py": "aa401abe06b7e8c5d74865506db8aa9c82b1219106a8ac2c075628ffbeea0160",
+    "check_right_access.py": "1c97656cbfd28455aab73754f8896c1c6134b398dca3258ac3c786cb3a5ec6ab",
+    "right-controls.json": "d13ec066d7385272bff70ef7f90140f3ee965122941852ea1de8457ccea958e7",
+    "validation.json": "bdf34a4aa779b64140fc488adcec9ee2310528b0057723907a3720dc061dcb68"
   },
   "artifact_sha256": {
-    "case-assembly-view.stl": "1ef13a7f71fc3b0281c4874ac49929e111425bbd7a4412d317d51bf5f346868c",
-    "case-realistic-exploded.png": "934b5757a8da303e26db64a868ae31cfab6d198eaaf0c6f90b492cd64fba50ec",
-    "case-realistic-rear.png": "6a930f6e28a127a650e1609b9ee72f085efe82eba455e7af6b6b54c74f2185ca",
-    "case-realistic-studio.png": "5e92c8e095a44256544db70b11b3cc41f182139144c70e257716b3c8f25bfd40",
-    "desktop-case-assembly.glb": "7f85e6820880ffb5b6152116a3a470edc8651d635a09b41c62c31cd3b3682468",
-    "desktop-case-realistic.blend": "658c6fce7d3b52f981372ea7e3e053f86da558963f28079671efd41ac23ceb6a"
+    "case-assembly-view.stl": "826065f3a53514b45d388e46382e79845c802eb8f21ee3985b1d9b50eb15af8f",
+    "case-realistic-exploded.png": "dd232fb92849c941e346eba9d5237963a6dcd8fbd9ba14351e6599470e56ab61",
+    "case-realistic-rear.png": "4224efef4504647106c55e99643c5662549f6ec32b41f3b3e9db7d58fc47fa22",
+    "case-realistic-right-access.png": "9b105c0f7495f232cd8d66593d8b0fba72394dc767e38757b8d2c58f1e03bf36",
+    "case-realistic-studio.png": "4efe613e66d615da9e09048d17164e50673a3a18ad09261e218c37daf422b21a",
+    "desktop-case-assembly.glb": "0b4012dbca48cedb1f484eedac684bc6d55ca544eac8ed3558f0f982775bcd91",
+    "desktop-case-realistic.blend": "bf1bbb3466d8a20921eae4be1a0f3b3cf7c1c1c45bab095762d3a8d90ab0121b"
   }
 }

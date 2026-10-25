@@ -15,8 +15,8 @@ DEST=ROOT/'output'/f'Daisy-Desktop-V3-{REV}'
 
 
 def main():
-    # Both checks re-open actual files. A failed gate must stop distribution.
-    for script in ['check_stl_orientation.py','validate_realistic_case.py']:
+    # All three checks re-open actual files. A failed gate must stop distribution.
+    for script in ['check_stl_orientation.py','check_right_access.py','validate_realistic_case.py']:
         subprocess.run([sys.executable,str(ROOT/script)],check=True,capture_output=True,text=True)
     DEST.mkdir(exist_ok=True)
     records=[]
@@ -35,13 +35,14 @@ def main():
     add(OUT/'desktop-case-assembly.glb',f'desktop-case-assembly-{REV}.glb')
     add(OUT/'desktop-case-realistic.blend',f'desktop-case-realistic-{REV}.blend')
     add(OUT/'case-assembly-view.stl',f'view-only/case-assembly-view-{REV}.stl')
-    for name in ['studio','rear','exploded']:
+    for name in ['studio','rear','exploded','right-access']:
         add(OUT/f'case-realistic-{name}.png',f'images/case-realistic-{name}-{REV}.png')
     add(ROOT/'output/orientation-proof'/f'orientation-proof-{REV}.png',f'orientation-proof-{REV}.png')
-    for name in ['before-correction.json','after-correction.json','withdrawn-packages.json']:
+    for name in ['before-correction.json','after-correction.json','withdrawn-packages.json','right-access-before.json','right-access-after.json']:
         add(ROOT/'orientation-audit'/name,'checks/'+name)
     for name in ['render-manifest.json','export-validation.json','board-model-inventory.json']:
         add(OUT/name,'checks/'+name)
+    add(ROOT/'right-controls.json','checks/right-controls.json')
     text=('Daisy Desktop Case V3 / '+REV+'\n\n'
         'ALTE PAKETE VOR DEM 25.10.2026 NICHT DRUCKEN: gespiegelte Druckdateien.\n'
         'Neu: Bestueckte Oberseite; Audio hinten, Seed links, MIDI rechts.\n'
@@ -50,10 +51,14 @@ def main():
         'GLB: Meter, farbige Baugruppe. BLEND: Arbeitsmassstab 1 Einheit = 1 mm.\n'
         'cut-contours/: Acryl/Papier. fit-tests/: noch unbestaetigte Passproben.\n'
         'Orientierung: unabhaengig an tatsaechlichen Dateien geprueft.\n'
+        'Enthaelt ACCESS-2026-10-25: seitlicher Radzugang und groessere Kopfhoerer-Frontoeffnung.\n'
+        'CAD-Pruefkoerper: gerader Stecker OD10mm, Fingerhuelle OD14mm; 15 Paarungen ohne Ueberschneidung.\n'
+        'Fingerhuelle an einer Kante nur 0,2mm Reserve. Reale Bedienbarkeit NICHT GEMESSEN.\n'
         'Hardware-Passung und Kappenhoehe: NICHT GEMESSEN.\n')
     (DEST/'README.txt').write_text(text,encoding='utf8',newline='\n')
     records.append(dict(path='README.txt',sha256=hashlib.sha256((DEST/'README.txt').read_bytes()).hexdigest()))
     manifest=dict(revision=REV,hardware='NICHT GEMESSEN',
+        access_revision='ACCESS-2026-10-25',
         orientation='Verified physical RH: audio rear, Seed left, MIDI right',files=records)
     (DEST/'package-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8',newline='\n')
     archive=DEST.with_suffix('.zip')

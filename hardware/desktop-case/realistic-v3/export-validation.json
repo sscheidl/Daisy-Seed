@@ -54,11 +54,11 @@
     0.0398,
     0.12900001
   ],
-  "glb_meshes": 742,
+  "glb_meshes": 744,
   "render_resolution": [
     2400,
     1600
   ],
   "source_and_artifact_hashes_verified": true,
-  "visual_review": "Separate manual inspection of all three images required"
+  "visual_review": "Separate manual inspection of all four images required"
 }

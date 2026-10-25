@@ -64,7 +64,7 @@ for name in original:
     forward=points_match(xyz,source.vertices)
     reverse=points_match(source.vertices,xyz)
     alignment[name]=dict(passed=True,max_distance_mm=max(forward,reverse),reflection_applied=False)
-for name in ['studio','rear','exploded']:
+for name in ['studio','rear','exploded','right-access']:
     im=Image.open(OUT/f'case-realistic-{name}.png')
     assert im.size==(2400,1600),(name,im.size)
 result=dict(date='2026-10-25',hardware='NICHT GEMESSEN',
@@ -75,6 +75,6 @@ result=dict(date='2026-10-25',hardware='NICHT GEMESSEN',
     assembly_stl_note='Visualization only: touching layers retain their own coincident interface faces',
     glb_extents_metres=glb.extents.round(8).tolist(),glb_meshes=len(glb.geometry),
     render_resolution=[2400,1600],source_and_artifact_hashes_verified=True,
-    visual_review='Separate manual inspection of all three images required')
+    visual_review='Separate manual inspection of all four images required')
 (OUT/'export-validation.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf8',newline='\n')
 print(json.dumps(result,indent=2))

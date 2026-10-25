@@ -135,7 +135,7 @@ cube('J7 USB schematic', -.3, 36.6, pcbtop, 7.5, 9, 3.5, silver, .4)
 cube('Seed USB schematic', -.3, 68, pcbtop+4.6, 7.5, 9, 3.5, silver, .4)
 cube('SD socket schematic', 0, 84, pcbtop, 17, 18, 2, silver, .5)
 cube('Headphone jack schematic', 170.6, 94, pcbtop, 6, 17, 5, black, .3)
-cyl('Volume wheel schematic', 191.3, 91.6, pcbtop, 7, 5, black)
+cyl('Volume wheel nominal top 2.5mm', 191.3, 91.6, pcbtop, 7, 2.5, black)
 for x, y in [(6, 17), (6, 29), (22, 31), (34, 31), (7, 55)]:
     cyl('Capacitor schematic', x, y, pcbtop, 4, 10, silver)
 

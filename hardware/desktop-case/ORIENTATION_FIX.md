@@ -85,6 +85,12 @@ wird hier nicht behauptet. Die Hardware-Passung ist weiterhin
 **NICHT GEMESSEN**; insbesondere bleiben Kappenhöhe und Seed-Einsteckhöhe
 als Annahmen kenntlich.
 
+Die Aussage zum unveränderten Volumen betrifft den reinen RH-Korrekturstand
+`2efeaf8`. Danach wurden die Ausschnitte für Rad/Kopfhörer gezielt verändert;
+dies ist die getrennte [ACCESS-Korrektur](RIGHT_ACCESS.md), kein weiterer
+Orientierungswechsel. Die Vorher-/Nachher-Draufsicht oben zeigt nur den
+RH-Korrekturschritt.
+
 ## Ersatzpaket und Rückzug der alten Pakete
 
 Nur das neue Paket **`Daisy-Desktop-V3-RH-2026-10-25.zip`** verwenden.
@@ -94,12 +100,14 @@ ausdrücklich mit `withdrawn` und `DO-NOT-PRINT` bezeichneten Ausgabeverzeichnis
 Die Hashes der vier alten Archive stehen in
 [withdrawn-packages.json](orientation-audit/withdrawn-packages.json).
 
-Vor dem Paketieren laufen beide Dateiprüfungen. Die tatsächlich enthaltenen
+Vor dem Paketieren laufen alle drei Dateiprüfungen einschließlich des
+Rad-/Kopfhörerzugangs. Die tatsächlich enthaltenen
 STL-Bytes werden nochmals gegen ihre aktuellen Hashes geprüft. Das neue
 Paket enthält den Vorher-/Nachher-Nachweis und die Prüfberichte.
 
 ```powershell
 .tools/case/Scripts/python.exe hardware/desktop-case/check_stl_orientation.py
+.tools/case/Scripts/python.exe hardware/desktop-case/check_right_access.py
 .tools/case/Scripts/python.exe hardware/desktop-case/validate_realistic_case.py
 .tools/case/Scripts/python.exe hardware/desktop-case/package_case_review.py
 ```
