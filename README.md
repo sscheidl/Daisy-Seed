@@ -133,8 +133,11 @@ Open source, decided on October 24, 2026:
 | --- | --- |
 | Everything of our own unless stated otherwise: firmware, the Mod on Daisy module, the browser editor (`editors/mod-on-daisy/web/`), `mod_probe.py`, scripts, docs | **MIT**, see [LICENSE](LICENSE) |
 | JUCE editor and VST3 plugin (`editors/mod-on-daisy/src/`, `tests/`, `CMakeLists.txt`) | **AGPLv3**, see [COPYING.AGPL-3.0.txt](editors/mod-on-daisy/COPYING.AGPL-3.0.txt). JUCE 9 is used under its AGPLv3 option; the MIT parts it includes stay MIT |
-| Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/LICENSES/`), Ambient Reverb (`effects/reverb/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
+| Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT, `instruments/physical-modeling/third_party/stmlib/LICENSE`, `instruments/physical-modeling/torus/UPSTREAM.md`), a patched copy of libDaisy's `midi_parser.cpp` (MIT, notice in the file, `instruments/physical-modeling/src/`), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/fatfs/LICENSE.txt`), Ambient Reverb (`effects/reverb/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
 
 The repository is public on GitHub; until this license was added it had none. Material
 that may not be redistributed (manufacturer documents, photos, analysis inputs) does not
-belong here; an audit of the content and history is still open.
+belong here. The content and full history were audited on October 25, 2026: no secrets,
+firmware images, samples or manufacturer documents were found in the published history.
+Local analysis outputs and exports that bundle third-party 3D models are excluded in
+`.gitignore`.
