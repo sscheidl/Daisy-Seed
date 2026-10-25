@@ -79,8 +79,8 @@ use the buttons on the Seed3. With a closed case they are reached through the pl
    This differs from the ROM-DFU sequence above.
 3. Continue with step 3 above.
 
-For the first Ambient Reverb test, select
-`effects/reverb/build/AmbientReverb-v0.2.bin` in the Web Programmer, or use
+For Ambient Reverb, select
+`effects/reverb/build/AmbientReverb-v0.3.1.bin` in the Web Programmer, or use
 `make PROJECT=reverb-fx program-dfu` with the same J7 connection and update mode
 (S9+S16 or the editor button). See the [reverb controls and test steps](../effects/reverb/README.md).
 

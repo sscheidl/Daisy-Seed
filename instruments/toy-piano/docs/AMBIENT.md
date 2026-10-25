@@ -1,8 +1,10 @@
-# Toy Piano + Ambient Reverb v0.1.1
+# Toy Piano + Ambient Reverb v0.1.2
 
 Eigenes Produkt `toy-piano-ambient`, aufbauend auf der modularen FX-Stufe in
 PR #38. Das bisherige Toy Piano v0.3 und die reine Ambient-FX-Firmware bleiben
-eigene Buildziele. Kein Gerät wurde verbunden oder geflasht.
+eigene Buildziele. Kein Gerät wurde verbunden oder geflasht. v0.1.2 ist v0.1.1 plus
+der gemeinsame Bootloader-Einstieg (Integrationsbranch mit PR #40); Klang und
+Bedienung sind sonst unverändert.
 
 | Poti | Funktion |
 | --- | --- |
@@ -46,7 +48,7 @@ Trocken spielen: VR6 ganz links; alle sechs Schalterstellungen sind nun FX.
 ## Editor und Diagnose
 
 Das bestehende HTML-/JUCE-/VST3-Panel erkennt das Produkt als
-`toy-piano-ambient 0.1.1`. Alle acht Matrixspalten sind beschrieben: Pitch, Level,
+`toy-piano-ambient 0.1.2`. Alle acht Matrixspalten sind beschrieben: Pitch, Level,
 Harmonic, Attack, Decay, HallDecay, HallMix und HallX. Neue FX-Spalten sind global;
 Poly AT auf Attack/Decay bleibt wegen der Anschlagübernahme gesperrt. Grundwerte
 und die gewählte Schalterstellung werden über den bestehenden Monitor gemeldet.
@@ -75,7 +77,7 @@ make PROJECT=toy-piano-ambient test
 make PROJECT=toy-piano-ambient test-sanitize
 make PROJECT=toy-piano-ambient -j4
 make PROJECT=toy-piano-ambient manifest
-python3 scripts/check-firmware.py instruments/toy-piano/build/ambient/ToyPianoAmbient-v0.1.1.bin
+python3 scripts/check-firmware.py instruments/toy-piano/build/ambient/ToyPianoAmbient-v0.1.2.bin
 ```
 
 Am Host geprüft: alle 16 Tasten und LED-Zustände, exakter trockener Vergleich
@@ -84,10 +86,26 @@ Piano-Hüllkurve, acht Editor-Ziele, MIDI-Rückstau ohne Verlust im Anwendungsqu
 Test, begrenzte Main-/Audio-Batches und keine Allokation im Audiocallback.
 Die Testuhr prüft CPU-Snapshot, Reset und Wraparound, keine reale CPU-Leistung.
 
-ARM-Build: 184140-Byte-BIN, 119568 B DTCM (11504 B statische Reserve), 1129624 B
-SDRAM. Die Reserve ist keine Stack-Hochwassermessung. Firmware- und ELF-Prüfung
-bestehen. BIN-SHA-256:
+ARM-Build v0.1.2 (Integrationsbranch, xPack GCC 13.2.1-1.1): 184220-Byte-BIN,
+119584 B DTCM (11488 B statische Reserve), 1129624 B SDRAM. Die Reserve ist keine
+Stack-Hochwassermessung. Firmware- und ELF-Prüfung bestehen. BIN-SHA-256:
+`0ecfb4f9f44a7a8b51fafe1a7b1ec9d81cb1dce420b7ce46cbeecfc00f9753e0`.
+Frühere v0.1.1 (Commit 07d39ad, unverändert, unabhängig neu gebaut und bytegleich):
+184140 Byte, 119568 B DTCM, SHA-256
 `3cd446fb4b0d17ecfffdcf5b7ec5a1b0a02a7f116cdab8a9aaa3d1de5da050ed`.
+
+## Firmware-Update ohne BOOT/RESET
+
+Wie in allen Firmwares dieses Repositorys ([Details](../../../common/bootloader/README.md)):
+
+* **S9 + S16** (äußere Tasten der zweiten Reihe, hier C5 und C6) allein **5 s** halten.
+  Beide Tasten spielen zuerst ihre Note; eine dritte Taste oder vorzeitiges Loslassen
+  verhindert den Einstieg. Eine allein 5 s gehaltene C5-C6-Oktave löst ihn also aus.
+* Oder **Firmware-Update …** im HTML-/JUCE-/VST3-Panel (SysEx über J7). Die Antwort
+  des Kits bestätigt nur die angenommene Anfrage, noch nicht den DFU-Eintritt.
+* Danach leuchten alle 16 LEDs (erwartet, NICHT GEMESSEN), und der Bootloader wartet
+  ohne Zeitlimit; erst das DFU-Gerät am Rechner bestätigt ihn. Flashen wie in
+  [FLASHING.md](../../../docs/FLASHING.md). RESET + BOOT bleibt der Rettungsweg.
 
 **NICHT GEMESSEN am Gerät:** gemeinsame CPU-Last, Stack-Hochwasser, analoge
 Pegel, Schalterrichtung und hörbare Übergänge. Zuerst mit niedrigem Abhörpegel

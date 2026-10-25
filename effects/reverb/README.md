@@ -75,7 +75,8 @@ the v0.3 firmware; the older plan predates the sixth algorithm.
 
 `src/fx_adapter.h` exposes the existing DSP through the shared wet-only audio
 contract. Its integration adapter has its own version in `adapter_version.h`;
-the shared core is versioned 0.3. The first composed firmware is
+the shared core is versioned 0.3.1 (0.3 plus the bootloader entry and USB-MIDI in
+the standalone firmware; the DSP is unchanged). The first composed firmware is
 `make PROJECT=physical-modeling-fx-ambient`; see
 [modular components](../../docs/MODULAR_COMPONENTS.md) for its limited pilot
 parameter mapping and hardware-test boundary.
@@ -89,10 +90,10 @@ as in [BUILD.md](../../docs/BUILD.md):
 make PROJECT=reverb-fx test
 make PROJECT=reverb-fx test-sanitize
 make PROJECT=reverb-fx -j4
-python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.3.bin
+python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.3.1.bin
 ```
 
-The firmware is `effects/reverb/build/AmbientReverb-v0.3.bin`, built with the
+The firmware is `effects/reverb/build/AmbientReverb-v0.3.1.bin`, built with the
 same `BOOT_SRAM` setup and external DFU bootloader as Toy Piano. Follow the
 [Desktop Kit flashing guide](../../docs/FLASHING.md); no bootloader change is
 required. Do not flash the research project's original image if you want the
@@ -156,3 +157,10 @@ xPack GCC 13.2.1-1.1 builds a 130828-byte `AmbientReverb-v0.3.bin`; BOOT_SRAM
 vectors and ARM ELF/memory checks pass. DTCM: 69124 B; SDRAM: 1114112 B. SHA-256:
 `576e9d81132f6b511913c477930c7073a7c0641f0d2ed8dc3eb071fb698bcc90`.
 The earlier v0.2 measurements above are retained as historical results.
+
+v0.3.1 (integration branch with PR #40) adds USB-MIDI on J7, so far only for the
+firmware update request, and the S9+S16 key gesture. 145748-byte
+`AmbientReverb-v0.3.1.bin`, SHA-256
+`3a19183d3474b00979ae2578ee8744865ff2aa0559f4df4b1de658503568ea62`.
+DTCM rises to 120584 B (static reserve 10488 B, was 61948 B) because of the USB-MIDI
+buffers; the 8 KiB check passes, the stack high-water mark is **NICHT GEMESSEN**.
