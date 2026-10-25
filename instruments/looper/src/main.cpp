@@ -69,10 +69,12 @@ static MidiUsbHandler usbMidi;
 static looper::midi::Receiver midiIn;
 static looper::midi::Takeover takeover[knobs::Decay + 1];  // audio callback only
 static uint8_t midiValue[knobs::Decay + 1] = {};          // audio callback only
-static_assert(looper::midi::kButtons == keys::kFirstMode + keys::kModes &&
-                  looper::midi::Import == keys::Import && looper::midi::SoundOnSound == keys::kFirstMode,
+static_assert(unsigned(looper::midi::kButtons) == keys::kFirstMode + keys::kModes &&
+                  unsigned(looper::midi::Import) == keys::Import &&
+                  unsigned(looper::midi::SoundOnSound) == keys::kFirstMode,
               "MIDI buttons follow the key order");
-static_assert(looper::midi::kKnobs == knobs::Decay + 1 && looper::midi::Varispeed == knobs::Varispeed,
+static_assert(unsigned(looper::midi::kKnobs) == knobs::Decay + 1 &&
+                  unsigned(looper::midi::Varispeed) == knobs::Varispeed,
               "MIDI knobs follow the pot order");
 
 // microSD: loop.wav is saved from the main loop and recalled at power-up;
