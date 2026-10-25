@@ -3,6 +3,8 @@
 // cycle counters for the matrix share, the whole callback and the main loop.
 #include "daisy_seed.h"
 #include "desktop_devkit.h"
+#include "bootloader_daisy.h"
+#include "bootloader_midi.h"
 #include "util/CpuLoadMeter.h"
 #include "mod_on_daisy_desktop.h"
 #include "scenarios.h"
@@ -36,6 +38,9 @@ std::atomic<uint32_t> key_scenario{0xFF}; // S1..S9 pressed: scenario 0..8
 mod::TripleBuffer<mod::Stats> stats_box;
 uint8_t current_scenario = 1;
 uint32_t midi_lost = 0, dispatch_max = 0, service_max = 0;
+// Software entry into the Daisy bootloader: S13+S14 for 3 s, or SysEx over J7.
+bootloader::KeyCombo boot_keys; // audio callback only
+bootloader::Request boot_request;
 static_assert(std::atomic<int8_t>::is_always_lock_free && std::atomic<uint32_t>::is_always_lock_free);
 
 struct Voice {
@@ -69,6 +74,11 @@ void AudioCallback(daisy::AudioHandle::InputBuffer, daisy::AudioHandle::OutputBu
     for(std::size_t key = 0; key < bench::kScenarioCount; ++key)
         if(hw.button[key].RisingEdge())
             key_scenario.store(uint32_t(key), std::memory_order_relaxed);
+    uint32_t held = 0;
+    for(std::size_t key = 0; key < daisy::desktop_devkit::kNumButtons; ++key)
+        held |= hw.button[key].Pressed() ? 1u << key : 0u;
+    if(boot_keys.Process(held, daisy::System::GetNow()))
+        boot_request.Set(bootloader::Request::kKeys);
     if(reset_stats.exchange(false, std::memory_order_relaxed)) {
         audio_stats = AudioStats{};
         load_meter.Reset();
@@ -257,6 +267,10 @@ int main() {
         const uint32_t dispatch_start = Cycles();
         while(usb_midi.HasEvents()) {
             const daisy::MidiEvent event = usb_midi.PopEvent();
+            if(bootloader::IsRequest(event)) {
+                boot_request.Set(bootloader::Request::kSysEx);
+                continue;
+            }
             mod::MidiMessage m;
             if(mod::adapter::ToMessage(event, m) && !modulation.controller.HandleMidi(m))
                 BenchMidi(m);
@@ -269,6 +283,7 @@ int main() {
         const uint32_t service = Cycles() - service_start;
         service_max = service > service_max ? service : service_max;
 
+        bootloader::Service(boot_request, hw, [](uint8_t* bytes, std::size_t size) { sender.Send(bytes, size); });
         const uint32_t key = key_scenario.exchange(0xFF, std::memory_order_relaxed);
         if(key != 0xFF)
             ApplyScenario(uint8_t(key));

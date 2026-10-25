@@ -88,6 +88,19 @@ int main() {
     assert(bypassed && (uiState.load() & 16u));
     RenderLeds(uiState.load());
     assert(hw.led[14] == .5f && hw.ledUpdates > 0);
+    // Bootloader entry: S13+S14 (reserved) alone for 3 s; no effect parameter changes.
+    using daisy::System;
+    const uint32_t ui = uiState.load();
+    hw.pressed[12] = hw.pressed[13] = true;
+    Tick(2990);
+    assert(!bootloader::Service(bootRequest, hw) && System::bootloader_resets == 0);
+    Tick(20);
+    assert(bootloader::Service(bootRequest, hw) && System::bootloader_resets == 1);
+    assert(System::bootloader_mode == System::DAISY_INFINITE_TIMEOUT && uiState.load() == ui);
+    for (unsigned i = 0; i < 16; ++i)
+        assert(hw.led[i] == 1.f);
+    hw.pressed[12] = hw.pressed[13] = false;
+    Tick(10);
     std::cout << "PASS: five modes, reserved buttons, switches, LED state, sustain, "
-                 "bypass gestures and dropout suppression\n";
+                 "bypass gestures, dropout suppression and bootloader keys\n";
 }

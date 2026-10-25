@@ -17,6 +17,8 @@ C_SOURCES += src/reader_ctlreq.c
 C_DEFS += -DDIAG_CARD_READER=1
 endif
 C_INCLUDES += -Isrc -I$(PROTOCOL_DIR)
+# Shared software entry into the Daisy bootloader (DDP BOOT); keys are not used here.
+C_INCLUDES += -I../../common/bootloader
 C_INCLUDES += -I$(LIBDAISY_DIR)/Middlewares/Patched/ST/STM32_USB_Device_Library/Class/CDC/Inc
 # FatFs sources are needed for the optional read-only microSD test.
 USE_FATFS = 1

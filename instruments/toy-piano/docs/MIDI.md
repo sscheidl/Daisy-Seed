@@ -53,6 +53,9 @@ return route or monitoring when only recording key presses.
 * At most 16 incoming notes are started per block; the queue holds 64. Excess input
   can be dropped. This is not a sustained-note MIDI synthesizer.
 * The port is MIDI-only; the template's serial Logger is not used concurrently.
-* Updates still use RESET then BOOT; the bootloader enumerates as DFU before the app.
+* Updates: the SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7` (or S13+S14 for 3 s) restarts
+  the kit into the bootloader, which then enumerates as DFU instead of the app
+  ([common/bootloader](../../../common/bootloader/README.md)). RESET then BOOT remains
+  the recovery path.
 * Test semitones, velocity, 16+ simultaneous incoming notes, outgoing chords,
   power-only use, reconnection and full-load callback time on hardware.

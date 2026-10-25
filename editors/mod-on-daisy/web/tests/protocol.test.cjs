@@ -107,4 +107,12 @@ assert(P.checkCompatibility({ instrument_key: 'toy-piano', patch: legacy }, now,
 assert(P.checkCompatibility({ instrument_key: 'toy-piano', schema_hash: '0', patch: P.defaultPatch(), hasFm: true }, now,
   { key: 'toy-piano', schema: 0, caps: 0x0a }).fmUnsupported);
 
-console.log('PASS: browser codec matches the C++ reference (CRC E2340CC6, format 2 9D6E020E, frame sizes, packing, monitor incl. mode, value labels, goal span, compatibility)');
+// Firmware update frames (common/bootloader/README.md, tests/test_bootloader_entry.cpp).
+assert.deepStrictEqual(P.BOOTLOADER_REQUEST, [0xf0, 0x7d, 0x42, 0x4c, 0x01, 0x01, 0x42, 0x4f, 0x4f, 0x54, 0xf7]);
+assert.deepStrictEqual(P.BOOTLOADER_ACK, [0xf0, 0x7d, 0x42, 0x4c, 0x01, 0x41, 0xf7]);
+assert(P.isBootloaderAck(Uint8Array.from(P.BOOTLOADER_ACK)));
+assert(!P.isBootloaderAck(P.BOOTLOADER_REQUEST) && !P.isBootloaderAck(P.BOOTLOADER_ACK.slice(0, 6)));
+assert.strictEqual(P.parseFrame(P.BOOTLOADER_REQUEST), null); // not an MD frame: the link ignores both
+assert.strictEqual(P.parseFrame(P.BOOTLOADER_ACK), null);
+
+console.log('PASS: browser codec matches the C++ reference (CRC E2340CC6, format 2 9D6E020E, frame sizes, packing, monitor incl. mode, value labels, goal span, compatibility, bootloader frames)');

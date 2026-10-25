@@ -181,6 +181,19 @@ class DeviceSession:
         return True
 
     @property
+    def bootloader_supported(self) -> bool:
+        return bool(self.connected and self.device and "boot" in self.device.capabilities)
+
+    def request_bootloader(self) -> bool:
+        """Asks the firmware to restart into the Daisy bootloader for a firmware update
+        (DDP BOOT). Refused while an SD test runs or Windows owns the card."""
+        if not self.bootloader_supported or self.sd_test_pending or self.reader_pending:
+            return False
+        if self.reader_supported and (self.reader is None or self.reader.state != "LOCAL"):
+            return False
+        return self.send("BOOT")
+
+    @property
     def reader_supported(self) -> bool:
         return bool(self.connected and self.device and "sdmsc" in self.device.capabilities)
 
@@ -423,7 +436,10 @@ class DeviceSession:
                 if sent is not None:
                     self.rtt_ms = (now - sent) * 1000.0
             elif msg.type == "ACK":
-                self._event("log", f"Acknowledged: {body}")
+                if msg.get("c") == "BOOT":
+                    self._event("bootloader", body)
+                else:
+                    self._event("log", f"Acknowledged: {body}")
             elif msg.type == "ERR":
                 if msg.get("c") == "READER":
                     self._reader_deadline = None

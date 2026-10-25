@@ -37,9 +37,18 @@ Only install a bootloader when it is missing or the wrong variant. Do not repeat
 ## Routine updates: flash Diagnostics
 
 1. Connect and power the kit through **J7 on the Desktop carrier**.
-2. Press and release **RESET**, then press **BOOT** within approximately two
-   seconds. The USR LED blinks quickly, then pulses slowly: the Daisy bootloader
-   is waiting for the application. This differs from the ROM DFU sequence above.
+2. Put the kit into update mode. Without touching the Seed3 buttons:
+   * diagnostic firmware running: **Firmware update mode …** in the Windows app
+     (DDP `BOOT`);
+   * an instrument or effect of this repository running: hold **S13 + S14** for
+     3 s, or **Firmware-Update …** in the Mod on Daisy editor
+     ([../../docs/FLASHING.md](../../docs/FLASHING.md)).
+
+   All 16 LEDs light up and the bootloader waits without a time limit.
+   **Recovery** (older or hung firmware): press and release **RESET**, then press
+   **BOOT** within approximately two seconds. The USR LED blinks quickly, then pulses
+   slowly: the Daisy bootloader is waiting for the application. This differs from the
+   ROM DFU sequence above.
 3. Connect in the [Daisy Web Programmer](https://flash.daisy.audio/), choose
    **Custom**, and upload **`firmware/build/DaisyDiagnostic.bin`**. Alternatively, run:
 
@@ -57,7 +66,8 @@ only one application runs at a time.
 
 ## If the device does not appear
 
-Check the data cable, port, and BOOT/RESET sequence. Routine updates require the
+Check the data cable, port, and that the kit is in update mode (all LEDs on, or
+the USR LED pulsing after BOOT/RESET). Routine updates require the
 external bootloader through J7. WebUSB requires a supported browser and USB access
 permissions. Linux may need udev rules; Windows may need the official Daisy/Zadig
 driver setup. See the [official help](https://docs.daisy.audio/tutorials/daisy-web-programmer/)

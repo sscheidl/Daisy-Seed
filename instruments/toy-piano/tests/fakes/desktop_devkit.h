@@ -13,6 +13,11 @@ struct System {
     inline static uint32_t now = 0;
     static uint32_t GetNow() { return now; }
     static void Delay(uint32_t ms) { now += ms; }
+    // libDaisy's System::ResetToBootloader(); the fake records the request.
+    enum BootloaderMode { STM = 0, DAISY, DAISY_SKIP_TIMEOUT, DAISY_INFINITE_TIMEOUT };
+    inline static unsigned bootloader_resets = 0;
+    inline static BootloaderMode bootloader_mode = STM;
+    static void ResetToBootloader(BootloaderMode mode) { ++bootloader_resets; bootloader_mode = mode; }
 };
 }
 #include "hid/digital_control.h"

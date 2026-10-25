@@ -1,6 +1,7 @@
 // Host tests of the editor core (src/core) against the firmware's Controller and
 // Engine (GUI.md § 3: "core/ wird mit einem simulierten Gerät getestet"). No JUCE.
 //   make -C editors/mod-on-daisy test
+#include "../src/core/Bootloader.h"
 #include "../src/core/PatchFile.h"
 #include "../src/core/SimInstruments.h"
 #include "../src/core/Simulator.h"
@@ -790,7 +791,53 @@ void TestGoalSpanAndAftertouch() {
 }
 
 
+// Firmware update request (common/bootloader/README.md): request bytes, reply, timeout.
+void TestBootRequest() {
+    BootRequest boot;
+    std::vector<std::vector<uint8_t>> sent;
+    auto send = [&](const uint8_t* b, std::size_t n) {
+        sent.emplace_back(b, b + n);
+        return true;
+    };
+    CHECK(!boot.Waiting() && boot.Poll(0) == BootRequest::Result::None);
+    CHECK(boot.Start(100, send) && boot.Waiting());
+    CHECK((sent == std::vector<std::vector<uint8_t>>{
+                       {0xF0, 0x7D, 0x42, 0x4C, 0x01, 0x01, 0x42, 0x4F, 0x4F, 0x54, 0xF7}}));
+    // Mod on Daisy frames, our own echoed request and a damaged reply are not the answer.
+    const std::vector<uint8_t> monitor = MonitorFrameFrom(0);
+    CHECK(!boot.OnMessage(monitor.data(), monitor.size()));
+    CHECK(!boot.OnMessage(sent[0].data(), sent[0].size()));
+    const uint8_t damaged[] = {0xF0, 0x7D, 0x42, 0x4C, 0x01, 0x01, 0xF7};
+    CHECK(!boot.OnMessage(damaged, sizeof(damaged)));
+    CHECK(boot.Poll(100 + BootRequest::kTimeoutMs - 1) == BootRequest::Result::None && boot.Waiting());
+    const uint8_t ack[] = {0xF0, 0x7D, 0x42, 0x4C, 0x01, 0x41, 0xF7};
+    CHECK(boot.OnMessage(ack, sizeof(ack)));
+    CHECK(!boot.Waiting() && boot.Poll(100 + BootRequest::kTimeoutMs) == BootRequest::Result::Acknowledged);
+    CHECK(boot.Poll(5000) == BootRequest::Result::None); // reported once
+    CHECK(boot.OnMessage(ack, sizeof(ack)) && boot.Poll(5001) == BootRequest::Result::None); // late duplicate
+
+    // No answer (older firmware): reported once after the timeout, across a clock wrap.
+    CHECK(boot.Start(0xFFFFFFF0u, send));
+    CHECK(boot.Poll(0xFFFFFFF0u + BootRequest::kTimeoutMs - 1) == BootRequest::Result::None);
+    CHECK(boot.Poll(0xFFFFFFF0u + BootRequest::kTimeoutMs) == BootRequest::Result::NoAnswer);
+    CHECK(!boot.Waiting() && boot.Poll(0x10000) == BootRequest::Result::None);
+    // A refused send leaves nothing pending; Cancel drops a pending request.
+    CHECK(!boot.Start(10, [](const uint8_t*, std::size_t) { return false; }) && !boot.Waiting());
+    CHECK(boot.Start(10, send) && boot.Waiting());
+    boot.Cancel();
+    CHECK(!boot.Waiting() && boot.Poll(10 + BootRequest::kTimeoutMs) == BootRequest::Result::None);
+
+    // The session ignores the reply: it is not a Mod on Daisy frame.
+    Rig rig(toy_piano::MakeModInfo());
+    CHECK(rig.Connect());
+    const std::size_t logs = rig.logs.size();
+    rig.session.OnMessage(ack, sizeof(ack));
+    rig.Run(50);
+    CHECK(rig.session.Connected() && rig.logs.size() == logs);
+}
+
 int main() {
+    TestBootRequest();
     TestConnect();
     TestEditsAndCoalescing();
     TestLimit();

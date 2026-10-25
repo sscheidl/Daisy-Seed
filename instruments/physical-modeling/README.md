@@ -74,7 +74,9 @@ The Firmware CI matrix provides `PhysicalModeling-v0.1.0.bin`, `.elf`, `.map` an
 Use the **existing external Daisy bootloader**, following
 [FLASHING](../../docs/FLASHING.md) and [HARDWARE_TEST](docs/HARDWARE_TEST.md).
 Flash only the application BIN. A working compatible bootloader needs no
-reinstallation. The user reports successful flashing and functional listening
+reinstallation. For an update, hold **S13 + S14** for 3 s or use **Firmware-Update …**
+in the editor (both builds): all LEDs light up and the bootloader waits
+([details](../../common/bootloader/README.md)). The user reports successful flashing and functional listening
 tests with S1 (Studio One). The authorized six-model hardware CPU capture recorded
 zero deadline overruns in 174084 blocks, with a highest peak of 56.71% at four
 voices and muted final master in the settled-model run. A subsequent practical

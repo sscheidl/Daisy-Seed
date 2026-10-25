@@ -8,6 +8,7 @@
 #include "version.h"
 const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
 #include "desktop_devkit.h"
+#include "bootloader_daisy.h"
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -51,6 +52,9 @@ static uint32_t downMask = 0;
 static std::atomic<uint32_t> uiState{0}, maximumCycles{0}, overruns{0};
 static uint32_t budgetCycles = 0;
 static float settled[knobs::Decay + 1] = {-1, -1, -1, -1, -1, -1, -1, -1};
+// Software entry into the Daisy bootloader: S13+S14 (no looper function) for 3 s.
+static bootloader::KeyCombo bootKeys;  // audio callback only
+static bootloader::Request bootRequest;
 
 // microSD: loop.wav is saved from the main loop and recalled at power-up;
 // S8 imports the next WAV file of 0:/looper/loops. The transfer buffer must be
@@ -174,6 +178,8 @@ static void Controls() {
             presses |= bit;
         }
     }
+    if (bootKeys.Process(downMask, System::GetNow()))
+        bootRequest.Set(bootloader::Request::kKeys);
     if (presses & (1u << keys::Record))
         engine.PressRecord();
     if (presses & (1u << keys::Play))
@@ -278,6 +284,12 @@ static void ServiceStorage(uint32_t now) {
     store.Service(view, port, now);
 }
 
+// Main loop: a pending request waits until no card write or import is running.
+static void ServiceBootloader() {
+    if (!storageReady || !store.Active())
+        bootloader::Service(bootRequest, hw);
+}
+
 static float CardLed(looper::LoopStore::Status status, uint32_t now) {
     switch (status) {
     case looper::LoopStore::Status::NoCard: return 0.f;
@@ -346,6 +358,7 @@ int main() {
     while (true) {
         const uint32_t now = System::GetNow();
         ServiceStorage(now);
+        ServiceBootloader();
         if (now - ledsAt >= 10) {
             ledsAt = now;
             ShowLeds(now, shown);

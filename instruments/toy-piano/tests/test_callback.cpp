@@ -174,6 +174,60 @@ void TestUsbMidi() {
         assert(piano.MidiVoiceNote(i) == -1);
     hUsbDeviceHS.dev_state = 0;
 }
+
+daisy::MidiEvent SysEx(const uint8_t* body, std::size_t size) {
+    daisy::MidiEvent event;
+    event.type = daisy::SystemCommon;
+    event.sc_type = daisy::SystemExclusive;
+    std::copy(body, body + size, event.sysex_data);
+    event.sysex_message_len = static_cast<uint8_t>(size);
+    return event;
+}
+
+// Software bootloader entry: S13+S14 alone for 3 s, or the SysEx request over J7.
+void TestBootloader() {
+    using daisy::System;
+    hw.pressed.fill(false);
+    Tick(8);
+    ServiceBootloader();
+    assert(System::bootloader_resets == 0);
+
+    // With a third key held the pair never fires; once alone, it takes 3 s.
+    hw.pressed[12] = hw.pressed[13] = hw.pressed[0] = true;
+    Tick(4000);
+    ServiceBootloader();
+    assert(System::bootloader_resets == 0);
+    hw.pressed[0] = false;
+    Tick(2990);
+    ServiceBootloader();
+    assert(System::bootloader_resets == 0);
+    Tick(20);
+    ServiceBootloader();
+    assert(System::bootloader_resets == 1);
+    assert(System::bootloader_mode == System::DAISY_INFINITE_TIMEOUT);
+    assert(usb_midi.sent.empty()); // nobody asked: no reply
+    hw.pressed.fill(false);
+    Tick(8);
+
+    // SysEx: consumed before Mod on Daisy, answered, then the reset.
+    hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
+    usb_midi.incoming.push_back(SysEx(bootloader::kRequestBody, sizeof(bootloader::kRequestBody)));
+    ServiceUsbMidi();
+    assert(usb_midi.sent.empty() && System::bootloader_resets == 1);
+    ServiceBootloader();
+    assert((usb_midi.sent == std::vector<Message>{
+        Message(std::begin(bootloader::kAck), std::end(bootloader::kAck))}));
+    assert(System::bootloader_resets == 2);
+
+    // The reply echoed back by a DAW, or a truncated request, does nothing.
+    usb_midi.sent.clear();
+    usb_midi.incoming.push_back(SysEx(bootloader::kAck + 1, sizeof(bootloader::kAck) - 2));
+    usb_midi.incoming.push_back(SysEx(bootloader::kRequestBody, sizeof(bootloader::kRequestBody) - 1));
+    ServiceUsbMidi();
+    ServiceBootloader();
+    assert(usb_midi.sent.empty() && System::bootloader_resets == 2);
+    hUsbDeviceHS.dev_state = 0;
+}
 }
 
 int main() {
@@ -239,5 +293,6 @@ int main() {
     assert(led_mask.load() == 0);
     TestUsbMidi();
     assert(hw.led_transfers == 0); // No LED I2C transfer in audio callback.
-    std::cout << "PASS: production callback + pinned debounce, 16 keys, 1-6 ms dropouts, release/repress, startup, hold, stereo, USB MIDI in/out\n";
+    TestBootloader();
+    std::cout << "PASS: production callback + pinned debounce, 16 keys, 1-6 ms dropouts, release/repress, startup, hold, stereo, USB MIDI in/out, bootloader entry\n";
 }

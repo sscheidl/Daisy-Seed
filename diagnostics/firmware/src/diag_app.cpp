@@ -72,6 +72,15 @@ void App::Step(uint32_t now) {
             board_.ReaderCommand(r, reply);
             keepalive_after_block_ = true;
         }
+        if(r & kRequestBootloader) {
+            if(board_.SdTestAllowed() && !boot_pending_) {
+                reply.Str("ACK c=BOOT");
+                boot_pending_ = true;
+                boot_since_ = now;
+            } else {
+                reply.Str("ERR c=BOOT e=BUSY"); // the card is shared with a computer
+            }
+        }
         if(r & kRequestNewSession) {
             // Output queued for a previous host (e.g. one that closed the port without
             // BYE) is stale; start the new session with a clean buffer.
@@ -145,6 +154,10 @@ void App::Step(uint32_t now) {
         }
     }
     tx_.Pump(usb_, stats_);
+    if(boot_pending_ && (tx_.Pending() == 0 || now - boot_since_ >= kBootFlushMs)) {
+        boot_pending_ = false;
+        board_.EnterBootloader();
+    }
 }
 
 } // namespace diag

@@ -227,6 +227,11 @@ class MainWindow(QMainWindow):
         rate_row.addWidget(self.rate_combo)
         rate_row.addStretch(1)
         layout.addLayout(rate_row)
+        self.boot_button = QPushButton("Firmware update mode …")
+        self.boot_button.setToolTip("Restarts the kit into the Daisy bootloader without BOOT/RESET. "
+                                    "Then flash with the Daisy Web Programmer or make program-dfu.")
+        self.boot_button.clicked.connect(self._enter_bootloader)
+        layout.addWidget(self.boot_button)
         return box
 
     def _build_sim_group(self) -> QGroupBox:
@@ -516,6 +521,9 @@ class MainWindow(QMainWindow):
                 self.sd_result = None
                 if payload is not None:
                     self._log(f"Card reader: {payload.state}")
+            elif kind == "bootloader":
+                self._log("The kit restarts into the Daisy bootloader (all 16 LEDs on). Flash the "
+                          "new firmware with the Daisy Web Programmer or make program-dfu.")
             elif kind == "log":
                 self._log(str(payload))
         if board_changed:
@@ -615,6 +623,8 @@ class MainWindow(QMainWindow):
         local = not s.reader_supported or (reader is not None and reader.state == "LOCAL")
         self.sd_button.setEnabled(enabled and st.sd_card and not s.sd_test_pending
                                   and not s.reader_pending and local)
+        self.boot_button.setEnabled(bool(enabled and s.bootloader_supported and local
+                                         and not s.sd_test_pending and not s.reader_pending))
         self.reader_share.setEnabled(bool(enabled and st.sd_card and reader and
                                           reader.state == "LOCAL" and not reader.busy
                                           and not s.sd_test_pending and not s.reader_pending))
@@ -733,6 +743,18 @@ class MainWindow(QMainWindow):
 
     def _toggle_led(self, index: int) -> None:
         self._set_led_bit(index, not bool(self.led_mask >> index & 1))
+
+    def _enter_bootloader(self) -> None:
+        s = self.session
+        if s is None or not s.bootloader_supported:
+            return
+        answer = QMessageBox.question(self, "Firmware update mode",
+            "The kit restarts into the Daisy bootloader: the diagnostic firmware stops and the "
+            "USB connection ends. Then flash the new firmware with the Daisy Web Programmer or "
+            "make program-dfu; the bootloader waits without a timeout. Continue?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if answer == QMessageBox.Yes and s.request_bootloader():
+            self._log("Firmware update mode requested")
 
     def _sd_test(self) -> None:
         if self.session and self.session.request_sd_test():

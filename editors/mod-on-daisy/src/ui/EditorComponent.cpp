@@ -46,6 +46,11 @@ EditorComponent::EditorComponent(bool with_simulators)
             ConnectTo(port_.getSelectedItemIndex());
         }
     };
+    addAndMakeVisible(update_);
+    update_.setButtonText(U("Firmware-Update …"));
+    update_.setTooltip(U("Startet das Kit im Daisy-Bootloader neu, ohne BOOT und RESET. Danach die Firmware mit "
+                         "dem Daisy Web Programmer oder „make program-dfu“ laden."));
+    update_.onClick = [this] { ConfirmFirmwareUpdate(); };
     addAndMakeVisible(status_);
     addAndMakeVisible(mode_);
     mode_.setColour(juce::Label::textColourId, colour::ink);
@@ -261,7 +266,7 @@ void EditorComponent::timerCallback() {
 // Plugin: connect once per change of the port list (start, kit plugged in, back from the
 // bootloader), so a busy port does not produce a new error every second.
 void EditorComponent::AutoConnect() {
-    if(!auto_connect || user_disconnected_ || session_.State() != LinkState::Offline || PortOpen())
+    if(!auto_connect || user_disconnected_ || session_.State() != LinkState::Offline || PortOpen() || boot_.Waiting())
         return;
     const juce::String list = PortNames().joinIntoString("|");
     if(list == auto_tried_)
@@ -306,13 +311,79 @@ void EditorComponent::Advance(uint32_t now_ms) {
     if(simulator_)
         simulator_->Advance(1, [this](const uint8_t* b, std::size_t n) { session_.OnMessage(b, n); });
     if(midi_)
-        for(const std::vector<uint8_t>& m : midi_->Take())
+        for(const std::vector<uint8_t>& m : midi_->Take()) {
+            boot_.OnMessage(m.data(), m.size());
             session_.OnMessage(m.data(), m.size());
+        }
+    if(boot_port_)
+        for(const std::vector<uint8_t>& m : boot_port_->Take())
+            boot_.OnMessage(m.data(), m.size());
     session_.Tick(now_);
     // The session gave up (no answer to IDENTIFY, refused send, wrong protocol): the
     // port is released at once, so another application or a new attempt can open it.
     if(session_.State() == LinkState::Offline && (midi_ || simulator_))
         ReleasePort();
+    FinishFirmwareUpdate(boot_.Poll(now_));
+}
+
+// ------------------------------------------------------------------ firmware update
+// The kit restarts into the Daisy bootloader (common/bootloader/README.md). Works with
+// every firmware of this repository that has USB-MIDI, also without a Mod on Daisy
+// connection: then the selected port is opened just for the request.
+void EditorComponent::ConfirmFirmwareUpdate() {
+    auto* w = new juce::AlertWindow(
+        U("Kit in den Update-Modus schalten?"),
+        U("Das Kit startet in den Daisy-Bootloader neu: Das Programm hält an, die MIDI-Verbindung endet und alle "
+          "16 LEDs leuchten. Danach die neue Firmware mit dem Daisy Web Programmer oder „make program-dfu“ "
+          "laden; das Kit wartet ohne Zeitlimit."),
+        juce::MessageBoxIconType::QuestionIcon, this);
+    w->setLookAndFeel(&look_);
+    w->addButton(U("Update-Modus starten"), 1, juce::KeyPress(juce::KeyPress::returnKey));
+    w->addButton(U("Abbrechen"), 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    w->enterModalState(true, juce::ModalCallbackFunction::create([this](int result) {
+                           if(result == 1)
+                               StartFirmwareUpdate(port_.getSelectedItemIndex());
+                       }),
+                       true);
+}
+
+void EditorComponent::StartFirmwareUpdate(int index) {
+    if(boot_.Waiting())
+        return;
+    const bool valid = index >= 0 && index < int(ports_.size());
+    if(simulator_ || (!midi_ && valid && ports_[std::size_t(index)].simulator >= 0))
+        return Log(LogKind::Warn, U("Ein Simulator hat keinen Bootloader."));
+    MidiPort* port = midi_.get();
+    if(!port) {
+        if(!valid)
+            return Log(LogKind::Warn, U("Bitte ein Gerät wählen."));
+        juce::String error;
+        boot_port_ = MidiPort::Open(ports_[std::size_t(index)].out, ports_[std::size_t(index)].in, error);
+        if(!boot_port_)
+            return Log(LogKind::Error, error);
+        port = boot_port_.get();
+    }
+    if(!boot_.Start(now_, [port](const uint8_t* b, std::size_t n) { return port->Send(b, n); })) {
+        boot_port_.reset();
+        return Log(LogKind::Error, U("Der MIDI-Port hat die Anfrage abgelehnt."));
+    }
+    Log(LogKind::Info, U("Update-Modus angefordert …"));
+    RefreshAll();
+}
+
+void EditorComponent::FinishFirmwareUpdate(BootRequest::Result result) {
+    if(result == BootRequest::Result::None)
+        return;
+    boot_port_.reset();
+    if(result == BootRequest::Result::Acknowledged) {
+        Disconnect(); // the port disappears with the reset; no "connection lost" message
+        Log(LogKind::Ok, U("Das Kit ist im Update-Modus. Firmware jetzt mit dem Daisy Web Programmer oder "
+                           "„make program-dfu“ laden."));
+    } else {
+        Log(LogKind::Warn, U("Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S13 und S14 drei "
+                             "Sekunden halten oder RESET und BOOT verwenden (docs/FLASHING.md)."));
+    }
+    RefreshAll();
 }
 
 void EditorComponent::ReleasePort() {
@@ -373,6 +444,7 @@ void EditorComponent::RefreshAll() {
     connect_.setButtonText(s == LinkState::Offline ? "Verbinden" : "Trennen");
     RefreshMode();
     port_.setEnabled(s == LinkState::Offline);
+    update_.setEnabled(!boot_.Waiting() && !simulator_ && !ports_.empty());
     pull_.setEnabled(session_.Connected());
     count_.setText(U("Aktive Verbindungen: ") + juce::String(model_.ActiveCount()) + " / "
                        + juce::String(model_.max_active),
@@ -457,6 +529,8 @@ void EditorComponent::resized() {
         port_.setBounds(h.removeFromLeft(300));
         h.removeFromLeft(8);
         connect_.setBounds(h.removeFromLeft(110));
+        update_.setBounds(h.removeFromRight(150));
+        h.removeFromRight(12);
         h.removeFromLeft(12);
         status_.setBounds(h.removeFromLeft(330));
         h.removeFromLeft(12);

@@ -14,7 +14,7 @@ test:
 	mkdir -p build/host
 	$(HOST_CXX) $(HOST_FLAGS) tests/ambient_verify.cpp src/ambient_reverb.cpp src/wet_path.cpp -o build/host/ambient_verify
 	./build/host/ambient_verify
-	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes -I$(LIBDAISY_DIR)/src tests/test_controls.cpp src/ambient_reverb.cpp src/wet_path.cpp -o build/host/test_controls
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes -I$(BOOTLOADER_DIR) -I$(LIBDAISY_DIR)/src tests/test_controls.cpp src/ambient_reverb.cpp src/wet_path.cpp -o build/host/test_controls
 	./build/host/test_controls
 
 test-sanitize:

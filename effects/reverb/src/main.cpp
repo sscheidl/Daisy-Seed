@@ -5,6 +5,7 @@
 const char ambient_reverb_firmware_version[] =
     "AMBIENT-REVERB-VERSION=" AMBIENT_REVERB_VERSION;
 #include "desktop_devkit.h"
+#include "bootloader_daisy.h"
 #include <atomic>
 #include <cmath>
 using namespace daisy;
@@ -20,6 +21,9 @@ static std::atomic<uint32_t> uiState{0};
 static unsigned controlCountdown = 0, controlInterval = 1;
 static float knobs[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
 static uint32_t downMask = 0;
+// Software entry into the Daisy bootloader: S13+S14 (reserved keys) for 3 s.
+static bootloader::KeyCombo bootKeys; // audio callback only
+static bootloader::Request bootRequest;
 static int widthPosition = Switch3::POS_CENTER, widthCandidate = Switch3::POS_CENTER;
 static unsigned widthStable = 0;
 static bool legacyMono = false;
@@ -53,6 +57,8 @@ static void Controls() {
             newPresses |= bit;
         }
     }
+    if (bootKeys.Process(downMask, System::GetNow()))
+        bootRequest.Set(bootloader::Request::kKeys);
     for (unsigned i = 0; i < 5; ++i)
         if (newPresses & (1u << i)) {
             parameters.mode = kModeButtons[i];
@@ -189,6 +195,7 @@ int main() {
             RenderLeds(ui);
             previousUi = ui;
         }
+        bootloader::Service(bootRequest, hw);
         // Inspect maximumCycles / overruns in a debugger for on-board CPU evidence.
     }
 }

@@ -12,6 +12,9 @@ LIBDAISY_DIR = $(DAISY_ROOT)/libDaisy
 DAISYSP_DIR = $(DAISY_ROOT)/DaisySP
 SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core
 BOOT_BIN = $(SYSTEM_FILES_DIR)/dsy_bootloader_v6_4-extdfu-2000ms.bin
+# Shared software entry into that bootloader (keys S13+S14, SysEx); see its README.
+BOOTLOADER_DIR = $(DAISY_ROOT)/common/bootloader
+C_INCLUDES += -I$(BOOTLOADER_DIR)
 
 include $(SYSTEM_FILES_DIR)/Makefile
 

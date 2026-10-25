@@ -34,6 +34,7 @@ The exact physical button and pot orientation still needs a board check.
 | --- | --- |
 | S1–S5 | Cloud / Halo / Scatter / Abyss / Bloom (Dream / Light / Rain / Dark / Rise inspired) |
 | S6–S14 | Reserved for future modes; no action |
+| S13 + S14, 3 s | Firmware update mode: all LEDs on, Daisy bootloader ([details](../../common/bootloader/README.md)) |
 | S15 | Bypass. Tap to toggle; hold from bypass for temporary effect (250 ms threshold) |
 | S16 | Sustain. Latching in Cloud; momentary in the other modes |
 | Three-way `tog_sw18` | Up = Wide, center = Medium, down = Narrow |

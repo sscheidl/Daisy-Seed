@@ -137,6 +137,7 @@ Size, Slice, Skip and Decay.
 | S7 | Seam: window ↔ crossfade | on for crossfade |
 | S8 | Import the next WAV file from `looper/loops/` (undoable) | card: off = none, dim = ready, blinking = saving or loading, fast = error |
 | S9–S12 | Sound on Sound, Replace, Frippertronics, Resample | on for the selected mode |
+| S13 + S14, 3 s | Firmware update mode: after a running card write, all LEDs on, Daisy bootloader ([details](../../common/bootloader/README.md)) | all on |
 | VR1 (pot 0) | Varispeed −24…+36 semitones, whole semitones, unity at 40 % | |
 | VR2 (pot 1) | Inertia 0…1 | |
 | pot 2 | Inertial Slope (centre lags both directions) | |

@@ -253,10 +253,36 @@ int main() {
     CHECK(engine.GetState() == looper::State::Looping && engine.Length() == 24000);
     CHECK(engine.StoredFrame(12000).right == .25f && !engine.CanUndo());
 
+    // Bootloader entry: S13+S14 (no looper function) for 3 s, never during card I/O.
+    hw.pressed[12] = hw.pressed[13] = true;
+    Blocks(2990);
+    ServiceBootloader();
+    CHECK(System::bootloader_resets == 0);
+    Blocks(20);
+    ServiceBootloader();
+    CHECK(System::bootloader_resets == 1 && System::bootloader_mode == System::DAISY_INFINITE_TIMEOUT);
+    hw.pressed[12] = hw.pressed[13] = false;
+    Blocks(15);
+    hw.pressed[keys::Import] = true;
+    for (unsigned i = 0; i < 20 && !store.Active(); ++i)
+        Blocks(1);
+    CHECK(store.Active());
+    bootRequest.Set(bootloader::Request::kKeys);
+    unsigned waited = 0;
+    for (; waited < 1000 && store.Active(); ++waited) {
+        ServiceBootloader();
+        Blocks(1);
+    }
+    CHECK(System::bootloader_resets == 1 && waited > 0 && !store.Active());
+    ServiceBootloader();
+    CHECK(System::bootloader_resets == 2);
+    hw.pressed[keys::Import] = false;
+    Blocks(15);
+
     if (failures) {
         std::printf("FAILED: %d production callback check(s)\n", failures);
         return 1;
     }
-    std::printf("PASS production callback: keys, knobs, LEDs state, auto-stop, bounded output\n");
+    std::printf("PASS production callback: keys, knobs, LEDs state, auto-stop, bounded output, bootloader entry after card I/O\n");
     return 0;
 }
