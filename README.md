@@ -11,7 +11,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | --- | --- | --- |
 | [Toy Piano v0.3](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3 hardware test pending |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings, six models and global reverb; user-confirmed hardware/MIDI behavior and measured CPU headroom; model-switch spikes accepted as a known limitation ([results](instruments/physical-modeling/docs/HARDWARE_PLAYING_2026-10-22.md)) |
-| [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
+| [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build without Mod on Daisy code, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [Nebulae on Daisy v0.1.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
 | [Looper v0.3](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import on microSD; host tests and ARM build pass; hardware test pending |
 | [Ambient Reverb v0.2](effects/reverb/) | `effects/reverb/` | Original stereo reverb with Desktop controls and variable-rate wet Stretch; host tests and ARM build pass; hardware test pending |
@@ -42,6 +42,7 @@ Daisy-Seed/
 │   └── mod-on-daisy/       # grid editor: JUCE standalone (src/), browser variant (web/)
 ├── diagnostics/           # Seed3 hardware diagnostics: firmware, Windows GUI, tests
 ├── common/desktop.mk      # shared official Seed3 Desktop build settings
+├── common/bootloader/     # firmware updates without BOOT/RESET (keys, SysEx)
 ├── docs/                  # hardware, build, flashing, and references
 ├── scripts/               # toolchain and BOOT_SRAM image checks
 ├── projects.mk            # project IDs, paths, and implementation status
@@ -95,7 +96,8 @@ and a shared effect chain have not been implemented.
 
 * **[Handover](HANDOVER.md)** (state, local setup, hardware test run sheet, open decisions)
   and the [agent rules](AGENTS.md).
-* [Build and toolchain](docs/BUILD.md), [hardware](docs/HARDWARE.md), and [flashing](docs/FLASHING.md).
+* [Build and toolchain](docs/BUILD.md), [hardware](docs/HARDWARE.md), and [flashing](docs/FLASHING.md);
+  updates without BOOT/RESET: hold S9+S16 for 5 s or use the editor ([common/bootloader](common/bootloader/README.md)).
 * [Toy Piano controls and hardware test](instruments/toy-piano/README.md),
   [USB MIDI](instruments/toy-piano/docs/MIDI.md),
   [changelog](instruments/toy-piano/CHANGELOG.md), and [validation report](instruments/toy-piano/docs/VALIDATION.md).

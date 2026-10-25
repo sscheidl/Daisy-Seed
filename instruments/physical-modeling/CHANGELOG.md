@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+* **Firmware updates without BOOT/RESET** ([common/bootloader](../../common/bootloader/README.md)):
+  holding S9+S16 alone for 5 s, or the USB-MIDI SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7`
+  (answered with `F0 7D 42 4C 01 41 F7`), lights all LEDs and restarts into the Daisy
+  bootloader with `DAISY_INFINITE_TIMEOUT`. The audio callback only runs the key timer.
+* In **both** builds, so the regular image is no longer byte-identical to v0.1.0; the
+  Mod on Daisy code still adds nothing to it. Sound unchanged: golden hashes of both
+  builds are the same before and after (compared on one compiler).
+
 ## Mod on Daisy build, mod3 - 2026-10-24 (correction order after the review)
 
 * Built with `MOD_ON_DAISY_EXTENSIONS=1`; `InitModulation()` enables the extended

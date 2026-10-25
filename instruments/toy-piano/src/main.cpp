@@ -1,4 +1,6 @@
 #include "desktop_devkit.h"
+#include "bootloader_daisy.h"
+#include "bootloader_midi.h"
 #include "modulation.h"
 #include "mod_on_daisy_desktop.h"
 #include "spsc_queue.h"
@@ -31,6 +33,9 @@ const mod::InstrumentInfo kModInfo = toy_piano::MakeModInfo();
 mod::adapter::UsbMidiSender mod_sender(usb_midi);
 mod::VoicePressure voice_pressure[toy_piano::kNumVoices];
 bool modulating = false; // audio callback only
+// Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
+bootloader::KeyCombo boot_keys; // audio callback only
+bootloader::Request boot_request;
 static_assert(std::atomic<uint32_t>::is_always_lock_free, "LED mailbox must be lock-free");
 static_assert(daisy::desktop_devkit::kNumButtons == toy_piano::kNumKeys);
 static_assert(daisy::desktop_devkit::kNumLeds == toy_piano::kNumKeys);
@@ -98,6 +103,8 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
             piano.NoteOn(notes[i].note, notes[i].velocity, attack_seconds, decay_seconds);
     }
     led_mask.store(held, std::memory_order_relaxed);
+    if(boot_keys.Process(held, daisy::System::GetNow()))
+        boot_request.Set(bootloader::Request::kKeys);
     ModulateVoices(size);
     for(size_t i = 0; i < size; ++i) {
         const float sample = piano.Process();
@@ -137,6 +144,10 @@ void ServiceUsbMidi() {
     usb_midi.Listen(); // Restarts reception after an overflow.
     while(usb_midi.HasEvents()) {
         auto event = usb_midi.PopEvent();
+        if(bootloader::IsRequest(event)) {
+            boot_request.Set(bootloader::Request::kSysEx);
+            continue;
+        }
         mod::MidiMessage message; // Mod on Daisy sees every event first (SysEx, CC1, AT)
         if(mod::adapter::ToMessage(event, message) && modulation.controller.HandleMidi(message))
             continue;
@@ -150,6 +161,14 @@ void ServiceUsbMidi() {
     const bool connected = hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED;
     SendKeyChanges(led_mask.load(std::memory_order_relaxed), connected);
     modulation.controller.Service(daisy::System::GetNow(), mod_sender); // at most one reply per ms
+}
+
+// Main loop only: replies over USB if a host asked, then resets into the bootloader.
+void ServiceBootloader() {
+    bootloader::Service(boot_request, hw, [](uint8_t* bytes, size_t size) {
+        if(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
+            usb_midi.SendMessage(bytes, size);
+    });
 }
 }
 
@@ -175,6 +194,7 @@ int main() {
     uint32_t previous_mask = 0;
     while(true) {
         ServiceUsbMidi();
+        ServiceBootloader();
         const uint32_t now = daisy::System::GetNow();
         if(now - last_led_update >= toy_piano::kLedIntervalMs) {
             last_led_update = now;

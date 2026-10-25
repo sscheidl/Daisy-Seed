@@ -86,6 +86,7 @@ jobs:
               return shared or any(p.startswith(prefixes) for p in changed)
 
           suites = {
+              "bootloader": touched("common/bootloader/"),
               "toy": touched("instruments/toy-piano/"),
               "physical": touched("instruments/physical-modeling/"),
               "granular": touched("instruments/granular/"),
@@ -113,6 +114,9 @@ jobs:
           git -C libDaisy submodule update --init --recursive --jobs 4
       - name: Check release guards without API writes
         run: make test-release
+      - name: Shared bootloader entry host tests
+        if: steps.changes.outputs.bootloader == 'true'
+        run: make -C common/bootloader test
       - name: Toy Piano host tests
         if: steps.changes.outputs.toy == 'true'
         run: make PROJECT=toy-piano test

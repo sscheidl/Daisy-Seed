@@ -17,6 +17,8 @@ C_SOURCES += src/reader_ctlreq.c
 C_DEFS += -DDIAG_CARD_READER=1
 endif
 C_INCLUDES += -Isrc -I$(PROTOCOL_DIR)
+# Shared software entry into the Daisy bootloader: DDP BOOT and the S9+S16 key gesture.
+C_INCLUDES += -I../../common/bootloader
 C_INCLUDES += -I$(LIBDAISY_DIR)/Middlewares/Patched/ST/STM32_USB_Device_Library/Class/CDC/Inc
 # FatFs sources are needed for the optional read-only microSD test.
 USE_FATFS = 1
@@ -80,16 +82,16 @@ HOST_SOURCES = src/diag_app.cpp src/diag_core.cpp $(PROTOCOL_DIR)/ddp.cpp
 .PHONY: test test-sanitize
 test:
 	mkdir -p build/host
-	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(PROTOCOL_DIR) ../tests/firmware/test_diag_core.cpp \
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(PROTOCOL_DIR) -I../../common/bootloader ../tests/firmware/test_diag_core.cpp \
 		$(HOST_SOURCES) -o build/host/test_diag_core
 	./build/host/test_diag_core $(PROTOCOL_DIR)/vectors.txt
-	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(PROTOCOL_DIR) ../tests/firmware/test_diag_app.cpp \
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(PROTOCOL_DIR) -I../../common/bootloader ../tests/firmware/test_diag_app.cpp \
 		$(HOST_SOURCES) -o build/host/test_diag_app
 	./build/host/test_diag_app
-	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(PROTOCOL_DIR) ../tests/firmware/test_card_reader.cpp \
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(PROTOCOL_DIR) -I../../common/bootloader ../tests/firmware/test_card_reader.cpp \
 		src/card_reader.cpp src/msc_bot.cpp -o build/host/test_card_reader
 	./build/host/test_card_reader
-	$(HOST_CXX) $(HOST_FLAGS) -DDIAG_CARD_READER=1 -Isrc -I$(PROTOCOL_DIR) \
+	$(HOST_CXX) $(HOST_FLAGS) -DDIAG_CARD_READER=1 -Isrc -I$(PROTOCOL_DIR) -I../../common/bootloader \
 		../tests/firmware/test_reader_app.cpp $(HOST_SOURCES) -o build/host/test_reader_app
 	./build/host/test_reader_app
 	$(HOST_CXX) $(HOST_FLAGS) -DDIAG_USB_HOST_TEST=1 -Isrc -I../tests/firmware \

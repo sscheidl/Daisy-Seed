@@ -167,6 +167,15 @@ shows circular, FREEZE trigger mode, FILE 1/2/3 pulses for file order. LEDs upda
 outside audio, only on changes, at most 100/s. An inherited PCA9685 DMA-start
 failure can hang main/LED service; the audio interrupt continues independently.
 
+## Firmware update mode
+
+Hold **S9 + S16**, and no other key, for 5 s, or send the bootloader SysEx from the
+Mod on Daisy editor (**Firmware-Update …**): all LEDs light up and the kit restarts into
+the Daisy bootloader ([details](../../common/bootloader/README.md),
+[FLASHING.md](../../docs/FLASHING.md)). In KEYBOARD mode these keys are C5 and C6, so
+a held octave of exactly these two notes for 5 s enters update mode as well; in
+SAMPLE mode they load slots 9 and 16 first.
+
 ## USB MIDI on carrier J7
 
 Class-compliant external USB MIDI, Omni input, one shared stereo voice with last

@@ -91,6 +91,7 @@ Host                                    Seed3
 | `RATE` | `hz=10..100` | `ACK c=RATE hz=<n>` |
 | `LED` | `m=OFF\|ON\|MASK\|CHASE\|FOLLOW`, optional `mask=<hex4>`, `br=0..100`, `ms=20..2000` | `ACK c=LED m=... mask=... br=... ms=...` |
 | `SDTEST` | — | `SD ...` (read-only test) |
+| `BOOT` | — | `ACK c=BOOT`, then the firmware restarts into the Daisy bootloader (no timeout); `ERR c=BOOT e=SESSION` without HELLO, `e=BUSY` while Windows owns the card |
 | `BYE` | — | `ACK c=BYE`, streaming off |
 
 Errors: `ERR c=<command> e=<code>`, where `UNKNOWN` means unknown command, `ARG`
@@ -116,11 +117,19 @@ feedback**: ST field `l` is the commanded state, not proof of actual light outpu
 ### HELLO
 
 ```text
-HELLO proto=1 fw=0.1.0 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led
+HELLO proto=1 fw=0.1.0 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot
 ```
 
 `bl` is the bootloader version recognized by libDaisy: `v6_1` means v6.1 or newer;
 other values are `v6_0`, `LT_v6_0`, and `NONE`.
+
+`boot` in `caps` means the firmware accepts `BOOT`; images built before this
+command was added do not advertise it. The firmware sends the ACK, waits up to 50 ms for it to leave, lights
+all 16 LEDs and resets through libDaisy's `DAISY_INFINITE_TIMEOUT` mode
+([common/bootloader](../../common/bootloader/README.md)). The CDC port then
+disappears; the bootloader appears as DFU device `0483:DF11`. Hosts without `boot`
+in `caps` do not offer the command. Holding S9 + S16 for 5 s on the kit does the
+same without a host and without a reply; the stream simply ends.
 
 ### ST — complete state
 

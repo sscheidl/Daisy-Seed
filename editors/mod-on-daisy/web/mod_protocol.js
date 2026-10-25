@@ -37,6 +37,11 @@
   const CAP = { monitor: 0x02, diagnostics: 0x04, polyAtLastNote: 0x08, baseMonitor: 0x10, extendedMonitor: 0x20, lfoFm: 0x40 };
   // Capabilities 2, appended to IDENTIFY by newer firmware (PROTOCOL.md § 3.6).
   const CAP2 = { modes: 0x01 };
+  // Firmware update: restart into the Daisy bootloader (common/bootloader/README.md).
+  // Its own header "BL", not an MD frame; every firmware of the repository with USB-MIDI.
+  const BOOTLOADER_REQUEST = [0xf0, 0x7d, 0x42, 0x4c, 0x01, 0x01, 0x42, 0x4f, 0x4f, 0x54, 0xf7];
+  const BOOTLOADER_ACK = [0xf0, 0x7d, 0x42, 0x4c, 0x01, 0x41, 0xf7];
+  const isBootloaderAck = (data) => data.length === BOOTLOADER_ACK.length && BOOTLOADER_ACK.every((b, i) => data[i] === b);
 
   const rateToHz = (r) => 0.02 * Math.pow(1000, Math.min(RATE_MAX, Math.max(0, r)) / RATE_MAX);
   const hzToRate = (hz) => Math.round(Math.log(hz / 0.02) / Math.log(1000) * RATE_MAX);
@@ -276,6 +281,7 @@
     MANUFACTURER, PROJECT, VERSION, MAX_FRAME, HEADER, MAX_PAYLOAD, BROADCAST, REPLY_BIT, NAK, MONITOR_FRAME,
     CMD, ERRORS, SOURCES, SHAPES, RANDOM_MODES, SYNCS, MIDI_DIVISIONS, GATE_DIVISIONS,
     DEFAULT_MIDI_DIVISION, DEFAULT_GATE_DIVISION, PARAM, RATE_MAX, CELLS, MAX_DEPTH, MAX_FM, CAP, CAP2,
+    BOOTLOADER_REQUEST, BOOTLOADER_ACK, isBootloaderAck,
     rateToHz, hzToRate, checksum, Writer, Reader, buildFrame, parseFrame, crc32,
     defaultPatch, bit, isEnabled, isActive, activeCount, serializePatch, patchCrc, divisionNames,
     decodeMonitor, valueLabel, clockState, goalSpan, checkCompatibility, safePart,

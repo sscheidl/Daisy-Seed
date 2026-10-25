@@ -54,6 +54,9 @@ class FakeBoard final : public diag::Board {
     diag::SdResult sd_result;
     uint32_t* clock = nullptr;  // RunSdTest advances it to model a blocking test
     uint32_t sd_block_ms = 0;
+    unsigned bootloader_entries = 0;
+    size_t delivered_at_boot = 0;
+    const FakeUsb* usb = nullptr;
 
     diag::Inputs ReadInputs() override { return inputs; }
     uint32_t ControlTicks() override { return ticks; }
@@ -63,6 +66,11 @@ class FakeBoard final : public diag::Board {
         if(clock)
             *clock += sd_block_ms;
         return sd_result;
+    }
+    void EnterBootloader() override {
+        ++bootloader_entries;
+        if(usb)
+            delivered_at_boot = usb->delivered.size();
     }
 };
 
@@ -367,7 +375,47 @@ void TestBlockingSdTestKeepsStream() {
 }
 } // namespace
 
+// BOOT: only in a session, answered first, then exactly one reset into the bootloader.
+void TestBootloader() {
+    Rig r;
+    r.board.usb = &r.usb;
+    r.Host("BOOT");
+    r.Run(5);
+    auto got = r.Received();
+    CHECK(got.size() == 1 && got[0] == "ERR c=BOOT e=SESSION");
+    CHECK(r.board.bootloader_entries == 0);
+    r.Host("HELLO proto=1");
+    r.Run(30);
+    r.Received();
+    r.Host("BOOT");
+    r.Run(1);
+    CHECK(r.board.bootloader_entries == 1);
+    got = r.Received();
+    CHECK(Count(got, "ACK c=BOOT") == 1);
+    // The ACK had been handed to USB before the reset was requested.
+    CHECK(r.board.delivered_at_boot == r.usb.delivered.size());
+    r.Run(100);
+    CHECK(r.board.bootloader_entries == 1);
+}
+
+// The key gesture of every app: S9+S16 alone for 5 s, also without a host.
+void TestBootloaderKeys() {
+    Rig r;
+    r.board.inputs.buttons = (1u << 8) | (1u << 15) | 1u;  // with S1: never
+    r.Run(6000);
+    CHECK(r.board.bootloader_entries == 0);
+    r.board.inputs.buttons = (1u << 8) | (1u << 15);
+    r.Run(4999);
+    CHECK(r.board.bootloader_entries == 0);
+    r.Run(2);
+    CHECK(r.board.bootloader_entries == 1);
+    r.Run(10000);  // still held: once
+    CHECK(r.board.bootloader_entries == 1);
+}
+
 int main() {
+    TestBootloader();
+    TestBootloaderKeys();
     TestSilentUntilHello();
     TestHandshakeAndRate();
     TestImmediateFrameOnChange();

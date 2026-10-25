@@ -121,7 +121,7 @@ void Session::WriteHello(ddp::Writer& out) const {
         .Str(" app=").Str(kAppName)
         .Str(" dev=seed3-desktop boot=BOOT_SRAM bl=").Str(bootloader_)
         .Str(" libdaisy=").Str(kLibDaisyCommit)
-        .Str(" caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led");
+        .Str(" caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot");
 #ifdef DIAG_CARD_READER
     out.Str(",sdmsc");
 #endif
@@ -225,6 +225,15 @@ uint32_t Session::Handle(const char* body, uint32_t now_ms, ddp::Writer& reply) 
         WriteError(reply, type, "UNSUPPORTED");
 #endif
         return kRequestNone;
+    }
+    if(std::strcmp(type, "BOOT") == 0) {
+        // Only in a session, so a stray frame cannot restart the kit. The App answers,
+        // because only the board knows whether the card is shared (card reader build).
+        if(!streaming_) {
+            WriteError(reply, type, "SESSION");
+            return kRequestNone;
+        }
+        return kRequestBootloader;
     }
     if(std::strcmp(type, "BYE") == 0) {
         streaming_ = false;

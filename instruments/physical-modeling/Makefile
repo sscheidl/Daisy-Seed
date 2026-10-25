@@ -28,7 +28,7 @@ $(BUILD_DIR)/%.o: %.cc Makefile | $(BUILD_DIR)
 HOST_CXX ?= g++
 HOST_PYTHON ?= python3
 HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -pthread
-HOST_INCLUDES = -DTEST -D_USE_MATH_DEFINES -Isrc -Itorus -Ithird_party -Wno-unused-local-typedefs -Wno-unused-parameter
+HOST_INCLUDES = -DTEST -D_USE_MATH_DEFINES -Isrc -I$(BOOTLOADER_DIR) -Itorus -Ithird_party -Wno-unused-local-typedefs -Wno-unused-parameter
 .PHONY: test test-sanitize test-thread version
 version:
 	@echo $(VERSION)

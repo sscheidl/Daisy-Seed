@@ -41,9 +41,20 @@ Do not repeat `program-boot` for ordinary firmware updates.
 ## Each update: flash Toy Piano
 
 1. Connect and power the kit through **J7 on the Desktop carrier**.
-2. Press/release RESET, then press BOOT during the approximately two-second window.
-   The USR LED first flashes quickly, then pulses slowly while waiting for firmware.
-   This differs from the ROM-DFU sequence above.
+2. Put the running firmware into update mode, **without the BOOT/RESET buttons**
+   ([details](../common/bootloader/README.md)):
+   * **Keys:** hold **S9 and S16** (the outer keys of the second row) together,
+     with no other key, for **5 seconds**; or
+   * **Editor:** click **Firmware-Update …** in the HTML editor, the JUCE app or the
+     VST3 plugin (USB-MIDI SysEx on J7); or
+   * **Diagnostic firmware:** **Firmware update mode …** in the Windows diagnostics app.
+
+   All 16 LEDs light up and the kit restarts into the Daisy bootloader, which now
+   waits for firmware **without a time limit**. This needs firmware that contains
+   the entry; an older image, or a crashed one, needs the recovery sequence below.
+   Every firmware of this repository supports the keys and, except the diagnostic
+   firmware (which has its own button), the editor button. The Looper first finishes
+   a running card write.
 3. Connect with the [Daisy Web Programmer](https://flash.daisy.audio/), choose Custom
    and select **`instruments/toy-piano/build/ToyPiano-v0.3.bin`**. Alternatively:
 
@@ -53,13 +64,25 @@ Do not repeat `program-boot` for ordinary firmware updates.
 
    The official Makefile writes the application to QSPI at `0x90040000`. The Daisy
    bootloader loads it into SRAM at `0x24000000` for execution.
-4. The application starts after flashing; press RESET if necessary. The bootloader
-   remains installed for the next update.
+4. The application starts after flashing and turns the LEDs off. If not, power-cycle
+   the kit by unplugging J7 (or press RESET). The bootloader remains installed for the
+   next update. To leave update mode without flashing, power-cycle the kit the same way.
+
+### Recovery: RESET and BOOT
+
+If the firmware does not react (an older image without the entry, a crash, a hang),
+use the buttons on the Seed3. With a closed case they are reached through the plungers.
+
+1. Connect and power the kit through J7.
+2. Press/release RESET, then press BOOT during the approximately two-second window.
+   The USR LED first flashes quickly, then pulses slowly while waiting for firmware.
+   This differs from the ROM-DFU sequence above.
+3. Continue with step 3 above.
 
 For the first Ambient Reverb test, select
 `effects/reverb/build/AmbientReverb-v0.2.bin` in the Web Programmer, or use
-`make PROJECT=reverb-fx program-dfu` with the same J7 connection and bootloader
-sequence. See the [reverb controls and test steps](../effects/reverb/README.md).
+`make PROJECT=reverb-fx program-dfu` with the same J7 connection and update mode
+(S9+S16 or the editor button). See the [reverb controls and test steps](../effects/reverb/README.md).
 
 For Nebulae on Daisy v0.1.0, use the same **carrier J7 / external bootloader**
 application sequence with `instruments/granular/build/NebulaeOnDaisy-v0.1.0.bin`,
@@ -69,7 +92,8 @@ did not flash a device. Follow its [short smoke plan](../instruments/granular/do
 
 ## If the device is missing
 
-Check the data cable, connector and correct BOOT/RESET sequence first. Updates
+Check the data cable and connector first, then whether the kit really is in update
+mode: all LEDs on after S9+S16, or the USR LED pulsing after the RESET/BOOT sequence. Updates
 require the external bootloader to enumerate through J7. WebUSB needs a supported
 browser and USB permissions. Linux may need udev rules; Windows may need the
 Daisy/Zadig driver setup. See the [official guide](https://docs.daisy.audio/tutorials/daisy-web-programmer/)

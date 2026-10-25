@@ -12,7 +12,7 @@ version:
 	@echo $(VERSION)
 HOST_CXX ?= g++
 HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -pthread
-HOST_INCLUDES = -Isrc -I$(DAISYSP_DIR)/Source -I$(LIBDAISY_DIR)/src -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+HOST_INCLUDES = -Isrc -I$(BOOTLOADER_DIR) -I$(DAISYSP_DIR)/Source -I$(LIBDAISY_DIR)/src -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 test:
 	mkdir -p build/host
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_toy_piano.cpp src/toy_piano.cpp -o build/host/test_toy_piano

@@ -2,6 +2,7 @@
 #define main FirmwareMain
 #include "../src/main.cpp"
 #undef main
+extern "C" { USBD_HandleTypeDef hUsbDeviceHS; } // the USB state the firmware reads
 #include <cassert>
 #include <iostream>
 static void Tick(unsigned count) {
@@ -88,6 +89,37 @@ int main() {
     assert(bypassed && (uiState.load() & 16u));
     RenderLeds(uiState.load());
     assert(hw.led[14] == .5f && hw.ledUpdates > 0);
+    // Bootloader entry: S9+S16 alone for 5 s (S16 still switches sustain on press).
+    using daisy::System;
+    hw.pressed[8] = hw.pressed[15] = true;
+    Tick(4990);
+    assert(!bootloader::Service(bootRequest, hw) && System::bootloader_resets == 0);
+    Tick(20);
+    assert(bootloader::Service(bootRequest, hw) && System::bootloader_resets == 1);
+    assert(System::bootloader_mode == System::DAISY_INFINITE_TIMEOUT);
+    for (unsigned i = 0; i < 16; ++i)
+        assert(hw.led[i] == 1.f);
+    hw.pressed[8] = hw.pressed[15] = false;
+    Tick(10);
+    // SysEx over J7: answered, then the reset; a truncated request does nothing.
+    hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
+    daisy::MidiEvent boot;
+    boot.type = daisy::SystemCommon;
+    boot.sc_type = daisy::SystemExclusive;
+    std::copy(std::begin(bootloader::kRequestBody), std::end(bootloader::kRequestBody), boot.sysex_data);
+    boot.sysex_message_len = sizeof(bootloader::kRequestBody);
+    usbMidi.incoming.push_back(boot);
+    ServiceUsbMidi();
+    assert(System::bootloader_resets == 1 && usbMidi.sent.empty());
+    ServiceBootloader();
+    assert(System::bootloader_resets == 2 && usbMidi.sent.size() == 1);
+    assert(usbMidi.sent[0] == std::vector<uint8_t>(std::begin(bootloader::kAck), std::end(bootloader::kAck)));
+    boot.sysex_message_len--;
+    usbMidi.incoming.push_back(boot);
+    ServiceUsbMidi();
+    ServiceBootloader();
+    assert(System::bootloader_resets == 2 && usbMidi.sent.size() == 1);
+    hUsbDeviceHS.dev_state = 0;
     std::cout << "PASS: five modes, reserved buttons, switches, LED state, sustain, "
-                 "bypass gestures and dropout suppression\n";
+                 "bypass gestures, dropout suppression and bootloader keys/SysEx\n";
 }

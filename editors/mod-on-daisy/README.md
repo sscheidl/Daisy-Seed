@@ -39,6 +39,18 @@ Dann „Weitere Informationen“ und „Trotzdem ausführen“ wählen.
    dem Start des Editors erscheint) und **Verbinden** klicken. Der Editor liest Instrument,
    Spalten und den aktuellen Zustand vom Gerät.
 
+**Firmware-Update …** (oben rechts) startet das Kit im Daisy-Bootloader neu, ohne die
+Tasten BOOT und RESET am Seed3 – auch bei geschlossenem Gehäuse. Nach einer Rückfrage
+sendet der Editor eine eigene SysEx-Nachricht an den gewählten Port
+([common/bootloader](../../common/bootloader/README.md)); das geht mit jeder Firmware dieses
+Repositorys (alle Instrumente und Effekte haben USB-MIDI an J7), auch ohne
+Mod-on-Daisy-Verbindung, z. B. mit Nebulae, Looper oder Ambient Reverb. Das Kit
+antwortet, alle 16 LEDs leuchten, und der Bootloader wartet ohne Zeitlimit. Danach die
+Firmware mit dem [Daisy Web Programmer](https://flash.daisy.audio/) oder `make program-dfu`
+laden ([docs/FLASHING.md](../../docs/FLASHING.md)). Kommt nach 2 s keine Antwort, kennt
+die Firmware den Befehl noch nicht: dann S9 und S16 fünf Sekunden halten oder RESET und
+BOOT verwenden. Mit einem Simulator ist der Knopf gesperrt.
+
 **Ohne Daisy:** Die Liste enthält nur MIDI-Ports; ohne Gerät lässt sich offline bearbeiten.
 Die Simulatoren („Simulator: Toy Piano“, „Simulator: Physical Modeling“) erscheinen nur mit
 `"Mod on Daisy Editor" --simulators` und im Selbsttest. Sie sind der Controller- und
@@ -276,7 +288,8 @@ offline geladen, beim Verbinden zum Gerät gesendet“ gegen den Simulator.
    **Verbinden** klicken.
 
 Firefox und Safari werden nicht unterstützt. Die Bedienung entspricht dem JUCE-Editor,
-ohne Rechtsklickmenü. **Demo (offline)** (oder `index.html#demo`) zeigt das Raster mit den
+ohne Rechtsklickmenü; **Firmware-Update …** nutzt die gewählten Ein- und Ausgänge, auch
+ohne Verbindung. **Demo (offline)** (oder `index.html#demo`) zeigt das Raster mit den
 Toy-Piano-Spalten und einem Beispiel-Patch.
 
 ```bash

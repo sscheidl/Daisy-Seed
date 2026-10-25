@@ -2,6 +2,15 @@
 
 The version is defined in [src/version.h](src/version.h).
 
+## Unreleased
+
+* **Firmware updates without BOOT/RESET** ([common/bootloader](../../common/bootloader/README.md)):
+  holding S9+S16 alone for 5 s, or the USB-MIDI SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7`
+  (answered with `F0 7D 42 4C 01 41 F7`), lights all LEDs and restarts into the Daisy
+  bootloader with `DAISY_INFINITE_TIMEOUT`. The audio callback only runs the key timer.
+* Sound unchanged: the golden hash is the same before and after (compared on one
+  compiler); `src/version.h` is not changed by this entry.
+
 ## 0.3 — 2026-10-23
 
 * **Mod on Daisy modulation matrix** ([modules/mod-on-daisy](../../modules/mod-on-daisy/)).
