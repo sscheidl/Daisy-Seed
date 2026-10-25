@@ -36,7 +36,7 @@ def connected():
 def test_handshake_reports_versions(connected):
     _, _, s = connected
     assert s.device.protocol == p.PROTOCOL_VERSION
-    assert s.device.firmware == "0.2.0-sim"
+    assert s.device.firmware == "0.2.1-sim"
     assert s.device.simulated
     events = [k for k, _ in s.drain_events()]
     assert "connected" in events
@@ -481,3 +481,26 @@ def test_hello_is_repeated_if_first_one_is_lost():
     assert s.reconnects == 0
     events = [k for k, _ in s.drain_events()]
     assert events.count("connected") == 1
+
+
+def test_bootloader_request_is_acknowledged_then_the_port_disappears(connected):
+    clock, cable, s = connected
+    assert s.bootloader_supported
+    s.drain_events()
+    assert s.request_bootloader()
+    run(clock, s, 0.1)
+    assert "bootloader" in [k for k, _ in s.drain_events()]
+    assert cable.device.bootloader_entries == 1 and not cable.plugged
+    run(clock, s, 2.0)
+    assert s.state != ConnState.CONNECTED and not s.request_bootloader()
+    cable.plug()  # flashed and restarted: the diagnostics come back
+    run(clock, s, 6.0)
+    assert s.state == ConnState.CONNECTED and cable.device.bootloader_entries == 0
+
+
+def test_bootloader_needs_a_session_and_the_capability():
+    clock, cable, s = make()
+    assert not s.request_bootloader()  # not connected
+    run(clock, s, 0.2)
+    s.device.capabilities.remove("boot")  # older firmware without BOOT
+    assert not s.bootloader_supported and not s.request_bootloader()

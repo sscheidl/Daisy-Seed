@@ -5,7 +5,7 @@
 #
 # JUCE 9.0.4 is fetched by CMake; -DMOD_EDITOR_JUCE_DIR=<path> uses a local checkout.
 cmake_minimum_required(VERSION 3.22)
-project(ModOnDaisyEditor VERSION 0.1.0 LANGUAGES C CXX)
+project(ModOnDaisyEditor VERSION 0.1.1 LANGUAGES C CXX)
 
 # Static MSVC runtime: the .exe runs without the Visual C++ redistributable.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -13,6 +13,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(MOD_EDITOR_JUCE_DIR "" CACHE PATH "Local JUCE checkout (default: fetch JUCE 9.0.4)")
 set(MOD_MODULE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../../modules/mod-on-daisy/include")
+# Shared bootloader request (common/bootloader), header-only like the module.
+set(BOOTLOADER_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../../common/bootloader")
 
 if(MOD_EDITOR_JUCE_DIR)
     add_subdirectory("${MOD_EDITOR_JUCE_DIR}" juce EXCLUDE_FROM_ALL)
@@ -27,7 +29,7 @@ endif()
 
 # Core tests without JUCE (also run by `make -C editors/mod-on-daisy test`).
 add_executable(mod_editor_core_tests tests/test_core.cpp)
-target_include_directories(mod_editor_core_tests PRIVATE "${MOD_MODULE_INCLUDE}")
+target_include_directories(mod_editor_core_tests PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}")
 # The simulator sends column base values like the Physical Modeling MOD build.
 target_compile_definitions(mod_editor_core_tests PRIVATE MOD_ON_DAISY_EXTENSIONS=1)
 target_compile_options(mod_editor_core_tests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8 /W4>)
@@ -43,7 +45,7 @@ juce_add_gui_app(ModOnDaisyEditor
 target_sources(ModOnDaisyEditor PRIVATE
     src/app/Main.cpp
     src/ui/EditorComponent.cpp)
-target_include_directories(ModOnDaisyEditor PRIVATE "${MOD_MODULE_INCLUDE}")
+target_include_directories(ModOnDaisyEditor PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}")
 target_compile_definitions(ModOnDaisyEditor PRIVATE
     MOD_EDITOR_VERSION="${PROJECT_VERSION}"
     MOD_ON_DAISY_EXTENSIONS=1
@@ -83,7 +85,7 @@ juce_add_plugin(ModOnDaisyPlugin
 target_sources(ModOnDaisyPlugin PRIVATE
     src/plugin/Plugin.cpp
     src/ui/EditorComponent.cpp)
-target_include_directories(ModOnDaisyPlugin PRIVATE "${MOD_MODULE_INCLUDE}")
+target_include_directories(ModOnDaisyPlugin PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}")
 target_compile_definitions(ModOnDaisyPlugin PUBLIC
     MOD_ON_DAISY_EXTENSIONS=1
     JUCE_WEB_BROWSER=0

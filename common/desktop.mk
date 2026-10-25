@@ -12,8 +12,19 @@ LIBDAISY_DIR = $(DAISY_ROOT)/libDaisy
 DAISYSP_DIR = $(DAISY_ROOT)/DaisySP
 SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core
 BOOT_BIN = $(SYSTEM_FILES_DIR)/dsy_bootloader_v6_4-extdfu-2000ms.bin
+# Shared software entry into that bootloader (keys S9+S16, SysEx); see its README.
+BOOTLOADER_DIR = $(DAISY_ROOT)/common/bootloader
+C_INCLUDES += -I$(BOOTLOADER_DIR)
 
 include $(SYSTEM_FILES_DIR)/Makefile
+
+# Variant directories (build/mod, build/ambient, build/fx-*, build/b256-max8): libDaisy
+# creates $(BUILD_DIR) with a plain mkdir, which fails on a fresh checkout without build/.
+ifneq ($(filter build/%,$(BUILD_DIR)),)
+$(BUILD_DIR): | build
+build:
+	mkdir -p build
+endif
 
 .PHONY: libs
 libs:

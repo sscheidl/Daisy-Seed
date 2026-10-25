@@ -187,3 +187,17 @@ def test_pending_sd_test_blocks_share_and_missing_card_blocks_share():
     assert not s.request_reader("SHARE")
     with pytest.raises(ValueError):
         s.request_reader("INVALID")
+
+
+def test_bootloader_waits_for_the_card():
+    """BOOT is refused while Windows owns the card, by the host and by the firmware."""
+    clock, cable, s = setup()
+    assert s.request_reader("SHARE")
+    advance(clock, s, 0.5)
+    assert s.reader.state == "SHARED" and s.bootloader_supported
+    assert not s.request_bootloader()
+    s.drain_events()
+    s.send("BOOT")  # an older host ignoring the reader state
+    advance(clock, s)
+    assert cable.device.bootloader_entries == 0 and cable.plugged
+    assert any("ERR c=BOOT e=BUSY" in str(v) for k, v in s.drain_events() if k == "log")

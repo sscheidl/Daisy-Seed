@@ -127,6 +127,12 @@ neuesten Wert (PROTOCOL § 4).
 7. **Portkonflikt** (E10): Kann der Port nicht geöffnet werden, erscheint ein klarer
    Hinweis, zum Beispiel: „Port ist von einer anderen Anwendung belegt (z. B. Studio
    One). Dort ‚Daisy Seed External‘ deaktivieren.“
+8. **Firmware-Update …** (Kopfzeile): Nach einer Rückfrage geht die Bootloader-Anfrage
+   (`common/bootloader/README.md`, nicht Teil des MD-Protokolls) über den verbundenen Port
+   oder, ohne Verbindung, über den gewählten Port, der nur dafür geöffnet wird. Antwortet
+   das Kit, trennt der Editor ohne Fehlermeldung; ohne Antwort nach 2 s nennt er Tasten
+   und Knöpfe als Weg. Kern: `src/core/Bootloader.h` (`BootRequest`), getestet in
+   `tests/test_core.cpp`.
 
 ### 2.5 Dateien
 

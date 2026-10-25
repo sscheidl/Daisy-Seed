@@ -21,13 +21,29 @@ assert match, "Could not read the version from src/version.h"
 version = match.group(1)
 
 path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else project / 'build' / f'ToyPiano-v{version}.bin'
-if path.name.startswith('NebulaeOnDaisy-v'):
+if path.name.startswith('ToyPianoAmbient-v'):
+    match = re.search(r'TOY_PIANO_AMBIENT_VERSION\s+"([^\"]+)"', (project / 'src' / 'composed_version.h').read_text())
+    assert match, 'Missing composed Toy Piano version'
+    version = match.group(1)
+    expected_name = f'ToyPianoAmbient-v{version}.bin'
+    marker = rb'TOYPIANO-AMBIENT-FW-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('NebulaeOnDaisy-v'):
     granular = root / 'instruments' / 'granular'
     match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
     assert match, "Could not read the Nebulae version"
     version = match.group(1)
     expected_name = f'NebulaeOnDaisy-v{version}.bin'
     marker = rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
+elif path.name.startswith(('PhysicalModelingFxTorus-v', 'PhysicalModelingFxAmbient-v')):
+    physical = root / 'instruments' / 'physical-modeling'
+    match = re.search(r'PHYSICAL_MODELING_COMPOSED_VERSION\s+"([^"]+)"',
+                      (physical / 'src' / 'composed_version.h').read_text())
+    assert match, 'Could not read composed product version'
+    version = match.group(1)
+    ambient = path.name.startswith('PhysicalModelingFxAmbient-')
+    expected_name = f"PhysicalModelingFx{'Ambient' if ambient else 'Torus'}-v{version}.bin"
+    marker = (rb'PHYSICAL-MODELING-FX-AMBIENT-VERSION=([0-9.]+)\x00' if ambient else
+              rb'PHYSICAL-MODELING-FX-TORUS-VERSION=([0-9.]+)\x00')
 elif path.name.startswith('PhysicalModelingMod-v'):
     physical = root / 'instruments' / 'physical-modeling'
     match = re.search(r'PHYSICAL_MODELING_VERSION\s+"([^"]+)"', (physical / 'src' / 'version.h').read_text())

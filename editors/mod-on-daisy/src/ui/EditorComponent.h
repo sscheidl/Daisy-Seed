@@ -2,6 +2,7 @@
 // The editor window's content (GUI.md § 2): status bar with the device, the grid, the
 // cell editor, the source bar and the file row. Everything runs on the GUI thread;
 // a 10 ms timer drives the session (timeouts, coalesced edits) and the simulator.
+#include "../core/Bootloader.h"
 #include "../core/PatchFile.h"
 #include "../core/SimInstruments.h"
 #include "../core/Simulator.h"
@@ -47,6 +48,9 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     // Applies pending view updates at once (the self-test has no message loop).
     void RefreshNow() { handleUpdateNowIfNeeded(); }
     bool PortOpen() const { return midi_ || simulator_; }
+    // Firmware update: restart the kit into the Daisy bootloader (no confirmation dialog).
+    void StartFirmwareUpdate(int port_index);
+    bool FirmwareUpdateWaiting() const { return boot_.Waiting(); }
     // Answer to the compatibility question when loading a file (the dialog's buttons).
     enum class CompatChoice { Cancel = 0, Safe = 1, Force = 2 };
     // Set by the self-test: decides instead of the modal dialog.
@@ -87,12 +91,16 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     void ReleasePort();
     void AutoConnect();
     void SendProjectPatch(const LoadedPatch& loaded);
+    void ConfirmFirmwareUpdate();
+    void FinishFirmwareUpdate(BootRequest::Result result);
 
     LookAndFeel look_;
     Model model_;
     Session session_;
     std::unique_ptr<Simulator> simulator_;
     std::unique_ptr<MidiPort> midi_;
+    BootRequest boot_;
+    std::unique_ptr<MidiPort> boot_port_; // opened only for the request while offline
     std::vector<Port> ports_;
     bool with_simulators_ = false;
     bool manual_clock_ = false;
@@ -109,6 +117,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     // header
     juce::ComboBox port_;
     juce::TextButton connect_{"Verbinden"};
+    juce::TextButton update_;
     juce::Label status_;
     juce::Label mode_; // active instrument mode, e.g. "Modell: Western Chords"
     int mode_index_ = -1, mode_origin_ = -1; // from the last monitor frame

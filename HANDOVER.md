@@ -1,5 +1,23 @@
 # Übergabe — lokal weiterarbeiten
 
+**Integration 25./26.10.2026:** Branch `integration/shimmer-bootloader` führt PR #40
+(Bootloader-Einstieg), #38 (modulare FX) und #41 (Toy Piano + Ambient mit Shimmer)
+zusammen. Testimages: `toy-piano-ambient 0.1.2` und `reverb-fx 0.3.1`; Komponente
+`bootloader-entry 1.0.0`. Wegen des Bootloader-Einstiegs ebenfalls neu versioniert: Toy Piano 0.3.1,
+Physical Modeling 0.1.1 (MOD-IDENTIFY `0.1.1-mod4`), PM-FX 0.2.1, Nebulae 0.1.1, Looper 0.3.1,
+Mod bench 0.1.1, Diagnose 0.2.1, Panels 0.1.1. Prüfbericht und Laufzettel:
+[docs/HARDWARE_TEST_INTEGRATION.md](docs/HARDWARE_TEST_INTEGRATION.md). Hardware
+**NICHT GEMESSEN**.
+
+**Ergänzung 25.10.2026:** Auf `feat/toy-piano-ambient` liegt das separate Produkt
+`toy-piano-ambient 0.1.1`, abhängig vom modularen FX-Unterbau in PR #38.
+[Bedienung, Build, Prüfergebnisse und Hardware-Laufzettel](instruments/toy-piano/docs/AMBIENT.md).
+Host-Tests, ASan/UBSan und ARM-Build bestanden; Toy Piano v0.3 bleibt bytegleich.
+Sechs echte Reverb-Modi einschließlich Shimmer (B / unten); VR7 regelt dessen
+Oktavanteil. Kern `ambient-reverb 0.3`, reine FX-Fassung: Shimmer auf S6.
+Gemeinsame CPU-Last und Audiotest am Kit sind **NICHT GEMESSEN**.
+Die folgenden älteren Abschnitte beschreiben ihren jeweils datierten Stand.
+
 **Stand:** 24. Oktober 2026 abends (PR #29 gemergt, mod3 geflasht, lokale Sitzung; § 3a).
 Zuvor: Korrekturauftrag umgesetzt in der Cloud-Sitzung. Ab jetzt wird lokal unter
 Windows mit Claude Code und Codex weitergearbeitet, mit USB-Zugriff auf das Seed3

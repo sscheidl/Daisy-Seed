@@ -22,7 +22,7 @@ test:
 	./build/host/test_wav
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc -Itests/fakes tests/test_store.cpp src/looper_engine.cpp $(STORE_SOURCES) -o build/host/test_store
 	./build/host/test_store
-	$(HOST_CXX) $(HOST_FLAGS) -Isrc -Itests/fakes -I$(LIBDAISY_DIR)/src -DLOOPER_BUFFER_FRAMES=192000 tests/test_callback.cpp src/looper_engine.cpp $(STORE_SOURCES) -o build/host/test_callback
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc -Itests/fakes -I$(BOOTLOADER_DIR) -I$(LIBDAISY_DIR)/src -DLOOPER_BUFFER_FRAMES=192000 tests/test_callback.cpp src/looper_engine.cpp $(STORE_SOURCES) -o build/host/test_callback
 	./build/host/test_callback
 
 test-sanitize:

@@ -8,11 +8,14 @@ class Board : public diag::Board {
   public:
     bool local = true;
     unsigned tests = 0;
-    diag::Inputs ReadInputs() override { diag::Inputs i; i.sd_card = true; return i; }
+    uint16_t buttons = 0;
+    diag::Inputs ReadInputs() override { diag::Inputs i; i.sd_card = true; i.buttons = buttons; return i; }
     uint32_t ControlTicks() override { return 0; }
     void ApplyLeds(uint16_t, uint8_t) override {}
     diag::SdResult RunSdTest(bool) override { ++tests; return {}; }
     bool SdTestAllowed() override { return local; }
+    unsigned boots = 0;
+    void EnterBootloader() override { ++boots; }
     void ReaderCommand(uint32_t request, ddp::Writer& out) override {
         if(request & diag::kRequestReaderShare) local = false;
         if(request & diag::kRequestReaderReturn) local = true;
@@ -39,6 +42,12 @@ int main() {
     if(usb.data.find(",sdmsc") == std::string::npos) return 2;
     Send(app, "SDTEST"); Send(app, "READER a=SHARE"); app.Step(3);
     if(board.tests != 0 || board.local || usb.data.find("ERR c=SDTEST e=BUSY") == std::string::npos) return 3;
+    Send(app, "BOOT"); app.Step(3); app.Step(100);  // never while the computer owns the card
+    if(board.boots != 0 || usb.data.find("ERR c=BOOT e=BUSY") == std::string::npos) return 7;
+    board.buttons = (1u << 8) | (1u << 15);  // the key gesture neither
+    for(uint32_t t = 100; t <= 5200; ++t) app.Step(t);
+    board.buttons = 0; app.Step(5201);
+    if(board.boots != 0) return 9;
     Send(app, "BYE"); app.Step(4); app.Step(4000);
     if(board.local) return 4;  // timeout/BYE never gives the card back
     Send(app, "HELLO proto=1"); Send(app, "READER a=RETURN"); app.Step(4001);
@@ -46,5 +55,7 @@ int main() {
     if(board.tests != 1) return 5;
     Send(app, "READER a=INVALID"); app.Step(4003);
     if(usb.data.find("ERR c=READER e=ARG") == std::string::npos) return 6;
+    Send(app, "BOOT"); app.Step(4004);  // card back with the kit: accepted
+    if(board.boots != 1 || usb.data.find("ACK c=BOOT") == std::string::npos) return 8;
     std::puts("reader application: passed"); return 0;
 }

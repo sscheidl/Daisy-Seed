@@ -1,5 +1,10 @@
 # Idee: Modularer Firmwarekern („Daisy-Baukasten“)
 
+**Umsetzung der ersten Stufe:** [Modulare Komponenten](MODULAR_COMPONENTS.md)
+beschreibt die zusätzlichen Torus-/Ambient-FX-Builds, den gemeinsamen
+Audiovertrag und die Versionsmanifeste. Die folgenden Überlegungen bleiben der
+historische Entwurf für den weitergehenden Baukasten einschließlich Laufzeitwechsel.
+
 **Stand:** Idee und erste Überlegungen vom 24.10.2026 (Hardwaretest-Abend mit
 Physical Modeling mod3). **Noch nicht geplant, kein Code.** Nächster Schritt: daraus einen
 ausgearbeiteten Plan machen (Schnittstellen, Speicher- und CPU-Modell, Bedienkonzept,

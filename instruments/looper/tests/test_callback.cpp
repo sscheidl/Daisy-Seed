@@ -5,6 +5,7 @@
 #include "../src/main.cpp"
 #undef main
 #include "memory_volume.h"
+extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }  // the USB state the firmware reads
 #include <cmath>
 #include <cstdio>
 
@@ -253,10 +254,65 @@ int main() {
     CHECK(engine.GetState() == looper::State::Looping && engine.Length() == 24000);
     CHECK(engine.StoredFrame(12000).right == .25f && !engine.CanUndo());
 
+    // Bootloader entry: S9+S16 for 5 s (S9 selects Sound on Sound), never during card I/O.
+    hw.pressed[8] = hw.pressed[15] = true;
+    Blocks(4990);
+    ServiceBootloader();
+    CHECK(System::bootloader_resets == 0);
+    Blocks(20);
+    ServiceBootloader();
+    CHECK(System::bootloader_resets == 1 && System::bootloader_mode == System::DAISY_INFINITE_TIMEOUT);
+    hw.pressed[8] = hw.pressed[15] = false;
+    Blocks(15);
+    hw.pressed[keys::Import] = true;
+    for (unsigned i = 0; i < 20 && !store.Active(); ++i)
+        Blocks(1);
+    CHECK(store.Active());
+    bootRequest.Set(bootloader::Request::kKeys);
+    unsigned waited = 0;
+    for (; waited < 1000 && store.Active(); ++waited) {
+        ServiceBootloader();
+        Blocks(1);
+    }
+    CHECK(System::bootloader_resets == 1 && waited > 0 && !store.Active());
+    ServiceBootloader();
+    CHECK(System::bootloader_resets == 2);
+    hw.pressed[keys::Import] = false;
+    Blocks(15);
+    // SysEx over J7 during an import: answered at once, the reset follows when idle.
+    hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
+    daisy::MidiEvent boot;
+    boot.type = daisy::SystemCommon;
+    boot.sc_type = daisy::SystemExclusive;
+    std::copy(std::begin(bootloader::kRequestBody), std::end(bootloader::kRequestBody), boot.sysex_data);
+    boot.sysex_message_len = sizeof(bootloader::kRequestBody);
+    hw.pressed[keys::Import] = true;
+    for (unsigned i = 0; i < 20 && !store.Active(); ++i)
+        Blocks(1);
+    CHECK(store.Active());
+    usbMidi.incoming.push_back(boot);
+    ServiceUsbMidi();
+    const std::vector<uint8_t> ack(std::begin(bootloader::kAck), std::end(bootloader::kAck));
+    CHECK(usbMidi.sent.size() == 1 && usbMidi.sent[0] == ack);
+    ServiceBootloader();
+    CHECK(System::bootloader_resets == 2);
+    for (waited = 0; waited < 1000 && store.Active(); ++waited)
+        Blocks(1);
+    ServiceBootloader();
+    CHECK(System::bootloader_resets == 3 && usbMidi.sent.size() == 1);  // one reply only
+    boot.sysex_message_len--;  // truncated: ignored
+    usbMidi.incoming.push_back(boot);
+    ServiceUsbMidi();
+    ServiceBootloader();
+    CHECK(System::bootloader_resets == 3 && usbMidi.sent.size() == 1);
+    hw.pressed[keys::Import] = false;
+    hUsbDeviceHS.dev_state = 0;
+    Blocks(15);
+
     if (failures) {
         std::printf("FAILED: %d production callback check(s)\n", failures);
         return 1;
     }
-    std::printf("PASS production callback: keys, knobs, LEDs state, auto-stop, bounded output\n");
+    std::printf("PASS production callback: keys, knobs, LEDs state, auto-stop, bounded output, bootloader keys/SysEx after card I/O\n");
     return 0;
 }

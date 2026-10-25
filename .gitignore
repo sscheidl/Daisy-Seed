@@ -1,6 +1,8 @@
 /build/
+/tests/fx/build/
 /instruments/*/build/
 /effects/*/build/
+/common/*/build/
 /.tools/
 *.wav
 __pycache__/

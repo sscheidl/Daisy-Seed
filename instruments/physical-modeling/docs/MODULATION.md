@@ -1,6 +1,6 @@
 # Physical Modeling + Mod on Daisy (separate build)
 
-**Image:** `build/mod/PhysicalModelingMod-v0.1.0.bin`
+**Image:** `build/mod/PhysicalModelingMod-v0.1.1.bin` (IDENTIFY `0.1.1-mod4`; up to the integration branch `v0.1.0` / `0.1.0-mod4`)
 (`make PROJECT=physical-modeling-mod`). Firmware marker: `PHYSICAL-MODELING-MOD-VERSION`.
 **Status:** software tested, hardware test pending.
 
