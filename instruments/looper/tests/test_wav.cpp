@@ -201,11 +201,18 @@ static void TestRejected() {
     Bytes guid = Riff({{"fmt ", Format(1, 2, 16, 48000, true, 1)}, {"data", Data(1, 2, 16, 10)}});
     guid[12 + 8 + 30] ^= 1;  // wrong subformat GUID
     expect(guid, wav::Error::Unsupported);
-    expect(File(1, 2, 16, 10, 44100), wav::Error::SampleRate);
     expect(File(1, 2, 16, 10, 96000), wav::Error::SampleRate);
+    expect(File(1, 2, 16, 10, 88200), wav::Error::SampleRate);
+    expect(File(1, 2, 16, 10, 32000), wav::Error::SampleRate);
     expect(File(1, 2, 16, 0), wav::Error::Empty);
+    expect(File(1, 2, 16, 0, 44100), wav::Error::Empty);
     expect(File(1, 2, 16, 1001), wav::Error::TooLong, 1000);
     CHECK(ParseBytes(File(1, 2, 16, 1000), info, 1000) == wav::Error::None);  // exactly the limit
+    CHECK(info.outputFrames == info.frames);
+    // 44.1 kHz is converted: the limit applies to the frames at 48 kHz.
+    CHECK(ParseBytes(File(1, 2, 16, 919, 44100), info, 1000) == wav::Error::None);
+    CHECK(info.sampleRate == 44100 && info.frames == 919 && info.outputFrames == 1000);
+    expect(File(1, 2, 16, 920, 44100), wav::Error::TooLong, 1000);
     Bytes truncated = File(1, 2, 16, 100);
     truncated.resize(truncated.size() - 1);
     expect(truncated, wav::Error::Truncated);
@@ -221,6 +228,14 @@ static void TestRejected() {
     CHECK(ParseBytes(Riff({{"fmt ", Format(3, 2, 32, 48000)}, {"lprs", lp}, {"data", Data(3, 2, 32, 100)}}),
                      info) == wav::Error::None);
     CHECK(!info.hasLoop);
+    // A loop chunk at 44.1 kHz does not describe the converted frames: ignored.
+    Bytes lp44;
+    Add32(lp44, 1);
+    Add32(lp44, 100);
+    Add32(lp44, 0);
+    CHECK(ParseBytes(Riff({{"fmt ", Format(3, 2, 32, 44100)}, {"lprs", lp44}, {"data", Data(3, 2, 32, 100)}}),
+                     info) == wav::Error::None);
+    CHECK(!info.hasLoop && info.outputFrames == 108);
     std::printf("%s rejected: header, format, rate, empty, too long, truncated, bad loop chunk\n",
                 failures == before ? "PASS" : "FAIL");
 }

@@ -3,6 +3,7 @@
 // against the file size, every length against the buffer capacity.
 #pragma once
 #include "looper_engine.h"
+#include "resample.h"
 #include <cstddef>
 #include <cstdint>
 
@@ -16,7 +17,7 @@ enum class Error : uint8_t {
     NoData,       // no data chunk
     Truncated,    // a chunk extends past the end of the file
     Unsupported,  // not 16/24-bit PCM or 32-bit float
-    SampleRate,   // not 48 kHz
+    SampleRate,   // not 44.1 or 48 kHz
     Empty,        // no frames
     TooLong,      // more frames than the buffer holds
 };
@@ -38,7 +39,8 @@ struct Info {
     uint16_t blockAlign = 0;  // bytes per frame
     uint32_t sampleRate = 0;
     uint32_t dataOffset = 0;
-    uint32_t frames = 0;
+    uint32_t frames = 0;        // in the file, at sampleRate
+    uint32_t outputFrames = 0;  // at 48 kHz after conversion; == frames at 48 kHz
     // Optional "lprs" chunk written by this looper: loop length and post-roll.
     // Valid only when loopLength + tailLength == frames.
     bool hasLoop = false;
@@ -46,12 +48,14 @@ struct Info {
 };
 
 constexpr uint32_t kSampleRate = 48000;
+constexpr uint32_t kSampleRate44 = 44100;  // accepted for import, converted to 48 kHz
 constexpr uint32_t kMaxChunks = 256;
 constexpr uint16_t kMaxChannels = 8;  // bounds the bytes per frame
 
 // Reads the header. Accepts PCM 16/24 bit and float 32 bit, also as
-// WAVE_FORMAT_EXTENSIBLE, at 48 kHz with 1 to 8 channels (the first two are
-// used), with up to maxFrames frames.
+// WAVE_FORMAT_EXTENSIBLE, at 48 or 44.1 kHz with 1 to 8 channels (the first two
+// are used), with up to maxFrames frames at 48 kHz (after conversion). The
+// "lprs" chunk is only honored at 48 kHz.
 Error Parse(Source& source, uint32_t maxFrames, Info& info);
 // Converts `frames` whole frames of raw data to stereo frames: mono is
 // duplicated, values are clamped to +-1 and non-finite floats become 0.

@@ -42,6 +42,23 @@ bool LoopStore::Init(Volume* volume, uint8_t* buffer, uint32_t bytes, uint32_t c
     return true;
 }
 
+bool LoopStore::EnableResampling(float* table, uint32_t floats) {
+    if (table == nullptr || floats < resample::kTableSize)
+        return false;
+    resample::BuildTable(table);
+    resampleTable_ = table;
+    return true;
+}
+
+// Parse accepts 44.1 kHz; it is usable only with the conversion table.
+bool LoopStore::Accepts(wav::Error& error) const {
+    if (Converting() && resampleTable_ == nullptr) {
+        error = wav::Error::SampleRate;
+        return false;
+    }
+    return true;
+}
+
 // ---------------------------------------------------------------- recall
 
 bool LoopStore::Recall(Engine& engine) {
@@ -59,19 +76,24 @@ bool LoopStore::Recall(Engine& engine) {
 bool LoopStore::ReadLoop(const char* path, Engine& engine) {
     if (!volume_->OpenRead(path))
         return false;
-    if (wav::Parse(source_, capacity_, info_) != wav::Error::None) {
+    wav::Error e = wav::Parse(source_, capacity_, info_);
+    if (e != wav::Error::None || !Accepts(e)) {
         volume_->Close();
         return false;
     }
-    Frame* target = engine.BeginImport(info_.frames);
-    const bool ok = target != nullptr && CopyFrames(target, 0, info_.frames);
+    Frame* target = engine.BeginImport(info_.outputFrames);
+    bool ok = target != nullptr;
+    if (ok && Converting())
+        ok = StartConversion(target) && ConvertFrames(0, info_.frames) && upsampler_.Finish();
+    else if (ok)
+        ok = CopyFrames(target, 0, info_.frames);
     volume_->Close();
     if (!ok) {
         engine.CancelImport();
         return false;
     }
     return info_.hasLoop ? engine.CommitImport(info_.loopLength, info_.tailLength, false)
-                         : engine.CommitImport(info_.frames, 0, false);
+                         : engine.CommitImport(info_.outputFrames, 0, false);
 }
 
 // Reads frames [from, from + count) of the open file into target[from...].
@@ -86,6 +108,42 @@ bool LoopStore::CopyFrames(Frame* target, uint32_t from, uint32_t count) {
             !volume_->ReadAt(uint32_t(offset), buffer_, n * info_.blockAlign))
             return false;
         wav::Decode(info_, buffer_, n, target + from + done);
+        done += n;
+    }
+    return true;
+}
+
+// 44.1 kHz: the converter needs the loop's last frames before its first one.
+bool LoopStore::StartConversion(Frame* target) {
+    const uint32_t count = std::min(info_.frames, resample::kHalf);
+    const uint64_t offset = uint64_t(info_.dataOffset) + uint64_t(info_.frames - count) * info_.blockAlign;
+    const uint32_t bytes = count * info_.blockAlign;
+    if (bytes > bytes_ || offset + bytes > volume_->Size() ||
+        !volume_->ReadAt(uint32_t(offset), buffer_, bytes))
+        return false;
+    Frame last[resample::kHalf];
+    wav::Decode(info_, buffer_, count, last);
+    return upsampler_.Start(resampleTable_, target, info_.frames, last, count);
+}
+
+// Reads input frames [from, from + count) of the open file into the converter.
+bool LoopStore::ConvertFrames(uint32_t from, uint32_t count) {
+    constexpr uint32_t kPiece = 64;
+    const uint32_t perChunk = info_.blockAlign ? bytes_ / info_.blockAlign : 0;
+    if (perChunk == 0)
+        return false;
+    Frame piece[kPiece];
+    for (uint32_t done = 0; done < count;) {
+        const uint32_t n = std::min(perChunk, count - done);
+        const uint64_t offset = uint64_t(info_.dataOffset) + uint64_t(from + done) * info_.blockAlign;
+        if (offset + uint64_t(n) * info_.blockAlign > volume_->Size() ||
+            !volume_->ReadAt(uint32_t(offset), buffer_, n * info_.blockAlign))
+            return false;
+        for (uint32_t i = 0; i < n; i += kPiece) {
+            const uint32_t m = std::min(kPiece, n - i);
+            wav::Decode(info_, buffer_ + size_t(i) * info_.blockAlign, m, piece);
+            upsampler_.Push(piece, m);
+        }
         done += n;
     }
     return true;
@@ -271,13 +329,13 @@ void LoopStore::StartImport(ImportPort& port, uint32_t nowMs) {
         Fail(Fault::File, nowMs, wav::Error::Io);
         return;
     }
-    const wav::Error e = wav::Parse(source_, capacity_, info_);
-    if (e != wav::Error::None) {
+    wav::Error e = wav::Parse(source_, capacity_, info_);
+    if (e != wav::Error::None || !Accepts(e)) {
         volume_->Close();
         Fail(Fault::File, nowMs, e);
         return;
     }
-    port.Begin(info_.frames);
+    port.Begin(info_.outputFrames);
     state_ = State::ImportGrant;
 }
 
@@ -290,15 +348,23 @@ void LoopStore::ContinueImport(ImportPort& port, uint32_t nowMs) {
             importTarget_ = buffer;
             importPosition_ = 0;
             state_ = State::ImportCopy;
+            if (Converting() && !StartConversion(buffer)) {
+                volume_->Close();
+                port.Cancel();
+                Fail(Fault::File, nowMs, wav::Error::Io);
+            }
         } else if (reply != ImportPort::Reply::Pending) {
             volume_->Close();  // recording, resampling or another change running
             Fail(Fault::Busy, nowMs);
         }
         break;
     case State::ImportCopy: {
-        const uint32_t n = std::min(bytes_ / info_.blockAlign * kChunksPerService,
-                                    info_.frames - importPosition_);
-        if (!CopyFrames(importTarget_, importPosition_, n)) {
+        const uint32_t budget = Converting() ? kResampleFramesPerService
+                                             : bytes_ / info_.blockAlign * kChunksPerService;
+        const uint32_t n = std::min(budget, info_.frames - importPosition_);
+        const bool copied = Converting() ? ConvertFrames(importPosition_, n)
+                                         : CopyFrames(importTarget_, importPosition_, n);
+        if (!copied) {
             volume_->Close();
             port.Cancel();
             Fail(Fault::File, nowMs, wav::Error::Io);
@@ -307,10 +373,15 @@ void LoopStore::ContinueImport(ImportPort& port, uint32_t nowMs) {
         importPosition_ += n;
         if (importPosition_ >= info_.frames) {
             volume_->Close();
+            if (Converting() && !upsampler_.Finish()) {
+                port.Cancel();
+                Fail(Fault::File, nowMs, wav::Error::Io);
+                break;
+            }
             if (info_.hasLoop)
                 port.Commit(info_.loopLength, info_.tailLength);
             else
-                port.Commit(info_.frames, 0);
+                port.Commit(info_.outputFrames, 0);
             state_ = State::ImportCommit;
         }
         break;

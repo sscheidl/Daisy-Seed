@@ -104,6 +104,7 @@ struct Rig {
     std::vector<Frame> a, b;
     Engine engine;
     std::vector<uint8_t> transfer = std::vector<uint8_t>(8192);
+    std::vector<float> table = std::vector<float>(resample::kTableSize);
     LoopStore store;
     View view{engine};
     Port port{engine};
@@ -111,9 +112,12 @@ struct Rig {
     uint32_t now = 0;
     uint64_t t = 0;
 
-    Rig(MemoryVolume& volume, uint32_t frames) : capacity(frames), a(frames), b(frames), card(volume) {
+    Rig(MemoryVolume& volume, uint32_t frames, bool resampling = true)
+        : capacity(frames), a(frames), b(frames), card(volume) {
         CHECK(engine.Init(48000.f, a.data(), b.data(), frames));
         CHECK(store.Init(&card, transfer.data(), uint32_t(transfer.size()), frames, "0:/looper"));
+        if (resampling)
+            CHECK(store.EnableResampling(table.data(), uint32_t(table.size())));
     }
     // One 48-frame callback and one main-loop pass per millisecond.
     void Run(uint32_t ms, float level = 0.f, double hz = 220.0) {
@@ -363,8 +367,13 @@ static void TestImport() {
     card.files["0:/looper/loops/A.WAV"] = Pcm16(kSecond / 4, 2, 48000, -16384);
     card.files["0:/looper/loops/B2.wav"] = Pcm16(kSecond / 8, 2, 48000, 2048);
     card.files["0:/looper/loops/c.wav"] = Pcm16(capacity, 2, 48000, 4096);      // exactly full
-    card.files["0:/looper/loops/d.wav"] = Pcm16(1000, 2, 44100, 100);           // wrong rate
+    // 44.1 kHz, converted: exactly full at 48 kHz, and one input frame too long.
+    const uint32_t full44 = capacity * resample::kDown / resample::kUp;
+    CHECK(resample::OutputFrames(full44) == capacity && resample::OutputFrames(full44 + 1) > capacity);
+    card.files["0:/looper/loops/c2.wav"] = Pcm16(full44, 2, 44100, 4096);
+    card.files["0:/looper/loops/d.wav"] = Pcm16(1000, 2, 96000, 100);           // wrong rate
     card.files["0:/looper/loops/e.wav"] = Pcm16(capacity + 1, 1, 48000, 100);   // too long
+    card.files["0:/looper/loops/f.wav"] = Pcm16(full44 + 1, 1, 44100, 100);     // too long at 48 kHz
     card.files["0:/looper/loops/.hidden.wav"] = Pcm16(100, 1, 48000, 1);
     card.files["0:/looper/loops/notes.txt"] = Bytes(10, 'x');
     auto rig = std::make_unique<Rig>(card, capacity);
@@ -385,16 +394,19 @@ static void TestImport() {
     std::vector<std::vector<Frame>> states;
     for (const Expect x : {Expect{"A.WAV", kSecond / 4, -.5f, -.5f}, Expect{"b.wav", kSecond / 2, .25f, .25f},
                            Expect{"B2.wav", kSecond / 8, .0625f, .0625f},
-                           Expect{"c.wav", capacity, .125f, .125f}}) {
+                           Expect{"c.wav", capacity, .125f, .125f}, Expect{"c2.wav", capacity, .125f, .125f}}) {
         import();
         CHECK(std::strcmp(r.store.LastImportName(), x.name) == 0);
         CHECK(r.store.LastFault() == LoopStore::Fault::None);
         CHECK(r.engine.Length() == x.length && r.engine.TailLength() == 0);
-        CHECK(r.engine.StoredFrame(x.length / 2).left == x.left && r.engine.StoredFrame(x.length / 2).right == x.right);
+        // Exact for 48 kHz; the 44.1 kHz filter has unity DC gain up to float rounding.
+        const Frame mid = r.engine.StoredFrame(x.length / 2), end = r.engine.StoredFrame(x.length - 1);
+        CHECK(std::fabs(mid.left - x.left) < 1e-6f && std::fabs(mid.right - x.right) < 1e-6f);
+        CHECK(std::fabs(end.left - x.left) < 1e-6f);  // the seam holds the level too
         states.push_back(Snapshot(r.engine));
     }
     // Invalid files are reported and change nothing.
-    for (wav::Error e : {wav::Error::SampleRate, wav::Error::TooLong}) {
+    for (wav::Error e : {wav::Error::SampleRate, wav::Error::TooLong, wav::Error::TooLong}) {
         import();
         CHECK(r.store.LastFault() == LoopStore::Fault::File && r.store.LastFileError() == e);
         CHECK(SameFrames(Snapshot(r.engine), states.back()));
@@ -447,11 +459,66 @@ static void TestImport() {
     PASS("import: sorted *.wav, wraps, validates, undoable, saved, refused while busy\n");
 }
 
+// 44.1 kHz files are converted to 48 kHz on import and on recall, and refused
+// when the firmware provides no conversion table.
+static void TestImport44k1() {
+    MemoryVolume card;
+    const uint32_t capacity = 2 * kSecond;
+    card.files["0:/looper/loops/sine.wav"] = Pcm16(44100, 1, 44100, 0);
+    // A 441 Hz sine: exactly 441 cycles in the file, 441 cycles at 48 kHz.
+    {
+        auto& f = card.files["0:/looper/loops/sine.wav"];
+        for (uint32_t i = 0; i < 44100; ++i) {
+            const int16_t v = int16_t(std::lround(16384.0 * std::sin(2.0 * 3.14159265358979 * 441.0 * i / 44100.0)));
+            f[44 + 2 * i] = uint8_t(v);
+            f[44 + 2 * i + 1] = uint8_t(uint16_t(v) >> 8);
+        }
+    }
+    auto none = std::make_unique<Rig>(card, capacity, false);
+    none->store.RequestImport();
+    none->Run(5);
+    CHECK(none->store.LastFault() == LoopStore::Fault::File &&
+          none->store.LastFileError() == wav::Error::SampleRate && none->engine.Length() == 0);
+
+    auto rig = std::make_unique<Rig>(card, capacity);
+    Rig& r = *rig;
+    r.store.RequestImport();
+    r.Run(1);
+    uint32_t passes = 0;
+    for (; passes < 5000 && (r.store.Active() || r.engine.Busy()); ++passes)
+        r.Run(1);
+    r.Run(20);
+    CHECK(r.store.LastFault() == LoopStore::Fault::None && r.engine.Length() == kSecond);
+    // 44100 input frames at 4096 per main-loop pass: the work is spread out.
+    CHECK(passes >= 44100 / LoopStore::kResampleFramesPerService);
+    double worst = 0.0;
+    for (uint32_t i = 0; i < kSecond; ++i) {
+        const double ideal = .5 * std::sin(2.0 * 3.14159265358979 * 441.0 * i / 48000.0);
+        worst = std::max(worst, std::fabs(double(r.engine.StoredFrame(i).left) - ideal));
+    }
+    CHECK(worst < 1e-4);  // 16-bit quantization dominates (3e-5)
+    // Saved as a 48 kHz loop and recalled unchanged.
+    const auto imported = Snapshot(r.engine);
+    RunUntilSaved(r, 1);
+    auto boot = std::make_unique<Rig>(card, capacity);
+    CHECK(boot->store.Recall(boot->engine) && SameFrames(Snapshot(boot->engine), imported));
+    // A 44.1 kHz loop.wav (copied onto the card by hand) is converted on recall.
+    card.files["0:/looper/loop.wav"] = card.files["0:/looper/loops/sine.wav"];
+    auto hand = std::make_unique<Rig>(card, capacity);
+    CHECK(hand->store.Recall(hand->engine) && hand->engine.Length() == kSecond);
+    CHECK(SameFrames(Snapshot(hand->engine), imported));
+    auto plain = std::make_unique<Rig>(card, capacity, false);
+    CHECK(!plain->store.Recall(plain->engine) && plain->engine.Length() == 0);
+    PASS("44.1 kHz: converted on import and recall, spread over passes, refused without table (max error %.1e)\n",
+         worst);
+}
+
 int main() {
     TestSaveAndRecall();
     TestAbortAndFaults();
     TestTornLastChunk();
     TestImport();
+    TestImport44k1();
     if (failures) {
         std::printf("FAILED: %d storage check(s)\n", failures);
         return 1;

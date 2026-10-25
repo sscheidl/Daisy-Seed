@@ -4,6 +4,7 @@
 // only through EngineView (a snapshot) and ImportPort (a request/reply pair).
 #pragma once
 #include "looper_engine.h"
+#include "resample.h"
 #include "wav.h"
 #include <cstdint>
 
@@ -63,11 +64,18 @@ class LoopStore {
     static constexpr uint32_t kMaxFiles = 32;
     static constexpr uint32_t kMaxName = 96;
     static constexpr uint32_t kChunksPerService = 4;
+    // Input frames converted per Service call for 44.1 kHz files (a few ms).
+    static constexpr uint32_t kResampleFramesPerService = 4096;
 
     // `buffer` is the transfer buffer (DMA-capable on the firmware), at least
     // 4 KB. `root` is the folder, e.g. "0:/looper": loop.wav, loop.tmp and
     // loops/ live there.
     bool Init(Volume* volume, uint8_t* buffer, uint32_t bytes, uint32_t capacity, const char* root);
+    // Enables 44.1 kHz files (converted to 48 kHz). `table` holds
+    // resample::kTableSize floats and is filled here; on the firmware it lives
+    // in SDRAM. Without it, 44.1 kHz files are rejected with
+    // wav::Error::SampleRate. Call after Init.
+    bool EnableResampling(float* table, uint32_t floats);
     // Before audio starts: loads the saved loop (or a complete temporary file
     // left by a power loss) straight into the engine. Not undoable.
     bool Recall(Engine& engine);
@@ -98,6 +106,10 @@ class LoopStore {
     void Fail(Fault fault, uint32_t nowMs, wav::Error file = wav::Error::None);
     bool ReadLoop(const char* path, Engine& engine);
     bool CopyFrames(Frame* target, uint32_t from, uint32_t count);
+    bool Accepts(wav::Error& error) const;
+    bool Converting() const { return info_.sampleRate != wav::kSampleRate; }
+    bool StartConversion(Frame* target);
+    bool ConvertFrames(uint32_t from, uint32_t count);
 
     class FileSource : public wav::Source {
       public:
@@ -132,6 +144,8 @@ class LoopStore {
     uint32_t saves_ = 0;
 
     wav::Info info_;
+    const float* resampleTable_ = nullptr;
+    resample::Upsampler upsampler_;
     Frame* importTarget_ = nullptr;
     uint32_t importPosition_ = 0;
 };
