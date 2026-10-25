@@ -41,9 +41,9 @@ class AmbientHost {
         if(frames != kBlockSize || !mono || !left || !right || left == right) return false;
         if(count_ == 0) {
             ambient::Parameters p;
-            constexpr ambient::Mode modes[5] = {ambient::Mode::Cloud, ambient::Mode::Halo,
-                ambient::Mode::Scatter, ambient::Mode::Abyss, ambient::Mode::Bloom};
-            p.mode = modes[std::min(selected_, 4u)];
+            constexpr ambient::Mode modes[6] = {ambient::Mode::Cloud, ambient::Mode::Halo,
+                ambient::Mode::Scatter, ambient::Mode::Abyss, ambient::Mode::Bloom, ambient::Mode::Shimmer};
+            p.mode = modes[selected_];
             p.decaySeconds = std::pow(45.f, decay_);
             p.toneHz = 400.f * std::pow(35.f, knobs_[3]);
             p.modDepthMs = 3.f * knobs_[4];
@@ -56,13 +56,12 @@ class AmbientHost {
             count_ = 20;
         }
         --count_;
-        const bool dry = selected_ == 5;
-        const float mix = dry ? 0.f : mix_;
+        const float mix = mix_;
         const float dry_gain = mix == 1.f ? 0.f : std::cos(mix * ambient::kPi * .5f);
         const float wet_gain = mix == 0.f ? 0.f : std::sin(mix * ambient::kPi * .5f);
         dry_.Set(dry_gain, 1920);
         wet_.Set(wet_gain, 1920);
-        send_.Set(dry ? 0.f : 1.f, 1920);
+        send_.Set(1.f, 1920);
         for(std::size_t i = 0; i < frames; ++i) {
             send_buffer_[i] = mono[i] * send_.Next();
         }

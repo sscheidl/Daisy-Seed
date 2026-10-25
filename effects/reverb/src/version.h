@@ -1,2 +1,2 @@
 #pragma once
-#define AMBIENT_REVERB_VERSION "0.2"
+#define AMBIENT_REVERB_VERSION "0.3"

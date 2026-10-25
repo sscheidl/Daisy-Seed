@@ -23,9 +23,9 @@ static uint32_t downMask = 0;
 static int widthPosition = Switch3::POS_CENTER, widthCandidate = Switch3::POS_CENTER;
 static unsigned widthStable = 0;
 static bool legacyMono = false;
-static constexpr ambient::Mode kModeButtons[5] = {
+static constexpr ambient::Mode kModeButtons[6] = {
     ambient::Mode::Cloud, ambient::Mode::Halo, ambient::Mode::Scatter,
-    ambient::Mode::Abyss, ambient::Mode::Bloom};
+    ambient::Mode::Abyss, ambient::Mode::Bloom, ambient::Mode::Shimmer};
 
 // Core owns its parameters in the audio thread. LED/main-loop work never touches DSP state.
 static void Controls() {
@@ -53,7 +53,7 @@ static void Controls() {
             newPresses |= bit;
         }
     }
-    for (unsigned i = 0; i < 5; ++i)
+    for (unsigned i = 0; i < 6; ++i)
         if (newPresses & (1u << i)) {
             parameters.mode = kModeButtons[i];
             sustain = false; // No hidden sustain latch across mode changes.
@@ -119,7 +119,7 @@ static void Controls() {
         parameters.bypass = bypassed;
         reverb.SetParameters(parameters);
         unsigned selected = 0;
-        for (unsigned i = 0; i < 5; ++i)
+        for (unsigned i = 0; i < 6; ++i)
             if (parameters.mode == kModeButtons[i])
                 selected = i;
         uiState.store(selected | (sustain ? 8u : 0u) | (bypassed ? 16u : 0u),
@@ -136,7 +136,7 @@ static float CodecLevel(float x) {
 }
 static void RenderLeds(uint32_t ui) {
     for (unsigned i = 0; i < 14; ++i)
-        hw.SetLed(i, i < 5 && (ui & 7u) == i ? .5f : 0.f);
+        hw.SetLed(i, i < 6 && (ui & 7u) == i ? .5f : 0.f);
     hw.SetLed(14, (ui & 16u) ? .5f : 0.f); // Bypass is active.
     hw.SetLed(15, (ui & 8u) ? .5f : 0.f);  // Sustain is active.
     hw.UpdateLeds();

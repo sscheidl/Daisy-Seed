@@ -10,13 +10,13 @@ share the pinned libraries, toolchain, and board build configuration.
 | Project | Directory | Status |
 | --- | --- | --- |
 | [Toy Piano v0.3](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3 hardware test pending |
-| [Toy Piano + Ambient Reverb v0.1.0](instruments/toy-piano/docs/AMBIENT.md) | `instruments/toy-piano/` (`AMBIENT=1`) | Separate `toy-piano-ambient` build: five reverb modes, Stretch, physical transpose/decay, existing matrix/editor contract and callback diagnostics; sixth switch state is Dry, Shimmer pending; host/sanitizer/ARM checks pass, hardware untested |
+| [Toy Piano + Ambient Reverb v0.1.1](instruments/toy-piano/docs/AMBIENT.md) | `instruments/toy-piano/` (`AMBIENT=1`) | Separate `toy-piano-ambient` build: six reverb modes including Shimmer, Stretch, physical transpose/decay, existing matrix/editor contract and callback diagnostics; host/sanitizer/ARM checks pass, hardware untested |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings, six models and global reverb; user-confirmed hardware/MIDI behavior and measured CPU headroom; model-switch spikes accepted as a known limitation ([results](instruments/physical-modeling/docs/HARDWARE_PLAYING_2026-10-22.md)) |
 | [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [Composed Physical Modeling FX](docs/MODULAR_COMPONENTS.md) | `instruments/physical-modeling/` (`COMPOSED=1`) | Separate v0.2.0 pilot builds with Torus or Ambient Reverb adapters and Mod on Daisy; explicit component manifests; hardware validation pending |
 | [Nebulae on Daisy v0.1.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
 | [Looper v0.3](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import on microSD; host tests and ARM build pass; hardware test pending |
-| [Ambient Reverb v0.2](effects/reverb/) | `effects/reverb/` | Original stereo reverb with Desktop controls and variable-rate wet Stretch; host tests and ARM build pass; hardware test pending |
+| [Ambient Reverb v0.3](effects/reverb/) | `effects/reverb/` | Original stereo reverb with Desktop controls and variable-rate wet Stretch; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 | [Mod on Daisy](modules/mod-on-daisy/) | `modules/mod-on-daisy/`, editor in `editors/mod-on-daisy/` | Reusable 8×8 modulation matrix (header-only module, no instrument firmware). Phase 2 software done: core, host tests (ASan/UBSan/TSan, fuzzing), bench firmware `make PROJECT=mod-bench`, `tools/mod_probe.py`; hardware measurements pending ([validation](modules/mod-on-daisy/docs/VALIDATION.md)). Spec: [decisions](modules/mod-on-daisy/docs/DECISIONS.md), [architecture](modules/mod-on-daisy/docs/ARCHITECTURE.md), [MIDI protocol](modules/mod-on-daisy/docs/PROTOCOL.md), [storage](modules/mod-on-daisy/docs/STORAGE.md) |
 | [Mod on Daisy Editor](editors/mod-on-daisy/) | `editors/mod-on-daisy/` (`src/` JUCE, `web/` browser) | Matrix/source panel as JUCE standalone, browser and VST3 device editor. Simulators are opt-in. Core/protocol tests cover lost/corrupted frames; VST3 passes PC audio through and stores the modulation patch, not the complete instrument/FX state |
@@ -84,7 +84,7 @@ its directory with `make -C instruments/toy-piano`. Its image is
 `instruments/toy-piano/src/version.h`; `make -s version` prints it. Builds for
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
-The reverb image is `effects/reverb/build/AmbientReverb-v0.2.bin`.
+The reverb image is `effects/reverb/build/AmbientReverb-v0.3.bin`.
 Nebulae builds with `make PROJECT=granular` to
 `instruments/granular/build/NebulaeOnDaisy-v0.1.0.bin`; its controls and hardware
 test are in the [project README](instruments/granular/README.md).

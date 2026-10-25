@@ -1,4 +1,4 @@
-# Toy Piano + Ambient Reverb v0.1.0
+# Toy Piano + Ambient Reverb v0.1.1
 
 Eigenes Produkt `toy-piano-ambient`, aufbauend auf der modularen FX-Stufe in
 PR #38. Das bisherige Toy Piano v0.3 und die reine Ambient-FX-Firmware bleiben
@@ -28,7 +28,7 @@ Alle 16 Taster bleiben Klaviertasten; LEDs folgen ausschließlich den Tasten.
 | A / unten | Scatter |
 | B / oben | Abyss |
 | B / Mitte | Bloom |
-| B / unten | Dry, Platzhalter für den noch nicht entwickelten Shimmer-Modus |
+| B / unten | Shimmer, aufsteigende Oktaven im Hall-Ausklang |
 
 A bedeutet `tog_sw17.Pressed() == false`, B bedeutet true. Die physische
 Zuordnung ist am Board zu bestätigen. Beide Schalter werden als Kombination
@@ -36,14 +36,17 @@ Zuordnung ist am Board zu bestätigen. Beide Schalter werden als Kombination
 Modulationsrate, Width und Pan bleiben auf festen Werten. Cloud X skaliert den
 Vibratoanteil zwischen halber und voller Depth, da kein Sustain-Taster vorhanden
 ist. Halo/Abyss X regelt den Oktavanteil, Scatter die Taps/Diffusion, Bloom die
-Anschwellzeit. Modewechsel und Dry/Mix verwenden geglättete Übergänge.
-Dry blendet Wet aus und stoppt den Send; der interne Ausklang bleibt erhalten
-und kann beim schnellen Wiedereinschalten wieder hörbar werden.
+Anschwellzeit. Shimmer X regelt den Anteil der aufwärts oktavierten Einspeisung.
+Der späte Hall wird ebenfalls durch den gefilterten +12-Halbtöne-Pfad geführt,
+sodass weitere Oktaven entstehen. Der Rücklauf skaliert mit der verbleibenden
+Feedback-Reserve; es gibt keinen unbegrenzten Regenerationsregler. Das ist ein
+eigener DSP-Modus, kein Slöer-Port. Modewechsel und Mix werden geglättet.
+Trocken spielen: VR6 ganz links; alle sechs Schalterstellungen sind nun FX.
 
 ## Editor und Diagnose
 
 Das bestehende HTML-/JUCE-/VST3-Panel erkennt das Produkt als
-`toy-piano-ambient 0.1.0`. Alle acht Matrixspalten sind beschrieben: Pitch, Level,
+`toy-piano-ambient 0.1.1`. Alle acht Matrixspalten sind beschrieben: Pitch, Level,
 Harmonic, Attack, Decay, HallDecay, HallMix und HallX. Neue FX-Spalten sind global;
 Poly AT auf Attack/Decay bleibt wegen der Anschlagübernahme gesperrt. Grundwerte
 und die gewählte Schalterstellung werden über den bestehenden Monitor gemeldet.
@@ -72,7 +75,7 @@ make PROJECT=toy-piano-ambient test
 make PROJECT=toy-piano-ambient test-sanitize
 make PROJECT=toy-piano-ambient -j4
 make PROJECT=toy-piano-ambient manifest
-python3 scripts/check-firmware.py instruments/toy-piano/build/ambient/ToyPianoAmbient-v0.1.0.bin
+python3 scripts/check-firmware.py instruments/toy-piano/build/ambient/ToyPianoAmbient-v0.1.1.bin
 ```
 
 Am Host geprüft: alle 16 Tasten und LED-Zustände, exakter trockener Vergleich
@@ -81,14 +84,30 @@ Piano-Hüllkurve, acht Editor-Ziele, MIDI-Rückstau ohne Verlust im Anwendungsqu
 Test, begrenzte Main-/Audio-Batches und keine Allokation im Audiocallback.
 Die Testuhr prüft CPU-Snapshot, Reset und Wraparound, keine reale CPU-Leistung.
 
-ARM-Build: 183868-Byte-BIN, 119568 B DTCM (11504 B statische Reserve), 1129608 B
+ARM-Build: 184140-Byte-BIN, 119568 B DTCM (11504 B statische Reserve), 1129624 B
 SDRAM. Die Reserve ist keine Stack-Hochwassermessung. Firmware- und ELF-Prüfung
 bestehen. BIN-SHA-256:
-`676c34f87c30c7175cb7ef3e31d37e048900c06c923c164a0a84e1431d0b2a1b`.
+`3cd446fb4b0d17ecfffdcf5b7ec5a1b0a02a7f116cdab8a9aaa3d1de5da050ed`.
 
 **NICHT GEMESSEN am Gerät:** gemeinsame CPU-Last, Stack-Hochwasser, analoge
 Pegel, Schalterrichtung und hörbare Übergänge. Zuerst mit niedrigem Abhörpegel
 und VR6 links das Piano prüfen, dann Mix und Stretch langsam erhöhen. Danach
-alle fünf FX und den Dry-Zustand, schnelle Anschläge und MIDI-Akkorde prüfen.
-CPU-Werte samt Firmwarehash und Testszenario protokollieren. Der sechste echte
-Shimmer-Algorithmus und ein vollständiges FX-Panel sind noch nicht implementiert.
+alle sechs FX, schnelle Anschläge und MIDI-Akkorde prüfen.
+CPU-Werte samt Firmwarehash und Testszenario protokollieren. Ein vollständiges FX-Panel ist noch nicht implementiert.
+
+## Shimmer-Prüfung (Host, 25.10.2026)
+
+**GEMESSEN im synthetischen Test:** 48 kHz, 375-Hz-Sinus für 1 s, danach
+3 s Stille; Projektion des linken Wet-Ausgangs zwischen 1 und 3 s, X = 1,
+Decay 8 s, Modulation aus. +12-Halbtöne-Amplitude 67,0576 (X = 0: 0,238547),
++24-Halbtöne-Amplitude 4,02927 (Halo: 0,841954). Das sind unnormierte
+Projektionssummen, keine dBFS oder Gerätepegel. Der Test prüft erzeugte Oktaven
+und die Unterscheidung von Halo, keine klangliche Gleichwertigkeit mit einem Pedal.
+
+90-s-Ausklang mit maximalem Decay/Depth/Rate/X: endlich, abklingend und ohne
+Guard-Eingriff. Sechs Modi bei vier Host-Sampleraten, Stretch-Endpunkte im
+Produktion-Callback und ASan/UBSan bestehen. Ein zusätzlicher Vorher/Nachher-
+Vergleich gegen `44b08ca` liefert für die fünf bisherigen Modi bitgleiche
+Float-Ausgaben (je 5 s bei 48 kHz, 1 s deterministisches Rauschen und 4 s Stille).
+Der gemeinsame Kern ist jetzt `ambient-reverb 0.3`; der Adaptervertrag bleibt
+unverändert. Die reine FX-Firmware bietet Shimmer auf S6 mit LED D6.

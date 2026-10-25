@@ -175,6 +175,30 @@ void TestMidiAndProtocol() {
     std::puts("PASS: USB protocol identity, 8 dynamic editor targets, mode metadata, CPU stats, echo guard and bounded Note On backpressure");
 }
 
+void TestShimmerCallback() {
+    // Sixth switch state must now render a wet tail, not the previous Dry placeholder.
+    hw.tog_sw17.value = true; hw.tog_sw18.value = 2;
+    hw.pot[1].value = 0; hw.pot[2].value = 1; hw.pot[5].value = 1;
+    hw.pot[6].value = 1;
+    Tick(400);
+    assert(fx->SelectedMode() == 5);
+    assert(std::strcmp(toy_piano::kFxModes[5].name, "Shimmer") == 0);
+    for(float stretch : {0.f, 1.f}) {
+        hw.pot[7].value = stretch; Tick(400);
+        hw.pressed[0] = true; Tick(12); hw.pressed[0] = false;
+        Tick(100);
+        assert(!piano.Envelope(0).Active());
+        double energy = 0;
+        for(unsigned b = 0; b < 1200; ++b) {
+            Tick();
+            for(unsigned i = 0; i < toy_piano::kBlockSize; ++i)
+                energy += double(left[i]) * left[i] + double(right[i]) * right[i];
+        }
+        assert(energy > 1e-7);
+    }
+    std::puts("PASS: sixth-mode Shimmer stereo tail at both Stretch endpoints through production callback");
+}
+
 void TestMeter() {
     mod::adapter::CallbackDiagnostics meter;
     meter.Init(48000, 48);
@@ -196,6 +220,7 @@ int main() {
     TestDryReference();
     TestControlsAndWet();
     TestMidiAndProtocol();
+    TestShimmerCallback();
     TestMeter();
     assert(allocations == 0);
     std::puts("PASS composed Toy Piano + Ambient; no allocation in the audio callback");

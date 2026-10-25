@@ -305,9 +305,57 @@ void CharactersAndBypass() {
     auto dry = a.fx.Process({.123f, -.07f});
     Require(dry.left == .123f && dry.right == -.07f, "silent bypass dry endpoint");
 }
+void ShimmerSpectrum() {
+    Fixture shimmer, plain, halo;
+    Parameters p = AmbientReverb::Preset(Mode::Shimmer);
+    Require(p.mode == Mode::Shimmer, "Shimmer preset fell back to Cloud");
+    p.mix = p.outputGain = 1;
+    p.texture = 1;
+    p.decaySeconds = 8;
+    p.modDepthMs = p.preDelayMs = 0;
+    shimmer.Prepare(48000, p);
+    p.texture = 0;
+    plain.Prepare(48000, p);
+    p.texture = 1;
+    p.mode = Mode::Halo;
+    halo.Prepare(48000, p);
+    double real[3][2]{}, imag[3][2]{}, tail = 0, difference = 0;
+    audio = true;
+    for (int n = 0; n < 48000 * 4; ++n) {
+        // Exact shifter-window period, clean source; no input harmonics.
+        const float x = n < 48000 ? .1f * float(std::sin(2 * double(kPi) * 375 * n / 48000)) : 0;
+        const Stereo y[3] = {shimmer.fx.Process({x, x}), plain.fx.Process({x, x}),
+                             halo.fx.Process({x, x})};
+        for (const auto v : y)
+            Require(std::isfinite(v.left) && std::isfinite(v.right), "Shimmer nonfinite");
+        if (n >= 48000 && n < 48000 * 3) {
+            for (unsigned f = 0; f < 2; ++f) {
+                const double phase = 2 * double(kPi) * (f ? 1500 : 750) * n / 48000;
+                for (unsigned i = 0; i < 3; ++i) {
+                    real[i][f] += y[i].left * std::cos(phase);
+                    imag[i][f] += y[i].left * std::sin(phase);
+                }
+            }
+            tail += Energy(y[0]);
+            difference += Energy({y[0].left - y[2].left, y[0].right - y[2].right});
+        }
+    }
+    audio = false;
+    const double up = std::hypot(real[0][0], imag[0][0]);
+    const double noPitch = std::hypot(real[1][0], imag[1][0]);
+    const double twice = std::hypot(real[0][1], imag[0][1]);
+    const double haloTwice = std::hypot(real[2][1], imag[2][1]);
+    std::cout << "Shimmer late +12st=" << up << "; X=0=" << noPitch
+              << "; +24st=" << twice << "; Halo +24st=" << haloTwice << "\n";
+    Require(up > noPitch * 10 && up > .01, "X fails to add an octave to the late tail");
+    Require(twice > haloTwice * 1.5 && twice > .0001,
+            "Shimmer fails to recirculate the pitched tail beyond Halo");
+    Require(tail > 1e-5 && difference > tail * .01, "Shimmer is silent or aliases Halo");
+    Require(shimmer.fx.GetDiagnostics().guardEvents == 0, "Shimmer relies on guard clipping");
+}
 void LongDecay() {
     Fixture f;
-    for (Mode mode : {Mode::Abyss, Mode::Halo}) {
+    for (Mode mode : {Mode::Abyss, Mode::Halo, Mode::Shimmer}) {
         Parameters p;
         p.mode = mode;
         p.mix = 1;
@@ -345,7 +393,7 @@ void Stability() {
         audio = true;
         for (unsigned n = 0; n < unsigned(fs * 8); ++n) {
             if (n % unsigned(fs) == 0) {
-                p.mode = Mode((n / unsigned(fs)) % 5);
+                p.mode = Mode((n / unsigned(fs)) % 6);
                 p.shape = Shape((n / unsigned(fs)) % 5);
                 f.fx.SetParameters(p);
             }
@@ -360,7 +408,7 @@ void Stability() {
     }
     Require(allocations == 0, "allocation in audio/parameter path");
     Require(peak < 4, "excessive normal peak");
-    std::cout << "4 rates / 5 modes / 5 shapes: peak=" << peak
+    std::cout << "4 rates / 6 modes / 5 shapes: peak=" << peak
               << "; audio allocations=" << allocations << "\n";
     // Worst valid controls with loud bursts: output finite even under a deliberately abusive input.
     Parameters p;
@@ -471,6 +519,7 @@ int main() {
         CharactersAndBypass();
         Stability();
         WetClockAndMono();
+        ShimmerSpectrum();
         LongDecay();
         Benchmark();
         std::cout << "PASS ambient\n";

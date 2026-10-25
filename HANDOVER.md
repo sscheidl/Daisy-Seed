@@ -1,10 +1,11 @@
 # Übergabe — lokal weiterarbeiten
 
 **Ergänzung 25.10.2026:** Auf `feat/toy-piano-ambient` liegt das separate Produkt
-`toy-piano-ambient 0.1.0`, abhängig vom modularen FX-Unterbau in PR #38.
+`toy-piano-ambient 0.1.1`, abhängig vom modularen FX-Unterbau in PR #38.
 [Bedienung, Build, Prüfergebnisse und Hardware-Laufzettel](instruments/toy-piano/docs/AMBIENT.md).
 Host-Tests, ASan/UBSan und ARM-Build bestanden; Toy Piano v0.3 bleibt bytegleich.
-Fünf echte Reverb-Modi, sechste Schalterstellung Dry; Shimmer noch offen.
+Sechs echte Reverb-Modi einschließlich Shimmer (B / unten); VR7 regelt dessen
+Oktavanteil. Kern `ambient-reverb 0.3`, reine FX-Fassung: Shimmer auf S6.
 Gemeinsame CPU-Last und Audiotest am Kit sind **NICHT GEMESSEN**.
 Die folgenden älteren Abschnitte beschreiben ihren jeweils datierten Stand.
 

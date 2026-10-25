@@ -16,7 +16,7 @@ enum ModTarget : uint8_t { ModPitch, ModLevel, ModHarmonic, ModAttack, ModDecay 
 constexpr unsigned ModHallDecay = 5, ModHallMix = 6, ModHallX = 7;
 inline constexpr mod::ModeInfo kFxModes[] = {
     {"Cloud", "A / SW18 up"}, {"Halo", "A / SW18 center"}, {"Scatter", "A / SW18 down"},
-    {"Abyss", "B / SW18 up"}, {"Bloom", "B / SW18 center"}, {"Dry (Shimmer pending)", "B / SW18 down"},
+    {"Abyss", "B / SW18 up"}, {"Bloom", "B / SW18 center"}, {"Shimmer", "B / SW18 down"},
 };
 #endif
 
