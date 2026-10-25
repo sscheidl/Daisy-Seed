@@ -7,6 +7,7 @@ extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iterator>
 #include <memory>
 #include <new>
 #include <vector>
@@ -199,6 +200,61 @@ void TestShimmerCallback() {
     std::puts("PASS: sixth-mode Shimmer stereo tail at both Stretch endpoints through production callback");
 }
 
+daisy::MidiEvent BootSysEx(const uint8_t* body, std::size_t size) {
+    daisy::MidiEvent e;
+    e.type = daisy::SystemCommon; e.sc_type = daisy::SystemExclusive;
+    e.sysex_message_len = uint8_t(size);
+    std::memcpy(e.sysex_data, body, size);
+    return e;
+}
+
+// Both bootloader triggers through the composed piano/Shimmer production path.
+void TestBootloader() {
+    using daisy::System;
+    assert(fx->SelectedMode() == 5); // Shimmer from the previous test is still selected
+    hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
+    hw.pressed.fill(false); Tick(10); ServiceUsbMidi(); usb_midi.sent.clear();
+    const unsigned resets = System::bootloader_resets;
+    // S9+S16 (C5/C6) with a third key never fires; alone it takes 5 s.
+    hw.pressed[8] = hw.pressed[15] = hw.pressed[0] = true;
+    Tick(6000); ServiceBootloader();
+    assert(System::bootloader_resets == resets);
+    hw.pressed[0] = false;
+    Tick(4990); ServiceBootloader();
+    assert(System::bootloader_resets == resets);
+    assert(led_mask.load() == ((1u << 8) | (1u << 15))); // the keys still play
+    Tick(20); ServiceBootloader();
+    assert(System::bootloader_resets == resets + 1);
+    assert(System::bootloader_mode == System::DAISY_INFINITE_TIMEOUT);
+    for(const auto& message : usb_midi.sent) assert(message.empty() || message[0] != 0xF0); // keys: no reply
+    hw.pressed.fill(false); Tick(10);
+    // Releasing one key early restarts the 5 s.
+    hw.pressed[8] = hw.pressed[15] = true; Tick(3000);
+    hw.pressed[15] = false; Tick(10);
+    hw.pressed[15] = true; Tick(3000); ServiceBootloader();
+    assert(System::bootloader_resets == resets + 1);
+    hw.pressed.fill(false); Tick(10); ServiceUsbMidi();
+    // SysEx: one reply, then the reset; the echoed reply and a truncated request do nothing.
+    usb_midi.sent.clear();
+    usb_midi.incoming.push_back(BootSysEx(bootloader::kRequestBody, sizeof(bootloader::kRequestBody)));
+    ServiceUsbMidi();
+    assert(System::bootloader_resets == resets + 1); // the reset happens in the main loop service
+    ServiceBootloader();
+    assert(System::bootloader_resets == resets + 2);
+    const std::vector<uint8_t> ack(std::begin(bootloader::kAck), std::end(bootloader::kAck));
+    unsigned acks = 0;
+    for(const auto& message : usb_midi.sent) acks += message == ack;
+    assert(acks == 1);
+    usb_midi.incoming.push_back(BootSysEx(bootloader::kAck + 1, sizeof(bootloader::kAck) - 2));
+    usb_midi.incoming.push_back(BootSysEx(bootloader::kRequestBody, sizeof(bootloader::kRequestBody) - 1));
+    ServiceUsbMidi(); ServiceBootloader();
+    assert(System::bootloader_resets == resets + 2);
+    assert(!Request(mod::proto::GetStats).empty()); // Mod on Daisy still answers its own frames
+    Tick(100); // the Shimmer tail keeps rendering finite output (checked in Tick)
+    hUsbDeviceHS.dev_state = 0;
+    std::puts("PASS: bootloader keys S9+S16 (5 s, extra key, early release) and SysEx (reply, echo, truncated) in Shimmer mode");
+}
+
 void TestMeter() {
     mod::adapter::CallbackDiagnostics meter;
     meter.Init(48000, 48);
@@ -221,6 +277,7 @@ int main() {
     TestControlsAndWet();
     TestMidiAndProtocol();
     TestShimmerCallback();
+    TestBootloader();
     TestMeter();
     assert(allocations == 0);
     std::puts("PASS composed Toy Piano + Ambient; no allocation in the audio callback");
