@@ -15,6 +15,15 @@ the intended use. Running synthesis has headroom.
 voice is described in [docs/MODULATION.md](docs/MODULATION.md)
 (`make PROJECT=physical-modeling-mod`). The regular build is unchanged.
 
+## Additional composed FX products
+
+The [modular component pilot](../../docs/MODULAR_COMPONENTS.md) adds separate
+`physical-modeling-fx-torus` and `physical-modeling-fx-ambient` builds. Both keep
+the existing keyboard/MIDI/Mod-on-Daisy host and choose the downstream wet effect
+at build time. They have product version 0.2.0 and explicit component manifests;
+the regular 0.1.0 and accepted Mod4 targets retain their prior identities.
+These combinations still need hardware CPU and listening tests.
+
 ## Models and controls
 
 | SW17 bank | SW18 UP | SW18 CENTER | SW18 DOWN |
@@ -61,8 +70,8 @@ make PROJECT=physical-modeling -j4
 make PROJECT=physical-modeling test
 make PROJECT=physical-modeling test-sanitize
 make PROJECT=physical-modeling test-thread
-python3 scripts/check-firmware.py instruments/physical-modeling/build/PhysicalModeling-v0.1.0.bin
-python3 scripts/check-physical-elf.py instruments/physical-modeling/build/PhysicalModeling-v0.1.0.elf
+python3 scripts/check-firmware.py instruments/physical-modeling/build/PhysicalModeling-v0.1.1.bin
+python3 scripts/check-physical-elf.py instruments/physical-modeling/build/PhysicalModeling-v0.1.1.elf
 ```
 
 The Firmware CI matrix provides `PhysicalModeling-v0.1.0.bin`, `.elf`, `.map` and
@@ -74,7 +83,9 @@ The Firmware CI matrix provides `PhysicalModeling-v0.1.0.bin`, `.elf`, `.map` an
 Use the **existing external Daisy bootloader**, following
 [FLASHING](../../docs/FLASHING.md) and [HARDWARE_TEST](docs/HARDWARE_TEST.md).
 Flash only the application BIN. A working compatible bootloader needs no
-reinstallation. The user reports successful flashing and functional listening
+reinstallation. For an update, hold **S9 + S16** for 5 s or use **Firmware-Update …**
+in the editor (both builds): all LEDs light up and the bootloader waits
+([details](../../common/bootloader/README.md)). The user reports successful flashing and functional listening
 tests with S1 (Studio One). The authorized six-model hardware CPU capture recorded
 zero deadline overruns in 174084 blocks, with a highest peak of 56.71% at four
 voices and muted final master in the settled-model run. A subsequent practical

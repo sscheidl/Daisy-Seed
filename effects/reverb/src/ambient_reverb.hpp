@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MIT
 #include "primitives.hpp"
 namespace ambient {
-enum class Mode : unsigned { Cloud, Bloom, Abyss, Halo, Scatter };
+// Append modes to preserve existing numeric IDs.
+enum class Mode : unsigned { Cloud, Bloom, Abyss, Halo, Scatter, Shimmer };
 struct Parameters {
     Mode mode = Mode::Cloud;
     Shape shape = Shape::Sine;
@@ -51,7 +52,7 @@ class AmbientReverb {
 
   private:
     struct State {
-        Ramp gain[8], mode[5];
+        Ramp gain[8], mode[6];
         Ramp tone, highpass, preDelay, depth, rate, width, dry, wet, diffusion, texture, riseStep,
             level, send, hold, sustain;
     } state_;

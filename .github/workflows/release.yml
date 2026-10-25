@@ -59,6 +59,7 @@ jobs:
         run: |
           make PROJECT=toy-piano -j4
           python3 scripts/check-firmware.py
+          make PROJECT=toy-piano manifest
       - name: Release notes and checksum
         env:
           VERSION: ${{ steps.version.outputs.value }}
@@ -100,4 +101,5 @@ jobs:
           gh release create "v$VERSION" "${args[@]}" \
             "$PROJECT_DIR/build/ToyPiano-v$VERSION.bin" \
             "$PROJECT_DIR/build/ToyPiano-v$VERSION.elf" \
-            "$PROJECT_DIR/build/SHA256SUMS"
+            "$PROJECT_DIR/build/SHA256SUMS" \
+            "$PROJECT_DIR/build/COMPONENTS.json"

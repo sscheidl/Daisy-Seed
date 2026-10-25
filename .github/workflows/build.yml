@@ -10,8 +10,11 @@ on:
         default: physical-modeling-mod
         options:
           - physical-modeling-mod
+          - physical-modeling-fx-torus
+          - physical-modeling-fx-ambient
           - physical-modeling
           - toy-piano
+          - toy-piano-ambient
           - granular
           - looper
           - reverb-fx
@@ -37,9 +40,12 @@ jobs:
           import os
           projects = [
               {"project":"toy-piano","directory":"instruments/toy-piano","image":"ToyPiano","build":"build"},
+              {"project":"toy-piano-ambient","directory":"instruments/toy-piano","image":"ToyPianoAmbient","build":"build/ambient"},
               {"project":"reverb-fx","directory":"effects/reverb","image":"AmbientReverb","build":"build"},
               {"project":"physical-modeling","directory":"instruments/physical-modeling","image":"PhysicalModeling","build":"build"},
               {"project":"physical-modeling-mod","directory":"instruments/physical-modeling","image":"PhysicalModelingMod","build":"build/mod"},
+              {"project":"physical-modeling-fx-torus","directory":"instruments/physical-modeling","image":"PhysicalModelingFxTorus","build":"build/fx-torus"},
+              {"project":"physical-modeling-fx-ambient","directory":"instruments/physical-modeling","image":"PhysicalModelingFxAmbient","build":"build/fx-ambient"},
               {"project":"granular","directory":"instruments/granular","image":"NebulaeOnDaisy","build":"build"},
               {"project":"looper","directory":"instruments/looper","image":"Looper","build":"build"},
               {"project":"mod-bench","directory":"modules/mod-on-daisy/bench","image":"ModBench","build":"build"},
@@ -85,7 +91,7 @@ jobs:
       - name: Check firmware image
         run: python3 scripts/check-firmware.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
       - name: Check ARM ELF and static memory reserves
-        if: matrix.project == 'physical-modeling' || matrix.project == 'physical-modeling-mod'
+        if: startsWith(matrix.project, 'physical-modeling') || matrix.project == 'toy-piano-ambient'
         run: python3 scripts/check-physical-elf.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
       - name: Check Nebulae ARM memory, SD DMA and dynamic WAV capacities
         if: matrix.project == 'granular'
@@ -95,6 +101,8 @@ jobs:
         run: |
           make -C modules/mod-on-daisy/bench BLOCK=256 -j4
           make -C modules/mod-on-daisy/bench MAX_ACTIVE=64 -j4
+      - name: Record versioned firmware composition
+        run: make PROJECT=${{ matrix.project }} manifest
       - name: Generate checksum
         run: cd ${{ matrix.directory }}/${{ matrix.build }} && sha256sum ${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin > SHA256SUMS
       - uses: actions/upload-artifact@v4
@@ -106,4 +114,5 @@ jobs:
             ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
             ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.map
             ${{ matrix.directory }}/${{ matrix.build }}/SHA256SUMS
+            ${{ matrix.directory }}/${{ matrix.build }}/COMPONENTS.json
           if-no-files-found: error

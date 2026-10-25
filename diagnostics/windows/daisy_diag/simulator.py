@@ -47,6 +47,8 @@ class SimulatedDevice:
         self.protocol_version = protocol_version
         self.reader_supported = reader_supported
         self.reader_state = "LOCAL"
+        self.in_bootloader = False  # BOOT accepted: the firmware has reset into the bootloader
+        self.bootloader_entries = 0
         self.reader_sectors = 0
         self.reader_init_duration = 0.0
         self.inputs = SimulatedInputs()
@@ -184,9 +186,9 @@ class SimulatedDevice:
                 self._streaming = True
                 self._last_sent = None
                 self._send(
-                    f"HELLO proto={self.protocol_version} fw=0.2.0-sim app=DaisyDiagnostic "
+                    f"HELLO proto={self.protocol_version} fw=0.2.1-sim app=DaisyDiagnostic "
                     "dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 "
-                    "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led"
+                    "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot"
                     + (",sdmsc" if self.reader_supported else "") + " sim=1")
                 self._send_state(now)
         elif t == "PING":
@@ -237,6 +239,15 @@ class SimulatedDevice:
                     self._send_reader(action)
             else:
                 self._send_reader(action)
+        elif t == "BOOT":
+            if not self._streaming:
+                self._send("ERR c=BOOT e=SESSION")
+            elif self.reader_state != "LOCAL":
+                self._send("ERR c=BOOT e=BUSY")
+            else:
+                self._send("ACK c=BOOT")
+                self.in_bootloader = True
+                self.bootloader_entries += 1
         elif t == "BYE":
             self._streaming = False
             self._send("ACK c=BYE")
@@ -349,7 +360,12 @@ class SimulatedLink:
 
     def read(self) -> bytes:
         self._check()
-        return self.device.output(self._clock())
+        data = self.device.output(self._clock())
+        if self.device.in_bootloader:
+            # The ACK is out; the CDC port disappears with the reset (DFU is no COM port).
+            # Plugging in again models the restart after flashing.
+            self._cable.unplug()
+        return data
 
     def write(self, data: bytes) -> None:
         self._check()

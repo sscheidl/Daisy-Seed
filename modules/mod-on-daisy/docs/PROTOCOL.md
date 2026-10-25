@@ -18,6 +18,9 @@ External“, D6). Grundlagen: [DECISIONS.md](DECISIONS.md) D9 und E9,
 * Noten werden **mitgelesen und weitergegeben**.
 * Fremde SysEx-Rahmen und SysEx mit anderer Projektkennung gibt `HandleMidi()` mit
   `false` an das Instrument weiter.
+* `F0 7D 42 4C …` („BL“) ist die Bootloader-Anfrage aller Firmwares dieses Repositorys
+  ([common/bootloader](../../../common/bootloader/README.md)), kein MD-Rahmen. Die
+  Firmware prüft sie vor `HandleMidi()`; beide Editoren senden sie über **Firmware-Update …**.
 * Die vorhandenen Instrument-CCs (Physical Modeling CC20–33, Telemetrie Kanal 16
   CC100–119; Nebulae CC20–27) bleiben unberührt.
 

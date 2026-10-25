@@ -12,7 +12,7 @@ enum Target : uint8_t { Pitch, Level, Harmonic, Tone, Pan, Master, Width, Drive 
 inline InstrumentInfo MakeInfo() {
     InstrumentInfo info;
     info.key = "mod-bench";
-    info.version = "0.1.0";
+    info.version = "0.1.1"; // IDENTIFY, follows MOD_BENCH_VERSION
     info.targets[Pitch] = {"Pitch", "+-1 st", 1.0f / 24.0f, true, false}; // 0..1 = +-12 st
     info.targets[Level] = {"Level", "100%", 1.0f, true, false};
     info.targets[Harmonic] = {"Harmonic", "100%", 1.0f, true, false};

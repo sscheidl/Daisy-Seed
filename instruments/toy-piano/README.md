@@ -11,6 +11,10 @@ The hardware diagnostic suite is maintained separately in
 
 ## Playing
 
+Separate modular product: [Toy Piano + Ambient Reverb](docs/AMBIENT.md),
+`make PROJECT=toy-piano-ambient`. It has its own version, controls and image;
+the v0.3 controls below still describe the original `toy-piano` target.
+
 | Button | Note | MIDI note | Button | Note | MIDI note |
 | --- | --- | --- | --- | --- | --- |
 | S1 | C4 | 60 | S9 | C5 | 72 |
@@ -109,9 +113,11 @@ and the external Daisy DFU bootloader:
 
 1. Only if the appropriate bootloader is missing: install it once through the
    USB-C connector **on the Seed3 module**.
-2. For normal use and firmware updates: use **J7 on the Desktop carrier**. Press
-   RESET, then BOOT during the approximately two-second bootloader window. Select
-   the BIN under Custom in the [Daisy Web Programmer](https://flash.daisy.audio/).
+2. For normal use and firmware updates: use **J7 on the Desktop carrier**. Hold
+   **S9 + S16** for 5 s (or click **Firmware-Update …** in the editor): all LEDs
+   light up and the bootloader waits without a time limit. Select the BIN under
+   Custom in the [Daisy Web Programmer](https://flash.daisy.audio/). Firmware older
+   than this entry, or a hung one, still needs RESET then BOOT within about two seconds.
 
 See [FLASHING.md](../../docs/FLASHING.md) for the separate procedures. An installed,
 appropriate bootloader does not need reinstalling. No hardware was flashed from cloud.

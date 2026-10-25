@@ -80,7 +80,7 @@ void TestIdentify() {
     char key[mod::kMaxKeyLength + 1]{}, version[13]{};
     id.Str(key, mod::kMaxKeyLength);
     id.Str(version, 12);
-    assert(std::strcmp(key, "physical-modeling") == 0 && std::strcmp(version, "0.1.0-mod4") == 0);
+    assert(std::strcmp(key, "physical-modeling") == 0 && std::strcmp(version, PHYSICAL_MODELING_VERSION "-mod4") == 0);
     // extended monitor and LFO cross modulation; capabilities 2 bit 0: active model (mod4)
     assert(r[r.size() - 2] == (0x0A | 0x30 | 0x40) && r.back() == 0x01);
     r = Request(mod::proto::GetAllowed, {});

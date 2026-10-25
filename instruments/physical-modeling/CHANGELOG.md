@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.1 / composed 0.2.1 - integration test images, not released
+
+* **Firmware updates without BOOT/RESET** ([common/bootloader](../../common/bootloader/README.md)):
+  holding S9+S16 alone for 5 s, or the USB-MIDI SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7`
+  (answered with `F0 7D 42 4C 01 41 F7`), lights all LEDs and restarts into the Daisy
+  bootloader with `DAISY_INFINITE_TIMEOUT`. The audio callback only runs the key timer.
+* In **both** builds, so the regular image is no longer byte-identical to v0.1.0; the
+  Mod on Daisy code still adds nothing to it. Sound unchanged: golden hashes of both
+  builds are the same before and after (compared on one compiler).
+
+## 0.2.0 - additional composed FX products
+
+* New physical-modeling-fx-torus and physical-modeling-fx-ambient targets select
+  typed wet-only effects behind the existing keyboard/MIDI/Mod on Daisy host.
+* Product identity is consistent in BIN, marker and IDENTIFY; component manifests
+  record independently versioned DSP, control and panel components.
+* The Torus adapter keeps the golden sound. Accepted regular and Mod4 images
+  retain their identities; new combinations still need hardware validation.
+
 ## Mod on Daisy build, mod3 - 2026-10-24 (correction order after the review)
 
 * Built with `MOD_ON_DAISY_EXTENSIONS=1`; `InitModulation()` enables the extended

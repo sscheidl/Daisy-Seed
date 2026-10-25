@@ -1,2 +1,2 @@
 #pragma once
-#define MOD_BENCH_VERSION "0.1.0"
+#define MOD_BENCH_VERSION "0.1.1"
