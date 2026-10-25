@@ -1,0 +1,153 @@
+{
+  "date": "2026-10-25",
+  "hardware": "NICHT GEMESSEN",
+  "stl_frame": {
+    "revision": "RH-2026-10-25",
+    "axes": "+X right/MIDI, +Y rear/audio, +Z up/populated side",
+    "origin": "PCB rear-left",
+    "source_2d": "KiCad: X right, Y toward player",
+    "source_to_stl": "X=x, Y=-y, Z=z; outward face winding preserved"
+  },
+  "access_revision": "ACCESS-2026-10-25",
+  "manufacturing_ready": false,
+  "parts": {
+    "tray": {
+      "size_mm": [
+        215.0,
+        129.0,
+        21.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 0.0
+    },
+    "unified-carrier": {
+      "size_mm": [
+        215.0,
+        129.0,
+        19.4
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 20.399999618530273
+    },
+    "lower-acrylic-reference": {
+      "size_mm": [
+        215.0,
+        129.0,
+        1.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 23.4
+    },
+    "upper-acrylic-reference": {
+      "size_mm": [
+        215.0,
+        129.0,
+        1.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 24.549999999999997
+    },
+    "removable-service-tool-fit-study": {
+      "size_mm": [
+        6.0,
+        6.0,
+        8.95
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 0
+    },
+    "guide-clearance-coupon": {
+      "size_mm": [
+        42.0,
+        18.0,
+        3.0
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 0
+    },
+    "H2-S9-cap-height-gauge": {
+      "size_mm": [
+        73.5,
+        13.0,
+        11.15
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 0
+    },
+    "paper-reference": {
+      "size_mm": [
+        215.0,
+        129.0,
+        0.15
+      ],
+      "closed": true,
+      "components": 1,
+      "installed_z": 24.4
+    }
+  },
+  "stack_mm": {
+    "pcb_top": 14.4,
+    "carrier_bottom": 21.0,
+    "carrier_top": 23.4,
+    "carrier_local_seat": 0.8,
+    "upper_post_body": 8.0,
+    "upper_post_shim": 0.2,
+    "lower_bottom": 23.4,
+    "lower_top": 24.4,
+    "upper_bottom": 24.549999999999997,
+    "upper_top": 25.549999999999997,
+    "knurlie_min_engagement": 3.05,
+    "lower_spacer_internal_screw_gap": 1.2,
+    "cap_rest_assumption": 13.0,
+    "cap_pressed_exposure_assumption": 1.6
+  },
+  "checks": [
+    "Eight closed, consistently wound, single-component bodies",
+    "Unified carrier is exactly one connected solid",
+    "10 assembly collision pairs clear",
+    "All five assembly solids clear nominal connector access sweeps",
+    "The entire paper contour is supported by the lower acrylic in plan view",
+    "All 16 key clearance envelopes pass through carrier, paper and both acrylics",
+    "All 16 LED vertical apertures clear through carrier and paper",
+    "28 nominal capacitor, pot, jack and metal-post envelopes clear the carrier",
+    "Conservative Knurlie grip 3.05 mm; opposing lower-post screws have 1.2 mm gap"
+  ],
+  "unresolved": [
+    "Actual cap seating height, friction, release and guide tolerances",
+    "Actual toggle shoulder elevation and included nuts/washers; direct PCB seating confirmed by user",
+    "Seed seating/transform, provisional service positions and tool length",
+    "Full component and plug models, all revision-dependent component envelopes",
+    "Metal post/shim/thread tolerances; only 0.05 mm reserve above 3 mm nominal grip target",
+    "Thin local seats/pocket roofs, support removal, printed strength and thermal behaviour"
+  ],
+  "source_sha256": {
+    "build_unified_case.py": "5742b485e051d02bb60e82843e2126ac914d8a5149000711de4e8bfebbb0086f",
+    "build_closed_case.py": "76af47fdcc2c2f474137262b9ed3e216a544237e595c94906e6c084fa27aec92",
+    "closed-mechanics.json": "ab977138259b4ca7a68e6ea24dcad02508e9aa8f0c7182f176ab7d9a1c2d9e69",
+    "board.json": "682bb5a19be77304ab51440a7e5094b03588777913881f96e2eff6a2d16baa1c",
+    "build_case.py": "3958e1b9615b08b028cd52106ff1748ed17ed9b5888f115b093814d1bd4f8344",
+    "right-controls.json": "d13ec066d7385272bff70ef7f90140f3ee965122941852ea1de8457ccea958e7"
+  },
+  "artifact_sha256": {
+    "acrylic-fit-study-a4.pdf": "7082fa2d6c2b9dbe2b729041f116762e576781b98ee5fad4ba6e51f754e29317",
+    "guide-clearance-coupon.stl": "13b4e01571c58a098aa863afe5b0af7124bcd57cc57bcaeda3e600e791f82e55",
+    "H2-S9-cap-height-gauge.stl": "f73e8df6b9627320b42c66d60f3ce33dee303940aec7fdcad5ee2f36733bb13d",
+    "lower-acrylic-1mm.svg": "18713242b5c6f123b1f12dacf1089d1aaf91a1e2e67a75d73c8c8828d9a5deef",
+    "lower-acrylic-reference.stl": "9bedf57e2f40e4c8f481c30e6bd1edc57bdd67b6fecab3052da61ef1bd95a322",
+    "paper-overlay-fast-change.svg": "da2dd8928a674cbf77e75bd09f8f19129015466f7c70711e1c975a63c6457ba5",
+    "paper-overlay.svg": "753c0431db71bab0d5180c04868cf7225cff40caffa77a28cd562b16c7193592",
+    "paper-reference.stl": "2ae89caac7bc0fc5b1cfb2350c012f2bb3476ea0b74d72163f0626b2c14dbdb0",
+    "removable-service-tool-fit-study.stl": "b4aa5621800d8c5abf175ebc36666044d275b7030a32c89fdcddab47887e215f",
+    "tray.stl": "ff00729f5229fd97a5fa565eaf3724cd69f91f1744b55c7cc700453a98064233",
+    "unified-carrier.stl": "9cd260c57b1e73d685c332a99edee08132ae08cb4c98dd355084941f9999b4d1",
+    "upper-acrylic-1mm.svg": "f617b97d6ecde40970d845b973cfdabd9d35fdc24906a7fd76f02a401ed558b2",
+    "upper-acrylic-reference.stl": "4684aa866dafd09a3fa27b5e55a6c4e8475e064770054339743362c11d880ceb"
+  }
+}

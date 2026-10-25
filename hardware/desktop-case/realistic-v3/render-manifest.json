@@ -1,0 +1,272 @@
+{
+  "date": "2026-10-25",
+  "stl_frame": {
+    "revision": "RH-2026-10-25",
+    "axes": "+X right/MIDI, +Y rear/audio, +Z up/populated side",
+    "origin": "PCB rear-left",
+    "source_2d": "KiCad: X right, Y toward player",
+    "source_to_stl": "X=x, Y=-y, Z=z; outward face winding preserved"
+  },
+  "hardware": "NICHT GEMESSEN",
+  "model_purpose": "Assembly visualization; only original case STLs are print parts",
+  "access_revision": "ACCESS-2026-10-25",
+  "wheel_top_above_pcb": 2.5,
+  "units": "mm in STL and blend, metres in GLB",
+  "devices": [
+    "NVIDIA GeForce RTX 5060 Ti"
+  ],
+  "native_kicad_model_footprints": 186,
+  "seed_module_pcb_top_above_desktop_assumed": 9,
+  "imported_board_bounds_mm": [
+    [
+      -0.2800000011920929,
+      -111.0,
+      11.095000267028809
+    ],
+    [
+      197.0,
+      1.9984014443252818e-15,
+      22.094999313354492
+    ]
+  ],
+  "seed3_bounds_mm": [
+    [
+      0.12000001966953278,
+      -82.69999694824219,
+      14.24399471282959
+    ],
+    [
+      52.55000305175781,
+      -64.69999694824219,
+      26.660213470458984
+    ]
+  ],
+  "seed_transform_right_handed": true,
+  "seed_service_mesh_bounds": [
+    {
+      "name": "Seed3 manufacturer Body1.013",
+      "min": [
+        14.300000190734863,
+        -72.79999542236328,
+        23.399999618530273
+      ],
+      "max": [
+        17.5,
+        -68.5999984741211,
+        25.399999618530273
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body1.014",
+      "min": [
+        14.300000190734863,
+        -78.79999542236328,
+        23.399999618530273
+      ],
+      "max": [
+        17.5,
+        -74.5999984741211,
+        25.399999618530273
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body2.002",
+      "min": [
+        14.800000190734863,
+        -72.19999694824219,
+        24.899999618530273
+      ],
+      "max": [
+        17.0,
+        -69.19999694824219,
+        26.100000381469727
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body2.003",
+      "min": [
+        14.800000190734863,
+        -78.19999694824219,
+        24.899999618530273
+      ],
+      "max": [
+        17.0,
+        -75.19999694824219,
+        26.100000381469727
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body3.002",
+      "min": [
+        14.550000190734863,
+        -73.0,
+        23.399999618530273
+      ],
+      "max": [
+        15.100000381469727,
+        -72.79999542236328,
+        23.899999618530273
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body3.003",
+      "min": [
+        14.550000190734863,
+        -79.0,
+        23.399999618530273
+      ],
+      "max": [
+        15.100000381469727,
+        -78.79999542236328,
+        23.899999618530273
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body4.002",
+      "min": [
+        16.700000762939453,
+        -73.0,
+        23.399999618530273
+      ],
+      "max": [
+        17.25,
+        -72.79999542236328,
+        23.899999618530273
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body4.003",
+      "min": [
+        16.700000762939453,
+        -79.0,
+        23.399999618530273
+      ],
+      "max": [
+        17.25,
+        -78.79999542236328,
+        23.899999618530273
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body5",
+      "min": [
+        14.550000190734863,
+        -68.5999984741211,
+        23.399999618530273
+      ],
+      "max": [
+        15.100000381469727,
+        -68.39999389648438,
+        23.899999618530273
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body5.001",
+      "min": [
+        14.550000190734863,
+        -74.5999984741211,
+        23.399999618530273
+      ],
+      "max": [
+        15.100000381469727,
+        -74.39999389648438,
+        23.899999618530273
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body6",
+      "min": [
+        16.700000762939453,
+        -68.5999984741211,
+        23.399999618530273
+      ],
+      "max": [
+        17.25,
+        -68.39999389648438,
+        23.899999618530273
+      ]
+    },
+    {
+      "name": "Seed3 manufacturer Body6.001",
+      "min": [
+        16.700000762939453,
+        -74.5999984741211,
+        23.399999618530273
+      ],
+      "max": [
+        17.25,
+        -74.39999389648438,
+        23.899999618530273
+      ]
+    }
+  ],
+  "approximations": [
+    "Control caps seated height 13mm assumed",
+    "Pots standard L25, custom -0085 drawing unverified",
+    "Procedural toggles, jack housings, jack/nut threads omitted",
+    "Knurlie head/washer outline approximate; no exact Befaco 3D file available",
+    "Seed XY/header seating provisional; FBX source is actual Seed3 Rev5",
+    "Paper labels are a neutral example; surface relief and shader bevel are visual only"
+  ],
+  "case_parts": {
+    "tray": {
+      "location_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "vertices": 1714
+    },
+    "unified-carrier": {
+      "location_mm": [
+        0.0,
+        0.0,
+        20.399999618530273
+      ],
+      "vertices": 7440
+    },
+    "lower-acrylic-reference": {
+      "location_mm": [
+        0.0,
+        0.0,
+        23.399999618530273
+      ],
+      "vertices": 2796
+    },
+    "paper-reference": {
+      "location_mm": [
+        0.0,
+        0.0,
+        24.399999618530273
+      ],
+      "vertices": 4596
+    },
+    "upper-acrylic-reference": {
+      "location_mm": [
+        0.0,
+        0.0,
+        24.564998626708984
+      ],
+      "vertices": 2548
+    }
+  },
+  "source_sha256": {
+    "render_realistic_case.py": "35bbed12571a74d4703d079ba274a996c773ee83c9eef84dc0ff9385ca4b01df",
+    "prepare_render_board.py": "bbccf80dc53254cbe93cb0a5341e0144d197f7238f9a1308da2d98b7501b5eae",
+    "compact_render_board.py": "61d9aba073a40de60a62409ee63e28821f12e68e8ebe5ea6f5e37e51a7b120c6",
+    "check_stl_orientation.py": "a41ad22add01e13066c1d42fcc8bac4af6ab74b3a727a87329804eed65fd67a5",
+    "validate_realistic_case.py": "aa401abe06b7e8c5d74865506db8aa9c82b1219106a8ac2c075628ffbeea0160",
+    "check_right_access.py": "1c97656cbfd28455aab73754f8896c1c6134b398dca3258ac3c786cb3a5ec6ab",
+    "right-controls.json": "d13ec066d7385272bff70ef7f90140f3ee965122941852ea1de8457ccea958e7",
+    "validation.json": "bdf34a4aa779b64140fc488adcec9ee2310528b0057723907a3720dc061dcb68"
+  },
+  "artifact_sha256": {
+    "case-assembly-view.stl": "826065f3a53514b45d388e46382e79845c802eb8f21ee3985b1d9b50eb15af8f",
+    "case-realistic-exploded.png": "dd232fb92849c941e346eba9d5237963a6dcd8fbd9ba14351e6599470e56ab61",
+    "case-realistic-rear.png": "4224efef4504647106c55e99643c5662549f6ec32b41f3b3e9db7d58fc47fa22",
+    "case-realistic-right-access.png": "9b105c0f7495f232cd8d66593d8b0fba72394dc767e38757b8d2c58f1e03bf36",
+    "case-realistic-studio.png": "4efe613e66d615da9e09048d17164e50673a3a18ad09261e218c37daf422b21a",
+    "desktop-case-assembly.glb": "0b4012dbca48cedb1f484eedac684bc6d55ca544eac8ed3558f0f982775bcd91",
+    "desktop-case-realistic.blend": "bf1bbb3466d8a20921eae4be1a0f3b3cf7c1c1c45bab095762d3a8d90ab0121b"
+  }
+}

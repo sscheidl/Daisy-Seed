@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-25",
+  "kind": "digital geometry checks",
+  "stl_frame": {
+    "revision": "RH-2026-10-25",
+    "axes": "+X right/MIDI, +Y rear/audio, +Z up/populated side",
+    "origin": "PCB rear-left",
+    "source_2d": "KiCad: X right, Y toward player",
+    "source_to_stl": "X=x, Y=-y, Z=z; outward face winding preserved"
+  },
+  "hardware": "NICHT GEMESSEN",
+  "parts": {
+    "tray": {
+      "watertight": true,
+      "components": 1,
+      "size_mm": [
+        215.0,
+        129.0,
+        19.4
+      ],
+      "volume_cm3": 98.14,
+      "triangles": 4234
+    },
+    "overlay-frame": {
+      "watertight": true,
+      "components": 1,
+      "size_mm": [
+        215.0,
+        129.0,
+        2.4
+      ],
+      "volume_cm3": 21.005,
+      "triangles": 4128
+    },
+    "fit-coupon": {
+      "watertight": true,
+      "components": 1,
+      "size_mm": [
+        62.0,
+        24.0,
+        2.4
+      ],
+      "volume_cm3": 2.966,
+      "triangles": 1100
+    }
+  },
+  "checks": {
+    "pcb_tray_collision_mm3": 0,
+    "tray_frame_collision_mm3": 0,
+    "cap_envelopes_clear": 16,
+    "leds_clear": 16,
+    "source_revisions_compared": 4
+  },
+  "design_mm": {
+    "floor": 2.8,
+    "wall": 2.4,
+    "pcb_bottom": 8.8,
+    "pcb_top": 10.4,
+    "frame_underside": 19.4,
+    "frame_top": 21.799999999999997,
+    "knob_opening": 14.0,
+    "acrylic_optional": 1.0,
+    "paper_allowance": 0.15
+  },
+  "source_sha256": {
+    "board.json": "682bb5a19be77304ab51440a7e5094b03588777913881f96e2eff6a2d16baa1c",
+    "build_case.py": "3958e1b9615b08b028cd52106ff1748ed17ed9b5888f115b093814d1bd4f8344"
+  },
+  "artifact_sha256": {
+    "clear-cover-cut.svg": "ebd65ccc28e3f7a58712376a71d79a608af252e2c8e020ac3204dc79b02a5f31",
+    "fit-coupon.stl": "34f423139e0b400b0da69abdfd9775006fd8da319a915a1ebf734355d61abb8e",
+    "overlay-frame.stl": "b9057c18c47763b0f8477f4871acfe6c43bc6f3123bb52b5900583f67b1d154b",
+    "paper-master-a4.pdf": "29f27634d27af2a00c29730bf6b3b0c80dac9ce4e8ae1ec1c34412a5a6a2b93b",
+    "tray.stl": "0dc2c85272181f55a0738405525a494091a0f9d449dd293e7f8b00a49aa3bca4"
+  }
+}

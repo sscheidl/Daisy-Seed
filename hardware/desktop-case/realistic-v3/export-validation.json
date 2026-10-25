@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-25",
+  "hardware": "NICHT GEMESSEN",
+  "stl_frame": {
+    "revision": "RH-2026-10-25",
+    "axes": "+X right/MIDI, +Y rear/audio, +Z up/populated side",
+    "origin": "PCB rear-left",
+    "source_2d": "KiCad: X right, Y toward player",
+    "source_to_stl": "X=x, Y=-y, Z=z; outward face winding preserved"
+  },
+  "render_print_vertex_alignment": {
+    "tray": {
+      "passed": true,
+      "max_distance_mm": 1.1314567579724843e-05,
+      "reflection_applied": false
+    },
+    "unified-carrier": {
+      "passed": true,
+      "max_distance_mm": 1.1325186076691311e-05,
+      "reflection_applied": false
+    },
+    "lower-acrylic-reference": {
+      "passed": true,
+      "max_distance_mm": 1.129730041362862e-05,
+      "reflection_applied": false
+    },
+    "paper-reference": {
+      "passed": true,
+      "max_distance_mm": 1.1297792958081423e-05,
+      "reflection_applied": false
+    },
+    "upper-acrylic-reference": {
+      "passed": true,
+      "max_distance_mm": 1.1272408304193822e-05,
+      "reflection_applied": false
+    }
+  },
+  "print_source_parts_unchanged_and_closed": [
+    "tray",
+    "unified-carrier",
+    "lower-acrylic-reference",
+    "paper-reference",
+    "upper-acrylic-reference"
+  ],
+  "assembly_stl_extents_mm": [
+    215.0,
+    129.0,
+    39.8
+  ],
+  "assembly_stl_merged_watertight": false,
+  "assembly_stl_note": "Visualization only: touching layers retain their own coincident interface faces",
+  "glb_extents_metres": [
+    0.21500001,
+    0.0398,
+    0.12900001
+  ],
+  "glb_meshes": 744,
+  "render_resolution": [
+    2400,
+    1600
+  ],
+  "source_and_artifact_hashes_verified": true,
+  "visual_review": "Separate manual inspection of all four images required"
+}

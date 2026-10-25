@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-25",
+  "hardware": "NICHT GEMESSEN",
+  "test_scope": "Geometric envelopes only; no actual cable, hand or accessibility measurement",
+  "parts": {
+    "tray": {
+      "sha256": "ff00729f5229fd97a5fa565eaf3724cd69f91f1744b55c7cc700453a98064233",
+      "overlap_mm3": {
+        "headphone_plug_body_OD10mm_fully_seated": 0.0,
+        "wheel_side_fingertip_envelope_OD14mm": 0.0,
+        "wheel_nominal_rotating_disk_OD14mm": 0.0
+      },
+      "passed": true
+    },
+    "unified-carrier": {
+      "sha256": "9cd260c57b1e73d685c332a99edee08132ae08cb4c98dd355084941f9999b4d1",
+      "overlap_mm3": {
+        "headphone_plug_body_OD10mm_fully_seated": 0.0,
+        "wheel_side_fingertip_envelope_OD14mm": 0.0,
+        "wheel_nominal_rotating_disk_OD14mm": 0.0
+      },
+      "passed": true
+    },
+    "lower-acrylic-reference": {
+      "sha256": "9bedf57e2f40e4c8f481c30e6bd1edc57bdd67b6fecab3052da61ef1bd95a322",
+      "overlap_mm3": {
+        "headphone_plug_body_OD10mm_fully_seated": 0.0,
+        "wheel_side_fingertip_envelope_OD14mm": 0.0,
+        "wheel_nominal_rotating_disk_OD14mm": 0.0
+      },
+      "passed": true
+    },
+    "paper-reference": {
+      "sha256": "2ae89caac7bc0fc5b1cfb2350c012f2bb3476ea0b74d72163f0626b2c14dbdb0",
+      "overlap_mm3": {
+        "headphone_plug_body_OD10mm_fully_seated": 0.0,
+        "wheel_side_fingertip_envelope_OD14mm": 0.0,
+        "wheel_nominal_rotating_disk_OD14mm": 0.0
+      },
+      "passed": true
+    },
+    "upper-acrylic-reference": {
+      "sha256": "4684aa866dafd09a3fa27b5e55a6c4e8475e064770054339743362c11d880ceb",
+      "overlap_mm3": {
+        "headphone_plug_body_OD10mm_fully_seated": 0.0,
+        "wheel_side_fingertip_envelope_OD14mm": 0.0,
+        "wheel_nominal_rotating_disk_OD14mm": 0.0
+      },
+      "passed": true
+    }
+  },
+  "passed": true
+}

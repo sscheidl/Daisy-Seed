@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-25",
+  "reason": "Mirrored print-part STLs; do not print",
+  "packages": [
+    {
+      "name": "desktop-case-review.zip",
+      "sha256": "10588423ac7865c590c7b589ca0fe528f6b98f79b6aed2e1e658c27276a30f00"
+    },
+    {
+      "name": "desktop-case-v1.zip",
+      "sha256": "1facf5830a02858827c5a5eaba0aa32e96a6224e6e71f9678aa1d0bbfca7ff56"
+    },
+    {
+      "name": "desktop-case-v2-study.zip",
+      "sha256": "d0d123b5f912f26826315e54b931ede7b0258fc9e6a4a8082d06fe2d894ca5d9"
+    },
+    {
+      "name": "unified-v3-study.zip",
+      "sha256": "a3466a553b055c988cf1a88e2232b2859addf227916a70aacd6c9cbde6095b1b"
+    }
+  ]
+}

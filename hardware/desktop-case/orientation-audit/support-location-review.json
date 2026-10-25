@@ -1,0 +1,586 @@
+{
+  "date": "2026-10-25",
+  "hardware": "NICHT GEMESSEN",
+  "scope": "Exact KiCad B.Cu pad shapes and via copper circles; no solder-tail or mechanical model",
+  "board_sha256": "bb9c37d795268f830b6ceeaa0dc6b952a4b547a3f253c8ff4d3251e62035aa68",
+  "source_frame": "PCB rear-left; X right, Y toward player",
+  "back_footprints": [],
+  "back_pad_count": 235,
+  "via_count": 195,
+  "supports": [
+    {
+      "label": "USB J7",
+      "center_xy": [
+        10,
+        41
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [
+        [
+          8.42,
+          38.845
+        ],
+        [
+          8.42,
+          43.49
+        ],
+        [
+          10.2888,
+          41.7387
+        ],
+        [
+          9.3725,
+          40.115
+        ]
+      ],
+      "rear_copper_clear": false
+    },
+    {
+      "label": "Audio left",
+      "center_xy": [
+        43.5,
+        11
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [],
+      "rear_copper_clear": true
+    },
+    {
+      "label": "Audio right",
+      "center_xy": [
+        144,
+        11
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [],
+      "rear_copper_clear": true
+    },
+    {
+      "label": "MIDI",
+      "center_xy": [
+        178,
+        37
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [
+        [
+          179.8,
+          36.6
+        ]
+      ],
+      "rear_copper_clear": false
+    },
+    {
+      "label": "CV 1",
+      "center_xy": [
+        102,
+        23
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [
+        [
+          103.7,
+          25.7
+        ],
+        [
+          101.2,
+          24.0
+        ]
+      ],
+      "rear_copper_clear": false
+    },
+    {
+      "label": "CV 2",
+      "center_xy": [
+        77.5,
+        23.5
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [],
+      "rear_copper_clear": true
+    },
+    {
+      "label": "Pot 1",
+      "center_xy": [
+        82,
+        51.5
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [],
+      "rear_copper_clear": true
+    },
+    {
+      "label": "Pot 2",
+      "center_xy": [
+        112.5,
+        51.5
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [],
+      "rear_copper_clear": true
+    },
+    {
+      "label": "Pot 3",
+      "center_xy": [
+        143,
+        51.5
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [],
+      "rear_copper_clear": true
+    },
+    {
+      "label": "Keys 1",
+      "center_xy": [
+        87,
+        93
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [
+        [
+          86.8,
+          95.7
+        ],
+        [
+          88.3,
+          93.9
+        ]
+      ],
+      "rear_copper_clear": false
+    },
+    {
+      "label": "Keys 2",
+      "center_xy": [
+        137,
+        93
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [
+        [
+          135.5,
+          90.9
+        ],
+        [
+          137.6,
+          93.7
+        ]
+      ],
+      "rear_copper_clear": false
+    },
+    {
+      "label": "Toggle",
+      "center_xy": [
+        39,
+        90
+      ],
+      "diameter": 6,
+      "pad_intersections": [],
+      "via_intersections": [],
+      "rear_copper_clear": true
+    }
+  ],
+  "control_xy_errors_mm": {
+    "H1": [
+      0.0,
+      0.0
+    ],
+    "H2": [
+      0.0,
+      0.0
+    ],
+    "H3": [
+      0.0,
+      0.0
+    ],
+    "H4": [
+      0.0,
+      0.0
+    ],
+    "S1": [
+      0.0,
+      0.0
+    ],
+    "S2": [
+      0.0,
+      0.0
+    ],
+    "S3": [
+      0.0,
+      0.0
+    ],
+    "S4": [
+      0.0,
+      0.0
+    ],
+    "S5": [
+      -0.0,
+      0.0
+    ],
+    "S6": [
+      0.0,
+      0.0
+    ],
+    "S7": [
+      0.0,
+      0.0
+    ],
+    "S8": [
+      0.0,
+      0.0
+    ],
+    "S9": [
+      0.0,
+      0.0
+    ],
+    "S10": [
+      0.0,
+      0.0
+    ],
+    "S11": [
+      0.0,
+      0.0
+    ],
+    "S12": [
+      0.0,
+      0.0
+    ],
+    "S13": [
+      -0.0,
+      0.0
+    ],
+    "S14": [
+      0.0,
+      0.0
+    ],
+    "S15": [
+      0.0,
+      0.0
+    ],
+    "S16": [
+      0.0,
+      0.0
+    ],
+    "VR1": [
+      0.0,
+      0.0
+    ],
+    "VR2": [
+      0.0,
+      0.0
+    ],
+    "VR3": [
+      0.0,
+      0.0
+    ],
+    "VR4": [
+      0.0,
+      0.0
+    ],
+    "VR5": [
+      -0.0,
+      0.0
+    ],
+    "VR6": [
+      0.0,
+      0.0
+    ],
+    "VR7": [
+      0.0,
+      0.0
+    ],
+    "VR8": [
+      0.0,
+      0.0
+    ],
+    "D1": [
+      0.0,
+      0.0
+    ],
+    "D2": [
+      0.0,
+      0.0
+    ],
+    "D3": [
+      0.0,
+      0.0
+    ],
+    "D4": [
+      0.0,
+      0.0
+    ],
+    "D5": [
+      -0.0,
+      0.0
+    ],
+    "D6": [
+      0.0,
+      0.0
+    ],
+    "D7": [
+      0.0,
+      0.0
+    ],
+    "D8": [
+      0.0,
+      0.0
+    ],
+    "D9": [
+      0.0,
+      0.0
+    ],
+    "D10": [
+      0.0,
+      0.0
+    ],
+    "D11": [
+      0.0,
+      0.0
+    ],
+    "D12": [
+      0.0,
+      0.0
+    ],
+    "D13": [
+      -0.0,
+      0.0
+    ],
+    "D14": [
+      0.0,
+      0.0
+    ],
+    "D15": [
+      0.0,
+      0.0
+    ],
+    "D16": [
+      0.0,
+      0.0
+    ],
+    "SW17": [
+      -0.0,
+      0.0
+    ],
+    "SW18": [
+      0.0,
+      0.0
+    ],
+    "J_CV_IN_1": [
+      0.0,
+      -0.0
+    ],
+    "J_CV_IN_2": [
+      0.0,
+      0.0
+    ],
+    "J_CV_OUT_1": [
+      0.0,
+      -0.0
+    ],
+    "J_CV_OUT_2": [
+      0.0,
+      0.0
+    ],
+    "J_GATE_IN1": [
+      0.0,
+      -0.0
+    ],
+    "J_GATE_IN2": [
+      0.0,
+      0.0
+    ]
+  },
+  "all_52_control_centres_match": true,
+  "connector_footprints": [
+    {
+      "ref": "J10",
+      "xy": [
+        184.8,
+        68.3
+      ],
+      "rotation": 90.0,
+      "footprint": "57PC5F",
+      "graphics_and_pads_bounds_xy": [
+        179.7365,
+        58.23650000000001,
+        196.8635,
+        78.3635
+      ]
+    },
+    {
+      "ref": "J8",
+      "xy": [
+        184.8,
+        44.3
+      ],
+      "rotation": 90.0,
+      "footprint": "57PC5F",
+      "graphics_and_pads_bounds_xy": [
+        179.7365,
+        34.23650000000001,
+        196.8635,
+        54.3635
+      ]
+    },
+    {
+      "ref": "RV1",
+      "xy": [
+        191.325,
+        91.6
+      ],
+      "rotation": -90.0,
+      "footprint": "Rotary Pot RK10J",
+      "graphics_and_pads_bounds_xy": [
+        181.625,
+        84.30000000000001,
+        198.375,
+        98.9
+      ]
+    },
+    {
+      "ref": "A1",
+      "xy": [
+        2.7950000000000017,
+        81.295
+      ],
+      "rotation": 90.0,
+      "footprint": "Electrosmith_Daisy_Seed",
+      "graphics_and_pads_bounds_xy": [
+        -0.22999999999999687,
+        64.28,
+        52.83,
+        83.07
+      ]
+    },
+    {
+      "ref": "J5",
+      "xy": [
+        173.6,
+        102.19999999999999
+      ],
+      "rotation": 180.0,
+      "footprint": "Jack_3.5mm_CUI_SJ-3523-SMT_Horizontal",
+      "graphics_and_pads_bounds_xy": [
+        167.975,
+        93.17500000000001,
+        179.225,
+        111.225
+      ]
+    },
+    {
+      "ref": "J2",
+      "xy": [
+        132.285,
+        20.235
+      ],
+      "rotation": 90.0,
+      "footprint": "Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal",
+      "graphics_and_pads_bounds_xy": [
+        130.26,
+        0.00999999999999801,
+        150.54,
+        27.590000000000003
+      ]
+    },
+    {
+      "ref": "J7",
+      "xy": [
+        6.0,
+        41.09
+      ],
+      "rotation": -90.0,
+      "footprint": "GCT_USB4110GFA",
+      "graphics_and_pads_bounds_xy": [
+        -0.5549999999999997,
+        34.614999999999995,
+        8.43,
+        47.565
+      ]
+    },
+    {
+      "ref": "J4",
+      "xy": [
+        31.799999999999997,
+        20.200000000000003
+      ],
+      "rotation": 90.0,
+      "footprint": "Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal",
+      "graphics_and_pads_bounds_xy": [
+        29.775000000000006,
+        -0.02499999999999858,
+        50.05500000000001,
+        27.555000000000007
+      ]
+    },
+    {
+      "ref": "J11",
+      "xy": [
+        184.8,
+        20.299999999999997
+      ],
+      "rotation": 90.0,
+      "footprint": "57PC5F",
+      "graphics_and_pads_bounds_xy": [
+        179.7365,
+        10.2365,
+        196.8635,
+        30.363500000000002
+      ]
+    },
+    {
+      "ref": "MICRO_SD7",
+      "xy": [
+        8.274999999999999,
+        92.69999999999999
+      ],
+      "rotation": -90.0,
+      "footprint": "TF-01A",
+      "graphics_and_pads_bounds_xy": [
+        -0.02499999999999858,
+        83.29,
+        17.224999999999994,
+        102.11000000000001
+      ]
+    },
+    {
+      "ref": "J3",
+      "xy": [
+        54.285,
+        20.235
+      ],
+      "rotation": 90.0,
+      "footprint": "Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal",
+      "graphics_and_pads_bounds_xy": [
+        52.260000000000005,
+        0.00999999999999801,
+        72.54,
+        27.590000000000003
+      ]
+    },
+    {
+      "ref": "J1",
+      "xy": [
+        154.685,
+        20.235
+      ],
+      "rotation": 90.0,
+      "footprint": "Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal",
+      "graphics_and_pads_bounds_xy": [
+        152.66,
+        0.00999999999999801,
+        172.94,
+        27.590000000000003
+      ]
+    }
+  ]
+}

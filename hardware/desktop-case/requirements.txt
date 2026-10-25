@@ -1,0 +1,4 @@
+manifold3d==3.5.4
+trimesh==4.12.2
+reportlab==5.1.0
+Pillow==13.0.0
