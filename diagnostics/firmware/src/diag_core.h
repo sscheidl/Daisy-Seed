@@ -7,20 +7,42 @@
 
 namespace diag {
 
-constexpr const char* kFirmwareVersion = "0.2.1";
+constexpr const char* kFirmwareVersion = "0.3.0";
 constexpr const char* kAppName = "DaisyDiagnostic";
 constexpr const char* kLibDaisyCommit = "f715e48";
 constexpr size_t kNumButtons = 16;
 constexpr size_t kNumLeds = 16;
 constexpr size_t kNumPots = 8;
+constexpr size_t kNumCv = 2;     // CV IN 1/2 (and CV OUT 1/2)
+constexpr size_t kNumGates = 2;  // GATE IN 1/2
+constexpr uint16_t kDacMax = 4095;  // 12-bit DAC code
 constexpr uint32_t kHostTimeoutMs = 3000;
 constexpr uint32_t kMinFrameSpacingMs = 10;
 
 enum class Sw18 : uint8_t { Center, Up, Down };
 enum class LedMode : uint8_t { Off, On, Mask, Chase, Follow };
+// CV OUT test signals. RAMP is a triangle (no jumps), SAW a rising sawtooth.
+// For RAMP and SAW, CV OUT 2 carries the inverse of CV OUT 1.
+enum class CvOutMode : uint8_t { Off, Fix, Ramp, Saw };
 
 const char* LedModeName(LedMode mode);
 bool ParseLedMode(const char* name, LedMode& mode);
+const char* CvOutModeName(CvOutMode mode);
+bool ParseCvOutMode(const char* name, CvOutMode& mode);
+
+// Gate inputs sampled once per 1 kHz control tick. Rising edges are counted
+// (modulo 256) so pulses between two state frames stay visible; pulses shorter
+// than one control tick (1 ms) can be missed.
+class GateTracker {
+  public:
+    void Update(size_t index, bool high);
+    uint8_t States() const { return states_; }  // bit 0 = GATE IN 1
+    uint8_t Count(size_t index) const { return count_[index]; }
+
+  private:
+    uint8_t states_ = 0;
+    uint8_t count_[kNumGates] = {};
+};
 
 // Debounced button state between DigitalControl's rising and falling edges.
 // DigitalControl may report a second rising edge after a short contact dropout
@@ -57,7 +79,13 @@ struct Settings {
     uint8_t led_brightness = 100;  // percent
     uint16_t chase_step_ms = 120;
     uint8_t rate_hz = 50;
+    CvOutMode cv_mode = CvOutMode::Off;  // power-up and end of every host session
+    uint16_t cv_code[kNumCv] = {};       // FIX codes 0..kDacMax
+    uint16_t cv_period_ms = 1000;        // RAMP/SAW period
 };
+
+// CV OUT codes for the current mode and time.
+void ComputeCvOut(const Settings& settings, uint32_t now_ms, uint16_t out[kNumCv]);
 
 // Commanded LED target state. There is no electrical LED feedback on the board.
 uint16_t ComputeLeds(const Settings& settings, uint32_t now_ms, uint16_t buttons);
@@ -72,12 +100,17 @@ struct Inputs {
     bool sd_card = false;
     bool jack_left = false;
     bool jack_right = false;
+    int16_t cv_norm[kNumCv] = {};    // -10000..10000 == -1.0..+1.0 (bipolar AnalogControl)
+    uint16_t cv_raw[kNumCv] = {};    // ADC 0..65535
+    uint8_t gates = 0;               // bit 0 = GATE IN 1
+    uint8_t gate_count[kNumGates] = {};
 };
 
 // True when a digital input differs; pots are sent with the periodic frames.
 bool DigitalChanged(const Inputs& a, const Inputs& b);
 
 uint16_t NormalizePot(float value);
+int16_t NormalizeCv(float value);
 
 struct Stats {
     uint32_t uptime_s = 0;
@@ -99,6 +132,7 @@ enum Request : uint32_t {
     kRequestReaderShare = 1u << 5,
     kRequestReaderReturn = 1u << 6,
     kRequestBootloader = 1u << 7,  // BOOT: restart into the Daisy bootloader after the reply
+    kRequestCvOut = 1u << 8,       // CV OUT settings changed
 };
 
 // Command handling and host liveness. Streaming starts with HELLO and stops after
@@ -127,8 +161,10 @@ class Session {
     uint32_t last_rx_ms_ = 0;
 };
 
+// `cv_out` are the DAC codes currently written; nullptr reports 0,0.
 void WriteState(const Inputs& in, const Settings& settings, uint16_t leds,
-                uint32_t seq, uint32_t now_ms, ddp::Writer& out);
+                uint32_t seq, uint32_t now_ms, ddp::Writer& out,
+                const uint16_t* cv_out = nullptr);
 void WriteSys(const Stats& stats, bool host, uint8_t rate_hz, ddp::Writer& out);
 
 enum class SdStatus : uint8_t { None, Mounted, Error };

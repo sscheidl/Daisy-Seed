@@ -36,7 +36,7 @@ def connected():
 def test_handshake_reports_versions(connected):
     _, _, s = connected
     assert s.device.protocol == p.PROTOCOL_VERSION
-    assert s.device.firmware == "0.2.1-sim"
+    assert s.device.firmware == "0.3.0-sim"
     assert s.device.simulated
     events = [k for k, _ in s.drain_events()]
     assert "connected" in events
@@ -504,3 +504,59 @@ def test_bootloader_needs_a_session_and_the_capability():
     run(clock, s, 0.2)
     s.device.capabilities.remove("boot")  # older firmware without BOOT
     assert not s.bootloader_supported and not s.request_bootloader()
+
+
+
+def test_cv_gate_values_reach_the_host(connected):
+    clock, cable, s = connected
+    dev = cable.device
+    dev.set_cv(0, 0.75)
+    dev.set_gate(1, True)
+    run(clock, s, 0.05)
+    cg = s.board.cvgate
+    assert cg.cv[0] == pytest.approx(0.75)
+    assert cg.gates == [False, True] and cg.gate_counts == [0, 1]
+    dev.pulse_gate(0)  # shorter than a frame: only the counter shows it
+    run(clock, s, 0.05)
+    assert s.board.cvgate.gates[0] is False and s.board.cvgate.gate_counts[0] == 1
+
+
+def test_cv_out_modes_and_session_end(connected):
+    clock, cable, s = connected
+    dev = cable.device
+    assert s.send(p.cmd_cvout("FIX", 1234, 4000))
+    run(clock, s, 0.05)
+    assert (s.board.cvgate.cv_out_mode, s.board.cvgate.cv_out) == ("FIX", [1234, 4000])
+    assert s.send(p.cmd_cvout("RAMP", period_ms=1000))
+    seen = set()
+    for _ in range(25):
+        run(clock, s, 0.04)
+        out = s.board.cvgate.cv_out
+        assert out[0] + out[1] == p.DAC_MAX
+        seen.add(out[0] // 512)
+    assert len(seen) >= 6  # the triangle sweeps the range
+    s.disconnect()  # BYE: the simulated firmware switches CV OUT off
+    assert dev.cv_mode == "OFF" and dev.cv_out(clock()) == [0, 0]
+
+
+def test_cv_out_rejected_without_session_and_on_bad_arguments(connected):
+    clock, cable, s = connected
+    s.send("CVOUT m=FIX c1=4096")
+    run(clock, s, 0.03)
+    logs = [str(v) for k, v in s.drain_events() if k == "log"]
+    assert any("ERR c=CVOUT e=ARG" in line for line in logs)
+    dev = SimulatedDevice()
+    dev.receive(p.build_frame("CVOUT m=FIX c1=1"), clock())
+    assert b"ERR c=CVOUT e=SESSION" in dev.output(clock())
+
+
+def test_cv_out_off_after_host_timeout():
+    clock = FakeClock()
+    dev = SimulatedDevice()
+    dev.receive(p.build_frame("HELLO proto=1"), clock())
+    dev.receive(p.build_frame("CVOUT m=FIX c1=4095 c2=4095"), clock())
+    dev.output(clock())
+    assert dev.cv_out(clock()) == [4095, 4095]
+    clock.advance(3.5)
+    dev.output(clock())
+    assert dev.cv_mode == "OFF"

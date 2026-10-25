@@ -1,5 +1,16 @@
 # Diagnostic firmware — configuration, dependencies, architecture
 
+## Version 0.3.0
+
+Adds the CV and gate jacks through the official `desktop_devkit::Hardware` API:
+CV IN 1/2 (`hw.cv[]`, bipolar, ADC channels 1/2) normalized and raw; GATE IN 1/2
+(`hw.gate_in[]`) read once per 1 kHz tick with state and rising-edge counters
+(`GateTracker`); CV OUT 1/2 through `hw.SetDacOut()` from the main loop only, with
+test signals Off/Fixed/Ramp/Saw (`CVOUT`). CV OUT returns to Off at power-up and
+whenever the host session ends (BYE, 3 s timeout, closed application), so no voltage
+stays on patched equipment unattended; `CVOUT` outside a session is rejected.
+Both image variants include it. The analog scaling (volts) is not measured.
+
 ## Version 0.2.1
 
 Adds the shared bootloader entry ([common/bootloader](../../common/bootloader/README.md)):
@@ -135,6 +146,8 @@ protocol/ddp.*            Frames, CRC, parsing, bounded writing
   passed as an operator test; exceptional cards and timeout behavior remain unmeasured.
 * libDaisy distinguishes `v6_0` and `v6_1` or newer, not specifically v6.4.
 * The unmodified LED driver can hang after a failed `TransmitDma()` start.
-* `Hardware::Init()` also configures unused MIDI UART, DAC, gate inputs, and CV ADC.
+* `Hardware::Init()` also configures the MIDI UART, which stays unused.
+* Gate inputs are polled at 1 kHz; pulses shorter than 1 ms can be missed.
+  CV/DAC voltage ranges are not measured; values are normalized or DAC codes.
 
 See [TEST_REPORT.md](TEST_REPORT.md) for hardware-test scope and open measurements.

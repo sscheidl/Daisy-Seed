@@ -31,6 +31,7 @@ UsbHandle usb;
 // ---- Control sampling (audio callback, 1 kHz) -----------------------------------
 diag::ButtonTracker buttons;
 diag::Switch3Debouncer sw18;
+diag::GateTracker gates;
 diag::Inputs callback_inputs;  // written in the callback, copied with IRQs masked
 std::atomic<uint32_t> control_ticks{0};
 
@@ -56,6 +57,12 @@ void AudioCallback(AudioHandle::InputBuffer, AudioHandle::OutputBuffer out, size
     callback_inputs.sd_card = hw.sd_detect.Pressed();
     callback_inputs.jack_left = hw.left_detect.Pressed();
     callback_inputs.jack_right = hw.right_detect.Pressed();
+    // One read per gate and tick: state and edge come from the same sample.
+    for(size_t i = 0; i < diag::kNumGates; ++i)
+        gates.Update(i, hw.gate_in[i].State());
+    callback_inputs.gates = gates.States();
+    for(size_t i = 0; i < diag::kNumGates; ++i)
+        callback_inputs.gate_count[i] = gates.Count(i);
     control_ticks.fetch_add(1, std::memory_order_relaxed);
 
     // Audio is not part of this diagnostic: outputs stay silent.
@@ -304,7 +311,17 @@ class DevkitBoard final : public diag::Board {
             in.pot_norm[i] = diag::NormalizePot(hw.pot[i].Value());
             in.pot_raw[i] = hw.seed.adc.GetMux(0, static_cast<uint8_t>(i));
         }
+        // CV IN 1/2 are ADC channels 1/2 (channel 0 is the pot mux), see desktop_devkit.cpp.
+        for(size_t i = 0; i < diag::kNumCv; ++i) {
+            in.cv_norm[i] = diag::NormalizeCv(hw.cv[i].Value());
+            in.cv_raw[i] = hw.seed.adc.Get(static_cast<uint8_t>(i + 1));
+        }
         return in;
+    }
+
+    void ApplyCvOut(uint16_t code1, uint16_t code2) override {
+        hw.SetDacOut(DacHandle::Channel::ONE, code1);  // polling DAC: short register write
+        hw.SetDacOut(DacHandle::Channel::TWO, code2);
     }
 
     uint32_t ControlTicks() override { return control_ticks.load(std::memory_order_relaxed); }
