@@ -1,5 +1,11 @@
 # Desktop-Gehäuse / Paper on Daisy
 
+**Aktuelle Fehlerprüfung 25.10.2026:** Der [Vergleich von V3 und Claudes
+Gegenentwurf](DESIGN_REVIEW_2026-10-25.md) findet offene Anschlussabstützung,
+fehlende Kappenrückhaltung und weitere konkrete Maß-/Zugangsprobleme.
+Die RH-/ACCESS-Prüfungen decken diese zusätzlichen Anforderungen nicht ab.
+Die vorhandenen STLs sind weiterhin eine Konstruktionsstudie.
+
 **25.10.2026: [Orientierungskorrektur RH](ORIENTATION_FIX.md). Frühere
 Druck-STLs und ZIP-Pakete nicht verwenden.** Alle V1/V2/V3-STLs sind neu
 exportiert und unabhängig geprüft. Render und Druckdateien benutzen jetzt

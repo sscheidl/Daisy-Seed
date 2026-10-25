@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-25",
+  "hardware": "NICHT GEMESSEN",
+  "scope": "Design targets and nominal drawing geometry, not actual plug or nut measurements",
+  "parts": {
+    "tray": {
+      "sha256": "ff00729f5229fd97a5fa565eaf3724cd69f91f1744b55c7cc700453a98064233",
+      "overlap_mm3": {
+        "J4_rear_OD11.4_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD12_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD14_axis_PCB_plus_8.14": 32.850955,
+        "J7_reference_USB_plug_body_12x6": 23.61599,
+        "CV_OUT1_SW8_nut_hypothesis": 0.0
+      }
+    },
+    "unified-carrier": {
+      "sha256": "9cd260c57b1e73d685c332a99edee08132ae08cb4c98dd355084941f9999b4d1",
+      "overlap_mm3": {
+        "J4_rear_OD11.4_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD12_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD14_axis_PCB_plus_8.14": 0.577074,
+        "J7_reference_USB_plug_body_12x6": 0.0,
+        "CV_OUT1_SW8_nut_hypothesis": 0.0
+      }
+    },
+    "lower-acrylic-reference": {
+      "sha256": "9bedf57e2f40e4c8f481c30e6bd1edc57bdd67b6fecab3052da61ef1bd95a322",
+      "overlap_mm3": {
+        "J4_rear_OD11.4_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD12_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD14_axis_PCB_plus_8.14": 0.0,
+        "J7_reference_USB_plug_body_12x6": 0.0,
+        "CV_OUT1_SW8_nut_hypothesis": 0.0
+      }
+    },
+    "paper-reference": {
+      "sha256": "2ae89caac7bc0fc5b1cfb2350c012f2bb3476ea0b74d72163f0626b2c14dbdb0",
+      "overlap_mm3": {
+        "J4_rear_OD11.4_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD12_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD14_axis_PCB_plus_8.14": 0.0,
+        "J7_reference_USB_plug_body_12x6": 0.0,
+        "CV_OUT1_SW8_nut_hypothesis": 0.0
+      }
+    },
+    "upper-acrylic-reference": {
+      "sha256": "4684aa866dafd09a3fa27b5e55a6c4e8475e064770054339743362c11d880ceb",
+      "overlap_mm3": {
+        "J4_rear_OD11.4_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD12_axis_PCB_plus_8.14": 0.0,
+        "J4_rear_OD14_axis_PCB_plus_8.14": 0.0,
+        "J7_reference_USB_plug_body_12x6": 0.0,
+        "CV_OUT1_SW8_nut_hypothesis": 0.005242
+      }
+    }
+  },
+  "calculations": {
+    "audio_axis_error_mm": 0.76,
+    "ideal_coaxial_plug_limit_with_axis_offset": 12.08,
+    "SW8_hex_corner_diameter": 9.237604307034012,
+    "square_5mm_diagonal": 7.0710678118654755,
+    "LED_point_at_PCB_original_limit_degrees": 14.931417178137552,
+    "LED_point_at_PCB_cone_if_lower_3mm_at_height_6mm": 14.036243467926479,
+    "LED_point_at_PCB_cone_if_upper_8mm_at_height_9mm": 23.962488974578182,
+    "knurlie_current_conservative_engagement": 3.05,
+    "knurlie_alternative_conservative_engagement": 3.8499999999999996,
+    "round_cap_diagram_height": 9.05,
+    "round_cap_diagram_max_diameter": 5.08
+  }
+}

@@ -1,5 +1,8 @@
 # Gegenvorschlag: Anschlussblenden, Stützboden, Klemm-Sandwich
 
+**Nachprüfung:** [Vergleich und Korrekturvorschläge vom 25.10.2026](DESIGN_REVIEW_2026-10-25.md).
+Die folgenden Konzeptmaße sind damit nicht als bestätigte CAD-Passung zu lesen.
+
 **Konzeptstand 25.10.2026. Keine CAD-Ausgabe, Hardware NICHT GEMESSEN.**
 Dieses Dokument bewertet [V3](UNIFIED_V3.md) gegen die Projektziele und
 beschreibt eine alternative Konstruktion. Ausgeklammert sind der bereits
