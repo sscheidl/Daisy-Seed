@@ -2,7 +2,7 @@
 // instrument's column table, driven over stdin/stdout. Used by the browser
 // editor's end-to-end test; no hardware involved. Built with MOD_ON_DAISY_EXTENSIONS=1.
 //
-//   mod_sim [toy-piano|physical-modeling|bench]
+//   mod_sim [toy-piano|physical-modeling|looper|bench]
 //   stdin:  "S <hex>"  MIDI message (SysEx F0 … F7 or a short message)
 //           "T <ms>"   advance time: one engine tick (48 samples) and Service() per ms
 //           "D"        dump: patch CRC and the active cells
@@ -10,6 +10,7 @@
 #include "mod_on_daisy/module.h"
 #include "../../../instruments/toy-piano/src/modulation.h"
 #include "../../../instruments/physical-modeling/src/modulation.h"
+#include "../../../instruments/looper/src/modulation.h"
 #include "../bench/src/scenarios.h"
 #include <cstdio>
 #include <cstring>
@@ -44,6 +45,8 @@ int main(int argc, char** argv) {
         info = toy_piano::MakeModInfo();
     else if(which == "physical-modeling")
         info = physical_modeling::MakeModInfo();
+    else if(which == "looper")
+        info = looper::columns::MakeModInfo();
     else if(which == "bench")
         info = bench::MakeInfo();
     else {
@@ -52,11 +55,12 @@ int main(int argc, char** argv) {
     }
     static mod::Module module;
     module.Init(info, 48000.0f, 48);
-    // Like the firmware: only the Physical Modeling MOD build enables the extensions
-    // (extended monitor, LFO cross modulation, active model); the toy-piano simulator plays
-    // Toy Piano v0.3 without extensions (the editor's fallback path; v0.4 firmware has them),
-    // the bench has none.
-    if(which == "physical-modeling")
+    // Like the firmware: the Physical Modeling and Looper MOD builds enable the extensions
+    // (extended monitor, LFO cross modulation, active model or loop mode); the toy-piano
+    // simulator plays Toy Piano v0.3 without extensions (the editor's fallback path; v0.4
+    // firmware has them), the bench has none.
+    const bool extensions = which == "physical-modeling" || which == "looper";
+    if(extensions)
         module.EnableExtensions({true, true, true});
     // Physical Modeling MOD=1 reports its pot positions (power-on defaults here) as
     // column base values; Toy Piano v0.3 and the bench report none (PROTOCOL.md § 3.3).
@@ -66,13 +70,19 @@ int main(int argc, char** argv) {
         for(std::size_t t = 0; t < mod::kTargets; ++t)
             bases[t] = pm[t];
     }
+    if(which == "looper") { // unity speed, whole loop, default Frippertronics decay, mix at unity
+        const float lp[mod::kTargets] = {looper::columns::SpeedToUnit(0.0f), 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+                                         looper::kDefaultDecay, looper::columns::kMixBase};
+        for(std::size_t t = 0; t < mod::kTargets; ++t)
+            bases[t] = lp[t];
+    }
     Stdout out;
     uint32_t now = 1;
     auto advance = [&](unsigned ms) {
         for(unsigned i = 0; i < ms; ++i) {
             for(std::size_t t = 0; t < mod::kTargets; ++t)
                 module.engine.ReportBase(t, bases[t]);
-            if(which == "physical-modeling") // power-on: bank A, SW18 up = Modal Resonator
+            if(extensions) // power-on: Modal Resonator (bank A, SW18 up) or Sound on Sound
                 module.engine.ReportMode(0, mod::kModeFromDevice);
             module.engine.Tick(48);
             module.controller.Service(++now, out);

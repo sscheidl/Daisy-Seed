@@ -140,7 +140,45 @@ it). Use momentary buttons.
       noticeable delay. Audio does not drop out and D16 stays off.
 - [ ] A firmware update request from the editor over J7 still works.
 
-## 9. Report
+## 9. Mod on Daisy build (LooperMod image)
+
+Optional, after sections 1–8 passed with the regular image. Columns and rules:
+[MODULATION.md](MODULATION.md). Status: **NICHT GEMESSEN**. `P` =
+`python modules/mod-on-daisy/tools/mod_probe.py` (`pip install mido python-rtmidi`);
+close the DAW or disable its port while `P` runs.
+
+- [ ] Build or download `build/mod/LooperMod-v0.4.0.bin`, note its SHA-256, and
+      flash it like the regular image (`PROJECT=looper-mod`).
+- [ ] Without a computer: keys, pots and recording behave exactly as with the
+      regular image (sections 2–6, short pass). D16 stays off.
+- [ ] `P identify`: instrument `looper`, version `0.4.0`, capabilities `122`
+      (`0x7A`), capabilities2 `1`. `P targets`: Speed, Start, Size, Slice, Skip,
+      Inertia, Fripp Decay, Mix. `P modes`: the four loop modes.
+- [ ] `P lengths`: `frame lengths OK`.
+- [ ] Browser editor (and the JUCE app or the VST3 if available): it connects and
+      shows the eight looper columns and the loop mode; pressing S9–S12 or sending
+      CC110–113 changes the mode shown.
+- [ ] Record a loop. `P set-cell LFO1 0 30`, `P source LFO1 rate 9000`: the pitch
+      wobbles about ±3.6 semitones at about 0.9 Hz, smoothly, no zipper noise.
+      Turn pot 0: the wobble follows the new speed.
+- [ ] `P set-cell MODWHEEL 7 -100` and move the mod wheel (CC1) up: the loop fades
+      out and only the dry input remains; `P set-cell MODWHEEL 7 100`: the dry input
+      fades out and only the loop remains. Mod wheel down: both at unity again.
+- [ ] `P set-cell LFO1 1 20` (Start) and `P set-cell RANDOM 4 50` (Skip): note how
+      the window movement and the jump crossfades sound, in window and crossfade
+      seam mode (S7).
+- [ ] With connections active: CC20–27 and CC102–113 still work as in section 8; a
+      firmware update request from the editor still reaches the bootloader.
+- [ ] Eight connections at once (LFOs on Speed, Start, Size, Mix, Random on Skip,
+      mod wheel on Slice, CV 1 on Inertia, aftertouch on Fripp Decay) while
+      overdubbing at +36 semitones with Slice/Skip: D16 stays off. If a debugger is
+      available, note `maximumCycles` with and without connections.
+- [ ] While the S8 LED blinks (saving or importing), the editor keeps its
+      connection; note any reply timeouts.
+- [ ] `P clear`: the loop sounds exactly as before the modulation. After a power
+      cycle the matrix is empty (patches are not stored).
+
+## 10. Report
 
 Write down for each box: pass, fail, or not tested, plus notes. Especially:
 boot time, any D16 event, control orientation, clicks with the settings that

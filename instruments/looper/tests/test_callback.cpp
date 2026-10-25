@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Run the production AudioCallback and Controls() with libDaisy's pinned
-// DigitalControl debouncer and a fake kit (4 s buffers, see the Makefile).
+// DigitalControl debouncer and a fake kit (4 s buffers, see the Makefile). Built
+// twice: the regular image and the MOD build (LOOPER_MOD) with an empty matrix.
 #define main FirmwareMain
 #include "../src/main.cpp"
 #undef main
@@ -88,6 +89,9 @@ int main() {
     std::uninitialized_fill_n(a, LOOPER_BUFFER_FRAMES, looper::Frame{});
     std::uninitialized_fill_n(b, LOOPER_BUFFER_FRAMES, looper::Frame{});
     CHECK(engine.Init(48000.f, a, b, LOOPER_BUFFER_FRAMES));
+#if LOOPER_MOD
+    InitModulation(48000.f);  // empty matrix: every check below holds unchanged
+#endif
     memoryCard.files["0:/looper/loops/one.wav"] = Pcm16Stereo(24000, 8192);  // 0.5 s at 0.25
     cardPresent.store(hw.sd_detect.Pressed());
     InitStorage();
@@ -425,6 +429,9 @@ int main() {
         std::printf("FAILED: %d production callback check(s)\n", failures);
         return 1;
     }
+#if LOOPER_MOD
+    std::printf("MOD build, empty matrix: ");
+#endif
     std::printf("PASS production callback: keys, knobs, MIDI CC, LEDs state, auto-stop, bounded output, bootloader keys/SysEx after card I/O\n");
     return 0;
 }

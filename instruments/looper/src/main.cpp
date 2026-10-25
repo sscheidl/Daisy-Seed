@@ -2,17 +2,26 @@
 // Looper for the Daisy Seed3 Desktop Dev Kit, libDaisy commit in the repository
 // README. Engine with loop modes and Slice/Skip, loop persistence and WAV import
 // on the microSD card; no effects. USB-MIDI on J7: CC control (midi_control.h) and
-// the bootloader request.
+// the bootloader request. MOD=1 (LOOPER_MOD) builds the separate Mod on Daisy image
+// with the modulation matrix of docs/MODULATION.md.
 #include "card_volume.h"
 #include "loop_store.h"
 #include "looper_engine.h"
 #include "midi_control.h"
 #include "version.h"
+#if LOOPER_MOD
+const char looper_firmware_version[] = "LOOPER-MOD-VERSION=" LOOPER_VERSION;
+#else
 const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
+#endif
 #include "desktop_devkit.h"
 #include "bootloader_daisy.h"
 #include "bootloader_midi.h"
 #include "usbd_core.h"
+#if LOOPER_MOD
+#include "modulation.h"
+#include "mod_on_daisy_desktop.h"
+#endif
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -74,6 +83,31 @@ static_assert(looper::midi::kButtons == keys::kFirstMode + keys::kModes &&
               "MIDI buttons follow the key order");
 static_assert(looper::midi::kKnobs == knobs::Decay + 1 && looper::midi::Varispeed == knobs::Varispeed,
               "MIDI knobs follow the pot order");
+
+#if LOOPER_MOD
+// Mod on Daisy (separate build, docs/MODULATION.md): one global matrix, ticked once
+// per audio block (1 kHz at 48 frames). The main loop handles its SysEx and replies.
+constexpr size_t kBlockFrames = 48;  // hw.seed.SetAudioBlockSize
+static mod::Module modulation;
+static const mod::InstrumentInfo kModInfo = looper::columns::MakeModInfo();
+static mod::adapter::UsbMidiSender modSender(usbMidi);
+static looper::columns::MixGains mixGains;      // audio callback only
+static uint8_t modeOrigin = mod::kModeUnknown;  // audio callback only: keys or CC presses
+
+static void InitModulation(float sampleRate) {
+    modulation.Init(kModInfo, sampleRate, kBlockFrames);
+    // extended monitor (base values), LFO cross modulation, loop mode in the monitor
+    modulation.EnableExtensions({true, true, true});
+}
+
+// Main loop: everything the looper's CC map does not own (CC1, aftertouch, CC120/123,
+// clock, start, notes, its SysEx) goes to Mod on Daisy.
+static void ForwardToModulation(const MidiEvent& event) {
+    mod::MidiMessage message;
+    if (mod::adapter::ToMessage(event, message))
+        modulation.controller.HandleMidi(message);
+}
+#endif
 
 // microSD: loop.wav is saved from the main loop and recalled at power-up;
 // S8 imports the next WAV file of 0:/looper/loops. The transfer buffer must be
@@ -213,7 +247,18 @@ static void Controls() {
     }
     if (bootKeys.Process(downMask, System::GetNow()))
         bootRequest.Set(bootloader::Request::kKeys);
+#if LOOPER_MOD
+    const uint32_t midiPresses = midiIn.TakePresses();
+    constexpr uint32_t kModeKeys =
+        (1u << keys::LoopMode) | (((1u << keys::kModes) - 1u) << keys::kFirstMode);
+    if (presses & kModeKeys)
+        modeOrigin = mod::kModeFromDevice;
+    else if (midiPresses & kModeKeys)
+        modeOrigin = mod::kModeFromMidi;
+    presses |= midiPresses;  // CC presses act like key presses
+#else
     presses |= midiIn.TakePresses();  // CC presses act like key presses
+#endif
     if (presses & (1u << keys::Record))
         engine.PressRecord();
     if (presses & (1u << keys::Play))
@@ -240,6 +285,34 @@ static void Controls() {
                                ? looper::SeamMode::Crossfade
                                : looper::SeamMode::Window);
     const float speedPot = hw.pot[knobs::Varispeed].Value();
+#if LOOPER_MOD
+    // The pot or CC value is the base; the matrix adds its offset, clamped (modulation.h).
+    looper::columns::Bases base;
+    base.semitones = MidiKnob(knobs::Varispeed, speedPot)
+                         ? looper::midi::SemitonesFromCc(midiValue[knobs::Varispeed])
+                         : VarispeedFromKnob(speedPot);
+    base.inertia = Knob(knobs::Inertia, hw.pot[knobs::Inertia].Value());
+    engine.SetInertialSlope(Knob(knobs::Slope, Settled(knobs::Slope)));
+    base.start = Knob(knobs::Start, Settled(knobs::Start));
+    base.size = Knob(knobs::Size, Settled(knobs::Size));
+    base.slice = Knob(knobs::Slice, Settled(knobs::Slice));
+    base.skip = Knob(knobs::Skip, Settled(knobs::Skip));
+    base.decay = Knob(knobs::Decay, Settled(knobs::Decay));
+    mod::Engine& matrix = modulation.engine;
+    mod::adapter::ReadHardware(matrix, hw);
+    matrix.Tick(kBlockFrames);
+    const looper::columns::Values value = looper::columns::Modulate(matrix, base);
+    looper::columns::ReportBases(matrix, base);
+    matrix.ReportMode(uint8_t(engine.GetLoopMode()), modeOrigin);
+    engine.SetVarispeed(value.semitones);
+    engine.SetInertia(value.inertia);
+    engine.SetStart(value.start);
+    engine.SetSize(value.size);
+    engine.SetSlice(value.slice);
+    engine.SetSkip(value.skip);
+    engine.SetFrippertronicsDecay(value.decay);
+    mixGains = value.mix;
+#else
     engine.SetVarispeed(MidiKnob(knobs::Varispeed, speedPot)
                             ? looper::midi::SemitonesFromCc(midiValue[knobs::Varispeed])
                             : VarispeedFromKnob(speedPot));
@@ -250,6 +323,7 @@ static void Controls() {
     engine.SetSlice(Knob(knobs::Slice, Settled(knobs::Slice)));
     engine.SetSkip(Knob(knobs::Skip, Settled(knobs::Skip)));
     engine.SetFrippertronicsDecay(Knob(knobs::Decay, Settled(knobs::Decay)));
+#endif
 
     uint32_t state = 0;
     if (engine.GetState() == looper::State::Recording || engine.Overdubbing() ||
@@ -289,10 +363,19 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
     const float* inRight = hw.right_detect.Pressed() ? in[1] : in[0];
     engine.Process(in[0], inRight, out[0], out[1], n);  // loop playback only
     PublishSnapshot();
+#if LOOPER_MOD
+    // Mix column: dry and loop gains, both exactly 1 without modulation.
+    const looper::columns::MixGains mix = mixGains;
+    for (size_t i = 0; i < n; ++i) {
+        out[0][i] = CodecLevel(mix.dry * in[0][i] + mix.loop * out[0][i]);
+        out[1][i] = CodecLevel(mix.dry * inRight[i] + mix.loop * out[1][i]);
+    }
+#else
     for (size_t i = 0; i < n; ++i) {
         out[0][i] = CodecLevel(in[0][i] + out[0][i]);
         out[1][i] = CodecLevel(inRight[i] + out[1][i]);
     }
+#endif
     const uint32_t elapsed = DWT->CYCCNT - start;
     if (elapsed > maximumCycles.load(std::memory_order_relaxed))
         maximumCycles.store(elapsed, std::memory_order_relaxed);
@@ -335,11 +418,20 @@ static void ServiceUsbMidi() {
     while (usbMidi.HasEvents()) {
         const MidiEvent event = usbMidi.PopEvent();
         if (event.type == ControlChange) {
+#if LOOPER_MOD
+            if (!midiIn.ControlChange(event.data[0], event.data[1]))
+                ForwardToModulation(event);  // CC1 and the other controllers
+#else
             midiIn.ControlChange(event.data[0], event.data[1]);
+#endif
             continue;
         }
-        if (!bootloader::IsRequest(event))
+        if (!bootloader::IsRequest(event)) {
+#if LOOPER_MOD
+            ForwardToModulation(event);
+#endif
             continue;
+        }
         uint8_t ack[sizeof(bootloader::kAck)];
         std::copy(std::begin(bootloader::kAck), std::end(bootloader::kAck), ack);
         SendMidi(ack, sizeof(ack));
@@ -398,6 +490,9 @@ int main() {
     hw.Init();
     hw.seed.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(48);
+#if LOOPER_MOD
+    InitModulation(hw.seed.AudioSampleRate());
+#endif
     for (auto& p : hw.pot)
         p.SetSampleRate(hw.seed.AudioCallbackRate());
     auto* a = reinterpret_cast<looper::Frame*>(storageA);
@@ -426,6 +521,9 @@ int main() {
         const uint32_t now = System::GetNow();
         ServiceStorage(now);
         ServiceUsbMidi();
+#if LOOPER_MOD
+        modulation.controller.Service(System::GetNow(), modSender);
+#endif
         ServiceBootloader();
         if (now - ledsAt >= 10) {
             ledsAt = now;

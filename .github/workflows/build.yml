@@ -17,6 +17,7 @@ on:
           - toy-piano-ambient
           - granular
           - looper
+          - looper-mod
           - reverb-fx
           - mod-bench
           - all
@@ -48,6 +49,7 @@ jobs:
               {"project":"physical-modeling-fx-ambient","directory":"instruments/physical-modeling","image":"PhysicalModelingFxAmbient","build":"build/fx-ambient"},
               {"project":"granular","directory":"instruments/granular","image":"NebulaeOnDaisy","build":"build"},
               {"project":"looper","directory":"instruments/looper","image":"Looper","build":"build"},
+              {"project":"looper-mod","directory":"instruments/looper","image":"LooperMod","build":"build/mod"},
               {"project":"mod-bench","directory":"modules/mod-on-daisy/bench","image":"ModBench","build":"build"},
           ]
           selected = os.environ["SELECTED_PROJECT"]

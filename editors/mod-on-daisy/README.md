@@ -30,8 +30,8 @@ Dann „Weitere Informationen“ und „Trotzdem ausführen“ wählen.
 
 ### Bedienung
 
-1. Daisy mit Mod-on-Daisy-Firmware an J7 anschließen, zum Beispiel `ToyPiano-v0.3.1.bin`
-   oder `PhysicalModelingMod-v0.1.1.bin`.
+1. Daisy mit Mod-on-Daisy-Firmware an J7 anschließen, zum Beispiel `ToyPiano-v0.3.1.bin`,
+   `PhysicalModelingMod-v0.1.1.bin` oder `LooperMod-v0.4.0.bin`.
 2. **Studio One schließen** oder dort den Port „Daisy Seed External“ deaktivieren.
    Unter Windows kann nur eine Anwendung den Port öffnen. Ist er belegt, sagt der
    Editor das.

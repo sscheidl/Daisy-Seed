@@ -22,7 +22,7 @@ def select_suites(changed):
         'toy': shared or touched('instruments/toy-piano/') or mod_api or fx,
         'physical': shared or touched('instruments/physical-modeling/') or mod_api or fx,
         'granular': shared or touched('instruments/granular/'),
-        'looper': shared or touched('instruments/looper/'),
+        'looper': shared or touched('instruments/looper/') or mod_api,
         'reverb': shared or touched('effects/reverb/'),
         'mod': shared or touched('modules/mod-on-daisy/'),
         'editor': shared or touched('editors/mod-on-daisy/') or mod_api,

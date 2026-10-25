@@ -5,11 +5,13 @@ import on the microSD card, and MIDI CC control over USB; host tests and ARM bui
 pass; no hardware run yet.** Project ID: `looper`. The goal is an original
 stereo tape looper for the Seed3 Desktop Dev Kit, using the Qu-Bit Stardust as the
 behavioral reference. Validation details: [docs/VALIDATION.md](docs/VALIDATION.md); checklist for the
-first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md).
+first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md). A separate
+build with the Mod on Daisy modulation matrix: [docs/MODULATION.md](docs/MODULATION.md).
 
 ```sh
 make PROJECT=looper -j4            # firmware: build/Looper-v0.4.0.bin
-make PROJECT=looper test           # host engine and production-callback tests
+make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.4.0.bin
+make PROJECT=looper test           # host tests of both builds, incl. production callback
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```
 
@@ -233,11 +235,25 @@ ignored, and the looper sends nothing back except the bootloader reply.
 * **Pots and CCs together:** the control moved last wins. A CC takes its knob
   over at once; moving the pot by more than 2 % of its travel hands the knob
   back. Without MIDI the pots behave exactly as before.
-* CC1 (mod wheel), aftertouch and CC120/123 stay free for a later
-  [Mod on Daisy](../../modules/mod-on-daisy/README.md) build, which consumes them.
+* CC1 (mod wheel), aftertouch and CC120/123 stay free in this build. The
+  separate [Mod on Daisy build](#mod-on-daisy-build-mod1) consumes them; the CCs above
+  work there unchanged.
 * The CCs reach the engine at the next audio callback (1 ms blocks). USB
   messages are read in the main loop; a card write or import may delay them by a
   few milliseconds (NICHT GEMESSEN on the board).
+
+## Mod on Daisy build (MOD=1)
+
+`make PROJECT=looper MOD=1` (or `PROJECT=looper-mod`) builds a second image,
+`build/mod/LooperMod-v0.4.0.bin`, with the
+[Mod on Daisy](../../modules/mod-on-daisy/README.md) 8×8 modulation matrix. The
+editors (browser, JUCE, VST3) connect over J7 and read its eight looper columns from
+the device: **Speed** (±12 semitones at depth 100), **Start**, **Size**, **Slice**,
+**Skip**, **Inertia**, **Fripp Decay** and **Mix** (dry/loop balance, new in this
+build). Each value is the pot or CC value plus the modulation, clamped to the
+control's range; with an empty matrix the build sounds bit-identical to the regular
+one, and the regular image stays byte-identical. Columns, MIDI routing, tests and
+resources: [docs/MODULATION.md](docs/MODULATION.md).
 
 ## Reference: Qu-Bit Stardust
 

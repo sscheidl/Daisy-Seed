@@ -16,9 +16,12 @@ Editor entsteht getrennt unter [`editors/mod-on-daisy/`](../../editors/mod-on-da
     Entwicklungsumgebung;
   * eine getrennte Fassung von
     [Physical Modeling (Rings/Torus)](../../instruments/physical-modeling/docs/MODULATION.md)
-    mit Poly AT pro Stimme.
-* Beide sind mit leerer Matrix bitgleich zum vorherigen Klang (Golden-Tests). Die
-  reguläre Physical-Modeling-Firmware ist bytegleich geblieben.
+    mit Poly AT pro Stimme;
+  * eine getrennte Fassung des [Loopers](../../instruments/looper/docs/MODULATION.md)
+    (`make PROJECT=looper MOD=1`) mit acht globalen Spalten: Speed, Start, Size, Slice,
+    Skip, Inertia, Frippertronics-Decay und Mix.
+* Alle sind mit leerer Matrix bitgleich zum vorherigen Klang (Golden-Tests). Die
+  regulären Physical-Modeling- und Looper-Firmwares sind bytegleich geblieben.
 
 ## v0.1 auf einen Blick
 
@@ -54,6 +57,8 @@ Editor entsteht getrennt unter [`editors/mod-on-daisy/`](../../editors/mod-on-da
 make -C modules/mod-on-daisy test          # Host-Tests (auch: test-sanitize, test-thread)
 make PROJECT=mod-bench -j4                 # Messfirmware (Toolchain wie in docs/BUILD.md)
 python3 modules/mod-on-daisy/tools/mod_probe.py selftest
+# Spaltentabelle eines Instruments ohne Hardware, über den Simulator aus `make test`:
+python3 modules/mod-on-daisy/tools/mod_probe.py --sim modules/mod-on-daisy/build/host/mod_sim --instrument looper targets
 ```
 
 Einbindung in ein Instrument: [docs/ARCHITECTURE.md § 6](docs/ARCHITECTURE.md#6-instrumentenschnittstelle).

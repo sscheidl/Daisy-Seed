@@ -263,6 +263,22 @@
       ],
       "panels": []
     },
+    "looper-mod": {
+      "version_component": "looper",
+      "directory": "instruments/looper/build/mod",
+      "image": "LooperMod",
+      "marker": "LOOPER-MOD-VERSION=",
+      "components": [
+        "looper",
+        "mod-on-daisy",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
     "reverb-fx": {
       "version_component": "ambient-reverb",
       "directory": "effects/reverb/build",
