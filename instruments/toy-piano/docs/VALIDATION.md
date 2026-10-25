@@ -1,5 +1,24 @@
 # Validation — Toy Piano
 
+## v0.4 (echo guard) — 2026-10-25
+
+Software checks on Windows 11 (llvm-mingw clang 23 for the host tests, xPack GCC
+13.2.1-1.1 for ARM). No hardware attached. Linux (GCC 13.3, glibc 2.39), the sanitizer
+suites and TSan: NOT RUN (GitHub Actions budget exhausted, no Linux toolchain locally).
+
+| Check | Result |
+| --- | --- |
+| `test_toy_piano`, `test_callback`, `test_modulation` | PASS |
+| `test_modulation` with UBSan (trap mode) | PASS |
+| Echo guard: every frame from the Daisy fed back for 1 s, monitor at 20 Hz | 20 monitor frames, 0 NAK; the echoed IDENTIFY reply is ignored (`IgnoredReplies() == 1`); IDENTIFY is still answered |
+| Golden test | the Linux reference `52580874FA24361F` cannot be reproduced on Windows/clang (unchanged `main` gives the same mismatch). Same platform, `main` vs. this branch: both `E34CE1F8D2676D39`, **identical** |
+| ARM build | `ToyPiano-v0.4.bin` 151,732 B (v0.3: 151,700 B), SHA-256 `20a5ea23…`; DTCM 118,936 B (v0.3: 118,928 B); `check-firmware.py` PASS |
+| Other images | byte-identical to `main`: Physical Modeling `eb8f412a…`, Physical Modeling mod `9517db27…`, ModBench `9f50a57b…` / `5cdeb0f6…` / `7f209c15…`; `main` gives `ToyPiano-v0.3.bin` `6dd79871…` as before |
+
+Hardware: NOT TESTED. Checklist: [HARDWARE_TEST_V0.4.md](HARDWARE_TEST_V0.4.md).
+
+---
+
 ## v0.3 (Mod on Daisy) — 2026-10-23
 
 Software checks on Linux x86_64 (GCC 13.3, glibc 2.39, as the CI runner) and ARM

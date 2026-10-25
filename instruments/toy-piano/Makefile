@@ -4,6 +4,9 @@ $(if $(VERSION),,$(error Could not read the version from src/version.h))
 TARGET = ToyPiano-v$(VERSION)
 CPP_SOURCES = src/main.cpp src/toy_piano.cpp
 MOD_ON_DAISY = ../../modules/mod-on-daisy
+# v0.4: echo guard of the Mod on Daisy controller (PROTOCOL.md § 2, step 2a), no other extensions.
+MOD_DEFS = -DMOD_ON_DAISY_IGNORE_REPLIES=1
+C_DEFS = $(MOD_DEFS)
 C_INCLUDES = -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 include ../../common/desktop.mk
 
@@ -12,7 +15,7 @@ version:
 	@echo $(VERSION)
 HOST_CXX ?= g++
 HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -pthread
-HOST_INCLUDES = -Isrc -I$(DAISYSP_DIR)/Source -I$(LIBDAISY_DIR)/src -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+HOST_INCLUDES = $(MOD_DEFS) -Isrc -I$(DAISYSP_DIR)/Source -I$(LIBDAISY_DIR)/src -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 test:
 	mkdir -p build/host
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_toy_piano.cpp src/toy_piano.cpp -o build/host/test_toy_piano

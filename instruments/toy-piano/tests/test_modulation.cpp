@@ -1,6 +1,6 @@
-// Toy Piano v0.3 with Mod on Daisy, through the production callback and USB-MIDI
+// Toy Piano (from v0.3) with Mod on Daisy, through the production callback and USB-MIDI
 // path: SysEx configuration, per-voice pitch/level/harmonic, Poly AT per voice,
-// latched attack/decay and the return to the unmodulated sound.
+// latched attack/decay, the return to the unmodulated sound and (v0.4) the echo guard.
 #define main FirmwareMain
 #include "../src/main.cpp"
 #undef main
@@ -35,17 +35,22 @@ daisy::MidiEvent Event(daisy::MidiMessageType type, uint8_t a, uint8_t b = 0) {
     return event;
 }
 
-// One SysEx request through the real USB path; returns the reply payload.
-std::vector<uint8_t> Request(uint8_t command, std::vector<uint8_t> payload, uint8_t* reply_command = nullptr) {
-    uint8_t frame[mod::proto::kMaxFrame];
-    seq = uint8_t((seq + 1) & 127);
-    const std::size_t size = mod::proto::BuildFrame(frame, 0, command, seq, payload.data(), payload.size());
+// Queues a complete SysEx frame (F0 ... F7) as received USB-MIDI.
+void Receive(const uint8_t* frame, std::size_t size) {
     daisy::MidiEvent event;
     event.type = daisy::SystemCommon;
     event.sc_type = daisy::SystemExclusive;
     std::memcpy(event.sysex_data, frame + 1, size - 2);
     event.sysex_message_len = uint8_t(size - 2);
     usb_midi.incoming.push_back(event);
+}
+
+// One SysEx request through the real USB path; returns the reply payload.
+std::vector<uint8_t> Request(uint8_t command, std::vector<uint8_t> payload, uint8_t* reply_command = nullptr) {
+    uint8_t frame[mod::proto::kMaxFrame];
+    seq = uint8_t((seq + 1) & 127);
+    const std::size_t size = mod::proto::BuildFrame(frame, 0, command, seq, payload.data(), payload.size());
+    Receive(frame, size);
     usb_midi.sent.clear();
     ServiceUsbMidi();
     ++daisy::System::now;
@@ -204,6 +209,48 @@ void TestHarmonicAndAliasRule() {
     Tick(2);
     assert(piano.VoiceHarmonic(0) == toy_piano::kSecondHarmonic && piano.VoiceHarmonic(top) == 0.0f);
 }
+
+// v0.4: Studio One input monitoring sends everything from the Daisy back to it (hardware
+// test of 24.10.2026 with Physical Modeling). Echoed replies, NAKs and monitor frames are
+// consumed without an answer, so no NAK loop can drown the editor's replies.
+void TestEchoedReplies() {
+    Request(mod::proto::Identify, {});
+    const std::vector<uint8_t> reply = usb_midi.sent[0];
+    usb_midi.sent.clear();
+    Receive(reply.data(), reply.size()); // the reply comes back as if it were a request
+    ServiceUsbMidi();
+    ++daisy::System::now;
+    assert(usb_midi.sent.empty() && modulation.controller.IgnoredReplies() == 1);
+
+    Request(mod::proto::Monitor, {20});
+    unsigned frames = 0, naks = 0;
+    auto run = [&](unsigned ms, bool echo) {
+        for(unsigned i = 0; i < ms; ++i) {
+            Tick();
+            usb_midi.sent.clear();
+            ServiceUsbMidi();
+            for(const std::vector<uint8_t>& out : usb_midi.sent) {
+                mod::proto::Frame f;
+                assert(mod::proto::ParseHeader(out.data() + 1, out.size() - 2, f) == mod::proto::Parse::Ok);
+                ++frames;
+                naks += f.command == mod::proto::kNak;
+                if(echo)
+                    Receive(out.data(), out.size());
+            }
+        }
+    };
+    run(1000, true);
+    std::printf("echoed replies: %u monitor frames in 1 s, %u NAK\n", frames, naks);
+    assert(naks == 0 && frames >= 19 && frames <= 21); // 20 Hz monitor, nothing else
+    uint8_t stop[mod::proto::kMaxFrame];
+    const uint8_t off = 0;
+    Receive(stop, mod::proto::BuildFrame(stop, 0, mod::proto::Monitor, 1, &off, 1));
+    run(5, false);
+    assert(naks == 0);
+    uint8_t command = 0;
+    Request(mod::proto::Identify, {}, &command); // requests are still answered
+    assert(command == (mod::proto::Identify | mod::proto::kReplyBit));
+}
 }
 
 int main() {
@@ -218,5 +265,6 @@ int main() {
     TestModWheelLevelAndPolyAt();
     TestLatchedAttack();
     TestHarmonicAndAliasRule();
-    std::printf("PASS: Toy Piano v0.3 modulation through the production callback and USB-MIDI\n");
+    TestEchoedReplies();
+    std::printf("PASS: Toy Piano modulation through the production callback and USB-MIDI\n");
 }

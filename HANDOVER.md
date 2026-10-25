@@ -44,6 +44,7 @@ Prüfwerte zum Wiedererkennen:
 | Golden-Hash Toy Piano (v0.2 = v0.3 mit leerer Matrix) | `52580874FA24361F` |
 | Golden-Hash Physical Modeling (regulär = `MOD=1` mit leerer Matrix) | `37DE0BF9D93B81CE` |
 | SHA-256 `ToyPiano-v0.3.bin` (= Release-Entwurf) | `6dd79871…` |
+| SHA-256 `ToyPiano-v0.4.bin` (Rückkopplungsschutz, Branch `feat/toy-piano-echo-guard`) | `20a5ea23…` |
 | SHA-256 `PhysicalModeling-v0.1.0.bin` (regulär) | `eb8f412a…` |
 | SHA-256 `ModBench-v0.1.0.bin` / `-block256` / `-max64` | `9f50a57b…` / `5cdeb0f6…` / `7f209c15…` |
 | SHA-256 `PhysicalModelingMod-v0.1.0.bin` (mod3, Branch) | `ccabdaa9…` |
@@ -138,8 +139,11 @@ Punkte 1–4 sind in PR #33 umgesetzt (§ 3b).
 * `NICHT GEMESSEN`: umgekehrte Reihenfolge (Editor zuerst), Modwheel → Level, CC28 „(MIDI)“, E19,
   E11–E17, R1–R7, R9, R10.
 * **Toy Piano v0.3 hat den Rückkopplungsschutz noch nicht** (Image soll bytegleich zum
-  Release-Entwurf bleiben) und hätte mit Studio One dasselbe Problem → in der nächsten
-  Toy-Piano-Version nachziehen (Entscheidung Betreiber).
+  Release-Entwurf bleiben) und hätte mit Studio One dasselbe Problem → umgesetzt in
+  **Toy Piano v0.4** (25.10.2026, Freigabe Betreiber; Branch `feat/toy-piano-echo-guard`):
+  nur die Regel aus PROTOCOL § 2, Schritt 2a (`MOD_ON_DAISY_IGNORE_REPLIES=1`), Klang und
+  übrige Images unverändert. Am Kit `NICHT GEMESSEN` (T16/T17 in
+  [HARDWARE_TEST_V0.4](instruments/toy-piano/docs/HARDWARE_TEST_V0.4.md)).
 
 **Weiter mit:** PR #33 mergen; restliche Schritte aus dem Laufzettel.
 
@@ -149,9 +153,9 @@ Punkte 1–4 sind in PR #33 umgesetzt (§ 3b).
 | --- | --- | --- |
 | Studio One + Editor gleichzeitig | **gelöst** mit mod4 (§ 3b): Windows MIDI Services teilt den Port, die Rückkopplungsschleife ist behoben | umgekehrte Reihenfolge noch prüfen; VST3-Fassung bleibt wünschenswert, ist dafür aber nicht mehr nötig |
 | PR #33 (mod4, Editor) | am Kit getestet, Quick checks | mergen |
-| Rückkopplungsschutz für Toy Piano | fehlt in v0.3 | mit der nächsten Toy-Piano-Version (Entscheidung Betreiber) |
+| Rückkopplungsschutz für Toy Piano | in v0.4 umgesetzt (Branch `feat/toy-piano-echo-guard`), Host-Tests und ARM-Build lokal unter Windows | am Kit T16/T17 prüfen; Linux-Golden-Hash und TSan noch offen |
 | Modularer Firmwarekern | Idee, [MODULAR_KERNEL_IDEA.md](docs/MODULAR_KERNEL_IDEA.md), GitHub-Milestone | ausgearbeiteten Plan schreiben, später |
-| Toy Piano v0.3 veröffentlichen | Entwurf wartet auf T1–T15 | entscheidet der Mensch |
+| Toy Piano veröffentlichen | Entwurf v0.3 wartet auf T1–T15; v0.4 = v0.3 + Rückkopplungsschutz | entscheidet der Mensch (v0.3-Entwurf oder v0.4) |
 | Grundwerte für Toy Piano | absichtlich aus, damit v0.3 dem Entwurf entspricht | mit der nächsten Toy-Piano-Version (z. B. 0.3.1) einschalten |
 | Lizenz | **entschieden 24.10.2026**: Open Source; JUCE-Editor und VST3-Plugin AGPLv3, alles Eigene sonst MIT (README § License) | Repo ist öffentlich (Actions-Minuten dafür kostenlos); Inhalt und Historie noch auf fremdes Material prüfen |
 | Speicher (QSPI) | nur spezifiziert (D8) | eigene Freigabe nötig |
@@ -212,7 +216,7 @@ Nächste Aufgaben:
 1. PR #33 mergen (falls noch offen).
 2. Mit dem JUCE-Editor am Kit die offenen Schritte aus § 3b und E11–E17 durchgehen (ich höre
    und bediene, du führst die Befehle aus und trägst die Ergebnisse als GEMESSEN mit Datum ein).
-3. Rückkopplungsschutz für Toy Piano (neue Version, nach meiner Freigabe).
+3. Rückkopplungsschutz für Toy Piano: v0.4, am Kit noch zu prüfen (T16/T17).
 4. Danach Toy Piano T1–T15 und Messfirmware H/S; VST3-Fassung planen.
 
 Regeln: Flashen nur nach meiner Freigabe im Bootloader-Modus, keine Releases

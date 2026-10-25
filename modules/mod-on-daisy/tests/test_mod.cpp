@@ -956,12 +956,18 @@ void TestExtensions() {
                 without, with);
 }
 
+#endif
+
+#if MOD_ON_DAISY_IGNORE_REPLIES
 // Hardware test 2026-10-24: Studio One echoed everything from the Daisy back to it; the
 // device NAKed every echoed reply and the NAKs looped (~500 frames/s), drowning the real
 // replies. With every outgoing frame echoed back, only the monitor frames may remain.
+// Runs with the extensions and with the echo guard alone (Toy Piano).
 void TestEchoedReplies() {
     Device d;
+#if MOD_ON_DAISY_EXTENSIONS
     d.module.EnableExtensions({true, true, true});
+#endif
     const Reply id = d.Request(proto::Identify, {});
     assert(id.present);
     std::vector<uint8_t> echo(d.out.frames[0], d.out.frames[0] + d.out.sizes[0]);
@@ -981,9 +987,13 @@ void TestEchoedReplies() {
         }
     }
     assert(naks == 0 && frames >= 19 && frames <= 21); // 20 Hz monitor, nothing else
-    assert(d.Request(proto::GetMode, Bytes({0})).present); // requests are still answered
+    const Reply again = d.Request(proto::Identify, {}); // requests are still answered
+    assert(again.present && again.frame.command == (proto::Identify | proto::kReplyBit));
     std::printf("echoed replies: ignored (%u monitor frames in 1 s, no NAK loop)\n", frames);
 }
+#endif
+
+#if MOD_ON_DAISY_EXTENSIONS
 
 // Instrument modes (PROTOCOL.md § 3.6): capabilities 2, GET_MODE and two monitor bytes.
 void TestModes() {
@@ -1064,6 +1074,8 @@ int main() {
 #if MOD_ON_DAISY_EXTENSIONS
     TestExtensions();
     TestModes();
+#endif
+#if MOD_ON_DAISY_IGNORE_REPLIES
     TestEchoedReplies();
 #endif
     std::printf("All Mod on Daisy host tests passed.\n");

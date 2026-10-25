@@ -2,6 +2,25 @@
 
 The version is defined in [src/version.h](src/version.h).
 
+## 0.4 — 2026-10-25
+
+* **Echo guard for Mod on Daisy.** SysEx frames whose command has the reply bit
+  (replies, NAKs, monitor frames) are consumed and never answered
+  (`modules/mod-on-daisy/docs/PROTOCOL.md` § 2, step 2a). Reason: with input
+  monitoring, Studio One sends everything from the Daisy back to it. In the hardware
+  test of 2026-10-24 with Physical Modeling, the firmware NAKed every echoed frame and
+  the NAKs looped at about 500 frames/s, so the editor saw no replies. Toy Piano v0.3
+  has the same controller and would loop the same way.
+* Only this rule is compiled in (`-DMOD_ON_DAISY_IGNORE_REPLIES=1`), none of the other
+  Mod on Daisy extensions: IDENTIFY, monitor frames and everything else on the wire
+  stay as in v0.3.
+* **Sound unchanged.** The audio path is untouched; the golden test gives the same hash
+  on the same platform with and without the change.
+* New test: every frame the Daisy sends is fed back for 1 s with the monitor at 20 Hz:
+  20 monitor frames, no NAK, requests are still answered.
+* Image +32 bytes (151,732 B), DTCM +8 bytes (118,936 B).
+* Hardware test pending: [HARDWARE_TEST_V0.4](docs/HARDWARE_TEST_V0.4.md).
+
 ## 0.3 — 2026-10-23
 
 * **Mod on Daisy modulation matrix** ([modules/mod-on-daisy](../../modules/mod-on-daisy/)).
