@@ -50,6 +50,7 @@ class FakeBoard final : public diag::Board {
     diag::Inputs inputs;
     uint32_t ticks = 0;
     std::vector<std::pair<uint16_t, uint8_t>> led_writes;
+    std::vector<std::pair<uint16_t, uint16_t>> cv_writes;
     std::vector<bool> sd_calls;
     diag::SdResult sd_result;
     uint32_t* clock = nullptr;  // RunSdTest advances it to model a blocking test
@@ -61,6 +62,7 @@ class FakeBoard final : public diag::Board {
     diag::Inputs ReadInputs() override { return inputs; }
     uint32_t ControlTicks() override { return ticks; }
     void ApplyLeds(uint16_t leds, uint8_t br) override { led_writes.emplace_back(leds, br); }
+    void ApplyCvOut(uint16_t c1, uint16_t c2) override { cv_writes.emplace_back(c1, c2); }
     diag::SdResult RunSdTest(bool card) override {
         sd_calls.push_back(card);
         if(clock)
@@ -134,7 +136,7 @@ void TestHandshakeAndRate() {
     r.Run(1);
     auto got = r.Received();
     CHECK(got.size() == 3);
-    CHECK(got.size() == 3 && StartsWith(got[0], "HELLO proto=1 fw=0.2.1"));
+    CHECK(got.size() == 3 && StartsWith(got[0], "HELLO proto=1 fw=0.3.0"));
     CHECK(got.size() == 3 && StartsWith(got[1], "ST n=0 "));
     CHECK(got.size() == 3 && StartsWith(got[2], "SYS "));
     for(int k = 0; k < 4; ++k) {  // keep the host alive with PINGs
@@ -413,6 +415,65 @@ void TestBootloaderKeys() {
     CHECK(r.board.bootloader_entries == 1);
 }
 
+void TestCvOutLifecycle() {
+    Rig r;
+    r.Run(1);
+    CHECK(r.board.cv_writes.size() == 1 && r.board.cv_writes[0] == std::make_pair(
+                                                 uint16_t{0}, uint16_t{0}));  // OFF at start
+    r.Host("CVOUT m=FIX c1=7");  // no session: rejected, nothing changes
+    r.Run(5);
+    auto got = r.Received();
+    CHECK(got.size() == 1 && got[0] == "ERR c=CVOUT e=SESSION");
+    CHECK(r.board.cv_writes.size() == 1);
+
+    r.Host("HELLO proto=1");
+    r.Host("CVOUT m=FIX c1=1000 c2=2000");
+    r.Run(30);
+    CHECK(r.board.cv_writes.back() == std::make_pair(uint16_t{1000}, uint16_t{2000}));
+    const size_t writes = r.board.cv_writes.size();
+    r.Run(100);
+    CHECK(r.board.cv_writes.size() == writes);  // unchanged codes are not rewritten
+    got = r.Received();
+    bool seen = false;
+    for(const auto& b : got)
+        seen = seen || (StartsWith(b, "ST ") && b.find(" co=FIX,1000,2000") != std::string::npos);
+    CHECK(seen);
+
+    r.Host("CVOUT m=SAW ms=100");
+    r.Run(100);
+    CHECK(r.board.cv_writes.size() > writes + 50);  // the saw is updated every step
+
+    r.Host("BYE");  // end of session: back to 0 V code
+    r.Run(2);
+    CHECK(r.board.cv_writes.back() == std::make_pair(uint16_t{0}, uint16_t{0}));
+    CHECK(r.app.settings().cv_mode == diag::CvOutMode::Off);
+
+    r.Host("HELLO proto=1");
+    r.Host("CVOUT m=FIX c1=4095 c2=4095");
+    r.Run(10);
+    CHECK(r.board.cv_writes.back() == std::make_pair(uint16_t{4095}, uint16_t{4095}));
+    r.Run(3100);  // host silent for more than 3 s: timeout switches CV OUT off as well
+    CHECK(r.board.cv_writes.back() == std::make_pair(uint16_t{0}, uint16_t{0}));
+}
+
+void TestGatesInState() {
+    Rig r;
+    r.Host("HELLO proto=1");
+    r.Run(1);
+    auto got = r.Received();
+    CHECK(Count(got, "ST ") == 1 && got[1].find(" g=00 gc=0000 ") != std::string::npos);
+    r.Run(10);
+    r.Received();
+    r.board.inputs.gates = 1;
+    r.board.inputs.gate_count[0] = 3;
+    r.board.inputs.cv_norm[1] = -2500;
+    r.board.inputs.cv_raw[1] = 24575;
+    r.Run(1);  // gate change: immediate frame (spacing >= 10 ms already given)
+    got = r.Received();
+    CHECK(Count(got, "ST ") == 1);
+    CHECK(!got.empty() && got[0].find(" cv=0,-2500 cvr=0,24575 g=10 gc=0300 ") != std::string::npos);
+}
+
 int main() {
     TestBootloader();
     TestBootloaderKeys();
@@ -429,6 +490,8 @@ int main() {
     TestLeds();
     TestSdRequest();
     TestBlockingSdTestKeepsStream();
+    TestCvOutLifecycle();
+    TestGatesInState();
     std::printf("%s: %d checks, %d failures\n", failures ? "FAIL" : "PASS", checks, failures);
     return failures ? 1 : 0;
 }

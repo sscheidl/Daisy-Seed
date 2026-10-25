@@ -29,15 +29,20 @@ class SimulatedInputs:
     sd_card: bool = False
     jack_left: bool = False
     jack_right: bool = False
+    cv: list[float] = field(default_factory=lambda: [0.0] * p.NUM_CV)  # -1.0 .. +1.0
+    gates: list[bool] = field(default_factory=lambda: [False] * p.NUM_GATES)
+    gate_counts: list[int] = field(default_factory=lambda: [0] * p.NUM_GATES)
 
     def copy(self) -> "SimulatedInputs":
         return SimulatedInputs(list(self.buttons), list(self.press_counts), list(self.pots),
                                self.sw17, self.sw18, self.sd_card, self.jack_left,
-                               self.jack_right)
+                               self.jack_right, list(self.cv), list(self.gates),
+                               list(self.gate_counts))
 
     def digital(self) -> tuple:
         return (tuple(self.buttons), tuple(self.press_counts), self.sw17, self.sw18,
-                self.sd_card, self.jack_left, self.jack_right)
+                self.sd_card, self.jack_left, self.jack_right, tuple(self.gates),
+                tuple(self.gate_counts))
 
 
 class SimulatedDevice:
@@ -60,6 +65,12 @@ class SimulatedDevice:
         self.led_mask = 0
         self.led_brightness = 100
         self.chase_ms = 120
+        self.cv_mode = "OFF"
+        self.cv_code = [0, 0]
+        self.cv_period_ms = 1000
+        # Simulated patch cables CV OUT n -> CV IN n. Code 0..4095 is shown as CV IN
+        # 0.0..+1.0; this is a simulation assumption, not the hardware's scaling.
+        self.cv_patched = False
         self.rate_hz = 50
         self.responsive = True  # False: behaves like a hung firmware (no output)
         self.corrupt_next_frame = False
@@ -89,6 +100,36 @@ class SimulatedDevice:
 
     def set_pot(self, index: int, value: float) -> None:
         self.inputs.pots[index] = min(1.0, max(0.0, value))
+
+    def set_cv(self, index: int, value: float) -> None:
+        self.inputs.cv[index] = min(1.0, max(-1.0, value))
+
+    def set_gate(self, index: int, high: bool) -> None:
+        if high and not self.inputs.gates[index]:
+            self.inputs.gate_counts[index] = (self.inputs.gate_counts[index] + 1) & 0xFF
+        self.inputs.gates[index] = high
+
+    def pulse_gate(self, index: int) -> None:
+        """A trigger shorter than one state frame: only the counter changes."""
+        self.set_gate(index, True)
+        self.set_gate(index, False)
+
+    def cv_out(self, now: float) -> list[int]:
+        """DAC codes as diag::ComputeCvOut computes them."""
+        if self.cv_mode == "OFF":
+            return [0, 0]
+        if self.cv_mode == "FIX":
+            return list(self.cv_code)
+        period = max(1, self.cv_period_ms)
+        phase = int(self._uptime(now) * 1000) % period
+        if self.cv_mode == "SAW":
+            value = phase * p.DAC_MAX // max(1, period - 1)
+        else:  # RAMP: triangle
+            half = max(1, period // 2)
+            value = (phase * p.DAC_MAX // half if phase < half
+                     else (period - phase) * p.DAC_MAX // (period - half))
+        value = min(p.DAC_MAX, value)
+        return [value, p.DAC_MAX - value]
 
     def set_sw17(self, position: str) -> None:
         assert position in ("U", "D")
@@ -158,6 +199,7 @@ class SimulatedDevice:
     def _expire(self, now: float) -> None:
         if self._streaming and now - self._last_rx >= HOST_TIMEOUT_S:
             self._streaming = False  # only a new HELLO restarts the stream
+            self.cv_mode = "OFF"  # as in the firmware: no voltage without a session
 
     def computed_leds(self, now: float) -> int:
         if self.led_mode == "OFF":
@@ -186,9 +228,9 @@ class SimulatedDevice:
                 self._streaming = True
                 self._last_sent = None
                 self._send(
-                    f"HELLO proto={self.protocol_version} fw=0.2.1-sim app=DaisyDiagnostic "
+                    f"HELLO proto={self.protocol_version} fw=0.3.0-sim app=DaisyDiagnostic "
                     "dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 "
-                    "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot"
+                    "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout"
                     + (",sdmsc" if self.reader_supported else "") + " sim=1")
                 self._send_state(now)
         elif t == "PING":
@@ -205,6 +247,8 @@ class SimulatedDevice:
                 self._send(f"ERR c={t} e=ARG")
         elif t == "LED":
             self._handle_led(msg)
+        elif t == "CVOUT":
+            self._handle_cvout(msg)
         elif t == "SDTEST":
             if self.reader_state != "LOCAL":
                 self._send("ERR c=SDTEST e=BUSY")
@@ -250,6 +294,7 @@ class SimulatedDevice:
                 self.bootloader_entries += 1
         elif t == "BYE":
             self._streaming = False
+            self.cv_mode = "OFF"
             self._send("ACK c=BYE")
         else:
             self._send(f"ERR c={t[:12]} e=UNKNOWN")
@@ -269,6 +314,32 @@ class SimulatedDevice:
             return
         self.led_mode, self.led_mask, self.led_brightness, self.chase_ms = mode, mask, br, ms
         self._send(f"ACK c=LED m={mode} mask={mask:04X} br={br} ms={ms}")
+
+    def _handle_cvout(self, msg: p.Message) -> None:
+        if not self._streaming:
+            self._send("ERR c=CVOUT e=SESSION")
+            return
+        mode = msg.get("m")
+
+        def opt(key: str, current: int, low: int, high: int) -> int:
+            raw = msg.get(key)
+            if raw is None:
+                return current
+            if not raw.isdigit() or len(raw) > 11 or not low <= int(raw) <= high:
+                raise ValueError
+            return int(raw)
+
+        try:
+            if mode not in p.CV_OUT_MODES:
+                raise ValueError
+            c1 = opt("c1", self.cv_code[0], 0, p.DAC_MAX)
+            c2 = opt("c2", self.cv_code[1], 0, p.DAC_MAX)
+            ms = opt("ms", self.cv_period_ms, 50, 10000)
+        except ValueError:
+            self._send("ERR c=CVOUT e=ARG")
+            return
+        self.cv_mode, self.cv_code, self.cv_period_ms = mode, [c1, c2], ms
+        self._send(f"ACK c=CVOUT m={mode} c1={c1} c2={c2} ms={ms}")
 
     def _sd_result(self) -> str:
         if not self.inputs.sd_card:
@@ -311,6 +382,19 @@ class SimulatedDevice:
             led_mode=self.led_mode,
             leds=[bool(leds >> i & 1) for i in range(p.NUM_LEDS)],
             led_brightness=self.led_brightness,
+            cvgate=self._cvgate(now),
+        )
+
+    def _cvgate(self, now: float) -> p.CvGateState:
+        out = self.cv_out(now)
+        cv = [o / p.DAC_MAX for o in out] if self.cv_patched else list(self.inputs.cv)
+        return p.CvGateState(
+            cv=[p.cv_to_int(v) / 10000.0 for v in cv],
+            cv_raw=[min(65535, int((v + 1.0) / 2.0 * 65535 + 0.5)) for v in cv],
+            gates=list(self.inputs.gates),
+            gate_counts=list(self.inputs.gate_counts),
+            cv_out_mode=self.cv_mode,
+            cv_out=out,
         )
 
     def _send_state(self, now: float) -> None:
@@ -418,3 +502,7 @@ def demo_pattern(device: SimulatedDevice, t: float) -> None:
     active = int(t * 4) % p.NUM_BUTTONS
     for i in range(p.NUM_BUTTONS):
         device.set_button(i, i == active)
+    for i in range(p.NUM_CV):
+        device.set_cv(i, math.sin(t * 0.9 + i * 1.7))
+    device.set_gate(0, int(t * 2) % 2 == 0)
+    device.set_gate(1, int(t * 3) % 3 == 0)

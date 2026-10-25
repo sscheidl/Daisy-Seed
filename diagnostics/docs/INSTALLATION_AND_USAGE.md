@@ -91,6 +91,8 @@ Use `--help` for the English command-line reference.
 * **SW17/SW18:** two-/three-position toggles with U/C/D labels.
 * **microSD:** No card / Card detected / Filesystem readable / Error.
 * **Audio inputs:** plug indicators. **Audio outputs have no jack detection.**
+* **CV / Gate:** CV IN 1/2 show the normalized value (−1…+1), GATE 1/2 a filled dot
+  when high and the rising-edge count, CV OUT 1/2 the mode and DAC code.
 * Gray **N/I** labels mark unimplemented functions; tooltips explain them.
 
 ### LED diagnostics
@@ -111,13 +113,23 @@ up to 20 seconds for the result.
 ### Other panels
 
 Toggle/plug status, knob percentage and raw ADC table with resettable min/max,
-press counts, planned **Not implemented** features, and the event log.
+press counts, the **CV / Gate** panel, planned **Not implemented** features, and the
+event log.
+
+The **CV / Gate** panel lists CV IN 1/2 (normalized, raw ADC, min/max), the gate
+states with edge counters, and the CV OUT test signal: **Off**, **Fixed** (two DAC
+codes 0–4095), **Ramp** (triangle) or **Saw** (rising sawtooth) with a period of
+50–10000 ms; CV OUT 2 carries the inverse in Ramp/Saw. CV OUT switches back to Off
+when the connection ends. Volts are not displayed: the analog scaling has not been
+measured yet. Before patching CV OUT into other equipment, check its input range.
 
 ### Simulation
 
 Select **Simulation** or start with `--sim`. A yellow banner marks simulated data.
 Click buttons, drag knobs or turn the mouse wheel, select toggle positions, and
-toggle microSD/audio input plugs. Controls simulate USB unplug/replug, frozen
+toggle microSD/audio input plugs. Click a GATE jack to toggle it and turn the
+mouse wheel over a CV IN jack to change its value; **Patch cables CV OUT → CV IN**
+feeds the outputs back (simulation assumption: code 0–4095 = CV IN 0–+1). Controls simulate USB unplug/replug, frozen
 firmware, corrupt frames, demo animation, and cards with/without a filesystem.
 The model uses the same wire protocol; it is not a replacement for real hardware.
 

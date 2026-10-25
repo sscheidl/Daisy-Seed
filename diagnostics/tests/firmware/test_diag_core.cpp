@@ -276,8 +276,9 @@ void TestSession() {
     CHECK_STR(Handle(s, "HELLO proto=2", 20), "ERR c=HELLO e=PROTO");
     CHECK(!s.HostActive(20));
     CHECK_STR(Handle(s, "HELLO proto=1", 100, &req),
-              "HELLO proto=1 fw=0.2.1 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM "
-              "bl=v6_1 libdaisy=f715e48 caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot");
+              "HELLO proto=1 fw=0.3.0 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM "
+              "bl=v6_1 libdaisy=f715e48 "
+              "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout");
     CHECK(req == (diag::kRequestState | diag::kRequestNewSession));
     CHECK(s.HostActive(100));
     CHECK(s.HostActive(100 + diag::kHostTimeoutMs - 1));
@@ -356,11 +357,30 @@ void TestStateFormat() {
     char buf[ddp::kMaxBody + 1];
     ddp::Writer w(buf, sizeof(buf));
     diag::WriteState(in, s, 0x0001, 1234, 56789, w);
-    // Must equal the ST example in PROTOCOL.md / vectors.txt.
+    // Must equal the 0.3.0 ST example in PROTOCOL.md / vectors.txt.
     CHECK_STR(w.CStr(),
               "ST n=1234 t=56789 b=0001 pc=01000000000000000000000000000000 "
               "p=0,10000,5000,0,0,0,0,0 r=0,65535,32768,0,0,0,0,0 s17=U s18=C sd=0 "
-              "jl=0 jr=1 lm=FOLLOW l=0001 br=100");
+              "jl=0 jr=1 lm=FOLLOW l=0001 br=100 cv=0,0 cvr=0,0 g=00 gc=0000 co=OFF,0,0");
+
+    // The 0.3.0 CV/gate vector in vectors.txt / PROTOCOL.md, byte for byte.
+    in.cv_norm[0] = 2500;
+    in.cv_norm[1] = -5000;
+    in.cv_raw[0] = 40960;
+    in.cv_raw[1] = 16384;
+    in.gates = 1;
+    in.gate_count[0] = 3;
+    in.gate_count[1] = 0xff;
+    s.cv_mode = diag::CvOutMode::Fix;
+    const uint16_t cv_fix[diag::kNumCv] = {1000, 4095};
+    ddp::Writer wv(buf, sizeof(buf));
+    diag::WriteState(in, s, 0x0001, 1234, 56789, wv, cv_fix);
+    CHECK_STR(wv.CStr(),
+              "ST n=1234 t=56789 b=0001 pc=01000000000000000000000000000000 "
+              "p=0,10000,5000,0,0,0,0,0 r=0,65535,32768,0,0,0,0,0 s17=U s18=C sd=0 "
+              "jl=0 jr=1 lm=FOLLOW l=0001 br=100 cv=2500,-5000 cvr=40960,16384 g=10 "
+              "gc=03FF co=FIX,1000,4095");
+    s.cv_mode = diag::CvOutMode::Off;
 
     // Worst case length stays within one frame.
     diag::Inputs max;
@@ -376,6 +396,22 @@ void TestStateFormat() {
     diag::WriteState(max, s, 0xffff, 0xffffffffu, 0xffffffffu, wm);
     CHECK(wm.Ok());
     CHECK(wm.Length() < 300);
+    // ... including the CV/gate fields at their widest.
+    for(size_t i = 0; i < diag::kNumCv; ++i) {
+        max.cv_norm[i] = -10000;
+        max.cv_raw[i] = 65535;
+        max.gate_count[i] = 0xff;
+    }
+    max.gates = 3;
+    s.cv_mode = diag::CvOutMode::Ramp;
+    const uint16_t cv_max[diag::kNumCv] = {diag::kDacMax, diag::kDacMax};
+    ddp::Writer wc(buf, sizeof(buf));
+    diag::WriteState(max, s, 0xffff, 0xffffffffu, 0xffffffffu, wc, cv_max);
+    CHECK(wc.Ok());
+    CHECK(wc.Length() < 330);
+    CHECK(std::string(buf).find(" cv=-10000,-10000 cvr=65535,65535 g=11 gc=FFFF "
+                                "co=RAMP,4095,4095") != std::string::npos);
+    s.cv_mode = diag::CvOutMode::Off;
 
     // Every button, pot and switch is reflected in its own field.
     for(size_t i = 0; i < diag::kNumButtons; ++i) {
@@ -469,6 +505,115 @@ void TestMisc() {
 }
 } // namespace
 
+void TestGates() {
+    diag::GateTracker g;
+    CHECK(g.States() == 0 && g.Count(0) == 0 && g.Count(1) == 0);
+    g.Update(0, true);
+    CHECK(g.States() == 1 && g.Count(0) == 1);
+    for(int k = 0; k < 10; ++k)
+        g.Update(0, true);  // held high: one edge only
+    CHECK(g.Count(0) == 1);
+    g.Update(1, true);
+    CHECK(g.States() == 3 && g.Count(1) == 1);
+    g.Update(0, false);
+    CHECK(g.States() == 2 && g.Count(0) == 1);
+    // A pulse of one tick is counted even if no frame saw the high state.
+    g.Update(0, true);
+    g.Update(0, false);
+    CHECK(g.Count(0) == 2 && g.States() == 2);
+    for(int k = 0; k < 254; ++k) {
+        g.Update(0, true);
+        g.Update(0, false);
+    }
+    CHECK(g.Count(0) == 0);  // modulo 256
+    CHECK(g.Count(1) == 1);
+}
+
+void TestCvOut() {
+    diag::Settings s;
+    uint16_t out[diag::kNumCv] = {1, 1};
+    CHECK(s.cv_mode == diag::CvOutMode::Off);  // power-up default
+    diag::ComputeCvOut(s, 123, out);
+    CHECK(out[0] == 0 && out[1] == 0);
+    s.cv_mode = diag::CvOutMode::Fix;
+    s.cv_code[0] = 1000;
+    s.cv_code[1] = diag::kDacMax;
+    diag::ComputeCvOut(s, 5, out);
+    CHECK(out[0] == 1000 && out[1] == diag::kDacMax);
+
+    s.cv_period_ms = 1000;
+    s.cv_mode = diag::CvOutMode::Saw;
+    diag::ComputeCvOut(s, 0, out);
+    CHECK(out[0] == 0 && out[1] == diag::kDacMax);
+    diag::ComputeCvOut(s, 999, out);
+    CHECK(out[0] == diag::kDacMax && out[1] == 0);
+    diag::ComputeCvOut(s, 1000, out);
+    CHECK(out[0] == 0);  // wraps
+    uint16_t prev = 0;
+    bool monotonic = true;
+    for(uint32_t t = 0; t < 1000; ++t) {
+        diag::ComputeCvOut(s, t, out);
+        monotonic = monotonic && out[0] >= prev && out[0] + out[1] == diag::kDacMax;
+        prev = out[0];
+    }
+    CHECK(monotonic);
+
+    s.cv_mode = diag::CvOutMode::Ramp;
+    diag::ComputeCvOut(s, 0, out);
+    CHECK(out[0] == 0);
+    diag::ComputeCvOut(s, 500, out);
+    CHECK(out[0] == diag::kDacMax);
+    bool smooth = true;
+    diag::ComputeCvOut(s, 0, out);
+    prev = out[0];
+    for(uint32_t t = 1; t < 3000; ++t) {  // no jump larger than one step, also across periods
+        diag::ComputeCvOut(s, t, out);
+        const int step = static_cast<int>(out[0]) - static_cast<int>(prev);
+        smooth = smooth && step <= 9 && step >= -9 && out[0] + out[1] == diag::kDacMax;
+        prev = out[0];
+    }
+    CHECK(smooth);
+
+    diag::CvOutMode m;
+    CHECK(diag::ParseCvOutMode("SAW", m) && m == diag::CvOutMode::Saw);
+    CHECK(!diag::ParseCvOutMode("saw", m));
+    CHECK_STR(diag::CvOutModeName(diag::CvOutMode::Ramp), "RAMP");
+
+    CHECK(diag::NormalizeCv(std::nanf("")) == 0);
+    CHECK(diag::NormalizeCv(-2.f) == -10000);
+    CHECK(diag::NormalizeCv(2.f) == 10000);
+    CHECK(diag::NormalizeCv(0.5f) == 5000);
+    CHECK(diag::NormalizeCv(-0.5f) == -5000);
+    CHECK(diag::NormalizeCv(0.f) == 0);
+}
+
+void TestCvOutCommand() {
+    diag::Session s;
+    s.Init("v6_1");
+    uint32_t req = 0;
+    CHECK_STR(Handle(s, "CVOUT m=FIX c1=1", 10, &req), "ERR c=CVOUT e=SESSION");
+    CHECK(req == diag::kRequestNone && s.settings.cv_mode == diag::CvOutMode::Off);
+    Handle(s, "HELLO proto=1", 20);
+    CHECK_STR(Handle(s, "CVOUT m=FIX c1=1000 c2=4095", 30, &req),
+              "ACK c=CVOUT m=FIX c1=1000 c2=4095 ms=1000");
+    CHECK(req == diag::kRequestCvOut);
+    CHECK_STR(Handle(s, "CVOUT m=SAW ms=50", 40), "ACK c=CVOUT m=SAW c1=1000 c2=4095 ms=50");
+    CHECK_STR(Handle(s, "CVOUT m=RAMP ms=10000", 40),
+              "ACK c=CVOUT m=RAMP c1=1000 c2=4095 ms=10000");
+    const diag::Settings before = s.settings;
+    CHECK_STR(Handle(s, "CVOUT", 50), "ERR c=CVOUT e=ARG");
+    CHECK_STR(Handle(s, "CVOUT m=SINE", 50), "ERR c=CVOUT e=ARG");
+    CHECK_STR(Handle(s, "CVOUT m=FIX c1=4096", 50), "ERR c=CVOUT e=ARG");
+    CHECK_STR(Handle(s, "CVOUT m=FIX c2=-1", 50), "ERR c=CVOUT e=ARG");
+    CHECK_STR(Handle(s, "CVOUT m=SAW ms=49", 50), "ERR c=CVOUT e=ARG");
+    CHECK_STR(Handle(s, "CVOUT m=SAW ms=10001", 50), "ERR c=CVOUT e=ARG");
+    CHECK_STR(Handle(s, "CVOUT m=FIX c1=000000000000001", 50), "ERR c=CVOUT e=ARG");
+    CHECK(s.settings.cv_mode == before.cv_mode && s.settings.cv_code[0] == before.cv_code[0]
+          && s.settings.cv_code[1] == before.cv_code[1]
+          && s.settings.cv_period_ms == before.cv_period_ms);
+    CHECK_STR(Handle(s, "CVOUT m=OFF", 60), "ACK c=CVOUT m=OFF c1=1000 c2=4095 ms=10000");
+}
+
 int main(int argc, char** argv) {
     if(argc < 2) {
         std::printf("usage: %s <vectors.txt>\n", argv[0]);
@@ -484,6 +629,9 @@ int main(int argc, char** argv) {
     TestSession();
     TestStateFormat();
     TestMisc();
+    TestGates();
+    TestCvOut();
+    TestCvOutCommand();
     std::printf("%s: %d checks, %d failures\n", failures ? "FAIL" : "PASS", checks, failures);
     return failures ? 1 : 0;
 }

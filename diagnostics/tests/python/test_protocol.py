@@ -184,3 +184,50 @@ def test_sd_and_sys_and_hello():
     info = p.parse_hello(p.parse_message(hello))
     assert info.protocol == 1 and info.boot == "BOOT_SRAM" and "led" in info.capabilities
     assert not info.simulated
+
+
+ST_CV_EXAMPLE = [b for _, b in load_vectors() if b.startswith("ST ") and " cv=" in b][0]
+
+
+def test_state_without_cv_fields_is_supported():
+    assert " cv=" not in ST_EXAMPLE  # firmware 0.1.0-0.2.x layout
+    assert p.parse_state(p.parse_message(ST_EXAMPLE)).cvgate is None
+
+
+def test_state_with_cv_fields_round_trip():
+    state = p.parse_state(p.parse_message(ST_CV_EXAMPLE))
+    cg = state.cvgate
+    assert cg.cv == [0.25, -0.5]
+    assert cg.cv_raw == [40960, 16384]
+    assert cg.gates == [True, False]
+    assert cg.gate_counts == [3, 255]
+    assert (cg.cv_out_mode, cg.cv_out) == ("FIX", [1000, 4095])
+    assert p.format_state(state) == ST_CV_EXAMPLE
+
+
+@pytest.mark.parametrize("bad", [
+    ST_CV_EXAMPLE.replace(" cv=2500,-5000", ""),  # incomplete block
+    ST_CV_EXAMPLE.replace("cv=2500,-5000", "cv=2500"),
+    ST_CV_EXAMPLE.replace("cv=2500,-5000", "cv=10001,0"),
+    ST_CV_EXAMPLE.replace("cv=2500,-5000", "cv=+2500,0"),
+    ST_CV_EXAMPLE.replace("g=10", "g=2"),
+    ST_CV_EXAMPLE.replace("gc=03FF", "gc=3FF"),
+    ST_CV_EXAMPLE.replace("co=FIX,1000,4095", "co=SINE,1000,4095"),
+    ST_CV_EXAMPLE.replace("co=FIX,1000,4095", "co=FIX,1000,4096"),
+    ST_CV_EXAMPLE.replace("co=FIX,1000,4095", "co=FIX,1000"),
+    ST_CV_EXAMPLE.replace("cvr=40960,16384", "cvr=40960,65536"),
+])
+def test_invalid_cv_fields_are_rejected(bad):
+    with pytest.raises(p.ProtocolError):
+        p.parse_state(p.parse_message(bad))
+
+
+def test_cv_rounding_and_command():
+    assert p.cv_to_int(float("nan")) == 0
+    assert p.cv_to_int(-2.0) == -10000
+    assert p.cv_to_int(-0.5) == -5000
+    assert p.cv_to_int(0.12345) == 1235
+    assert p.cmd_cvout("FIX", 1000, 5000, 20) == "CVOUT m=FIX c1=1000 c2=4095 ms=50"
+    assert p.cmd_cvout("OFF") == "CVOUT m=OFF"
+    with pytest.raises(ValueError):
+        p.cmd_cvout("SINE")

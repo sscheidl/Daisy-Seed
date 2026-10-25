@@ -25,11 +25,14 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 | microSD | Card detection; optional **read-only** filesystem test | No card / detected / readable / error |
 | Optional SD card reader | Separate writable CDC + MSC firmware variant; exclusive card ownership | Explicit share, Windows eject, return or interruption acknowledgement |
 | Audio inputs L/R | Input jack detection only; outputs have no detection | Input connector indicators |
+| CV IN 1/2, GATE IN 1/2 | Normalized CV and raw ADC; gate state and edge counters (1 kHz) | Values at the jacks, CV / Gate panel with min/max |
+| CV OUT 1/2 | Test signals Off / Fixed / Ramp / Saw as DAC codes; off when the session ends | Mode, codes and period |
 | USB | DDP v1: handshake, 10–100 Hz state stream, CRC, keepalive | Discovery, timeouts, reconnection |
 | Simulation | — | Device model speaking the same protocol |
 
-Audio processing, DSP, MIDI DIN, USB-MIDI, USB host, CV, and gate functions are
-marked **Not implemented** or **N/I**. Displayed LED states are targets, not optical
+Audio processing, DSP, MIDI DIN, USB-MIDI, and USB host functions are
+marked **Not implemented** or **N/I**. CV and gate values are shown normalized or as
+DAC codes; volts are not displayed until they have been measured (H12–H15). Displayed LED states are targets, not optical
 or electrical feedback from the LEDs.
 
 ## Binary downloads

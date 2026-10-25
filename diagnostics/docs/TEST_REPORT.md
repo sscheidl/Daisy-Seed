@@ -1,5 +1,35 @@
 # Test report
 
+## Version 0.3.0 CV and gate jacks
+
+Software-only validation; **no hardware test has been performed** for this version.
+Local results on 25 October 2026 (Windows 11):
+
+| Check | Command | Result |
+| --- | --- | --- |
+| ARM build and image/SD symbol policy, both variants | `bash scripts/build-firmware.sh` | Passed |
+| C++ host tests, MSVC `/W4 /WX` | `scripts\run-host-tests-msvc.cmd` | Passed: core 397, main loop 659, card reader 4631 checks, reader application, USB adapter 53 |
+| Same suites with clang `-Wall -Wextra -Werror`, and with ASan + UBSan | `make -C firmware test` / `test-sanitize` with `HOST_CXX=clang++` (llvm-mingw) | Passed |
+| Python protocol, session, simulator and GUI tests | `python -m pytest tests/python` | 221 passed |
+
+New host tests cover gate edge counting (held level, one-tick pulse, modulo 256),
+CV OUT modes (fixed codes, monotonic saw, triangle without jumps, inverse channel),
+`CVOUT` validation including overlong values and the session requirement, CV OUT
+switching off after BYE and after the 3 s timeout, gate changes triggering frames,
+the maximum ST length, byte-identical firmware/host formatting of the new ST vector,
+strict host parsing of the CV/gate block and acceptance of frames without it.
+
+Pending hardware tests (status **NICHT GEMESSEN**):
+
+| # | Test | Status |
+| --- | --- | --- |
+| H12 | CV IN 1/2 with known voltages (e.g. −5, 0, +5 V if within the jack's range): normalized value, raw ADC, mapping CV IN 1/2 | **Not measured** |
+| H13 | GATE IN 1/2: state and edge counter with a gate/trigger source; polarity; short pulses | **Not measured** |
+| H14 | CV OUT 1/2 with a multimeter/oscilloscope: codes 0, 2048, 4095 in Fixed; Ramp and Saw shape and period; Off after closing the application | **Not measured** |
+| H15 | Loop test: patch CV OUT 1/2 → CV IN 1/2, compare codes with read values | **Not measured** |
+
+Do not connect CV OUT to equipment with an unknown input range before H14.
+
 ## Version 0.2.0 SD card reader
 
 This extension has software-only validation. Both ARM variants build with separate

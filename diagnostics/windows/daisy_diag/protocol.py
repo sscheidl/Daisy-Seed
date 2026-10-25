@@ -13,6 +13,10 @@ NUM_BUTTONS = 16
 NUM_LEDS = 16
 NUM_POTS = 8
 LED_MODES = ("OFF", "ON", "MASK", "CHASE", "FOLLOW")
+CV_OUT_MODES = ("OFF", "FIX", "RAMP", "SAW")
+NUM_CV = 2
+NUM_GATES = 2
+DAC_MAX = 4095
 USB_VID = 0x0483
 USB_PID = 0x5740
 
@@ -26,6 +30,8 @@ U32_MAX = 0xFFFFFFFF
 _DEC = re.compile(r"[0-9]{1,10}")
 _SIGNED_DEC = re.compile(r"-?[0-9]{1,10}")
 _HEX4 = re.compile(r"[0-9A-Fa-f]{4}")
+_SIGNED_CV = re.compile(r"-?[0-9]{1,5}")
+_GATE_BITS = re.compile(r"[01]{2}")
 _PRESS_COUNTS = re.compile(r"[0-9A-Fa-f]{32}")
 
 
@@ -177,6 +183,18 @@ def format_message(msg_type: str, **fields: object) -> str:
 
 
 @dataclass
+class CvGateState:
+    """CV IN, GATE IN and CV OUT fields of an ST message (firmware 0.3.0 and later)."""
+
+    cv: list[float] = field(default_factory=lambda: [0.0] * NUM_CV)  # -1.0 .. +1.0
+    cv_raw: list[int] = field(default_factory=lambda: [0] * NUM_CV)  # 0 .. 65535
+    gates: list[bool] = field(default_factory=lambda: [False] * NUM_GATES)
+    gate_counts: list[int] = field(default_factory=lambda: [0] * NUM_GATES)
+    cv_out_mode: str = "OFF"
+    cv_out: list[int] = field(default_factory=lambda: [0] * NUM_CV)  # DAC codes written
+
+
+@dataclass
 class BoardState:
     """Complete panel state as reported by an ST message."""
 
@@ -194,6 +212,7 @@ class BoardState:
     led_mode: str = "FOLLOW"
     leds: list[bool] = field(default_factory=lambda: [False] * NUM_LEDS)
     led_brightness: int = 100
+    cvgate: CvGateState | None = None  # None: firmware without CV/gate support
 
 
 def _mask_bits(mask: int, count: int) -> list[bool]:
@@ -218,6 +237,42 @@ def _flag(msg: Message, key: str) -> bool:
     if value not in ("0", "1"):
         raise ProtocolError(f"ST: field {key!r} must be 0 or 1")
     return value == "1"
+
+
+_CVGATE_KEYS = ("cv", "cvr", "g", "gc", "co")
+
+
+def _parse_cvgate(msg: Message) -> CvGateState | None:
+    present = [k for k in _CVGATE_KEYS if k in msg.fields]
+    if not present:
+        return None
+    if len(present) != len(_CVGATE_KEYS):
+        raise ProtocolError("ST: CV/gate fields must be complete")
+    cv_parts = msg.fields["cv"].split(",")
+    if len(cv_parts) != NUM_CV or not all(_SIGNED_CV.fullmatch(v) for v in cv_parts):
+        raise ProtocolError("ST: field 'cv' invalid")
+    cv = [int(v) for v in cv_parts]
+    if any(not -10000 <= v <= 10000 for v in cv):
+        raise ProtocolError("ST: field 'cv' out of range")
+    gates = msg.fields["g"]
+    if not _GATE_BITS.fullmatch(gates):
+        raise ProtocolError("ST: field 'g' must be two 0/1 digits")
+    gc = msg.hex4("gc")
+    co = msg.fields["co"].split(",")
+    if len(co) != 1 + NUM_CV or co[0] not in CV_OUT_MODES or not all(
+            _DEC.fullmatch(v) for v in co[1:]):
+        raise ProtocolError("ST: field 'co' invalid")
+    codes = [int(v) for v in co[1:]]
+    if any(v > DAC_MAX for v in codes):
+        raise ProtocolError("ST: field 'co' code out of range")
+    return CvGateState(
+        cv=[v / 10000.0 for v in cv],
+        cv_raw=_int_list(msg, "cvr", NUM_CV, 0, 65535),
+        gates=[c == "1" for c in gates],
+        gate_counts=[gc >> 8 & 0xFF, gc & 0xFF],
+        cv_out_mode=co[0],
+        cv_out=codes,
+    )
 
 
 def parse_state(msg: Message) -> BoardState:
@@ -251,6 +306,7 @@ def parse_state(msg: Message) -> BoardState:
         led_mode=led_mode,
         leds=_mask_bits(leds, NUM_LEDS),
         led_brightness=msg.int("br", 0, 100),
+        cvgate=_parse_cvgate(msg),
     )
 
 
@@ -267,7 +323,29 @@ def format_state(state: BoardState) -> str:
         f"s17={state.sw17} s18={state.sw18} sd={int(state.sd_card)} "
         f"jl={int(state.jack_left)} jr={int(state.jack_right)} "
         f"lm={state.led_mode} l={mask(state.leds)} br={state.led_brightness}"
+        + ("" if state.cvgate is None else _format_cvgate(state.cvgate))
     )
+
+
+def _format_cvgate(c: CvGateState) -> str:
+    return (
+        f" cv={','.join(str(cv_to_int(v)) for v in c.cv)}"
+        f" cvr={','.join(str(v) for v in c.cv_raw)}"
+        f" g={''.join('1' if g else '0' for g in c.gates)}"
+        f" gc={''.join(f'{n & 0xFF:02X}' for n in c.gate_counts)}"
+        f" co={c.cv_out_mode},{','.join(str(v) for v in c.cv_out)}"
+    )
+
+
+def cv_to_int(value: float) -> int:
+    """Same rounding as diag::NormalizeCv in the firmware."""
+    if value != value:
+        return 0
+    if value <= -1.0:
+        return -10000
+    if value >= 1.0:
+        return 10000
+    return int(value * 10000.0 + 0.5) if value >= 0 else -int(-value * 10000.0 + 0.5)
 
 
 def pot_to_int(value: float) -> int:
@@ -404,6 +482,20 @@ def cmd_led(mode: str, mask: int | None = None, brightness: int | None = None,
         body += f" br={max(0, min(100, int(brightness)))}"
     if step_ms is not None:
         body += f" ms={max(20, min(2000, int(step_ms)))}"
+    return body
+
+
+def cmd_cvout(mode: str, code1: int | None = None, code2: int | None = None,
+              period_ms: int | None = None) -> str:
+    if mode not in CV_OUT_MODES:
+        raise ValueError(f"unknown CV OUT mode {mode!r}")
+    body = f"CVOUT m={mode}"
+    if code1 is not None:
+        body += f" c1={max(0, min(DAC_MAX, int(code1)))}"
+    if code2 is not None:
+        body += f" c2={max(0, min(DAC_MAX, int(code2)))}"
+    if period_ms is not None:
+        body += f" ms={max(50, min(10000, int(period_ms)))}"
     return body
 
 

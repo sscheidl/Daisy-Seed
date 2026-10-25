@@ -9,8 +9,8 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QAbstractItemView, QButtonGroup, QCheckBox, QComboBox,
                                QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
                                QLabel, QMainWindow, QPlainTextEdit, QPushButton, QScrollArea,
-                               QSlider, QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout,
-                               QWidget, QMessageBox)
+                               QSlider, QSpinBox, QSplitter, QTableWidget, QTableWidgetItem,
+                               QVBoxLayout, QWidget, QMessageBox)
 
 from .. import __version__
 from .. import protocol as p
@@ -33,9 +33,9 @@ EXTENSIONS = (
     ("MIDI DIN", 'OUT/THRU/INPUT (USART1, D13/D14). Not implemented.'),
     ("USB-MIDI", 'Not implemented. J7 carries the diagnostic protocol over USB CDC.'),
     ("USB-Host", 'Not implemented. USB host capability and electrical requirements (VBUS supply and port role) have not been verified on hardware.'),
-    ("CV Input/Output", 'CV IN 1/2 (D20/D21), CV OUT 1/2 (DAC). Not implemented.'),
-    ("Gate Input", 'GATE IN 1/2 (D0/D18). Not implemented.'),
 )
+
+CV_OUT_BUTTONS = (("OFF", "Off"), ("FIX", "Fixed"), ("RAMP", "Ramp"), ("SAW", "Saw"))
 
 STATE_COLORS = {
     ConnState.CONNECTED: theme.OK,
@@ -132,6 +132,7 @@ class MainWindow(QMainWindow):
         self.panel_layout.addWidget(self._build_inputs_group())
         self.panel_layout.addWidget(self._build_pot_group())
         self.panel_layout.addWidget(self._build_counter_group())
+        self.panel_layout.addWidget(self._build_cvgate_group())
         self.panel_layout.addWidget(self._build_extensions_group())
         self.panel_layout.addStretch(1)
         scroll.setWidget(panel)
@@ -147,6 +148,9 @@ class MainWindow(QMainWindow):
         self.board.sw18Changed.connect(lambda pos: self._sim_device() and self._sim_device().set_sw18(pos))
         self.board.sdToggled.connect(self._sim_toggle_sd)
         self.board.jackToggled.connect(self._sim_toggle_jack)
+        self.board.gateToggled.connect(self._sim_toggle_gate)
+        self.board.cvChanged.connect(
+            lambda i, v: self._sim_device() and self._sim_device().set_cv(i, v))
         self.board.ledClicked.connect(self._toggle_led)
 
     def _build_header(self) -> QWidget:
@@ -268,7 +272,12 @@ class MainWindow(QMainWindow):
         self.sim_jl.toggled.connect(lambda on: self._sim_set_jack("left", on))
         self.sim_jr = QCheckBox('Right audio input plugged in')
         self.sim_jr.toggled.connect(lambda on: self._sim_set_jack("right", on))
-        for w in (self.sim_sd_card, self.sim_sd_fs, self.sim_jl, self.sim_jr):
+        self.sim_cv_patch = QCheckBox('Patch cables CV OUT 1/2 → CV IN 1/2')
+        self.sim_cv_patch.setToolTip('Simulation assumption: DAC code 0–4095 appears as '
+                                     'CV IN 0.0–+1.0. The real scaling is not measured.')
+        self.sim_cv_patch.toggled.connect(
+            lambda on: self._sim_device() and setattr(self._sim_device(), "cv_patched", on))
+        for w in (self.sim_sd_card, self.sim_sd_fs, self.sim_jl, self.sim_jr, self.sim_cv_patch):
             layout.addWidget(w)
         self.sim_reader_eject = QPushButton("Simulate Windows eject")
         self.sim_reader_eject.clicked.connect(
@@ -391,6 +400,81 @@ class MainWindow(QMainWindow):
         reset = QPushButton('Reset min/max')
         reset.clicked.connect(self._reset_minmax)
         layout.addWidget(reset)
+        return box
+
+    def _build_cvgate_group(self) -> QGroupBox:
+        box = QGroupBox('CV / Gate')
+        layout = QVBoxLayout(box)
+        self.cvgate_status = QLabel("")
+        self.cvgate_status.setObjectName("hint")
+        self.cvgate_status.setWordWrap(True)
+        layout.addWidget(self.cvgate_status)
+        self.cv_table = QTableWidget(p.NUM_CV, 5)
+        self.cv_table.setHorizontalHeaderLabels(["", 'Value', 'Raw ADC', "Min", "Max"])
+        self.cv_table.verticalHeader().setVisible(False)
+        self.cv_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.cv_table.setSelectionMode(QAbstractItemView.NoSelection)
+        self.cv_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        for i in range(p.NUM_CV):
+            self.cv_table.setItem(i, 0, QTableWidgetItem(f"CV IN {i + 1}"))
+            for c in range(1, 5):
+                item = QTableWidgetItem("–")
+                item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                self.cv_table.setItem(i, c, item)
+            self.cv_table.setRowHeight(i, 22)
+        self.cv_table.setFixedHeight(22 * p.NUM_CV + 30)
+        layout.addWidget(self.cv_table)
+        gates = QHBoxLayout()
+        self.gate_labels: list[QLabel] = []
+        for i in range(p.NUM_GATES):
+            label = QLabel(f"GATE {i + 1}: –")
+            label.setObjectName("valueLabel")
+            gates.addWidget(label)
+            self.gate_labels.append(label)
+        layout.addLayout(gates)
+
+        out_label = QLabel('CV OUT test signal')
+        out_label.setObjectName("sectionLabel")
+        layout.addWidget(out_label)
+        row = QHBoxLayout()
+        self.cv_mode_group = QButtonGroup(self)
+        self.cv_mode_buttons: dict[str, QPushButton] = {}
+        for mode, text in CV_OUT_BUTTONS:
+            b = QPushButton(text)
+            b.setCheckable(True)
+            b.setObjectName("segment")
+            b.clicked.connect(lambda _c=False, m=mode: self._send_cvout(m))
+            self.cv_mode_group.addButton(b)
+            self.cv_mode_buttons[mode] = b
+            row.addWidget(b)
+        layout.addLayout(row)
+        form = QFormLayout()
+        self.cv_code_spins: list[QSpinBox] = []
+        for i in range(p.NUM_CV):
+            spin = QSpinBox()
+            spin.setRange(0, p.DAC_MAX)
+            spin.setValue(0)
+            spin.setSuffix(" / 4095")
+            spin.setToolTip('DAC code for the fixed mode')
+            form.addRow(f"CV OUT {i + 1} code:", spin)
+            self.cv_code_spins.append(spin)
+        self.cv_period_spin = QSpinBox()
+        self.cv_period_spin.setRange(50, 10000)
+        self.cv_period_spin.setSingleStep(50)
+        self.cv_period_spin.setValue(1000)
+        self.cv_period_spin.setSuffix(" ms")
+        form.addRow('Ramp/saw period:', self.cv_period_spin)
+        layout.addLayout(form)
+        self.cv_apply = QPushButton('Apply CV OUT settings')
+        self.cv_apply.clicked.connect(lambda: self._send_cvout(self._current_cv_mode()))
+        layout.addWidget(self.cv_apply)
+        note = QLabel('Values are normalized: CV IN −1…+1 (libDaisy bipolar CV), CV OUT as '
+                      'DAC code 0–4095. Volts are not shown until they have been measured on '
+                      'the hardware. Ramp is a triangle, saw a rising sawtooth; CV OUT 2 '
+                      'carries the inverse. CV OUT returns to Off when the session ends.')
+        note.setObjectName("hint")
+        note.setWordWrap(True)
+        layout.addWidget(note)
         return box
 
     def _build_counter_group(self) -> QGroupBox:
@@ -706,6 +790,7 @@ class MainWindow(QMainWindow):
                 "–" if hi is None else f"{hi * 100:.1f} %")
             for c, txt in enumerate(cells, start=1):
                 self.pot_table.item(i, c).setText(txt)
+        self._refresh_cvgate(st)
         for i, label in enumerate(self.counter_labels):
             if st is None:
                 label.setText(f"S{i + 1}: –")
@@ -785,9 +870,77 @@ class MainWindow(QMainWindow):
     def _reset_minmax(self) -> None:
         self.board.pot_min = [None] * p.NUM_POTS
         self.board.pot_max = [None] * p.NUM_POTS
+        self.cv_min: list[float | None] = [None] * p.NUM_CV
+        self.cv_max: list[float | None] = [None] * p.NUM_CV
         self.board.update()
 
+    # ---- CV / gate ----------------------------------------------------------------------
+    def _current_cv_mode(self) -> str:
+        st = self.session.board if self.session else None
+        if st is not None and st.cvgate is not None:
+            return st.cvgate.cv_out_mode
+        return "OFF"
+
+    def _send_cvout(self, mode: str) -> None:
+        if self.session is None:
+            return
+        body = p.cmd_cvout(mode, self.cv_code_spins[0].value(), self.cv_code_spins[1].value(),
+                           self.cv_period_spin.value())
+        if self.session.send(body):
+            self._log(f"CV OUT requested: {mode}")
+
+    def _refresh_cvgate(self, st) -> None:
+        cg = st.cvgate if st is not None else None
+        if cg is not None:
+            for i, v in enumerate(cg.cv):
+                lo, hi = self.cv_min[i], self.cv_max[i]
+                self.cv_min[i] = v if lo is None else min(lo, v)
+                self.cv_max[i] = v if hi is None else max(hi, v)
+        enabled = cg is not None
+        for b in self.cv_mode_buttons.values():
+            b.setEnabled(enabled)
+        for w in (*self.cv_code_spins, self.cv_period_spin, self.cv_apply):
+            w.setEnabled(enabled)
+        if st is None:
+            self.cvgate_status.setText("")
+        elif cg is None:
+            self.cvgate_status.setText('The connected firmware reports no CV/gate data '
+                                       '(firmware 0.3.0 or later required).')
+        else:
+            self.cvgate_status.setText(
+                f"CV OUT: {cg.cv_out_mode}, codes {cg.cv_out[0]} / {cg.cv_out[1]}")
+        for i in range(p.NUM_CV):
+            lo, hi = self.cv_min[i], self.cv_max[i]
+            cells = ("–", "–", "–", "–") if cg is None else (
+                f"{cg.cv[i]:+.4f}", str(cg.cv_raw[i]),
+                "–" if lo is None else f"{lo:+.3f}", "–" if hi is None else f"{hi:+.3f}")
+            for c, txt in enumerate(cells, start=1):
+                self.cv_table.item(i, c).setText(txt)
+        for i, label in enumerate(self.gate_labels):
+            if cg is None:
+                label.setText(f"GATE {i + 1}: –")
+                label.setStyleSheet("")
+            else:
+                label.setText(f"GATE {i + 1}: {'HIGH' if cg.gates[i] else 'LOW'} · "
+                              f"edges {cg.gate_counts[i]}")
+                label.setStyleSheet(f"color: {theme.TEXT.name()}; font-weight: 700;"
+                                    if cg.gates[i] else f"color: {theme.MUTED.name()};")
+        if cg is not None:
+            button = self.cv_mode_buttons.get(cg.cv_out_mode)
+            if button is not None and not button.isChecked():
+                button.setChecked(True)
+        else:
+            self.cv_mode_group.setExclusive(False)
+            for b in self.cv_mode_buttons.values():
+                b.setChecked(False)
+            self.cv_mode_group.setExclusive(True)
+
     # ---- simulation controls -------------------------------------------------------------
+    def _sim_toggle_gate(self, index: int) -> None:
+        dev = self._sim_device()
+        if dev:
+            dev.set_gate(index, not dev.inputs.gates[index])
+
     def _sim_device(self):
         return self.cable.device if self.cable is not None else None
 

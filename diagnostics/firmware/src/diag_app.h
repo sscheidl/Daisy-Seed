@@ -30,6 +30,8 @@ class Board {
     virtual Inputs ReadInputs() = 0;
     virtual uint32_t ControlTicks() = 0;  // number of 1 kHz control updates so far
     virtual void ApplyLeds(uint16_t leds, uint8_t brightness_percent) = 0;
+    // CV OUT 1/2 DAC codes 0..kDacMax; main loop only.
+    virtual void ApplyCvOut(uint16_t, uint16_t) {}
     virtual SdResult RunSdTest(bool card_present) = 0;  // blocking, bounded
     virtual bool SdTestAllowed() { return true; }
     // Default board is the protected diagnostic build. Reader builds return
@@ -101,6 +103,8 @@ class App {
     uint16_t last_leds_ = 0;
     uint8_t last_brightness_ = 0;
     bool leds_dirty_ = true;
+    uint16_t last_cv_[kNumCv] = {};
+    bool cv_applied_ = false;
     bool keepalive_after_block_ = false;
     bool boot_pending_ = false;
     uint32_t boot_since_ = 0;
