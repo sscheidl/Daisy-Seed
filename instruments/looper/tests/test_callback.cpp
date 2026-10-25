@@ -226,6 +226,118 @@ int main() {
     Blocks(20);
     CHECK(engine.Reversed() != reversed);
 
+    // MIDI CC on J7, any channel: CC102-113 act like S1-S12, CC20-27 like the pots.
+    auto cc = [](uint8_t controller, uint8_t value, int channel = 0) {
+        daisy::MidiEvent e;
+        e.type = daisy::ControlChange;
+        e.channel = channel;
+        e.data[0] = controller;
+        e.data[1] = value;
+        usbMidi.incoming.push_back(e);
+        ServiceUsbMidi();  // main loop
+        Blocks(2);
+    };
+    auto tap = [&](uint8_t controller, int channel = 0) {
+        cc(controller, 127, channel);
+        cc(controller, 0, channel);
+    };
+    const bool midiReversed = engine.Reversed();
+    tap(105);
+    Blocks(20);
+    CHECK(engine.Reversed() != midiReversed);
+    cc(105, 127);
+    cc(105, 100);  // still held: one press only
+    Blocks(20);
+    CHECK(engine.Reversed() == midiReversed);
+    cc(105, 0);
+    tap(113, 15);  // channel 16
+    CHECK(engine.GetLoopMode() == looper::LoopMode::Resample && mode() == 3);
+    tap(111);
+    CHECK(engine.GetLoopMode() == looper::LoopMode::Replace);
+    tap(107);  // next mode
+    CHECK(engine.GetLoopMode() == looper::LoopMode::Frippertronics);
+    tap(110);
+    CHECK(engine.GetLoopMode() == looper::LoopMode::SoundOnSound);
+    const auto seam = engine.GetSeamMode();
+    tap(108);
+    CHECK(engine.GetSeamMode() != seam);
+    tap(108);
+    tap(103);
+    CHECK(!engine.Playing());
+    tap(103);
+    CHECK(engine.Playing());
+    tap(102);
+    CHECK(engine.Overdubbing());
+    Blocks(200, .3f);
+    tap(102);
+    Blocks(50);
+    CHECK(!engine.Overdubbing() && engine.CanUndo());
+    tap(104);
+    Blocks(50);  // the 10 ms undo ramp
+    CHECK(engine.CanRedo());
+    tap(104);
+    Blocks(50);
+    CHECK(engine.CanUndo() && !engine.CanRedo());
+    // CC20 sets whole semitones, 64 = unity; the pot takes over again after a 2 % move.
+    cc(20, 76);
+    CHECK(engine.VarispeedTarget() == 12.f);
+    cc(20, 0);
+    CHECK(engine.VarispeedTarget() == -24.f);
+    cc(20, 127);
+    CHECK(engine.VarispeedTarget() == 36.f);
+    cc(20, 76);
+    hw.pot[knobs::Varispeed].value = .41f;  // 1 %: MIDI keeps the knob
+    Blocks(2);
+    CHECK(engine.VarispeedTarget() == 12.f);
+    hw.pot[knobs::Varispeed].value = .43f;  // 3 %: the pot is back
+    Blocks(2);
+    CHECK(engine.VarispeedTarget() == 2.f);
+    hw.pot[knobs::Varispeed].value = .4f;
+    Blocks(2);
+    CHECK(engine.VarispeedTarget() == 0.f);
+    cc(21, 127);
+    CHECK(engine.Inertia() == 1.f);
+    cc(21, 0);
+    CHECK(engine.Inertia() == 0.f);
+    cc(25, 127);
+    CHECK(engine.SliceDivisor() == 16);
+    cc(25, 0);
+    CHECK(engine.SliceDivisor() == 1);
+    cc(24, 64);
+    Blocks(20);
+    CHECK(engine.WindowSize() < engine.Length());
+    cc(24, 127);
+    Blocks(20);
+    CHECK(engine.WindowSize() == engine.Length());
+    cc(27, 127);
+    CHECK(engine.FrippertronicsDecay() == 1.f);
+    hw.pot[knobs::Decay].value = .05f;  // the pot takes the knob back
+    Blocks(2);
+    CHECK(engine.FrippertronicsDecay() == .05f);
+    hw.pot[knobs::Decay].value = 0.f;
+    // Other controllers and notes do nothing and get no reply.
+    const auto loopMode = engine.GetLoopMode();
+    const bool playing = engine.Playing();
+    for (uint8_t other : {1, 7, 10, 64, 101, 114, 120, 123})
+        tap(other);
+    daisy::MidiEvent note;
+    note.type = daisy::NoteOn;
+    note.data[0] = 60;
+    note.data[1] = 100;
+    usbMidi.incoming.push_back(note);
+    ServiceUsbMidi();
+    Blocks(20);
+    CHECK(engine.GetLoopMode() == loopMode && engine.Playing() == playing && usbMidi.sent.empty());
+    // Every pot takes its knob back (the remaining checks use the pots).
+    for (unsigned k = 0; k <= knobs::Decay; ++k) {
+        const float v = hw.pot[k].value;
+        hw.pot[k].value = v < .5f ? v + .05f : v - .05f;
+        Blocks(2);
+        hw.pot[k].value = v;
+        Blocks(2);
+    }
+    CHECK(engine.VarispeedTarget() == 0.f && engine.WindowSize() == engine.Length());
+
     // Recording until the 4 s buffer is full stops automatically.
     Press(keys::Erase);
     Blocks(50);
@@ -313,6 +425,6 @@ int main() {
         std::printf("FAILED: %d production callback check(s)\n", failures);
         return 1;
     }
-    std::printf("PASS production callback: keys, knobs, LEDs state, auto-stop, bounded output, bootloader keys/SysEx after card I/O\n");
+    std::printf("PASS production callback: keys, knobs, MIDI CC, LEDs state, auto-stop, bounded output, bootloader keys/SysEx after card I/O\n");
     return 0;
 }
