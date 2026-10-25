@@ -5,6 +5,11 @@ beschreibt die zusätzlichen Torus-/Ambient-FX-Builds, den gemeinsamen
 Audiovertrag und die Versionsmanifeste. Die folgenden Überlegungen bleiben der
 historische Entwurf für den weitergehenden Baukasten einschließlich Laufzeitwechsel.
 
+Bestandsaufnahme vom 25.10.2026, vor dieser ersten Stufe:
+[Rings/Torus, Mod-Modul, Editoren und Versionierung](MODULARITY_AUDIT_2026-10-25.md).
+Sie trennt die bereits implementierten Bausteine von den noch offenen
+Instrument-/FX-Schnittstellen und enthält erneut ausgeführte Prüfungen.
+
 **Stand:** Idee und erste Überlegungen vom 24.10.2026 (Hardwaretest-Abend mit
 Physical Modeling mod3). **Noch nicht geplant, kein Code.** Nächster Schritt: daraus einen
 ausgearbeiteten Plan machen (Schnittstellen, Speicher- und CPU-Modell, Bedienkonzept,
