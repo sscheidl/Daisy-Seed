@@ -10,6 +10,11 @@ __pycache__/
 /instruments/looper/**/*.elf
 /instruments/looper/**/*.pkl
 /instruments/looper/work/
+/instruments/looper/stardust-work/
+# Local review exports that bundle third-party 3D models
+/hardware/desktop-case-review/
+# Local agent scratch space
+/.work/
 /modules/*/build/
 /editors/*/build/
 /modules/*/bench/build/
