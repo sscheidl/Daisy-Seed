@@ -69,6 +69,9 @@ void InitModulation(float sample_rate) {
     modulation.EnableExtensions({true, true, true});
 #else
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize);
+    // v0.4: extended monitor (pot positions, ranges) and LFO cross modulation, like
+    // Physical Modeling MOD. No instrument modes: the keyboard has no model switch.
+    modulation.EnableExtensions({true, true, false});
 #endif
 }
 
@@ -144,8 +147,17 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
                      modulation.engine.Apply(toy_piano::ModHallMix, fx->MixBase()),
                      modulation.engine.Apply(toy_piano::ModHallX, fx->XBase()));
 #else
-    const float attack = modulation.engine.Apply(toy_piano::ModAttack, attack_pot.Process(hw.pot[0].Value()));
-    const float decay = modulation.engine.Apply(toy_piano::ModDecay, decay_pot.Process(hw.pot[1].Value()));
+    const float attack_base = attack_pot.Process(hw.pot[0].Value());
+    const float decay_base = decay_pot.Process(hw.pot[1].Value());
+    const float attack = modulation.engine.Apply(toy_piano::ModAttack, attack_base);
+    const float decay = modulation.engine.Apply(toy_piano::ModDecay, decay_base);
+    // Column values before modulation for the editor (extended monitor): fixed bases
+    // for the voice targets, the pot positions for attack and decay.
+    modulation.engine.ReportBase(toy_piano::ModPitch, toy_piano::kPitchBase);
+    modulation.engine.ReportBase(toy_piano::ModLevel, toy_piano::kLevelBase);
+    modulation.engine.ReportBase(toy_piano::ModHarmonic, toy_piano::kHarmonicBase);
+    modulation.engine.ReportBase(toy_piano::ModAttack, attack_base);
+    modulation.engine.ReportBase(toy_piano::ModDecay, decay_base);
 #endif
     // Only convert times on a new note, then latch them for that one shot.
     static uint32_t held = 0;

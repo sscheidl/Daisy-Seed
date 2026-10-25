@@ -1,5 +1,20 @@
 # Validation — Toy Piano
 
+## v0.4 after merging main (PR #42): full panel and bootloader entry — 2026-10-26
+
+Windows 11, llvm-mingw clang 23 (host), xPack GCC 13.2.1-1.1 (ARM). No hardware attached.
+
+| Check | Result |
+| --- | --- |
+| `test_toy_piano`, `test_callback` (bootloader keys/SysEx), `test_modulation` | PASS, also with ASan/UBSan |
+| Panel extensions in `test_modulation` | IDENTIFY capabilities 0x7A, capabilities 2 = 0; LFO cross modulation accepted (`SET_SOURCE` fm); monitor bases: Pitch/Level/Harmonic fixed, Attack 0.25 and Decay 0.80 follow VR1/VR2, columns 6–8 = −1 |
+| Echo guard (from the first v0.4) | still 20 monitor frames, 0 NAK with every frame fed back |
+| Golden test | Windows/clang: `E34CE1F8D2676D39`, identical to `main` (sound unchanged with the extensions); Linux reference `52580874FA24361F`: see the PR's CI run |
+| ARM build | `ToyPiano-v0.4.bin` 160,532 B, SHA-256 `639dcacfc5f4adfc3494c50937d749a6409de7ee90150f72eef8cf6eb20f2a17`; DTCM 119,424 B (static reserve 11,648 B); `check-firmware.py` PASS |
+| Composed product | `ToyPianoAmbient-v0.1.2.bin` byte-identical to `main` (`0ecfb4f9…`) |
+
+Hardware: NOT TESTED. Checklist: [HARDWARE_TEST_V0.4.md](HARDWARE_TEST_V0.4.md) (T1–T20).
+
 ## v0.4 (echo guard) — 2026-10-25
 
 Software checks on Windows 11 (llvm-mingw clang 23 for the host tests, xPack GCC

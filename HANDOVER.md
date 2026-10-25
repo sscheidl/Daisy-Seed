@@ -159,8 +159,10 @@ Punkte 1–4 sind in PR #33 umgesetzt (§ 3b).
 * **Toy Piano v0.3 hat den Rückkopplungsschutz noch nicht** (Image soll bytegleich zum
   Release-Entwurf bleiben) und hätte mit Studio One dasselbe Problem → umgesetzt in
   **Toy Piano v0.4** (25.10.2026, Freigabe Betreiber; Branch `feat/toy-piano-echo-guard`):
-  nur die Regel aus PROTOCOL § 2, Schritt 2a (`MOD_ON_DAISY_IGNORE_REPLIES=1`), Klang und
-  übrige Images unverändert. Am Kit `NICHT GEMESSEN` (T16/T17 in
+  zunächst nur die Regel aus PROTOCOL § 2, Schritt 2a. **Nach dem Merge von PR #42
+  (26.10.2026)** mit allen Mod-on-Daisy-Erweiterungen wie Physical Modeling: Grundwerte
+  (Potistellungen), erweiterter Monitor, LFO-Quermodulation; Klang mit leerer Matrix
+  unverändert. Am Kit `NICHT GEMESSEN` (T16/T17 in
   [HARDWARE_TEST_V0.4](instruments/toy-piano/docs/HARDWARE_TEST_V0.4.md)).
 
 **Weiter mit:** PR #33 mergen; restliche Schritte aus dem Laufzettel.
@@ -174,7 +176,7 @@ Punkte 1–4 sind in PR #33 umgesetzt (§ 3b).
 | Rückkopplungsschutz für Toy Piano | in v0.4 umgesetzt (Branch `feat/toy-piano-echo-guard`), Host-Tests und ARM-Build lokal unter Windows | am Kit T16/T17 prüfen; Linux-Golden-Hash und TSan noch offen |
 | Modularer Firmwarekern | Idee, [MODULAR_KERNEL_IDEA.md](docs/MODULAR_KERNEL_IDEA.md), GitHub-Milestone | ausgearbeiteten Plan schreiben, später |
 | Toy Piano veröffentlichen | Entwurf v0.3 wartet auf T1–T15; v0.4 = v0.3 + Rückkopplungsschutz | entscheidet der Mensch (v0.3-Entwurf oder v0.4) |
-| Grundwerte für Toy Piano | absichtlich aus, damit v0.3 dem Entwurf entspricht | mit der nächsten Toy-Piano-Version (z. B. 0.3.1) einschalten |
+| Grundwerte für Toy Piano | in v0.4 eingeschaltet (volles Panel wie Physical Modeling) | am Kit T18/T19 prüfen |
 | Lizenz | **entschieden 24.10.2026**: Open Source; JUCE-Editor und VST3-Plugin AGPLv3, alles Eigene sonst MIT (README § License) | Repo ist öffentlich (Actions-Minuten dafür kostenlos); Inhalt und Historie noch auf fremdes Material prüfen |
 | Speicher (QSPI) | nur spezifiziert (D8) | eigene Freigabe nötig |
 | Editor-Feinschliff | offen: Rückgängig/Wiederholen, Wahl beim Wiederverbinden, Schema-Cache | nach den Hardwaretests |

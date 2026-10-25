@@ -11,8 +11,9 @@ C_DEFS = $(FX_DEFS)
 FX_SOURCES = ../../effects/reverb/src/ambient_reverb.cpp ../../effects/reverb/src/wet_path.cpp
 else
 TARGET = ToyPiano-v$(VERSION)
-# v0.4: echo guard of the Mod on Daisy controller (PROTOCOL.md § 2, step 2a), no other extensions.
-MOD_DEFS = -DMOD_ON_DAISY_IGNORE_REPLIES=1
+# v0.4: all Mod on Daisy extensions as in Physical Modeling MOD (extended monitor with
+# pot positions, LFO cross modulation) and with them the echo guard (PROTOCOL.md § 2, 2a).
+MOD_DEFS = -DMOD_ON_DAISY_EXTENSIONS=1
 C_DEFS = $(MOD_DEFS)
 endif
 CPP_SOURCES = src/main.cpp src/toy_piano.cpp $(FX_SOURCES)

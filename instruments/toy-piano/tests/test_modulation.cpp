@@ -1,6 +1,7 @@
 // Toy Piano (from v0.3) with Mod on Daisy, through the production callback and USB-MIDI
 // path: SysEx configuration, per-voice pitch/level/harmonic, Poly AT per voice,
-// latched attack/decay, the return to the unmodulated sound and (v0.4) the echo guard.
+// latched attack/decay, the return to the unmodulated sound and (v0.4) the echo guard
+// plus the panel extensions (pot positions, extended monitor, LFO cross modulation).
 #define main FirmwareMain
 #include "../src/main.cpp"
 #undef main
@@ -82,6 +83,13 @@ void TestIdentifyAndColumns() {
     id.Str(key, mod::kMaxKeyLength);
     id.Str(version, 12);
     assert(std::strcmp(key, "toy-piano") == 0 && std::strcmp(version, TOY_PIANO_VERSION) == 0);
+    id.U7(); // kMaxActive
+    id.U14(); // tick rate
+    id.U7(); // preset slots
+    id.U32(); // schema hash
+    const unsigned caps = id.U7(), caps2 = id.U7();
+    // v0.4: monitor 0x02, base values 0x10, extended monitor 0x20, LFO FM 0x40; no modes.
+    assert((caps & 0x72) == 0x72 && caps2 == 0);
     for(uint8_t t = 5; t < 8; ++t)
         assert(Request(mod::proto::GetTarget, {t})[1] == 0); // free columns: greyed out
     r = Request(mod::proto::GetAllowed, {});
@@ -251,6 +259,31 @@ void TestEchoedReplies() {
     Request(mod::proto::Identify, {}, &command); // requests are still answered
     assert(command == (mod::proto::Identify | mod::proto::kReplyBit));
 }
+
+// v0.4: the editor's column headers show the value before modulation; attack and decay
+// follow their pots, pitch/level/harmonic report their fixed bases, free columns -1.
+void TestPanelExtensions() {
+    // LFO cross modulation: LFO 1 follows LFO 2 at +50, accepted only with the extension
+    // (value = fm + 100, PROTOCOL.md § 3.6); then back to 0.
+    Request(mod::proto::SetSource, {mod::Lfo1, mod::ParamFm, 150 & 127, 150 >> 7});
+    Request(mod::proto::SetSource, {mod::Lfo1, mod::ParamFm, 100, 0});
+    modulation.engine.EnableMonitor(true);
+    hw.pot[0].value = 0.25f;
+    hw.pot[1].value = 0.8f;
+    Tick(400); // PotFilter smoothing and hysteresis
+    assert(modulation.engine.Monitor().Fetch());
+    const mod::MonitorSnapshot& m = modulation.engine.Monitor().Front();
+    assert(std::fabs(m.base[toy_piano::ModPitch] - toy_piano::kPitchBase) < 1e-6f);
+    assert(std::fabs(m.base[toy_piano::ModLevel] - toy_piano::kLevelBase) < 1e-6f);
+    assert(std::fabs(m.base[toy_piano::ModHarmonic] - toy_piano::kHarmonicBase) < 1e-6f);
+    assert(std::fabs(m.base[toy_piano::ModAttack] - 0.25f) < 0.01f);
+    assert(std::fabs(m.base[toy_piano::ModDecay] - 0.8f) < 0.01f);
+    for(std::size_t t = 5; t < mod::kTargets; ++t)
+        assert(m.base[t] == -1.0f);
+    hw.pot[1].value = 1.0f;
+    std::printf("panel: attack base %.3f, decay base %.3f\n", double(m.base[toy_piano::ModAttack]),
+                double(m.base[toy_piano::ModDecay]));
+}
 }
 
 int main() {
@@ -266,5 +299,6 @@ int main() {
     TestLatchedAttack();
     TestHarmonicAndAliasRule();
     TestEchoedReplies();
+    TestPanelExtensions();
     std::printf("PASS: Toy Piano modulation through the production callback and USB-MIDI\n");
 }

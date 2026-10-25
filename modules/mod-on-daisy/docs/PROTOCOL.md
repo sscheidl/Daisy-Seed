@@ -53,9 +53,9 @@ F0 7D 4D 44 <ver> <dev> <cmd> <seq> <len> <payload: len Bytes> <chk> F7
    Input-Monitoring alles, was vom Daisy kommt, an den Daisy zurück. Ein NAK auf jeden
    zurückgeschickten Rahmen ergab endlose NAK-Schleifen (gemessen rund 500 Rahmen/s), die
    die Antworten an den Editor verdrängten. Teil von `MOD_ON_DAISY_EXTENSIONS`
-   (Physical Modeling `0.1.0-mod4`); einzeln mit `MOD_ON_DAISY_IGNORE_REPLIES=1`
-   (Toy Piano ab v0.4). Toy Piano v0.3 und die Messfirmware haben die Regel nicht, damit
-   ihre Images unverändert bleiben.
+   (Physical Modeling ab `0.1.0-mod4`, Toy Piano ab v0.4, Toy Piano Ambient); einzeln
+   schaltbar mit `MOD_ON_DAISY_IGNORE_REPLIES=1`. Toy Piano v0.3 und die Messfirmware
+   haben die Regel nicht.
 3. `<ver> ≠ 1` → `NAK 6`.
 4. Länge oder Prüfsumme falsch → `NAK 1` bzw. `NAK 2`.
 5. Sonst ausführen.

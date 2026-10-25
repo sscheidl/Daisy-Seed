@@ -53,7 +53,9 @@ int main(int argc, char** argv) {
     static mod::Module module;
     module.Init(info, 48000.0f, 48);
     // Like the firmware: only the Physical Modeling MOD build enables the extensions
-    // (extended monitor, LFO cross modulation, active model); Toy Piano v0.3 and the bench do not.
+    // (extended monitor, LFO cross modulation, active model); the toy-piano simulator plays
+    // Toy Piano v0.3 without extensions (the editor's fallback path; v0.4 firmware has them),
+    // the bench has none.
     if(which == "physical-modeling")
         module.EnableExtensions({true, true, true});
     // Physical Modeling MOD=1 reports its pot positions (power-on defaults here) as
