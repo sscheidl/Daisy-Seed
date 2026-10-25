@@ -19,6 +19,7 @@ args.add_argument('--output-dir', type=Path, default=ROOT/'output')
 opt = args.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
 data = json.loads((ROOT/'board.json').read_text())
 report = json.loads((opt.output_dir/'validation.json').read_text())
+assert report.get('stl_frame',{}).get('revision')=='RH-2026-10-25','Withdrawn STL revision'
 seat = report['design_mm']['frame_underside']
 pcbtop = report['design_mm']['pcb_top']
 bpy.ops.object.select_all(action='SELECT')
@@ -82,7 +83,8 @@ def label(text, x, y, z, size=2.2):
 def stl(name, z, mat):
     bpy.ops.wm.stl_import(filepath=str(opt.output_dir/f'{name}.stl'))
     obj = bpy.context.object
-    obj.scale.y = -1
+    # STL is already in the physical RH frame; render exactly what is printed.
+    assert max(v.co.y for v in obj.data.vertices)<=9.01,(name,'Wrong STL orientation')
     obj.location.z = z
     obj.data.materials.append(mat)
     return obj

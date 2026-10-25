@@ -1,6 +1,40 @@
 {
-  "date": "2026-10-24",
+  "date": "2026-10-25",
   "hardware": "NICHT GEMESSEN",
+  "stl_frame": {
+    "revision": "RH-2026-10-25",
+    "axes": "+X right/MIDI, +Y rear/audio, +Z up/populated side",
+    "origin": "PCB rear-left",
+    "source_2d": "KiCad: X right, Y toward player",
+    "source_to_stl": "X=x, Y=-y, Z=z; outward face winding preserved"
+  },
+  "render_print_vertex_alignment": {
+    "tray": {
+      "passed": true,
+      "max_distance_mm": 1.1314567579724843e-05,
+      "reflection_applied": false
+    },
+    "unified-carrier": {
+      "passed": true,
+      "max_distance_mm": 1.1325186076691311e-05,
+      "reflection_applied": false
+    },
+    "lower-acrylic-reference": {
+      "passed": true,
+      "max_distance_mm": 1.129730041362862e-05,
+      "reflection_applied": false
+    },
+    "paper-reference": {
+      "passed": true,
+      "max_distance_mm": 1.1297792958081423e-05,
+      "reflection_applied": false
+    },
+    "upper-acrylic-reference": {
+      "passed": true,
+      "max_distance_mm": 1.1272408304193822e-05,
+      "reflection_applied": false
+    }
+  },
   "print_source_parts_unchanged_and_closed": [
     "tray",
     "unified-carrier",

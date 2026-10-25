@@ -153,7 +153,7 @@ def installed(parts):
 
 
 def verify(parts):
-    report = {'date':'2026-10-24','hardware':'NICHT GEMESSEN','manufacturing_ready':False,'parts':{}}
+    report = {'date':'2026-10-25','hardware':'NICHT GEMESSEN','stl_frame':b.STL_FRAME,'manufacturing_ready':False,'parts':{}}
     for name,(solid,z) in parts.items():
         mesh = b.mesh_of(solid)
         assert mesh.is_watertight and mesh.is_winding_consistent,name
@@ -230,7 +230,8 @@ def pdf(path):
         c.drawString(15*mm,23*mm,'Einteiliger Drucktraeger darunter: Tasterraster + Seed-Haube + Buchsenhauben; obere Klarplatte per Knurlies loesbar.')
         c.line(175*mm,13*mm,275*mm,13*mm)
         for x in [175,275]: c.line(x*mm,11*mm,x*mm,15*mm)
-        c.drawCentredString(225*mm,17*mm,'Kontrollstrecke exakt 100 mm'); c.showPage()
+        c.drawCentredString(225*mm,17*mm,'Kontrollstrecke exakt 100 mm')
+        b.orientation_footer(c); c.showPage()
     c.save()
 
 
@@ -241,7 +242,7 @@ def main():
     parts=build(); report=verify(parts)
     args.output.mkdir(parents=True,exist_ok=True)
     for name,(solid,z) in parts.items():
-        mesh=b.mesh_of(solid); mesh.apply_translation((0,0,-mesh.bounds[0,2])); mesh.export(args.output/f'{name}.stl')
+        mesh=b.physical_mesh_of(solid); mesh.apply_translation((0,0,-mesh.bounds[0,2])); mesh.export(args.output/f'{name}.stl')
     for kind in ['lower','upper']:
         b.contour_svg(layer_section(kind),args.output/f'{kind}-acrylic-1mm.svg')
     b.contour_svg(paper_section(),args.output/'paper-overlay.svg')
@@ -249,7 +250,7 @@ def main():
     pdf(args.output/'acrylic-fit-study-a4.pdf')
     report['artifact_sha256'] = {p.name:hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted(args.output.iterdir()) if p.suffix in ['.stl','.svg','.pdf']}
-    (args.output/'validation.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8')
+    (args.output/'validation.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8',newline='\n')
     print(json.dumps({'parts':len(parts),'stack_mm':report['stack_mm'],'checks':report['checks']},indent=2))
 
 

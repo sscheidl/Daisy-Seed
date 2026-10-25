@@ -11,6 +11,7 @@ OUT = ROOT/'output/closed-v2'
 B = json.loads((ROOT/'board.json').read_text())
 C = json.loads((ROOT/'closed-mechanics.json').read_text())
 R = json.loads((OUT/'validation.json').read_text())
+assert R.get('stl_frame',{}).get('revision')=='RH-2026-10-25','Withdrawn STL revision'
 S = R['stack_mm']
 PCB = S['pcb_top']
 bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete(use_global=False)
@@ -59,8 +60,8 @@ def text(label,x,y,z,size=2):
 def stl(name,z,m):
     bpy.ops.wm.stl_import(filepath=str(OUT/f'{name}.stl'))
     o=bpy.context.object; o.name=name
-    for v in o.data.vertices: v.co.y*=-1
-    o.data.flip_normals()
+    # Physical RH STL: no render-only reflection.
+    assert max(v.co.y for v in o.data.vertices)<=9.01,(name,'Wrong STL orientation')
     o.location.z=z; o.data.materials.append(m)
     if m==acrylic:
         # Avoid opaque shadow approximations on the paper in a short product render.

@@ -1,5 +1,9 @@
 # V3 als detaillierte Baugruppenansicht
 
+**RH-Korrektur 25.10.2026:** Die Renderer spiegeln die importierten STLs
+nicht mehr. Sie laden unmittelbar die korrigierten Druckdateien.
+Alte ZIP-Pakete sind zurückgezogen; [Nachweis und Ersatz](ORIENTATION_FIX.md).
+
 **Stand 24.10.2026: digitale Visualisierung. Hardware NICHT GEMESSEN.**
 Die vorhandene Konstruktion aus [V3](UNIFIED_V3.md) wird mit detaillierterer
 Bestückung und Materialien dargestellt. Das Rendering ändert weder die
@@ -111,6 +115,7 @@ Bibliothek ausgegeben.
 ```powershell
 & 'C:/Program Files/KiCad/10.0/bin/python.exe' hardware/desktop-case/prepare_render_board.py
 .tools/case/Scripts/python.exe hardware/desktop-case/compact_render_board.py
+.tools/case/Scripts/python.exe hardware/desktop-case/check_stl_orientation.py
 & 'C:/Program Files/Blender Foundation/Blender 5.2/blender.exe' --background --python hardware/desktop-case/render_realistic_case.py
 .tools/case/Scripts/python.exe hardware/desktop-case/validate_realistic_case.py
 ```
@@ -129,6 +134,12 @@ Montage-STL: 215 × 129 × 39,8 mm. GLB: 0,215 × 0,0398 × 0,129 m in dessen
 Y-oben-System. Quellen-/Ausgabe-Hashes und alle drei Bildgrößen bestätigt.
 Gesamt-, Rück- und Explosionsansicht wurden nach dem finalen Render visuell
 geprüft. Papier-/Tasterhöhe, Passform und Belastbarkeit bleiben NICHT GEMESSEN.
+
+**Ergänzung 25.10.2026:** Alle fünf korrigierten Druck-STLs und GLB-Teile
+stimmen in ihrer tatsächlichen Einbaulage ohne zusätzliche Spiegelung
+überein. Die maximale Vertexabweichung ist kleiner als 0,000012 mm.
+Die unabhängige Prüfung der Hersteller-Landmarken besteht; die frühere
+Orientierung scheitert an denselben Prüfpunkten.
 
 ## Quellenhinweise
 

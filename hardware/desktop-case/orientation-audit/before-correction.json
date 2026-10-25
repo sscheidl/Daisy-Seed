@@ -1,0 +1,330 @@
+{
+  "date": "2026-10-25",
+  "hardware": "NICHT GEMESSEN",
+  "physical_frame": "RH: +X right/MIDI, +Y rear/audio, +Z populated side up; origin PCB rear-left",
+  "oracle": "Independent solid-angle witnesses; no generator imports or test-time reflection",
+  "manufacturer_source": "daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a",
+  "parts": {
+    "prototype/tray.stl": {
+      "sha256": "8cfd84a6207dd1a52ae0a05ca4cd33b63580390fb95278203ac87d771df0273b",
+      "closed": true,
+      "outward_normals": true,
+      "bounds_mm": [
+        [
+          -9.0,
+          -9.0,
+          0.0
+        ],
+        [
+          206.0,
+          120.0,
+          19.4
+        ]
+      ],
+      "checks": [
+        {
+          "landmark": "rear audio J4",
+          "opening_mm": [
+            39.915,
+            7.8,
+            12
+          ],
+          "material_mm": [
+            80,
+            7.8,
+            12
+          ],
+          "opening_winding": 0.0,
+          "material_winding": -0.0,
+          "passed": false
+        },
+        {
+          "landmark": "right DIN J11",
+          "opening_mm": [
+            204.8,
+            -20.3,
+            12
+          ],
+          "material_mm": [
+            204.8,
+            -108,
+            12
+          ],
+          "opening_winding": -0.0,
+          "material_winding": -0.0,
+          "passed": false
+        },
+        {
+          "landmark": "left USB J7",
+          "opening_mm": [
+            -7.8,
+            -41.09,
+            12
+          ],
+          "material_mm": [
+            -7.8,
+            -20,
+            12
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 0.0,
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    "closed-v2/closed-tray.stl": {
+      "sha256": "76badf3789f50c30c8dc2b01d36fe9e700b6d0f8ae4996f21f64d2ee92482560",
+      "closed": true,
+      "outward_normals": true,
+      "bounds_mm": [
+        [
+          -9.0,
+          -9.0,
+          0.0
+        ],
+        [
+          206.0,
+          120.0,
+          23.4
+        ]
+      ],
+      "checks": [
+        {
+          "landmark": "rear audio J4",
+          "opening_mm": [
+            39.915,
+            7.8,
+            20
+          ],
+          "material_mm": [
+            80,
+            7.8,
+            20
+          ],
+          "opening_winding": 0.0,
+          "material_winding": -0.0,
+          "passed": false
+        },
+        {
+          "landmark": "right DIN J11",
+          "opening_mm": [
+            204.8,
+            -20.3,
+            20
+          ],
+          "material_mm": [
+            204.8,
+            -108,
+            20
+          ],
+          "opening_winding": -0.0,
+          "material_winding": -0.0,
+          "passed": false
+        },
+        {
+          "landmark": "left USB J7",
+          "opening_mm": [
+            -7.8,
+            -41.09,
+            18
+          ],
+          "material_mm": [
+            -7.8,
+            -55,
+            18
+          ],
+          "opening_winding": 0.0,
+          "material_winding": -0.0,
+          "passed": false
+        },
+        {
+          "landmark": "left Seed USB",
+          "opening_mm": [
+            -7.8,
+            -73,
+            20
+          ],
+          "material_mm": [
+            -7.8,
+            -55,
+            20
+          ],
+          "opening_winding": 0.0,
+          "material_winding": -0.0,
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    "unified-v3/tray.stl": {
+      "sha256": "8d7b63e9e896f35c56fdfecf9f0486f5e98a157a58571fb9abf8c9b5946911d8",
+      "closed": true,
+      "outward_normals": true,
+      "bounds_mm": [
+        [
+          -9.0,
+          -9.0,
+          0.0
+        ],
+        [
+          206.0,
+          120.0,
+          21.0
+        ]
+      ],
+      "checks": [
+        {
+          "landmark": "rear audio J4",
+          "opening_mm": [
+            39.915,
+            7.8,
+            20
+          ],
+          "material_mm": [
+            80,
+            7.8,
+            20
+          ],
+          "opening_winding": 0.0,
+          "material_winding": -0.0,
+          "passed": false
+        },
+        {
+          "landmark": "right DIN J11",
+          "opening_mm": [
+            204.8,
+            -20.3,
+            20
+          ],
+          "material_mm": [
+            204.8,
+            -108,
+            20
+          ],
+          "opening_winding": 0.0,
+          "material_winding": -0.0,
+          "passed": false
+        },
+        {
+          "landmark": "left USB J7",
+          "opening_mm": [
+            -7.8,
+            -41.09,
+            18
+          ],
+          "material_mm": [
+            -7.8,
+            -55,
+            18
+          ],
+          "opening_winding": -0.0,
+          "material_winding": -0.0,
+          "passed": false
+        },
+        {
+          "landmark": "left Seed USB",
+          "opening_mm": [
+            -7.8,
+            -73,
+            20
+          ],
+          "material_mm": [
+            -7.8,
+            -55,
+            20
+          ],
+          "opening_winding": 0.0,
+          "material_winding": -0.0,
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    "unified-v3/unified-carrier.stl": {
+      "sha256": "2dda95320d69de3d9748bd4700a0056ac56715049afa93919bc9acead42fe1eb",
+      "closed": true,
+      "outward_normals": true,
+      "bounds_mm": [
+        [
+          -9.0,
+          -9.0,
+          20.4
+        ],
+        [
+          206.0,
+          120.0,
+          39.8
+        ]
+      ],
+      "checks": [
+        {
+          "landmark": "CV_OUT1",
+          "opening_mm": [
+            82,
+            -15.8,
+            22
+          ],
+          "material_mm": [
+            89,
+            -15.8,
+            22
+          ],
+          "opening_winding": 0.0,
+          "material_winding": -0.0,
+          "passed": false
+        },
+        {
+          "landmark": "key S1",
+          "opening_mm": [
+            69,
+            -85,
+            21.5
+          ],
+          "material_mm": [
+            74.8,
+            -85,
+            21.5
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 0.0,
+          "passed": false
+        },
+        {
+          "landmark": "LED D1",
+          "opening_mm": [
+            69,
+            -78,
+            21.5
+          ],
+          "material_mm": [
+            73,
+            -78,
+            21.5
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 0.0,
+          "passed": false
+        },
+        {
+          "landmark": "Seed RESET provisional",
+          "opening_mm": [
+            15.895,
+            -70.655,
+            31.5
+          ],
+          "material_mm": [
+            18.395,
+            -70.655,
+            31.5
+          ],
+          "opening_winding": -0.0,
+          "material_winding": -0.0,
+          "passed": false
+        }
+      ],
+      "passed": false
+    }
+  },
+  "passed": false
+}

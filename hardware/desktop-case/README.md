@@ -1,5 +1,10 @@
 # Desktop-Gehäuse / Paper on Daisy
 
+**25.10.2026: [Orientierungskorrektur RH](ORIENTATION_FIX.md). Frühere
+Druck-STLs und ZIP-Pakete nicht verwenden.** Alle V1/V2/V3-STLs sind neu
+exportiert und unabhängig geprüft. Render und Druckdateien benutzen jetzt
+denselben physischen Koordinatenraum.
+
 **Aktueller Entwurf: [durchgehender Druckträger V3](UNIFIED_V3.md).**
 Ein Druckteil verbindet Bedienfläche, Seed-/Buchsenhauben und das angeformte
 Tasterraster. Darauf liegen weiterhin zwei 1-mm-Acrylplatten mit Papier,

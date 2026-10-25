@@ -1,5 +1,8 @@
 # Durchgehender Träger V3
 
+**Korrigierter Export RH-2026-10-25:** Frühere Druckdateien sind wegen
+Spiegelung zurückgezogen. [Ursache, Zweitprüfung und Ersatzpaket](ORIENTATION_FIX.md).
+
 **Stand 24.10.2026: CAD-Passstudie. Hardware, Festigkeit und Druckbarkeit am
 Prototyp NICHT GEMESSEN.** V3 ersetzt die getrennten Hauben und das separat
 angeschraubte Raster aus [V2](CLOSED_V2.md) durch **ein einziges Druckteil**.
@@ -246,6 +249,8 @@ Die aktuelle Ausgabe liegt unter [unified-v3/](unified-v3/).
 STL-Einheit mm; alle STL-Unterseiten auf Z=0. Der Einbauversatz steht in
 `validation.json`. Die STL-Unterseite des Trägers ist die Unterseite des
 angeformten Rasters, nicht die Unterseite der Grundhaut.
+STL-Koordinaten sind rechtshändig: X rechts, Y nach hinten, Z nach oben.
+Das entspricht `X=x, Y=-y, Z=z` gegenüber den internen PCB-Draufsichtdaten.
 
 ```powershell
 .tools/case/Scripts/python.exe hardware/desktop-case/build_unified_case.py

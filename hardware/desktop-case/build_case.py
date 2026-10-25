@@ -32,6 +32,10 @@ SERVICE_WINDOWS = [(20, -10, 154, 54), (0, 10, 49, 54), (0, 64, 54, 21), (0, 83,
                    (178, 8, 40, 96), (166, 92, 19, 20)]
 KEY_WINDOW = (64, 74.5, 96, 31.5)
 TOGGLE_WINDOWS = [(v["x"] - 4.5, v["y"] - 9, 9, 18) for v in BOARD["toggles"]]
+STL_FRAME = dict(revision='RH-2026-10-25',
+    axes='+X right/MIDI, +Y rear/audio, +Z up/populated side',
+    origin='PCB rear-left',source_2d='KiCad: X right, Y toward player',
+    source_to_stl='X=x, Y=-y, Z=z; outward face winding preserved')
 
 
 def box(x, y, z, w, d, h):
@@ -117,8 +121,26 @@ def mesh_of(solid):
                            faces=np.asarray(mesh.tri_verts), process=True)
 
 
+def physical_mesh_of(solid):
+    """Map source PCB screen coordinates into a right-handed physical STL frame.
+
+    Source X-right/Y-forward plus Z-up is left-handed. Apply this conversion
+    once at export, never in a renderer. trimesh also reverses face winding
+    for the negative-determinant affine map, retaining outward normals.
+    """
+    mesh=mesh_of(solid)
+    mesh.apply_transform(np.diag([1.,-1.,1.,1.]))
+    assert mesh.is_watertight and mesh.is_winding_consistent and mesh.volume>0
+    return mesh
+
+
+def orientation_footer(c):
+    c.setFont('Helvetica',7)
+    c.drawString(15*mm,6*mm,'BESTUECKTE OBERSEITE: Audio hinten | Seed links | MIDI rechts | RH 25.10.2026')
+
+
 def validate(solids, seat, knob_diameter):
-    report = {"date": "2026-10-24", "kind": "digital geometry checks",
+    report = {"date": "2026-10-25", "kind": "digital geometry checks",'stl_frame':STL_FRAME,
               "hardware": "NICHT GEMESSEN", "parts": {}}
     for name, solid in solids.items():
         mesh = mesh_of(solid)
@@ -202,6 +224,7 @@ def master_pdf(section, out):
         c.line(x*mm, 11*mm, x*mm, 15*mm)
     c.setFont('Helvetica', 8)
     c.drawCentredString(225*mm, 17*mm, 'Kontrollstrecke exakt 100 mm')
+    orientation_footer(c)
     c.save()
 
 
@@ -218,14 +241,14 @@ def main():
     report = validate(solids, seat, args.knob_opening)
     args.output.mkdir(parents=True, exist_ok=True)
     for name, solid in solids.items():
-        mesh_of(solid).export(args.output/f'{name}.stl')
+        physical_mesh_of(solid).export(args.output/f'{name}.stl')
     section = panel_section(args.knob_opening)
     contour_svg(section, args.output/'clear-cover-cut.svg')
     master_pdf(section, args.output/'paper-master-a4.pdf')
     report['artifact_sha256'] = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                                 for p in sorted(args.output.iterdir())
                                 if p.suffix in ['.stl', '.svg', '.pdf']}
-    (args.output/'validation.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf8')
+    (args.output/'validation.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf8',newline='\n')
     print(json.dumps(report, indent=2))
 
 

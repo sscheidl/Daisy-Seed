@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import itertools
 from pathlib import Path
 
 import numpy as np
@@ -31,10 +32,43 @@ assert np.allclose(stl.extents,[215,129,39.8],atol=.01),stl.extents
 glb=trimesh.load(OUT/'desktop-case-assembly.glb',force='scene')
 assert np.isfinite(glb.bounds).all()
 assert np.allclose(glb.extents*1000,[215,39.8,129],atol=.1),glb.extents
+
+
+def points_match(source,target,tolerance=.0001):
+    """Compare positions with round-off tolerance, without reflecting either mesh."""
+    bins={}
+    for v in source:
+        key=tuple(np.floor(v/tolerance).astype(np.int64))
+        bins.setdefault(key,[]).append(v)
+    offsets=list(itertools.product([-1,0,1],repeat=3))
+    worst=0.
+    for v in target:
+        key=np.floor(v/tolerance).astype(np.int64)
+        candidates=[p for d in offsets for p in bins.get(tuple(key+np.asarray(d)),[])]
+        assert candidates,('Missing print vertex in render export',v)
+        dist=float(np.linalg.norm(np.asarray(candidates)-v,axis=1).min())
+        assert dist<=tolerance,('Render differs from print mesh',v,dist)
+        worst=max(worst,dist)
+    return worst
+
+
+alignment={}
+for name in original:
+    source=trimesh.load(PARTS/f'{name}.stl',force='mesh')
+    source.apply_translation((0,0,case['parts'][name]['installed_z']))
+    if name=='upper-acrylic-reference': source.apply_translation((0,0,.015))
+    transform,geom_name=glb.graph[name]
+    rendered=glb.geometry[geom_name].copy(); rendered.apply_transform(transform)
+    # Proper rotation: glTF Y-up metres -> physical Z-up millimetres (det > 0).
+    xyz=rendered.vertices[:,[0,2,1]]*np.array([1000,-1000,1000])
+    forward=points_match(xyz,source.vertices)
+    reverse=points_match(source.vertices,xyz)
+    alignment[name]=dict(passed=True,max_distance_mm=max(forward,reverse),reflection_applied=False)
 for name in ['studio','rear','exploded']:
     im=Image.open(OUT/f'case-realistic-{name}.png')
     assert im.size==(2400,1600),(name,im.size)
-result=dict(date='2026-10-24',hardware='NICHT GEMESSEN',
+result=dict(date='2026-10-25',hardware='NICHT GEMESSEN',
+    stl_frame=case['stl_frame'],render_print_vertex_alignment=alignment,
     print_source_parts_unchanged_and_closed=original,
     assembly_stl_extents_mm=stl.extents.round(5).tolist(),
     assembly_stl_merged_watertight=bool(stl.is_watertight),

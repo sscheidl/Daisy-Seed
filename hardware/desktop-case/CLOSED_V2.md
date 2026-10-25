@@ -1,5 +1,8 @@
 # Geschlossener Entwurf V2
 
+**Korrigierter Export RH-2026-10-25:** Frühere Druckdateien sind wegen
+Spiegelung zurückgezogen. [Ursache und unabhängiger Nachweis](ORIENTATION_FIX.md).
+
 **Konstruktionsstand 24.10.2026. Hardware NICHT GEMESSEN.** Diese Fassung ist
 eine konkrete CAD- und Passstudie, noch kein freigegebenes Fertigungspaket.
 Sie berücksichtigt die gewünschten Metallpfosten, Knurlies, zwei Acrylplatten,

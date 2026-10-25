@@ -20,6 +20,7 @@ REF=ROOT.parents[1]/'build/case-reference'
 B=json.loads((ROOT/'board.json').read_text())
 C=json.loads((ROOT/'closed-mechanics.json').read_text())
 R=json.loads((PARTS/'validation.json').read_text()); S=R['stack_mm']; PCB=S['pcb_top']
+assert R.get('stl_frame',{}).get('revision')=='RH-2026-10-25','Withdrawn STL export revision'
 VIEWS=set(sys.argv[sys.argv.index('--')+1:]) if '--' in sys.argv else {'studio','rear','exploded'}
 bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete(use_global=False)
 bpy.context.scene.unit_settings.system='NONE'
@@ -114,8 +115,9 @@ def label(value,x,y,z,size=2.1):
 def part(name,z,mat):
     bpy.ops.wm.stl_import(filepath=str(PARTS/f'{name}.stl'))
     o=bpy.context.object; o.name=name
-    for v in o.data.vertices: v.co.y*=-1
-    o.data.flip_normals(); o.location.z=z; o.data.materials.append(mat)
+    # Import the exact physical RH print mesh: never repair handedness here.
+    assert max(v.co.y for v in o.data.vertices)<=9.01,(name,'Non-physical STL orientation')
+    o.location.z=z; o.data.materials.append(mat)
     if mat==clear: o.visible_shadow=False
     objects[name]=o; return o
 
@@ -298,7 +300,7 @@ def render(name):
 aim((98,-55,18))
 for o in bpy.context.scene.objects: o.select_set(False)
 assembly=[o for o in bpy.context.scene.objects if o.type in ['MESH','FONT'] and o!=ground]
-report=dict(hardware='NICHT GEMESSEN',model_purpose='Assembly visualization; only original case STLs are print parts',
+report=dict(date='2026-10-25',stl_frame=R['stl_frame'],hardware='NICHT GEMESSEN',model_purpose='Assembly visualization; only original case STLs are print parts',
     units='mm in STL and blend, metres in GLB',devices=devices,
     native_kicad_model_footprints=186,seed_module_pcb_top_above_desktop_assumed=9,
     imported_board_bounds_mm=board_bounds,
@@ -355,7 +357,8 @@ if 'exploded' in VIEWS:
     camera.location=(400,-520,430); camera.data.lens=62; aim((98,-55,50))
     render('case-realistic-exploded')
 report['source_sha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in
-    [Path(__file__),ROOT/'prepare_render_board.py',ROOT/'compact_render_board.py',PARTS/'validation.json']}
+    [Path(__file__),ROOT/'prepare_render_board.py',ROOT/'compact_render_board.py',
+     ROOT/'check_stl_orientation.py',ROOT/'validate_realistic_case.py',PARTS/'validation.json']}
 report['artifact_sha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(OUT.iterdir())
     if p.name.startswith(('desktop-case-','case-realistic-','case-assembly-')) and p.suffix in ['.glb','.stl','.blend','.png']}
 (OUT/'render-manifest.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8',newline='\n')

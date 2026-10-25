@@ -207,7 +207,7 @@ def build():
 
 
 def verify(parts):
-    result = {'date': '2026-10-24', 'hardware': 'NICHT GEMESSEN',
+    result = {'date': '2026-10-25', 'hardware': 'NICHT GEMESSEN','stl_frame':b.STL_FRAME,
               'manufacturing_ready': False, 'parts': {}}
     for name, (solid, z) in parts.items():
         local = solid.translate((0, 0, -min(v[2] for v in b.mesh_of(solid).vertices)))
@@ -289,6 +289,7 @@ def pdf(out, report):
         c.line(175*mm,13*mm,275*mm,13*mm)
         for x in [175,275]: c.line(x*mm,11*mm,x*mm,15*mm)
         c.drawCentredString(225*mm,17*mm,'Kontrollstrecke exakt 100 mm')
+        b.orientation_footer(c)
         c.showPage()
     c.setFont('Helvetica-Bold',19); c.drawString(17*mm,190*mm,'V2 / Metallpfosten und Hoehenbudget')
     c.setFont('Helvetica',10)
@@ -313,6 +314,7 @@ def pdf(out, report):
         '', 'Vor Druckauftrag: Kappen und Gewindebudget am echten Board pruefen. Kein Ergebnis ist als GEMESSEN eingetragen.'
     ]
     for i, line in enumerate(lines): c.drawString(17*mm,(179-i*6)*mm,line)
+    b.orientation_footer(c)
     c.save()
 
 
@@ -324,7 +326,7 @@ def main():
     args.output.mkdir(parents=True,exist_ok=True)
     for name,(solid,z) in parts.items():
         # STL coordinates are always local to the print bed; installed Z is in validation.json.
-        mesh = b.mesh_of(solid); mesh.apply_translation((0,0,-mesh.bounds[0,2]))
+        mesh = b.physical_mesh_of(solid); mesh.apply_translation((0,0,-mesh.bounds[0,2]))
         mesh.export(args.output/f'{name}.stl')
     svg(layer_section('lower'), args.output/'lower-acrylic-1mm.svg')
     svg(layer_section('upper'), args.output/'upper-acrylic-1mm.svg')
@@ -334,7 +336,7 @@ def main():
     pdf(args.output/'sandwich-and-height-study-a4.pdf',report)
     report['artifact_sha256'] = {p.name:hashlib.sha256(p.read_bytes()).hexdigest()
                                for p in sorted(args.output.iterdir()) if p.suffix in ['.stl','.svg','.pdf']}
-    (args.output/'validation.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8')
+    (args.output/'validation.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf8',newline='\n')
     print(json.dumps({'parts':len(parts),'stack_mm':report['stack_mm'],'manufacturing_ready':False},indent=2))
 
 

@@ -1,4 +1,12 @@
 {
+  "date": "2026-10-25",
+  "stl_frame": {
+    "revision": "RH-2026-10-25",
+    "axes": "+X right/MIDI, +Y rear/audio, +Z up/populated side",
+    "origin": "PCB rear-left",
+    "source_2d": "KiCad: X right, Y toward player",
+    "source_to_stl": "X=x, Y=-y, Z=z; outward face winding preserved"
+  },
   "hardware": "NICHT GEMESSEN",
   "model_purpose": "Assembly visualization; only original case STLs are print parts",
   "units": "mm in STL and blend, metres in GLB",
@@ -241,17 +249,19 @@
     }
   },
   "source_sha256": {
-    "render_realistic_case.py": "822e239d5513bc0af114c8bd858a5dd090d49360ef3a91d1b03eb30622d25fd2",
+    "render_realistic_case.py": "485e546f3ce866a1a51adad4f299375a097e999655fe13ae694c5c06a7cdb219",
     "prepare_render_board.py": "bbccf80dc53254cbe93cb0a5341e0144d197f7238f9a1308da2d98b7501b5eae",
     "compact_render_board.py": "61d9aba073a40de60a62409ee63e28821f12e68e8ebe5ea6f5e37e51a7b120c6",
-    "validation.json": "a9c560480eaa21b15633bd597cdc28f667660dac89c88b9155b6fb33df193a85"
+    "check_stl_orientation.py": "a41ad22add01e13066c1d42fcc8bac4af6ab74b3a727a87329804eed65fd67a5",
+    "validate_realistic_case.py": "d95257948e6370c99e2ddc06a71234a19bc89959fd8a44eb86d66b31b99bccfe",
+    "validation.json": "d8c46173f04be8376822aa6484fb9def0e9eaacb43321c9a5b64f6791c8e2f30"
   },
   "artifact_sha256": {
-    "case-assembly-view.stl": "a790c02472de7e7bd07791f2f6824475da123569d76de173370336d53c3bde17",
-    "case-realistic-exploded.png": "384de5c5ff0178a5b3ce22c039ba009a693546fe2112ccdb1c89b2870b09c7df",
-    "case-realistic-rear.png": "d250b745307e538dd89ea7b57289f719692197c1837bce334c0d4f8bdac39fea",
-    "case-realistic-studio.png": "b431929a14bb5099a42fe3295bd8d1352cc34ef73e0b4ceac5c248871bbab1b5",
-    "desktop-case-assembly.glb": "1a9b6b734512fd86780d1f4b0402460f99baf2c65bf9bb87f39ecd0145c84e3b",
-    "desktop-case-realistic.blend": "f147803859e9ad8c75f7996a4cf384d252c313df5428fbacffa6de9d2153b9d6"
+    "case-assembly-view.stl": "1ef13a7f71fc3b0281c4874ac49929e111425bbd7a4412d317d51bf5f346868c",
+    "case-realistic-exploded.png": "934b5757a8da303e26db64a868ae31cfab6d198eaaf0c6f90b492cd64fba50ec",
+    "case-realistic-rear.png": "6a930f6e28a127a650e1609b9ee72f085efe82eba455e7af6b6b54c74f2185ca",
+    "case-realistic-studio.png": "5e92c8e095a44256544db70b11b3cc41f182139144c70e257716b3c8f25bfd40",
+    "desktop-case-assembly.glb": "7f85e6820880ffb5b6152116a3a470edc8651d635a09b41c62c31cd3b3682468",
+    "desktop-case-realistic.blend": "658c6fce7d3b52f981372ea7e3e053f86da558963f28079671efd41ac23ceb6a"
   }
 }
