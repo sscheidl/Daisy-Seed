@@ -7,7 +7,7 @@ behavioral reference. Validation details: [docs/VALIDATION.md](docs/VALIDATION.m
 first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.3.0.bin
+make PROJECT=looper -j4            # firmware: build/Looper-v0.3.1.bin
 make PROJECT=looper test           # host engine and production-callback tests
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```

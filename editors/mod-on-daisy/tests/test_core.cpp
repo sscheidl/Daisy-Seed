@@ -337,7 +337,7 @@ void TestModeAndValueLabels() {
     rig.sim.mode = kSimInstruments[1].mode;
     rig.sim.EnableExtensions(kSimInstruments[1].extensions);
     CHECK(rig.Connect());
-    CHECK(rig.session.Device().Modes() && rig.session.Device().version == "0.1.0-mod4");
+    CHECK(rig.session.Device().Modes() && rig.session.Device().version == PHYSICAL_MODELING_VERSION "-mod4");
     rig.Run(300); // GET_MODE 0..5 after connecting, monitor frames
     const DeviceInfo& d = rig.session.Device();
     CHECK(d.modes.size() == 6 && d.modes[4].name == "Western Chords" && d.modes[4].hint == "Bank B, SW18 Mitte");

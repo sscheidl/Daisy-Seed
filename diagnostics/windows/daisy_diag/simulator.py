@@ -186,7 +186,7 @@ class SimulatedDevice:
                 self._streaming = True
                 self._last_sent = None
                 self._send(
-                    f"HELLO proto={self.protocol_version} fw=0.2.0-sim app=DaisyDiagnostic "
+                    f"HELLO proto={self.protocol_version} fw=0.2.1-sim app=DaisyDiagnostic "
                     "dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 "
                     "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot"
                     + (",sdmsc" if self.reader_supported else "") + " sim=1")

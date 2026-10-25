@@ -2,7 +2,7 @@
 
 The version is defined in [src/version.h](src/version.h).
 
-## Unreleased
+## 0.3.1 - integration test image, not released
 
 * **Firmware updates without BOOT/RESET** ([common/bootloader](../../common/bootloader/README.md)):
   holding S9+S16 alone for 5 s, or the USB-MIDI SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7`

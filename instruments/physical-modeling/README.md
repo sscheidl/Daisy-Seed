@@ -70,8 +70,8 @@ make PROJECT=physical-modeling -j4
 make PROJECT=physical-modeling test
 make PROJECT=physical-modeling test-sanitize
 make PROJECT=physical-modeling test-thread
-python3 scripts/check-firmware.py instruments/physical-modeling/build/PhysicalModeling-v0.1.0.bin
-python3 scripts/check-physical-elf.py instruments/physical-modeling/build/PhysicalModeling-v0.1.0.elf
+python3 scripts/check-firmware.py instruments/physical-modeling/build/PhysicalModeling-v0.1.1.bin
+python3 scripts/check-physical-elf.py instruments/physical-modeling/build/PhysicalModeling-v0.1.1.elf
 ```
 
 The Firmware CI matrix provides `PhysicalModeling-v0.1.0.bin`, `.elf`, `.map` and

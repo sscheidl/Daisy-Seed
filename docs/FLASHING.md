@@ -56,7 +56,7 @@ Do not repeat `program-boot` for ordinary firmware updates.
    firmware (which has its own button), the editor button. The Looper first finishes
    a running card write.
 3. Connect with the [Daisy Web Programmer](https://flash.daisy.audio/), choose Custom
-   and select **`instruments/toy-piano/build/ToyPiano-v0.3.bin`**. Alternatively:
+   and select **`instruments/toy-piano/build/ToyPiano-v0.3.1.bin`**. Alternatively:
 
    ```bash
    make PROJECT=toy-piano program-dfu
@@ -85,7 +85,7 @@ For Ambient Reverb, select
 (S9+S16 or the editor button). See the [reverb controls and test steps](../effects/reverb/README.md).
 
 For Nebulae on Daisy v0.1.0, use the same **carrier J7 / external bootloader**
-application sequence with `instruments/granular/build/NebulaeOnDaisy-v0.1.0.bin`,
+application sequence with `instruments/granular/build/NebulaeOnDaisy-v0.1.1.bin`,
 or explicitly run `make PROJECT=granular program-dfu`. No bootloader update is
 needed for an already compatible external v6.x installation. This implementation
 did not flash a device. Follow its [short smoke plan](../instruments/granular/docs/HARDWARE_TEST_PLAN.md).

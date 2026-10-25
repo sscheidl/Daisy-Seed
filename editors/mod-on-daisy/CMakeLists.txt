@@ -5,7 +5,7 @@
 #
 # JUCE 9.0.4 is fetched by CMake; -DMOD_EDITOR_JUCE_DIR=<path> uses a local checkout.
 cmake_minimum_required(VERSION 3.22)
-project(ModOnDaisyEditor VERSION 0.1.0 LANGUAGES C CXX)
+project(ModOnDaisyEditor VERSION 0.1.1 LANGUAGES C CXX)
 
 # Static MSVC runtime: the .exe runs without the Visual C++ redistributable.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

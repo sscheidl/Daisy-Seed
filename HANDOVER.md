@@ -3,7 +3,9 @@
 **Integration 25./26.10.2026:** Branch `integration/shimmer-bootloader` führt PR #40
 (Bootloader-Einstieg), #38 (modulare FX) und #41 (Toy Piano + Ambient mit Shimmer)
 zusammen. Testimages: `toy-piano-ambient 0.1.2` und `reverb-fx 0.3.1`; Komponente
-`bootloader-entry 1.0.0`. Prüfbericht und Laufzettel:
+`bootloader-entry 1.0.0`. Wegen des Bootloader-Einstiegs ebenfalls neu versioniert: Toy Piano 0.3.1,
+Physical Modeling 0.1.1 (MOD-IDENTIFY `0.1.1-mod4`), PM-FX 0.2.1, Nebulae 0.1.1, Looper 0.3.1,
+Mod bench 0.1.1, Diagnose 0.2.1, Panels 0.1.1. Prüfbericht und Laufzettel:
 [docs/HARDWARE_TEST_INTEGRATION.md](docs/HARDWARE_TEST_INTEGRATION.md). Hardware
 **NICHT GEMESSEN**.
 

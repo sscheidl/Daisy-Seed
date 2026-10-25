@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 / composed 0.2.1 - integration test images, not released
 
 * **Firmware updates without BOOT/RESET** ([common/bootloader](../../common/bootloader/README.md)):
   holding S9+S16 alone for 5 s, or the USB-MIDI SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7`

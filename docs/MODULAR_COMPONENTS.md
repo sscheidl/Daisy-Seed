@@ -76,8 +76,8 @@ make PROJECT=physical-modeling-fx-torus -j4
 make PROJECT=physical-modeling-fx-ambient -j4
 make PROJECT=physical-modeling-fx-torus manifest
 make PROJECT=physical-modeling-fx-ambient manifest
-python3 scripts/check-firmware.py instruments/physical-modeling/build/fx-torus/PhysicalModelingFxTorus-v0.2.0.bin
-python3 scripts/check-firmware.py instruments/physical-modeling/build/fx-ambient/PhysicalModelingFxAmbient-v0.2.0.bin
+python3 scripts/check-firmware.py instruments/physical-modeling/build/fx-torus/PhysicalModelingFxTorus-v0.2.1.bin
+python3 scripts/check-firmware.py instruments/physical-modeling/build/fx-ambient/PhysicalModelingFxAmbient-v0.2.1.bin
 ```
 
 Die offiziellen Makefiles verwenden flache Objektnamen und sortierte VPATHs.
