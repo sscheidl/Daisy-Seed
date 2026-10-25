@@ -55,7 +55,7 @@ def test_starts_in_simulation_and_is_marked(sim):
     assert window.sim_banner.isVisible() and "SIMULATION" in window.sim_banner.text()
     assert "SIMULATION" in window.windowTitle()
     assert window.status_pill.text() == "Connected (Simulation)"
-    assert window.info["fw"].text() == "DaisyDiagnostic 0.2.1-sim"
+    assert window.info["fw"].text() == "DaisyDiagnostic 0.3.0-sim"
     assert window.info["proto"].text().startswith("DDP v1")
     assert window.board.simulated and window.board.interactive
 
@@ -231,11 +231,11 @@ def test_frozen_firmware_shows_connection_error(sim):
 def test_not_implemented_sections_are_labelled(sim):
     window, _ = sim
     badges = [w for w in window.findChildren(QLabel) if w.objectName() == "niBadge"]
-    assert len(badges) == len(mw.EXTENSIONS) == 7
+    assert len(badges) == len(mw.EXTENSIONS) == 5
     assert all(b.text() == 'Not implemented' for b in badges)
     names = {name for name, _ in mw.EXTENSIONS}
     assert names == {"Audio Input/Output", "Audio-Engine / DSP", "MIDI DIN", "USB-MIDI",
-                     "USB-Host", "CV Input/Output", "Gate Input"}
+                     "USB-Host"}  # CV and gate are implemented since 0.3.0
     tip = window.board.tooltip_for(("midi", 0))
     assert 'Not implemented' in tip
 
@@ -261,3 +261,48 @@ def test_hardware_mode_without_device(app, monkeypatch):
     assert "No Daisy" in window.status_detail.text()
     assert window.board.state is None
     window.close()
+
+
+def test_cv_gate_panel_and_board(sim):
+    window, step = sim
+    dev = window.cable.device
+    dev.set_cv(0, 0.25)
+    dev.set_cv(1, -0.5)
+    step(0.05)
+    cg = window.board.state.cvgate
+    assert cg is not None and cg.cv == pytest.approx([0.25, -0.5])
+    assert window.cv_table.item(0, 1).text() == "+0.2500"
+    assert window.cv_table.item(1, 1).text() == "-0.5000"
+    # gate click on the board (simulation) and edge counter
+    QTest.mouseClick(window.board, Qt.LeftButton, Qt.NoModifier,
+                     widget_point(window, board_mod.CV_JACKS["gate_in_2"][0]))
+    step(0.05)
+    assert window.board.state.cvgate.gates == [False, True]
+    assert window.gate_labels[1].text() == "GATE 2: HIGH · edges 1"
+    dev.pulse_gate(0)
+    step(0.05)
+    assert window.board.state.cvgate.gate_counts[0] == 1
+    assert "CV IN 1: +0.2500" in window.board.tooltip_for(("cv_in_1", 0))
+    assert "Not implemented" not in window.board.tooltip_for(("cv", 0))
+
+
+def test_cv_out_controls(sim):
+    window, step = sim
+    window.cv_code_spins[0].setValue(1000)
+    window.cv_code_spins[1].setValue(4095)
+    window.cv_mode_buttons["FIX"].click()
+    step(0.05)
+    cg = window.board.state.cvgate
+    assert (cg.cv_out_mode, cg.cv_out) == ("FIX", [1000, 4095])
+    assert window.cv_mode_buttons["FIX"].isChecked()
+    window.cv_period_spin.setValue(200)
+    window.cv_mode_buttons["SAW"].click()
+    step(0.05)
+    assert window.board.state.cvgate.cv_out_mode == "SAW"
+    window.sim_cv_patch.setChecked(True)
+    step(0.05)
+    cg = window.board.state.cvgate
+    assert cg.cv[0] == pytest.approx(cg.cv_out[0] / 4095, abs=1e-3)
+    window.cv_mode_buttons["OFF"].click()
+    step(0.05)
+    assert window.board.state.cvgate.cv_out == [0, 0]

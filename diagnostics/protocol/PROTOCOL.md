@@ -90,6 +90,7 @@ Host                                    Seed3
 | `GET` | — | Immediate `ST` and `SYS` in an active session |
 | `RATE` | `hz=10..100` | `ACK c=RATE hz=<n>` |
 | `LED` | `m=OFF\|ON\|MASK\|CHASE\|FOLLOW`, optional `mask=<hex4>`, `br=0..100`, `ms=20..2000` | `ACK c=LED m=... mask=... br=... ms=...` |
+| `CVOUT` | `m=OFF\|FIX\|RAMP\|SAW`, optional `c1=0..4095`, `c2=0..4095`, `ms=50..10000` | `ACK c=CVOUT m=... c1=... c2=... ms=...`; `ERR c=CVOUT e=SESSION` without HELLO (firmware 0.3.0) |
 | `SDTEST` | — | `SD ...` (read-only test) |
 | `BOOT` | — | `ACK c=BOOT`, then the firmware restarts into the Daisy bootloader (no timeout); `ERR c=BOOT e=SESSION` without HELLO, `e=BUSY` while Windows owns the card |
 | `BYE` | — | `ACK c=BYE`, streaming off |
@@ -112,13 +113,26 @@ with a valid CRC.
 `br` sets PWM brightness in percent (default 100). LEDs have **no electrical
 feedback**: ST field `l` is the commanded state, not proof of actual light output.
 
+| CV OUT mode | Meaning (DAC codes, 12 bit) |
+| --- | --- |
+| `OFF` | Both outputs code 0; default after startup **and after every session end** (BYE or 3 s timeout) |
+| `FIX` | CV OUT 1 = `c1`, CV OUT 2 = `c2` |
+| `RAMP` | Triangle 0 → 4095 → 0 with period `ms` (default 1000 ms); CV OUT 2 = 4095 − CV OUT 1 |
+| `SAW` | Rising sawtooth 0 → 4095, reset every `ms`; CV OUT 2 = 4095 − CV OUT 1 |
+
+Absent optional fields keep their previous value. Codes are not volts: the
+analog scaling of the outputs has not been measured.
+
 ## Firmware → host
 
 ### HELLO
 
 ```text
-HELLO proto=1 fw=0.1.0 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot
+HELLO proto=1 fw=0.3.0 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout
 ```
+
+`cvin`, `gate` and `cvout` (firmware 0.3.0) announce the CV/gate fields in `ST` and
+the `CVOUT` command.
 
 `bl` is the bootloader version recognized by libDaisy: `v6_1` means v6.1 or newer;
 other values are `v6_0`, `LT_v6_0`, and `NONE`.
@@ -153,6 +167,25 @@ ST n=1234 t=56789 b=0001 pc=01000000000000000000000000000000 p=0,10000,5000,0,0,
 | `lm` | Active LED mode |
 | `l` | Commanded LED mask, bit 0 = D1 |
 | `br` | LED brightness, `0..100` percent |
+
+Firmware 0.3.0 appends a CV/gate block. It is either complete or absent; hosts
+must accept frames without it (older firmware):
+
+```text
+ST ... br=100 cv=2500,-5000 cvr=40960,16384 g=10 gc=03FF co=FIX,1000,4095
+```
+
+| Field | Meaning |
+| --- | --- |
+| `cv` | CV IN 1/2 normalized, `-10000..10000` = `-1.0..+1.0` (libDaisy bipolar `AnalogControl`); not volts |
+| `cvr` | CV IN 1/2 raw ADC values `0..65535` (ADC channels 1/2, pins D20/D21) |
+| `g` | GATE IN 1/2 state, one `0`/`1` digit each, GATE 1 first |
+| `gc` | Rising-edge counts, two hex digits each (modulo 256), GATE 1 first |
+| `co` | CV OUT mode and the two DAC codes currently written (`0..4095`) |
+
+Gates are sampled once per 1 kHz control tick (pins D0/D18, libDaisy `GateIn`
+polarity); pulses shorter than 1 ms can be missed. CV values are sent with the
+periodic frames; gate changes also trigger an immediate frame.
 
 Periodic rate is selected by RATE (default **50 Hz**). Digital input changes
 trigger additional frames with a minimum 10 ms interval.

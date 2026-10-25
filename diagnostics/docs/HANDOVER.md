@@ -52,8 +52,9 @@ subsequent hardware evidence is listed separately in the test report.
 ## 2. Deliberately not implemented
 
 Audio input/output processing (only input jack detection), DSP, MIDI DIN,
-USB-MIDI, USB host, CV input/output, and gate input are labeled **Not implemented**
-or **N/I**. Audio outputs have no jack detection. USB-host capability and electrical
+USB-MIDI, and USB host are labeled **Not implemented** or **N/I**. CV input/output
+and gate input are implemented since 0.3.0 (normalized values and DAC codes; volts
+not measured, hardware tests H12–H15 pending). Audio outputs have no jack detection. USB-host capability and electrical
 requirements have not been verified. No SD writes/formatting and no automatic
 bootloader installation are implemented.
 

@@ -12,6 +12,15 @@ constexpr ModeName kModeNames[] = {
     {LedMode::Chase, "CHASE"},   {LedMode::Follow, "FOLLOW"},
 };
 
+struct CvModeName {
+    CvOutMode mode;
+    const char* name;
+};
+constexpr CvModeName kCvModeNames[] = {
+    {CvOutMode::Off, "OFF"}, {CvOutMode::Fix, "FIX"},
+    {CvOutMode::Ramp, "RAMP"}, {CvOutMode::Saw, "SAW"},
+};
+
 char Sw18Char(Sw18 pos) {
     switch(pos) {
         case Sw18::Up: return 'U';
@@ -45,6 +54,54 @@ bool ParseLedMode(const char* name, LedMode& mode) {
         }
     }
     return false;
+}
+
+const char* CvOutModeName(CvOutMode mode) {
+    for(const auto& entry : kCvModeNames)
+        if(entry.mode == mode)
+            return entry.name;
+    return "OFF";
+}
+
+bool ParseCvOutMode(const char* name, CvOutMode& mode) {
+    for(const auto& entry : kCvModeNames) {
+        if(std::strcmp(entry.name, name) == 0) {
+            mode = entry.mode;
+            return true;
+        }
+    }
+    return false;
+}
+
+void GateTracker::Update(size_t index, bool high) {
+    const uint8_t bit = static_cast<uint8_t>(1u << index);
+    if(high && !(states_ & bit))
+        ++count_[index];
+    states_ = high ? static_cast<uint8_t>(states_ | bit) : static_cast<uint8_t>(states_ & ~bit);
+}
+
+void ComputeCvOut(const Settings& settings, uint32_t now_ms, uint16_t out[kNumCv]) {
+    const uint32_t period = settings.cv_period_ms ? settings.cv_period_ms : 1;
+    const uint32_t phase = now_ms % period;
+    uint32_t value = 0;
+    switch(settings.cv_mode) {
+        case CvOutMode::Off: out[0] = out[1] = 0; return;
+        case CvOutMode::Fix:
+            out[0] = settings.cv_code[0];
+            out[1] = settings.cv_code[1];
+            return;
+        case CvOutMode::Saw: value = phase * kDacMax / (period - (period > 1 ? 1 : 0)); break;
+        case CvOutMode::Ramp: {
+            const uint32_t half = period / 2 ? period / 2 : 1;
+            value = phase < half ? phase * kDacMax / half
+                                 : (period - phase) * kDacMax / (period - half);
+            break;
+        }
+    }
+    if(value > kDacMax)
+        value = kDacMax;
+    out[0] = static_cast<uint16_t>(value);
+    out[1] = static_cast<uint16_t>(kDacMax - value);
 }
 
 void ButtonTracker::Update(size_t index, bool rising_edge, bool falling_edge) {
@@ -92,7 +149,8 @@ uint16_t ComputeLeds(const Settings& settings, uint32_t now_ms, uint16_t buttons
 bool DigitalChanged(const Inputs& a, const Inputs& b) {
     if(a.buttons != b.buttons || a.sw17_up != b.sw17_up || a.sw18 != b.sw18
        || a.sd_card != b.sd_card || a.jack_left != b.jack_left
-       || a.jack_right != b.jack_right)
+       || a.jack_right != b.jack_right || a.gates != b.gates
+       || std::memcmp(a.gate_count, b.gate_count, sizeof(a.gate_count)) != 0)
         return true;
     return std::memcmp(a.press_count, b.press_count, sizeof(a.press_count)) != 0;
 }
@@ -103,6 +161,16 @@ uint16_t NormalizePot(float value) {
     if(value >= 1.f)
         return 10000;
     return static_cast<uint16_t>(value * 10000.f + 0.5f);
+}
+
+int16_t NormalizeCv(float value) {
+    if(value != value)  // NaN
+        return 0;
+    if(value <= -1.f)
+        return -10000;
+    if(value >= 1.f)
+        return 10000;
+    return static_cast<int16_t>(value >= 0.f ? value * 10000.f + 0.5f : value * 10000.f - 0.5f);
 }
 
 void Session::Expire(uint32_t now_ms) {
@@ -121,7 +189,7 @@ void Session::WriteHello(ddp::Writer& out) const {
         .Str(" app=").Str(kAppName)
         .Str(" dev=seed3-desktop boot=BOOT_SRAM bl=").Str(bootloader_)
         .Str(" libdaisy=").Str(kLibDaisyCommit)
-        .Str(" caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot");
+        .Str(" caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout");
 #ifdef DIAG_CARD_READER
     out.Str(",sdmsc");
 #endif
@@ -208,6 +276,48 @@ uint32_t Session::Handle(const char* body, uint32_t now_ms, ddp::Writer& reply) 
             .Str(" ms=").U32(settings.chase_step_ms);
         return kRequestLeds;
     }
+    if(std::strcmp(type, "CVOUT") == 0) {
+        // Only in a session: CV OUT returns to OFF whenever the session ends.
+        if(!streaming_) {
+            WriteError(reply, type, "SESSION");
+            return kRequestNone;
+        }
+        Settings next = settings;
+        char text[12];
+        if(!ddp::FindField(body, "m", text, sizeof(text))
+           || !ParseCvOutMode(text, next.cv_mode)) {
+            WriteError(reply, type, "ARG");
+            return kRequestNone;
+        }
+        // Optional fields: absent keeps the setting, present-but-invalid (including
+        // too long to parse) rejects the whole command.
+        const char* code_keys[kNumCv] = {"c1", "c2"};
+        for(size_t i = 0; i < kNumCv; ++i) {
+            const ddp::Lookup found = ddp::LookupField(body, code_keys[i], text, sizeof(text));
+            if(found == ddp::Lookup::Missing)
+                continue;
+            if(found == ddp::Lookup::TooLong || !ddp::ParseU32(text, value) || value > kDacMax) {
+                WriteError(reply, type, "ARG");
+                return kRequestNone;
+            }
+            next.cv_code[i] = static_cast<uint16_t>(value);
+        }
+        const ddp::Lookup found = ddp::LookupField(body, "ms", text, sizeof(text));
+        if(found != ddp::Lookup::Missing) {
+            if(found == ddp::Lookup::TooLong || !ddp::ParseU32(text, value) || value < 50
+               || value > 10000) {
+                WriteError(reply, type, "ARG");
+                return kRequestNone;
+            }
+            next.cv_period_ms = static_cast<uint16_t>(value);
+        }
+        settings = next;
+        reply.Str("ACK c=CVOUT m=").Str(CvOutModeName(settings.cv_mode))
+            .Str(" c1=").U32(settings.cv_code[0])
+            .Str(" c2=").U32(settings.cv_code[1])
+            .Str(" ms=").U32(settings.cv_period_ms);
+        return kRequestCvOut;
+    }
     if(std::strcmp(type, "SDTEST") == 0)
         return kRequestSdTest;
     if(std::strcmp(type, "READER") == 0) {
@@ -245,7 +355,7 @@ uint32_t Session::Handle(const char* body, uint32_t now_ms, ddp::Writer& reply) 
 }
 
 void WriteState(const Inputs& in, const Settings& settings, uint16_t leds,
-                uint32_t seq, uint32_t now_ms, ddp::Writer& out) {
+                uint32_t seq, uint32_t now_ms, ddp::Writer& out, const uint16_t* cv_out) {
     out.Str("ST n=").U32(seq).Str(" t=").U32(now_ms)
         .Str(" b=").Hex(in.buttons, 4).Str(" pc=");
     for(uint8_t count : in.press_count)
@@ -270,6 +380,20 @@ void WriteState(const Inputs& in, const Settings& settings, uint16_t leds,
         .Str(" lm=").Str(LedModeName(settings.led_mode))
         .Str(" l=").Hex(leds, 4)
         .Str(" br=").U32(settings.led_brightness);
+    out.Str(" cv=");
+    for(size_t i = 0; i < kNumCv; ++i) {
+        if(i)
+            out.Char(',');
+        if(in.cv_norm[i] < 0)
+            out.Char('-');
+        out.U32(static_cast<uint32_t>(in.cv_norm[i] < 0 ? -in.cv_norm[i] : in.cv_norm[i]));
+    }
+    out.Str(" cvr=").U32(in.cv_raw[0]).Char(',').U32(in.cv_raw[1])
+        .Str(" g=").Char(in.gates & 1u ? '1' : '0').Char(in.gates & 2u ? '1' : '0')
+        .Str(" gc=").Hex(in.gate_count[0], 2).Hex(in.gate_count[1], 2)
+        .Str(" co=").Str(CvOutModeName(settings.cv_mode))
+        .Char(',').U32(cv_out ? cv_out[0] : 0u)
+        .Char(',').U32(cv_out ? cv_out[1] : 0u);
 }
 
 void WriteSys(const Stats& stats, bool host, uint8_t rate_hz, ddp::Writer& out) {

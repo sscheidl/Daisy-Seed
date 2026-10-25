@@ -114,6 +114,19 @@ void App::Step(uint32_t now) {
         leds_dirty_ = false;
     }
 
+    // CV OUT: test signals only while a host session is active, so no voltage is
+    // left on patched equipment after BYE, a timeout or a closed application.
+    if(!session_.HostActive(now))
+        session_.settings.cv_mode = CvOutMode::Off;
+    uint16_t cv[kNumCv];
+    ComputeCvOut(session_.settings, now, cv);
+    if(!cv_applied_ || cv[0] != last_cv_[0] || cv[1] != last_cv_[1]) {
+        board_.ApplyCvOut(cv[0], cv[1]);
+        last_cv_[0] = cv[0];
+        last_cv_[1] = cv[1];
+        cv_applied_ = true;
+    }
+
     if(now - last_stat_ms_ >= 1000) {
         const uint32_t ticks = board_.ControlTicks();
         stats_.control_rate_hz = (ticks - last_ticks_) * 1000u / (now - last_stat_ms_);
@@ -140,7 +153,7 @@ void App::Step(uint32_t now) {
         if(periodic || changed || (requests & kRequestState)) {
             char body[ddp::kMaxBody + 1];
             ddp::Writer out(body, sizeof(body));
-            WriteState(inputs, session_.settings, last_leds_, seq_++, now, out);
+            WriteState(inputs, session_.settings, last_leds_, seq_++, now, out, last_cv_);
             Send(out);
             last_sent_ = inputs;
             last_state_ms_ = now;

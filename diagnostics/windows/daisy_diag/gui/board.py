@@ -50,7 +50,8 @@ RV1_CENTER = QPointF(1130, 530)
 NOT_IMPLEMENTED_TIPS = {
     "out_r": 'Right audio output (J4)\nAudio output: not implemented (silent)',
     "out_l": 'Left audio output (J3)\nAudio output: not implemented (silent)',
-    "cv": 'CV inputs/outputs and gate inputs\nNot implemented',
+    "cv": 'CV / gate section: CV IN 1/2, GATE IN 1/2, CV OUT 1/2\n'
+          'Values are normalized; volts have not been measured',
     "midi": 'MIDI DIN (OUT/THRU/INPUT)\nNot implemented',
     "phones": 'Headphone output J5\nAudio output: not implemented',
     "rv1": 'RV1: analog headphone volume control\nCannot be read by software',
@@ -102,6 +103,8 @@ class BoardWidget(QWidget):
     sw18Changed = Signal(str)
     sdToggled = Signal()
     jackToggled = Signal(str)  # "left" / "right"
+    gateToggled = Signal(int)
+    cvChanged = Signal(int, float)
     ledClicked = Signal(int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -161,6 +164,9 @@ class BoardWidget(QWidget):
         for key, (x, _label) in AUDIO_JACKS.items():
             if audio_jack_rect(x).contains(pt):
                 return (key, 0)
+        for key, (center, _label) in CV_JACKS.items():
+            if abs(pt.x() - center.x()) <= 22 and abs(pt.y() - center.y()) <= 22:
+                return (key, 0)
         if QRectF(430, 30, 325, 190).contains(pt):
             return ("cv", 0)
         if QRectF(1050, 50, 130, 420).contains(pt):
@@ -200,6 +206,8 @@ class BoardWidget(QWidget):
             self.jackToggled.emit("left")
         elif kind == "in_r":
             self.jackToggled.emit("right")
+        elif kind in ("gate_in_1", "gate_in_2"):
+            self.gateToggled.emit(int(kind[-1]) - 1)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._drag_pot is not None:
@@ -207,7 +215,8 @@ class BoardWidget(QWidget):
             return
         hit = self.hit_test(self.to_board(event.position()))
         clickable = hit is not None and (
-            (self.interactive and hit[0] in ("button", "pot", "sw17", "sw18", "sd", "in_l", "in_r"))
+            (self.interactive and hit[0] in ("button", "pot", "sw17", "sw18", "sd", "in_l", "in_r",
+                                             "gate_in_1", "gate_in_2", "cv_in_1", "cv_in_2"))
             or (self.led_selectable and hit[0] == "led"))
         self.setCursor(Qt.PointingHandCursor if clickable else Qt.ArrowCursor)
 
@@ -224,6 +233,11 @@ class BoardWidget(QWidget):
         if hit and hit[0] == "pot":
             step = 0.02 if event.angleDelta().y() > 0 else -0.02
             self.potChanged.emit(hit[1], min(1.0, max(0.0, self.state.pots[hit[1]] + step)))
+            event.accept()
+        elif hit and hit[0] in ("cv_in_1", "cv_in_2") and self.state.cvgate is not None:
+            index = int(hit[0][-1]) - 1
+            step = 0.05 if event.angleDelta().y() > 0 else -0.05
+            self.cvChanged.emit(index, min(1.0, max(-1.0, self.state.cvgate.cv[index] + step)))
             event.accept()
 
     def _drag_to(self, pt: QPointF) -> None:
@@ -274,6 +288,24 @@ class BoardWidget(QWidget):
             return 'J7 USB-C (Desktop carrier)\nPower + USB CDC (DDP diagnostic protocol)'
         if kind == "seed":
             return NOT_IMPLEMENTED_TIPS["seed_usb"]
+        if kind in ("cv_in_1", "cv_in_2", "gate_in_1", "gate_in_2", "cv_out_1", "cv_out_2"):
+            n = int(kind[-1])
+            cg = st.cvgate if st is not None else None
+            hint = ""
+            if kind.startswith("cv_in"):
+                value = "–" if cg is None else f"{cg.cv[n - 1]:+.4f} (raw {cg.cv_raw[n - 1]})"
+                hint = "\nMouse wheel changes the simulated value" if self.interactive else ""
+                return (f"CV IN {n}: {value}\nNormalized −1…+1 (libDaisy bipolar CV); "
+                        f"volts not measured{hint}{suffix}")
+            if kind.startswith("gate_in"):
+                value = "–" if cg is None else (
+                    f"{'HIGH' if cg.gates[n - 1] else 'LOW'}, rising edges: {cg.gate_counts[n - 1]}")
+                hint = "\nClick toggles the simulated gate" if self.interactive else ""
+                return (f"GATE IN {n}: {value}\nSampled at 1 kHz; pulses shorter than 1 ms "
+                        f"can be missed{hint}{suffix}")
+            value = "–" if cg is None else f"{cg.cv_out_mode}, DAC code {cg.cv_out[n - 1]} of 4095"
+            return (f"CV OUT {n}: {value}\nCommanded code only; there is no measurement "
+                    f"feedback{suffix}")
         if kind in ("in_l", "in_r"):
             side = 'left' if kind == "in_l" else 'right'
             plugged = None if st is None else (st.jack_left if kind == "in_l" else st.jack_right)
@@ -292,7 +324,7 @@ class BoardWidget(QWidget):
         st = self.state
         self._paint_board(painter)
         self._paint_audio_jacks(painter, st)
-        self._paint_cv_section(painter)
+        self._paint_cv_section(painter, st)
         self._paint_midi(painter)
         self._paint_usb_and_seed(painter)
         self._paint_sd(painter)
@@ -416,7 +448,7 @@ class BoardWidget(QWidget):
         painter.drawEllipse(center, 6, 6)
         self._text(painter, QRectF(center.x() - 40, center.y() - 40, 80, 14), label, 7.5)
 
-    def _paint_cv_section(self, painter: QPainter) -> None:
+    def _paint_cv_section(self, painter: QPainter, st: p.BoardState | None) -> None:
         painter.setPen(QPen(theme.SILK, 1.5))
         painter.setBrush(Qt.NoBrush)
         painter.drawRect(QRectF(430, 30, 325, 190))
@@ -431,7 +463,29 @@ class BoardWidget(QWidget):
         painter.setBrush(theme.PCB)
         painter.drawEllipse(c, 6, 6)
         self._text(painter, QRectF(500, 140, 140, 16), "CV / Gate", 8.5, theme.SILK_MUTED)
-        self._ni_badge(painter, QPointF(570, 170))
+        cg = st.cvgate if st is not None else None
+        for key, (center, _label) in CV_JACKS.items():
+            n = int(key[-1]) - 1
+            rect = QRectF(center.x() - 34, center.y() + 23, 68, 13)
+            if cg is None:
+                self._text(painter, rect, "–", 7.5, theme.SILK_MUTED, family=theme.MONO_FONT)
+            elif key.startswith("cv_in"):
+                self._text(painter, rect, f"{cg.cv[n]:+.3f}", 7.5, theme.TEXT,
+                           family=theme.MONO_FONT)
+            elif key.startswith("cv_out"):
+                text = "OFF" if cg.cv_out_mode == "OFF" else f"{cg.cv_out_mode} {cg.cv_out[n]}"
+                self._text(painter, rect, text, 7.5,
+                           theme.SILK_MUTED if cg.cv_out_mode == "OFF" else theme.TEXT,
+                           family=theme.MONO_FONT)
+            else:
+                high = cg.gates[n]
+                dot = QPointF(center.x() - 14, center.y() + 29.5)
+                painter.setPen(QPen(theme.TEXT, 1))
+                painter.setBrush(theme.TEXT if high else Qt.NoBrush)
+                painter.drawEllipse(dot, 3.5, 3.5)
+                self._text(painter, QRectF(center.x() - 8, center.y() + 23, 30, 13),
+                           f"{cg.gate_counts[n]}", 7.5, theme.TEXT if high else theme.SILK_MUTED,
+                           Qt.AlignLeft | Qt.AlignVCenter, family=theme.MONO_FONT)
 
     def _paint_midi(self, painter: QPainter) -> None:
         for y, label in MIDI_JACKS.values():
