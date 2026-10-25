@@ -67,6 +67,15 @@ The [Desktop control plan](docs/CONTROL_PLAN.md) records the source checks,
 mode expansion path, and hardware acceptance steps. The table above describes
 the v0.2 firmware.
 
+## Reuse inside an instrument
+
+`src/fx_adapter.h` exposes the existing DSP through the shared wet-only audio
+contract. Its integration adapter has its own version in `adapter_version.h`;
+the standalone v0.2 core/version is retained. The first composed firmware is
+`make PROJECT=physical-modeling-fx-ambient`; see
+[modular components](../../docs/MODULAR_COMPONENTS.md) for its limited pilot
+parameter mapping and hardware-test boundary.
+
 ## Build and test
 
 From the repository root, with the pinned submodules and ARM toolchain installed

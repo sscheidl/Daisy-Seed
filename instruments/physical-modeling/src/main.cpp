@@ -9,6 +9,9 @@
 #include "usbd_core.h"
 #include <atomic>
 #include <new>
+#if PHYSICAL_MODELING_COMPOSED
+#include "composed_version.h"
+#endif
 #if PHYSICAL_MODELING_MOD
 #include "modulation.h"
 #include "mod_on_daisy_desktop.h"
@@ -17,7 +20,11 @@
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
 namespace {
 using namespace physical_modeling;
-#if PHYSICAL_MODELING_MOD
+#if PHYSICAL_MODELING_COMPOSED && PHYSICAL_MODELING_AMBIENT
+const char kFirmwareId[] = "PHYSICAL-MODELING-FX-AMBIENT-VERSION=" PHYSICAL_MODELING_COMPOSED_VERSION;
+#elif PHYSICAL_MODELING_COMPOSED
+const char kFirmwareId[] = "PHYSICAL-MODELING-FX-TORUS-VERSION=" PHYSICAL_MODELING_COMPOSED_VERSION;
+#elif PHYSICAL_MODELING_MOD
 const char kFirmwareId[] = "PHYSICAL-MODELING-MOD-VERSION=" PHYSICAL_MODELING_VERSION;
 #else
 const char kFirmwareId[] = "PHYSICAL-MODELING-VERSION=" PHYSICAL_MODELING_VERSION;

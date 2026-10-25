@@ -10,6 +10,15 @@
   Mod on Daisy code still adds nothing to it. Sound unchanged: golden hashes of both
   builds are the same before and after (compared on one compiler).
 
+## 0.2.0 - additional composed FX products
+
+* New physical-modeling-fx-torus and physical-modeling-fx-ambient targets select
+  typed wet-only effects behind the existing keyboard/MIDI/Mod on Daisy host.
+* Product identity is consistent in BIN, marker and IDENTIFY; component manifests
+  record independently versioned DSP, control and panel components.
+* The Torus adapter keeps the golden sound. Accepted regular and Mod4 images
+  retain their identities; new combinations still need hardware validation.
+
 ## Mod on Daisy build, mod3 - 2026-10-24 (correction order after the review)
 
 * Built with `MOD_ON_DAISY_EXTENSIONS=1`; `InitModulation()` enables the extended

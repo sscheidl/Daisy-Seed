@@ -132,6 +132,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     <button id="pullBtn" disabled>Vom Gerät neu laden</button>
     <button id="demoBtn" title="Spalten von Toy Piano v0.3 und ein Beispiel-Patch, ohne Gerät">Demo (offline)</button>
     <span id="log" role="status"></span>
+    <span class="hint" id="panelBuild"></span>
   </section>
 </main>
 <dialog id="compatDialog">
@@ -146,9 +147,11 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     </div>
   </form>
 </dialog>
+<script src="version.js"></script>
 <script src="mod_protocol.js"></script>
 <script>
 'use strict';
+document.getElementById('panelBuild').textContent = `HTML Editor ${MOD_ON_DAISY_WEB_VERSION}`;
 const P = window.ModProtocol;
 const $ = (id) => document.getElementById(id);
 
