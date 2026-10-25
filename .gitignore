@@ -1,4 +1,5 @@
 /build/
+/tests/fx/build/
 /instruments/*/build/
 /effects/*/build/
 /.tools/

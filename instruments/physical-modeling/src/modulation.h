@@ -4,6 +4,9 @@
 // and 7; column 6 is the output level (the reverb decay it replaced had little effect).
 #include "parameter_manager.h"
 #include "version.h"
+#if PHYSICAL_MODELING_COMPOSED
+#include "composed_version.h"
+#endif
 #include "mod_on_daisy/types.h"
 
 namespace physical_modeling {
@@ -29,7 +32,11 @@ inline mod::InstrumentInfo MakeModInfo() {
     mod::InstrumentInfo info;
     info.key = "physical-modeling";
     // mod2: Level column; mod3: monitor ranges, LFO FM; mod4: active model in the monitor
+#if PHYSICAL_MODELING_COMPOSED
+    info.version = PHYSICAL_MODELING_COMPOSED_VERSION;
+#else
     info.version = PHYSICAL_MODELING_VERSION "-mod4";
+#endif
 #if MOD_ON_DAISY_EXTENSIONS
     info.modes = kModes;
     info.mode_count = uint8_t(sizeof(kModes) / sizeof(kModes[0]));

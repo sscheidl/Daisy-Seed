@@ -15,6 +15,15 @@ the intended use. Running synthesis has headroom.
 voice is described in [docs/MODULATION.md](docs/MODULATION.md)
 (`make PROJECT=physical-modeling-mod`). The regular build is unchanged.
 
+## Additional composed FX products
+
+The [modular component pilot](../../docs/MODULAR_COMPONENTS.md) adds separate
+`physical-modeling-fx-torus` and `physical-modeling-fx-ambient` builds. Both keep
+the existing keyboard/MIDI/Mod-on-Daisy host and choose the downstream wet effect
+at build time. They have product version 0.2.0 and explicit component manifests;
+the regular 0.1.0 and accepted Mod4 targets retain their prior identities.
+These combinations still need hardware CPU and listening tests.
+
 ## Models and controls
 
 | SW17 bank | SW18 UP | SW18 CENTER | SW18 DOWN |

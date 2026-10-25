@@ -28,6 +28,16 @@ if path.name.startswith('NebulaeOnDaisy-v'):
     version = match.group(1)
     expected_name = f'NebulaeOnDaisy-v{version}.bin'
     marker = rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
+elif path.name.startswith(('PhysicalModelingFxTorus-v', 'PhysicalModelingFxAmbient-v')):
+    physical = root / 'instruments' / 'physical-modeling'
+    match = re.search(r'PHYSICAL_MODELING_COMPOSED_VERSION\s+"([^"]+)"',
+                      (physical / 'src' / 'composed_version.h').read_text())
+    assert match, 'Could not read composed product version'
+    version = match.group(1)
+    ambient = path.name.startswith('PhysicalModelingFxAmbient-')
+    expected_name = f"PhysicalModelingFx{'Ambient' if ambient else 'Torus'}-v{version}.bin"
+    marker = (rb'PHYSICAL-MODELING-FX-AMBIENT-VERSION=([0-9.]+)\x00' if ambient else
+              rb'PHYSICAL-MODELING-FX-TORUS-VERSION=([0-9.]+)\x00')
 elif path.name.startswith('PhysicalModelingMod-v'):
     physical = root / 'instruments' / 'physical-modeling'
     match = re.search(r'PHYSICAL_MODELING_VERSION\s+"([^"]+)"', (physical / 'src' / 'version.h').read_text())
