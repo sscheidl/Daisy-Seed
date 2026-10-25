@@ -1,10 +1,13 @@
 // Host tests of TEST_PLAN_PHASE2.md § 2.1-2.4, 2.6 and 2.7.
 #include "common.h"
 #include <atomic>
+#include <functional>
 #include <cstdio>
 #include <cstdlib>
 #include <new>
 #include <random>
+#include <string>
+#include <utility>
 
 // ---- allocation counter for the real-time paths (§ 2.3) ----
 static std::atomic<long> g_allocations{0};
@@ -457,7 +460,7 @@ void TestProtocolCommands() {
     id.Str(version, 12);
     assert(id.U7() == kMaxActive && id.U14() == 1000 && id.U7() == 0);
     assert(id.U32() == SchemaHash(d.info));
-    assert(id.U7() == 0x0A && id.AtEnd());
+    assert(id.U7() == 0x0A && id.AtEnd()); // extensions are off unless the instrument enables them
 
     // The longest planned key is sent in full (review finding: 17 > 16 characters).
     {
@@ -738,7 +741,8 @@ void TestControllerBehavior() {
         m.module.controller.Service(m.now + t, m.out);
     assert(m.out.count >= 38 && m.out.count <= 41);
     const Reply frame0 = Decode(m.out.frames[0], m.out.sizes[0]);
-    assert(frame0.frame.command == proto::MonitorFrame && frame0.payload.size() == 36);
+    assert(frame0.frame.command == proto::MonitorFrame);
+    assert(frame0.payload.size() == 36); // plain frames unless the instrument enables extensions
     // No reply code may equal the monitor frame code (found by the editor test).
     for(unsigned cmd = 0; cmd < 0x40; ++cmd)
         assert((cmd | proto::kReplyBit) != proto::MonitorFrame || cmd == 0x3E);
@@ -804,6 +808,250 @@ void TestNoAllocation() {
 }
 }
 
+#if MOD_ON_DAISY_EXTENSIONS
+// Extensions (types.h): extended monitor and LFO cross modulation, switched on at run time.
+struct ExtFrame {
+    float source[8], offset[8], cv[2], base[8], min[8], max[8];
+    unsigned clocks, at_kind, at_note, at_value, at_age;
+};
+ExtFrame ParseExt(const Reply& f) {
+    assert(f.frame.command == proto::MonitorFrame && f.payload.size() == 89);
+    proto::Reader r(f.payload.data(), f.payload.size());
+    ExtFrame e;
+    for(float* group : {e.source, e.offset})
+        for(int i = 0; i < 8; ++i)
+            group[i] = proto::DecodeSigned(r.U14());
+    for(float& v : e.cv)
+        v = proto::DecodeSigned(r.U14());
+    for(float* group : {e.base, e.min, e.max})
+        for(int i = 0; i < 8; ++i)
+            group[i] = proto::DecodeSigned(r.U14());
+    e.clocks = r.U7();
+    e.at_kind = r.U7();
+    e.at_note = r.U7();
+    e.at_value = r.U7();
+    e.at_age = r.U7();
+    assert(r.Ok() && r.AtEnd());
+    return e;
+}
+// Runs `ms` milliseconds of engine ticks and Service(); returns the last monitor frame.
+ExtFrame RunMonitored(Device& d, unsigned ms, const std::function<void(unsigned)>& each = nullptr) {
+    Reply last;
+    for(unsigned i = 0; i < ms; ++i) {
+        if(each)
+            each(i);
+        d.Ticks(1);
+        d.out.count = 0;
+        d.module.controller.Service(++d.now, d.out);
+        if(d.out.count && Decode(d.out.frames[0], d.out.sizes[0]).frame.command == proto::MonitorFrame)
+            last = Decode(d.out.frames[0], d.out.sizes[0]);
+    }
+    assert(last.present);
+    return ParseExt(last);
+}
+
+void TestExtensions() {
+    // Off by default even when compiled in: plain caps and 36-byte frames (checked above).
+    Device plain;
+    assert(plain.Request(proto::SetSource, Bytes({0, ParamFm, 100, 0})).frame.command == proto::kNak);
+
+    Device d;
+    d.module.EnableExtensions({true, true});
+    const Reply id = d.Request(proto::Identify, {});
+    assert(id.payload.back() == (0x0A | 0x30 | 0x40));
+    assert(d.module.controller.CurrentPatch().format == 2);
+    assert(d.module.controller.CurrentCrc() != 0x61C264C4u); // format 2 carries the fm bytes
+
+    // Patch format 2: round trip, CRC over 111 bytes, format 1 must not carry fm.
+    Patch p{};
+    p.format = 2;
+    p.lfo[0].fm = -37;
+    p.lfo[1].fm = 100;
+    assert(PatchSize(p) == kPatchBytesV2 && Deserialize(Serialize(p)).lfo[0].fm == -37);
+    assert(PatchCrc(Deserialize(Serialize(p))) == PatchCrc(p) && Validate(p, ~0ull) == Status::Ok);
+    p.format = 1;
+    assert(Validate(p, ~0ull) == Status::Range);
+    p.lfo[0].fm = p.lfo[1].fm = 0;
+    assert(PatchCrc(p) == PatchCrc(Patch{}) || p.lfo[0].rate != Patch{}.lfo[0].rate);
+    assert(PatchCrc(Patch{}) == 0x61C264C4u); // format 1 unchanged by the extension
+
+    // FM parameter: value = fm + 100; Random has none; GET_SOURCE appends it.
+    assert(d.Request(proto::SetSource, Bytes({0, ParamFm, 140 & 127, 140 >> 7})).frame.command == (proto::SetSource | 0x40));
+    assert(d.module.controller.CurrentPatch().lfo[0].fm == 40);
+    assert(d.Request(proto::SetSource, Bytes({2, ParamFm, 140 & 127, 140 >> 7})).frame.command == proto::kNak);
+    assert(d.Request(proto::SetSource, Bytes({1, ParamFm, 0x49, 0x01})).frame.command == proto::kNak); // 201
+    Reply src = d.Request(proto::GetSource, Bytes({0}));
+    assert(src.payload.size() == 10 && (src.payload[8] | (src.payload[9] << 7)) == 140);
+
+    // Extended monitor: base values, min/max of the window, clocks, aftertouch.
+    d.Request(proto::SetCell, Bytes({Lfo1, 0, 50, 2}));          // makes the program active
+    d.Request(proto::SetSource, Bytes({0, ParamFm, 100, 0}));   // fm 0 for the range check
+    d.Request(proto::SetSource, Bytes({0, ParamRate, 0x7F, 0x7F})); // 20 Hz
+    d.Request(proto::Monitor, Bytes({20}));
+    d.module.engine.ReportBase(3, 0.75f);
+    ExtFrame e = RunMonitored(d, 400);
+    assert(std::fabs(e.base[3] - 0.75f) < 1e-3f && e.base[0] == -1.0f);
+    // 20 Hz sampled every 50 ms always hits the same phase; the window still shows the sweep.
+    assert(e.min[Lfo1] < -0.95f && e.max[Lfo1] > 0.95f);
+    assert(e.min[ModWheel] == 0.0f && e.max[ModWheel] == 0.0f && e.clocks == 0 && e.at_kind == 0 && e.at_age == 127);
+    // A new window starts with every frame: a slow LFO shows a narrow range again.
+    d.Request(proto::SetSource, Bytes({0, ParamRate, 0, 0})); // 0.02 Hz
+    e = RunMonitored(d, 300);
+    assert(e.max[Lfo1] - e.min[Lfo1] < 0.05f);
+    // MIDI clock running (24 ppqn at 120 BPM = one pulse per ~21 ms), then stopped.
+    e = RunMonitored(d, 300, [&](unsigned i) { if(i % 21 == 0) d.Midi(0xF8, 0); });
+    assert(e.clocks & 1);
+    e = RunMonitored(d, 600);
+    assert(!(e.clocks & 1));
+    // Aftertouch: the kind follows the last message, value 0 included; Note Off clears Poly.
+    d.Midi(0x90, 60, 100);
+    d.Midi(0x90, 64, 100);
+    d.Midi(0xA0, 60, 120); // pressure on the first of two held notes
+    e = RunMonitored(d, 60);
+    assert(e.at_kind == 2 && e.at_note == 60 && e.at_value == 120 && e.at_age < 5);
+    assert(e.max[PolyAt] == 0.0f); // the Poly AT source follows the last note (N1): 64 has no pressure
+    d.Midi(0x80, 60, 0);
+    e = RunMonitored(d, 60);
+    assert(e.at_kind == 2 && e.at_value == 0);
+    d.Midi(0xD0, 0);
+    e = RunMonitored(d, 60);
+    assert(e.at_kind == 1 && e.at_value == 0);
+    d.Midi(0xD0, 90);
+    e = RunMonitored(d, 60);
+    assert(e.at_kind == 1 && e.at_value == 90);
+    d.Request(proto::Monitor, Bytes({20})); // monitoring ends 3 s after the last request
+    e = RunMonitored(d, 2800);
+    assert(e.at_kind == 1 && e.at_age == 127); // stays, but marked old
+
+    // FM: LFO 2 a slow square at +1 doubles LFO 1's rate twice (+2 octaves at fm +100).
+    Device f;
+    f.module.EnableExtensions({false, true});
+    f.Request(proto::SetCell, Bytes({Lfo1, 0, 50, 2}));
+    f.Request(proto::SetSource, Bytes({0, ParamShape, SawUp, 0}));
+    f.Request(proto::SetSource, Bytes({1, ParamShape, Square, 0}));
+    f.Request(proto::SetSource, Bytes({1, ParamRate, 0, 0})); // 0.02 Hz: +1 for 25 s
+    auto wraps = [&](unsigned ticks) {
+        unsigned n = 0;
+        float last = f.module.engine.Source(Lfo1);
+        for(unsigned i = 0; i < ticks; ++i) {
+            f.Ticks(1);
+            const float now = f.module.engine.Source(Lfo1);
+            n += now < last - 1.0f;
+            last = now;
+        }
+        return n;
+    };
+    f.Request(proto::SetSource, Bytes({0, ParamRate, 0x00, 0x40})); // 8192: ~0.63 Hz
+    f.Ticks(10);
+    const unsigned without = wraps(10000);
+    f.Request(proto::SetSource, Bytes({0, ParamFm, 200 & 127, 200 >> 7})); // fm +100
+    assert(f.module.controller.CurrentPatch().lfo[0].fm == 100);
+    f.Ticks(10);
+    const unsigned with = wraps(10000);
+    assert(without >= 5 && without <= 7 && with >= 4 * without - 2 && with <= 4 * without + 2);
+    // Synced LFOs ignore fm (the clock sets the rate).
+    f.Request(proto::SetSource, Bytes({0, ParamSync, MidiClock, 0}));
+    assert(Compile(f.module.controller.CurrentPatch(), f.info, 48000.0f, {0.0f, 0.0f}).lfo[0].fm_octaves == 0.0f);
+    std::printf("extensions: format 2 + FM (%u -> %u cycles in 10 s), monitor ranges, clocks, aftertouch\n",
+                without, with);
+}
+
+#endif
+
+#if MOD_ON_DAISY_IGNORE_REPLIES
+// Hardware test 2026-10-24: Studio One echoed everything from the Daisy back to it; the
+// device NAKed every echoed reply and the NAKs looped (~500 frames/s), drowning the real
+// replies. With every outgoing frame echoed back, only the monitor frames may remain.
+// Runs with the extensions and with the echo guard alone (Toy Piano).
+void TestEchoedReplies() {
+    Device d;
+#if MOD_ON_DAISY_EXTENSIONS
+    d.module.EnableExtensions({true, true, true});
+#endif
+    const Reply id = d.Request(proto::Identify, {});
+    assert(id.present);
+    std::vector<uint8_t> echo(d.out.frames[0], d.out.frames[0] + d.out.sizes[0]);
+    d.SendRaw(echo.data(), echo.size()); // the reply comes back as if it were a request
+    assert(!d.Collect().present && d.module.controller.IgnoredReplies() == 1);
+
+    d.Request(proto::Monitor, Bytes({20}));
+    unsigned frames = 0, naks = 0;
+    for(unsigned ms = 0; ms < 1000; ++ms) {
+        d.Ticks(1);
+        d.out.count = 0;
+        d.module.controller.Service(++d.now, d.out);
+        for(std::size_t k = 0; k < d.out.count; ++k) {
+            ++frames;
+            naks += Decode(d.out.frames[k], d.out.sizes[k]).frame.command == proto::kNak;
+            d.SendRaw(d.out.frames[k], d.out.sizes[k]); // Studio One input monitoring
+        }
+    }
+    assert(naks == 0 && frames >= 19 && frames <= 21); // 20 Hz monitor, nothing else
+    const Reply again = d.Request(proto::Identify, {}); // requests are still answered
+    assert(again.present && again.frame.command == (proto::Identify | proto::kReplyBit));
+    std::printf("echoed replies: ignored (%u monitor frames in 1 s, no NAK loop)\n", frames);
+}
+#endif
+
+#if MOD_ON_DAISY_EXTENSIONS
+
+// Instrument modes (PROTOCOL.md § 3.6): capabilities 2, GET_MODE and two monitor bytes.
+void TestModes() {
+    static const ModeInfo kTwo[] = {{"Alpha", "Bank A, SW18 oben"}, {"Beta", "Bank B, SW18 unten"}};
+    // Without the switch, or without the extended monitor: no capabilities 2, GET_MODE unknown.
+    Device off;
+    off.info.modes = kTwo;
+    off.info.mode_count = 2;
+    off.module.EnableExtensions({true, true, false});
+    assert(off.Request(proto::Identify, {}).payload.back() == (0x0A | 0x30 | 0x40));
+    Reply nak = off.Request(proto::GetMode, Bytes({0}));
+    assert(nak.frame.command == proto::kNak && nak.payload[1] == proto::ErrUnknown);
+    Device no_monitor;
+    no_monitor.info.modes = kTwo;
+    no_monitor.info.mode_count = 2;
+    no_monitor.module.EnableExtensions({false, false, true});
+    assert(no_monitor.Request(proto::GetMode, Bytes({0})).frame.command == proto::kNak);
+
+    Device d;
+    d.info.modes = kTwo;
+    d.info.mode_count = 2;
+    d.module.EnableExtensions({true, true, true});
+    const Reply id = d.Request(proto::Identify, {});
+    assert(id.payload[id.payload.size() - 2] == (0x0A | 0x30 | 0x40) && id.payload.back() == 0x01);
+    Reply m = d.Request(proto::GetMode, Bytes({1}));
+    assert(m.frame.command == (proto::GetMode | 0x40));
+    proto::Reader r(m.payload.data(), m.payload.size());
+    char name[kMaxModeText + 1]{}, hint[kMaxModeText + 1]{};
+    assert(r.U7() == 1 && r.U7() == 2);
+    r.Str(name, kMaxModeText);
+    r.Str(hint, kMaxModeText);
+    assert(r.Ok() && r.AtEnd() && std::string(name) == "Beta" && std::string(hint) == "Bank B, SW18 unten");
+    assert(d.Request(proto::GetMode, Bytes({2})).frame.command == proto::kNak);
+    assert(d.Request(proto::GetMode, {}).frame.command == proto::kNak);
+
+    // Monitor: 91 bytes, unknown until reported, then mode and origin as the audio side set them.
+    d.Request(proto::Monitor, Bytes({20}));
+    Reply last;
+    auto run = [&](unsigned ms) {
+        for(unsigned i = 0; i < ms; ++i) {
+            d.Ticks(1);
+            d.out.count = 0;
+            d.module.controller.Service(++d.now, d.out);
+            if(d.out.count && Decode(d.out.frames[0], d.out.sizes[0]).frame.command == proto::MonitorFrame)
+                last = Decode(d.out.frames[0], d.out.sizes[0]);
+        }
+        assert(last.present && last.payload.size() == 91);
+        return std::make_pair(unsigned(last.payload[89]), unsigned(last.payload[90]));
+    };
+    assert(run(100) == std::make_pair(unsigned(kModeUnknown), unsigned(kModeUnknown)));
+    d.module.engine.ReportMode(1, kModeFromMidi);
+    assert(run(100) == std::make_pair(1u, unsigned(kModeFromMidi)));
+    d.module.engine.ReportMode(0, kModeFromDevice);
+    assert(run(100) == std::make_pair(0u, unsigned(kModeFromDevice)));
+    std::printf("modes: capabilities 2, GET_MODE, monitor bytes 89/90 (91-byte frames)\n");
+}
+#endif
+
 int main() {
     TestCrcAndSerialization();
     TestValidation();
@@ -823,5 +1071,12 @@ int main() {
     TestControllerBehavior();
     TestNoAllocation();
     TestFuzz();
+#if MOD_ON_DAISY_EXTENSIONS
+    TestExtensions();
+    TestModes();
+#endif
+#if MOD_ON_DAISY_IGNORE_REPLIES
+    TestEchoedReplies();
+#endif
     std::printf("All Mod on Daisy host tests passed.\n");
 }

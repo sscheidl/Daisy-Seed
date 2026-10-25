@@ -27,7 +27,7 @@ modules/mod-on-daisy/
 ├── docs/                 DECISIONS, ARCHITECTURE, PROTOCOL, STORAGE, TEST_PLAN_PHASE2, VALIDATION
 ├── include/mod_on_daisy/ header-only, C++17, nur Standardbibliothek
 │   ├── types.h           Konstanten, Source/Shape/Sync, Teilungen, TargetInfo, InstrumentInfo, AllowedCells
-│   ├── patch.h           Patch (Raster + Quellparameter), Validate, Serialize (109 B), CRC-32, SchemaHash
+│   ├── patch.h           Patch (Raster + Quellparameter), Validate, Serialize (109 B, Format 2: 111 B), CRC-32, SchemaHash
 │   ├── sources.h         Sinus/Formen, Rng, Smoother, CV-Totzone, ClockFollower; Rate → Inkrement (Main)
 │   ├── program.h         Program und Compile(Patch) → Program (Main)
 │   ├── mailbox.h         lock-freier Triple-Buffer
@@ -139,6 +139,11 @@ struct Patch {
 };   // serialisiert: 1 + 64 + 8 + 2·7 + 6 + 16 = 109 Byte, Little Endian, ohne Padding
 ```
 
+Mit `MOD_ON_DAISY_EXTENSIONS=1` hat `LfoParams` zusätzlich `int8_t fm` (−100…+100,
+LFO-Quermodulation). Ein Patch mit `format = 2` hängt `fm` von LFO 1 und 2 an
+(111 Byte); `format = 1` muss `fm = 0` haben. Ein Gerät mit eingeschalteter
+Quermodulation arbeitet mit Format 2 (PROTOCOL § 3.6).
+
 * **Aktiv** ist eine Zelle, wenn sie eingeschaltet ist und `depth ≠ 0`. Eine
   ausgeschaltete Zelle behält ihre Tiefe.
 * **`Validate(patch, allowed)`** lehnt einen Patch als Ganzes ab, wenn:
@@ -159,6 +164,7 @@ struct Patch {
 | 3 | Gate | 0 Gate 1, 1 Gate 2 (bei Sync = Gate) | wie LFO |
 | 4 | Teilung | MIDI: 0 4 Takte, 1 2 Takte, 2 1 Takt, 3 1/2, 4 1/4, 5 1/4T, 6 1/8, 7 1/8T, 8 1/16, 9 1/16T, 10 1/32. Gate: 0 1 Zyklus pro 4 Impulse, 1 pro 2, 2 pro Impuls, 3 zwei pro Impuls, 4 vier pro Impuls | wie LFO |
 | 5 | Retrigger | 0 aus, 1 Neustart bei jedem Note On (nur bei Sync = frei) | — |
+| 6 | fm (Erweiterung) | −100…+100, übertragen als fm + 100: Rate × 2^(fm/50 · Wert des anderen LFOs), also bis ±2 Oktaven; nur bei Sync = frei | — |
 
 Wechselt die Sync-Art, setzt der Controller die Teilung auf den Standard der neuen Art:
 MIDI-Clock 1/4, Gate 1 Zyklus pro Impuls. Derselbe Index bedeutet je nach Art etwas
@@ -247,6 +253,11 @@ float ApplyVoice(t, base, p)    = Clamp01(base + offset[t] + voice_gain[t] · p)
     erfasst, bei Block 48 also 1 ms. Der Jitter wird durch die Periodenschätzung
     geglättet. Gate-Impulse kürzer als ein Block können verloren gehen (E8, Messung H8).
 * **Retrigger** (nur frei laufend): Jedes Note On setzt die Phase auf 0.
+* **Quermodulation** (Erweiterung, nur frei laufend): Das Inkrement von LFO i wird pro
+  Tick mit `2^(fm_i/50 · LFO_(1−i))` multipliziert. Der Wert des anderen LFOs stammt aus
+  dem vorigen Tick, damit die Reihenfolge der Berechnung keine Rolle spielt. `Exp2Small`
+  ist ein kubisches Polynom mit Tabellenstufen, begrenzt auf ±2 Oktaven. Bei `fm = 0`
+  bleibt der Code-Pfad bitgleich zum freien Lauf ohne Quermodulation.
 
 ### 4.3 CV-Aufbereitung
 
@@ -384,7 +395,7 @@ modulation.controller.Service(daisy::System::GetNow(), sender);
 | 3 | Damping | `Damping` | Stimme | 100 % |
 | 4 | Position | `Position` | Stimme | 100 % |
 | 5 | Excitation | `Excitation` | global, `latched` | 100 % |
-| 6 | Reverb | `Decay` | global | 100 % |
+| 6 | Level | Ausgangspegel (Grundwert 0,5 = Verstärkung 1) | global | `+-100%` (0…2); ersetzt seit dem Hardwaretest 23.10.2026 Reverb/`Decay` |
 | 7 | Dry/Wet | `Wet` | global | 100 % |
 
 ¹ `OFFEN`: In Akkordmodellen wählt Structure den Akkord für den ganzen Part

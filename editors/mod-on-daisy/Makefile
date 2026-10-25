@@ -2,8 +2,8 @@
 .DEFAULT_GOAL := test
 HOST_CXX ?= g++
 HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -Wshadow -pthread
-INCLUDES = -I../../modules/mod-on-daisy/include
-HEADERS = $(wildcard src/core/*.h) $(wildcard ../../modules/mod-on-daisy/include/mod_on_daisy/*.h)
+INCLUDES = -I../../modules/mod-on-daisy/include -I../../common/bootloader -DMOD_ON_DAISY_EXTENSIONS=1 # monitor extensions, LFO cross modulation
+HEADERS = $(wildcard src/core/*.h) $(wildcard ../../modules/mod-on-daisy/include/mod_on_daisy/*.h) $(wildcard ../../common/bootloader/*.h)
 
 .PHONY: test test-sanitize app clean
 test: $(HEADERS) tests/test_core.cpp

@@ -3,6 +3,7 @@
 // class, USB CDC on carrier port J7 and a read-only microSD driver. The protocol and
 // main-loop logic live in diag_app.* / diag_core.* and are tested on the host.
 #include "desktop_devkit.h"
+#include "bootloader_daisy.h"
 #include "per/sdmmc.h"
 #include "usbd_core.h"
 #include "ff.h"
@@ -316,6 +317,8 @@ class DevkitBoard final : public diag::Board {
     }
 
     diag::SdResult RunSdTest(bool card_present) override { return ::RunSdTest(card_present); }
+    // DDP BOOT, after the ACK: no SD access is running (the test blocks the main loop).
+    void EnterBootloader() override { bootloader::Enter(hw); }
 #ifdef DIAG_CARD_READER
     bool SdTestAllowed() override { return card_reader.Local(); }
     void ReaderCommand(uint32_t command, ddp::Writer& out) override {

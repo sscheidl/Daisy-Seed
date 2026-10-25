@@ -4,6 +4,24 @@
 #include <cstddef>
 #include <cstdint>
 
+// Optional extensions, compiled in only with -DMOD_ON_DAISY_EXTENSIONS=1 and then
+// switched on per instrument at run time (Module::EnableExtensions):
+//   * extended monitor: column base values, source minimum/maximum per monitor
+//     interval, clock activity and the last received aftertouch (PROTOCOL.md § 3.3)
+//   * LFO cross modulation: each LFO's rate modulated by the other (patch format 2)
+//   * instrument modes: names via GET_MODE, the active mode in the monitor (§ 3.6)
+// Without the switch the code is absent, so images built without it stay unchanged.
+#ifndef MOD_ON_DAISY_EXTENSIONS
+#define MOD_ON_DAISY_EXTENSIONS 0
+#endif
+// Echo guard: frames with the reply bit (replies, NAKs, monitor frames) are consumed and
+// never answered, so a DAW that echoes the port back cannot start a NAK loop (PROTOCOL.md
+// § 2, step 2a). Part of the extensions; instruments without them switch it on alone with
+// -DMOD_ON_DAISY_IGNORE_REPLIES=1 (Toy Piano from v0.4).
+#ifndef MOD_ON_DAISY_IGNORE_REPLIES
+#define MOD_ON_DAISY_IGNORE_REPLIES MOD_ON_DAISY_EXTENSIONS
+#endif
+
 namespace mod {
 constexpr uint8_t kVersionMajor = 0, kVersionMinor = 1, kVersionPatch = 0;
 
@@ -52,11 +70,24 @@ struct TargetInfo {
     bool latched = false;            // read only when a note starts (Poly AT has no effect)
 };
 
+#if MOD_ON_DAISY_EXTENSIONS
+// One selectable instrument mode (PROTOCOL.md § 3.6), e.g. a Physical Modeling model.
+struct ModeInfo {
+    const char* name = nullptr; // <= kMaxModeText characters
+    const char* hint = nullptr; // how to select it on the device, <= kMaxModeText characters
+};
+constexpr std::size_t kMaxModeText = 24, kMaxModes = 32;
+#endif
+
 struct InstrumentInfo {
     const char* key = nullptr;       // stable instrument key, <= kMaxKeyLength characters
     const char* version = nullptr;   // instrument firmware version, <= 12 characters
     TargetInfo targets[kTargets]{};
     uint8_t unavailable_sources = 0; // bit s: source s is owned by the instrument
+#if MOD_ON_DAISY_EXTENSIONS
+    const ModeInfo* modes = nullptr; // optional, reported with Extensions::modes
+    uint8_t mode_count = 0;          // <= kMaxModes
+#endif
 };
 
 constexpr std::size_t CellIndex(std::size_t source, std::size_t target) {

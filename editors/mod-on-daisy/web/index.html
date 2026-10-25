@@ -28,6 +28,7 @@ button:disabled { opacity: .5; cursor: default; }
 .pill { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; white-space: nowrap; }
 .pill.ok { color: var(--ok); border-color: var(--ok); }
 .pill.err { color: var(--err); border-color: var(--err); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
 main { max-width: 1180px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 300px; }
 @media (max-width: 980px) { main { grid-template-columns: minmax(0, 1fr); } }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
@@ -44,6 +45,26 @@ table.grid tbody th .src { color: var(--ink); font-weight: 600; font-size: 12.5p
 .meter { position: relative; height: 4px; background: var(--line); border-radius: 2px; margin-top: 4px; overflow: hidden; }
 .meter i { position: absolute; top: 0; bottom: 0; background: var(--accent); }
 .meter.center::after { content: ""; position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1px; background: var(--muted); }
+.meter b { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); display: none; }
+.meter.based b { display: block; } .meter.based::after { display: none; } /* base value reported */
+.meter u { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--accent); display: none; }
+.meter.ranged u { display: block; }       /* band = range in the monitor window, tick = current value */
+.meter.ranged i { opacity: .55; }
+.meter.idle i, .meter.idle u, .meter.stale i, .meter.stale u, .meter.stale b { display: none; }
+.meter.idle, .meter.stale { opacity: .45; }
+.meter.fast i { left: 0 !important; width: 100% !important; opacity: .45; } /* older firmware: too fast to sample */
+.meter .clo, .meter .chi { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--err); display: none; }
+.meter .clo { left: 0; } .meter .chi { right: 0; }
+.meter.cliplo .clo, .meter.cliphi .chi { display: block; }
+th.corner { text-align: left !important; vertical-align: bottom; font-size: 11.5px; }
+th.corner .at { color: var(--ink); font-weight: 600; }
+th.corner .stale { color: var(--warn); }
+tbody th.atShown .src::after { content: " ●"; color: var(--accent); font-size: 10px; }
+.clockRow span.warn { color: var(--warn); }
+dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); max-width: 520px; }
+dialog::backdrop { background: rgba(0, 0, 0, .45); }
+dialog h3 { margin: 0 0 8px; font-size: 15px; }
+dialog ul { padding-left: 18px; margin: 8px 0; }
 td.cell { width: 72px; height: 44px; border-radius: 7px; border: 1px solid var(--line); text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; cursor: ns-resize; position: relative; }
 td.cell.zero { color: var(--muted); font-weight: 400; }
 td.cell.pos { background: rgba(var(--pos), var(--a)); }
@@ -80,7 +101,9 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
   <label>Ausgang <select id="outPort"><option value="">–</option></select></label>
   <label>Eingang <select id="inPort"><option value="">–</option></select></label>
   <button id="connect" class="primary">Verbinden</button>
+  <button id="updateBtn" title="Startet das Kit im Daisy-Bootloader neu, ohne BOOT und RESET. Danach die Firmware mit dem Daisy Web Programmer oder make program-dfu laden.">Firmware-Update …</button>
   <span id="status" class="pill">offline</span>
+  <span id="mode" class="pill" hidden></span>
 </header>
 <main>
   <section class="card">
@@ -105,28 +128,48 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     <label>Patch <input type="text" id="patchName" maxlength="16" placeholder="Name" style="width:160px"></label>
     <button id="loadBtn">Datei öffnen …</button><input type="file" id="fileInput" accept=".modpatch,.json" hidden>
     <button id="saveBtn">Datei speichern …</button>
-    <button id="clearBtn">Matrix leeren</button>
+    <button id="clearBtn" title="Setzt alle Tiefen auf 0 und schaltet alle Verbindungen aus. LFOs, Random und Name bleiben.">Matrix leeren</button>
     <button id="pullBtn" disabled>Vom Gerät neu laden</button>
     <button id="demoBtn" title="Spalten von Toy Piano v0.3 und ein Beispiel-Patch, ohne Gerät">Demo (offline)</button>
     <span id="log" role="status"></span>
+    <span class="hint" id="panelBuild"></span>
   </section>
 </main>
+<dialog id="compatDialog">
+  <form method="dialog">
+    <h3>Patch passt nicht genau zu diesem Gerät</h3>
+    <ul id="compatNotes"></ul>
+    <p class="hint">„Ohne betroffene laden“ schaltet die betroffenen Verbindungen aus (die Tiefe bleibt erhalten) und lädt alles andere.</p>
+    <div class="row">
+      <button value="safe" class="primary" autofocus>Ohne betroffene laden</button>
+      <button value="force">Trotzdem vollständig</button>
+      <button value="cancel">Abbrechen</button>
+    </div>
+  </form>
+</dialog>
+<script src="version.js"></script>
 <script src="mod_protocol.js"></script>
 <script>
 'use strict';
+document.getElementById('panelBuild').textContent = `HTML Editor ${MOD_ON_DAISY_WEB_VERSION}`;
 const P = window.ModProtocol;
 const $ = (id) => document.getElementById(id);
 
 // ------------------------------------------------------------------ state
 const state = {
-  patch: P.defaultPatch(),
-  targets: Array.from({ length: 8 }, (_, t) => ({ present: true, perVoice: false, latched: false, name: `Ziel ${t + 1}`, spanText: '' })),
+  patch: P.defaultPatch(2), // offline: format 2, so LFO cross modulation can be edited and saved
+  // Placeholder columns until a device or the demo says what they are; not written to files.
+  targets: Array.from({ length: 8 }, (_, t) => ({ present: true, perVoice: false, latched: false, name: `Ziel ${t + 1}`, spanText: '', span: 1, placeholder: true })),
+  origin: null,          // instrument key, schema and columns of a file loaded offline
   allowed: (1n << 64n) - 1n,
   maxActive: 8,
   selected: 0,
   device: null,          // IDENTIFY result
   link: null,
-  monitor: null,         // { source[8], offset[8], cv[2] }
+  monitor: null,         // decodeMonitor() result
+  health: 'ok',          // 'ok' | 'nolive' (1.5 s without monitor) | 'noreply' (5 s without anything)
+  unconfirmed: false,    // a request timed out: reload the device state once it is heard again
+  statusBase: '',
 };
 
 // ------------------------------------------------------------------ device link
@@ -134,10 +177,14 @@ class DeviceLink {
   constructor(output, input, onMonitor) {
     this.output = output; this.input = input; this.onMonitor = onMonitor;
     this.device = P.BROADCAST; this.seq = Math.floor(Math.random() * 128);
-    this.queue = []; this.current = null;
+    this.queue = []; this.current = null; this.closed = false;
+    this.lastFrame = this.lastLive = Date.now();
+    this.onHeard = () => {}; this.onTimeout = () => {};
     input.onmidimessage = (e) => this.receive(e.data);
   }
+  // Ends handlers, timers and requests; the ports are closed by disconnect().
   close() {
+    this.closed = true;
     this.input.onmidimessage = null;
     const pending = this.current ? [this.current, ...this.queue] : this.queue;
     if (this.current) clearTimeout(this.current.timer); // no more retries on the closed port
@@ -145,6 +192,7 @@ class DeviceLink {
     pending.forEach((q) => q.reject(new Error('getrennt')));
   }
   request(command, payload = [], device) {
+    if (this.closed) return Promise.reject(new Error('getrennt'));
     return new Promise((resolve, reject) => {
       this.queue.push({ command, payload, device, resolve, reject });
       this.pump();
@@ -165,8 +213,10 @@ class DeviceLink {
     try { this.output.send(q.frame); } catch (e) { return this.finish(null, e); }
     clearTimeout(q.timer);
     q.timer = setTimeout(() => {
-      if (q.tries <= 3) this.send();
-      else this.finish(null, new Error('keine Antwort vom Gerät'));
+      if (this.closed || this.current !== q) return;
+      if (q.tries <= 3) return this.send();
+      this.onTimeout(); // it may have been applied without its reply arriving
+      this.finish(null, new Error('keine Antwort vom Gerät – ist der MIDI-Eingang von einer anderen Anwendung belegt (z. B. Studio One)?'));
     }, 250);
   }
   finish(reply, error) {
@@ -180,8 +230,11 @@ class DeviceLink {
   receive(data) {
     let f;
     try { f = P.parseFrame(data); } catch (e) { return; } // damaged: the retry will fix it
-    if (!f) return;
-    if (f.command === P.MONITOR_FRAME) { this.onMonitor(f.payload); return; }
+    if (!f || this.closed) return;
+    if (this.device !== P.BROADCAST && f.device !== this.device) return; // another device on the port
+    this.lastFrame = Date.now();
+    this.onHeard();
+    if (f.command === P.MONITOR_FRAME) { this.lastLive = this.lastFrame; this.onMonitor(f.payload); return; }
     const q = this.current;
     if (!q || f.seq !== q.seq) return;
     if (f.command === P.NAK) {
@@ -196,11 +249,14 @@ class DeviceLink {
 }
 
 // ------------------------------------------------------------------ messages
-let lastAlert = 0;
-// Confirmations never hide a warning or error that is less than 4 s old.
+let lastAlert = 0, lastLog = '', lastLogAt = 0;
+// Confirmations never hide a warning or error that is less than 4 s old; the same
+// message within 3 s is shown once (the first one always).
 function log(text, kind = '') {
   const el = $('log');
+  if (text === lastLog && Date.now() - lastLogAt < 3000) return;
   if (kind === 'ok' && Date.now() - lastAlert < 4000) return;
+  lastLog = text; lastLogAt = Date.now();
   if (kind === 'warn' || kind === 'err') lastAlert = Date.now();
   el.textContent = text;
   el.className = kind;
@@ -213,14 +269,22 @@ function buildGrid() {
   const g = $('grid');
   g.innerHTML = '';
   const head = g.createTHead().insertRow();
-  head.appendChild(document.createElement('th'));
+  const corner = document.createElement('th');
+  corner.className = 'corner';
+  corner.innerHTML = '<span class="at">Aftertouch</span> <span class="atKind"></span><div class="meter"><i></i></div><span class="stale"></span>';
+  head.appendChild(corner);
   state.targets.forEach((t, i) => {
     const th = document.createElement('th');
     th.className = t.present ? '' : 'absent';
-    th.innerHTML = `<span class="name"></span><span class="span"></span><div class="meter center"><i></i></div>`;
+    th.innerHTML = `<span class="name"></span><span class="span"></span><div class="meter center"><i></i><b></b><u></u><span class="clo"></span><span class="chi"></span></div>`;
     th.querySelector('.name').textContent = t.present ? t.name : '—';
     th.querySelector('.span').textContent = t.present ? `${t.spanText.replace('+-', '±')}${t.latched ? ' · Anschlag' : ''}` : 'nicht vorhanden';
-    th.title = t.present ? `${t.name}: Tiefe 100 = ${t.spanText.replace('+-', '±')}${t.perVoice ? ', pro Stimme' : ''}${t.latched ? ', wirkt beim nächsten Anschlag' : ''}` : 'Das Instrument hat hier kein Ziel';
+    th.title = t.present ? `${t.name}: Tiefe 100 = ${t.spanText.replace('+-', '±')}${t.perVoice ? ', pro Stimme' : ''}`
+      + (t.latched ? '\nWird beim Anschlag übernommen: Änderungen wirken ab der nächsten Note, klingende Noten bleiben.' : '')
+      + '\nWeißer Strich: Grundwert (Poti, CC oder fester Wert des Instruments) vor der Modulation. Band: Bereich des '
+      + 'Sollwerts vor der Glättung im Instrument, nur globaler Anteil; Strich in Akzentfarbe: jetzt; rote Enden: bei 0 bzw. 1 begrenzt.'
+      + (t.perVoice ? ' Poly AT wirkt hier zusätzlich pro Stimme und ist nicht enthalten.' : '')
+      : 'Das Instrument hat hier kein Ziel';
     th.dataset.target = i;
     head.appendChild(th);
   });
@@ -229,7 +293,7 @@ function buildGrid() {
   P.SOURCES.forEach((name, s) => {
     const tr = body.insertRow();
     const th = document.createElement('th');
-    th.innerHTML = `<span class="src"></span><div class="meter ${s < 5 ? 'center' : ''}"><i></i></div>`;
+    th.innerHTML = `<span class="src"></span><div class="meter ${s < 5 ? 'center' : ''}"><i></i><u></u></div>`;
     th.querySelector('.src').textContent = name;
     tr.appendChild(th);
     for (let t = 0; t < 8; ++t) {
@@ -296,6 +360,7 @@ const pendingCells = new Set();
 let inFlightCell = -1, changesInFlight = 0;
 // Every state change goes through here, so the CRC check knows what is still open.
 function change(command, payload) {
+  if (!state.link) return Promise.reject(new Error('nicht verbunden'));
   changesInFlight++;
   return state.link.request(command, payload).finally(() => { changesInFlight--; });
 }
@@ -416,7 +481,9 @@ function setSourceParam(src, param, value) {
   const p = src === 2 ? state.patch.random : state.patch.lfo[src];
   const key = Object.keys(P.PARAM).find((k) => P.PARAM[k] === param);
   const prevSync = p.sync;
-  if (key === 'shape' && src === 2) p.mode = value; else p[key] = value;
+  if (key === 'shape' && src === 2) p.mode = value;
+  else if (key === 'fm') p.fm = value - P.MAX_FM; // on the wire fm + 100
+  else p[key] = value;
   if (key === 'sync' && value !== prevSync) { // same rule as the device: each source starts at its default
     p.division = value === 2 ? P.DEFAULT_GATE_DIVISION : P.DEFAULT_MIDI_DIVISION;
   }
@@ -452,7 +519,9 @@ function buildSources() {
       <label class="rateRow">Rate <span class="row"><input type="range" class="rate" min="0" max="${P.RATE_MAX}" step="1"><span class="hz"></span></span></label>
       <label class="divRow">Teilung <select class="division"></select></label>
       <label class="gateRow">Eingang <select class="gate"><option value="0">Gate 1</option><option value="1">Gate 2</option></select></label>
-      ${src < 2 ? '<label class="retrigRow">Retrigger <span><input type="checkbox" class="retrigger"> bei Note On</span></label>' : ''}`;
+      ${src < 2 ? '<label class="retrigRow">Retrigger <span><input type="checkbox" class="retrigger"> bei Note On</span></label>' : ''}
+      ${src < 2 ? `<label class="fmRow" title="Quermodulation: ${P.SOURCES[1 - src]} verändert die Rate dieses LFOs, ±100 = ±2 Oktaven. Nur im freien Lauf; mit Clock oder Gate bestimmt der Takt die Rate.">FM ← L${2 - src} <span class="row"><input type="range" class="fm" min="-100" max="100" step="1"><span class="hz fmv"></span></span></label>` : ''}
+      <label class="clockRow">Takt <span></span></label>`;
     const shape = card.querySelector('.shape');
     (src === 2 ? P.RANDOM_MODES : P.SHAPES).forEach((n, i) => shape.add(new Option(n, i)));
     shape.addEventListener('change', () => setSourceParam(src, P.PARAM.shape, +shape.value));
@@ -471,6 +540,8 @@ function buildSources() {
     card.querySelector('.gate').addEventListener('change', (e) => setSourceParam(src, P.PARAM.gate, +e.target.value));
     const rt = card.querySelector('.retrigger');
     if (rt) rt.addEventListener('change', () => setSourceParam(src, P.PARAM.retrigger, rt.checked ? 1 : 0));
+    const fm = card.querySelector('.fm');
+    if (fm) fm.addEventListener('input', () => setSourceParam(src, P.PARAM.fm, +fm.value + P.MAX_FM));
     root.appendChild(card);
   });
   renderSources();
@@ -498,26 +569,129 @@ function renderSources() {
     card.querySelector('.gate').value = p.gate;
     const rt = card.querySelector('.retrigger');
     if (rt) { rt.checked = !!p.retrigger; card.querySelector('.retrigRow').hidden = p.sync !== 0; }
+    const fm = card.querySelector('.fm');
+    if (fm) {
+      card.querySelector('.fmRow').hidden = state.patch.format !== 2; // device without cross modulation
+      fm.value = p.fm || 0;
+      fm.disabled = p.sync !== 0; // the value stays stored for a return to free running
+      card.querySelector('.fmv').textContent = (p.fm > 0 ? '+' : '') + (p.fm || 0);
+    }
   });
   $('patchName').value = state.patch.name;
+  renderClocks();
 }
 
 // ------------------------------------------------------------------ monitor
+// One rule for every sync mode (review F3): with the extended monitor the device reports
+// the range each source swept in the 50 ms window, shown as a band with the current
+// value as a tick. Older firmware: the sampled value; free LFOs above 5 Hz as a full band.
 function onMonitor(payload) {
-  const r = new P.Reader(payload);
-  const v = Array.from({ length: 18 }, () => ((r.u14() & 16383) - 8192) / 8191);
-  state.monitor = v;
-  document.querySelectorAll('#grid tbody th .meter i').forEach((i, s) => setMeter(i, v[s], s < 5));
-  document.querySelectorAll('#grid thead th .meter i').forEach((i, t) => setMeter(i, v[8 + t], true));
+  state.monitor = P.decodeMonitor(payload);
+  renderMonitor();
+  renderClocks();
+  renderMode();
 }
-function setMeter(el, value, bipolar) {
-  value = Math.max(-1, Math.min(1, value));
-  if (bipolar) { el.style.left = (50 + Math.min(0, value) * 50) + '%'; el.style.width = Math.abs(value) * 50 + '%'; }
-  else { el.style.left = '0'; el.style.width = Math.max(0, value) * 100 + '%'; }
+// The model that sounds, in the connection area (hardware test 24.10.2026).
+function renderMode() {
+  const el = $('mode'), d = state.link ? state.device : null, m = state.monitor;
+  const mode = d && m && d.modes && m.mode >= 0 ? d.modes[m.mode] : null;
+  el.hidden = !(d && d.caps2 & P.CAP2.modes);
+  el.textContent = mode ? `Modell: ${mode.name}${m.modeOrigin === 1 ? ' (MIDI)' : ''}` : 'Modell: …';
+  el.title = (mode ? `${mode.name} – am Gerät: ${mode.hint}` + (m.modeOrigin === 1 ? '\nZuletzt per MIDI (CC28) gewählt; die Schalter stehen evtl. anders.' : '') : '')
+    + (d && d.modes ? '\nAlle Modelle:' + d.modes.map((x) => `\n  ${x.name} – ${x.hint}`).join('') : '');
+}
+const setPos = (el, from, to) => { el.style.left = from * 100 + '%'; el.style.width = Math.max(0, to - from) * 100 + '%'; };
+function sourceUsed(s) { for (let t = 0; t < 8; ++t) if (P.isActive(state.patch, s * 8 + t)) return true; return false; }
+function renderMonitor() {
+  const m = state.monitor, stale = !!state.link && (!m || state.health !== 'ok');
+  document.querySelectorAll('#grid tbody th').forEach((th, s) => {
+    const meter = th.querySelector('.meter'), bip = s < 5;
+    const x = (v) => (bip ? (Math.max(-1, Math.min(1, v)) + 1) / 2 : Math.max(0, Math.min(1, v)));
+    const p = s < 2 ? state.patch.lfo[s] : state.patch.random;
+    const idle = !m || !sourceUsed(s);
+    meter.classList.toggle('stale', stale);
+    meter.classList.toggle('idle', !stale && idle);
+    meter.classList.toggle('ranged', !!m && m.hasRange);
+    meter.classList.toggle('fast', !!m && !m.hasRange && s < 3 && p.sync === 0 && P.rateToHz(p.rate) > 5);
+    th.classList.toggle('atShown', !!m && !stale && m.hasRange && ((s === 6 && m.atKind === 1) || (s === 7 && m.atKind === 2)));
+    if (!m) return;
+    const v = m.source[s];
+    if (m.hasRange) {
+      setPos(meter.querySelector('i'), x(m.min[s]), x(m.max[s]));
+      meter.querySelector('u').style.left = x(v) * 100 + '%';
+    } else if (bip) setPos(meter.querySelector('i'), Math.min(0.5, x(v)), Math.max(0.5, x(v)));
+    else setPos(meter.querySelector('i'), 0, x(v));
+    th.title = `${P.SOURCES[s]}: ${v.toFixed(2)}` + (m.hasRange ? ` (Bereich der letzten 50 ms ${m.min[s].toFixed(2)} … ${m.max[s].toFixed(2)})` : '');
+  });
+  document.querySelectorAll('#grid thead th[data-target]').forEach((th) => {
+    const t = +th.dataset.target, meter = th.querySelector('.meter');
+    meter.classList.toggle('stale', stale);
+    if (!m) { meter.classList.remove('based', 'ranged', 'cliplo', 'cliphi'); return setPos(meter.querySelector('i'), 0.5, 0.5); }
+    const g = P.goalSpan(state.patch, state.targets, m, t), col = state.targets[t];
+    if (col.present) // current value instead of the fixed span once the device reports it
+      th.querySelector('.span').textContent = (g.hasBase ? P.valueLabel(col, m.base[t]) : col.spanText.replace('+-', '±'))
+        + (col.latched ? ' · Anschlag' : '');
+    meter.classList.toggle('based', g.hasBase);
+    meter.classList.toggle('ranged', g.hasBase);
+    meter.classList.toggle('cliplo', g.clippedLow);
+    meter.classList.toggle('cliphi', g.clippedHigh);
+    if (g.hasBase) {
+      setPos(meter.querySelector('i'), g.lo, g.hi);
+      meter.querySelector('b').style.left = m.base[t] * 100 + '%';
+      meter.querySelector('u').style.left = Math.max(0, Math.min(1, m.base[t] + m.offset[t])) * 100 + '%';
+    } else {
+      const o = Math.max(-1, Math.min(1, m.offset[t]));
+      setPos(meter.querySelector('i'), Math.min(0.5, (o + 1) / 2), Math.max(0.5, (o + 1) / 2));
+    }
+  });
+  const corner = document.querySelector('#grid th.corner');
+  if (corner) {
+    const known = !!m && m.hasRange, kind = known ? m.atKind : 0;
+    corner.querySelector('.stale').textContent = stale ? (state.health === 'noreply' ? 'keine Antwort vom Gerät' : 'keine Live-Daten') : '';
+    corner.querySelector('.atKind').textContent = !state.link || !m ? '' : !known ? 'Kanal/Poly getrennt'
+      : kind === 0 ? '—' : kind === 1 ? 'Kanal' : `Poly · ${noteName(m.atNote)}`;
+    const meter = corner.querySelector('.meter');
+    meter.classList.toggle('idle', !known || kind === 0 || m.atAge >= 127 || stale);
+    setPos(meter.querySelector('i'), 0, known ? m.atValue / 127 : 0);
+    corner.title = !known
+      ? 'Aftertouch: Diese Firmware meldet nicht, welche Art zuletzt kam. Kanal-AT und Poly AT stehen getrennt in ihren Zeilen (eingeschränkte Anzeige).'
+      : 'Aftertouch folgt automatisch der zuletzt empfangenen Art (auch bei Wert 0). Kanal-AT und Poly AT bleiben technisch getrennte Zeilen; der Punkt markiert die angezeigte.'
+        + (kind === 2 ? '\nPoly: zuletzt adressierte Note, solange sie gehalten wird. Globale Ziele nutzen weiter die zuletzt gespielte Note (Zeile Poly AT).' : '');
+  }
+}
+const noteName = (n) => ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][n % 12] + (Math.floor(n / 12) - 1);
+function clearMonitor() {
+  state.monitor = null;
+  document.querySelectorAll('#grid .meter i').forEach((i) => setPos(i, 0, 0));
+  renderMonitor();
+  renderClocks();
+}
+function renderClocks() {
+  document.querySelectorAll('.source').forEach((card) => {
+    const src = +card.dataset.src, p = src === 2 ? state.patch.random : state.patch.lfo[src];
+    const row = card.querySelector('.clockRow'), out = row.querySelector('span');
+    row.hidden = p.sync === 0 || !state.link;
+    const c = P.clockState(state.monitor, p.sync, p.gate);
+    out.textContent = c < 0 ? 'unbekannt' : c ? (p.sync === 1 ? 'MIDI-Clock läuft' : 'Gate-Impulse kommen an')
+      : (p.sync === 1 ? 'Kein MIDI-Clock – LFO steht' : 'Keine Gate-Impulse – LFO steht');
+    out.className = c === 0 ? 'warn' : '';
+  });
 }
 
 // ------------------------------------------------------------------ connection
-let midiAccess = null, monitorTimer = null;
+let midiAccess = null, monitorTimer = null, healthTimer = null, connecting = false;
+// Port owner (review F2): every port this editor opened is closed again, on explicit
+// disconnect, failed open, failed handshake and unplugging. A reconnect waits for it.
+let closing = Promise.resolve();
+const portClose = { calls: 0 }; // counted for the end-to-end test
+function closePorts(...ports) {
+  const done = ports.filter(Boolean).map((p) => {
+    portClose.calls++;
+    try { return Promise.resolve(p.close && p.close()).catch(() => {}); } catch (e) { return Promise.resolve(); }
+  });
+  closing = Promise.all([closing, ...done]);
+  return closing;
+}
 async function initMidi() {
   if (!navigator.requestMIDIAccess) {
     log('Dieser Browser kennt kein Web MIDI. Bitte Chrome oder Edge verwenden.', 'err');
@@ -540,53 +714,126 @@ async function initMidi() {
   const refresh = () => {
     fill($('outPort'), [...midiAccess.outputs.values()]);
     fill($('inPort'), [...midiAccess.inputs.values()]);
-    if (state.link && ![...midiAccess.outputs.values()].some((p) => p === state.link.output && p.state === 'connected')) disconnect('Gerät getrennt');
+    const link = state.link;
+    const present = (map, port) => [...map.values()].some((p) => p === port && p.state === 'connected');
+    if (link && (!present(midiAccess.outputs, link.output) || !present(midiAccess.inputs, link.input))) {
+      disconnect('Gerät getrennt');
+      log('Die Verbindung zum Daisy ist abgerissen. Bearbeitung geht offline weiter.', 'err');
+    }
   };
   midiAccess.onstatechange = refresh;
   refresh();
 }
 
 function disconnect(reason) {
-  if (state.link) state.link.close();
+  const link = state.link;
   state.link = null;
+  if (link) {
+    link.close();
+    closePorts(link.output, link.input);
+  }
   clearInterval(monitorTimer);
+  clearInterval(healthTimer);
+  state.health = 'ok';
+  state.unconfirmed = false;
+  pendingCells.clear(); pendingSources.clear();
+  clearMonitor(); // no old values after the device is gone
+  renderMode();
   setStatus(reason || 'offline', reason ? 'err' : '');
   $('connect').textContent = 'Verbinden';
   $('pullBtn').disabled = true;
+  renderGrid();
+}
+
+// Review F5: live data and replies are watched separately; recovery reloads the state.
+function checkHealth() {
+  const link = state.link;
+  if (!link) return;
+  const now = Date.now();
+  const next = now - link.lastFrame >= 5000 ? 'noreply' : now - link.lastLive >= 1500 ? 'nolive' : 'ok';
+  if (next === state.health) return;
+  const before = state.health;
+  state.health = next;
+  if (next === 'noreply') {
+    state.unconfirmed = true;
+    log('Keine Antwort vom Gerät seit 5 s – Port von einer anderen Anwendung belegt (z. B. Studio One) oder Kabel getrennt? Änderungen bleiben unbestätigt.', 'err');
+  } else if (before === 'noreply') {
+    log('Das Gerät antwortet wieder – Zustand wird neu geladen.', 'warn');
+  }
+  setStatus(state.statusBase + (next === 'noreply' ? ' · keine Antwort' : next === 'nolive' ? ' · keine Live-Daten' : ''),
+    next === 'ok' ? 'ok' : next === 'nolive' ? 'warn' : 'err');
+  renderMonitor();
 }
 
 async function connect() {
   if (state.link) return disconnect();
+  if (connecting) return;
   if (!midiAccess) await initMidi();
   if (!midiAccess) return;
   const out = midiAccess.outputs.get($('outPort').value), inp = midiAccess.inputs.get($('inPort').value);
   if (!out || !inp) return log('Bitte Ein- und Ausgang wählen.', 'warn');
+  connecting = true;
   try {
-    await out.open(); await inp.open();
-  } catch (e) {
-    return log('Port kann nicht geöffnet werden – ist er von einer anderen Anwendung belegt (z. B. Studio One)? ' + e.message, 'err');
+    await closing; // a close of the previous connection must finish first
+    let opened = null;
+    try {
+      await out.open(); opened = out;
+      await inp.open();
+    } catch (e) {
+      closePorts(opened); // output open, input taken: release the output again
+      return log('Port kann nicht geöffnet werden – ist er von einer anderen Anwendung belegt (z. B. Studio One)? ' + e.message, 'err');
+    }
+    await connectLink(out, inp);
+  } finally {
+    connecting = false;
   }
-  state.link = new DeviceLink(out, inp, onMonitor);
+}
+
+async function connectLink(out, inp) {
+  const link = new DeviceLink(out, inp, onMonitor);
+  state.link = link;
+  link.onTimeout = () => { state.unconfirmed = true; };
+  link.onHeard = () => {
+    if (state.unconfirmed && state.link === link && state.device) {
+      state.unconfirmed = false;
+      pull().catch((e) => log(e.message, 'err'));
+    }
+    if (state.health !== 'ok') checkHealth();
+  };
   setStatus('verbinde …');
   try {
-    const f = await state.link.request(P.CMD.identify, [], P.BROADCAST);
+    const f = await link.request(P.CMD.identify, [], P.BROADCAST);
     const r = new P.Reader(f.payload);
     const info = { protocol: `${r.u7()}.${r.u7()}`, module: `${r.u7()}.${r.u7()}.${r.u7()}`, key: r.str(), version: r.str(),
-      maxActive: r.u7(), tickHz: r.u14(), slots: r.u7(), schema: r.u32(), caps: r.u7(), device: f.device };
+      maxActive: r.u7(), tickHz: r.u14(), slots: r.u7(), schema: r.u32(), caps: r.u7(),
+      caps2: r.pos < f.payload.length ? r.u7() : 0, device: f.device, modes: [] }; // caps2: newer firmware
     if (!info.protocol.startsWith('1.')) throw new Error('Protokollversion ' + info.protocol + ' wird nicht unterstützt');
     state.device = info;
     state.maxActive = info.maxActive;
+    state.origin = null;
     await pull(true);
-    setStatus(`${info.key} ${info.version} · ID ${info.device}`, 'ok');
+    if (info.caps2 & P.CAP2.modes) { // names of the instrument modes (PROTOCOL.md § 3.6)
+      for (let i = 0, count = 1; i < count; ++i) {
+        const g = new P.Reader((await link.request(P.CMD.getMode, [i])).payload);
+        g.u7();
+        count = Math.min(32, g.u7());
+        info.modes[i] = { name: g.str(), hint: g.str() };
+      }
+    }
+    state.statusBase = `${info.key} ${info.version} · ID ${info.device}`;
+    setStatus(state.statusBase, 'ok');
     $('deviceInfo').textContent = `${info.key} ${info.version}, Mod on Daisy ${info.module}, Protokoll ${info.protocol}, Tick ${info.tickHz} Hz, Schema ${info.schema.toString(16).toUpperCase().padStart(8, '0')}. Speicherplätze im Gerät: ${info.slots ? info.slots : 'noch keine (Patches als Datei sichern)'}.`;
     $('connect').textContent = 'Trennen';
     $('pullBtn').disabled = false;
-    const renew = () => state.link && state.link.request(P.CMD.monitor, [20]).catch(() => {});
+    // A lost renewal is not logged on its own: the health state reports silence.
+    const renew = () => state.link === link && link.request(P.CMD.monitor, [20]).catch(() => {});
     renew();
     monitorTimer = setInterval(renew, 1000);
+    link.lastFrame = link.lastLive = Date.now(); // grace until the first monitor frame
+    healthTimer = setInterval(checkHealth, 250);
     log('Verbunden. Der Zustand des Geräts wurde geladen.', 'ok');
   } catch (e) {
-    disconnect('Fehler');
+    if (state.link === link) disconnect('Fehler'); // closes both ports, no retries remain
     log(e.message, 'err');
   }
 }
@@ -607,35 +854,43 @@ async function pull(withColumns = false) {
     buildGrid();
   }
   const m = new P.Reader((await link.request(P.CMD.getMatrix)).payload);
-  const patch = P.defaultPatch();
+  const patch = P.defaultPatch(state.device && state.device.caps & P.CAP.lfoFm ? 2 : 1); // the CRC covers the format
   patch.depth = m.packed(64).map((b) => (b > 127 ? b - 256 : b));
   patch.enabled = m.mask64();
   m.u32();
   for (let src = 0; src < 3; ++src) {
     const r = new P.Reader((await link.request(P.CMD.getSource, [src])).payload);
     r.u7();
-    const v = { rate: r.u14(), shape: r.u7(), sync: r.u7(), gate: r.u7(), division: r.u7(), retrigger: r.u7() };
+    const v = { rate: r.u14(), shape: r.u7(), sync: r.u7(), gate: r.u7(), division: r.u7(), retrigger: r.u7(), fm: 0 };
+    if (src < 2 && r.bytes.length >= 10) v.fm = r.u14() - P.MAX_FM; // LFO cross modulation appended
     if (src === 2) patch.random = { rate: v.rate, mode: v.shape, sync: v.sync, gate: v.gate, division: v.division };
     else patch.lfo[src] = v;
   }
   patch.name = new P.Reader((await link.request(P.CMD.getName)).payload).str();
+  if (state.link !== link) return; // disconnected meanwhile
   state.patch = patch;
+  state.origin = null; // the device state replaces whatever a file said
   renderGrid();
   renderSources();
 }
 
 // ------------------------------------------------------------------ files
+const hex32 = (v) => v.toString(16).toUpperCase().padStart(8, '0');
 function savePatch() {
   const p = state.patch;
+  // Connected: the device's key, schema and columns. Offline: those of the file it was
+  // loaded from, so its meaning stays checkable; otherwise unknown (null).
+  const device = state.link ? state.device : null, origin = !device ? state.origin : null;
   const doc = {
     format: 'mod-on-daisy-patch', version: 1,
-    instrument_key: state.device ? state.device.key : null,
-    schema_hash: state.device ? state.device.schema.toString(16).toUpperCase().padStart(8, '0') : null,
+    instrument_key: device ? device.key : origin ? origin.instrument_key || null : null,
+    schema_hash: device ? hex32(device.schema) : origin ? origin.schema_hash || null : null,
     name: p.name,
-    columns: state.targets.map((t) => (t.present ? t.name : null)),
+    columns: origin ? origin.columns.slice() : state.targets.map((t) => (t.present && !t.placeholder ? t.name : null)),
     depth: Array.from({ length: 8 }, (_, s) => p.depth.slice(s * 8, s * 8 + 8)),
     enabled: Array.from({ length: 8 }, (_, s) => Array.from({ length: 8 }, (_, t) => P.isEnabled(p, s * 8 + t))),
-    lfo: p.lfo, random: p.random,
+    lfo: p.lfo.map((l) => ({ rate: l.rate, shape: l.shape, sync: l.sync, gate: l.gate, division: l.division, retrigger: l.retrigger, fm: l.fm || 0 })),
+    random: p.random,
   };
   const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -645,30 +900,77 @@ function savePatch() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+// Review F1: before a file reaches a device, columns that mean something else are named
+// and the user decides (safe / force / cancel). Tests answer via window.__compatChoice.
+function askCompat(compat) {
+  if (window.__compatChoice) return Promise.resolve(window.__compatChoice(compat));
+  const dlg = $('compatDialog');
+  const list = $('compatNotes');
+  list.innerHTML = '';
+  compat.notes.forEach((n) => { const li = document.createElement('li'); li.textContent = n; list.appendChild(li); });
+  dlg.returnValue = '';
+  return new Promise((resolve) => {
+    dlg.addEventListener('close', () => resolve(dlg.returnValue || 'cancel'), { once: true });
+    dlg.showModal();
+  });
+}
+
 async function loadPatch(text) {
   const doc = JSON.parse(text);
   if (doc.format !== 'mod-on-daisy-patch' || doc.version !== 1) throw new Error('Keine Mod-on-Daisy-Patchdatei (Version 1).');
-  if (state.device && doc.instrument_key && doc.instrument_key !== state.device.key
-      && !confirm(`Die Datei ist für „${doc.instrument_key}“, verbunden ist „${state.device.key}“. Trotzdem laden?`)) return;
-  const p = P.defaultPatch();
+  if (!Array.isArray(doc.depth) || !Array.isArray(doc.enabled) || !Array.isArray(doc.lfo) || !doc.random) throw new Error('Die Datei ist unvollständig.');
+  const p = P.defaultPatch(2);
   doc.depth.forEach((row, s) => row.forEach((d, t) => { p.depth[s * 8 + t] = Math.max(-100, Math.min(100, d | 0)); }));
   doc.enabled.forEach((row, s) => row.forEach((on, t) => { if (on) p.enabled |= P.bit(s * 8 + t); }));
   p.lfo = doc.lfo.map((l) => ({ ...P.defaultPatch().lfo[0], ...l }));
+  for (const l of p.lfo) {
+    if (!Number.isInteger(l.fm) || l.fm < -P.MAX_FM || l.fm > P.MAX_FM) throw new Error('Die Datei hat eine ungültige LFO-Quermodulation.');
+  }
   p.random = { ...P.defaultPatch().random, ...doc.random };
   p.name = String(doc.name || '').slice(0, 16);
   for (let c = 0; c < 64; ++c) if (P.isActive(p, c) && !allowedCell(c)) { p.enabled &= ~P.bit(c); }
   if (P.activeCount(p) > state.maxActive) throw new Error(`Die Datei hat mehr als ${state.maxActive} aktive Verbindungen.`);
+  const file = { instrument_key: doc.instrument_key || null, schema_hash: doc.schema_hash || null,
+    columns: Array.isArray(doc.columns) ? doc.columns.slice(0, 8) : new Array(8).fill(null),
+    patch: p, hasFm: p.lfo.some((l) => l.fm !== 0) };
+  if (!state.link) { // offline: nothing to compare with; keep where the file came from
+    state.patch = p;
+    state.origin = { instrument_key: file.instrument_key, schema_hash: file.schema_hash, columns: file.columns };
+    renderGrid(); renderSources();
+    return log('Patch geladen (offline).', 'ok');
+  }
+  let patch = p;
+  const compat = P.checkCompatibility(file, state.targets, state.device);
+  if (compat.needsDecision) {
+    const choice = await askCompat(compat);
+    if (choice === 'cancel') return log('Laden abgebrochen, das Gerät bleibt unverändert.', '');
+    if (choice === 'safe') {
+      patch = P.safePart(p, compat);
+      let off = 0;
+      for (let c = 0; c < 64; ++c) if (compat.affected & P.bit(c)) off++;
+      log(`Geladen ohne ${off} betroffene Verbindung(en).`, 'warn');
+    }
+  }
+  await upload(patch);
+}
+
+// The whole patch, zeros and switched-off cells included: SET_MATRIX, the source
+// parameters (fm when the device has it) and the name; the CRC confirms the result.
+async function upload(patch) {
+  const fm = !!(state.device.caps & P.CAP.lfoFm);
+  const p = { ...patch, format: fm ? 2 : 1, lfo: patch.lfo.map((l) => ({ ...l, fm: fm ? l.fm || 0 : 0 })) };
   state.patch = p;
+  pendingCells.clear(); pendingSources.clear();
   renderGrid(); renderSources();
-  if (!state.link) return log('Patch geladen (offline).', 'ok');
   let f;
   try {
     const w = new P.Writer().packed(p.depth.map((d) => d & 0xff)).mask64(p.enabled);
     await change(P.CMD.setMatrix, w.bytes); // the whole grid at once
     for (let src = 0; src < 3; ++src) {
-      const v = src === 2 ? { ...p.random, shape: p.random.mode, retrigger: 0 } : p.lfo[src];
+      const v = src === 2 ? { ...p.random, shape: p.random.mode, retrigger: 0 } : { ...p.lfo[src], fm: p.lfo[src].fm + P.MAX_FM };
       for (const [k, param] of Object.entries(P.PARAM)) {
-        if (src === 2 && k === 'retrigger') continue;
+        if (src === 2 && (k === 'retrigger' || k === 'fm')) continue;
+        if (k === 'fm' && !fm) continue;
         await change(P.CMD.setSource, new P.Writer().u7(src).u7(param).u14(v[k]).bytes);
       }
     }
@@ -704,7 +1006,9 @@ function loadDemo() {
   p.lfo[1] = { ...p.lfo[1], shape: 1, sync: 1, division: 6 };
   p.random = { ...p.random, mode: 1, sync: 2, gate: 0, division: 2 };
   p.name = 'Demo Vibrato';
+  p.format = 2;
   state.patch = p;
+  state.origin = null;
   state.maxActive = 8;
   state.selected = 7 * 8 + 1;
   buildGrid();
@@ -713,7 +1017,53 @@ function loadDemo() {
   log('Demo geladen – ohne Gerät, Änderungen bleiben im Browser.', 'ok');
 }
 
+// ------------------------------------------------------------------ firmware update
+// The kit restarts into the Daisy bootloader (common/bootloader/README.md). Every firmware
+// of this repository with USB-MIDI understands it, also without a Mod on Daisy connection:
+// then the selected ports are opened just for the request.
+let updating = false;
+const BOOT_TIMEOUT_MS = 2000; // the firmware answers within milliseconds, then resets
+async function firmwareUpdate() {
+  if (updating) return;
+  if (!midiAccess) await initMidi();
+  if (!midiAccess) return;
+  const link = state.link;
+  const out = link ? link.output : midiAccess.outputs.get($('outPort').value);
+  const inp = link ? link.input : midiAccess.inputs.get($('inPort').value);
+  if (!out || !inp) return log('Bitte Ein- und Ausgang wählen.', 'warn');
+  if (!confirm('Kit in den Update-Modus schalten?\n\nDas Kit startet in den Daisy-Bootloader neu: Das Programm hält an, '
+    + 'die MIDI-Verbindung endet und alle 16 LEDs leuchten. Danach die neue Firmware mit dem Daisy Web Programmer '
+    + 'oder „make program-dfu“ laden; das Kit wartet ohne Zeitlimit.')) return;
+  updating = true;
+  $('updateBtn').disabled = true;
+  try {
+    if (!link) {
+      await closing;
+      try { await out.open(); await inp.open(); } catch (e) {
+        closePorts(out, inp);
+        return log('Port kann nicht geöffnet werden – ist er von einer anderen Anwendung belegt (z. B. Studio One)? ' + e.message, 'err');
+      }
+    }
+    const acked = await new Promise((resolve) => {
+      const done = (ok) => { clearTimeout(timer); inp.removeEventListener('midimessage', onMessage); resolve(ok); };
+      const onMessage = (e) => { if (P.isBootloaderAck(e.data)) done(true); };
+      const timer = setTimeout(() => done(false), BOOT_TIMEOUT_MS);
+      inp.addEventListener('midimessage', onMessage);
+      try { out.send(P.BOOTLOADER_REQUEST); } catch (e) { done(false); }
+    });
+    if (acked && state.link) disconnect(); // the port disappears with the reset
+    else if (!link) closePorts(out, inp);
+    // The reply confirms that the request was accepted, not the DFU entry itself.
+    if (acked) log('Anfrage angenommen: Das Kit startet in den Update-Modus (alle LEDs an, der Looper erst nach laufender Kartenarbeit). Sobald es als DFU-Gerät erscheint, Firmware mit dem Daisy Web Programmer oder „make program-dfu“ laden.', 'ok');
+    else log('Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S9 und S16 fünf Sekunden halten oder RESET und BOOT verwenden (docs/FLASHING.md).', 'warn');
+  } finally {
+    updating = false;
+    $('updateBtn').disabled = false;
+  }
+}
+
 // ------------------------------------------------------------------ wiring
+$('updateBtn').addEventListener('click', firmwareUpdate);
 $('demoBtn').addEventListener('click', loadDemo);
 $('connect').addEventListener('click', connect);
 $('pullBtn').addEventListener('click', () => pull().then(() => log('Vom Gerät geladen.', 'ok')).catch((e) => log(e.message, 'err')));

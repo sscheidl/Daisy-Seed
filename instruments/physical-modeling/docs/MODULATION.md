@@ -1,6 +1,6 @@
 # Physical Modeling + Mod on Daisy (separate build)
 
-**Image:** `build/mod/PhysicalModelingMod-v0.1.0.bin`
+**Image:** `build/mod/PhysicalModelingMod-v0.1.1.bin` (IDENTIFY `0.1.1-mod4`; up to the integration branch `v0.1.0` / `0.1.0-mod4`)
 (`make PROJECT=physical-modeling-mod`). Firmware marker: `PHYSICAL-MODELING-MOD-VERSION`.
 **Status:** software tested, hardware test pending.
 
@@ -20,7 +20,9 @@ as it is:
 
 ## Columns
 
-The grid columns are the instrument parameters 0–7 (same as CC20–27):
+Columns 0–5 and 7 are the instrument parameters of the same index (same as CC20–25
+and CC27). Column 6 is the output level since the first hardware test (23.10.2026):
+the reverb decay it replaced had little audible effect.
 
 | Column | Target | Path | Depth 100 means |
 | --- | --- | --- | --- |
@@ -30,7 +32,7 @@ The grid columns are the instrument parameters 0–7 (same as CC20–27):
 | 3 | Damping | global and per voice | full range |
 | 4 | Position | global and per voice | full range |
 | 5 | Excitation | global, latched at the strike | full range; Poly AT greyed out |
-| 6 | Reverb (decay) | global | full range |
+| 6 | **Level** (output gain, smoothed 5 ms) | global | ±100 % of unity: gain 0 (silence) … 2 (+6 dB, into the soft limiter); exactly 1 with an empty matrix |
 | 7 | Dry/Wet | global | full range |
 
 * **Global offsets** go through the existing 5 ms parameter smoothing. The pot or CC
@@ -42,7 +44,28 @@ The grid columns are the instrument parameters 0–7 (same as CC20–27):
     this costs no extra filter work.
   * Pressure is tracked per MIDI note. A voice takes the pressure of the note it
     plays. After Note Off the voice keeps ringing and glides back within 10 ms.
-* Poly AT on Reverb and Dry/Wet uses the most recent held note (last note).
+* Poly AT on Level and Dry/Wet uses the most recent held note (last note).
+* **Base values for the editor**: this build reports each column's pot/CC position
+  before modulation in the monitor. Level reports its fixed unity point 0.5 (gain 1);
+  it is not a pot reading, pot 7 still sets the reverb decay. The editors show a tick
+  at the base value and the range the modulation covers, so it is visible when a
+  modulation runs into 0 or 1. Requested in the hardware test of 23.10.2026.
+* **Extensions (mod3, correction order of 24.10.2026)**: built with
+  `MOD_ON_DAISY_EXTENSIONS=1` and switched on in `InitModulation()` with
+  `EnableExtensions({true, true})`:
+  * extended monitor (89 bytes): per-source min/max over the monitor window, clock
+    activity and the last received aftertouch kind/note/value/age;
+  * LFO cross modulation: each LFO's rate can follow the other LFO (`fm`, ±2 octaves,
+    free running only); patches are format 2 (111 bytes).
+  See PROTOCOL.md § 3.6. IDENTIFY capabilities `0x7A`. Nothing changes in the audio path
+  with `fm = 0`; the golden hash of the MOD build with an empty matrix is unchanged.
+* **Active model (mod4, hardware test of 24.10.2026)**: the build reports which of the six
+  models sounds and whether the last change came from SW17/SW18 or from CC28, and names the
+  models with their switch positions (PROTOCOL.md § 3.6, `Extensions::modes`). The editors
+  show it in the connection area. Nothing changes in the audio path.
+* IDENTIFY reports the version `0.1.0-mod4` (mod2: Level column and base values; mod3:
+  extensions; mod4: active model). The image name stays `PhysicalModelingMod-v0.1.0.bin`; the regular build
+  is unchanged.
 * `OFFEN`: In the chord models, Structure selects the chord for the whole part.
   A per-voice Structure there changes only the resonator settings, not the chord.
   Whether that is musically useful needs listening.
@@ -64,8 +87,8 @@ CC20–33, pitch bend, notes and the CPU telemetry on channel 16 CC119 are uncha
 
 | | Default | MOD=1 |
 | --- | ---: | ---: |
-| BIN | 137,784 B | 163,064 B |
-| DTCM static | 107,792 B (reserve 23,280) | 109,896 B (reserve 21,176) |
+| BIN | 137,784 B | 170,312 B (mod3, 24.10.2026) |
+| DTCM static | 107,792 B (reserve 23,280) | 110,352 B (reserve 20,720, mod3) |
 
 `scripts/check-physical-elf.py` passes for both (≥ 8 KiB DTCM reserve). Use the
 existing CPU telemetry (`tools/cpu_probe.py`, channel 16 CC119) to measure the
@@ -79,7 +102,7 @@ the port disabled.
 | Nr. | Step | Expected | Result |
 | --- | --- | --- | --- |
 | R1 | Flash, play keys, pots and model switches without a PC | exactly as v0.1.0 | |
-| R2 | `P identify`, `P matrix` | `physical-modeling`, `0.1.0-mod`; Poly AT under Excitation greyed | |
+| R2 | `P identify`, `P matrix` | `physical-modeling`, `0.1.0-mod3`, caps `0x7A`; Poly AT under Excitation greyed | |
 | R3 | `P lengths` | `frame lengths OK` | |
 | R4 | `P set-cell LFO1 2 40`, `P source LFO1 rate 9000` | brightness sweeps at about 0.9 Hz without zipper noise | |
 | R5 | `P set-cell MODWHEEL 7 100` | mod wheel opens Dry/Wet | |

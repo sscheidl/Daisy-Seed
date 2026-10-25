@@ -58,7 +58,9 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   Toy Piano and Physical Modeling: with an empty matrix, Toy Piano v0.3 must match the
   v0.2 hash and the Physical Modeling `MOD=1` build the v0.1.0 hash. The Physical
   Modeling integration stays behind `PHYSICAL_MODELING_MOD` / `TORUS_VOICE_MODULATION`,
-  so the regular image stays byte-identical. A golden hash changes only on purpose,
+  so the regular image carries no Mod on Daisy code. Shared features every firmware
+  must have (the bootloader entry in `common/bootloader`) go into both builds. A golden
+  hash changes only on purpose,
   with the reason in the changelog.
 * **Real-time code**: no allocation, locks or blocking calls in the audio callback;
   Mod on Daisy runs at 1 kHz control rate. The protocol is `modules/mod-on-daisy/docs/PROTOCOL.md`

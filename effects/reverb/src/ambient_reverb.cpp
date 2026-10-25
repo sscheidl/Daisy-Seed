@@ -45,7 +45,7 @@ bool AmbientReverb::Prepare(float sampleRate, Memory &memory) {
 }
 void AmbientReverb::SetParameters(const Parameters &input, bool immediate) {
     Parameters p = input;
-    if (unsigned(p.mode) > unsigned(Mode::Scatter))
+    if (unsigned(p.mode) > unsigned(Mode::Shimmer))
         p.mode = Mode::Cloud;
     if (unsigned(p.shape) > unsigned(Shape::Random))
         p.shape = Shape::Sine;
@@ -70,7 +70,7 @@ void AmbientReverb::SetParameters(const Parameters &input, bool immediate) {
         state_.gain[i].Set(std::exp(-6.907755279f * seconds /
                                     (p.sustain ? 45.f : p.decaySeconds)), smooth);
     }
-    for (unsigned i = 0; i < 5; ++i)
+    for (unsigned i = 0; i < 6; ++i)
         state_.mode[i].Set(i == unsigned(p.mode) ? 1.f : 0.f, smooth);
     state_.tone.Set(1 - Pole(std::min(p.toneHz, .4f * sampleRate_), sampleRate_), smooth);
     state_.highpass.Set(Pole(p.lowCutHz, sampleRate_), smooth);
@@ -110,8 +110,8 @@ Stereo AmbientReverb::Process(Stereo in) {
                 depth = state_.depth.Next() * (1 - hold), rate = state_.rate.Next();
     const float sustain = state_.sustain.Next();
     const float diffusion = state_.diffusion.Next(), texture = state_.texture.Next();
-    std::array<float, 5> mode{};
-    for (unsigned i = 0; i < 5; ++i)
+    std::array<float, 6> mode{};
+    for (unsigned i = 0; i < 6; ++i)
         mode[i] = state_.mode[i].Next();
     std::array<float, 8> gain{};
     float maximumGain = 0;
@@ -139,13 +139,20 @@ Stereo AmbientReverb::Process(Stereo in) {
                  .35f * pre_[1].Read(pd + .037f * sampleRate_ + 1) +
                      .25f * pre_[0].Read(pd + .101f * sampleRate_ + 1) -
                      .15f * pre_[1].Read(pd + .149f * sampleRate_ + 1)};
-    const float loopSend = .35f * (1 - maximumGain) * (1 - hold);
+    // Shimmer recirculates more of the late tank through the +12 st shifter.
+    // Its return scales with unused feedback gain, rather than adding a fixed
+    // regenerative gain at long decay. Hold suppresses the pitched return.
+    const float loopSend = (.35f + .35f * mode[5]) * (1 - maximumGain) * (1 - hold);
     Stereo pitchIn{.7f * x.left + loopSend * feedback_.left,
                    .7f * x.right + loopSend * feedback_.right};
     const Stereo octaveUp = up_.Process(pitchIn), octaveDown = down_.Process(pitchIn);
     const float amount = .5f * texture;
     x.left += amount * (mode[2] * octaveDown.left + mode[3] * octaveUp.left);
     x.right += amount * (mode[2] * octaveDown.right + mode[3] * octaveUp.right);
+    if (mode[5] > 0) {
+        x.left += .8f * texture * mode[5] * octaveUp.left;
+        x.right += .8f * texture * mode[5] * octaveUp.right;
+    }
     float l = x.left, r = x.right;
     for (unsigned i = 0; i < 4; ++i) {
         l = inputAp_[i].Allpass(l, inputLength_[i], .6f);
@@ -231,6 +238,14 @@ Parameters AmbientReverb::Preset(Mode mode) {
         p.diffusion = .45f;
         p.preDelayMs = 8;
         p.mix = .55f;
+        break;
+    case Mode::Shimmer:
+        p.decaySeconds = 28;
+        p.toneHz = 9000;
+        p.texture = .8f;
+        p.diffusion = .95f;
+        p.modDepthMs = .7f;
+        p.mix = .65f;
         break;
     default:
         p.mode = Mode::Cloud;

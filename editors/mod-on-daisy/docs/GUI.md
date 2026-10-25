@@ -127,6 +127,12 @@ neuesten Wert (PROTOCOL § 4).
 7. **Portkonflikt** (E10): Kann der Port nicht geöffnet werden, erscheint ein klarer
    Hinweis, zum Beispiel: „Port ist von einer anderen Anwendung belegt (z. B. Studio
    One). Dort ‚Daisy Seed External‘ deaktivieren.“
+8. **Firmware-Update …** (Kopfzeile): Nach einer Rückfrage geht die Bootloader-Anfrage
+   (`common/bootloader/README.md`, nicht Teil des MD-Protokolls) über den verbundenen Port
+   oder, ohne Verbindung, über den gewählten Port, der nur dafür geöffnet wird. Antwortet
+   das Kit, trennt der Editor ohne Fehlermeldung; ohne Antwort nach 2 s nennt er Tasten
+   und Knöpfe als Weg. Kern: `src/core/Bootloader.h` (`BootRequest`), getestet in
+   `tests/test_core.cpp`.
 
 ### 2.5 Dateien
 
@@ -166,19 +172,20 @@ editors/mod-on-daisy/
   **direkt** ein. Kodierung, Validierung und CRC sind dadurch dieselben wie in der
   Firmware. Die Validierung läuft vor dem Senden zusätzlich im Editor, zum Beispiel
   „9. Verbindung nicht möglich“.
-* **VST3 später**: Die Bedienoberfläche hängt nur von `core/` ab. Für das Plugin kommt
-  ein `AudioProcessor` hinzu, der den Patch als Plugin-State im Studio-One-Projekt
-  speichert und beim Laden zum Gerät sendet. Der Portzugriff im Plugin ist die
+* **VST3** (umgesetzt 24.10.2026, `src/plugin/Plugin.cpp`): Die Bedienoberfläche hängt nur
+  von `core/` ab. Ein `AudioProcessor` (Audio-Effekt, Ton unverändert) hält den Editor
+  dauerhaft, verbindet sich selbst, speichert den Patch als Plugin-State im
+  Studio-One-Projekt und sendet ihn beim Laden zum Gerät. Den Port hält das Plugin selbst;
+  Windows MIDI Services teilt ihn mit Studio One (E7b). Frühere Überlegung: Der Portzugriff im Plugin ist die
   wichtigste offene Frage (E10). Sie wird mit dem Ergebnis von H4 (TEST_PLAN) zu Beginn
   von Phase 3 entschieden.
 * **Tests**: `core/` wird mit einem simulierten Gerät getestet, das denselben
   `Controller` aus `modules/mod-on-daisy` auf dem Host nutzt. Dazu Verlust, Verzögerung
   und Verfälschung von Rahmen.
 * **JUCE-Version:** 9.0.4, fest in `CMakeLists.txt`.
-* `OFFEN` **Lizenz:** JUCE steht unter AGPLv3 oder einer kommerziellen JUCE-Lizenz.
-  Für den eigenen Gebrauch spielt das keine Rolle. Vor einer Weitergabe der `.exe` an
-  andere ist zu entscheiden, ob der Editor unter AGPLv3 steht oder eine JUCE-Lizenz
-  genutzt wird. Siehe README.
+* **Lizenz (entschieden 24.10.2026):** JUCE-Editor und Plugin unter **AGPLv3** (JUCE 9 unter
+  seiner AGPLv3-Option), Browser-Editor und der Rest des Repos unter MIT. Einzelheiten:
+  Editor-README § Lizenz.
 
 ## 4. Bewusst nicht in v0.1
 

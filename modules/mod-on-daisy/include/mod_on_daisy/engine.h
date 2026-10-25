@@ -6,10 +6,22 @@
 #include "program.h"
 
 namespace mod {
+#if MOD_ON_DAISY_EXTENSIONS
+// Instrument mode reporting (PROTOCOL.md § 3.6): origin of the last mode change.
+constexpr uint8_t kModeUnknown = 127, kModeFromDevice = 0, kModeFromMidi = 1;
+#endif
+
 struct MonitorSnapshot {
     float source[kSources]{};
     float offset[kTargets]{};
     float cv_raw[2]{}; // before calibration and dead band (CV calibration, TEST_PLAN H5)
+#if MOD_ON_DAISY_EXTENSIONS
+    // Extended monitor (PROTOCOL.md § 3.3).
+    float base[kTargets]{-1, -1, -1, -1, -1, -1, -1, -1}; // 0..1 before modulation; -1 = not reported
+    float min[kSources]{}, max[kSources]{};               // range of each source in the monitor window
+    uint8_t clocks = 0; // bit 0 MIDI clock, bit 1 gate 1, bit 2 gate 2 running
+    uint8_t mode = kModeUnknown, mode_origin = kModeUnknown; // instrument mode (Extensions::modes)
+#endif
 };
 
 class Engine {
@@ -65,9 +77,22 @@ class Engine {
         }
         was_active_ = true;
 
+#if MOD_ON_DAISY_EXTENSIONS
+        // Cross modulation uses the other LFO's value of the previous tick.
+        const float previous[2] = {source_[Lfo1], source_[Lfo2]};
+#endif
         for(std::size_t i = 0; i < 2; ++i) {
             bool wrapped = false;
+#if MOD_ON_DAISY_EXTENSIONS
+            uint32_t inc = p.lfo[i].inc;
+            if(p.lfo[i].fm_octaves < 0.0f || p.lfo[i].fm_octaves > 0.0f) { // exactly 0: rate untouched
+                const float scaled = float(inc) * Exp2Small(p.lfo[i].fm_octaves * previous[1 - i]);
+                inc = scaled >= 4294967295.0f ? 0xFFFFFFFFu : uint32_t(scaled);
+            }
+            const float phase = RunPhase(p.lfo[i], lfo_[i], samples, retrigger, wrapped, inc);
+#else
             const float phase = RunPhase(p.lfo[i], lfo_[i], samples, retrigger, wrapped);
+#endif
             if(p.lfo[i].shape == SampleHold) {
                 if(wrapped || !lfo_[i].primed) {
                     lfo_[i].hold = lfo_[i].rng.Bipolar();
@@ -80,7 +105,11 @@ class Engine {
         }
         {
             bool wrapped = false;
+#if MOD_ON_DAISY_EXTENSIONS
+            const float phase = RunPhase(p.random, random_, samples, false, wrapped, p.random.inc);
+#else
             const float phase = RunPhase(p.random, random_, samples, false, wrapped);
+#endif
             if(wrapped || !random_.primed) {
                 random_.previous = random_.primed ? random_.hold : random_.rng.Bipolar();
                 random_.hold = random_.rng.Bipolar();
@@ -111,6 +140,22 @@ class Engine {
         return Clamp01(base + offset_[target] + program_->voice_gain[target] * voice_pressure);
     }
     float VoiceGain(std::size_t target) const { return program_->voice_gain[target]; }
+    // Audio IRQ, optional: the column's value before modulation, for the monitor only.
+#if MOD_ON_DAISY_EXTENSIONS
+    void ReportBase(std::size_t target, float base) { base_[target] = base; }
+    // Audio IRQ, optional: the mode that sounds and where the last change came from.
+    void ReportMode(uint8_t mode, uint8_t origin) {
+        mode_ = mode;
+        mode_origin_ = origin;
+    }
+    // Main loop: starts a new min/max window once a monitor frame has been taken. The
+    // audio side resets its own accumulators when it sees the new epoch (no shared
+    // write), so a window covers the ticks between two frames.
+    void NextMonitorWindow() { range_epoch_.fetch_add(1, std::memory_order_relaxed); }
+#else
+    void ReportBase(std::size_t, float) {}
+    void ReportMode(uint8_t, uint8_t) {}
+#endif
     float NotePressure(uint8_t note) const { return float(live_->PressureRaw(note)) * (1.0f / 127.0f); }
     float PressureCoeff() const { return midi_coeff_; }
     bool Active() const { return program_->active; }
@@ -129,7 +174,12 @@ class Engine {
         Rng rng;
     };
 
+#if MOD_ON_DAISY_EXTENSIONS
+    float RunPhase(const SourceConfig& c, Voice& v, std::size_t samples, bool retrigger, bool& wrapped,
+                   uint32_t inc) {
+#else
     float RunPhase(const SourceConfig& c, Voice& v, std::size_t samples, bool retrigger, bool& wrapped) {
+#endif
         float phase;
         if(c.sync == Free) {
             const uint32_t old = v.phase;
@@ -137,7 +187,11 @@ class Engine {
                 v.phase = 0;
                 wrapped = true;
             } else {
+#if MOD_ON_DAISY_EXTENSIONS
+                v.phase += inc * uint32_t(samples);
+#else
                 v.phase += c.inc * uint32_t(samples);
+#endif
                 wrapped = v.phase < old;
             }
             phase = float(v.phase >> 8) * (1.0f / 16777216.0f);
@@ -186,8 +240,41 @@ class Engine {
             m.offset[i] = offset_[i];
         m.cv_raw[0] = cv_raw_[0];
         m.cv_raw[1] = cv_raw_[1];
+#if MOD_ON_DAISY_EXTENSIONS
+        for(std::size_t i = 0; i < kTargets; ++i)
+            m.base[i] = base_[i];
+        m.mode = mode_;
+        m.mode_origin = mode_origin_;
+        const uint32_t epoch = range_epoch_.load(std::memory_order_relaxed);
+        for(std::size_t i = 0; i < kSources; ++i) {
+            if(epoch != range_seen_ || source_[i] < range_min_[i])
+                range_min_[i] = source_[i];
+            if(epoch != range_seen_ || source_[i] > range_max_[i])
+                range_max_[i] = source_[i];
+            m.min[i] = range_min_[i];
+            m.max[i] = range_max_[i];
+        }
+        range_seen_ = epoch;
+        m.clocks = uint8_t((Running(midi_clock_, 3.0f, 0.25f) ? 1 : 0) | (Running(gate_clock_[0], 2.5f, 0.05f) ? 2 : 0)
+                           | (Running(gate_clock_[1], 2.5f, 0.05f) ? 4 : 0));
+#endif
         monitor_.Publish();
     }
+
+#if MOD_ON_DAISY_EXTENSIONS
+    // A clock runs while its next pulse is not overdue: `periods` expected periods,
+    // at least `min_seconds`, at most 4 s (slow gate clocks).
+    bool Running(const ClockFollower& c, float periods, float min_seconds) const {
+        if(!c.HasReference())
+            return false;
+        float limit = c.PeriodSamples() * periods;
+        if(limit < min_seconds * sample_rate_)
+            limit = min_seconds * sample_rate_;
+        if(limit > 4.0f * sample_rate_)
+            limit = 4.0f * sample_rate_;
+        return c.SinceSamples() < limit;
+    }
+#endif
 
     LiveState* live_ = nullptr;
     TripleBuffer<Program> programs_;
@@ -201,6 +288,13 @@ class Engine {
     bool gate_now_[2]{}, gate_before_[2]{};
     float source_[kSources]{};
     float offset_[kTargets]{};
+#if MOD_ON_DAISY_EXTENSIONS
+    float base_[kTargets]{-1, -1, -1, -1, -1, -1, -1, -1};
+    uint8_t mode_ = kModeUnknown, mode_origin_ = kModeUnknown; // audio only, like base_
+    std::atomic<uint32_t> range_epoch_{0}; // written by the main loop only
+    uint32_t range_seen_ = ~0u;            // audio only, like the accumulators
+    float range_min_[kSources]{}, range_max_[kSources]{};
+#endif
     bool was_active_ = false;
     Voice lfo_[2]{Voice{0, 0, 0, 0, false, Rng(0x9E3779B9u)}, Voice{0, 0, 0, 0, false, Rng(0x7F4A7C15u)}};
     Voice random_{0, 0, 0, 0, false, Rng(0x2545F491u)};

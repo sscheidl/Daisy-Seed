@@ -1,4 +1,6 @@
 #include "desktop_devkit.h"
+#include "bootloader_daisy.h"
+#include "bootloader_midi.h"
 #include "physical_modeling.h"
 #include "midi_control.h"
 #include "spsc_queue.h"
@@ -7,6 +9,9 @@
 #include "usbd_core.h"
 #include <atomic>
 #include <new>
+#if PHYSICAL_MODELING_COMPOSED
+#include "composed_version.h"
+#endif
 #if PHYSICAL_MODELING_MOD
 #include "modulation.h"
 #include "mod_on_daisy_desktop.h"
@@ -15,7 +20,11 @@
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
 namespace {
 using namespace physical_modeling;
-#if PHYSICAL_MODELING_MOD
+#if PHYSICAL_MODELING_COMPOSED && PHYSICAL_MODELING_AMBIENT
+const char kFirmwareId[] = "PHYSICAL-MODELING-FX-AMBIENT-VERSION=" PHYSICAL_MODELING_COMPOSED_VERSION;
+#elif PHYSICAL_MODELING_COMPOSED
+const char kFirmwareId[] = "PHYSICAL-MODELING-FX-TORUS-VERSION=" PHYSICAL_MODELING_COMPOSED_VERSION;
+#elif PHYSICAL_MODELING_MOD
 const char kFirmwareId[] = "PHYSICAL-MODELING-MOD-VERSION=" PHYSICAL_MODELING_VERSION;
 #else
 const char kFirmwareId[] = "PHYSICAL-MODELING-VERSION=" PHYSICAL_MODELING_VERSION;
@@ -33,6 +42,9 @@ std::atomic<uint32_t> cpu_request{0};
 SpscQueue<CpuSnapshot, 4> cpu_snapshots;
 bool cpu_reply_pending = false; // Main loop only; at most one outstanding request.
 uint32_t held = 0;
+// Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
+bootloader::KeyCombo boot_keys; // audio callback only
+bootloader::Request boot_request;
 static_assert(std::atomic<uint32_t>::is_always_lock_free);
 static_assert(daisy::desktop_devkit::kNumButtons == kNotes.size());
 #if PHYSICAL_MODELING_MOD
@@ -41,16 +53,27 @@ mod::Module modulation;
 const mod::InstrumentInfo kModInfo = MakeModInfo();
 mod::adapter::UsbMidiSender mod_sender(midi);
 mod::VoicePressure voice_pressure[kVoices];
+uint8_t model_origin = mod::kModeUnknown; // audio IRQ only: switches or CC28 (mod4)
 
-void InitModulation(float sample_rate) { modulation.Init(kModInfo, sample_rate, kBlockSize); }
+void InitModulation(float sample_rate) {
+    modulation.Init(kModInfo, sample_rate, kBlockSize);
+    // extended monitor, LFO cross modulation (mod3), active model (mod4)
+    modulation.EnableExtensions({true, true, true});
+}
 
 // Audio IRQ: global offsets into the parameter smoothing, Poly AT into the voices.
 void Modulate(size_t size) {
     mod::Engine& engine = modulation.engine;
     mod::adapter::ReadHardware(engine, hw);
     engine.Tick(size);
-    for(unsigned t = 0; t < 8; ++t)
+    for(unsigned t = 0; t < 8; ++t) {
+        if(t == kLevelColumn)
+            continue;
         synth->parameters.SetModOffset(t, engine.Offset(t));
+        engine.ReportBase(t, synth->parameters.Target(t)); // pot/CC position, for the editor
+    }
+    synth->parameters.SetModLevel(LevelGain(engine.Apply(kLevelColumn, kLevelBase)));
+    engine.ReportBase(kLevelColumn, kLevelBase);
     std::array<float, 5> gain{};
     bool voices = false;
     for(unsigned t = 0; t < 5; ++t) {
@@ -84,8 +107,12 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
 #endif
     for(unsigned i = 0; i < 8; ++i) synth->parameters.Pot(i, hw.pot[i].Value());
     unsigned model;
-    if(model_switch.Process(hw.tog_sw17.Pressed(), hw.tog_sw18.Read(), model))
+    if(model_switch.Process(hw.tog_sw17.Pressed(), hw.tog_sw18.Read(), model)) {
         synth->parameters.SelectModel(model);
+#if PHYSICAL_MODELING_MOD
+        model_origin = mod::kModeFromDevice;
+#endif
+    }
     for(unsigned i = 0; i < kNotes.size(); ++i) {
         const uint32_t bit = 1u << i;
         if(hw.button[i].RisingEdge() && !(held & bit)) {
@@ -97,9 +124,19 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     // Leave queued MIDI intact when the DSP FIFO cannot accept an entire batch.
     if(synth->PendingNotes() <= 192) {
         MidiMessage message;
-        for(unsigned i = 0; i < 32 && midi_in.Pop(message); ++i) HandleMidi(*synth, message);
+        for(unsigned i = 0; i < 32 && midi_in.Pop(message); ++i) {
+#if PHYSICAL_MODELING_MOD
+            if((message.status & 0xf0) == 0xb0 && message.data1 == 28) model_origin = mod::kModeFromMidi;
+#endif
+            HandleMidi(*synth, message);
+        }
     }
+#if PHYSICAL_MODELING_MOD
+    modulation.engine.ReportMode(uint8_t(synth->ModelIndex()), model_origin); // the model that sounds
+#endif
     led_mask.store(held, std::memory_order_relaxed);
+    if(boot_keys.Process(held, daisy::System::GetNow()))
+        boot_request.Set(bootloader::Request::kKeys);
     synth->Process(out[0], out[1], size);
     cpu_meter.End();
     if(request) cpu_snapshots.Push(cpu_meter.Snapshot(synth->ModelIndex()));
@@ -116,6 +153,10 @@ void ServiceMidi() {
         }
         if(!midi.HasEvents()) return;
         const auto event = midi.PopEvent();
+        if(bootloader::IsRequest(event)) {
+            boot_request.Set(bootloader::Request::kSysEx);
+            continue;
+        }
         if(event.type == daisy::ControlChange && CpuRequest(event.channel, event.data[0], event.data[1])) {
             if(!cpu_reply_pending) {
                 cpu_reply_pending = true;
@@ -145,6 +186,13 @@ void ServiceCpuTelemetry() {
     if(hUsbDeviceHS.dev_state != USBD_STATE_CONFIGURED) return;
     auto packet = EncodeCpuSnapshot(snapshot);
     midi.SendMessage(packet.data(), packet.size()); // Main loop only, on request.
+}
+// Main loop only: replies over USB if a host asked, then resets into the bootloader.
+void ServiceBootloader() {
+    bootloader::Service(boot_request, hw, [](uint8_t* bytes, size_t size) {
+        if(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
+            midi.SendMessage(bytes, size);
+    });
 }
 void ServiceLeds() {
     static uint32_t previous = 0, last = 0;
@@ -177,7 +225,7 @@ int main() {
     midi.Init(config); midi.StartReceive();
     hw.seed.StartAudio(AudioCallback);
     while(true) {
-        ServiceMidi(); ServiceCpuTelemetry(); ServiceLeds();
+        ServiceMidi(); ServiceCpuTelemetry(); ServiceBootloader(); ServiceLeds();
 #if PHYSICAL_MODELING_MOD
         modulation.controller.Service(daisy::System::GetNow(), mod_sender);
 #endif

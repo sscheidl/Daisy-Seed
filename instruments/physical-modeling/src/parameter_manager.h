@@ -45,6 +45,9 @@ class ParameterManager {
     // Mod on Daisy offset for parameters 0..7 (normalized, summed before the 5 ms
     // smoothing). With offset 0 the goal is exactly the target.
     void SetModOffset(unsigned id, float offset) { if(id < 8) mod_offset_[id] = offset; }
+    // Output gain of the Level column, smoothed like the parameters; exactly 1 unmodulated.
+    void SetModLevel(float gain) { level_target_ = gain; }
+    float Level() const { return level_; }
 #endif
     void Advance() {
         // 5 ms at 4 kHz; snap small residuals so dry/wet endpoints are exact.
@@ -59,11 +62,16 @@ class ParameterManager {
 #endif
         }
         bend_ += 0.0487705755f * (bend_target_ - bend_);
+#if PHYSICAL_MODELING_MOD
+        level_ += 0.0487705755f * (level_target_ - level_);
+        if(std::fabs(level_target_ - level_) < 0.000001f) level_ = level_target_;
+#endif
     }
   private:
     std::array<float, Count> target_{}, current_{};
 #if PHYSICAL_MODELING_MOD
     std::array<float, Count> mod_offset_{};
+    float level_ = 1, level_target_ = 1;
 #endif
     std::array<PotFilter, 8> pots_{};
     float bend_ = 0, bend_target_ = 0;

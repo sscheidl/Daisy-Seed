@@ -18,11 +18,11 @@ From the repository root:
 make PROJECT=granular -j4
 make PROJECT=granular test
 make PROJECT=granular test-sanitize
-python3 scripts/check-firmware.py instruments/granular/build/NebulaeOnDaisy-v0.1.0.bin
-python3 scripts/check-granular-elf.py instruments/granular/build/NebulaeOnDaisy-v0.1.0.elf
+python3 scripts/check-firmware.py instruments/granular/build/NebulaeOnDaisy-v0.1.1.bin
+python3 scripts/check-granular-elf.py instruments/granular/build/NebulaeOnDaisy-v0.1.1.elf
 ```
 
-Outputs: `build/NebulaeOnDaisy-v0.1.0.bin`, `.elf`, `.map`, `SHA256SUMS`.
+Outputs: `build/NebulaeOnDaisy-v0.1.1.bin`, `.elf`, `.map`, `SHA256SUMS`.
 Identity: `NEBULAE-FW-VERSION=0.1.0`. C++17, Cortex-M7 hard float,
 `BOOT_SRAM`, 48 kHz, **256 samples/block**. The pinned AudioHandle clamps larger
 blocks to 256; firmware checks the actual size. FFT hop is 512 samples.
@@ -166,6 +166,15 @@ pulses at reset/wrap. FILE displays loading/errors. During SOURCE hold, RECORD
 shows circular, FREEZE trigger mode, FILE 1/2/3 pulses for file order. LEDs update
 outside audio, only on changes, at most 100/s. An inherited PCA9685 DMA-start
 failure can hang main/LED service; the audio interrupt continues independently.
+
+## Firmware update mode
+
+Hold **S9 + S16**, and no other key, for 5 s, or send the bootloader SysEx from the
+Mod on Daisy editor (**Firmware-Update …**): all LEDs light up and the kit restarts into
+the Daisy bootloader ([details](../../common/bootloader/README.md),
+[FLASHING.md](../../docs/FLASHING.md)). In KEYBOARD mode these keys are C5 and C6, so
+a held octave of exactly these two notes for 5 s enters update mode as well; in
+SAMPLE mode they load slots 9 and 16 first.
 
 ## USB MIDI on carrier J7
 

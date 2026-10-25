@@ -11,7 +11,7 @@ and firmware updates. The USB connector on the Seed3 module is unused by the app
 | Input | Note On on any channel, notes 0–127. Frequency follows the note; velocity 1–127 scales amplitude linearly. |
 | Input voices | 16 MIDI voices independent of the 16 key voices. A full pool steals the oldest voice; repeating a still-active note retriggers its existing voice. |
 | Envelope | VR1/VR2 set attack/decay at the strike. Note Off, sustain, pitch bend and program changes are ignored: these are one-shot AD notes. |
-| Modulation (v0.3) | CC1 (mod wheel), channel aftertouch and polyphonic aftertouch are sources of the Mod on Daisy matrix. SysEx `F0 7D 4D 44 …` configures it ([protocol](../../../modules/mod-on-daisy/docs/PROTOCOL.md)); replies go back on the same port, at most one per millisecond. MIDI clock and Start sync the LFOs. Other CCs remain ignored. |
+| Modulation (v0.3) | CC1 (mod wheel), channel aftertouch and polyphonic aftertouch are sources of the Mod on Daisy matrix. SysEx `F0 7D 4D 44 …` configures it ([protocol](../../../modules/mod-on-daisy/docs/PROTOCOL.md)); replies go back on the same port, at most one per millisecond. From v0.4, frames that are themselves replies (a DAW echoing the port back, e.g. Studio One input monitoring) are ignored. MIDI clock and Start sync the LFOs. Other CCs remain ignored. |
 | Output | S1–S16 send Note On on channel 1 with velocity 100 at debounced press, and Note Off at release. |
 | Bundling | Up to eight simultaneous key changes per transfer; the remainder follows at the next main-loop service, normally 1 ms later. There is no output event queue. |
 | Duplicate C5 | S8/S9 both send note 72: holding both produces two Note Ons, releasing them produces two Note Offs. |
@@ -53,6 +53,9 @@ return route or monitoring when only recording key presses.
 * At most 16 incoming notes are started per block; the queue holds 64. Excess input
   can be dropped. This is not a sustained-note MIDI synthesizer.
 * The port is MIDI-only; the template's serial Logger is not used concurrently.
-* Updates still use RESET then BOOT; the bootloader enumerates as DFU before the app.
+* Updates: the SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7` (or S9+S16 for 5 s) restarts
+  the kit into the bootloader, which then enumerates as DFU instead of the app
+  ([common/bootloader](../../../common/bootloader/README.md)). RESET then BOOT remains
+  the recovery path.
 * Test semitones, velocity, 16+ simultaneous incoming notes, outgoing chords,
   power-only use, reconnection and full-load callback time on hardware.

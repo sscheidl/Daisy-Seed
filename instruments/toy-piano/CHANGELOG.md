@@ -2,6 +2,42 @@
 
 The version is defined in [src/version.h](src/version.h).
 
+## 0.4 — 2026-10-25
+
+* **Echo guard for Mod on Daisy.** SysEx frames whose command has the reply bit
+  (replies, NAKs, monitor frames) are consumed and never answered
+  (`modules/mod-on-daisy/docs/PROTOCOL.md` § 2, step 2a). Reason: with input
+  monitoring, Studio One sends everything from the Daisy back to it. In the hardware
+  test of 2026-10-24 with Physical Modeling, the firmware NAKed every echoed frame and
+  the NAKs looped at about 500 frames/s, so the editor saw no replies. Toy Piano v0.3
+  has the same controller and would loop the same way.
+* **Full Mod on Daisy panel, as Physical Modeling MOD** (`-DMOD_ON_DAISY_EXTENSIONS=1`,
+  which also brings the echo guard): column base values (attack and decay follow VR1/VR2,
+  pitch/level/harmonic report their fixed bases), extended monitor (ranges, clock,
+  aftertouch) and LFO cross modulation (patch format 2). No instrument modes: the
+  keyboard has no model switch. IDENTIFY capabilities 0x7A, capabilities 2 = 0.
+* Includes the bootloader entry of the unreleased 0.3.1 (S9+S16 for 5 s or SysEx).
+* **Sound unchanged.** The audio path is untouched; the golden test gives the same hash
+  on the same platform with and without the change.
+* New test: every frame the Daisy sends is fed back for 1 s with the monitor at 20 Hz:
+  20 monitor frames, no NAK, requests are still answered.
+* Image and memory: see [VALIDATION](docs/VALIDATION.md) (the first v0.4 build without
+  panel and bootloader entry was 151,732 B).
+* Hardware test pending: [HARDWARE_TEST_V0.4](docs/HARDWARE_TEST_V0.4.md).
+
+## 0.3.1 - integration test image, not released
+
+* Integration test image of the integration branch (PR #42). The release preflight
+  still accepts only major.minor, so a release needs a deliberate new number
+  (0.4 is taken by PR #39); the host test now accepts X.Y and X.Y.Z.
+
+* **Firmware updates without BOOT/RESET** ([common/bootloader](../../common/bootloader/README.md)):
+  holding S9+S16 alone for 5 s, or the USB-MIDI SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7`
+  (answered with `F0 7D 42 4C 01 41 F7`), lights all LEDs and restarts into the Daisy
+  bootloader with `DAISY_INFINITE_TIMEOUT`. The audio callback only runs the key timer.
+* Sound unchanged: the golden hash is the same before and after (compared on one
+  compiler); `src/version.h` is not changed by this entry.
+
 ## 0.3 — 2026-10-23
 
 * **Mod on Daisy modulation matrix** ([modules/mod-on-daisy](../../modules/mod-on-daisy/)).

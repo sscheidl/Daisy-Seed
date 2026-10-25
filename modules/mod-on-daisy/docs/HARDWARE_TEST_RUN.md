@@ -1,6 +1,7 @@
 # Laufzettel Hardwaretest — Mod on Daisy, Toy Piano v0.3, Physical Modeling, Editoren
 
-**Stand:** 23. Oktober 2026. Ausgeführt wird lokal unter Windows am Seed3 Desktop Kit.
+**Stand:** 24. Oktober 2026 (Korrekturauftrag: E7b in zwei Reihenfolgen, E11–E17
+neu). Ausgeführt wird lokal unter Windows am Seed3 Desktop Kit.
 Die Firmware-Images und Werkzeuge sind gebaut und auf dem Host getestet. Am Gerät
 wurde noch nichts gemessen.
 
@@ -92,7 +93,23 @@ andere MIDI-Programme schließen, weil der Port nur einer Anwendung gehört.
 | E7 | M | Studio One mit aktivem Daisy-Port öffnen, dann im Editor **Verbinden** | klare Meldung „… belegt (z. B. Studio One) …“, kein Absturz |
 | E8 | M | Während der Verbindung das USB-Kabel an J7 ziehen, wieder stecken, **Verbinden** | „Gerät getrennt“, offline weiter bearbeitbar; danach Zustand vom Gerät geladen |
 | E9 | M | Physical Modeling: verbinden, Poly AT → Brightness +70, Akkord halten, eine Taste drücken | Poly AT × Excitation schraffiert; nur die gedrückte Stimme ändert sich |
+| E9b | M | Physical Modeling (`0.1.0-mod4`), im Editor **„Daisy Seed External“** gewählt (kein Simulator): Potis drehen, Modwheel → Level −100 | Spaltenköpfe zeigen einen weißen Strich am Grundwert, der dem Poti folgt, und darüber den aktuellen Wert (z. B. „63 %“, Pitch in Halbtönen); bei Level steht er fest bei 0,5 („+0 %“). Spalte 7 heißt „Level“, das Modwheel blendet bis Stille aus |
+| E7b | M | Mehrere Programme pro Port prüfen (Windows MIDI Services), siehe [Editor-README](../../../editors/mod-on-daisy/README.md#studio-one-und-der-editor-gleichzeitig). **Beide Reihenfolgen**: (a) erst Studio One, dann Editor; (b) erst Editor, dann Studio One | Ergebnis je Reihenfolge notieren: gehen beide gleichzeitig? Bei (b): bekommt Studio One Noten, bleibt der Editor grün? |
+| E11 | M | Physical Modeling, LFO 1 → Structure +50, LFO 1 frei auf 20 Hz, dann MIDI-Clock 150 BPM 1/32 aus Studio One | LFO-1-Balken zeigt ein breites Band (nicht einen stehenden Wert); Spaltenkopf Structure zeigt den Bereich um den Grundwert, rote Enden, wenn er an 0 oder 1 anstößt. Clock stoppen: Zeile „Takt“ meldet „Kein MIDI-Clock – LFO steht“, das Band schrumpft |
+| E12 | M | Potis Structure auf ca. 10 %, 50 %, 90 %, jeweils mit LFO ±50 | Bereich ungefähr 0…0,6 / 0…1 / 0,4…1, begrenzte Enden rot; Klang passt zur Anzeige |
+| E13 | M | Keyboard nur mit Channel AT, dann nur mit Poly AT; bei Poly AT zwei Tasten halten und nur auf die **erste** drücken; loslassen | Anzeige „Aftertouch · Kanal“ bzw. „Poly · Note“, Punkt an der passenden Zeile; bei der ersten von zwei Tasten zeigt sie deren Druck; nach dem Loslassen 0. Klangwirkung wie bisher |
+| E14 | M | LFO 2 langsam (0,3 Hz) → nichts; LFO 1 → Pitch +20, „FM ← L2“ auf +60 | LFO 1 wird periodisch schneller und langsamer (hörbar am Vibrato). Bei LFO 1 auf MIDI-Clock ist der FM-Regler gesperrt |
+| E15 | M | Datei `legacy-reverb.modpatch` (aus `editors/mod-on-daisy/web/tests/`) im verbundenen Editor öffnen | Frage „Patch passt nicht genau …“ nennt „Reverb → Level“; „Abbrechen“ ändert nichts; „Ohne betroffene laden“ lässt Modwheel → Level ausgeschaltet |
+| E16 | M | Studio One belegt den Port, dann im Editor **Verbinden**; danach Studio One schließen und erneut **Verbinden** (beide Editoren) | Erster Versuch: klare Meldung, Port wird freigegeben; zweiter Versuch verbindet ohne Neustart des Editors |
+| E17 | M | Verbunden, dann in Studio One den Daisy-Eingang aktivieren (falls möglich) oder Kabel ziehen | Status wird nach ca. 1,5 s gelb „keine Live-Daten“, nach 5 s rot „keine Antwort“, eine Meldung im Log; nach Wiederherstellung grün und „Zustand wird neu geladen“ |
+| E18 | M | Physical Modeling (`0.1.0-mod4`): SW17/SW18 durch alle sechs Stellungen, dann CC28 aus Studio One oder vom Keyboard | Oben neben dem Status steht „Modell: …“ passend zur Schalterstellung (Tooltip: Bank/SW18); nach CC28 „… (MIDI)“. Beide Editoren gleich |
+| E19 | M | Toy Piano v0.3 verbinden | Keine Modell-Anzeige; Spaltenköpfe zeigen weiter den Hub (Toy Piano meldet keine Grundwerte) |
 | E10 | M | `editor/ModOnDaisyEditor.html` in Chrome/Edge, SysEx erlauben, verbinden, eine Zelle ändern | Bestätigung mit Patch-CRC wie im JUCE-Editor |
+| P1 | M | VST3: `Mod on Daisy.vst3` nach `C:\Program Files\Common Files\VST3\` kopieren, Studio One neu scannen, „Mod on Daisy“ als Effekt auf eine Spur legen (Kit mit mod4 an J7, Daisy in Studio One aktiv) | Plugin erscheint unter Daisy-Seed; ohne das Fenster zu öffnen verbindet es sich (Fenster öffnen: Status grün, Modell angezeigt); Ton der Spur unverändert |
+| P2 | M | Im Plugin LFO 1 → Pitch +20 setzen, Fenster schließen, Noten spielen | Vibrato hörbar; Fenster wieder öffnen: alles wie zuvor, Status grün, Live-Anzeige läuft |
+| P3 | M | Song speichern, Studio One schließen, Kit aus- und einschalten (leere Matrix), Studio One und Song öffnen | Plugin verbindet sich und sendet den Song-Patch: Vibrato wieder da, Raster zeigt LFO 1 → Pitch +20 |
+| P4 | M | Im Plugin „Trennen“, dann Kit abziehen und wieder anstecken | Bleibt getrennt bis „Verbinden“; danach normal |
+| P5 | M | Standalone-Editor zusätzlich zum Plugin öffnen und verbinden | Beide grün; eine Änderung in einem erscheint im anderen nach „Vom Gerät laden“ |
 
 Ergebnisse in [VALIDATION.md](VALIDATION.md) § 1b (JUCE-Editor) bzw. § 1a
 (Browser-Editor) unter einem neuen Punkt „Am Gerät“.

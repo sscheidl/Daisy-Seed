@@ -1,5 +1,6 @@
 // Mod on Daisy Editor, JUCE standalone (GUI.md § 3, D6: Windows first, VST3 later).
-//   ModOnDaisyEditor                      normal start
+//   ModOnDaisyEditor                      normal start, MIDI ports only
+//   ModOnDaisyEditor --simulators         also lists the simulators (development, no Daisy)
 //   ModOnDaisyEditor --selftest <dir>     drives the window against the simulator, checks
 //                                         the device CRC after every step, writes screenshots
 #include "../ui/EditorComponent.h"
@@ -11,10 +12,10 @@ using editor::ui::EditorComponent;
 
 class MainWindow : public juce::DocumentWindow {
   public:
-    explicit MainWindow(const juce::String& name)
+    MainWindow(const juce::String& name, bool with_simulators)
         : DocumentWindow(name, ui::colour::bg, DocumentWindow::allButtons) {
         setUsingNativeTitleBar(true);
-        setContentOwned(new EditorComponent(), true);
+        setContentOwned(new EditorComponent(with_simulators), true);
         setResizable(true, true);
         setResizeLimits(1100, 860, 4000, 3000);
         centreWithSize(getWidth(), getHeight());
@@ -35,7 +36,9 @@ class SelfTest {
         log_.replaceWithText({});
         ToyPiano();
         PhysicalModeling();
+        Corrections();
         Offline();
+        ProjectPatch();
         if(failures_)
             Say("FAIL: " + juce::String(failures_) + " checks");
         else
@@ -99,6 +102,10 @@ class SelfTest {
         Model& m = e_.GetModel();
         SELFTEST_CHECK(e_.GetSession().Connected() && e_.GetSession().Device().key == "toy-piano");
         SELFTEST_CHECK(m.columns[0].name == "Pitch" && !m.columns[6].present && !m.Allowed(7 * 8 + 3));
+        // Firmware update: a simulator has no bootloader; nothing is sent, the session stays.
+        e_.StartFirmwareUpdate(PortIndex("Simulator: Toy Piano"));
+        SELFTEST_CHECK(!e_.FirmwareUpdateWaiting() && e_.GetSession().Connected());
+        SELFTEST_CHECK(e_.LogText().contains("keinen Bootloader"));
 
         // Keyboard: LFO 1 → Pitch +30.
         e_.Grid().Select(0);
@@ -182,6 +189,7 @@ class SelfTest {
         SELFTEST_CHECK(Settle() && e_.GetSession().Device().key == "physical-modeling");
         Model& m = e_.GetModel();
         SELFTEST_CHECK(m.columns[5].name == "Excitation" && !m.Allowed(7 * 8 + 5));
+        SELFTEST_CHECK(m.columns[6].name == "Level"); // replaced the reverb decay (mod2)
         auto& grid = e_.Grid();
         const int cells[][3] = {{0, 2, 40}, {1, 1, -30}, {2, 4, 25}, {6, 6, 60}, {7, 2, 70}, {7, 0, 12}};
         for(const auto& c : cells) {
@@ -196,6 +204,83 @@ class SelfTest {
         Say("PASS physical-modeling: columns, Poly AT per voice, Excitation greyed out");
     }
 
+    // Correction order 2026-10-24 in the real window: FM, ranges, aftertouch, health,
+    // compatibility question, port release.
+    void Corrections() {
+        e_.ConnectTo(PortIndex("Simulator: Physical Modeling"));
+        SELFTEST_CHECK(Settle() && e_.GetSession().Device().LfoFm());
+        Model& m = e_.GetModel();
+        Simulator& sim = *e_.GetSimulator();
+        ui::SourcePanel& lfo1 = e_.Source(0);
+        SELFTEST_CHECK(lfo1.Fm().isVisible() && lfo1.Fm().isEnabled() && !e_.Source(2).Fm().isVisible());
+        lfo1.Fm().setValue(35, juce::sendNotificationSync);
+        e_.Source(1).Rate().setValue(HzToRate(9.0f), juce::sendNotificationSync);
+        e_.GetSession().EditDepth(0 * 8 + 1, 50);
+        e_.GetSession().EditDepth(1 * 8 + 1, 20);
+        lfo1.Rate().setValue(HzToRate(20.0f), juce::sendNotificationSync);
+        SELFTEST_CHECK(Settle() && InSync() && sim.Device().CurrentPatch().lfo[0].fm == 35);
+        sim.Midi(0x90, 60, 100);
+        sim.Midi(0xA0, 60, 96);
+        e_.Step(300);
+        SELFTEST_CHECK(e_.Grid().Monitor().has_range && e_.Grid().Monitor().at_kind == 2);
+        SELFTEST_CHECK(e_.Grid().Monitor().max[0] - e_.Grid().Monitor().min[0] > 1.5f);
+        e_.Grid().Select(0 * 8 + 1);
+        Shot("juce-editor-ranges.png");
+        lfo1.Sync(mod::MidiClock).onClick();
+        SELFTEST_CHECK(Settle() && !lfo1.Fm().isEnabled() && m.patch.lfo[0].fm == 35);
+        e_.Step(200);
+        SELFTEST_CHECK(lfo1.ClockText().contains(ui::U("Kein MIDI-Clock")));
+        lfo1.Sync(mod::Free).onClick();
+        SELFTEST_CHECK(Settle() && lfo1.Fm().isEnabled());
+        Say("PASS corrections: LFO FM slider, ranges, aftertouch kind, clock state");
+
+        // Health: replies lost (port taken by another application), then back.
+        sim.drop_replies = 1;
+        e_.Step(1700);
+        e_.RefreshNow();
+        SELFTEST_CHECK(e_.GetSession().StatusText().find("keine Live-Daten") != std::string::npos);
+        e_.Step(3600);
+        e_.RefreshNow();
+        SELFTEST_CHECK(e_.GetSession().StatusText().find("keine Antwort") != std::string::npos);
+        Shot("juce-editor-no-replies.png");
+        sim.drop_replies = 0;
+        SELFTEST_CHECK(Settle() && e_.GetSession().LinkHealth() == Health::Ok && InSync());
+        Say("PASS corrections: health no live data / no replies / recovered");
+
+        // Compatibility: a Toy Piano file on Physical Modeling asks; cancel changes nothing,
+        // safe load switches the affected connections off.
+        Model toy;
+        toy.columns[0].name = "Pitch";
+        toy.SetDepth(0, 30);
+        DeviceInfo toy_device;
+        toy_device.key = "toy-piano";
+        const juce::File file = dir_.getChildFile("selftest-toy.modpatch");
+        file.replaceWithText(ui::U(SavePatch(toy, &toy_device)));
+        int asked = 0;
+        e_.compat_decision = [&](const Compatibility& c) {
+            ++asked;
+            SELFTEST_CHECK(c.key_mismatch && c.affected == Bit(0));
+            return ui::EditorComponent::CompatChoice::Cancel;
+        };
+        const uint32_t before = m.Crc();
+        e_.LoadFile(file);
+        SELFTEST_CHECK(Settle() && asked == 1 && m.Crc() == before && InSync());
+        e_.compat_decision = [](const Compatibility&) { return ui::EditorComponent::CompatChoice::Safe; };
+        e_.LoadFile(file);
+        SELFTEST_CHECK(Settle() && InSync() && !m.Enabled(0) && m.Depth(0) == 30);
+        e_.compat_decision = nullptr;
+        Say("PASS corrections: compatibility question (cancel, safe load)");
+
+        // A session that gives up releases the port at once (review F2).
+        e_.ConnectTo(PortIndex("Simulator: Physical Modeling"));
+        e_.GetSimulator()->drop_replies = 1;
+        for(int i = 0; i < 3000 && e_.GetSession().State() != LinkState::Offline; ++i)
+            e_.Step(1);
+        e_.Step(1);
+        SELFTEST_CHECK(e_.GetSession().State() == LinkState::Offline && !e_.PortOpen());
+        Say("PASS corrections: no answer to IDENTIFY releases the port");
+    }
+
     void Offline() {
         e_.Disconnect();
         SELFTEST_CHECK(e_.GetSession().State() == LinkState::Offline);
@@ -203,6 +288,29 @@ class SelfTest {
         Key(juce::KeyPress::pageDownKey);
         SELFTEST_CHECK(e_.GetModel().Depth(12) == -10);
         Say("PASS offline: editing without a device");
+    }
+
+    // VST3 plugin: a patch from the project, loaded while offline, is shown at once and
+    // replaces the device's state when the connection is ready; changes reach the host.
+    void ProjectPatch() {
+        Model& m = e_.GetModel();
+        std::string reported;
+        e_.patch_changed = [&reported](const std::string& t) { reported = t; };
+        e_.GetSession().EditDepth(1, 40, true); // LFO 1 -> Structure, offline
+        const std::string project = e_.PatchText();
+        e_.GetSession().EditDepth(1, 0);
+        e_.LoadProjectPatch(project);
+        e_.RefreshNow();
+        SELFTEST_CHECK(m.Depth(1) == 40 && reported.find("40") != std::string::npos);
+        e_.ConnectTo(PortIndex("Simulator: Physical Modeling")); // a fresh device: empty matrix
+        SELFTEST_CHECK(Settle());
+        e_.RefreshNow();
+        // The fresh device had an empty matrix: now it holds the project patch.
+        SELFTEST_CHECK(Settle() && InSync() && m.Depth(1) == 40 && m.Enabled(1));
+        SELFTEST_CHECK(e_.GetSimulator()->Device().CurrentPatch().depth[0][1] == 40);
+        e_.patch_changed = nullptr;
+        e_.Disconnect();
+        Say("PASS plugin: project patch shown offline, sent to the device on connecting");
     }
 
     EditorComponent& e_;
@@ -217,9 +325,10 @@ class Application : public juce::JUCEApplication {
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const juce::String& command_line) override {
-        window_ = std::make_unique<MainWindow>(getApplicationName() + " " + getApplicationVersion());
         const juce::StringArray args = juce::StringArray::fromTokens(command_line, true);
         const int i = args.indexOf("--selftest");
+        window_ = std::make_unique<MainWindow>(getApplicationName() + " " + getApplicationVersion(),
+                                               i >= 0 || args.contains("--simulators"));
         if(i >= 0) {
             const juce::File dir = juce::File::getCurrentWorkingDirectory().getChildFile(
                 args[i + 1].isEmpty() ? juce::String("selftest") : args[i + 1].unquoted());

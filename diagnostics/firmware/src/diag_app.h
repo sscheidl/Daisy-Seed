@@ -3,6 +3,7 @@
 // main.cpp supplies the hardware through the Board and UsbSink interfaces.
 #pragma once
 #include "ddp.h"
+#include "bootloader_entry.h"
 #include "diag_core.h"
 #include "ring_buffer.h"
 
@@ -36,6 +37,8 @@ class Board {
     virtual void ReaderCommand(uint32_t, ddp::Writer& out) {
         out.Str("ERR c=READER e=UNSUPPORTED");
     }
+    // Resets into the Daisy bootloader (common/bootloader); does not return on hardware.
+    virtual void EnterBootloader() = 0;
 
   protected:
     ~Board() = default;
@@ -62,6 +65,8 @@ class App {
   public:
     static constexpr uint32_t kRxSize = 1024;
     static constexpr uint32_t kLedMinIntervalMs = 10;
+    // BOOT waits at most this long for the ACK to leave before the reset.
+    static constexpr uint32_t kBootFlushMs = 50;
 
     App(Board& board, UsbSink& usb, const char* bootloader_name, uint32_t now_ms);
 
@@ -97,6 +102,9 @@ class App {
     uint8_t last_brightness_ = 0;
     bool leds_dirty_ = true;
     bool keepalive_after_block_ = false;
+    bool boot_pending_ = false;
+    uint32_t boot_since_ = 0;
+    bootloader::KeyCombo boot_keys_;  // S9+S16 for 5 s, as in every app
 };
 
 } // namespace diag

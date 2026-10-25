@@ -27,10 +27,91 @@ class Transport {
 
 enum class LogKind { Info, Ok, Warn, Error };
 enum class LinkState { Offline, Connecting, Connected };
+// What a connected session can still rely on (review finding F5).
+enum class Health {
+    Ok,         // replies and live data arrive
+    NoLiveData, // no monitor frame for kStaleMs, replies may still work
+    NoReplies,  // nothing from the device for kLostMs: changes stay unconfirmed
+};
 
 struct MonitorValues {
     float source[mod::kSources]{}, offset[mod::kTargets]{}, cv[2]{};
+    // Column base values (pot/CC position before modulation), 0..1; -1 = not reported.
+    // Only instruments with IDENTIFY capability bit 4 send them (PROTOCOL.md § 3.3).
+    float base[mod::kTargets]{-1, -1, -1, -1, -1, -1, -1, -1};
+
+    // Extended monitor (IDENTIFY capability bit 5, 89 bytes): the range each source swept
+    // in the monitor window, clock activity and the last received aftertouch.
+    bool has_range = false;
+    float min[mod::kSources]{}, max[mod::kSources]{};
+    uint8_t clocks = 0;   // bit 0 MIDI clock, bit 1 gate 1, bit 2 gate 2 running
+    uint8_t at_kind = 0;  // 0 none, 1 channel, 2 poly
+    uint8_t at_note = 0, at_value = 0, at_age = 127; // age in 20 ms, 127 = old
+    // Instrument mode (capabilities 2 bit 0, 91 bytes): index, origin 0 device / 1 MIDI; -1 = unknown.
+    int mode = -1, mode_origin = -1;
+
+    bool HasBase(std::size_t t) const { return base[t] >= 0.0f; }
+    // Where the column ends up: base plus the global offset, clamped like Engine::Apply.
+    float Result(std::size_t t) const {
+        const float v = base[t] + offset[t];
+        return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+    }
+    // The range a source swept in the last monitor window; without the extended monitor
+    // only the sampled value is known.
+    float Low(int s) const { return has_range ? min[s] : source[s]; }
+    float High(int s) const { return has_range ? max[s] : source[s]; }
+    // Whether the clock a synced source follows is running: 1 yes, 0 no, -1 unknown.
+    int ClockState(unsigned sync, unsigned gate) const {
+        if(!has_range || sync == mod::Free)
+            return -1;
+        const uint8_t bit = sync == mod::MidiClock ? 1 : (gate == 0 ? 2 : 4);
+        return (clocks & bit) ? 1 : 0;
+    }
 };
+
+// The global goal of a column over the last monitor window (review F3/F4): interval
+// arithmetic over the active connections with gain = depth/100 * span as in
+// Program::Compile, around the base value and clamped like Engine::Apply. The window
+// ranges of several sources need not coincide, so with more than one connection this is
+// the reachable range, not a measured one. Poly AT on a per-voice column acts on each
+// voice on top of this and is left out; `voice_part` says it exists.
+struct GoalSpan {
+    float lo = 0, hi = 0;          // base + offset range (0..1) or, without base, the offset range
+    bool has_base = false;
+    bool clipped_low = false, clipped_high = false;
+    bool voice_part = false;
+};
+inline GoalSpan GoalSpanOf(const Model& model, const MonitorValues& m, std::size_t t) {
+    GoalSpan g;
+    const Column& col = model.columns[t];
+    float lo = 0, hi = 0;
+    for(int s = 0; s < int(mod::kSources); ++s) {
+        if(!model.Active(s * int(mod::kTargets) + int(t)))
+            continue;
+        if(s == mod::PolyAt && col.per_voice) {
+            g.voice_part = true;
+            continue;
+        }
+        const float gain = float(model.Depth(s * int(mod::kTargets) + int(t))) / float(mod::kMaxDepth) * col.span;
+        const float a = gain * m.Low(s), b = gain * m.High(s);
+        lo += a < b ? a : b;
+        hi += a < b ? b : a;
+    }
+    if(!m.has_range)
+        lo = hi = m.offset[t]; // the engine's own sum; the sampled sources may be older
+    g.has_base = m.HasBase(t);
+    if(g.has_base) {
+        lo += m.base[t];
+        hi += m.base[t];
+        g.clipped_low = lo < 0.0f;
+        g.clipped_high = hi > 1.0f;
+        lo = lo < 0.0f ? 0.0f : (lo > 1.0f ? 1.0f : lo);
+        hi = hi < 0.0f ? 0.0f : (hi > 1.0f ? 1.0f : hi);
+    }
+    g.lo = lo;
+    g.hi = hi;
+    return g;
+}
 
 inline std::string ErrorText(unsigned code) {
     switch(code) {
@@ -52,6 +133,8 @@ inline std::string ErrorText(unsigned code) {
 class Session {
   public:
     static constexpr uint32_t kTimeoutMs = 250, kEditGapMs = 20, kMonitorRenewMs = 1000;
+    // No monitor frame for 1.5 s: live data stale. Nothing at all for 5 s: no replies.
+    static constexpr uint32_t kStaleMs = 1500, kLostMs = 5000, kLogRepeatMs = 3000;
     static constexpr int kRetries = 3;
     static constexpr unsigned kMonitorRate = 20;
 
@@ -65,7 +148,13 @@ class Session {
     LinkState State() const { return state_; }
     bool Connected() const { return state_ == LinkState::Connected; }
     const DeviceInfo& Device() const { return device_info_; }
-    const std::string& StatusText() const { return status_; }
+    Health LinkHealth() const { return Connected() ? health_ : Health::Ok; }
+    // The device line plus what is degraded; never a plain success while nothing arrives.
+    std::string StatusText() const {
+        if(!Connected() || health_ == Health::Ok)
+            return status_;
+        return status_ + (health_ == Health::NoReplies ? " · keine Antwort" : " · keine Live-Daten");
+    }
     bool Pending(int cell) const { return pending_cells_.count(cell) || in_flight_cell_ == cell; }
     // Nothing waiting, nothing open: what the tests wait for.
     bool Idle() const { return !current_ && queue_.empty() && !HasPendingEdits() && changes_in_flight_ == 0; }
@@ -94,6 +183,7 @@ class Session {
             d.slots = int(rd.U7());
             d.schema = rd.U32();
             d.caps = int(rd.U7());
+            d.caps2 = rd.AtEnd() ? 0 : int(rd.U7()); // appended by newer firmware
             d.device = r.device;
             if(!rd.Ok() || d.protocol_major != proto::kVersion) {
                 Fail("Protokollversion " + std::to_string(d.protocol_major) + "." + std::to_string(d.protocol_minor)
@@ -105,9 +195,13 @@ class Session {
             model_.max_active = d.max_active;
             Pull(true, [this] {
                 state_ = LinkState::Connected;
+                health_ = Health::Ok;
+                last_frame_ms_ = last_live_ms_ = now_; // grace until the first monitor frame
                 SetStatus(device_info_.key + " " + device_info_.version + " · ID " + std::to_string(device_));
                 last_monitor_ = now_ - kMonitorRenewMs; // start at once
                 Log(LogKind::Ok, "Verbunden. Der Zustand des Geräts wurde geladen.");
+                if(device_info_.Modes())
+                    FetchMode(0);
             });
         }, [this](const std::string& message) { Fail(message); });
     }
@@ -124,6 +218,8 @@ class Session {
         edit_in_flight_ = false;
         changes_in_flight_ = 0;
         transport_ = nullptr;
+        health_ = Health::Ok;
+        unconfirmed_ = false;
         const bool was = state_ != LinkState::Offline;
         state_ = LinkState::Offline;
         if(was || !reason.empty())
@@ -141,11 +237,19 @@ class Session {
             return; // damaged or foreign: the retry repairs a damaged reply
         if(device_ != proto::kBroadcast && f.device != device_)
             return; // another device on the same port
+        last_frame_ms_ = now_;
+        if(unconfirmed_ && Connected()) {
+            unconfirmed_ = false;
+            Pull();
+        }
         if(f.command == proto::MonitorFrame) {
+            last_live_ms_ = now_;
+            UpdateHealth();
             if(monitor && Connected())
                 monitor(DecodeMonitor(f.payload, f.length));
             return;
         }
+        UpdateHealth();
         if(!current_ || f.seq != current_->seq)
             return;
         Reply reply{f.command, f.device, std::vector<uint8_t>(f.payload, f.payload + f.length)};
@@ -165,14 +269,20 @@ class Session {
                 ++retries_;
                 Transmit();
             } else {
-                Finish(nullptr, "keine Antwort vom Gerät");
+                // The device may have applied it without its reply arriving (review F7):
+                // once it is heard again, its state is reloaded.
+                unconfirmed_ = Connected();
+                Finish(nullptr, "keine Antwort vom Gerät – ist der MIDI-Eingang von einer anderen Anwendung belegt "
+                                "(z. B. Studio One)?");
             }
         }
         FlushEdits();
         if(Connected() && now_ - last_monitor_ >= kMonitorRenewMs) {
             last_monitor_ = now_;
+            // A lost renewal is not logged on its own: the health state reports silence.
             Send(proto::Monitor, {uint8_t(kMonitorRate)}, device_, nullptr, [](const std::string&) {});
         }
+        UpdateHealth();
     }
 
     // ------------------------------------------------------------------ edits
@@ -216,7 +326,13 @@ class Session {
 
     // A whole patch, e.g. from a file: SET_MATRIX at once, then the source parameters
     // and the name. If the device refuses any step, the editor reloads what it has.
-    void Upload(const mod::Patch& patch) {
+    void Upload(const mod::Patch& patch_in) {
+        mod::Patch patch = patch_in;
+        if(transport_) { // the device's format; unsupported cross modulation never reaches it
+            patch.format = device_info_.LfoFm() ? 2 : 1;
+            if(patch.format == 1)
+                patch.lfo[0].fm = patch.lfo[1].fm = 0;
+        }
         model_.patch = patch;
         pending_cells_.clear();
         pending_sources_.clear();
@@ -245,6 +361,9 @@ class Session {
                     continue;
                 Change(proto::SetSource, SourcePayload(src, param), nullptr, nullptr, job);
             }
+        if(device_info_.LfoFm())
+            for(int src = 0; src < mod::Random; ++src)
+                Change(proto::SetSource, SourcePayload(src, mod::ParamFm), nullptr, nullptr, job);
         Change(proto::SetName, NamePayload(), [this](const Reply& r) {
             ConfirmCrc(r);
         }, nullptr, job);
@@ -267,6 +386,7 @@ class Session {
         auto fetched = std::make_shared<Fetched>();
         fetched->columns = model_.columns;
         fetched->allowed = model_.allowed;
+        fetched->patch.format = device_info_.LfoFm() ? 2 : 1; // the CRC covers the format
         if(with_columns) {
             for(int t = 0; t < int(mod::kTargets); ++t)
                 Send(proto::GetTarget, {uint8_t(t)}, device_, [fetched, t](const Reply& r) {
@@ -301,10 +421,15 @@ class Session {
                 const uint16_t rate = uint16_t(rd.U14());
                 const uint8_t shape = uint8_t(rd.U7()), sync = uint8_t(rd.U7()), gate = uint8_t(rd.U7()),
                               division = uint8_t(rd.U7()), retrigger = uint8_t(rd.U7());
-                if(src == mod::Random)
+                if(src == mod::Random) {
                     fetched->patch.random = {rate, shape, sync, gate, division};
-                else
-                    fetched->patch.lfo[src] = {rate, shape, sync, gate, division, retrigger};
+                } else {
+                    mod::LfoParams& l = fetched->patch.lfo[src];
+                    l.rate = rate; l.shape = shape; l.sync = sync; l.gate = gate; l.division = division;
+                    l.retrigger = retrigger;
+                    if(r.payload.size() >= 10) // LFO cross modulation appended (fm + 100)
+                        l.fm = int8_t(int(rd.U14()) - mod::kMaxFm);
+                }
             }, nullptr, job);
         Send(proto::GetName, {}, device_, [this, fetched, done](const Reply& r) {
             proto::Reader rd(r.payload.data(), r.payload.size());
@@ -312,6 +437,7 @@ class Session {
             model_.patch = fetched->patch;
             model_.columns = fetched->columns;
             model_.allowed = fetched->allowed;
+            model_.origin = FileOrigin{}; // the device state replaces whatever a file said
             Changed();
             if(done)
                 done();
@@ -374,7 +500,45 @@ class Session {
             v = proto::DecodeSigned(rd.U14());
         for(float& v : m.cv)
             v = proto::DecodeSigned(rd.U14());
+        if(size >= 52)
+            for(float& v : m.base)
+                v = proto::DecodeSigned(rd.U14());
+        if(size >= 89) {
+            m.has_range = true;
+            for(float& v : m.min)
+                v = proto::DecodeSigned(rd.U14());
+            for(float& v : m.max)
+                v = proto::DecodeSigned(rd.U14());
+            m.clocks = uint8_t(rd.U7());
+            m.at_kind = uint8_t(rd.U7());
+            m.at_note = uint8_t(rd.U7());
+            m.at_value = uint8_t(rd.U7());
+            m.at_age = uint8_t(rd.U7());
+        }
+        if(size >= 91) {
+            const unsigned mode = rd.U7(), origin = rd.U7();
+            m.mode = mode == 127 ? -1 : int(mode);
+            m.mode_origin = origin == 127 ? -1 : int(origin);
+        }
         return m;
+    }
+
+    // Names of the instrument modes, one GET_MODE after the other (the first reply says how
+    // many). The view shows the mode as soon as its name is known.
+    void FetchMode(unsigned m) {
+        Send(proto::GetMode, {uint8_t(m)}, device_, [this, m](const Reply& r) {
+            proto::Reader rd(r.payload.data(), r.payload.size());
+            const unsigned index = rd.U7(), count = rd.U7();
+            const std::string name = ReadString(rd, mod::kMaxModeText), hint = ReadString(rd, mod::kMaxModeText);
+            if(!rd.Ok() || index != m || count > mod::kMaxModes)
+                return;
+            device_info_.modes.resize(count);
+            device_info_.modes[index] = {name, hint};
+            if(index + 1 < count)
+                FetchMode(index + 1);
+            if(changed)
+                changed();
+        }, [this](const std::string& message) { Log(LogKind::Warn, "Modi nicht gelesen: " + message); });
     }
 
     std::vector<uint8_t> SourcePayload(int src, int param) const {
@@ -436,7 +600,7 @@ class Session {
         ++current_->tries;
         current_->sent_ms = now_;
         if(!transport_->Send(current_->frame.data(), current_->frame.size()))
-            Finish(nullptr, "MIDI-Ausgang verweigert das Senden");
+            Fail("Der MIDI-Ausgang verweigert das Senden – Verbindung getrennt.");
     }
 
     // Completes the open request; handlers run after the link state is consistent.
@@ -548,9 +712,34 @@ class Session {
         status_ = text;
         Changed();
     }
+    // The same message within kLogRepeatMs is shown once; the first one always.
     void Log(LogKind kind, const std::string& text) {
+        if(text == last_log_ && now_ - last_log_ms_ < kLogRepeatMs)
+            return;
+        last_log_ = text;
+        last_log_ms_ = now_;
         if(log)
             log(kind, text);
+    }
+
+    void UpdateHealth() {
+        if(!Connected())
+            return;
+        const Health next = now_ - last_frame_ms_ >= kLostMs ? Health::NoReplies
+            : now_ - last_live_ms_ >= kStaleMs                ? Health::NoLiveData
+                                                               : Health::Ok;
+        if(next == health_)
+            return;
+        const Health before = health_;
+        health_ = next;
+        if(next == Health::NoReplies) {
+            unconfirmed_ = true;
+            Log(LogKind::Error, "Keine Antwort vom Gerät seit 5 s – Port von einer anderen Anwendung belegt (z. B. "
+                                "Studio One) oder Kabel getrennt? Änderungen bleiben unbestätigt.");
+        } else if(before == Health::NoReplies) {
+            Log(LogKind::Warn, "Das Gerät antwortet wieder – Zustand wird neu geladen.");
+        }
+        Changed();
     }
     void Changed() {
         if(changed)
@@ -564,6 +753,10 @@ class Session {
     std::string status_ = "offline";
     uint8_t device_ = proto::kBroadcast, seq_ = 0;
     uint32_t now_ = 0, last_edit_ = 0, last_monitor_ = 0, retries_ = 0;
+    uint32_t last_frame_ms_ = 0, last_live_ms_ = 0, last_log_ms_ = 0;
+    Health health_ = Health::Ok;
+    bool unconfirmed_ = false; // a change timed out: reload when the device is heard again
+    std::string last_log_;
     uint64_t generation_ = 0;
     std::unique_ptr<Request> current_;
     std::deque<std::unique_ptr<Request>> queue_;

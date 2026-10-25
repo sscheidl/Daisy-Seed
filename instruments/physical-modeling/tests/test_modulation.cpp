@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <utility>
 #include <vector>
 using namespace physical_modeling;
 extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }
@@ -79,7 +80,9 @@ void TestIdentify() {
     char key[mod::kMaxKeyLength + 1]{}, version[13]{};
     id.Str(key, mod::kMaxKeyLength);
     id.Str(version, 12);
-    assert(std::strcmp(key, "physical-modeling") == 0 && std::strcmp(version, "0.1.0-mod") == 0);
+    assert(std::strcmp(key, "physical-modeling") == 0 && std::strcmp(version, PHYSICAL_MODELING_VERSION "-mod4") == 0);
+    // extended monitor and LFO cross modulation; capabilities 2 bit 0: active model (mod4)
+    assert(r[r.size() - 2] == (0x0A | 0x30 | 0x40) && r.back() == 0x01);
     r = Request(mod::proto::GetAllowed, {});
     mod::proto::Reader allowed(r.data(), r.size());
     const uint64_t mask = allowed.Mask64();
@@ -146,13 +149,132 @@ void TestLatchedExcitation() {
     assert(synth->parameters.Get(Excitation) == synth->parameters.Target(Excitation));
 }
 
+void PlayChord() {
+    for(uint8_t n : {48, 55, 60, 64})
+        Midi(daisy::NoteOn, n, 120);
+    Tick(400);
+}
+float Rms(unsigned blocks) {
+    double sum = 0;
+    for(unsigned b = 0; b < blocks; ++b) {
+        Tick();
+        for(unsigned i = 0; i < 48; ++i)
+            sum += double(left[i]) * left[i] + double(right[i]) * right[i];
+    }
+    return float(std::sqrt(sum / (96.0 * blocks)));
+}
+
+void TestLevel() {
+    // Column 6 is the output level (hardware test 2026-10-23: the reverb decay had little effect).
+    const std::vector<uint8_t> t = Request(mod::proto::GetTarget, {kLevelColumn});
+    mod::proto::Reader rd(t.data(), t.size());
+    rd.U7();
+    assert(rd.U7() == 1); // present, global, not latched
+    rd.U14();
+    char name[13]{};
+    rd.Str(name, 12);
+    assert(std::strcmp(name, "Level") == 0);
+    assert(synth->parameters.Level() == 1.0f); // unmodulated: exactly unity
+    SetCell(mod::ModWheel, kLevelColumn, -100);
+    Midi(daisy::ControlChange, 1, 0);
+    PlayChord();
+    const float open = Rms(50);
+    Midi(daisy::ControlChange, 1, 127); // wheel up: level 0
+    Tick(100);
+    assert(synth->parameters.Level() < 1e-4f);
+    const float closed = Rms(50);
+    assert(open > 1e-3f && closed < open * 0.01f);
+    Request(mod::proto::ClearMatrix, {});
+    Midi(daisy::ControlChange, 1, 0);
+    Tick(100);
+    assert(synth->parameters.Level() == 1.0f); // back to exactly unity
+    std::printf("level column: RMS %.4f open, %.6f with the mod wheel at -100\n", open, closed);
+}
+
+void TestBaseMonitor() {
+    // Base values: pot/CC position of each column before modulation (PROTOCOL.md § 3.3).
+    hw.pot[1].value = 0.8f; // Structure
+    Tick(200);
+    Request(mod::proto::Monitor, {20});
+    midi.sent.clear();
+    Tick(120);
+    const std::vector<uint8_t>* last = nullptr;
+    for(const std::vector<uint8_t>& m : midi.sent)
+        if(m.size() > 7 && m[6] == mod::proto::MonitorFrame)
+            last = &m;
+    assert(last);
+    mod::proto::Frame f;
+    assert(mod::proto::ParseHeader(last->data() + 1, last->size() - 2, f) == mod::proto::Parse::Ok);
+    assert(f.length == 91); // extended monitor: base values, ranges, clocks, aftertouch, model
+    mod::proto::Reader rd(f.payload, f.length);
+    for(int i = 0; i < 18; ++i)
+        rd.U14();
+    float base[8];
+    for(float& b : base)
+        b = mod::proto::DecodeSigned(rd.U14());
+    assert(std::fabs(base[Structure] - synth->parameters.Target(Structure)) < 1e-3f);
+    assert(std::fabs(base[Structure] - 0.8f) < 0.01f);
+    assert(std::fabs(base[kLevelColumn] - kLevelBase) < 1e-3f);
+    Request(mod::proto::Monitor, {0});
+    hw.pot[1].value = 0.5f;
+    Tick(200);
+}
+
+// The last monitor frame's model bytes (89: model, 90: origin), PROTOCOL.md § 3.6.
+std::pair<unsigned, unsigned> MonitoredModel(unsigned ticks) {
+    Request(mod::proto::Monitor, {20});
+    midi.sent.clear();
+    Tick(ticks);
+    const std::vector<uint8_t>* last = nullptr;
+    for(const std::vector<uint8_t>& m : midi.sent)
+        if(m.size() > 7 && m[6] == mod::proto::MonitorFrame)
+            last = &m;
+    assert(last);
+    mod::proto::Frame f;
+    assert(mod::proto::ParseHeader(last->data() + 1, last->size() - 2, f) == mod::proto::Parse::Ok && f.length == 91);
+    return {f.payload[89], f.payload[90]};
+}
+
+void TestModel() {
+    // Six models with names and switch hints, in ModelIndex order.
+    const char* names[] = {"Modal Resonator", "Sympathetic Strings", "Inharmonic Strings",
+                           "FM Voice", "Western Chords", "String & Reverb"};
+    for(uint8_t m = 0; m < 6; ++m) {
+        std::vector<uint8_t> r = Request(mod::proto::GetMode, {m});
+        mod::proto::Reader rd(r.data(), r.size());
+        char name[mod::kMaxModeText + 1]{}, hint[mod::kMaxModeText + 1]{};
+        assert(rd.U7() == m && rd.U7() == 6);
+        rd.Str(name, mod::kMaxModeText);
+        rd.Str(hint, mod::kMaxModeText);
+        assert(rd.Ok() && rd.AtEnd() && std::strcmp(name, names[m]) == 0);
+        assert(std::strncmp(hint, m < 3 ? "Bank A" : "Bank B", 6) == 0);
+    }
+    uint8_t nak = 0;
+    Request(mod::proto::GetMode, {6}, &nak);
+    assert(nak == mod::proto::kNak);
+    // Power-on: the fake switches read bank A and SW18 position 0, accepted from the device.
+    assert(MonitoredModel(60) == std::make_pair(unsigned(SwitchModel(false, 0)), unsigned(mod::kModeFromDevice)));
+    // Bank B, SW18 down: String & Reverb from the device once the 20 ms debounce and the fade passed.
+    hw.tog_sw17.value = true;
+    hw.tog_sw18.value = 2;
+    assert(MonitoredModel(200) == std::make_pair(5u, unsigned(mod::kModeFromDevice)));
+    // CC28 selects FM Voice (index 3: floor(6 * v / 127) = 3 for v = 64) from MIDI.
+    Midi(daisy::ControlChange, 28, 64);
+    assert(MonitoredModel(200) == std::make_pair(3u, unsigned(mod::kModeFromMidi)));
+    Request(mod::proto::Monitor, {0});
+    hw.tog_sw17.value = false;
+    hw.tog_sw18.value = 0;
+    Tick(200);
+    std::printf("model: names, switches -> String & Reverb, CC28 -> FM Voice (origin MIDI)\n");
+}
+
 void TestStress() {
     // Eight connections incl. S&H and random on voice targets while notes keep coming.
     SetCell(mod::Lfo1, Structure, 60);
     SetCell(mod::Lfo2, Position, -80);
     SetCell(mod::Random, Damping, 70);
     SetCell(mod::Cv1, Brightness, 50);
-    SetCell(mod::ModWheel, Decay, 90);
+    SetCell(mod::ModWheel, kLevelColumn, 90);
     SetCell(mod::ChannelAt, Wet, 40);
     SetCell(mod::PolyAt, Damping, 100);
     SetCell(mod::Cv2, Frequency, 30);
@@ -187,6 +309,9 @@ int main() {
     TestGlobal();
     TestPolyAtPerVoice();
     TestLatchedExcitation();
+    TestLevel();
+    TestBaseMonitor();
+    TestModel();
     TestStress();
-    std::printf("PASS: Physical Modeling Mod on Daisy build: SysEx, global offsets, Poly AT per voice, latched excitation, stress\n");
+    std::printf("PASS: Physical Modeling Mod on Daisy build: SysEx, global offsets, Poly AT per voice, latched excitation, level column, base values, model, stress\n");
 }

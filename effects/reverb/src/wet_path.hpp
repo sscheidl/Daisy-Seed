@@ -12,6 +12,8 @@ class WetPath {
     void SetParameters(const Parameters &parameters);
     void ServiceFilter(); // Call at control rate, never once per sample.
     void SetLegacyMono(bool enabled);
+    // Embedded FX hosts own the dry mix. Exact endpoints avoid cos(pi/2) leakage.
+    void ForceWetOnly() { dry_.Set(0.f, 0); wet_.Set(1.f, 0); }
     Stereo Process(Stereo input, bool rightConnected);
     const Diagnostics &GetDiagnostics() const { return core_.GetDiagnostics(); }
     float InternalRateRatio() const { return ratio_; }

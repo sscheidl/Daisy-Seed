@@ -1,6 +1,15 @@
 .DEFAULT_GOAL := all
 include projects.mk
 PROJECT ?= toy-piano
+.PHONY: components manifest test-components test-fx
+components:
+	python3 scripts/component_manifest.py --validate
+manifest:
+	python3 scripts/component_manifest.py --project $(PROJECT) --built
+test-components:
+	python3 -m unittest discover -s tests -p test_components.py -v
+test-fx:
+	$(MAKE) -C tests/fx test
 
 PROJECT_ACTIONS := all clean libs test test-sanitize test-thread version program-dfu program-boot
 .PHONY: help list all-projects test-projects test-release test-sd $(PROJECT_ACTIONS)

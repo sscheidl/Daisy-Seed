@@ -1,0 +1,320 @@
+{
+  "format_version": 1,
+  "components": {
+    "toy-piano": {
+      "kind": "instrument",
+      "source": "instruments/toy-piano",
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/version.h",
+        "name": "TOY_PIANO_VERSION"
+      }
+    },
+    "physical-modeling": {
+      "kind": "instrument",
+      "source": "instruments/physical-modeling",
+      "version": {
+        "type": "macro",
+        "path": "instruments/physical-modeling/src/version.h",
+        "name": "PHYSICAL_MODELING_VERSION"
+      }
+    },
+    "nebulae": {
+      "kind": "instrument",
+      "source": "instruments/granular",
+      "version": {
+        "type": "macro",
+        "path": "instruments/granular/src/version.h",
+        "name": "NEBULAE_VERSION"
+      }
+    },
+    "looper": {
+      "kind": "instrument",
+      "source": "instruments/looper",
+      "version": {
+        "type": "macro",
+        "path": "instruments/looper/src/version.h",
+        "name": "LOOPER_VERSION"
+      }
+    },
+    "ambient-reverb": {
+      "kind": "effect",
+      "source": "effects/reverb",
+      "version": {
+        "type": "macro",
+        "path": "effects/reverb/src/version.h",
+        "name": "AMBIENT_REVERB_VERSION"
+      }
+    },
+    "ambient-reverb-fx": {
+      "kind": "effect",
+      "source": "effects/reverb/src/fx_adapter.h",
+      "depends": [
+        "ambient-reverb",
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/reverb/src/adapter_version.h",
+        "name": "AMBIENT_FX_ADAPTER_VERSION"
+      }
+    },
+    "torus-reverb": {
+      "kind": "effect",
+      "source": "effects/torus-reverb",
+      "version": {
+        "type": "macro",
+        "path": "effects/torus-reverb/src/version.h",
+        "name": "TORUS_REVERB_VERSION"
+      },
+      "provenance": "instruments/physical-modeling/torus/UPSTREAM.md"
+    },
+    "fx-contract": {
+      "kind": "contract",
+      "source": "common/audio",
+      "version": {
+        "type": "macro",
+        "path": "common/audio/fx_contract.h",
+        "name": "SEED_FX_CONTRACT_VERSION"
+      }
+    },
+    "bootloader-entry": {
+      "kind": "control",
+      "source": "common/bootloader",
+      "version": {
+        "type": "macro",
+        "path": "common/bootloader/bootloader_entry.h",
+        "name": "BOOTLOADER_ENTRY_VERSION"
+      }
+    },
+    "mod-on-daisy": {
+      "kind": "control",
+      "source": "modules/mod-on-daisy",
+      "version": {
+        "type": "constants",
+        "path": "modules/mod-on-daisy/include/mod_on_daisy/types.h",
+        "names": [
+          "kVersionMajor",
+          "kVersionMinor",
+          "kVersionPatch"
+        ]
+      }
+    },
+    "mod-editor-juce": {
+      "kind": "panel",
+      "source": "editors/mod-on-daisy/src",
+      "depends": [
+        "mod-on-daisy",
+        "bootloader-entry"
+      ],
+      "version": {
+        "type": "cmake",
+        "path": "editors/mod-on-daisy/CMakeLists.txt"
+      }
+    },
+    "mod-editor-vst3": {
+      "kind": "panel",
+      "source": "editors/mod-on-daisy/src/plugin",
+      "depends": [
+        "mod-on-daisy",
+        "bootloader-entry"
+      ],
+      "version": {
+        "type": "cmake",
+        "path": "editors/mod-on-daisy/CMakeLists.txt"
+      }
+    },
+    "mod-editor-web": {
+      "kind": "panel",
+      "source": "editors/mod-on-daisy/web",
+      "depends": [
+        "mod-on-daisy",
+        "bootloader-entry"
+      ],
+      "version": {
+        "type": "javascript",
+        "path": "editors/mod-on-daisy/web/version.js",
+        "name": "MOD_ON_DAISY_WEB_VERSION"
+      }
+    },
+    "callback-diagnostics": {
+      "kind": "control",
+      "source": "modules/mod-on-daisy/adapters",
+      "version": {
+        "type": "macro",
+        "path": "modules/mod-on-daisy/adapters/callback_diagnostics.h",
+        "name": "MOD_CALLBACK_DIAGNOSTICS_VERSION"
+      },
+      "depends": [
+        "mod-on-daisy"
+      ]
+    }
+  },
+  "products": {
+    "toy-piano": {
+      "version_component": "toy-piano",
+      "directory": "instruments/toy-piano/build",
+      "image": "ToyPiano",
+      "marker": "TOYPIANO-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "mod-on-daisy",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "physical-modeling": {
+      "version_component": "physical-modeling",
+      "directory": "instruments/physical-modeling/build",
+      "image": "PhysicalModeling",
+      "marker": "PHYSICAL-MODELING-VERSION=",
+      "components": [
+        "physical-modeling",
+        "torus-reverb",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "physical-modeling-mod": {
+      "version_component": "physical-modeling",
+      "directory": "instruments/physical-modeling/build/mod",
+      "image": "PhysicalModelingMod",
+      "marker": "PHYSICAL-MODELING-MOD-VERSION=",
+      "legacy_device_version": true,
+      "components": [
+        "physical-modeling",
+        "torus-reverb",
+        "mod-on-daisy",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "physical-modeling-fx-torus": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/physical-modeling/src/composed_version.h",
+        "name": "PHYSICAL_MODELING_COMPOSED_VERSION"
+      },
+      "directory": "instruments/physical-modeling/build/fx-torus",
+      "image": "PhysicalModelingFxTorus",
+      "marker": "PHYSICAL-MODELING-FX-TORUS-VERSION=",
+      "components": [
+        "physical-modeling",
+        "torus-reverb",
+        "mod-on-daisy",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "physical-modeling-fx-ambient": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/physical-modeling/src/composed_version.h",
+        "name": "PHYSICAL_MODELING_COMPOSED_VERSION"
+      },
+      "directory": "instruments/physical-modeling/build/fx-ambient",
+      "image": "PhysicalModelingFxAmbient",
+      "marker": "PHYSICAL-MODELING-FX-AMBIENT-VERSION=",
+      "components": [
+        "physical-modeling",
+        "ambient-reverb-fx",
+        "mod-on-daisy",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "granular": {
+      "version_component": "nebulae",
+      "directory": "instruments/granular/build",
+      "image": "NebulaeOnDaisy",
+      "marker": "NEBULAE-FW-VERSION=",
+      "components": [
+        "nebulae",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "looper": {
+      "version_component": "looper",
+      "directory": "instruments/looper/build",
+      "image": "Looper",
+      "marker": "LOOPER-VERSION=",
+      "components": [
+        "looper",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "reverb-fx": {
+      "version_component": "ambient-reverb",
+      "directory": "effects/reverb/build",
+      "image": "AmbientReverb",
+      "marker": "AMBIENT-REVERB-VERSION=",
+      "components": [
+        "ambient-reverb",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "mod-bench": {
+      "version": {
+        "type": "macro",
+        "path": "modules/mod-on-daisy/bench/src/version.h",
+        "name": "MOD_BENCH_VERSION"
+      },
+      "directory": "modules/mod-on-daisy/bench/build",
+      "image": "ModBench",
+      "marker": "MOD-BENCH-VERSION=",
+      "components": [
+        "mod-on-daisy",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "toy-piano-ambient": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_AMBIENT_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/ambient",
+      "image": "ToyPianoAmbient",
+      "marker": "TOYPIANO-AMBIENT-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "ambient-reverb-fx",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    }
+  }
+}

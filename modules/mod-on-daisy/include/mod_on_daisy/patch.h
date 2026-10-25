@@ -12,6 +12,9 @@ struct LfoParams {
     uint8_t gate = 0;       // 0 = Gate 1, 1 = Gate 2 (GateClock)
     uint8_t division = kDefaultMidiDivision;
     uint8_t retrigger = 0;  // 1: restart on every Note On (Free only)
+#if MOD_ON_DAISY_EXTENSIONS
+    int8_t fm = 0;          // -100..+100: rate modulated by the other LFO, ±2 octaves (format 2, Free only)
+#endif
 };
 struct RandomParams {
     uint16_t rate = 8000;
@@ -24,6 +27,9 @@ struct RandomParams {
 // Source parameter numbers of SET_SOURCE (PROTOCOL.md § 3.2).
 enum SourceParam : uint8_t { ParamRate, ParamShape, ParamSync, ParamGate, ParamDivision, ParamRetrigger,
                              kSourceParamCount };
+// LFO cross modulation (extension, IDENTIFY capability bit 6): value = fm + 100, 0..200.
+constexpr uint8_t ParamFm = 6;
+constexpr int kMaxFm = 100;
 
 struct Patch {
     uint8_t format = 1;
@@ -70,7 +76,11 @@ enum class Status : uint8_t { Ok = 0, Range = 4, Limit = 7, NotAllowed = 8 };
 
 inline Status ValidateSource(const LfoParams& p) {
     const bool ok = p.rate <= kRateMax && p.shape < kShapeCount && p.sync < kSyncCount && p.gate < 2
-        && p.division < (p.sync == GateClock ? kGateDivisionCount : kMidiDivisionCount) && p.retrigger < 2;
+        && p.division < (p.sync == GateClock ? kGateDivisionCount : kMidiDivisionCount) && p.retrigger < 2
+#if MOD_ON_DAISY_EXTENSIONS
+        && p.fm >= -kMaxFm && p.fm <= kMaxFm
+#endif
+        ;
     return ok ? Status::Ok : Status::Range;
 }
 inline Status ValidateSource(const RandomParams& p) {
@@ -81,8 +91,16 @@ inline Status ValidateSource(const RandomParams& p) {
 
 // A patch is accepted or rejected as a whole, never partially.
 inline Status Validate(const Patch& patch, uint64_t allowed) {
+#if MOD_ON_DAISY_EXTENSIONS
+    // Format 2 adds the LFO cross modulation; format 1 must not carry any.
+    if(patch.format != 1 && patch.format != 2)
+        return Status::Range;
+    if(patch.format == 1 && (patch.lfo[0].fm != 0 || patch.lfo[1].fm != 0))
+        return Status::Range;
+#else
     if(patch.format != 1)
         return Status::Range;
+#endif
     for(std::size_t s = 0; s < kSources; ++s)
         for(std::size_t t = 0; t < kTargets; ++t)
             if(patch.depth[s][t] < -kMaxDepth || patch.depth[s][t] > kMaxDepth)
@@ -122,7 +140,13 @@ inline uint32_t Crc32(const uint8_t* data, std::size_t size) {
 
 // Fixed little-endian byte layout without padding (STORAGE.md § 3, PROTOCOL.md).
 constexpr std::size_t kPatchBytes = 1 + kCells + kSources + 2 * 7 + 6 + 16; // 109
+#if MOD_ON_DAISY_EXTENSIONS
+constexpr std::size_t kPatchBytesV2 = kPatchBytes + 2; // format 2: + fm of LFO 1 and 2
+using PatchBytes = std::array<uint8_t, kPatchBytesV2>;
+inline std::size_t PatchSize(const Patch& p) { return p.format == 2 ? kPatchBytesV2 : kPatchBytes; }
+#else
 using PatchBytes = std::array<uint8_t, kPatchBytes>;
+#endif
 
 inline PatchBytes Serialize(const Patch& p) {
     PatchBytes b{};
@@ -150,6 +174,12 @@ inline PatchBytes Serialize(const Patch& p) {
     b[i++] = p.random.division;
     for(char c : p.name)
         b[i++] = static_cast<uint8_t>(c);
+#if MOD_ON_DAISY_EXTENSIONS
+    if(p.format == 2) {
+        b[i++] = static_cast<uint8_t>(p.lfo[0].fm);
+        b[i++] = static_cast<uint8_t>(p.lfo[1].fm);
+    }
+#endif
     return b;
 }
 
@@ -179,12 +209,22 @@ inline Patch Deserialize(const PatchBytes& b) {
     p.random.division = b[i++];
     for(char& c : p.name)
         c = static_cast<char>(b[i++]);
+#if MOD_ON_DAISY_EXTENSIONS
+    if(p.format == 2) {
+        p.lfo[0].fm = static_cast<int8_t>(b[i++]);
+        p.lfo[1].fm = static_cast<int8_t>(b[i++]);
+    }
+#endif
     return p;
 }
 
 inline uint32_t PatchCrc(const Patch& p) {
     const PatchBytes bytes = Serialize(p);
+#if MOD_ON_DAISY_EXTENSIONS
+    return Crc32(bytes.data(), PatchSize(p));
+#else
     return Crc32(bytes.data(), bytes.size());
+#endif
 }
 
 // CRC-32 over key and all column descriptions: changes whenever a column's meaning

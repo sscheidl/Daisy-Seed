@@ -72,6 +72,15 @@ void App::Step(uint32_t now) {
             board_.ReaderCommand(r, reply);
             keepalive_after_block_ = true;
         }
+        if(r & kRequestBootloader) {
+            if(board_.SdTestAllowed() && !boot_pending_) {
+                reply.Str("ACK c=BOOT");
+                boot_pending_ = true;
+                boot_since_ = now;
+            } else {
+                reply.Str("ERR c=BOOT e=BUSY"); // the card is shared with a computer
+            }
+        }
         if(r & kRequestNewSession) {
             // Output queued for a previous host (e.g. one that closed the port without
             // BYE) is stale; start the new session with a clean buffer.
@@ -85,6 +94,12 @@ void App::Step(uint32_t now) {
     stats_.rx_bad = parser_.bad_crc + parser_.bad_format + parser_.overflow + rx_.Overflow();
 
     const Inputs inputs = board_.ReadInputs();
+    // The key gesture of all apps (common/bootloader). Ignored while Windows owns
+    // the card; it needs a new 5 s hold after the card is returned.
+    if(boot_keys_.Process(inputs.buttons, now) && board_.SdTestAllowed() && !boot_pending_) {
+        boot_pending_ = true;
+        boot_since_ = now;
+    }
 
     // LEDs: commanded state only, there is no optical feedback.
     const uint16_t leds = ComputeLeds(session_.settings, now, inputs.buttons);
@@ -145,6 +160,10 @@ void App::Step(uint32_t now) {
         }
     }
     tx_.Pump(usb_, stats_);
+    if(boot_pending_ && (tx_.Pending() == 0 || now - boot_since_ >= kBootFlushMs)) {
+        boot_pending_ = false;
+        board_.EnterBootloader();
+    }
 }
 
 } // namespace diag

@@ -22,7 +22,7 @@ test:
 	mkdir -p build/host
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_nebulae.cpp $(DSP_SOURCES) -o build/host/test_nebulae
 	./build/host/test_nebulae
-	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes -Isrc -I../../libDaisy/src tests/test_callback.cpp $(DSP_SOURCES) -o build/host/test_callback
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes -Isrc -I$(BOOTLOADER_DIR) -I../../libDaisy/src tests/test_callback.cpp $(DSP_SOURCES) -o build/host/test_callback
 	./build/host/test_callback
 	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes tests/test_sd_driver.cpp -o build/host/test_sd_driver
 	./build/host/test_sd_driver
