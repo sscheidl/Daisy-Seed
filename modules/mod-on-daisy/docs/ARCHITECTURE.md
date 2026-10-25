@@ -402,6 +402,22 @@ modulation.controller.Service(daisy::System::GetNow(), sender);
 (`ChordSelector`). Ob eine stimmenbezogene Structure dort sinnvoll ist, wird bei der
 Integration geprüft.
 
+**Looper** (getrennte Fassung `MOD=1`, [MODULATION.md](../../../instruments/looper/docs/MODULATION.md)):
+eine Schleife, keine Stimmen; alle Spalten global, keine `latched`, alle 64 Zellen
+erlaubt. Grundwert ist der Poti- oder CC-Wert (wer zuletzt bewegt wurde), dazu der
+Versatz, begrenzt auf den Bereich des Reglers.
+
+| Spalte | Ziel | Grundwert | span |
+| --- | --- | --- | --- |
+| 0 | Speed | Poti 0 / CC20, ganze Halbtöne (−24…+36) | 0,2 = `+-12 st`, Modulation ungerundet |
+| 1 | Start | Poti 3 / CC23 | 100 % |
+| 2 | Size | Poti 4 / CC24 | 100 % |
+| 3 | Slice | Poti 5 / CC25 | 100 % |
+| 4 | Skip | Poti 6 / CC26 | 100 % |
+| 5 | Inertia | Poti 1 / CC21 | 100 % |
+| 6 | Fripp Decay | Poti 7 / CC27, wirkt nur in Frippertronics | 100 % |
+| 7 | Mix | fest 0,5 (trocken und Schleife bei 1) | 0,5 = `+-50%` (0 nur trocken, 1 nur Schleife) |
+
 **Nebulae**: Start, Speed, Size, Density, Pitch, Overlap, Blend und Window, alle global.
 Poly AT kommt dort über die Last-Note-Regel; die effektive Rate liegt bei 187,5 Hz (E7).
 

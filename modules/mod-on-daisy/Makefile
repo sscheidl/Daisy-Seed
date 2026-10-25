@@ -26,6 +26,7 @@ test: $(HEADERS)
 	./build/host/test_thread
 	python3 tools/mod_probe.py selftest
 	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) -DMOD_ON_DAISY_EXTENSIONS=1 tools/mod_sim.cpp -o build/host/mod_sim
+	python3 tools/mod_probe.py --sim build/host/mod_sim --instrument looper targets
 	node ../../editors/mod-on-daisy/web/tests/protocol.test.cjs
 
 # Browser editor against the simulated device in headless Chromium (needs Playwright;

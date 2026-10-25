@@ -38,7 +38,7 @@ struct SaiHandle {
 };
 // USB MIDI: the firmware polls events and sends raw 3-byte messages. The fake
 // feeds scripted events in and records every message handed to SendMessage().
-// Names as in libDaisy's MidiEvent.h. Only the bootloader request is used so far.
+// Names as in libDaisy's MidiEvent.h, so the real Mod on Daisy adapter compiles.
 enum MidiMessageType { NoteOff, NoteOn, PolyphonicKeyPressure, ControlChange, ProgramChange,
                        ChannelPressure, PitchBend, SystemCommon, SystemRealTime, ChannelMode, MessageLast };
 enum SystemCommonType { SystemExclusive, MTCQuarterFrame, SongPositionPointer, SongSelect };
@@ -94,6 +94,9 @@ struct Hardware {
         void SetSampleRate(float) {}
     };
     std::array<Pot, 8> pot{};
+    std::array<Pot, 2> cv{};  // read by the Mod on Daisy adapter (MOD build)
+    struct Gate { bool high = false; bool State() const { return high; } };
+    std::array<Gate, 2> gate_in{};
     std::array<DigitalControl, 16> button{};
     std::array<bool, 16> pressed{};
     struct RightDetect { bool pressed = false; bool Pressed() const { return pressed; } } right_detect;

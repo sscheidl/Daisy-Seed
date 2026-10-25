@@ -80,9 +80,8 @@ class ComponentTests(unittest.TestCase):
 
     def test_shared_control_consumers(self):
         suites = selection.select_suites(['modules/mod-on-daisy/include/mod_on_daisy/engine.h'])
-        for key in ('toy', 'physical', 'mod', 'editor', 'submodules'):
+        for key in ('toy', 'physical', 'looper', 'mod', 'editor', 'submodules'):
             self.assertTrue(suites[key], key)
-        self.assertFalse(suites['looper'])
         self.assertFalse(suites['granular'])
 
     def test_fx_consumers(self):

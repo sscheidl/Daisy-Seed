@@ -1,7 +1,8 @@
 # Validation — Looper v0.3
 
 Date: 2026-10-20, updated 2026-10-25 for v0.3.2 (44.1 kHz import) and v0.4.0
-(MIDI CC control). Hardware validation: **PENDING — no run on the Seed3 yet.**
+(MIDI CC control), 2026-10-26 for the separate Mod on Daisy build (`MOD=1`).
+Hardware validation: **PENDING — no run on the Seed3 yet.**
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
@@ -12,6 +13,11 @@ Date: 2026-10-20, updated 2026-10-25 for v0.3.2 (44.1 kHz import) and v0.4.0
 | Card persistence and import | PASS | `tests/test_store.cpp` with an in-memory card and fault injection |
 | Production callback | PASS | `tests/test_callback.cpp` runs `src/main.cpp` with the kit fake and libDaisy's `DigitalControl` |
 | ARM build | PASS | `make PROJECT=looper`, image check with `scripts/check-firmware.py` |
+| Mod on Daisy columns | PASS | `tests/test_columns.cpp`: table, mapping, base + offset with clamping |
+| Mod on Daisy firmware | PASS | `tests/test_modulation.cpp` and `tests/test_callback.cpp` on the MOD build of `src/main.cpp` |
+| Golden, MOD vs. regular | PASS | `tests/test_golden.cpp`: same output hash from both builds |
+| Regular image unchanged | PASS | `Looper-v0.4.0.bin` byte-identical to the v0.4.0 image after the MOD integration |
+| MOD ARM build | PASS | `make PROJECT=looper MOD=1`, image check with `scripts/check-firmware.py` |
 | Hardware | PENDING | see the list at the end |
 
 ## Toolchain
@@ -67,8 +73,32 @@ save delay, the abort on change, the check after copying a chunk, the recall of
 `loop.tmp`, the deletion after erase, the name sort, or the import lock in the
 engine.
 
+## Mod on Daisy build (MOD=1)
+
+GEMESSEN 2026-10-26 on the local Windows toolchain above (host compiler clang
+from llvm-mingw, `-O2` and the ASan/UBSan build at `-O1`); columns and rules in
+[MODULATION.md](MODULATION.md).
+
+| Check | Result |
+| --- | --- |
+| Regular image | `make PROJECT=looper` before the change (on `d9841fa`) and after a clean rebuild with the change: both `Looper-v0.4.0.bin`, 166,072 bytes, SHA-256 `7477080f…49447727a67`, `cmp` byte-identical |
+| MOD image | `build/mod/LooperMod-v0.4.0.bin`, 200,024 bytes, SHA-256 `739e622e94fd47846aff6bdbd5b4f06462b69878ff6e4da859c1caa3569b39f6` (local build, not a release); `check-firmware.py` passes for both images |
+| Golden | `tests/test_golden.cpp` gives `2A2DBCEC41A54F57` for the unchanged v0.4.0 `main.cpp`, the regular build and the MOD build with an empty matrix (clang `-O2` and `-O1` with sanitizers). The hash depends on compiler and libm, so `make test` compares the two builds with each other instead of pinning it. Mutation check by hand: Mix base 0.4999 or a constant speed offset of 0.006 semitones each change the MOD hash |
+| Columns | `tests/test_columns.cpp`: names and span texts within the protocol limits, all global, all 64 cells allowed, four modes; Speed −24/0/+36 → 0/0.4/1; Mix 0.5 → dry 1, loop 1 exactly; empty matrix: all 61 semitones × six pot positions bit-identical; mod wheel +100 on Speed: 0 → +12, 30 → +36 (clamp); −50: 7 → +1, −20 → −24 (clamp); depth 25 at half wheel bends to 1.51 semitones (unrounded); Start 0.2 + 0.5 → 0.7, 0.8 + 0.5 → 1; Size 0.6 − 1 → 0; Decay 0.5 + 0.3 → 0.8; Mix −100/+100/+50 → dry only / loop only / dry 0.5; bases in the monitor |
+| Firmware | `tests/test_modulation.cpp` (production `main.cpp`): IDENTIFY `looper` / `0.4.0`, capabilities `0x7A`/`0x01`, eight `GET_TARGET` replies, all cells allowed, four `GET_MODE` replies; mod wheel on Speed +12 over the pot, +17 over CC20 = 69, +36 clamp from pot +30; LFO 1 depth 50 at about 5 Hz: −6.00…+6.00 semitones, fractional values; CV 1 on Start moves the window, mod wheel −100 on Size shrinks it below a quarter, +50 on Decay gives 0.8, CC27 = 127 gives 1, the pot at 0.35 gives 0.85; Slice divisor 16 and inertia 0.7 from the wheel, back to 1 and 0; Mix: dry only reproduces the input exactly, loop only plays the loop; CC105, CC112, CC110 with an LFO on Skip; loop mode 2 from CC112 (origin MIDI), 1 from S10 (origin device), S6 cycling; CC1, aftertouch, clock, start, notes and CC120/123 change no looper state and get no reply; the bootloader SysEx gets its single reply and a reset, the matrix sees no frame; after `CLEAR_MATRIX` speed, window, decay and Mix are exactly the base |
+| Callback test, MOD build | `tests/test_callback.cpp` passes unchanged with an empty matrix |
+| Simulator | `modules/mod-on-daisy`: `mod_probe.py --sim build/host/mod_sim --instrument looper` `identify`, `targets`, `modes`, `matrix` read the table above (schema `6D869522`) |
+| Module suites | `make -C modules/mod-on-daisy test` and the same with ASan/UBSan pass (on Windows with `-D_USE_MATH_DEFINES`; `test-sanitize` itself fails locally on the unquoted `$(MAKE)` with the space in the checkout path, so its recipe was run directly) |
+| Component registry | `make test-components`: 7 tests pass, `looper-mod` is a product with `looper`, `mod-on-daisy`, `bootloader-entry` and the three panels |
+
+Not measured: the callback load of the matrix on the board, the editors against the
+real device, and how fast Start/Size modulation sounds (see "Needs hardware").
+
 ## Memory and image
 
+* `LooperMod-v0.4.0.bin` (MOD build): 200,024 bytes; DTCM 118,560 bytes (90.5 %,
+  reserve 12,512 bytes), SRAM image 200,024 of 480 KB. The regular image below is
+  unchanged.
 * `Looper-v0.4.0.bin`: 166,072 bytes, SHA-256
   `7477080fb2b21e2d79393dfc3db4a93749f5695d5db97df8fe11449447727a67` (local build,
   not a release). MIDI CC control adds 960 bytes of code and 272 bytes in DTCM
@@ -144,3 +174,7 @@ Step-by-step checklist: [HARDWARE_TEST.md](HARDWARE_TEST.md).
    importing, recall after a power cycle, removal during a save. The SDMMC/FatFS
    path, the cache handling and the SD interrupt priority are untested on the
    board.
+7. Mod on Daisy build: the editors find the device and show the eight columns,
+   the callback peak with eight connections (`maximumCycles`, D16), LFO on Speed
+   and Mix without zipper noise, the sound of fast Start/Size modulation (jump
+   crossfades), editor replies during a card save (HARDWARE_TEST.md § 9).

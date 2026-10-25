@@ -38,6 +38,7 @@ abgegriffen. Der Host hält den bestehenden Dry/Wet-Mix und Ausgangsschutz.
 | `physical-modeling-fx-torus` | Torus + Mod-Kern + Torus-FX-Adapter | `0.2.0` |
 | `physical-modeling-fx-ambient` | Torus + Mod-Kern + Ambient-FX-Adapter | `0.2.0` |
 | `reverb-fx` | vorhandenes Ambient-FX mit externen Audioeingängen | unverändert `0.2` |
+| `looper-mod` | Looper + Mod-Kern (`MOD=1`) | Looper-Version, z. B. `0.4.0`, für Dateiname, Marker `LOOPER-MOD-VERSION` und IDENTIFY |
 
 Die neuen Produkte haben eigene Buildverzeichnisse und Marker; Dateiname und
 IDENTIFY lesen dieselbe Produktversion. Die Versionsnummer der eingebundenen

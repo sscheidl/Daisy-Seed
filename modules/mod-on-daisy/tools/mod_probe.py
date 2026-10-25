@@ -15,13 +15,17 @@ Not the editor. A small command-line client for the protocol in docs/PROTOCOL.md
     python mod_probe.py bench --csv results.csv     # scenarios S0..S8 (bench firmware)
     python mod_probe.py cc-stats                    # plain-CC fallback of the bench
     python mod_probe.py selftest                    # codec check, no MIDI port needed
+    python mod_probe.py --sim build/host/mod_sim --instrument looper targets
 
-The port defaults to the first one containing "Daisy"; use --port to choose.
+The port defaults to the first one containing "Daisy"; use --port to choose. --sim talks
+to the host simulator tools/mod_sim.cpp (an instrument's column table) instead of a port.
 """
 import argparse
 import csv
+import os
 import random
 import re
+import subprocess
 import sys
 import time
 
@@ -276,6 +280,36 @@ class Device:
         raise TimeoutError(f'no reply to command {command:#04x}')
 
 
+class SimDevice(Device):
+    """tools/mod_sim.cpp over stdin/stdout instead of a MIDI port: the real Controller and
+    Engine with an instrument's column table, no hardware. Replies arrive synchronously."""
+
+    def __init__(self, path, instrument, device=0):
+        # abspath: Windows does not resolve a relative path with forward slashes
+        self.proc = subprocess.Popen([os.path.abspath(path), instrument], stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE, text=True)
+        self.device, self.timeout, self.seq = device, 0, random.randrange(128)
+        self.monitor, self.replies = [], []
+
+    def send_raw(self, frame):
+        self.proc.stdin.write(f'S {frame.hex()}\n')
+        self.proc.stdin.flush()
+        for line in self.proc.stdout:
+            line = line.strip()
+            if line == 'OK':
+                return
+            if line.startswith('R '):
+                self.replies.append(bytes.fromhex(line[2:]))
+        raise RuntimeError('mod_sim exited')
+
+    def receive(self, deadline):
+        while self.replies:
+            message = self.replies.pop(0)
+            parsed = parse_body(message[1:-1]) if message[:1] == b'\xf0' else None
+            if parsed is not None and parsed[0] != MONITOR_FRAME:
+                yield parsed
+
+
 def identify(dev):
     r = Reader(dev.request(CMD['identify'], device=0x7F))
     info = dict(protocol=f'{r.u7()}.{r.u7()}', module=f'{r.u7()}.{r.u7()}.{r.u7()}', instrument=r.str(),
@@ -486,6 +520,8 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--port')
     p.add_argument('--device', type=int, default=0)
+    p.add_argument('--sim', help='path to the mod_sim simulator instead of a MIDI port')
+    p.add_argument('--instrument', default='toy-piano', help='column table of the simulator (--sim)')
     sub = p.add_subparsers(dest='cmd', required=True)
     for name in ['ports', 'identify', 'modes', 'targets', 'matrix', 'clear', 'lengths', 'stats', 'cc-stats', 'selftest']:
         sub.add_parser(name)
@@ -519,7 +555,7 @@ def main():
         print('outputs:', mido.get_output_names())
         print('inputs: ', mido.get_input_names())
         return
-    dev = Device(args.port, args.device)
+    dev = SimDevice(args.sim, args.instrument, args.device) if args.sim else Device(args.port, args.device)
     if args.cmd == 'identify':
         print(identify(dev))
     elif args.cmd == 'modes':
