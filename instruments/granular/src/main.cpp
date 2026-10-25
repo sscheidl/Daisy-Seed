@@ -1,4 +1,5 @@
 #include "desktop_devkit.h"
+#include "bootloader_daisy.h"
 #include "engine.h"
 #include "fatfs.h"
 #include "usbd_core.h"
@@ -30,11 +31,18 @@ bool usb_ready=false, mounted=false;
 bool sent_notes[128]{};
 // Inspect through a debugger; values are NOT measurements until run on hardware.
 volatile uint32_t callback_peak_cycles=0, callback_overruns=0;
+// Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
+bootloader::KeyCombo boot_keys;     // control timer only
+bootloader::SysExMatcher boot_sysex; // USB interrupt only
+bootloader::Request boot_request;
 void ServiceUsb();
 void ReceiveUsb(uint8_t* bytes,size_t size,void*) {
     neb::Midi event;
-    for(size_t i=0;i<size;++i) if(usb_parser.Byte(bytes[i],event) && !usb_events.Push(event))
-        usb_overflow.store(true,std::memory_order_release);
+    for(size_t i=0;i<size;++i) {
+        if(boot_sysex.Byte(bytes[i])) boot_request.Set(bootloader::Request::kSysEx);
+        if(usb_parser.Byte(bytes[i],event) && !usb_events.Push(event))
+            usb_overflow.store(true,std::memory_order_release);
+    }
 }
 class SdFile : public neb::File {
     FIL handle_{}; bool open_=false;
@@ -70,6 +78,7 @@ void PollControls(void*) {
         if(hw.button[i].FallingEdge()) held &= uint16_t(~(1u<<i));
     }
     neb::ControlFrame f;f.keys=held;f.ms=daisy::System::GetNow();f.toggle=hw.tog_sw18.Read();
+    if(boot_keys.Process(held,f.ms)) boot_request.Set(bootloader::Request::kKeys);
     for(unsigned i=0;i<8;++i) f.pot[i]=hw.pot[i].Value();
     if(!controls.Push(f)) control_panic.store(true,std::memory_order_release);
     card.store(hw.sd_detect.Pressed(),std::memory_order_relaxed);
@@ -133,6 +142,13 @@ void ServiceUsb() {
     }
     if(count) usb.Tx(bytes,count);
 }
+// Main loop only: replies over USB if a host asked, then resets into the bootloader.
+// SD access is read-only, so a load in progress may be cut off.
+void ServiceBootloader() {
+    bootloader::Service(boot_request,hw,[](uint8_t* bytes,size_t size) {
+        if(hUsbDeviceHS.dev_state==USBD_STATE_CONFIGURED) usb.Tx(bytes,size);
+    });
+}
 }
 extern "C" void neb_sd_service(void) {ServiceUsb();}
 extern "C" int neb_card_present(void) {return card.load(std::memory_order_relaxed)!=0;}
@@ -160,6 +176,7 @@ int main() {
     bool initial=true,previous_card=card.load()!=0;
     while(true) {
         ServiceUsb();
+        ServiceBootloader();
         const unsigned selected=request.exchange(0,std::memory_order_acquire);
         if(selected) pending=selected;
         const uint32_t now=daisy::System::GetNow();

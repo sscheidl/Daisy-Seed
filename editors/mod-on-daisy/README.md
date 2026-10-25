@@ -30,14 +30,28 @@ Dann „Weitere Informationen“ und „Trotzdem ausführen“ wählen.
 
 ### Bedienung
 
-1. Daisy mit Mod-on-Daisy-Firmware an J7 anschließen, zum Beispiel `ToyPiano-v0.3.bin`
-   oder `PhysicalModelingMod-v0.1.0.bin`.
+1. Daisy mit Mod-on-Daisy-Firmware an J7 anschließen, zum Beispiel `ToyPiano-v0.3.1.bin`
+   oder `PhysicalModelingMod-v0.1.1.bin`.
 2. **Studio One schließen** oder dort den Port „Daisy Seed External“ deaktivieren.
    Unter Windows kann nur eine Anwendung den Port öffnen. Ist er belegt, sagt der
    Editor das.
 3. Oben das Gerät wählen (ein Daisy-Port wird vorgeschlagen, auch wenn das Kit erst nach
    dem Start des Editors erscheint) und **Verbinden** klicken. Der Editor liest Instrument,
    Spalten und den aktuellen Zustand vom Gerät.
+
+**Firmware-Update …** (oben rechts) startet das Kit im Daisy-Bootloader neu, ohne die
+Tasten BOOT und RESET am Seed3 – auch bei geschlossenem Gehäuse. Nach einer Rückfrage
+sendet der Editor eine eigene SysEx-Nachricht an den gewählten Port
+([common/bootloader](../../common/bootloader/README.md)); das geht mit jeder Firmware dieses
+Repositorys (alle Instrumente und Effekte haben USB-MIDI an J7), auch ohne
+Mod-on-Daisy-Verbindung, z. B. mit Nebulae, Looper oder Ambient Reverb. Das Kit
+antwortet, sobald es die Anfrage angenommen hat; die Antwort ist noch kein Nachweis des
+DFU-Eintritts. Danach leuchten alle 16 LEDs, und der Bootloader wartet ohne Zeitlimit
+(der Looper beendet vorher laufende Kartenarbeit). Danach die
+Firmware mit dem [Daisy Web Programmer](https://flash.daisy.audio/) oder `make program-dfu`
+laden ([docs/FLASHING.md](../../docs/FLASHING.md)). Kommt nach 2 s keine Antwort, kennt
+die Firmware den Befehl noch nicht: dann S9 und S16 fünf Sekunden halten oder RESET und
+BOOT verwenden. Mit einem Simulator ist der Knopf gesperrt.
 
 **Ohne Daisy:** Die Liste enthält nur MIDI-Ports; ohne Gerät lässt sich offline bearbeiten.
 Die Simulatoren („Simulator: Toy Piano“, „Simulator: Physical Modeling“) erscheinen nur mit
@@ -276,7 +290,8 @@ offline geladen, beim Verbinden zum Gerät gesendet“ gegen den Simulator.
    **Verbinden** klicken.
 
 Firefox und Safari werden nicht unterstützt. Die Bedienung entspricht dem JUCE-Editor,
-ohne Rechtsklickmenü. **Demo (offline)** (oder `index.html#demo`) zeigt das Raster mit den
+ohne Rechtsklickmenü; **Firmware-Update …** nutzt die gewählten Ein- und Ausgänge, auch
+ohne Verbindung. **Demo (offline)** (oder `index.html#demo`) zeigt das Raster mit den
 Toy-Piano-Spalten und einem Beispiel-Patch.
 
 ```bash

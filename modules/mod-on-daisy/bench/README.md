@@ -18,7 +18,7 @@ Eine Sinus-Stimmenbank mit 8 Zielen läuft durch die Matrix:
 ## Bauen und flashen
 
 ```bash
-make PROJECT=mod-bench -j4                          # build/ModBench-v0.1.0.bin (Block 48)
+make PROJECT=mod-bench -j4                          # build/ModBench-v0.1.1.bin (Block 48)
 make -C modules/mod-on-daisy/bench BLOCK=256 -j4     # build/b256-max8/
 make -C modules/mod-on-daisy/bench MAX_ACTIVE=64 -j4 # build/b48-max64/ (Szenario S6)
 make PROJECT=mod-bench program-dfu                   # wie bei den Instrumenten (docs/FLASHING.md)

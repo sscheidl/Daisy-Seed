@@ -14,6 +14,13 @@
 #ifndef MOD_ON_DAISY_EXTENSIONS
 #define MOD_ON_DAISY_EXTENSIONS 0
 #endif
+// Echo guard: frames with the reply bit (replies, NAKs, monitor frames) are consumed and
+// never answered, so a DAW that echoes the port back cannot start a NAK loop (PROTOCOL.md
+// § 2, step 2a). Part of the extensions; instruments without them switch it on alone with
+// -DMOD_ON_DAISY_IGNORE_REPLIES=1 (Toy Piano from v0.4).
+#ifndef MOD_ON_DAISY_IGNORE_REPLIES
+#define MOD_ON_DAISY_IGNORE_REPLIES MOD_ON_DAISY_EXTENSIONS
+#endif
 
 namespace mod {
 constexpr uint8_t kVersionMajor = 0, kVersionMinor = 1, kVersionPatch = 0;

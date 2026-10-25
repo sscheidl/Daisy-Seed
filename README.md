@@ -9,15 +9,17 @@ share the pinned libraries, toolchain, and board build configuration.
 
 | Project | Directory | Status |
 | --- | --- | --- |
-| [Toy Piano v0.3](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3 hardware test pending |
+| [Toy Piano v0.4](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); v0.4 has the full Mod on Daisy panel like Physical Modeling (pot positions, extended monitor, LFO cross modulation) and ignores echoed replies (Studio One input monitoring); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3/v0.4 hardware test pending |
+| [Toy Piano + Ambient Reverb v0.1.2](instruments/toy-piano/docs/AMBIENT.md) | `instruments/toy-piano/` (`AMBIENT=1`) | Separate `toy-piano-ambient` build: six reverb modes including Shimmer, Stretch, physical transpose/decay, existing matrix/editor contract and callback diagnostics; host/sanitizer/ARM checks pass, hardware untested |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings, six models and global reverb; user-confirmed hardware/MIDI behavior and measured CPU headroom; model-switch spikes accepted as a known limitation ([results](instruments/physical-modeling/docs/HARDWARE_PLAYING_2026-10-22.md)) |
-| [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
-| [Nebulae on Daisy v0.1.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
-| [Looper v0.3](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import on microSD; host tests and ARM build pass; hardware test pending |
-| [Ambient Reverb v0.2](effects/reverb/) | `effects/reverb/` | Original stereo reverb with Desktop controls and variable-rate wet Stretch; host tests and ARM build pass; hardware test pending |
+| [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build without Mod on Daisy code, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
+| [Composed Physical Modeling FX](docs/MODULAR_COMPONENTS.md) | `instruments/physical-modeling/` (`COMPOSED=1`) | Separate v0.2.0 pilot builds with Torus or Ambient Reverb adapters and Mod on Daisy; explicit component manifests; hardware validation pending |
+| [Nebulae on Daisy v0.1.1](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
+| [Looper v0.3.1](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import on microSD; host tests and ARM build pass; hardware test pending |
+| [Ambient Reverb v0.3.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb with Desktop controls and variable-rate wet Stretch; host tests and ARM build pass; hardware test pending |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 | [Mod on Daisy](modules/mod-on-daisy/) | `modules/mod-on-daisy/`, editor in `editors/mod-on-daisy/` | Reusable 8×8 modulation matrix (header-only module, no instrument firmware). Phase 2 software done: core, host tests (ASan/UBSan/TSan, fuzzing), bench firmware `make PROJECT=mod-bench`, `tools/mod_probe.py`; hardware measurements pending ([validation](modules/mod-on-daisy/docs/VALIDATION.md)). Spec: [decisions](modules/mod-on-daisy/docs/DECISIONS.md), [architecture](modules/mod-on-daisy/docs/ARCHITECTURE.md), [MIDI protocol](modules/mod-on-daisy/docs/PROTOCOL.md), [storage](modules/mod-on-daisy/docs/STORAGE.md) |
-| [Mod on Daisy Editor](editors/mod-on-daisy/) | `editors/mod-on-daisy/` (`src/` JUCE, `web/` browser) | Grid editor for the 8×8 matrix and source parameters. **JUCE standalone** (Windows .exe from CI, Linux/macOS via CMake) with a built-in simulator of the firmware; core tested against the firmware's controller with lost/corrupted frames (`make -C editors/mod-on-daisy test`). Browser variant (Chrome/Edge, Web MIDI) end-to-end tested in headless Chromium. VST3 later |
+| [Mod on Daisy Editor](editors/mod-on-daisy/) | `editors/mod-on-daisy/` (`src/` JUCE, `web/` browser) | Matrix/source panel as JUCE standalone, browser and VST3 device editor. Simulators are opt-in. Core/protocol tests cover lost/corrupted frames; VST3 passes PC audio through and stores the modulation patch, not the complete instrument/FX state |
 
 The repository remains **`sscheidl/Daisy-Seed`**. Project directories share one Git
 history while keeping their source, tests, validation notes, and build output
@@ -42,6 +44,7 @@ Daisy-Seed/
 │   └── mod-on-daisy/       # grid editor: JUCE standalone (src/), browser variant (web/)
 ├── diagnostics/           # Seed3 hardware diagnostics: firmware, Windows GUI, tests
 ├── common/desktop.mk      # shared official Seed3 Desktop build settings
+├── common/bootloader/     # firmware updates without BOOT/RESET (keys, SysEx)
 ├── docs/                  # hardware, build, flashing, and references
 ├── scripts/               # toolchain and BOOT_SRAM image checks
 ├── projects.mk            # project IDs, paths, and implementation status
@@ -78,24 +81,31 @@ make test-release
 
 Toy Piano is the default when `PROJECT=` is omitted. You can also build it from
 its directory with `make -C instruments/toy-piano`. Its image is
-**`instruments/toy-piano/build/ToyPiano-v0.3.bin`**. The version is defined in
+**`instruments/toy-piano/build/ToyPiano-v0.4.bin`**. The version is defined in
 `instruments/toy-piano/src/version.h`; `make -s version` prints it. Builds for
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
-The reverb image is `effects/reverb/build/AmbientReverb-v0.2.bin`.
+The reverb image is `effects/reverb/build/AmbientReverb-v0.3.1.bin`.
 Nebulae builds with `make PROJECT=granular` to
-`instruments/granular/build/NebulaeOnDaisy-v0.1.0.bin`; its controls and hardware
+`instruments/granular/build/NebulaeOnDaisy-v0.1.1.bin`; its controls and hardware
 test are in the [project README](instruments/granular/README.md).
 
 Each implemented project is currently a separate firmware image. Switching
-instruments requires flashing the corresponding BIN; runtime instrument switching
-and a shared effect chain have not been implemented.
+instruments requires flashing the corresponding BIN. The composed Physical Modeling
+pilot selects a downstream Torus or Ambient FX at build time; runtime instrument/FX
+switching and arbitrary effect chains have not been implemented.
+
+All implemented instruments, effects and control panels are listed in the
+[component registry](components/README.md). `make components` validates owned
+version sources; `make PROJECT=<id> manifest` checks the built image and records
+the product/component versions, Git revision and checksum in `COMPONENTS.json`.
 
 ## Documentation and next steps
 
 * **[Handover](HANDOVER.md)** (state, local setup, hardware test run sheet, open decisions)
   and the [agent rules](AGENTS.md).
-* [Build and toolchain](docs/BUILD.md), [hardware](docs/HARDWARE.md), and [flashing](docs/FLASHING.md).
+* [Build and toolchain](docs/BUILD.md), [hardware](docs/HARDWARE.md), and [flashing](docs/FLASHING.md);
+  updates without BOOT/RESET: hold S9+S16 for 5 s or use the editor ([common/bootloader](common/bootloader/README.md)).
 * [Toy Piano controls and hardware test](instruments/toy-piano/README.md),
   [USB MIDI](instruments/toy-piano/docs/MIDI.md),
   [changelog](instruments/toy-piano/CHANGELOG.md), and [validation report](instruments/toy-piano/docs/VALIDATION.md).
@@ -123,8 +133,11 @@ Open source, decided on October 24, 2026:
 | --- | --- |
 | Everything of our own unless stated otherwise: firmware, the Mod on Daisy module, the browser editor (`editors/mod-on-daisy/web/`), `mod_probe.py`, scripts, docs | **MIT**, see [LICENSE](LICENSE) |
 | JUCE editor and VST3 plugin (`editors/mod-on-daisy/src/`, `tests/`, `CMakeLists.txt`) | **AGPLv3**, see [COPYING.AGPL-3.0.txt](editors/mod-on-daisy/COPYING.AGPL-3.0.txt). JUCE 9 is used under its AGPLv3 option; the MIT parts it includes stay MIT |
-| Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/LICENSES/`), Ambient Reverb (`effects/reverb/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
+| Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT, `instruments/physical-modeling/third_party/stmlib/LICENSE`, `instruments/physical-modeling/torus/UPSTREAM.md`), a patched copy of libDaisy's `midi_parser.cpp` (MIT, notice in the file, `instruments/physical-modeling/src/`), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/fatfs/LICENSE.txt`), Ambient Reverb (`effects/reverb/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
 
 The repository is public on GitHub; until this license was added it had none. Material
 that may not be redistributed (manufacturer documents, photos, analysis inputs) does not
-belong here; an audit of the content and history is still open.
+belong here. The content and full history were audited on October 25, 2026: no secrets,
+firmware images, samples or manufacturer documents were found in the published history.
+Local analysis outputs and exports that bundle third-party 3D models are excluded in
+`.gitignore`.

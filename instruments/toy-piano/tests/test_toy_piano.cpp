@@ -352,13 +352,23 @@ void TestNoAliasedHarmonic() {
     }
 }
 
+// Released images use major.minor (scripts/check-release-available.sh stays strict);
+// integration test images may carry a patch level such as 0.3.1.
 void TestVersion() {
     const std::string version = kVersion;
     assert(version == TOY_PIANO_VERSION);
-    const auto dot = version.find('.');
-    assert(dot != std::string::npos && dot > 0 && dot + 1 < version.size());
-    for(std::size_t i = 0; i < version.size(); ++i)
-        assert(i == dot || (version[i] >= '0' && version[i] <= '9'));
+    std::size_t fields = 1, digits = 0;
+    for(const char c : version) {
+        if(c == '.') {
+            assert(digits > 0);
+            ++fields;
+            digits = 0;
+        } else {
+            assert(c >= '0' && c <= '9');
+            ++digits;
+        }
+    }
+    assert(digits > 0 && (fields == 2 || fields == 3));
 }
 
 void TestSpscQueue() {

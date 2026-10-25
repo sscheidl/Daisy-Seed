@@ -101,6 +101,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
   <label>Ausgang <select id="outPort"><option value="">–</option></select></label>
   <label>Eingang <select id="inPort"><option value="">–</option></select></label>
   <button id="connect" class="primary">Verbinden</button>
+  <button id="updateBtn" title="Startet das Kit im Daisy-Bootloader neu, ohne BOOT und RESET. Danach die Firmware mit dem Daisy Web Programmer oder make program-dfu laden.">Firmware-Update …</button>
   <span id="status" class="pill">offline</span>
   <span id="mode" class="pill" hidden></span>
 </header>
@@ -131,6 +132,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     <button id="pullBtn" disabled>Vom Gerät neu laden</button>
     <button id="demoBtn" title="Spalten von Toy Piano v0.3 und ein Beispiel-Patch, ohne Gerät">Demo (offline)</button>
     <span id="log" role="status"></span>
+    <span class="hint" id="panelBuild"></span>
   </section>
 </main>
 <dialog id="compatDialog">
@@ -145,9 +147,11 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     </div>
   </form>
 </dialog>
+<script src="version.js"></script>
 <script src="mod_protocol.js"></script>
 <script>
 'use strict';
+document.getElementById('panelBuild').textContent = `HTML Editor ${MOD_ON_DAISY_WEB_VERSION}`;
 const P = window.ModProtocol;
 const $ = (id) => document.getElementById(id);
 
@@ -1013,7 +1017,53 @@ function loadDemo() {
   log('Demo geladen – ohne Gerät, Änderungen bleiben im Browser.', 'ok');
 }
 
+// ------------------------------------------------------------------ firmware update
+// The kit restarts into the Daisy bootloader (common/bootloader/README.md). Every firmware
+// of this repository with USB-MIDI understands it, also without a Mod on Daisy connection:
+// then the selected ports are opened just for the request.
+let updating = false;
+const BOOT_TIMEOUT_MS = 2000; // the firmware answers within milliseconds, then resets
+async function firmwareUpdate() {
+  if (updating) return;
+  if (!midiAccess) await initMidi();
+  if (!midiAccess) return;
+  const link = state.link;
+  const out = link ? link.output : midiAccess.outputs.get($('outPort').value);
+  const inp = link ? link.input : midiAccess.inputs.get($('inPort').value);
+  if (!out || !inp) return log('Bitte Ein- und Ausgang wählen.', 'warn');
+  if (!confirm('Kit in den Update-Modus schalten?\n\nDas Kit startet in den Daisy-Bootloader neu: Das Programm hält an, '
+    + 'die MIDI-Verbindung endet und alle 16 LEDs leuchten. Danach die neue Firmware mit dem Daisy Web Programmer '
+    + 'oder „make program-dfu“ laden; das Kit wartet ohne Zeitlimit.')) return;
+  updating = true;
+  $('updateBtn').disabled = true;
+  try {
+    if (!link) {
+      await closing;
+      try { await out.open(); await inp.open(); } catch (e) {
+        closePorts(out, inp);
+        return log('Port kann nicht geöffnet werden – ist er von einer anderen Anwendung belegt (z. B. Studio One)? ' + e.message, 'err');
+      }
+    }
+    const acked = await new Promise((resolve) => {
+      const done = (ok) => { clearTimeout(timer); inp.removeEventListener('midimessage', onMessage); resolve(ok); };
+      const onMessage = (e) => { if (P.isBootloaderAck(e.data)) done(true); };
+      const timer = setTimeout(() => done(false), BOOT_TIMEOUT_MS);
+      inp.addEventListener('midimessage', onMessage);
+      try { out.send(P.BOOTLOADER_REQUEST); } catch (e) { done(false); }
+    });
+    if (acked && state.link) disconnect(); // the port disappears with the reset
+    else if (!link) closePorts(out, inp);
+    // The reply confirms that the request was accepted, not the DFU entry itself.
+    if (acked) log('Anfrage angenommen: Das Kit startet in den Update-Modus (alle LEDs an, der Looper erst nach laufender Kartenarbeit). Sobald es als DFU-Gerät erscheint, Firmware mit dem Daisy Web Programmer oder „make program-dfu“ laden.', 'ok');
+    else log('Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S9 und S16 fünf Sekunden halten oder RESET und BOOT verwenden (docs/FLASHING.md).', 'warn');
+  } finally {
+    updating = false;
+    $('updateBtn').disabled = false;
+  }
+}
+
 // ------------------------------------------------------------------ wiring
+$('updateBtn').addEventListener('click', firmwareUpdate);
 $('demoBtn').addEventListener('click', loadDemo);
 $('connect').addEventListener('click', connect);
 $('pullBtn').addEventListener('click', () => pull().then(() => log('Vom Gerät geladen.', 'ok')).catch((e) => log(e.message, 'err')));

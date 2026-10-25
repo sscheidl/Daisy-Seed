@@ -1,5 +1,23 @@
 # Übergabe — lokal weiterarbeiten
 
+**Integration 25./26.10.2026:** Branch `integration/shimmer-bootloader` führt PR #40
+(Bootloader-Einstieg), #38 (modulare FX) und #41 (Toy Piano + Ambient mit Shimmer)
+zusammen. Testimages: `toy-piano-ambient 0.1.2` und `reverb-fx 0.3.1`; Komponente
+`bootloader-entry 1.0.0`. Wegen des Bootloader-Einstiegs ebenfalls neu versioniert: Toy Piano 0.3.1,
+Physical Modeling 0.1.1 (MOD-IDENTIFY `0.1.1-mod4`), PM-FX 0.2.1, Nebulae 0.1.1, Looper 0.3.1,
+Mod bench 0.1.1, Diagnose 0.2.1, Panels 0.1.1. Prüfbericht und Laufzettel:
+[docs/HARDWARE_TEST_INTEGRATION.md](docs/HARDWARE_TEST_INTEGRATION.md). Hardware
+**NICHT GEMESSEN**.
+
+**Ergänzung 25.10.2026:** Auf `feat/toy-piano-ambient` liegt das separate Produkt
+`toy-piano-ambient 0.1.1`, abhängig vom modularen FX-Unterbau in PR #38.
+[Bedienung, Build, Prüfergebnisse und Hardware-Laufzettel](instruments/toy-piano/docs/AMBIENT.md).
+Host-Tests, ASan/UBSan und ARM-Build bestanden; Toy Piano v0.3 bleibt bytegleich.
+Sechs echte Reverb-Modi einschließlich Shimmer (B / unten); VR7 regelt dessen
+Oktavanteil. Kern `ambient-reverb 0.3`, reine FX-Fassung: Shimmer auf S6.
+Gemeinsame CPU-Last und Audiotest am Kit sind **NICHT GEMESSEN**.
+Die folgenden älteren Abschnitte beschreiben ihren jeweils datierten Stand.
+
 **Stand:** 24. Oktober 2026 abends (PR #29 gemergt, mod3 geflasht, lokale Sitzung; § 3a).
 Zuvor: Korrekturauftrag umgesetzt in der Cloud-Sitzung. Ab jetzt wird lokal unter
 Windows mit Claude Code und Codex weitergearbeitet, mit USB-Zugriff auf das Seed3
@@ -44,6 +62,7 @@ Prüfwerte zum Wiedererkennen:
 | Golden-Hash Toy Piano (v0.2 = v0.3 mit leerer Matrix) | `52580874FA24361F` |
 | Golden-Hash Physical Modeling (regulär = `MOD=1` mit leerer Matrix) | `37DE0BF9D93B81CE` |
 | SHA-256 `ToyPiano-v0.3.bin` (= Release-Entwurf) | `6dd79871…` |
+| SHA-256 `ToyPiano-v0.4.bin` (Rückkopplungsschutz, Branch `feat/toy-piano-echo-guard`) | `20a5ea23…` |
 | SHA-256 `PhysicalModeling-v0.1.0.bin` (regulär) | `eb8f412a…` |
 | SHA-256 `ModBench-v0.1.0.bin` / `-block256` / `-max64` | `9f50a57b…` / `5cdeb0f6…` / `7f209c15…` |
 | SHA-256 `PhysicalModelingMod-v0.1.0.bin` (mod3, Branch) | `ccabdaa9…` |
@@ -138,8 +157,13 @@ Punkte 1–4 sind in PR #33 umgesetzt (§ 3b).
 * `NICHT GEMESSEN`: umgekehrte Reihenfolge (Editor zuerst), Modwheel → Level, CC28 „(MIDI)“, E19,
   E11–E17, R1–R7, R9, R10.
 * **Toy Piano v0.3 hat den Rückkopplungsschutz noch nicht** (Image soll bytegleich zum
-  Release-Entwurf bleiben) und hätte mit Studio One dasselbe Problem → in der nächsten
-  Toy-Piano-Version nachziehen (Entscheidung Betreiber).
+  Release-Entwurf bleiben) und hätte mit Studio One dasselbe Problem → umgesetzt in
+  **Toy Piano v0.4** (25.10.2026, Freigabe Betreiber; Branch `feat/toy-piano-echo-guard`):
+  zunächst nur die Regel aus PROTOCOL § 2, Schritt 2a. **Nach dem Merge von PR #42
+  (26.10.2026)** mit allen Mod-on-Daisy-Erweiterungen wie Physical Modeling: Grundwerte
+  (Potistellungen), erweiterter Monitor, LFO-Quermodulation; Klang mit leerer Matrix
+  unverändert. Am Kit `NICHT GEMESSEN` (T16/T17 in
+  [HARDWARE_TEST_V0.4](instruments/toy-piano/docs/HARDWARE_TEST_V0.4.md)).
 
 **Weiter mit:** PR #33 mergen; restliche Schritte aus dem Laufzettel.
 
@@ -149,10 +173,10 @@ Punkte 1–4 sind in PR #33 umgesetzt (§ 3b).
 | --- | --- | --- |
 | Studio One + Editor gleichzeitig | **gelöst** mit mod4 (§ 3b): Windows MIDI Services teilt den Port, die Rückkopplungsschleife ist behoben | umgekehrte Reihenfolge noch prüfen; VST3-Fassung bleibt wünschenswert, ist dafür aber nicht mehr nötig |
 | PR #33 (mod4, Editor) | am Kit getestet, Quick checks | mergen |
-| Rückkopplungsschutz für Toy Piano | fehlt in v0.3 | mit der nächsten Toy-Piano-Version (Entscheidung Betreiber) |
+| Rückkopplungsschutz für Toy Piano | in v0.4 umgesetzt (Branch `feat/toy-piano-echo-guard`), Host-Tests und ARM-Build lokal unter Windows | am Kit T16/T17 prüfen; Linux-Golden-Hash und TSan noch offen |
 | Modularer Firmwarekern | Idee, [MODULAR_KERNEL_IDEA.md](docs/MODULAR_KERNEL_IDEA.md), GitHub-Milestone | ausgearbeiteten Plan schreiben, später |
-| Toy Piano v0.3 veröffentlichen | Entwurf wartet auf T1–T15 | entscheidet der Mensch |
-| Grundwerte für Toy Piano | absichtlich aus, damit v0.3 dem Entwurf entspricht | mit der nächsten Toy-Piano-Version (z. B. 0.3.1) einschalten |
+| Toy Piano veröffentlichen | Entwurf v0.3 wartet auf T1–T15; v0.4 = v0.3 + Rückkopplungsschutz | entscheidet der Mensch (v0.3-Entwurf oder v0.4) |
+| Grundwerte für Toy Piano | in v0.4 eingeschaltet (volles Panel wie Physical Modeling) | am Kit T18/T19 prüfen |
 | Lizenz | **entschieden 24.10.2026**: Open Source; JUCE-Editor und VST3-Plugin AGPLv3, alles Eigene sonst MIT (README § License) | Repo ist öffentlich (Actions-Minuten dafür kostenlos); Inhalt und Historie noch auf fremdes Material prüfen |
 | Speicher (QSPI) | nur spezifiziert (D8) | eigene Freigabe nötig |
 | Editor-Feinschliff | offen: Rückgängig/Wiederholen, Wahl beim Wiederverbinden, Schema-Cache | nach den Hardwaretests |
@@ -212,7 +236,7 @@ Nächste Aufgaben:
 1. PR #33 mergen (falls noch offen).
 2. Mit dem JUCE-Editor am Kit die offenen Schritte aus § 3b und E11–E17 durchgehen (ich höre
    und bediene, du führst die Befehle aus und trägst die Ergebnisse als GEMESSEN mit Datum ein).
-3. Rückkopplungsschutz für Toy Piano (neue Version, nach meiner Freigabe).
+3. Rückkopplungsschutz für Toy Piano: v0.4, am Kit noch zu prüfen (T16/T17).
 4. Danach Toy Piano T1–T15 und Messfirmware H/S; VST3-Fassung planen.
 
 Regeln: Flashen nur nach meiner Freigabe im Bootloader-Modus, keine Releases

@@ -18,6 +18,9 @@ External“, D6). Grundlagen: [DECISIONS.md](DECISIONS.md) D9 und E9,
 * Noten werden **mitgelesen und weitergegeben**.
 * Fremde SysEx-Rahmen und SysEx mit anderer Projektkennung gibt `HandleMidi()` mit
   `false` an das Instrument weiter.
+* `F0 7D 42 4C …` („BL“) ist die Bootloader-Anfrage aller Firmwares dieses Repositorys
+  ([common/bootloader](../../../common/bootloader/README.md)), kein MD-Rahmen. Die
+  Firmware prüft sie vor `HandleMidi()`; beide Editoren senden sie über **Firmware-Update …**.
 * Die vorhandenen Instrument-CCs (Physical Modeling CC20–33, Telemetrie Kanal 16
   CC100–119; Nebulae CC20–27) bleiben unberührt.
 
@@ -49,9 +52,10 @@ F0 7D 4D 44 <ver> <dev> <cmd> <seq> <len> <payload: len Bytes> <chk> F7
    **nie beantwortet**. Grund (Hardwaretest 24.10.2026): Studio One schickt mit
    Input-Monitoring alles, was vom Daisy kommt, an den Daisy zurück. Ein NAK auf jeden
    zurückgeschickten Rahmen ergab endlose NAK-Schleifen (gemessen rund 500 Rahmen/s), die
-   die Antworten an den Editor verdrängten. Mit `MOD_ON_DAISY_EXTENSIONS` umgesetzt
-   (Physical Modeling `0.1.0-mod4`); Toy Piano v0.3 und die Messfirmware haben die Regel
-   noch nicht, damit ihre Images unverändert bleiben.
+   die Antworten an den Editor verdrängten. Teil von `MOD_ON_DAISY_EXTENSIONS`
+   (Physical Modeling ab `0.1.0-mod4`, Toy Piano ab v0.4, Toy Piano Ambient); einzeln
+   schaltbar mit `MOD_ON_DAISY_IGNORE_REPLIES=1`. Toy Piano v0.3 und die Messfirmware
+   haben die Regel nicht.
 3. `<ver> ≠ 1` → `NAK 6`.
 4. Länge oder Prüfsumme falsch → `NAK 1` bzw. `NAK 2`.
 5. Sonst ausführen.

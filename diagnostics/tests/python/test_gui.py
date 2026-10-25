@@ -55,7 +55,7 @@ def test_starts_in_simulation_and_is_marked(sim):
     assert window.sim_banner.isVisible() and "SIMULATION" in window.sim_banner.text()
     assert "SIMULATION" in window.windowTitle()
     assert window.status_pill.text() == "Connected (Simulation)"
-    assert window.info["fw"].text() == "DaisyDiagnostic 0.2.0-sim"
+    assert window.info["fw"].text() == "DaisyDiagnostic 0.2.1-sim"
     assert window.info["proto"].text().startswith("DDP v1")
     assert window.board.simulated and window.board.interactive
 

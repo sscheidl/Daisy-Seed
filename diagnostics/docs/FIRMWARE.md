@@ -1,5 +1,12 @@
 # Diagnostic firmware — configuration, dependencies, architecture
 
+## Version 0.2.1
+
+Adds the shared bootloader entry ([common/bootloader](../../common/bootloader/README.md)):
+DDP `BOOT` (capability `boot`, button **Firmware update mode …** in the Windows app)
+and the key gesture S9 + S16 for 5 s. Both are refused while Windows owns the SD card.
+The Windows app carries the same version. Integration test image, not released.
+
 ## Version 0.2.0 variants
 
 The default image remains strictly read-only. `CARD_READER=1` builds the separate

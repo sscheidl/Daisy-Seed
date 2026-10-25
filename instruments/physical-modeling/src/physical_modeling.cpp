@@ -3,7 +3,12 @@
 namespace physical_modeling {
 void Synth::Init() {
     torus::InitResources();
-    part_.Init(); reverb_.Init(reverb_buffer_);
+    part_.Init();
+#if PHYSICAL_MODELING_COMPOSED
+    reverb_.Prepare(reverb_buffer_);
+#else
+    reverb_.Init(reverb_buffer_);
+#endif
     write_ = read_ = overflow_ = 0; fade_ = 1; fading_out_ = false; chord_ = ChordSelector{};
 }
 bool Synth::NoteOn(unsigned note, unsigned velocity) {
@@ -53,12 +58,16 @@ void Synth::Render(float* left, float* right) {
     float input[kQuantum]{};
     part_.Process(state, patch, input, left, right, kQuantum);
     float wet_left[kQuantum], wet_right[kQuantum];
+#if PHYSICAL_MODELING_COMPOSED
+    reverb_.SetParameters(parameters);
+#else
     // set_time is a feedback coefficient, not seconds. Keep strictly below unity.
     reverb_.set_time(0.35f + 0.63f * parameters.Get(Decay));
     reverb_.set_lp(0.05f + 0.9f * (1.0f - parameters.Get(ReverbDamping)));
     reverb_.set_diffusion(0.9f * parameters.Get(Diffusion));
     reverb_.set_input_gain(0.5f * parameters.Get(InputGain));
     reverb_.set_amount(1.0f); // Wet-only; external crossfade includes dry exactly once.
+#endif
     for(size_t i = 0; i < kQuantum; ++i) {
         fade_ = fading_out_ ? std::max(0.0f, fade_ - 1.0f/192.0f) : std::min(1.0f, fade_ + 1.0f/192.0f);
         left[i] *= fade_; right[i] *= fade_;

@@ -102,6 +102,10 @@ class SelfTest {
         Model& m = e_.GetModel();
         SELFTEST_CHECK(e_.GetSession().Connected() && e_.GetSession().Device().key == "toy-piano");
         SELFTEST_CHECK(m.columns[0].name == "Pitch" && !m.columns[6].present && !m.Allowed(7 * 8 + 3));
+        // Firmware update: a simulator has no bootloader; nothing is sent, the session stays.
+        e_.StartFirmwareUpdate(PortIndex("Simulator: Toy Piano"));
+        SELFTEST_CHECK(!e_.FirmwareUpdateWaiting() && e_.GetSession().Connected());
+        SELFTEST_CHECK(e_.LogText().contains("keinen Bootloader"));
 
         // Keyboard: LFO 1 → Pitch +30.
         e_.Grid().Select(0);

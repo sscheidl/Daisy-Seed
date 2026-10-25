@@ -60,5 +60,19 @@ int main() {
     assert(loader.active==1 && bridge.published.channels==1 && bridge.published.frames==2);
     assert(live_banks[1][32769]==32767);
     card.store(0);assert(!loader.Request(2));assert(loader.error==neb::FileError::NoCard && loader.active==1);
-    std::puts("PASS production callback/adapter: real DigitalControl debouncing, 16 keys, mode release, raw MIDI/running status/RT/reset/disconnect, FAT path and PCM load, poisoned SDRAM construction");
+    // Bootloader entry: S9+S16 alone for 5 s (no reply), or the raw SysEx request (answered).
+    using daisy::System;
+    hw.tog_sw18.value=0;Advance(30);usb.sent.clear();
+    hw.pressed[8]=hw.pressed[15]=hw.pressed[0]=true;Advance(6000);ServiceBootloader();
+    assert(System::bootloader_resets==0);
+    hw.pressed[0]=false;Advance(4990);ServiceBootloader();assert(System::bootloader_resets==0);
+    Advance(20);ServiceBootloader();
+    assert(System::bootloader_resets==1 && System::bootloader_mode==System::DAISY_INFINITE_TIMEOUT);
+    hw.pressed[8]=hw.pressed[15]=false;Advance(15);usb.sent.clear();
+    const std::vector<uint8_t> ack(std::begin(bootloader::kAck),std::end(bootloader::kAck));
+    Send({0xf0,0x7d,0x42,0x4c,0x01,0x01,0xf8,'B','O','O','T',0xf7,0x90,60,100});ServiceBootloader(); // clock inside
+    assert(System::bootloader_resets==2 && usb.sent.size()==1 && usb.sent[0]==ack);
+    Send({0xf0,0x7d,0x42,0x4c,0x01,0x41,0xf7});Send({0xf0,0x7d,0x42,0x4c,0x01,0x01,'B','O','O',0xf7});
+    ServiceBootloader();assert(System::bootloader_resets==2); // echoed reply, truncated request
+    std::puts("PASS production callback/adapter: real DigitalControl debouncing, 16 keys, mode release, raw MIDI/running status/RT/reset/disconnect, FAT path and PCM load, poisoned SDRAM construction, bootloader keys/SysEx");
 }

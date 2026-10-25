@@ -54,6 +54,7 @@ class ToyPiano {
     // Back to the unmodulated pitch and harmonic; the level ramps back to 1.
     void ClearModulation(std::size_t ramp);
     float VoiceIncrement(std::size_t voice) const { return voices_[voice].increment; }
+    float BaseIncrement(std::size_t voice) const { return voices_[voice].base_increment; }
     float VoiceLevel(std::size_t voice) const { return voices_[voice].level; }
     float VoiceHarmonic(std::size_t voice) const { return voices_[voice].harmonic; }
   private:

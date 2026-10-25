@@ -7,7 +7,7 @@
 
 namespace diag {
 
-constexpr const char* kFirmwareVersion = "0.2.0";
+constexpr const char* kFirmwareVersion = "0.2.1";
 constexpr const char* kAppName = "DaisyDiagnostic";
 constexpr const char* kLibDaisyCommit = "f715e48";
 constexpr size_t kNumButtons = 16;
@@ -98,6 +98,7 @@ enum Request : uint32_t {
     kRequestReaderStatus = 1u << 4,
     kRequestReaderShare = 1u << 5,
     kRequestReaderReturn = 1u << 6,
+    kRequestBootloader = 1u << 7,  // BOOT: restart into the Daisy bootloader after the reply
 };
 
 // Command handling and host liveness. Streaming starts with HELLO and stops after
