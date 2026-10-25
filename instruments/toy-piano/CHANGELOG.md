@@ -4,6 +4,10 @@ The version is defined in [src/version.h](src/version.h).
 
 ## 0.3.1 - integration test image, not released
 
+* Integration test image of the integration branch (PR #42). The release preflight
+  still accepts only major.minor, so a release needs a deliberate new number
+  (0.4 is taken by PR #39); the host test now accepts X.Y and X.Y.Z.
+
 * **Firmware updates without BOOT/RESET** ([common/bootloader](../../common/bootloader/README.md)):
   holding S9+S16 alone for 5 s, or the USB-MIDI SysEx `F0 7D 42 4C 01 01 42 4F 4F 54 F7`
   (answered with `F0 7D 42 4C 01 41 F7`), lights all LEDs and restarts into the Daisy
