@@ -12,7 +12,7 @@ test-fx:
 	$(MAKE) -C tests/fx test
 
 PROJECT_ACTIONS := all clean libs test test-sanitize test-thread version program-dfu program-boot
-.PHONY: help list all-projects test-projects test-release $(PROJECT_ACTIONS)
+.PHONY: help list all-projects test-projects test-release test-sd $(PROJECT_ACTIONS)
 
 test-release:
 	python3 -m unittest discover -s tests -p test_release_guard.py -v
@@ -31,5 +31,9 @@ $(PROJECT_ACTIONS):
 all-projects:
 	$(foreach p,$(BUILDABLE_PROJECTS),"$(MAKE)" PROJECT=$(p) all &&) true
 
-test-projects:
+test-projects: test-sd
 	$(foreach p,$(BUILDABLE_PROJECTS),"$(MAKE)" PROJECT=$(p) test &&) true
+
+# Shared read-only SD driver (common/sd): host tests on FAT32/exFAT images.
+test-sd:
+	"$(MAKE)" -C common/sd test

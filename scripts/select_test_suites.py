@@ -8,8 +8,11 @@ import subprocess
 def select_suites(changed):
     def touched(*prefixes):
         return any(p.startswith(prefixes) for p in changed)
+    # common/audio/ (FX contract) and common/sd/ (not used by any firmware yet) have
+    # their own consumer rules instead of selecting every firmware suite.
     shared = any(p in ('Makefile', 'projects.mk', 'libDaisy', 'DaisySP') or
-                 (p.startswith('common/') and not p.startswith('common/audio/')) for p in changed)
+                 (p.startswith('common/') and not p.startswith(('common/audio/', 'common/sd/')))
+                 for p in changed)
     mod_api = touched('modules/mod-on-daisy/include/', 'modules/mod-on-daisy/adapters/')
     fx = touched('common/audio/', 'effects/torus-reverb/', 'effects/reverb/src/', 'tests/fx/',
                  'instruments/physical-modeling/torus/dsp/fx/',
@@ -25,6 +28,7 @@ def select_suites(changed):
         'editor': shared or touched('editors/mod-on-daisy/') or mod_api,
         'diagnostics': shared or touched('diagnostics/'),
         'fx': shared or fx,
+        'sd': shared or touched('common/sd/', 'scripts/check-sd-symbols.py'),
         'components': True, # tiny registry/selection tests; no compiler or dependencies
     }
     if '.github/workflows/quick.yml' in changed:

@@ -110,6 +110,14 @@ class ComponentTests(unittest.TestCase):
                     'diagnostics', 'submodules'):
             self.assertTrue(suites[key], key)
 
+    def test_sd_driver_consumers(self):
+        # The shared SD driver is not linked by any firmware yet: only its own suite runs.
+        suites = selection.select_suites(['common/sd/ro_sd.c'])
+        self.assertTrue(suites['sd'])
+        for key in ('toy', 'physical', 'granular', 'looper', 'reverb', 'bootloader', 'diagnostics'):
+            self.assertFalse(suites[key], key)
+        self.assertTrue(selection.select_suites(['Makefile'])['sd'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -102,3 +102,6 @@ jobs:
       - name: Diagnostics host tests
         if: steps.changes.outputs.diagnostics == 'true'
         run: make -C diagnostics/firmware test
+      - name: Shared SD driver host tests (FAT32/exFAT images)
+        if: steps.changes.outputs.sd == 'true'
+        run: make -C common/sd test
