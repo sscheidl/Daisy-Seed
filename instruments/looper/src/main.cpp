@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Looper for the Daisy Seed3 Desktop Dev Kit, libDaisy commit in the repository
 // README. Engine with loop modes and Slice/Skip, loop persistence and WAV import
-// on the microSD card; no effects. USB-MIDI on J7 so far only for the bootloader request.
+// on the microSD card; no effects. USB-MIDI on J7: CC control (midi_control.h) and
+// the bootloader request.
 #include "card_volume.h"
 #include "loop_store.h"
 #include "looper_engine.h"
+#include "midi_control.h"
 #include "version.h"
 const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
 #include "desktop_devkit.h"
@@ -61,8 +63,19 @@ static bootloader::Request bootRequest;
 
 // libDaisy's USB device state for the external port (J7 on the carrier).
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
-// USB-MIDI on J7. Notes and CCs are ignored until the looper gets MIDI control.
+// USB-MIDI on J7: CC20-27 work like the pots, CC102-113 like the keys S1-S12
+// (README "MIDI control"). Notes are ignored.
 static MidiUsbHandler usbMidi;
+static looper::midi::Receiver midiIn;
+static looper::midi::Takeover takeover[knobs::Decay + 1];  // audio callback only
+static uint8_t midiValue[knobs::Decay + 1] = {};          // audio callback only
+static_assert(unsigned(looper::midi::kButtons) == keys::kFirstMode + keys::kModes &&
+                  unsigned(looper::midi::Import) == keys::Import &&
+                  unsigned(looper::midi::SoundOnSound) == keys::kFirstMode,
+              "MIDI buttons follow the key order");
+static_assert(unsigned(looper::midi::kKnobs) == knobs::Decay + 1 &&
+                  unsigned(looper::midi::Varispeed) == knobs::Varispeed,
+              "MIDI knobs follow the pot order");
 
 // microSD: loop.wav is saved from the main loop and recalled at power-up;
 // S8 imports the next WAV file of 0:/looper/loops. The transfer buffer must be
@@ -174,6 +187,18 @@ static float Settled(unsigned knob) {
     return settled[knob];
 }
 
+// Pot or MIDI, whichever moved last (normalized 0...1 for all knobs but varispeed).
+static bool MidiKnob(unsigned knob, float pot) {
+    uint8_t value = 0;
+    const bool fresh = midiIn.TakeKnob(knob, value);
+    if (fresh)
+        midiValue[knob] = value;
+    return takeover[knob].UseMidi(pot, fresh);
+}
+static float Knob(unsigned knob, float pot) {
+    return MidiKnob(knob, pot) ? looper::midi::UnitFromCc(midiValue[knob]) : pot;
+}
+
 // The engine is owned by the audio callback; controls are read there too.
 static void Controls() {
     hw.UpdateAllControls();
@@ -190,6 +215,7 @@ static void Controls() {
     }
     if (bootKeys.Process(downMask, System::GetNow()))
         bootRequest.Set(bootloader::Request::kKeys);
+    presses |= midiIn.TakePresses();  // CC presses act like key presses
     if (presses & (1u << keys::Record))
         engine.PressRecord();
     if (presses & (1u << keys::Play))
@@ -215,14 +241,17 @@ static void Controls() {
         engine.SetSeamMode(engine.GetSeamMode() == looper::SeamMode::Window
                                ? looper::SeamMode::Crossfade
                                : looper::SeamMode::Window);
-    engine.SetVarispeed(VarispeedFromKnob(hw.pot[knobs::Varispeed].Value()));
-    engine.SetInertia(hw.pot[knobs::Inertia].Value());
-    engine.SetInertialSlope(Settled(knobs::Slope));
-    engine.SetStart(Settled(knobs::Start));
-    engine.SetSize(Settled(knobs::Size));
-    engine.SetSlice(Settled(knobs::Slice));
-    engine.SetSkip(Settled(knobs::Skip));
-    engine.SetFrippertronicsDecay(Settled(knobs::Decay));
+    const float speedPot = hw.pot[knobs::Varispeed].Value();
+    engine.SetVarispeed(MidiKnob(knobs::Varispeed, speedPot)
+                            ? looper::midi::SemitonesFromCc(midiValue[knobs::Varispeed])
+                            : VarispeedFromKnob(speedPot));
+    engine.SetInertia(Knob(knobs::Inertia, hw.pot[knobs::Inertia].Value()));
+    engine.SetInertialSlope(Knob(knobs::Slope, Settled(knobs::Slope)));
+    engine.SetStart(Knob(knobs::Start, Settled(knobs::Start)));
+    engine.SetSize(Knob(knobs::Size, Settled(knobs::Size)));
+    engine.SetSlice(Knob(knobs::Slice, Settled(knobs::Slice)));
+    engine.SetSkip(Knob(knobs::Skip, Settled(knobs::Skip)));
+    engine.SetFrippertronicsDecay(Knob(knobs::Decay, Settled(knobs::Decay)));
 
     uint32_t state = 0;
     if (engine.GetState() == looper::State::Recording || engine.Overdubbing() ||
@@ -306,7 +335,12 @@ static void SendMidi(uint8_t* bytes, size_t size) {
 static void ServiceUsbMidi() {
     usbMidi.Listen();  // restarts reception after an overflow
     while (usbMidi.HasEvents()) {
-        if (!bootloader::IsRequest(usbMidi.PopEvent()))
+        const MidiEvent event = usbMidi.PopEvent();
+        if (event.type == ControlChange) {
+            midiIn.ControlChange(event.data[0], event.data[1]);
+            continue;
+        }
+        if (!bootloader::IsRequest(event))
             continue;
         uint8_t ack[sizeof(bootloader::kAck)];
         std::copy(std::begin(bootloader::kAck), std::end(bootloader::kAck), ack);

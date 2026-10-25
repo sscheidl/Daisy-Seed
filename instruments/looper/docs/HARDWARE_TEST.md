@@ -1,4 +1,4 @@
-# Hardware test — Looper v0.3 — PENDING — USER TEST
+# Hardware test — Looper v0.4 — PENDING — USER TEST
 
 No hardware run or flash has been done by the agent. Work through the sections in
 order: later checks only make sense once the earlier ones pass. Tick each box and
@@ -7,7 +7,7 @@ skipped one.
 
 ## 0. Prepare
 
-- [ ] Build or download `Looper-v0.3.2.bin` and note its SHA-256. The PR CI
+- [ ] Build or download `Looper-v0.4.0.bin` and note its SHA-256. The PR CI
       artifact and a local build of the same commit must match.
 - [ ] Flash it through the external Daisy bootloader as in
       [docs/FLASHING.md](../../../docs/FLASHING.md) (`PROJECT=looper`). Do not
@@ -121,7 +121,26 @@ of about 80 s.
 - [ ] Check `looper/loop.wav` on a computer: it plays as a 32-bit float stereo
       WAV at 48 kHz.
 
-## 8. Report
+## 8. MIDI control
+
+Connect J7 to the computer. In the DAW (or a MIDI monitor plus a controller),
+select the MIDI output "Daisy Seed External" (name as the operating system shows
+it). Use momentary buttons.
+
+- [ ] CC102 (127, then 0) starts and stops recording like S1; CC103 pauses and
+      plays like S2; CC104 undoes and redoes like S3; CC105 reverses.
+- [ ] CC110–113 select the four loop modes; the mode LEDs follow.
+- [ ] CC20: 64 plays at ×1, 76 an octave up, 40 two octaves down. Then turn pot 0
+      a little: the pot takes over again.
+- [ ] CC21–27 move inertia, slope, start, size, slice, skip and decay like the
+      pots.
+- [ ] Holding a button (or a DAW resending 127 on playback start) does not toggle
+      twice.
+- [ ] While the S8 LED blinks (saving), CCs still act within a moment; note any
+      noticeable delay. Audio does not drop out and D16 stays off.
+- [ ] A firmware update request from the editor over J7 still works.
+
+## 9. Report
 
 Write down for each box: pass, fail, or not tested, plus notes. Especially:
 boot time, any D16 event, control orientation, clicks with the settings that

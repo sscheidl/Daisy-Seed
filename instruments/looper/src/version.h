@@ -1,2 +1,2 @@
 #pragma once
-#define LOOPER_VERSION "0.3.2"
+#define LOOPER_VERSION "0.4.0"

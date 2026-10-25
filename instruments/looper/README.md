@@ -1,13 +1,14 @@
 # Looper — Instrument Project
 
-**Status: v0.3 with all four loop modes, Slice/Skip, and loop persistence and WAV
-import on the microSD card; host tests and ARM build pass; no hardware run yet.** Project ID: `looper`. The goal is an original
+**Status: v0.4 with all four loop modes, Slice/Skip, loop persistence and WAV
+import on the microSD card, and MIDI CC control over USB; host tests and ARM build
+pass; no hardware run yet.** Project ID: `looper`. The goal is an original
 stereo tape looper for the Seed3 Desktop Dev Kit, using the Qu-Bit Stardust as the
 behavioral reference. Validation details: [docs/VALIDATION.md](docs/VALIDATION.md); checklist for the
 first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.3.2.bin
+make PROJECT=looper -j4            # firmware: build/Looper-v0.4.0.bin
 make PROJECT=looper test           # host engine and production-callback tests
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```
@@ -101,9 +102,10 @@ independently from those descriptions.
   switching never steps the output; where a loop has no such region (up to 1,344
   frames), the post-roll crossfade switches in under a 384-frame jump crossfade.
 
-Not in v0.3: effects, input saturation and mix curves, Freeze, clock-synced
-slices, 1V/Oct and CV, the encoder range modes, WAV export, MIDI control. J7 is a
-USB-MIDI device, so far only for the firmware update request.
+Not in v0.4: effects, input saturation and mix curves, Freeze, clock-synced
+slices, 1V/Oct and CV, the encoder range modes, WAV export, MIDI notes, clock and
+feedback to the controller. J7 is a USB-MIDI device for CC control and the
+firmware update request.
 
 **Decided for Frippertronics (2026-10-20),** following manual v1.1.0 rather than
 the analyzed code, whose behavior is still OPEN (analysis section 8); both are
@@ -118,7 +120,7 @@ implemented and tested:
   selected; erase stays available. This avoids state changes that are hard to
   follow while the loop keeps decaying.
 
-## Seed3 controls (v0.3)
+## Seed3 controls (v0.4)
 
 [src/main.cpp](src/main.cpp) runs the engine in the audio callback (48 kHz,
 48-frame blocks) and outputs dry input plus loop through a soft limit above
@@ -194,6 +196,48 @@ buffer live in SDRAM, because the SDMMC1 IDMA cannot reach DTCM. The SD
 interrupt runs below the audio DMA. The original fades audio out and pauses it
 for imports and reloads its undo state from the card; this firmware does neither
 (analysis sections 3 and 9).
+
+## MIDI control (v0.4)
+
+The kit appears as a USB-MIDI device on **J7**. The looper listens to control
+changes on **every channel**; a DAW or a MIDI controller can play it without an
+editor. Notes, pitch bend, aftertouch, clock and all other controllers are
+ignored, and the looper sends nothing back except the bootloader reply.
+
+| CC | Function | Values |
+| --- | --- | --- |
+| 20 | Speed (varispeed) | value − 64 semitones: **64 = ×1**, 76 = +12, 40 = −24; below 40 −24, above 100 +36 |
+| 21 | Inertia | 0…127 = 0…1, like pot 1 |
+| 22 | Inertial Slope | like pot 2 (64 ≈ centre) |
+| 23 | Start | like pot 3 |
+| 24 | Size | like pot 4 (127 = whole loop) |
+| 25 | Slice | like pot 5 |
+| 26 | Skip | like pot 6 |
+| 27 | Frippertronics decay | like pot 7 (0 keeps, 127 erases) |
+| 102 | Record (S1) | a press is a step from below 64 to 64 or more |
+| 103 | Play/pause (S2) | |
+| 104 | Undo, or redo when available (S3) | |
+| 105 | Reverse (S4) | |
+| 106 | Erase (S5) | |
+| 107 | Next loop mode (S6) | |
+| 108 | Seam: window ↔ crossfade (S7) | |
+| 109 | Import the next WAV file (S8) | |
+| 110–113 | Sound on Sound, Replace, Frippertronics, Resample (S9–S12) | |
+
+* **Keys:** use momentary buttons (127 on press, 0 on release), as most
+  controllers and DAW button lanes send by default. A held value (127 again, or
+  any value of 64 or more) is not a new press, so a DAW that repeats the last
+  value on playback start does not toggle anything twice. A controller in
+  "toggle" mode sends 127 and 0 on alternate presses and therefore triggers on
+  every second press only.
+* **Pots and CCs together:** the control moved last wins. A CC takes its knob
+  over at once; moving the pot by more than 2 % of its travel hands the knob
+  back. Without MIDI the pots behave exactly as before.
+* CC1 (mod wheel), aftertouch and CC120/123 stay free for a later
+  [Mod on Daisy](../../modules/mod-on-daisy/README.md) build, which consumes them.
+* The CCs reach the engine at the next audio callback (1 ms blocks). USB
+  messages are read in the main loop; a card write or import may delay them by a
+  few milliseconds (NICHT GEMESSEN on the board).
 
 ## Reference: Qu-Bit Stardust
 

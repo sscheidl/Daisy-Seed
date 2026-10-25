@@ -3,7 +3,7 @@ VERSION := $(shell sed -n 's/.*LOOPER_VERSION "\(.*\)".*/\1/p' src/version.h | h
 $(if $(VERSION),,$(error Could not read the version from src/version.h))
 TARGET = Looper-v$(VERSION)
 STORE_SOURCES = src/wav.cpp src/resample.cpp src/loop_store.cpp
-CPP_SOURCES = src/main.cpp src/looper_engine.cpp $(STORE_SOURCES) src/fatfs_volume.cpp
+CPP_SOURCES = src/main.cpp src/looper_engine.cpp src/midi_control.cpp $(STORE_SOURCES) src/fatfs_volume.cpp
 USE_FATFS = 1
 C_INCLUDES += -Isrc
 include ../../common/desktop.mk
@@ -22,9 +22,11 @@ test:
 	./build/host/test_wav
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_resample.cpp src/resample.cpp -o build/host/test_resample
 	./build/host/test_resample
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_midi.cpp src/midi_control.cpp -o build/host/test_midi
+	./build/host/test_midi
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc -Itests/fakes tests/test_store.cpp src/looper_engine.cpp $(STORE_SOURCES) -o build/host/test_store
 	./build/host/test_store
-	$(HOST_CXX) $(HOST_FLAGS) -Isrc -Itests/fakes -I$(BOOTLOADER_DIR) -I$(LIBDAISY_DIR)/src -DLOOPER_BUFFER_FRAMES=192000 tests/test_callback.cpp src/looper_engine.cpp $(STORE_SOURCES) -o build/host/test_callback
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc -Itests/fakes -I$(BOOTLOADER_DIR) -I$(LIBDAISY_DIR)/src -DLOOPER_BUFFER_FRAMES=192000 tests/test_callback.cpp src/looper_engine.cpp src/midi_control.cpp $(STORE_SOURCES) -o build/host/test_callback
 	./build/host/test_callback
 
 test-sanitize:
