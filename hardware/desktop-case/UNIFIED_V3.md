@@ -6,6 +6,11 @@ angeschraubte Raster aus [V2](CLOSED_V2.md) durch **ein einziges Druckteil**.
 Die Bodenwanne bleibt abnehmbar. Beide 1-mm-Acrylplatten für die
 Papierbeschriftung bleiben erhalten.
 
+> **Befund 25.10.2026: `tray.stl` und `unified-carrier.stl` sind
+> spiegelverkehrt und so nicht druckbar.** Acryl-/Papier-SVGs und Renderbilder
+> sind richtig orientiert. Siehe
+> [Befund: Druckteile gespiegelt](#befund-druckteile-gespiegelt).
+
 **Die Bedienfläche ist eben:** Untere Acrylplatte, Papier und obere Acrylplatte
 liegen jeweils in einer einzigen Ebene. Tasterkappen, Potiwellen und
 Kippschalter ragen durch einzelne Öffnungen. Das Papier läuft jetzt auch
@@ -186,6 +191,41 @@ Vollständige Bauteil-/Steckermodelle, Passung am Board, Festigkeit,
 Drucktoleranzen, Reibung und thermisches Verhalten: **NICHT GEMESSEN**.
 Keine Fertigungsfreigabe. Erst Kappenhöhe und kleinen Coupon prüfen, danach
 den großen Passprototyp beauftragen.
+
+## Befund: Druckteile gespiegelt
+
+**Digital geprüft am 25.10.2026, nicht korrigiert.** Die Druckteile
+`tray.stl` und `unified-carrier.stl` übernehmen die KiCad-Koordinaten
+unverändert (y in der Draufsicht nach unten) und legen Z nach oben. Das
+ergibt ein linkshändiges System. STL wird von Slicern rechtshändig gelesen;
+die gedruckten Teile sind deshalb ein Spiegelbild des Boards.
+
+Nachgemessen an den Wandöffnungen in Platinenkoordinaten:
+
+| Öffnung | Lage in der STL | Am Board |
+| --- | --- | --- |
+| USB-C J7, microSD | Wand x = −9, y ≈ 41 / 92 | links |
+| MIDI-DIN J8, J10, J11 | Wand x = 206, y ≈ 20 / 44 / 68 | rechts |
+| 6,35-mm-Buchsen J1–J4 | Wand y = −9 | hinten |
+
+Im Slicer liegen die 6,35-mm-Buchsen damit vorn. Dreht man das Teil so, dass
+sie hinten liegen, sitzt MIDI links und USB/SD rechts; Taster und Potis sind
+ebenso gespiegelt. Eine 180°-Drehung behebt das nicht.
+
+Nicht betroffen:
+
+- `lower-acrylic-1mm.svg`, `upper-acrylic-1mm.svg` und `paper-overlay.svg`
+  liegen in SVG-Draufsicht (y nach unten) richtig. Alle Ausschnitte für
+  H1–H4, S1–S16, D1–D16, VR1–VR8, SW17/SW18 und die sechs senkrechten
+  Buchsen treffen die Rev4-KiCad-Positionen ohne Abweichung.
+- Die Renderbilder sind richtig, weil `render_unified_preview.py` und
+  `render_realistic_case.py` die importierten STLs mit `v.co.y *= -1`
+  spiegeln. Die Bilder verdecken den Fehler der Druckteile daher.
+
+Korrektur, noch nicht umgesetzt: beim STL-Export y spiegeln (y → −y) und die
+Dreiecks-Umlaufrichtung umkehren; danach die Spiegelung in beiden
+Render-Skripten entfernen und die Wandöffnungen erneut gegen KiCad prüfen. Bis dahin
+`tray.stl` und `unified-carrier.stl` nicht drucken.
 
 ## Dateien und Reproduktion
 
