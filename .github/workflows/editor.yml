@@ -58,7 +58,12 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor.exe" "dist/ModOnDaisyEditor.exe"
           Copy-Item editors/mod-on-daisy/README.md dist/README.md
-          Get-FileHash dist/ModOnDaisyEditor.exe -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  ModOnDaisyEditor.exe" } | Set-Content dist/SHA256SUMS
+          # The VST3 plugin is part of the same build (README: VST3-Plugin für Studio One).
+          Copy-Item -Recurse "build/editor/ModOnDaisyPlugin_artefacts/Release/VST3/Mod on Daisy.vst3" "dist/Mod on Daisy.vst3"
+          Get-ChildItem dist -Recurse -File -Include *.exe, *.vst3 | ForEach-Object {
+            $rel = $_.FullName.Substring((Resolve-Path dist).Path.Length + 1).Replace('\', '/')
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $rel"
+          } | Set-Content dist/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           retention-days: 14
