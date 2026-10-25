@@ -88,7 +88,8 @@ class ComponentTests(unittest.TestCase):
     def test_fx_consumers(self):
         suites = selection.select_suites(['common/audio/fx_contract.h'])
         self.assertTrue(suites['fx'] and suites['physical'])
-        self.assertFalse(suites['toy'] or suites['looper'])
+        self.assertTrue(suites['toy'])
+        self.assertFalse(suites['looper'])
         suites = selection.select_suites(['effects/reverb/src/wet_path.cpp'])
         self.assertTrue(suites['fx'] and suites['physical'] and suites['reverb'])
         suites = selection.select_suites(['instruments/physical-modeling/torus/dsp/fx/reverb.h'])

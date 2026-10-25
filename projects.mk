@@ -12,6 +12,11 @@ PROJECT_ARGS_physical-modeling-fx-ambient := MOD=1 COMPOSED=1 FX=ambient
 PROJECT_STATUS_physical-modeling-fx-ambient := buildable
 
 PROJECT_DIR_toy-piano := instruments/toy-piano
+PROJECTS += toy-piano-ambient
+BUILDABLE_PROJECTS += toy-piano-ambient
+PROJECT_DIR_toy-piano-ambient := instruments/toy-piano
+PROJECT_ARGS_toy-piano-ambient := AMBIENT=1
+PROJECT_STATUS_toy-piano-ambient := buildable
 PROJECT_DIR_physical-modeling := instruments/physical-modeling
 # Separate Mod on Daisy build of the same sources (own image and build/mod directory).
 PROJECT_DIR_physical-modeling-mod := instruments/physical-modeling

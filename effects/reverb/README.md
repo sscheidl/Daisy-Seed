@@ -1,4 +1,4 @@
-# Ambient Reverb v0.2 — Seed3 Desktop Dev Kit
+# Ambient Reverb v0.3 — Seed3 Desktop Dev Kit
 
 **Buildable prototype; no hardware run has been reported.** Project ID: `reverb-fx`.
 This is an original stereo ambient reverb imported from the
@@ -15,8 +15,11 @@ planned; its code is not included in this firmware.
 
 The engine has eight modulated feedback branches, input allpass diffusion,
 filtered octave-up/down paths, stereo width, predelay, sustain, and bypass with
-trails. Five direct mode buttons select the existing Cloud, Halo, Scatter,
-Abyss, and Bloom algorithms. S6–S14 are reserved for future original modes.
+trails. Six direct mode buttons select Cloud, Halo, Scatter, Abyss, Bloom and
+Shimmer. S7–S14 are reserved for future original modes. Shimmer adds a stronger
+filtered octave-up injection and recirculates the late tail through the shifter;
+its feedback return scales with unused tank gain. X controls its octave amount.
+No additional large audio buffers are required.
 The modulation shape is Sine in this control revision; mode buttons do not
 recall knob presets. The DSP allocates no memory in the audio callback.
 
@@ -33,7 +36,8 @@ The exact physical button and pot orientation still needs a board check.
 | Control | Function |
 | --- | --- |
 | S1–S5 | Cloud / Halo / Scatter / Abyss / Bloom (Dream / Light / Rain / Dark / Rise inspired) |
-| S6–S14 | Reserved for future modes; no action |
+| S6 | Shimmer: original rising-octave ambient reverb |
+| S7–S14 | Reserved for future modes; no action |
 | S9 + S16, 5 s | Firmware update mode: all LEDs on, Daisy bootloader ([details](../../common/bootloader/README.md)); S16 switches sustain first |
 | S15 | Bypass. Tap to toggle; hold from bypass for temporary effect (250 ms threshold) |
 | S16 | Sustain. Latching in Cloud; momentary in the other modes |
@@ -44,12 +48,12 @@ The exact physical button and pot orientation still needs a board check.
 | VR3 | Modulation depth, 0–3 ms |
 | VR4 | Dry/wet mix, 0–100%, equal-power mapping |
 | VR5 | Wet Pan, left–center–right |
-| VR6 | Mode-dependent X: sustained Cloud vibrato, Halo/Abyss octave amount, Scatter tap diffusion, Bloom rise |
+| VR6 | Mode-dependent X: sustained Cloud vibrato, Halo/Abyss/Shimmer octave amount, Scatter tap diffusion, Bloom rise |
 | VR7 | Base LFO rate, 0.03–1.5 Hz |
 | VR8 | Stretch: continuously varies the wet processing clock from 48 to 12 kHz |
 
-Exactly one of LEDs D1–D5 indicates the selected mode. D15 lights when bypass
-is active; D16 lights when Sustain is active. D6–D14 remain off. The main loop
+Exactly one of LEDs D1–D6 indicates the selected mode. D15 lights when bypass
+is active; D16 lights when Sustain is active. D7–D14 remain off. The main loop
 updates LEDs on state changes, polling every 10 ms. Callback overruns remain
 available through the `overruns` debugger variable; D16 is now a Sustain LED.
 Pot changes update DSP coefficients at most about 50 times per second; button
@@ -65,13 +69,13 @@ and its clock range have not been verified.
 
 The [Desktop control plan](docs/CONTROL_PLAN.md) records the source checks,
 mode expansion path, and hardware acceptance steps. The table above describes
-the v0.2 firmware.
+the v0.3 firmware; the older plan predates the sixth algorithm.
 
 ## Reuse inside an instrument
 
 `src/fx_adapter.h` exposes the existing DSP through the shared wet-only audio
 contract. Its integration adapter has its own version in `adapter_version.h`;
-the standalone v0.2 core/version is retained. The first composed firmware is
+the shared core is versioned 0.3. The first composed firmware is
 `make PROJECT=physical-modeling-fx-ambient`; see
 [modular components](../../docs/MODULAR_COMPONENTS.md) for its limited pilot
 parameter mapping and hardware-test boundary.
@@ -85,10 +89,10 @@ as in [BUILD.md](../../docs/BUILD.md):
 make PROJECT=reverb-fx test
 make PROJECT=reverb-fx test-sanitize
 make PROJECT=reverb-fx -j4
-python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.2.bin
+python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.3.bin
 ```
 
-The firmware is `effects/reverb/build/AmbientReverb-v0.2.bin`, built with the
+The firmware is `effects/reverb/build/AmbientReverb-v0.3.bin`, built with the
 same `BOOT_SRAM` setup and external DFU bootloader as Toy Piano. Follow the
 [Desktop Kit flashing guide](../../docs/FLASHING.md); no bootloader change is
 required. Do not flash the research project's original image if you want the
@@ -124,11 +128,11 @@ Seed3 recordings or a listening comparison with Slöer.
 
 1. Keep monitoring level low. Test bypass and dry signal first, including the
    left-only input, stereo input, and Legacy Mono switch positions.
-2. Test S1–S5, S15/S16, their LEDs, both toggles, and all eight pots. Confirm
+2. Test S1–S6, S15/S16, their LEDs, both toggles, and all eight pots. Confirm
    Sustain and bypass transitions without loud jumps; verify the physical
    positions of `tog_sw17` and `tog_sw18`.
 3. Turn VR8 slowly and compare the wet tail timing and tone at both endpoints.
-   Try Halo/Abyss with maximum decay, modulation, and texture. Read
+   Try Halo/Abyss/Shimmer with maximum decay, modulation, and texture. Read
    `maximumCycles`, `overruns`, and `budgetCycles` in a debugger; record the
    board setup and signal level. D16 now indicates Sustain, not an overrun.
 4. Check output level, noise, and stereo image through the actual codec. The
@@ -138,3 +142,17 @@ Seed3 recordings or a listening comparison with Slöer.
 The FV-1 marking on the user's Slöer board is documented in the
 [reference survey](../../docs/REFERENCES.md). Its effect program and complete
 stereo path remain unknown.
+
+## v0.3 software validation (October 25, 2026)
+
+Host and fatal ASan/UBSan suites pass, including six-mode control/LED mapping,
+Shimmer octave spectrum, 90-second maximum-control tail stability and four
+samplerates. The shared wet-only adapter and Torus/Ambient host tests pass.
+A deterministic 5-second comparison with `44b08ca` preserves float output for
+the original five modes. These are software results; device sound and CPU are
+**NICHT GEMESSEN**.
+
+xPack GCC 13.2.1-1.1 builds a 130828-byte `AmbientReverb-v0.3.bin`; BOOT_SRAM
+vectors and ARM ELF/memory checks pass. DTCM: 69124 B; SDRAM: 1114112 B. SHA-256:
+`576e9d81132f6b511913c477930c7073a7c0641f0d2ed8dc3eb071fb698bcc90`.
+The earlier v0.2 measurements above are retained as historical results.

@@ -1,5 +1,14 @@
 # Übergabe — lokal weiterarbeiten
 
+**Ergänzung 25.10.2026:** Auf `feat/toy-piano-ambient` liegt das separate Produkt
+`toy-piano-ambient 0.1.1`, abhängig vom modularen FX-Unterbau in PR #38.
+[Bedienung, Build, Prüfergebnisse und Hardware-Laufzettel](instruments/toy-piano/docs/AMBIENT.md).
+Host-Tests, ASan/UBSan und ARM-Build bestanden; Toy Piano v0.3 bleibt bytegleich.
+Sechs echte Reverb-Modi einschließlich Shimmer (B / unten); VR7 regelt dessen
+Oktavanteil. Kern `ambient-reverb 0.3`, reine FX-Fassung: Shimmer auf S6.
+Gemeinsame CPU-Last und Audiotest am Kit sind **NICHT GEMESSEN**.
+Die folgenden älteren Abschnitte beschreiben ihren jeweils datierten Stand.
+
 **Stand:** 24. Oktober 2026 abends (PR #29 gemergt, mod3 geflasht, lokale Sitzung; § 3a).
 Zuvor: Korrekturauftrag umgesetzt in der Cloud-Sitzung. Ab jetzt wird lokal unter
 Windows mit Claude Code und Codex weitergearbeitet, mit USB-Zugriff auf das Seed3

@@ -11,6 +11,10 @@ The hardware diagnostic suite is maintained separately in
 
 ## Playing
 
+Separate modular product: [Toy Piano + Ambient Reverb](docs/AMBIENT.md),
+`make PROJECT=toy-piano-ambient`. It has its own version, controls and image;
+the v0.3 controls below still describe the original `toy-piano` target.
+
 | Button | Note | MIDI note | Button | Note | MIDI note |
 | --- | --- | --- | --- | --- | --- |
 | S1 | C4 | 60 | S9 | C5 | 72 |

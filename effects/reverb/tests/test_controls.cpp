@@ -21,10 +21,10 @@ int main() {
     hw.Init();
     controlInterval = 30;
     Tick(8);
-    const ambient::Mode expected[5] = {ambient::Mode::Cloud, ambient::Mode::Halo,
+    const ambient::Mode expected[6] = {ambient::Mode::Cloud, ambient::Mode::Halo,
                                        ambient::Mode::Scatter, ambient::Mode::Abyss,
-                                       ambient::Mode::Bloom};
-    for (unsigned i = 0; i < 5; ++i) {
+                                       ambient::Mode::Bloom, ambient::Mode::Shimmer};
+    for (unsigned i = 0; i < 6; ++i) {
         Tap(i);
         assert(parameters.mode == expected[i]);
         assert((uiState.load() & 7u) == i);
@@ -33,7 +33,7 @@ int main() {
             assert(hw.led[led] == (led == i ? .5f : 0.f));
     }
     Tap(0);
-    for (unsigned i = 5; i < 14; ++i) {
+    for (unsigned i = 6; i < 14; ++i) {
         Tap(i);
         assert(parameters.mode == ambient::Mode::Cloud);
     }
@@ -120,6 +120,6 @@ int main() {
     ServiceBootloader();
     assert(System::bootloader_resets == 2 && usbMidi.sent.size() == 1);
     hUsbDeviceHS.dev_state = 0;
-    std::cout << "PASS: five modes, reserved buttons, switches, LED state, sustain, "
+    std::cout << "PASS: six modes, reserved buttons, switches, LED state, sustain, "
                  "bypass gestures, dropout suppression and bootloader keys/SysEx\n";
 }

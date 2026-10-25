@@ -93,8 +93,9 @@ manuell gemäß AGENTS.md; es wird keine automatische ARM-Matrix eingeführt.
 
 Der Baukasten beschreibt momentan konkrete Buildziele; eine freie Auswahl aller
 Instrument-/FX-Paare und ein allgemeiner Instrument-Host sind weitere Schritte.
-Die Toy-Piano/Reverb-Kombination und der sechste Shimmer-Typ sind noch nicht
-implementiert. Bestehende HTML-/JUCE-/VST3-Panels bleiben Matrix-Editoren und
+Die [Toy-Piano/Reverb-Kombination](../instruments/toy-piano/docs/AMBIENT.md)
+ist als separates Produkt mit sechs Modi einschließlich Shimmer implementiert
+(PR #41, aufbauend auf diesem Unterbau). Bestehende HTML-/JUCE-/VST3-Panels bleiben Matrix-Editoren und
 speichern weiterhin Mod-Patches. Vollständige Klangparameter, Live-Komponenten-
 Entdeckung, DSP-Anwendungsrevisionen und ein vollständiges Song-Patchformat
 brauchen eine gemeinsam getestete Erweiterung des bestehenden Vertrags.
