@@ -8,9 +8,13 @@
 // Replace only the platform clock used by the real, pinned DigitalControl.
 // The STM32 System header is not host-buildable; no debounce logic is copied.
 #define DSY_SYSTEM_H
+#define DSY_SDRAM_BSS
 namespace daisy {
 struct System {
     inline static uint32_t now = 0;
+    inline static uint32_t ticks = 0;
+    static uint32_t GetTick() { return ticks; }
+    static uint32_t GetTickFreq() { return 1000000; }
     static uint32_t GetNow() { return now; }
     static void Delay(uint32_t ms) { now += ms; }
 };
@@ -84,6 +88,8 @@ struct Hardware {
     };
     std::array<Pot, 8> pot{};
     std::array<Pot, 2> cv{};          // bipolar -1..+1 in the real AnalogControl
+    struct Toggle { bool value = false; bool Pressed() const { return value; } } tog_sw17;
+    struct Toggle3 { int value = 1; int Read() const { return value; } } tog_sw18;
     struct Gate {
         bool high = false;
         bool State() const { return high; }

@@ -14,6 +14,7 @@ on:
           - physical-modeling-fx-ambient
           - physical-modeling
           - toy-piano
+          - toy-piano-ambient
           - granular
           - looper
           - reverb-fx
@@ -39,6 +40,7 @@ jobs:
           import os
           projects = [
               {"project":"toy-piano","directory":"instruments/toy-piano","image":"ToyPiano","build":"build"},
+              {"project":"toy-piano-ambient","directory":"instruments/toy-piano","image":"ToyPianoAmbient","build":"build/ambient"},
               {"project":"reverb-fx","directory":"effects/reverb","image":"AmbientReverb","build":"build"},
               {"project":"physical-modeling","directory":"instruments/physical-modeling","image":"PhysicalModeling","build":"build"},
               {"project":"physical-modeling-mod","directory":"instruments/physical-modeling","image":"PhysicalModelingMod","build":"build/mod"},
@@ -89,7 +91,7 @@ jobs:
       - name: Check firmware image
         run: python3 scripts/check-firmware.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
       - name: Check ARM ELF and static memory reserves
-        if: startsWith(matrix.project, 'physical-modeling')
+        if: startsWith(matrix.project, 'physical-modeling') || matrix.project == 'toy-piano-ambient'
         run: python3 scripts/check-physical-elf.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
       - name: Check Nebulae ARM memory, SD DMA and dynamic WAV capacities
         if: matrix.project == 'granular'

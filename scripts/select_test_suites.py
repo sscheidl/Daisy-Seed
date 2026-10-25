@@ -15,7 +15,7 @@ def select_suites(changed):
                  'instruments/physical-modeling/torus/dsp/fx/',
                  'instruments/physical-modeling/third_party/stmlib/')
     suites = {
-        'toy': shared or touched('instruments/toy-piano/') or mod_api,
+        'toy': shared or touched('instruments/toy-piano/') or mod_api or fx,
         'physical': shared or touched('instruments/physical-modeling/') or mod_api or fx,
         'granular': shared or touched('instruments/granular/'),
         'looper': shared or touched('instruments/looper/'),

@@ -124,6 +124,18 @@
         "path": "editors/mod-on-daisy/web/version.js",
         "name": "MOD_ON_DAISY_WEB_VERSION"
       }
+    },
+    "callback-diagnostics": {
+      "kind": "control",
+      "source": "modules/mod-on-daisy/adapters",
+      "version": {
+        "type": "macro",
+        "path": "modules/mod-on-daisy/adapters/callback_diagnostics.h",
+        "name": "MOD_CALLBACK_DIAGNOSTICS_VERSION"
+      },
+      "depends": [
+        "mod-on-daisy"
+      ]
     }
   },
   "products": {
@@ -253,6 +265,28 @@
       "marker": "MOD-BENCH-VERSION=",
       "components": [
         "mod-on-daisy"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "toy-piano-ambient": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_AMBIENT_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/ambient",
+      "image": "ToyPianoAmbient",
+      "marker": "TOYPIANO-AMBIENT-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "ambient-reverb-fx",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "fx-contract"
       ],
       "panels": [
         "mod-editor-web",

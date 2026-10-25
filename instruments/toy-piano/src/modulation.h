@@ -4,11 +4,21 @@
 // for experiments and are greyed out in the editor.
 #include "config.h"
 #include "version.h"
+#if TOY_PIANO_FX
+#include "composed_version.h"
+#endif
 #include "mod_on_daisy/types.h"
 #include <cmath>
 
 namespace toy_piano {
 enum ModTarget : uint8_t { ModPitch, ModLevel, ModHarmonic, ModAttack, ModDecay };
+#if TOY_PIANO_FX
+constexpr unsigned ModHallDecay = 5, ModHallMix = 6, ModHallX = 7;
+inline constexpr mod::ModeInfo kFxModes[] = {
+    {"Cloud", "A / SW18 up"}, {"Halo", "A / SW18 center"}, {"Scatter", "A / SW18 down"},
+    {"Abyss", "B / SW18 up"}, {"Bloom", "B / SW18 center"}, {"Dry (Shimmer pending)", "B / SW18 down"},
+};
+#endif
 
 // Normalized bases. They map exactly to the v0.2 values (ratio 1, gain 1,
 // harmonic 0.12), so an empty matrix leaves the sound bit-identical.
@@ -21,8 +31,18 @@ static_assert(kHarmonicBase * kHarmonicScale == kSecondHarmonic, "harmonic base 
 
 inline mod::InstrumentInfo MakeModInfo() {
     mod::InstrumentInfo info;
+#if TOY_PIANO_FX
+    info.key = "toy-piano-ambient";
+    info.version = TOY_PIANO_AMBIENT_VERSION;
+    info.modes = kFxModes;
+    info.mode_count = 6;
+    info.targets[ModHallDecay] = {"HallDecay", "100%", 1.f, false, false};
+    info.targets[ModHallMix] = {"HallMix", "100%", 1.f, false, false};
+    info.targets[ModHallX] = {"HallX", "100%", 1.f, false, false};
+#else
     info.key = "toy-piano";
     info.version = TOY_PIANO_VERSION;
+#endif
     info.targets[ModPitch] = {"Pitch", "+-2 st", 2.0f / kPitchRange, true, false};
     info.targets[ModLevel] = {"Level", "+-100%", 0.5f, true, false};
     info.targets[ModHarmonic] = {"Harmonic", "+-0.5", 1.0f, true, false};

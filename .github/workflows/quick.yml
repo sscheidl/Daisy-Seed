@@ -72,7 +72,9 @@ jobs:
         run: make test-release
       - name: Toy Piano host tests
         if: steps.changes.outputs.toy == 'true'
-        run: make PROJECT=toy-piano test
+        run: |
+          make PROJECT=toy-piano test
+          make PROJECT=toy-piano-ambient test
       - name: Physical Modeling host tests (base and MOD)
         if: steps.changes.outputs.physical == 'true'
         run: |
