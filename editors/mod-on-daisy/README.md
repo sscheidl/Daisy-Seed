@@ -17,13 +17,15 @@ Beide Fassungen lesen und schreiben dieselben `.modpatch`-Dateien.
 
 ### Windows-Programm holen
 
-Die CI baut bei jeder Änderung `ModOnDaisyEditor.exe`:
+Die CI baut `ModOnDaisyEditor.exe` und das VST3-Plugin `Mod on Daisy.vst3`:
 
 1. Auf GitHub unter **Actions → Editor** den letzten grünen Lauf öffnen. Der Lauf
    startet nur von Hand („Run workflow“, Branch wählen).
 2. Unten bei **Artifacts** `ModOnDaisyEditor-windows-x64-…` herunterladen und entpacken.
 3. `ModOnDaisyEditor.exe` starten. Eine Installation ist nicht nötig, die
-   Visual-C++-Laufzeit ist eingebaut.
+   Visual-C++-Laufzeit ist eingebaut. Im selben Paket liegt der Ordner
+   `Mod on Daisy.vst3` für Studio One ([unten](#vst3-plugin-für-studio-one)).
+   `SHA256SUMS` nennt die Prüfsummen beider Dateien.
 
 Windows SmartScreen kann beim ersten Start warnen, weil die Datei nicht signiert ist.
 Dann „Weitere Informationen“ und „Trotzdem ausführen“ wählen.
@@ -250,7 +252,8 @@ auf eine beliebige Spur, z. B. die Daisy-Spur.
   Zwei Plugin-Instanzen im selben Song würden beide senden; nur eine verwenden.
 * Keine Simulatoren im Plugin.
 
-**Installieren** (Windows): Den Ordner `Mod on Daisy.vst3` nach
+**Installieren** (Windows): Den Ordner `Mod on Daisy.vst3` (aus dem CI-Paket
+`ModOnDaisyEditor-windows-x64-…` oder aus dem eigenen Build) nach
 `C:\Program Files\Common Files\VST3\` kopieren (Administratorrechte), in Studio One
 unter *Optionen → Orte → VST-Plug-Ins* neu scannen lassen.
 
