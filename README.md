@@ -22,7 +22,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Tape FX v0.1.0](effects/tape-fx/) | `effects/tape-fx/` | Reusable stereo tape component ported from the drumlogue TapeVibe (bit-identical reference path) with optional MixForge stages, plus the standalone `tape-fx` stereo effect firmware; host/sanitizer/ARM checks pass, hardware untested ([report](effects/tape-fx/docs/REPORT.md)) |
 | [Step Seq v0.1.0](sequencers/step-seq/) | `sequencers/step-seq/` | KORG SQ-1-style 2 × 8-step sequencer, firmware `step-seq`: CV/Gate (own DAC register path, calibration, enable), MIDI USB+DIN with note tracking, three play modes, internal/Gate/MIDI/Auto clock, SQ protocol and `sq_probe.py`; host/sanitizer/ARM checks pass, hardware untested |
 | [Acid 303 v0.1.0](instruments/acid-303/) | `instruments/acid-303/` | Monophonic TB-303-style voice (DaisySP PolyBLEP and ladder filter with self-oscillation, accent, slide, two-source note stack) and standalone firmware `acid-303` with MIDI USB+DIN and CC plan; golden tests; host/sanitizer/ARM checks pass, hardware untested |
-| [Drive](effects/drive/) | `effects/drive/` | Planned (Acid Seq phase 3): Tape FX saturation curves shared via `common/dsp/saturation.h`, auto level; scaffold only |
+| [Drive v0.1.0](effects/drive/) | `effects/drive/` | Soft/Hard/Tape/Fold saturation shared with Tape FX (`common/dsp/saturation.h`, Tape FX images byte-identical after the move), tone, auto level within 1 dB, wet-only FX contract; standalone `drive-fx` firmware; host/sanitizer/ARM checks pass, hardware untested |
 | [Stereo Delay](effects/stereo-delay/) | `effects/stereo-delay/` | Planned (Acid Seq phase 4): ping-pong and stereo L/R delay with clock sync up to 12 s; scaffold only |
 | [Acid Seq](sequencers/acid-seq/) | `sequencers/acid-seq/` | Planned product (phase 6) composed of the four components above ([work order](docs/acid-seq/ARBEITSAUFTRAG.md)) |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
@@ -56,7 +56,7 @@ Daisy-Seed/
 │   └── mod-on-daisy/       # grid editor: JUCE standalone (src/), browser variant (web/)
 ├── diagnostics/           # Seed3 hardware diagnostics: firmware, Windows GUI, tests
 ├── common/desktop.mk      # shared official Seed3 Desktop build settings
-├── common/dsp/            # shared header-only DSP (saturation curves)
+├── common/dsp/            # shared header-only DSP (saturation curves, deterministic exp2/log2)
 ├── common/bootloader/     # firmware updates without BOOT/RESET (keys, SysEx)
 ├── docs/                  # hardware, build, flashing, and references
 ├── scripts/               # toolchain and BOOT_SRAM image checks

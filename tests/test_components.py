@@ -138,7 +138,7 @@ class ComponentTests(unittest.TestCase):
         # Components are registered with their version sources; products follow only
         # with their first validated build (BUILDABLE_PROJECTS == products above).
         data = manifest.load_registry()
-        expected = {'step-seq': 'sequencer', 'acid-303': 'instrument', 'saturation': 'dsp',
+        expected = {'step-seq': 'sequencer', 'acid-303': 'instrument', 'saturation': 'dsp', 'fast-math': 'dsp',
                     'drive': 'effect', 'stereo-delay': 'effect'}
         for key, kind in expected.items():
             self.assertEqual(data['components'][key]['kind'], kind)
@@ -189,6 +189,7 @@ class ComponentTests(unittest.TestCase):
             'sequencers/acid-seq/src/main.cpp': ('acidseq',),
             # Shared saturation: its consumers only, no longer every suite.
             'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'fx', 'acidseq'),
+            'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
             'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq'),
             'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor',),
             'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor',),

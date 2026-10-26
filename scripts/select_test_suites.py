@@ -36,7 +36,7 @@ def select_suites(changed):
     stepseq = acid_common or touched('sequencers/step-seq/')
     acid303 = acid_common or fixtures or touched('instruments/acid-303/') # renders the 303 fixture
     drive = acid_common or dsp or fx_contract or fixtures or touched('effects/drive/')
-    delay = acid_common or fx_contract or fixtures or touched('effects/stereo-delay/')
+    delay = acid_common or fx_contract or fixtures or touched('effects/stereo-delay/', 'common/dsp/fastmath.h')
     suites = {
         'bootloader': shared or touched('common/bootloader/'),
         'toy': shared or touched('instruments/toy-piano/') or mod_api or fx or dsp,

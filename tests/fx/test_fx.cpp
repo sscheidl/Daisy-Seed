@@ -2,6 +2,7 @@
 #include "../../effects/torus-reverb/src/torus_reverb.h"
 #include "../../effects/reverb/src/fx_adapter.h"
 #include "../../effects/tape-fx/src/tape_fx.h"
+#include "../../effects/drive/include/drive/drive.h"
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -18,7 +19,8 @@ static unsigned allocations = 0;
 [[gnu::noinline]] void operator delete(void* p) noexcept { std::free(p); }
 [[gnu::noinline]] void operator delete(void* p, std::size_t) noexcept { std::free(p); }
 
-template<class Effect> void Contract() {
+// `tail`: effects with memory must still ring 100 ms after an impulse; Drive has none.
+template<class Effect> void Contract(bool tail_expected = true) {
     auto fx = std::make_unique<Effect>();
     auto storage = std::make_unique<typename Effect::Storage>();
     float left[48]{}, right[48]{}, out_left[48]{}, out_right[48]{};
@@ -52,7 +54,7 @@ template<class Effect> void Contract() {
         // is checked against the upstream amount=1 reference below, not zero latency.
     }
     audio = false;
-    assert(energy > 1e-10 && tail > 1e-12 && allocations == 0);
+    assert(energy > 1e-10 && (!tail_expected || tail > 1e-12) && allocations == 0);
 }
 
 static void TorusReference() {
@@ -85,6 +87,7 @@ int main() {
     Contract<seed::fx::TorusReverb>();
     Contract<seed::fx::AmbientReverb>();
     Contract<seed::fx::TapeFx>();
+    Contract<seed::fx::Drive>(false);
     TorusReference();
     {
         seed::fx::AmbientReverb fx;
@@ -97,5 +100,5 @@ int main() {
         assert(fx.Process({&left, &right, &out_left, &out_right, 1}));
         assert(out_left == 0 && out_right == 0);
     }
-    std::puts("PASS: all three FX adapters (Torus, Ambient, Tape), wet-only routing, bounds, tails, zero audio allocations and exact Torus reference");
+    std::puts("PASS: all four FX adapters (Torus, Ambient, Tape, Drive), wet-only routing, bounds, tails, zero audio allocations and exact Torus reference");
 }

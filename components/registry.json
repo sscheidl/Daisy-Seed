@@ -191,9 +191,10 @@
     },
     "drive": {
       "kind": "effect",
-      "source": "effects/drive",
+      "source": "effects/drive/include",
       "depends": [
         "saturation",
+        "fast-math",
         "fx-contract"
       ],
       "version": {
@@ -212,6 +213,15 @@
         "type": "macro",
         "path": "effects/stereo-delay/src/version.h",
         "name": "STEREO_DELAY_VERSION"
+      }
+    },
+    "fast-math": {
+      "kind": "dsp",
+      "source": "common/dsp/fastmath.h",
+      "version": {
+        "type": "macro",
+        "path": "common/dsp/fastmath.h",
+        "name": "SEED_FAST_MATH_VERSION"
       }
     }
   },
@@ -464,6 +474,22 @@
       "device_id": "acid-303",
       "components": [
         "acid-303",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "drive-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/drive/src/version.h",
+        "name": "DRIVE_FIRMWARE_VERSION"
+      },
+      "directory": "effects/drive/build",
+      "image": "DriveFx",
+      "marker": "DRIVE-FX-VERSION=",
+      "device_id": "drive-fx",
+      "components": [
+        "drive",
         "bootloader-entry"
       ],
       "panels": []

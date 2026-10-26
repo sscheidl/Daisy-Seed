@@ -854,6 +854,13 @@ stehen im [CHANGELOG](../../instruments/acid-303/CHANGELOG.md).
 
 ### Phase 3: Sättigung auslagern und Effekt `drive`
 
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-3`), Drive 0.1.0.
+3a als eigener Commit: Tape-FX-BINs bytegleich, Hashes und Referenztests unverändert.
+3b: Pegeltest ±1 dB bestanden (größte Abweichung 0,41 dB), mit zwei begründeten
+Abweichungen: Die feste Kurve hängt vom Pegel in die Kurve ab, Fold auf Rechtecken bleibt
+leiser ([CHANGELOG](../../effects/drive/CHANGELOG.md)). Hardwaretest NICHT GEMESSEN
+([HARDWARE_TEST.md](../../effects/drive/docs/HARDWARE_TEST.md)).
+
 * **Ziel:** die Kurven aus `tape-fx` ohne Klangänderung nach
   `common/dsp/saturation.h` verschieben und darauf den Effekt `drive` bauen.
 * **Schritt 3a, Auslagern (eigener Commit):**

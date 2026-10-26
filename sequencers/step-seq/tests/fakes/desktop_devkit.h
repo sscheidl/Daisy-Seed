@@ -133,6 +133,7 @@ struct Hardware {
     std::array<bool, 16> pressed{};
     struct Toggle3 { int position = Switch3::POS_UP; int Read() const { return position; } } tog_sw18;
     struct Toggle2 { bool pressed = false; bool Pressed() const { return pressed; } } tog_sw17;
+    struct Detect { bool pressed = false; bool Pressed() const { return pressed; } } right_detect;
     MidiUartHandler midi;
     std::vector<std::pair<int, uint16_t>> dac_init; // SetDacOut calls (start-up only)
     void Init() { for (auto& b : button) b.Init(true); }
