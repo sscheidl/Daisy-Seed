@@ -7,6 +7,22 @@ aufstecken und seitlich führen. [Druckpaket](v4/full/V4-KOMPLETTDRUCK.zip)
 mit vier STLs, drei vorpositionierten 3MF-Platten, SVGs und Montage/Einkauf.
 Digital geprüft; Hardware **NICHT GEMESSEN**.
 
+## Fertigungsanbieter
+
+Diese beiden Anbieter wurden bereits für das PreenFM2-Gehäuse genutzt;
+am 26.10.2026 anhand der vorhandenen Auftragsbelege zugeordnet:
+
+| Anbieter | Leistung | Früherer PreenFM2-Auftrag |
+| --- | --- | --- |
+| [Lazycut](https://lazycut.de/) | Laserzuschnitt der Acrylplatten | Auftrag AU-202609-10258 vom 08.09.2026 nennt „Plexiglas 1 mm klar“. |
+| [3ddruck-express.de](https://3ddruck-express.de/) | FDM-Druck der Gehäuseteile | Bestellung 4431 vom 15.08.2026: PETG-CF schwarz, 0,12-mm-Schichten; Wanne 40 %, Rückblende 60 % Füllung. |
+
+Für den neuen V4-Auftrag gelten die [aktuellen Druck- und Acrylvorgaben](v4/full/V4.md#fertigungsauftrag).
+Die früheren Einstellungen dienen als Bestellhistorie. Die privaten Rechnungen
+und Bestell-E-Mails bleiben außerhalb des Repositorys.
+
+## Frühere Entwürfe und Prüfungen
+
 Die folgenden Abschnitte dokumentieren ältere Entwürfe. Die frühere Empfehlung,
 vor dem Komplettdruck Coupons zu bestellen, ist für V4 durch die neue
 Nutzerentscheidung ersetzt. [Dreier-Lochprobe](v4/simple-guide/README.md)
