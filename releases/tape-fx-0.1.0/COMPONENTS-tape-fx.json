@@ -1,0 +1,41 @@
+{
+  "manifest_version": 1,
+  "product": {
+    "id": "tape-fx",
+    "version": "0.1.0",
+    "legacy_device_version": false
+  },
+  "components": [
+    {
+      "id": "fx-contract",
+      "kind": "contract",
+      "version": "1.0.0",
+      "version_source": "common/audio/fx_contract.h",
+      "depends": []
+    },
+    {
+      "id": "tape-fx",
+      "kind": "effect",
+      "version": "0.1.0",
+      "version_source": "effects/tape-fx/src/version.h",
+      "depends": [
+        "fx-contract"
+      ]
+    },
+    {
+      "id": "bootloader-entry",
+      "kind": "control",
+      "version": "1.0.0",
+      "version_source": "common/bootloader/bootloader_entry.h",
+      "depends": []
+    }
+  ],
+  "compatible_control_panels": [],
+  "repository_commit": "bc0c7e9441856e4234a9cf992bc3b921e744d11f",
+  "working_tree_dirty": false,
+  "image": {
+    "name": "TapeFx-v0.1.0.bin",
+    "bytes": 125264,
+    "sha256": "49472f686ce2a47eca17c86f605ce7a1fb1429a96d628d0d0b5defbb23364382"
+  }
+}

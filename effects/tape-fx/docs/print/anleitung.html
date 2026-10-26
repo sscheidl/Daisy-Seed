@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Tape FX 0.1.0 – Bedienungsanleitung</title>
+<link rel="stylesheet" href="style.css"></head><body>
+
+<h1>Tape FX 0.1.0 – Bedienungsanleitung</h1>
+<div class="sub">Electro-Smith Seed3 Desktop Development Kit · Hardware-Hörtest · Stand 26.10.2026 · Commit <code>bc0c7e9</code></div>
+
+<p>Tape FX ist eine Stereo-Bandmaschinen-Simulation, portiert aus dem drumlogue-Effekt
+<b>TapeVibe</b> (Klangreferenz) mit zuschaltbaren Zusatzstufen aus <b>MixForge</b>.
+Für den Hörtest gibt es zwei Firmware-Images:</p>
+
+<table>
+<tr><th>Image</th><th>Zweck</th><th>Größe</th><th>SHA-256</th></tr>
+<tr><td class="k">TapeFx-v0.1.0.bin</td><td>Stereo-Effekt für externe Quellen (Line-Eingang)</td><td style="white-space:nowrap">125 264 B</td><td><code>49472f686ce2a47e…5defbb23364382</code></td></tr>
+<tr><td class="k">ToyPianoTape-v0.1.0.bin</td><td>Toy Piano → Tape FX, Testinstrument</td><td style="white-space:nowrap">173 956 B</td><td><code>a730cb2afe9a1bb7…515f67794c3c62be6</code></td></tr>
+</table>
+
+<div class="warn"><b>Status:</b> Hosttests, Sanitizer und ARM-Builds bestanden. Klang, CPU-Last, Pegel und
+Schalterrichtung am Gerät sind <b>NICHT GEMESSEN</b>. Mit niedrigem Abhörpegel beginnen.</div>
+
+<h2>1. Flashen</h2>
+<p>Flashen erfolgt manuell, wie in <code>docs/FLASHING.md</code> beschrieben.</p>
+<ul>
+<li>Erstes Mal oder Rettungsweg: <b>BOOT</b> halten, <b>RESET</b> drücken, BOOT loslassen; dann per DFU flashen.</li>
+<li>Ohne Tasten am Seed: <b>S9 + S16</b> allein 5 s halten (im Toy Piano spielen beide zuerst ihre Note; eine dritte Taste
+oder vorzeitiges Loslassen bricht ab) oder im Mod-on-Daisy-Panel <b>Firmware-Update …</b> wählen. Danach leuchten alle
+16 LEDs, und der Bootloader wartet ohne Zeitlimit auf das DFU-Gerät.</li>
+<li>Vor dem Flashen die Prüfsumme mit <code>SHA256SUMS</code> vergleichen.</li>
+</ul>
+
+<h2>2. Gemeinsame Bedienung</h2>
+<p>Beide Images verwenden dieselbe Belegung, in der Reihenfolge der drumlogue-Seiten von TapeVibe.
+Die Potis werden in ganze Prozent übersetzt (wie am drumlogue) und gleiten ohne Sprünge (15 ms).</p>
+
+<table>
+<tr><th>Poti</th><th>Funktion</th><th>Wirkung</th><th>TapeVibe-Startwert</th></tr>
+<tr><td class="k">VR1</td><td>Drive</td><td>Bandsättigung mit dynamischer Kompression; Pegel wird nachgeführt</td><td>35 %</td></tr>
+<tr><td class="k">VR2</td><td>Tone</td><td>links dunkel, Mitte neutral, rechts heller</td><td>50 %</td></tr>
+<tr><td class="k">VR3</td><td>Age</td><td>Alter des Bandes: skaliert Wow/Flutter (Rate und Tiefe), Head Bump, Hiss, Dropout-Häufigkeit</td><td>40 %</td></tr>
+<tr><td class="k">VR4</td><td>Mix</td><td>Dry/Wet: links trocken, rechts nur Band</td><td>40 %</td></tr>
+<tr><td class="k">VR5</td><td>Wow</td><td>langsames Tonhöhenschwanken (0,25–0,8 Hz)</td><td>20 %</td></tr>
+<tr><td class="k">VR6</td><td>Flutter</td><td>schnelles Tonhöhenzittern (6–14 Hz)</td><td>15 %</td></tr>
+<tr><td class="k">VR7</td><td>Hiss</td><td>Bandrauschen</td><td>20 %</td></tr>
+<tr><td class="k">VR8</td><td>Dropouts</td><td>kurze Pegel- und Höhenaussetzer</td><td>10 %</td></tr>
+</table>
+
+<table>
+<tr><th>Schalter</th><th>Stellung</th><th>Funktion</th></tr>
+<tr><td class="k" rowspan="2">SW17 (2 Stufen)</td><td>A</td><td>Tape an</td></tr>
+<tr><td>B</td><td>Bypass: Mix gleitet in 10 ms auf 0, Ausgang = Eingang (exakt)</td></tr>
+<tr><td class="k" rowspan="3">SW18 (3 Stufen)</td><td>oben</td><td>Studio: wenig Rauschen, kurze leichte Aussetzer</td></tr>
+<tr><td>Mitte</td><td>Tape (TapeVibe-Standard)</td></tr>
+<tr><td>unten</td><td>Cassette: mehr Rauschen, lange tiefe Aussetzer, teils einseitig</td></tr>
+</table>
+<div class="note">Welche physische Stellung von SW17 „A“ bzw. „B“ ist, ist am Board noch nicht bestätigt. SW18 wird nach 15 ms stabiler Lage übernommen.</div>
+
+<h2>3. Tape FX (Standalone-Effekt)</h2>
+<p>Stereo-Quelle an <b>IN L/R</b>, Ausgang an <b>OUT L/R</b> bzw. Kopfhörer. Steckt rechts nichts, wird der linke Eingang
+auf beide Kanäle gelegt. Die Tasten schalten die MixForge-Zusatzstufen:</p>
+<table>
+<tr><th>Taste</th><th>Funktion</th><th>LED</th></tr>
+<tr><td class="k">S1</td><td>Drive-Kurve <b>TapeVibe</b> (Original, Standard)</td><td rowspan="4">leuchtet bei der gewählten Kurve</td></tr>
+<tr><td class="k">S2</td><td>Drive-Kurve MixForge <b>TAPE</b> (Bias + Pre-/De-Emphasis)</td></tr>
+<tr><td class="k">S3</td><td>Drive-Kurve MixForge <b>HARD</b> (harte Begrenzung)</td></tr>
+<tr><td class="k">S4</td><td>Drive-Kurve MixForge <b>FOLD</b> (Wavefolding, stark verzerrend)</td></tr>
+<tr><td class="k">S5</td><td>Kompressor ein/aus (−18 dB, 4:1, Attack 10 ms, Release 300 ms; vor dem Band)</td><td>an = aktiv</td></tr>
+<tr><td class="k">S6</td><td>Bitcrusher ein/aus (8 Bit, Haltezeit 3 Samples ≈ 16 kHz; nach dem Band)</td><td>an = aktiv</td></tr>
+<tr><td class="k">S8</td><td>– (nur Anzeige)</td><td>Tape aktiv (aus bei Bypass)</td></tr>
+<tr><td class="k">S16</td><td>– (nur Anzeige)</td><td>mindestens ein Callback-Überlauf seit dem Start</td></tr>
+</table>
+<p>Die übrigen Tasten haben keine Funktion; S9 + S16 bleiben der Bootloader-Einstieg.</p>
+
+<h2>4. Toy Piano + Tape FX</h2>
+<ul>
+<li>Alle <b>16 Tasten</b> spielen wie im Toy Piano (S1–S8: C4–C5, S9–S16: C5–C6), die LEDs zeigen gehaltene Tasten.</li>
+<li>Alle acht Potis gehören dem Band. Deshalb sind <b>Attack 2 ms</b> und <b>Decay 1,5 s</b> fest; über die Mod-on-Daisy-Matrix bleiben beide modulierbar.</li>
+<li><b>USB-MIDI</b> an J7 spielt 16 weitere Stimmen. Das Mod-on-Daisy-Panel meldet <code>toy-piano-tape 0.1.0</code> mit den Spalten Pitch, Level, Harmonic, Attack, Decay.</li>
+<li>Das Klavier ist mono; Stereo entsteht nur durch Hiss und die kanalweisen Dropout-Pegel. Externe Eingänge werden ignoriert.</li>
+<li>CPU-Werte über USB: <code>python modules/mod-on-daisy/tools/mod_probe.py stats</code></li>
+</ul>
+
+<h2>5. Was zu erwarten ist</h2>
+<table>
+<tr><th>Effekt</th><th>Bereich (aus Hosttests, kein Messergebnis am Gerät)</th></tr>
+<tr><td class="k">Wow</td><td>höchstens ±0,9 Cent bei 0,8 Hz (Age 100 %). <b>Kaum hörbar ist das erwartete Originalverhalten.</b></td></tr>
+<tr><td class="k">Flutter</td><td>bis ±4,2 Cent bei 10 + 14 Hz (Age 100 %); an gehaltenen Tönen gut hörbar</td></tr>
+<tr><td class="k">Drive</td><td>Klirrfaktor am Sinus (−6 dBFS) ca. 1 % bei 0 % bis 28 % bei 100 %; Pegel bleibt zwischen −3 und +4 dB</td></tr>
+<tr><td class="k">Hiss</td><td>bei Hiss und Age 100 %: Studio −61,5, Tape −52,1, Cassette −46,8 dBFS</td></tr>
+<tr><td class="k">Dropouts</td><td>bei 100 %: etwa 28 (Studio), 46 (Tape), 67 (Cassette) pro Sekunde, 0,5–9 ms lang</td></tr>
+</table>
+
+<h2>6. Prüfablauf</h2>
+<p>Ergebnisse mit Datum als <b>GEMESSEN</b> eintragen; nicht Geprüftes bleibt <b>NICHT GEMESSEN</b>.</p>
+<table>
+<tr><th>#</th><th>Schritt</th><th>Erwartung</th><th class="result">Ergebnis</th></tr>
+<tr><td>1</td><td>Einschalten, SW17 auf Bypass</td><td>Signal unverändert (Toy Piano: trockenes Klavier)</td><td></td></tr>
+<tr><td>2</td><td>SW17 Tape an, Potis auf Startwerte</td><td>leichte Färbung, leises Rauschen, seltene kurze Aussetzer</td><td></td></tr>
+<tr><td>3</td><td>VR4 Mix ganz rechts, VR1 Drive 0 → 100 %</td><td>zunehmende Sättigung, Pegel ungefähr gleich</td><td></td></tr>
+<tr><td>4</td><td>VR3 Age 100 %, VR6 Flutter 100 %, VR5 Wow 0</td><td>schnelles Tonhöhenzittern, an gehaltenen Tönen deutlich</td><td></td></tr>
+<tr><td>5</td><td>VR5 Wow 100 %, VR6 Flutter 0</td><td>sehr langsames, kaum hörbares Schwanken</td><td></td></tr>
+<tr><td>6</td><td>VR2 Tone 0 / 50 / 100 %</td><td>dunkel / neutral / heller</td><td></td></tr>
+<tr><td>7</td><td>VR7 Hiss 100 %, SW18 oben / Mitte / unten</td><td>Rauschen leise → lauter</td><td></td></tr>
+<tr><td>8</td><td>VR8 Dropouts 100 %, SW18 oben / Mitte / unten</td><td>kurze leichte → längere tiefe Aussetzer</td><td></td></tr>
+<tr><td>9</td><td>Alle Potis schnell drehen</td><td>keine Klicks, keine Aussetzer</td><td></td></tr>
+<tr><td>10</td><td>SW17 während des Spiels umschalten</td><td>weicher Übergang ohne Knacks</td><td></td></tr>
+<tr><td>11</td><td>nur Tape FX: S1–S4, S5, S6</td><td>Kurven hörbar verschieden; Kompressor glättet; Bitcrusher körnig</td><td></td></tr>
+<tr><td>12</td><td>nur Tape FX: Mono-Quelle nur links</td><td>gleiches Signal auf beiden Ausgängen</td><td></td></tr>
+<tr><td>13</td><td>nur Toy Piano: 16 Tasten, schnelle Akkorde, MIDI-Akkorde</td><td>alle Töne, LEDs folgen den Tasten</td><td></td></tr>
+<tr><td>14</td><td>CPU: Tape FX alles 100 % + S2, S5, S6 für 5 min; Toy Piano: <code>mod_probe.py stats</code></td><td>LED S16 bleibt aus; <code>load_max</code> deutlich unter 100 %</td><td></td></tr>
+<tr><td>15</td><td>Bootloader: S9 + S16 5 s halten</td><td>alle 16 LEDs an, DFU-Gerät erscheint</td><td></td></tr>
+</table>
+<p>Bitte zusätzlich notieren: Firmware-Hash, Abhörkette, Quelle und Pegel, bei CPU-Werten das Testszenario.</p>
+
+<h2>7. Fehlersuche</h2>
+<table>
+<tr><th>Beobachtung</th><th>Prüfen</th></tr>
+<tr><td>Kein Effekt hörbar</td><td>SW17 in der anderen Stellung? VR4 Mix links = trocken.</td></tr>
+<tr><td>Wow nicht hörbar</td><td>Erwartet: TapeVibe-Wow ist sehr dezent. VR3 Age auf 100 % stellen; Flutter testen.</td></tr>
+<tr><td>Nur ein Kanal (Tape FX)</td><td>Rechter Eingang gesteckt, aber ohne Signal? Dann ist rechts still.</td></tr>
+<tr><td>Starke Verzerrung</td><td>VR1 Drive zurücknehmen; bei Tape FX auf S1 (TapeVibe-Kurve) wechseln, S6 aus.</td></tr>
+<tr><td>LED S16 leuchtet</td><td>CPU-Überlauf aufgetreten: Einstellung und Dauer notieren und melden.</td></tr>
+</table>
+
+<div class="foot">Quellen: effects/tape-fx/docs/HARDWARE_TEST.md, REPORT.md, instruments/toy-piano/docs/TAPE.md · Repository sscheidl/Daisy-Seed, PR #49</div>
+</body></html>

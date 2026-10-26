@@ -62,6 +62,8 @@ Laufzeit bei Extremwerten.
 * [Technischer Bericht](docs/REPORT.md): Architektur, Abweichungen, Optimierungen,
   CPU- und Speicherbedarf.
 * [Hardware-Hörtest](docs/HARDWARE_TEST.md): Bedienung und Prüfablauf beider Images.
+* Fertige Hörtest-Images mit Prüfsummen, Bedienungsanleitung und Cheatsheet (PDF):
+  [releases/tape-fx-0.1.0](../../releases/tape-fx-0.1.0/). PDF-Quellen: `docs/print/`.
 
 Stardust (`instruments/looper/`) ist nicht verändert. Die Komponente ist für eine
 spätere Integration dort vorbereitet (16 KiB Delay-Speicher im SDRAM-Rest).
