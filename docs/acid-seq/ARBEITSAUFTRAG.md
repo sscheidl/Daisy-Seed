@@ -135,9 +135,8 @@ Kerne (header-only, ohne libDaisy, auf dem Host testbar):
   übernimmt das 20-ms-Mapping, das Nebulae dafür schon verwendet.
 * **Bootloader:** S9 und S16 gleichzeitig 5 s gehalten startet ihn. Es gibt
   keine Mehrtastengesten, eine Kollision ist damit ausgeschlossen.
-* **Zuordnung der Schalter:** Der Benutzer hat „Switch 2“ für Start/Stop
-  genannt. Drei Modi brauchen aber den Schalter mit drei Stellungen (SW18).
-  Start/Stop liegt deshalb auf dem Schalter mit zwei Stellungen (SW17), siehe D2.
+* **Zuordnung der Schalter** (vom Benutzer bestätigt am 2026-10-26): SW17 mit
+  zwei Stellungen ist Start/Stop, SW18 mit drei Stellungen wählt den Modus.
 
 ### 4.2 Abspielmodi und Start/Stop
 
@@ -514,7 +513,7 @@ Für jede Phase gilt:
 | Nr. | Frage | Vorschlag |
 | --- | --- | --- |
 | D1 | Eigener SysEx-Kopf `7D 53 51` oder Erweiterung des Mod-on-Daisy-Protokolls? | Eigener Kopf. Das MD-Protokoll bleibt dann unverändert, und Firmware, `mod_probe.py`, beide Editoren und deren Tests müssen nicht gemeinsam geändert werden |
-| D2 | **Entschieden 2026-10-26:** Start/Stop über einen Schalter, drei Modi über den anderen. Offen ist noch: (a) Der Benutzer nannte „Switch 2“ für Start/Stop. Ist SW17 gemeint? (b) Startet der Sequencer beim Einschalten, wenn SW17 auf Run steht? | (a) SW17, weil nur SW18 drei Stellungen hat. (b) Ja, die Stellung gibt den Zustand an. CV bleibt ohnehin gesperrt, bis kalibriert ist |
+| D2 | **Entschieden 2026-10-26:** Start/Stop auf SW17 (zwei Stellungen), die drei Modi auf SW18. Offen ist noch: Startet der Sequencer beim Einschalten, wenn SW17 auf Run steht? | Ja, die Stellung gibt den Zustand an. CV bleibt ohnehin gesperrt, bis kalibriert ist |
 | D3 | **Entschieden 2026-10-26:** zunächst nur drei Modi. Weitere Modi (Pendel, Brownian, Step Jump, Parallel 2 × 8, Polyrhythmus) vielleicht später über das Control Panel | Erst nach Phase 6 planen. Dann regeln, wie ein Panel-Modus sich zur Schalterstellung von SW18 verhält. CV/Duty bleibt draußen, weil die Gate-Länge pro Step ihn abdeckt |
 | D4 | Filter: Moog-Ladder (DaisySP) oder eigener Diode-Ladder? | Mit `LadderFilter` beginnen. Diode-Ladder als spätere Version mit neuem Golden-Hash |
 | D5 | 2-faches Oversampling für Hard und Fold? | Erst nach der CPU-Messung auf der Hardware entscheiden. Bis dahin ohne Oversampling |
@@ -538,7 +537,7 @@ Für jede Phase gilt:
 * **Die Auslagerung der Sättigung** könnte den Klang von Tape FX unbemerkt
   ändern. Abgesichert durch Schritt 3a mit Hash- und Referenztests.
 * **SW17 startet sofort.** Steht der Schalter beim Einschalten auf Run, laufen
-  Sequencer und MIDI-Ausgabe sofort los (D2 b). Die CV-Ausgänge sind bis zur
+  Sequencer und MIDI-Ausgabe sofort los (D2). Die CV-Ausgänge sind bis zur
   Kalibrierung gesperrt (4.3).
 
 ## 8. Liste NICHT GEMESSEN (wird in den Phasen fortgeschrieben)
