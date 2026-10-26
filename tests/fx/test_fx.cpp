@@ -1,6 +1,7 @@
 // MIT. Exercise both typed adapters through the same audio-block contract.
 #include "../../effects/torus-reverb/src/torus_reverb.h"
 #include "../../effects/reverb/src/fx_adapter.h"
+#include "../../effects/tape-fx/src/tape_fx.h"
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -83,6 +84,7 @@ static void TorusReference() {
 int main() {
     Contract<seed::fx::TorusReverb>();
     Contract<seed::fx::AmbientReverb>();
+    Contract<seed::fx::TapeFx>();
     TorusReference();
     {
         seed::fx::AmbientReverb fx;
@@ -95,5 +97,5 @@ int main() {
         assert(fx.Process({&left, &right, &out_left, &out_right, 1}));
         assert(out_left == 0 && out_right == 0);
     }
-    std::puts("PASS: both FX adapters, wet-only routing, bounds, tails, zero audio allocations and exact Torus reference");
+    std::puts("PASS: all three FX adapters (Torus, Ambient, Tape), wet-only routing, bounds, tails, zero audio allocations and exact Torus reference");
 }

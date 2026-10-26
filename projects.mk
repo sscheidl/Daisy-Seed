@@ -39,3 +39,11 @@ PROJECT_STATUS_looper-mod := buildable
 PROJECT_STATUS_reverb-fx := buildable
 PROJECT_STATUS_granular-fx := planned
 PROJECT_STATUS_mod-bench := buildable
+# Tape FX (TapeVibe/MixForge port): standalone stereo effect and Toy Piano test product.
+PROJECTS += tape-fx toy-piano-tape
+BUILDABLE_PROJECTS += tape-fx toy-piano-tape
+PROJECT_DIR_tape-fx := effects/tape-fx
+PROJECT_STATUS_tape-fx := buildable
+PROJECT_DIR_toy-piano-tape := instruments/toy-piano
+PROJECT_ARGS_toy-piano-tape := TAPE=1
+PROJECT_STATUS_toy-piano-tape := buildable

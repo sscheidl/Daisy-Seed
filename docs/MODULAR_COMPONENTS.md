@@ -12,7 +12,7 @@ Modulationsmatrix und kein zusätzliches Editor-Protokoll.
   auch jede gebaute Firmwarezusammenstellung.
 * **Audiovertrag 1.0:** `Prepare(Config, Storage&)`, komponentenspezifische
   `SetParameters`, `Process(StereoBlock)`. Keine virtuelle Dispatch-Schicht.
-  Die beiden Adapter sind wet-only; Speicher gehört dem Host, Prepare läuft vor
+  Alle drei FX (Torus, Ambient, Tape) sind wet-only; Speicher gehört dem Host, Prepare läuft vor
   dem Audiostart. Ungültige Blöcke werden vor Bufferzugriffen abgelehnt, zulässige
   Blöcke sind begrenzt und dürfen exakt kanalweise In-place arbeiten.
 * **Torus-FX:** identische ursprüngliche DSP und normalisierte Parameter; der
@@ -21,6 +21,9 @@ Modulationsmatrix und kein zusätzliches Editor-Protokoll.
   nativen Parametersatz. Dry/Mix, Ausgangsverstärkung und Bypass sind im Adapter
   auf reine Wet-Verarbeitung gestellt; Routing und endgültige Mischung liegen
   beim Host. Parameteranwendung und Filterservice sind auf 50 Hz begrenzt.
+* **Tape-FX** (`effects/tape-fx`, seit 26.10.2026): eigener nativer DSP-Port von
+  drumlogue TapeVibe/MixForge mit host-seitigem `TapeMixer` (Dry/Wet, Bypass,
+  Ausgangsschutz); 16 KiB Speicher vom Host. Produkte `tape-fx` und `toy-piano-tape`.
 * **Anwendungsadapter:** `physical-modeling/src/composed_fx.h` verbindet die
   bestehenden Torus-Parameter mit dem gewählten Effekt. Damit bleibt die
   Reglerzuordnung außerhalb des FX-Kerns.

@@ -69,6 +69,19 @@
       },
       "provenance": "instruments/physical-modeling/torus/UPSTREAM.md"
     },
+    "tape-fx": {
+      "kind": "effect",
+      "source": "effects/tape-fx/src",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/tape-fx/src/version.h",
+        "name": "TAPE_FX_VERSION"
+      },
+      "provenance": "effects/tape-fx/tests/reference/UPSTREAM.md"
+    },
     "fx-contract": {
       "kind": "contract",
       "source": "common/audio",
@@ -321,6 +334,45 @@
       "components": [
         "toy-piano",
         "ambient-reverb-fx",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "tape-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/tape-fx/src/version.h",
+        "name": "TAPE_FX_FIRMWARE_VERSION"
+      },
+      "directory": "effects/tape-fx/build",
+      "image": "TapeFx",
+      "marker": "TAPE-FX-VERSION=",
+      "components": [
+        "tape-fx",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "toy-piano-tape": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_TAPE_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/tape",
+      "image": "ToyPianoTape",
+      "marker": "TOYPIANO-TAPE-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "tape-fx",
         "mod-on-daisy",
         "callback-diagnostics",
         "fx-contract",
