@@ -892,6 +892,10 @@ leiser ([CHANGELOG](../../effects/drive/CHANGELOG.md)). Hardwaretest NICHT GEMES
 
 ### Phase 4: Effekt `stereo-delay`
 
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-4`), Version 0.1.0.
+Alle Tests aus der Liste bestanden, Speicher laut ELF im SDRAM (4 608 512 Byte). Hardwaretest
+NICHT GEMESSEN ([HARDWARE_TEST.md](../../effects/stereo-delay/docs/HARDWARE_TEST.md)).
+
 * **Ziel:** das Delay aus 4.8 (Ping-Pong und Stereo L/R) als Kern nach
   FX-Vertrag 1.0 und als Firmware `delay-fx`.
 * **Tests:**

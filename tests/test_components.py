@@ -188,7 +188,7 @@ class ComponentTests(unittest.TestCase):
             'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'acidseq'),
             'sequencers/acid-seq/src/main.cpp': ('acidseq',),
             # Shared saturation: its consumers only, no longer every suite.
-            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'fx', 'acidseq'),
+            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
             'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
             'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq'),
             'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor',),

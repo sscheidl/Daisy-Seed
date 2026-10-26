@@ -205,8 +205,10 @@
     },
     "stereo-delay": {
       "kind": "effect",
-      "source": "effects/stereo-delay",
+      "source": "effects/stereo-delay/include",
       "depends": [
+        "saturation",
+        "fast-math",
         "fx-contract"
       ],
       "version": {
@@ -490,6 +492,22 @@
       "device_id": "drive-fx",
       "components": [
         "drive",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "delay-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/stereo-delay/src/version.h",
+        "name": "STEREO_DELAY_FIRMWARE_VERSION"
+      },
+      "directory": "effects/stereo-delay/build",
+      "image": "DelayFx",
+      "marker": "DELAY-FX-VERSION=",
+      "device_id": "delay-fx",
+      "components": [
+        "stereo-delay",
         "bootloader-entry"
       ],
       "panels": []
