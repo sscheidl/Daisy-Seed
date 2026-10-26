@@ -451,6 +451,22 @@
         "bootloader-entry"
       ],
       "panels": []
+    },
+    "acid-303": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/acid-303/src/version.h",
+        "name": "ACID_303_FIRMWARE_VERSION"
+      },
+      "directory": "instruments/acid-303/build",
+      "image": "Acid303",
+      "marker": "ACID-303-FW-VERSION=",
+      "device_id": "acid-303",
+      "components": [
+        "acid-303",
+        "bootloader-entry"
+      ],
+      "panels": []
     }
   }
 }

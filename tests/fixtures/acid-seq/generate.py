@@ -84,6 +84,14 @@ def fixtures():
     return result
 
 
+# Fixtures rendered by a component itself; the manifest records them, generate.py does not
+# reproduce them (the component's host test does, bit for bit).
+RENDERED = {
+    'acid303_phrase': 'Acid 303 voice 0.1.0, default parameters, saw: 1 s of the test phrase '
+                      '(instruments/acid-303, make fixture); input for the auto-level acceptance',
+}
+
+
 def pack(signal):
     return struct.pack(f'<{len(signal)}f', *signal)
 
@@ -115,6 +123,11 @@ def main():
             data = stored
         manifest['files'][name] = {'file': path.name, 'description': description,
                                    'sha256': hashlib.sha256(data).hexdigest(), **stats(data)}
+    for name, description in RENDERED.items():
+        path = HERE / f'{name}.f32'
+        data = path.read_bytes()
+        manifest['files'][name] = {'file': path.name, 'description': description,
+                                   'sha256': hashlib.sha256(data).hexdigest(), 'rendered': True, **stats(data)}
     text = json.dumps(manifest, indent=2) + '\n'
     if args.write:
         (HERE / 'manifest.json').write_text(text, encoding='utf-8', newline='\n')

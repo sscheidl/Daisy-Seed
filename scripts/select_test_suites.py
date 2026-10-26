@@ -34,7 +34,7 @@ def select_suites(changed):
     diagnostics_adapter = touched('modules/mod-on-daisy/adapters/')
     acid_common = shared or diagnostics_adapter or sq_contract
     stepseq = acid_common or touched('sequencers/step-seq/')
-    acid303 = acid_common or touched('instruments/acid-303/')
+    acid303 = acid_common or fixtures or touched('instruments/acid-303/') # renders the 303 fixture
     drive = acid_common or dsp or fx_contract or fixtures or touched('effects/drive/')
     delay = acid_common or fx_contract or fixtures or touched('effects/stereo-delay/')
     suites = {

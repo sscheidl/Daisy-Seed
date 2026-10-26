@@ -192,7 +192,7 @@ class ComponentTests(unittest.TestCase):
             'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq'),
             'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor',),
             'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor',),
-            'tests/fixtures/acid-seq/manifest.json': ('drive', 'delay', 'acidseq'),
+            'tests/fixtures/acid-seq/manifest.json': ('acid303', 'drive', 'delay', 'acidseq'),
             'sequencers/README.md': (),
             'sequencers/step-seq/README.md': ('stepseq', 'acidseq'),
         }

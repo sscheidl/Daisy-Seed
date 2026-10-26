@@ -12,6 +12,7 @@ CHECKER = ROOT / 'scripts' / 'check-firmware.py'
 # prefix, version source, macro, marker (as in check-firmware.py ACID_SEQ)
 IMAGES = [
     ('StepSeq-v', 'sequencers/step-seq/src/version.h', 'STEP_SEQ_FIRMWARE_VERSION', 'STEP-SEQ-FW-VERSION='),
+    ('Acid303-v', 'instruments/acid-303/src/version.h', 'ACID_303_FIRMWARE_VERSION', 'ACID-303-FW-VERSION='),
 ]
 
 

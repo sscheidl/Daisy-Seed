@@ -232,7 +232,7 @@ class FixtureTests(unittest.TestCase):
         manifest = json.loads((FIXTURES / 'manifest.json').read_text(encoding='utf-8'))
         self.assertEqual(manifest['sample_rate'], 48000)
         expected = {'saw_lp1', 'saw_lp2', 'saw_lp3', 'square_lp1', 'square_lp2', 'square_lp3',
-                    'saw_resonance', 'impulse', 'silence'}
+                    'saw_resonance', 'impulse', 'silence', 'acid303_phrase'}
         self.assertEqual(set(manifest['files']), expected)
         for name, entry in manifest['files'].items():
             data = (FIXTURES / entry['file']).read_bytes()

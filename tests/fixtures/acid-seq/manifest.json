@@ -68,6 +68,14 @@
       "sha256": "ea0787f65f73b0013d03b359490e3125211b28ad5c1502ffb1544c0ded4192f5",
       "peak": 0.0,
       "rms": 0.0
+    },
+    "acid303_phrase": {
+      "file": "acid303_phrase.f32",
+      "description": "Acid 303 voice 0.1.0, default parameters, saw: 1 s of the test phrase (instruments/acid-303, make fixture); input for the auto-level acceptance",
+      "sha256": "52e6bb7c6ed0d1a1ca661752ab5df0d40f7e6b2584a42d08935c62e95f4130e5",
+      "rendered": true,
+      "peak": 0.251486,
+      "rms": 0.057548
     }
   }
 }

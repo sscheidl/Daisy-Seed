@@ -819,6 +819,13 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
 
 ### Phase 2: TB-303-Stimme und Firmware `acid-303`
 
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-2`), Version 0.1.0.
+Host-, Sanitizer- und ARM-Prüfungen bestanden. Golden-Hashes und die versionierte
+303-Fixture liegen vor. Hardwaretest NICHT GEMESSEN
+([HARDWARE_TEST.md](../../instruments/acid-303/docs/HARDWARE_TEST.md)). Festlegungen
+(Accent ab Anschlag 101, omni in der eigenen Firmware, Bezugswert des Klick-Kriteriums)
+stehen im [CHANGELOG](../../instruments/acid-303/CHANGELOG.md).
+
 * **Ziel:** die Stimme aus 4.6 als header-only Kern
   `instruments/acid-303/include/acid303/` und als eigenständiges Instrument.
 * **Umfang:**
