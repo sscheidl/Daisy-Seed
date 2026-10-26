@@ -12,6 +12,10 @@
 #include "ambient_host.h"
 #include "callback_diagnostics.h"
 #include <new>
+#elif TOY_PIANO_TAPE
+#include "tape_host.h"
+#include "callback_diagnostics.h"
+#include <new>
 #endif
 #define TOY_PIANO_MODULATION 1 // tests: call InitModulation() before the callback
 
@@ -23,6 +27,8 @@ namespace {
 // scripts/check-firmware.py compares it with src/version.h.
 #if TOY_PIANO_FX
 const char kFirmwareId[] = "TOYPIANO-AMBIENT-FW-VERSION=" TOY_PIANO_AMBIENT_VERSION;
+#elif TOY_PIANO_TAPE
+const char kFirmwareId[] = "TOYPIANO-TAPE-FW-VERSION=" TOY_PIANO_TAPE_VERSION;
 #else
 const char kFirmwareId[] = "TOYPIANO-FW-VERSION=" TOY_PIANO_VERSION;
 #endif
@@ -36,6 +42,16 @@ bool InitializeFx() {
     std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
     fx = new(fx_storage) toy_piano::AmbientHost{};
     return fx->Prepare();
+}
+#elif TOY_PIANO_TAPE
+// Host incl. the 16 KiB delay lines in SDRAM: default .bss would be the nearly full DTCM.
+alignas(toy_piano::TapeHost) unsigned char DSY_SDRAM_BSS fx_storage[sizeof(toy_piano::TapeHost)];
+toy_piano::TapeHost* tape = nullptr;
+mod::adapter::CallbackDiagnostics callback_diagnostics;
+bool InitializeFx() {
+    std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
+    tape = new(fx_storage) toy_piano::TapeHost{};
+    return tape->Prepare();
 }
 #else
 toy_piano::PotFilter attack_pot, decay_pot;
@@ -67,6 +83,10 @@ void InitModulation(float sample_rate) {
     callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
     modulation.EnableExtensions({true, true, true});
+#elif TOY_PIANO_TAPE
+    callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
+    modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
+    modulation.EnableExtensions({true, true, false});
 #else
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize);
     // v0.4: extended monitor (pot positions, ranges) and LFO cross modulation, like
@@ -117,7 +137,7 @@ void ModulateVoices(size_t size) {
 
 void AudioCallback(daisy::AudioHandle::InputBuffer,
                    daisy::AudioHandle::OutputBuffer out, size_t size) {
-#if TOY_PIANO_FX
+#if TOY_PIANO_FX || TOY_PIANO_TAPE
     if(size != toy_piano::kBlockSize) {
         for(size_t i = 0; i < std::min(size, toy_piano::kBlockSize); ++i) out[0][i] = out[1][i] = 0;
         return;
@@ -146,6 +166,19 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     fx->SetModulated(modulation.engine.Apply(toy_piano::ModHallDecay, fx->ReverbDecayBase()),
                      modulation.engine.Apply(toy_piano::ModHallMix, fx->MixBase()),
                      modulation.engine.Apply(toy_piano::ModHallX, fx->XBase()));
+#elif TOY_PIANO_TAPE
+    std::array<float, 8> raw{};
+    for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
+    tape->ReadControls(raw, hw.tog_sw17.Pressed(), hw.tog_sw18.Read());
+    // All pots belong to the tape: attack 2 ms and decay 1.5 s are fixed bases the
+    // matrix can still modulate. Pitch, level and harmonic are the Toy Piano bases.
+    const float attack = modulation.engine.Apply(toy_piano::ModAttack, 0.f);
+    const float decay = modulation.engine.Apply(toy_piano::ModDecay, toy_piano::kTapeDecayBase);
+    modulation.engine.ReportBase(toy_piano::ModPitch, toy_piano::kPitchBase);
+    modulation.engine.ReportBase(toy_piano::ModLevel, toy_piano::kLevelBase);
+    modulation.engine.ReportBase(toy_piano::ModHarmonic, toy_piano::kHarmonicBase);
+    modulation.engine.ReportBase(toy_piano::ModAttack, 0.f);
+    modulation.engine.ReportBase(toy_piano::ModDecay, toy_piano::kTapeDecayBase);
 #else
     const float attack_base = attack_pot.Process(hw.pot[0].Value());
     const float decay_base = decay_pot.Process(hw.pot[1].Value());
@@ -197,6 +230,11 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     for(size_t i = 0; i < size; ++i) mono[i] = piano.Process();
     fx->Process(mono.data(), out[0], out[1], size);
     callback_diagnostics.End();
+#elif TOY_PIANO_TAPE
+    std::array<float, toy_piano::kBlockSize> mono{};
+    for(size_t i = 0; i < size; ++i) mono[i] = piano.Process();
+    tape->Process(mono.data(), out[0], out[1], size);
+    callback_diagnostics.End();
 #else
     for(size_t i = 0; i < size; ++i) {
         const float sample = piano.Process();
@@ -235,7 +273,7 @@ void SendKeyChanges(uint32_t mask, bool connected) {
 // Main loop only: USB parsing happens in the USB interrupt, but sending blocks.
 void ServiceUsbMidi() {
     usb_midi.Listen(); // Restarts reception after an overflow.
-#if TOY_PIANO_FX
+#if TOY_PIANO_FX || TOY_PIANO_TAPE
     static bool pending = false;
     static NoteIn next{};
     for(unsigned batch = 0; batch < 64; ++batch) {
@@ -258,7 +296,7 @@ void ServiceUsbMidi() {
         if(event.type == daisy::NoteOn) {
             const auto note = event.AsNoteOn();
             if(note.velocity > 0) {
-#if TOY_PIANO_FX
+#if TOY_PIANO_FX || TOY_PIANO_TAPE
                 if(!midi_in.Push({note.note, note.velocity})) {
                     next = {note.note, note.velocity};
                     pending = true;
@@ -291,7 +329,7 @@ int main() {
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(toy_piano::kBlockSize);
     piano.Init(hw.seed.AudioSampleRate());
-#if TOY_PIANO_FX
+#if TOY_PIANO_FX || TOY_PIANO_TAPE
     if(!InitializeFx()) while(true) daisy::System::Delay(100);
 #endif
     InitModulation(hw.seed.AudioSampleRate());

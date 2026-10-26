@@ -93,6 +93,13 @@ class ComponentTests(unittest.TestCase):
         self.assertTrue(suites['fx'] and suites['physical'] and suites['reverb'])
         suites = selection.select_suites(['instruments/physical-modeling/torus/dsp/fx/reverb.h'])
         self.assertTrue(suites['fx'] and suites['physical'])
+        # Tape FX DSP: its own suite, the shared FX contract test and its Toy Piano consumer.
+        suites = selection.select_suites(['effects/tape-fx/src/tape_fx.h'])
+        self.assertTrue(suites['tape'] and suites['fx'] and suites['toy'] and suites['submodules'])
+        self.assertFalse(suites['looper'])
+        suites = selection.select_suites(['effects/tape-fx/tests/test_tape_fx.cpp'])
+        self.assertTrue(suites['tape'] and suites['submodules'])
+        self.assertFalse(suites['toy'] or suites['physical'] or suites['looper'])
 
     def test_bootloader_entry(self):
         # Every firmware product embeds the shared bootloader entry with its own version;
@@ -105,7 +112,7 @@ class ComponentTests(unittest.TestCase):
         for panel in ('mod-editor-web', 'mod-editor-juce', 'mod-editor-vst3'):
             self.assertIn('bootloader-entry', data['components'][panel]['depends'])
         suites = selection.select_suites(['common/bootloader/bootloader_entry.h'])
-        for key in ('bootloader', 'toy', 'physical', 'granular', 'looper', 'reverb', 'mod',
+        for key in ('bootloader', 'toy', 'physical', 'granular', 'looper', 'reverb', 'tape', 'mod',
                     'diagnostics', 'submodules'):
             self.assertTrue(suites[key], key)
 
@@ -113,7 +120,7 @@ class ComponentTests(unittest.TestCase):
         # The shared SD driver is not linked by any firmware yet: only its own suite runs.
         suites = selection.select_suites(['common/sd/ro_sd.c'])
         self.assertTrue(suites['sd'])
-        for key in ('toy', 'physical', 'granular', 'looper', 'reverb', 'bootloader', 'diagnostics'):
+        for key in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
         self.assertTrue(selection.select_suites(['Makefile'])['sd'])
 

@@ -1,7 +1,7 @@
 # Komponenten und Produktversionen
 
 `registry.json` ordnet allen implementierten Instrumenten, den beiden Reverb-
-Komponenten, Mod on Daisy, dem gemeinsamen Bootloader-Einstieg (`bootloader-entry`,
+Komponenten, der Tape-FX-Komponente (`tape-fx`), Mod on Daisy, dem gemeinsamen Bootloader-Einstieg (`bootloader-entry`,
 in jedem Firmwareprodukt) und den drei Control Panels stabile IDs zu. Die
 Versionen werden aus den eigenen Headern bzw. CMake gelesen. Im Register steht
 keine zweite Kopie dieser Versionsnummern. Der Browser zeigt seine eigene

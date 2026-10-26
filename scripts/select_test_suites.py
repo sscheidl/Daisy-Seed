@@ -14,7 +14,7 @@ def select_suites(changed):
                  (p.startswith('common/') and not p.startswith(('common/audio/', 'common/sd/')))
                  for p in changed)
     mod_api = touched('modules/mod-on-daisy/include/', 'modules/mod-on-daisy/adapters/')
-    fx = touched('common/audio/', 'effects/torus-reverb/', 'effects/reverb/src/', 'tests/fx/',
+    fx = touched('common/audio/', 'effects/torus-reverb/', 'effects/reverb/src/', 'effects/tape-fx/src/', 'tests/fx/',
                  'instruments/physical-modeling/torus/dsp/fx/',
                  'instruments/physical-modeling/third_party/stmlib/')
     suites = {
@@ -24,6 +24,7 @@ def select_suites(changed):
         'granular': shared or touched('instruments/granular/'),
         'looper': shared or touched('instruments/looper/') or mod_api,
         'reverb': shared or touched('effects/reverb/'),
+        'tape': shared or fx or touched('effects/tape-fx/'),
         'mod': shared or touched('modules/mod-on-daisy/'),
         'editor': shared or touched('editors/mod-on-daisy/') or mod_api,
         'diagnostics': shared or touched('diagnostics/'),
@@ -33,7 +34,7 @@ def select_suites(changed):
     }
     if '.github/workflows/quick.yml' in changed:
         suites = {key: True for key in suites}
-    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'reverb'))
+    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape'))
     return suites
 
 

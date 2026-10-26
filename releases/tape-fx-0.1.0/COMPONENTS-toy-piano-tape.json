@@ -1,0 +1,95 @@
+{
+  "manifest_version": 1,
+  "product": {
+    "id": "toy-piano-tape",
+    "version": "0.1.0",
+    "legacy_device_version": false
+  },
+  "components": [
+    {
+      "id": "toy-piano",
+      "kind": "instrument",
+      "version": "0.4",
+      "version_source": "instruments/toy-piano/src/version.h",
+      "depends": []
+    },
+    {
+      "id": "fx-contract",
+      "kind": "contract",
+      "version": "1.0.0",
+      "version_source": "common/audio/fx_contract.h",
+      "depends": []
+    },
+    {
+      "id": "tape-fx",
+      "kind": "effect",
+      "version": "0.1.0",
+      "version_source": "effects/tape-fx/src/version.h",
+      "depends": [
+        "fx-contract"
+      ]
+    },
+    {
+      "id": "mod-on-daisy",
+      "kind": "control",
+      "version": "0.1.0",
+      "version_source": "modules/mod-on-daisy/include/mod_on_daisy/types.h",
+      "depends": []
+    },
+    {
+      "id": "callback-diagnostics",
+      "kind": "control",
+      "version": "0.1.0",
+      "version_source": "modules/mod-on-daisy/adapters/callback_diagnostics.h",
+      "depends": [
+        "mod-on-daisy"
+      ]
+    },
+    {
+      "id": "bootloader-entry",
+      "kind": "control",
+      "version": "1.0.0",
+      "version_source": "common/bootloader/bootloader_entry.h",
+      "depends": []
+    }
+  ],
+  "compatible_control_panels": [
+    {
+      "id": "mod-editor-web",
+      "kind": "panel",
+      "version": "0.1.1",
+      "version_source": "editors/mod-on-daisy/web/version.js",
+      "depends": [
+        "mod-on-daisy",
+        "bootloader-entry"
+      ]
+    },
+    {
+      "id": "mod-editor-juce",
+      "kind": "panel",
+      "version": "0.1.1",
+      "version_source": "editors/mod-on-daisy/CMakeLists.txt",
+      "depends": [
+        "mod-on-daisy",
+        "bootloader-entry"
+      ]
+    },
+    {
+      "id": "mod-editor-vst3",
+      "kind": "panel",
+      "version": "0.1.1",
+      "version_source": "editors/mod-on-daisy/CMakeLists.txt",
+      "depends": [
+        "mod-on-daisy",
+        "bootloader-entry"
+      ]
+    }
+  ],
+  "repository_commit": "bc0c7e9441856e4234a9cf992bc3b921e744d11f",
+  "working_tree_dirty": false,
+  "image": {
+    "name": "ToyPianoTape-v0.1.0.bin",
+    "bytes": 173956,
+    "sha256": "a730cb2afe9a1bb70304774752cf5e0d934cd2ff4e00003515f67794c3c62be6"
+  }
+}

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Tape FX 0.1.0 – Cheatsheet</title>
+<style>
+@page { size: A4 landscape; margin: 10mm; }
+* { box-sizing: border-box; }
+body { font-family: "DejaVu Sans", sans-serif; font-size: 8.6pt; line-height: 1.33; color: #1d1d1f; margin: 0; }
+h1 { font-size: 15pt; margin: 0; }
+.head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5pt solid #b5651d; padding-bottom: 1.5mm; margin-bottom: 3mm; }
+.head .meta { color: #555; font-size: 8pt; }
+.grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 4mm; }
+.box { border: 0.6pt solid #d6c8b8; border-radius: 2mm; padding: 2.5mm 3mm; break-inside: avoid; }
+h2 { font-size: 10pt; margin: 0 0 1.5mm; color: #5a2d0c; }
+table { border-collapse: collapse; width: 100%; }
+td, th { padding: 0.8mm 1.2mm; border-bottom: 0.4pt solid #e6ddd2; vertical-align: top; text-align: left; }
+th { font-size: 7.6pt; color: #6b5a4a; font-weight: bold; }
+td.k { font-weight: bold; white-space: nowrap; width: 1%; }
+.pots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; margin: 1mm 0 2mm; }
+.pot { text-align: center; }
+.pot .c { width: 11mm; height: 11mm; border-radius: 50%; border: 1.2pt solid #5a2d0c; margin: 0 auto 0.8mm; position: relative; background: #fbf5ef; }
+.pot .c::after { content: ""; position: absolute; left: 50%; top: 1mm; width: 0.9pt; height: 4mm; background: #5a2d0c; transform: translateX(-50%); }
+.pot b { display: block; font-size: 8pt; }
+.pot span { font-size: 7.4pt; color: #555; }
+.keys { display: grid; grid-template-columns: repeat(8, 1fr); gap: 1.2mm; margin: 1mm 0; }
+.key { border: 0.8pt solid #9c8a78; border-radius: 1mm; text-align: center; padding: 0.8mm 0; font-size: 7pt; min-height: 9mm; }
+.key b { display: block; font-size: 7.6pt; }
+.key.on { background: #f3e2cf; border-color: #b5651d; }
+.key.led { background: #eef3e8; border-color: #6d8f4e; }
+.key.boot { border-style: dashed; }
+.note { background: #fbf5ef; border-left: 2pt solid #b5651d; padding: 1.5mm 2mm; margin-top: 2mm; font-size: 8pt; }
+.warn { background: #fcefee; border-left: 2pt solid #b3261e; padding: 1.5mm 2mm; margin-top: 2mm; font-size: 8pt; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 7.6pt; background: #f4f1ec; padding: 0 0.8mm; }
+.legend { font-size: 7.2pt; color: #555; margin-top: 1mm; }
+</style></head><body>
+
+<div class="head"><h1>Tape FX 0.1.0 · Cheatsheet</h1>
+<div class="meta">Seed3 Desktop Kit · TapeFx-v0.1.0.bin · ToyPianoTape-v0.1.0.bin · Commit bc0c7e9 · 26.10.2026</div></div>
+
+<div class="grid">
+<div class="box">
+<h2>Potis (beide Images)</h2>
+<div class="pots">
+<div class="pot"><div class="c"></div><b>VR1 Drive</b><span>Start 35 %</span></div>
+<div class="pot"><div class="c"></div><b>VR2 Tone</b><span>dunkel ↔ hell, 50 %</span></div>
+<div class="pot"><div class="c"></div><b>VR3 Age</b><span>Start 40 %</span></div>
+<div class="pot"><div class="c"></div><b>VR4 Mix</b><span>dry ↔ wet, 40 %</span></div>
+<div class="pot"><div class="c"></div><b>VR5 Wow</b><span>Start 20 %</span></div>
+<div class="pot"><div class="c"></div><b>VR6 Flutter</b><span>Start 15 %</span></div>
+<div class="pot"><div class="c"></div><b>VR7 Hiss</b><span>Start 20 %</span></div>
+<div class="pot"><div class="c"></div><b>VR8 Dropouts</b><span>Start 10 %</span></div>
+</div>
+<table>
+<tr><th>Schalter</th><th>Stellung</th><th>Funktion</th></tr>
+<tr><td class="k" rowspan="2">SW17</td><td>A</td><td>Tape an</td></tr>
+<tr><td>B</td><td>Bypass (10 ms, exakt trocken)</td></tr>
+<tr><td class="k" rowspan="3">SW18</td><td>oben</td><td>Studio</td></tr>
+<tr><td>Mitte</td><td>Tape (Standard)</td></tr>
+<tr><td>unten</td><td>Cassette</td></tr>
+</table>
+<div class="note">Age skaliert Wow/Flutter-Rate und -Tiefe, Head Bump, Hiss und Dropout-Häufigkeit. Für Modulationstests VR3 ganz rechts.</div>
+<div class="warn">A/B von SW17 am Board noch unbestätigt. Hardware: NICHT GEMESSEN.</div>
+</div>
+
+<div class="box">
+<h2>Tape FX (Line-Eingang)</h2>
+<div class="keys">
+<div class="key on"><b>S1</b>TapeVibe</div><div class="key on"><b>S2</b>TAPE</div><div class="key on"><b>S3</b>HARD</div><div class="key on"><b>S4</b>FOLD</div>
+<div class="key on"><b>S5</b>Komp.</div><div class="key on"><b>S6</b>Crush</div><div class="key"><b>S7</b>–</div><div class="key led"><b>S8</b>Tape an</div>
+<div class="key boot"><b>S9</b>Boot*</div><div class="key"><b>S10</b>–</div><div class="key"><b>S11</b>–</div><div class="key"><b>S12</b>–</div>
+<div class="key"><b>S13</b>–</div><div class="key"><b>S14</b>–</div><div class="key"><b>S15</b>–</div><div class="key led boot"><b>S16</b>Überlauf</div>
+</div>
+<div class="legend">Orange: Taste schaltet, LED zeigt Zustand · Grün: nur LED · *S9+S16 5 s = Bootloader</div>
+<table style="margin-top:2mm">
+<tr><td class="k">S1–S4</td><td>Drive-Kurve (eine aktiv): Original / MixForge TAPE (Bias + Emphasis) / HARD / FOLD</td></tr>
+<tr><td class="k">S5</td><td>Kompressor −18 dB, 4:1, 10/300 ms, vor dem Band</td></tr>
+<tr><td class="k">S6</td><td>Bitcrusher 8 Bit, ≈ 16 kHz, nach dem Band</td></tr>
+<tr><td class="k">S8 LED</td><td>Tape aktiv (aus bei Bypass)</td></tr>
+<tr><td class="k">S16 LED</td><td>CPU-Überlauf seit Start → melden</td></tr>
+<tr><td class="k">Eingang</td><td>IN L/R stereo; rechts leer → links auf beide Kanäle</td></tr>
+</table>
+</div>
+
+<div class="box">
+<h2>Toy Piano + Tape FX</h2>
+<table>
+<tr><td class="k">Tasten</td><td>S1–S8: C4–C5, S9–S16: C5–C6; LEDs zeigen gehaltene Tasten</td></tr>
+<tr><td class="k">Hüllkurve</td><td>Attack 2 ms, Decay 1,5 s fest (Matrix kann modulieren)</td></tr>
+<tr><td class="k">MIDI</td><td>USB J7: 16 weitere Stimmen; Panel: <code>toy-piano-tape 0.1.0</code></td></tr>
+<tr><td class="k">Stereo</td><td>Klavier mono; Stereo nur durch Hiss und Dropouts</td></tr>
+<tr><td class="k">CPU</td><td><code>mod_probe.py stats</code></td></tr>
+</table>
+
+<h2 style="margin-top:3mm">Erwartete Bereiche (Hosttest)</h2>
+<table>
+<tr><td class="k">Wow</td><td>≤ ±0,9 Cent, 0,25–0,8 Hz – kaum hörbar (Original)</td></tr>
+<tr><td class="k">Flutter</td><td>≤ ±4,2 Cent, 6–14 Hz – gut hörbar</td></tr>
+<tr><td class="k">Drive</td><td>THD 1 → 28 % (Sinus −6 dBFS), Pegel −3…+4 dB</td></tr>
+<tr><td class="k">Hiss</td><td>Studio −61,5 / Tape −52,1 / Cassette −46,8 dBFS</td></tr>
+<tr><td class="k">Dropouts</td><td>28 / 46 / 67 pro s bei 100 %, 0,5–9 ms</td></tr>
+</table>
+
+<h2 style="margin-top:3mm">Schnelltest</h2>
+<table>
+<tr><td class="k">1</td><td>Bypass → trocken; Tape an → Färbung</td></tr>
+<tr><td class="k">2</td><td>Mix rechts, Drive 0 → 100 %</td></tr>
+<tr><td class="k">3</td><td>Age 100 %, Flutter 100 % an gehaltenen Tönen</td></tr>
+<tr><td class="k">4</td><td>Hiss/Dropouts 100 %, SW18 durchschalten</td></tr>
+<tr><td class="k">5</td><td>Potis schnell drehen, SW17 umschalten: kein Knacks</td></tr>
+</table>
+<div class="note"><b>Bootloader:</b> S9 + S16 allein 5 s halten → alle LEDs an. Rettung: BOOT + RESET.</div>
+</div>
+</div>
+</body></html>

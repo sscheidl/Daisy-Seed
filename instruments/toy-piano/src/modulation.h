@@ -4,7 +4,7 @@
 // for experiments and are greyed out in the editor.
 #include "config.h"
 #include "version.h"
-#if TOY_PIANO_FX
+#if TOY_PIANO_FX || TOY_PIANO_TAPE
 #include "composed_version.h"
 #endif
 #include "mod_on_daisy/types.h"
@@ -39,6 +39,10 @@ inline mod::InstrumentInfo MakeModInfo() {
     info.targets[ModHallDecay] = {"HallDecay", "100%", 1.f, false, false};
     info.targets[ModHallMix] = {"HallMix", "100%", 1.f, false, false};
     info.targets[ModHallX] = {"HallX", "100%", 1.f, false, false};
+#elif TOY_PIANO_TAPE
+    // The five Toy Piano columns; the tape is played from the pots only.
+    info.key = "toy-piano-tape";
+    info.version = TOY_PIANO_TAPE_VERSION;
 #else
     info.key = "toy-piano";
     info.version = TOY_PIANO_VERSION;

@@ -9,6 +9,13 @@ Mod bench 0.1.1, Diagnose 0.2.1, Panels 0.1.1. Prüfbericht und Laufzettel:
 [docs/HARDWARE_TEST_INTEGRATION.md](docs/HARDWARE_TEST_INTEGRATION.md). Hardware
 **NICHT GEMESSEN**.
 
+**Ergänzung 26.10.2026 (Tape FX):** Neue Komponente `tape-fx 0.1.0` in
+`effects/tape-fx/` (Port von drumlogue TapeVibe, Referenzpfad bitgleich, optionale
+MixForge-Stufen) mit zwei neuen Buildzielen: `tape-fx` (Stereo-Effekt) und
+`toy-piano-tape` (Toy Piano → Tape FX). Bestehende Images bytegleich, Stardust/Looper
+unverändert. [Bericht](effects/tape-fx/docs/REPORT.md),
+[Hörtest-Laufzettel](effects/tape-fx/docs/HARDWARE_TEST.md). Hardware **NICHT GEMESSEN**.
+
 **Ergänzung 25.10.2026:** Auf `feat/toy-piano-ambient` liegt das separate Produkt
 `toy-piano-ambient 0.1.1`, abhängig vom modularen FX-Unterbau in PR #38.
 [Bedienung, Build, Prüfergebnisse und Hardware-Laufzettel](instruments/toy-piano/docs/AMBIENT.md).

@@ -78,6 +78,7 @@ jobs:
         run: |
           make PROJECT=toy-piano test
           make PROJECT=toy-piano-ambient test
+          make PROJECT=toy-piano-tape test
       - name: Physical Modeling host tests (base and MOD)
         if: steps.changes.outputs.physical == 'true'
         run: |
@@ -93,6 +94,9 @@ jobs:
       - name: Reverb host tests
         if: steps.changes.outputs.reverb == 'true'
         run: make PROJECT=reverb-fx test
+      - name: Tape FX host tests (DSP against drumlogue reference, firmware controls)
+        if: steps.changes.outputs.tape == 'true'
+        run: make PROJECT=tape-fx test
       - name: Mod on Daisy host tests
         if: steps.changes.outputs.mod == 'true'
         run: make -C modules/mod-on-daisy test

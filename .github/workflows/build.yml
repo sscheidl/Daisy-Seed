@@ -15,6 +15,8 @@ on:
           - physical-modeling
           - toy-piano
           - toy-piano-ambient
+          - toy-piano-tape
+          - tape-fx
           - granular
           - looper
           - looper-mod
@@ -42,7 +44,9 @@ jobs:
           projects = [
               {"project":"toy-piano","directory":"instruments/toy-piano","image":"ToyPiano","build":"build"},
               {"project":"toy-piano-ambient","directory":"instruments/toy-piano","image":"ToyPianoAmbient","build":"build/ambient"},
+              {"project":"toy-piano-tape","directory":"instruments/toy-piano","image":"ToyPianoTape","build":"build/tape"},
               {"project":"reverb-fx","directory":"effects/reverb","image":"AmbientReverb","build":"build"},
+              {"project":"tape-fx","directory":"effects/tape-fx","image":"TapeFx","build":"build"},
               {"project":"physical-modeling","directory":"instruments/physical-modeling","image":"PhysicalModeling","build":"build"},
               {"project":"physical-modeling-mod","directory":"instruments/physical-modeling","image":"PhysicalModelingMod","build":"build/mod"},
               {"project":"physical-modeling-fx-torus","directory":"instruments/physical-modeling","image":"PhysicalModelingFxTorus","build":"build/fx-torus"},
@@ -95,6 +99,9 @@ jobs:
       - name: Check ARM ELF and static memory reserves
         if: startsWith(matrix.project, 'physical-modeling') || matrix.project == 'toy-piano-ambient'
         run: python3 scripts/check-physical-elf.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
+      - name: Check Tape FX ELF, DTCM reserve and SDRAM placement of the delay lines
+        if: matrix.project == 'tape-fx' || matrix.project == 'toy-piano-tape'
+        run: python3 scripts/check-tape-elf.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
       - name: Check Nebulae ARM memory, SD DMA and dynamic WAV capacities
         if: matrix.project == 'granular'
         run: python3 scripts/check-granular-elf.py ${{ matrix.directory }}/${{ matrix.build }}/NebulaeOnDaisy-v${{ steps.version.outputs.value }}.elf --host-test

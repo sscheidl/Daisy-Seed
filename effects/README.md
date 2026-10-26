@@ -6,6 +6,7 @@ Dev Kit:
 | Effect | Project ID | Status |
 | --- | --- | --- |
 | [Ambient Reverb](reverb/) | `reverb-fx` | Buildable original stereo reverb; hardware test pending. Clouds/Nimbus remains a separate study |
+| [Tape FX](tape-fx/) | `tape-fx` | Buildable TapeVibe/MixForge port as reusable component and stereo effect; also used by `toy-piano-tape`; hardware test pending |
 | [Granular / Freeze](granular/) | `granular-fx` | Planned |
 
 Ambient Reverb has its own source, host tests, README, and build directory.

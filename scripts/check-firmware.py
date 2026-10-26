@@ -4,6 +4,7 @@
 Usage: check-firmware.py [image.bin]
 Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
 Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
+effects/tape-fx/build/TapeFx-v<version>.bin, build/tape/ToyPianoTape-v<version>.bin,
 PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
 instruments/looper/build/Looper-v<version>.bin, build/mod/LooperMod-v<version>.bin and
 modules/mod-on-daisy/bench/build/ModBench-v<version>.bin.
@@ -21,7 +22,20 @@ assert match, "Could not read the version from src/version.h"
 version = match.group(1)
 
 path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else project / 'build' / f'ToyPiano-v{version}.bin'
-if path.name.startswith('ToyPianoAmbient-v'):
+if path.name.startswith('ToyPianoTape-v'):
+    match = re.search(r'TOY_PIANO_TAPE_VERSION\s+"([^\"]+)"', (project / 'src' / 'composed_version.h').read_text())
+    assert match, 'Missing composed Toy Piano Tape version'
+    version = match.group(1)
+    expected_name = f'ToyPianoTape-v{version}.bin'
+    marker = rb'TOYPIANO-TAPE-FW-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('TapeFx-v'):
+    tape = root / 'effects' / 'tape-fx'
+    match = re.search(r'TAPE_FX_FIRMWARE_VERSION\s+"([^"]+)"', (tape / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Tape FX firmware version"
+    version = match.group(1)
+    expected_name = f'TapeFx-v{version}.bin'
+    marker = rb'TAPE-FX-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('ToyPianoAmbient-v'):
     match = re.search(r'TOY_PIANO_AMBIENT_VERSION\s+"([^\"]+)"', (project / 'src' / 'composed_version.h').read_text())
     assert match, 'Missing composed Toy Piano version'
     version = match.group(1)
