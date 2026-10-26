@@ -1,5 +1,21 @@
 # Gesicherter Stand – 25.10.2026
 
+**Aktualisiert 26.10.2026:** Der Nutzer möchte deutlich weniger Druckaufwand
+und hat ausdrücklich „Stecken und seitlich führen reicht“ gewählt.
+Eine zusätzliche Auszugssicherung ist nicht mehr gefordert. Keine 16 losen
+Haltehülsen als Serienanforderung. Neuer Einstieg: `simple-guide/README.md`
+und `build_simple_guide.py`, je Kappenform eine einzige Lochprobe mit drei
+Spielmaßen. Der nachstehende Stand mit 38 Teilen bleibt historischer,
+optionaler Prüfkatalog. Keine geänderten Hardwaremesswerte, keine Stufe2.
+
+Neue Probe: beide STLs geschlossen, außenorientiert, je eine Komponente;
+RH-Gegenproben und unabhängige PCB-Landmarken bestanden. 24 Prüfungen von
+Kappe/Tastergehäuse im Ruhezustand, beim Drücken und Abziehen: kein
+Schnittvolumen. Alte 38 RH-Dateiprüfungen als Regression bestanden.
+`build/case-v4-print/C2-direct-S-EIN-TEIL.zip` bzw. `...-R-EIN-TEIL.zip`
+enthält jeweils genau ein unverändertes STL, Anleitung und Bericht.
+ZIPs sind lokal; `build_simple_guide.py` erzeugt sie reproduzierbar.
+
 Branch `codex/case-v4-coupons`, eigener Worktree `case-v4-coupons`, Basis
 `main` 5f25359 einschließlich PR #43. Alten Worktree nicht weiterverwenden.
 Auf Nutzerwunsch wegen verbleibendem Tagesbudget gesichert, danach Stopp.

@@ -6,11 +6,14 @@ Layout/lighting values are presentation settings, never mechanical dimensions.
 import json
 import math
 from pathlib import Path
+import sys
 
 import bpy
 from mathutils import Vector
 
-ROOT=Path(__file__).resolve().parent
+BASE=Path(__file__).resolve().parent
+SIMPLE='--simple-guide' in sys.argv
+ROOT=BASE/'simple-guide' if SIMPLE else BASE
 manifest=json.loads((ROOT/"coupons/manifest.json").read_text(encoding="utf8"))
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete(use_global=False)
@@ -35,6 +38,8 @@ def text_label(label,x,y,size):
     obj.location=(x,y,.05); obj.data.materials.append(ink)
 
 
+columns=min(7,len(manifest['parts']))
+rows=math.ceil(len(manifest['parts'])/columns)
 for i,(name,meta) in enumerate(manifest["parts"].items()):
     bpy.ops.wm.stl_import(filepath=str(ROOT/"coupons"/meta["file"]))
     obj=bpy.context.object; obj.name=name; obj.data.materials.clear(); obj.data.materials.append(shell)
@@ -42,19 +47,25 @@ for i,(name,meta) in enumerate(manifest["parts"].items()):
     xyz=[obj.matrix_world@Vector(p) for p in obj.bound_box]
     cx=(min(p.x for p in xyz)+max(p.x for p in xyz))/2
     cy=(min(p.y for p in xyz)+max(p.y for p in xyz))/2
-    x=(i%7)*100; y=-(i//7)*65
+    x=(i%columns)*100; y=-(i//columns)*65
     obj.location+=Vector((x-cx,y-cy,-min(p.z for p in xyz)+.1))
     text_label(name,x-43,y-28,4.4)
 
-text_label("V4 / C1-C7   |   38 Einzel-STLs   |   NOMINAL - Hardware NICHT GEMESSEN",-45,48,6)
-text_label("Teile zur Uebersicht verschoben. Keine montierte Baugruppe. Keine Spiegelung.",-45,37,4.3)
-bpy.ops.mesh.primitive_plane_add(size=2000,location=(300,-150,-.05))
+if SIMPLE:
+    text_label('V4 / Eine Kappenprobe',-45,48,6)
+    text_label('S: eckig   R: rund   |   Nur eine Form drucken',-45,37,4.3)
+    text_label('NOMINAL - Hardware NICHT GEMESSEN',-45,27,4.3)
+else:
+    text_label(f"V4 / C1-C7   |   {len(manifest['parts'])} Einzel-STLs   |   NOMINAL - Hardware NICHT GEMESSEN",-45,48,6)
+    text_label("Teile zur Uebersicht verschoben. Keine montierte Baugruppe. Keine Spiegelung.",-45,37,4.3)
+target=Vector(((columns-1)*50,-(rows-1)*32.5,0))
+bpy.ops.mesh.primitive_plane_add(size=2000,location=(*target[:2],-.05))
 bpy.context.object.data.materials.append(ground)
 
-bpy.ops.object.camera_add(location=(540,-700,1000))
-camera=bpy.context.object; target=Vector((300,-150,0))
+bpy.ops.object.camera_add(location=target+Vector((110,-190,300) if SIMPLE else (240,-550,1000)))
+camera=bpy.context.object
 camera.rotation_euler=(target-camera.location).to_track_quat("-Z","Y").to_euler()
-camera.data.type="ORTHO"; camera.data.ortho_scale=860; camera.data.clip_end=10000
+camera.data.type="ORTHO"; camera.data.ortho_scale=245 if SIMPLE else 860; camera.data.clip_end=10000
 scene=bpy.context.scene; scene.camera=camera
 for pos,power,size in [((140,-200,650),5000000,450),((700,200,450),3000000,350)]:
     bpy.ops.object.light_add(type="AREA",location=pos)
@@ -75,6 +86,6 @@ scene.view_settings.view_transform="AgX"
 scene.render.image_settings.file_format="PNG"
 scene.render.filepath=str(ROOT/"coupons-overview.png")
 bpy.ops.render.render(write_still=True)
-local=ROOT.parents[2]/"build/v4-checks/coupons-preview.blend"
+local=BASE.parents[2]/('build/v4-checks/simple-guide-preview.blend' if SIMPLE else 'build/v4-checks/coupons-preview.blend')
 local.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.save_as_mainfile(filepath=str(local))

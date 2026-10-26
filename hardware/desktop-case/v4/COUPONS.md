@@ -1,4 +1,11 @@
-# V4 – Stufe 1: Funktionsproben
+# V4 – früherer vollständiger Prüfkatalog
+
+**Vereinfachung vom 26.10.2026:** Für den Einstieg genügt jetzt
+[eine einteilige Kappenprobe](simple-guide/README.md). Der Nutzer hat die
+zusätzliche Auszugssicherung abgewählt: Originalkappen aufstecken und
+gemeinsam seitlich führen reicht. Die folgenden 38 Dateien bleiben als
+optionale frühere Studien erhalten; sie sind **kein Pflichtdruckprogramm**.
+Die Haltehülsen und ihr bisheriges Abnahmekriterium sind damit überholt.
 
 Stand 25.10.2026. **Hardware NICHT GEMESSEN. Sämtliche folgenden CAD-Maße
 sind NOMINAL in mm**, sofern nicht anders angegeben. Auch ein digitales

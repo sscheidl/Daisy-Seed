@@ -1,0 +1,171 @@
+{
+  "schema": 1,
+  "hardware": "NICHT GEMESSEN",
+  "generated_at_utc": "2026-10-26T19:02:44.912588+00:00",
+  "parameters": "../v4-parameters.json",
+  "parameters_sha256": "7c19e3c7dd985d5616d05a5fef5fa669aecc17dbf0adf1c602a006f2655efcf1",
+  "generator_sha256": "1bdff331bfd527df9a282ec6e6bed689b2d44969bf981d40482907986129bafd",
+  "geometry_helper_sha256": "007abfc5519cb87cf608f6962d55a11f30fbed3940e6aff3c387cb4f8e2ed456",
+  "frame": "RH: +X right/MIDI, +Y rear/audio, +Z up. Add installed_z_offset for PCB-top Z=0; no reflection on import.",
+  "decision": "Original caps stay on switch stems; shared plate provides lateral guidance. Pull-out retention waived by user on 2026-10-26.",
+  "parts": {
+    "C2-direct-S": {
+      "file": "C2-direct-S.stl",
+      "id": "C2-DS",
+      "purpose": "One-piece side guide for original cap; no pull-out retention",
+      "installed_z_offset": 9.0,
+      "print_orientation": "flat underside on bed; no rotation or reflection",
+      "supports": "none",
+      "ear_source_xyz": [
+        55,
+        67.05,
+        9
+      ],
+      "marker_source": {
+        "void": [
+          80.2,
+          71.14999999999999,
+          9.88
+        ],
+        "solid": [
+          81.0,
+          71.14999999999999,
+          9.88
+        ],
+        "additional": [
+          {
+            "void": [
+              80.2,
+              69.55,
+              9.88
+            ],
+            "solid": [
+              81.0,
+              69.55,
+              9.88
+            ]
+          },
+          {
+            "void": [
+              81.8,
+              69.55,
+              9.88
+            ],
+            "solid": [
+              82.6,
+              69.55,
+              9.88
+            ]
+          }
+        ]
+      },
+      "family": "direct-guide",
+      "shape": "square",
+      "openings": [
+        {
+          "source_xy": [
+            69.0,
+            85
+          ],
+          "size_mm": 5.2,
+          "clearance_per_side_mm": 0.1
+        },
+        {
+          "source_xy": [
+            81.2857142857,
+            85
+          ],
+          "size_mm": 5.4,
+          "clearance_per_side_mm": 0.2
+        },
+        {
+          "source_xy": [
+            93.57142857139999,
+            85
+          ],
+          "size_mm": 5.6,
+          "clearance_per_side_mm": 0.3
+        }
+      ]
+    },
+    "C2-direct-R": {
+      "file": "C2-direct-R.stl",
+      "id": "C2-DR",
+      "purpose": "One-piece side guide for original cap; no pull-out retention",
+      "installed_z_offset": 9.0,
+      "print_orientation": "flat underside on bed; no rotation or reflection",
+      "supports": "none",
+      "ear_source_xyz": [
+        55,
+        67.05,
+        9
+      ],
+      "marker_source": {
+        "void": [
+          80.2,
+          71.14999999999999,
+          9.88
+        ],
+        "solid": [
+          81.0,
+          71.14999999999999,
+          9.88
+        ],
+        "additional": [
+          {
+            "void": [
+              80.2,
+              69.55,
+              9.88
+            ],
+            "solid": [
+              81.0,
+              69.55,
+              9.88
+            ]
+          },
+          {
+            "void": [
+              81.8,
+              69.55,
+              9.88
+            ],
+            "solid": [
+              82.6,
+              69.55,
+              9.88
+            ]
+          }
+        ]
+      },
+      "family": "direct-guide",
+      "shape": "round",
+      "openings": [
+        {
+          "source_xy": [
+            69.0,
+            85
+          ],
+          "size_mm": 5.28,
+          "clearance_per_side_mm": 0.1
+        },
+        {
+          "source_xy": [
+            81.2857142857,
+            85
+          ],
+          "size_mm": 5.48,
+          "clearance_per_side_mm": 0.2
+        },
+        {
+          "source_xy": [
+            93.57142857139999,
+            85
+          ],
+          "size_mm": 5.68,
+          "clearance_per_side_mm": 0.3
+        }
+      ]
+    }
+  }
+}
