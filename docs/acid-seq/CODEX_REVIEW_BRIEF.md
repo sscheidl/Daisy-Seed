@@ -45,10 +45,13 @@ Auftrags. Wo du etwas nicht prüfen konntest, schreib das dazu.
    * Hält die CI-Erweiterung das Budget ein?
    * Kein Flash-Schreiben, Bootloader-Einstieg in jeder Firmware.
 4. **Bedienkonzept.**
-   * Gibt es Kollisionen zwischen Step-Wahl, langem Druck, Start/Stop-Geste (D2)
-     und der Bootloader-Geste S9 + S16?
-   * Ist das Abspielverhalten bei Moduswechseln, in den Parallel- und
-     Polyrhythmus-Modi und mit dem Pendel eindeutig festgelegt?
+   * Gibt es Kollisionen zwischen Step-Wahl, langem Druck und der
+     Bootloader-Geste S9 + S16?
+   * Ist das Abspielverhalten der drei Modi (Vorwärts, Rückwärts, Zufall über
+     SW18) bei Moduswechsel und Längenänderung eindeutig festgelegt?
+   * Start/Stop über SW17 (4.2): Ist der Vorrang vor MIDI Start/Stop, Panel und
+     Gate IN 2 widerspruchsfrei? Was passiert beim Einschalten mit SW17 auf Run?
+     Was passiert, wenn die externe Clock ausfällt?
 5. **Protokoll und Panel.**
    * Ist ein eigener SysEx-Kopf `7D 53 51` (D1) sinnvoll gegenüber dem
      Parametervertrag, den `docs/MODULARITY_AUDIT_2026-10-25.md` § 3 empfiehlt?

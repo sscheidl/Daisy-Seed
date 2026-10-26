@@ -110,7 +110,7 @@ Kerne (header-only, ohne libDaisy, auf dem Host testbar):
 
 | Element | Funktion |
 | --- | --- |
-| S1–S8, S9–S16 | Steps A1–A8 und B1–B8. **Drücken** wählt den Step. **Lang drücken** (≥ 400 ms) schaltet sein Gate um. Ausgewertet wird das beim Loslassen und nur, wenn währenddessen keine andere Taste gedrückt wurde. Mehrtastengesten (D2) schalten so kein Gate |
+| S1–S8, S9–S16 | Steps A1–A8 und B1–B8. **Drücken** wählt den Step. **Lang drücken** (≥ 400 ms) schaltet sein Gate um. Ausgewertet wird das beim Loslassen und nur, wenn währenddessen keine andere Taste gedrückt wurde |
 | LEDs D1–D16 | Gate an: hell. Gate aus: dunkel. Lauflicht: kurzes Aufblitzen bzw. Abdunkeln. Gewählter Step: schnelles Blinken |
 | VR1 | Oktave des gewählten Steps (5 Stufen) |
 | VR2 | Halbton des gewählten Steps (12 Stufen) |
@@ -118,10 +118,10 @@ Kerne (header-only, ohne libDaisy, auf dem Host testbar):
 | VR4 | Accent und Slide des gewählten Steps: nichts, Accent, Slide, Accent + Slide |
 | VR5 | Tempo, 30–300 BPM, global |
 | VR6 | Swing, global (gerade Sechzehntel um 50–75 % verschoben) |
-| VR7 | Sequenzlänge 1–16, global (in den Parallel-Modi: Länge der Reihe des gewählten Steps) |
+| VR7 | Sequenzlänge 1–16, global |
 | VR8 | Transponierung ±12 Halbtöne, global |
-| SW17 × SW18 | Sechs Modus-Plätze, siehe 4.2 |
-| Start/Stop | Offen, siehe D2 |
+| SW17 (2 Stellungen) | Start/Stop, siehe 4.2 |
+| SW18 (3 Stellungen) | Abspielmodus: oben Vorwärts, Mitte Rückwärts, unten Zufall |
 
 * **Rasterstufen der Potis:** Hysterese an jeder Stufengrenze, damit Werte
   nicht springen. Die Poti-Glättung von Toy Piano (20 ms, 0,1 % Hysterese) dient
@@ -133,41 +133,49 @@ Kerne (header-only, ohne libDaisy, auf dem Host testbar):
   Note für 150 ms auf CV/Gate, MIDI und die interne Stimme aus.
 * **SW18 (Switch3)** wird von `UpdateAllControls` nicht entprellt. Der Adapter
   übernimmt das 20-ms-Mapping, das Nebulae dafür schon verwendet.
-* **Bootloader:** S9 und S16 gleichzeitig 5 s gehalten startet ihn. Gewählt wird
-  ein Step schon beim Drücken. Deshalb darf keine Geste verlangen, beide Tasten
-  lange zu halten.
+* **Bootloader:** S9 und S16 gleichzeitig 5 s gehalten startet ihn. Es gibt
+  keine Mehrtastengesten, eine Kollision ist damit ausgeschlossen.
+* **Zuordnung der Schalter:** Der Benutzer hat „Switch 2“ für Start/Stop
+  genannt. Drei Modi brauchen aber den Schalter mit drei Stellungen (SW18).
+  Start/Stop liegt deshalb auf dem Schalter mit zwei Stellungen (SW17), siehe D2.
 
-### 4.2 Abspielmodi (SW17 × SW18 = 6 Plätze, im Editor frei belegbar)
+### 4.2 Abspielmodi und Start/Stop
 
-| | SW18 oben | SW18 Mitte | SW18 unten |
-| --- | --- | --- | --- |
-| **SW17 A** | Vorwärts 16 | Rückwärts 16 | Zufall 16 |
-| **SW17 B** | Pendel 16 | Parallel 2 × 8 | Polyrhythmus (A und B mit eigener Länge) |
+| SW18 | Modus | Ablauf bei Länge L |
+| --- | --- | --- |
+| oben | Vorwärts | A1…A8, B1…B8, begrenzt auf L, dann wieder von vorn |
+| Mitte | Rückwärts | Step L abwärts bis Step 1, dann wieder von Step L |
+| unten | Zufall | gleichverteilt über die Steps 1…L. Der Zufallsgenerator (xorshift32) hat einen festen Seed, damit Tests reproduzierbar sind |
 
-* **Vorwärts 16 und Rückwärts 16:** A1…A8, B1…B8 und umgekehrt, begrenzt auf die
-  Sequenzlänge.
-* **Pendel:** läuft hin und zurück, ohne die Endpunkte doppelt zu spielen.
-* **Zufall:** gleichverteilt über die aktive Länge. Der Zufallsgenerator
-  (xorshift32) hat einen festen Seed, damit Tests reproduzierbar sind.
-* **Parallel und Polyrhythmus:**
-  * Reihe A wird zu Kanal A (CV OUT 1/2, MIDI-Kanal A, interne Stimme).
-  * Reihe B wird zu MIDI-Kanal B, und zu CV OUT 2, wenn die CV-Belegung auf
-    „Tonhöhe A + Tonhöhe B“ steht.
-* **Weitere Modi** stehen im Editor für die Plätze zur Wahl: Brownian
-  (Zufallsschritt −1/0/+1/+2) und Step Jump. Den SQ-1-Modus CV/Duty ersetzt die
-  Gate-Länge pro Step, siehe D3.
-* **Modus-Wechsel:** Der Schalter gilt. Ein Modus, den der Editor setzt, gilt bis
-  zur nächsten Schalterbewegung.
-* **Modus-Wechsel während des Spielens:** wird zum nächsten Step übernommen.
-  Die Position wird dabei sinnvoll abgebildet, zum Beispiel bleibt bei Vorwärts
-  nach Rückwärts der Index erhalten.
+* **Modus-Wechsel während des Spielens:** gilt ab dem nächsten Step. Die
+  Position bleibt erhalten, nur die Richtung ändert sich.
+* **Weitere Modi** wie Pendel, Brownian, Step Jump oder Parallel 2 × 8 kommen
+  vielleicht später über das Control Panel. Sie sind nicht Teil der Phasen 1–6,
+  siehe Abschnitt 6, D3.
+
+**Start/Stop mit SW17.** Die Schalterstellung entspricht dem Zustand: Run oder
+Stop.
+
+* **Clock intern:**
+  * Run startet beim ersten Step der Laufrichtung, bei Rückwärts also bei Step L.
+  * Stop hält sofort an: Gate aus, MIDI All Notes Off, CV-Tonhöhe bleibt stehen.
+* **Externe Clock (Gate IN 1 oder MIDI):** SW17 auf Run schaltet den Sequencer
+  scharf. Er läuft, sobald Pulse kommen bzw. MIDI Start oder Continue eintrifft,
+  und hält bei MIDI Stop an. SW17 auf Stop hält immer an, unabhängig von der
+  Clock.
+* **Gate IN 2 im Run-Modus:** wirkt zusätzlich zu SW17. Der Sequencer läuft
+  nur, wenn beide auf Run stehen.
+* **Control Panel und MIDI Start/Stop:** wirken nur, solange SW17 auf Run steht.
+  Der Schalter ist die übergeordnete Freigabe.
+* **Einschalten mit SW17 auf Run:** Der Sequencer startet sofort, weil die
+  Schalterstellung den Zustand angibt. Bleibt offen in D2.
 
 ### 4.3 Buchsen, Clock und Ausgabe
 
 | Buchse | Grundbelegung | Alternative (Editor) |
 | --- | --- | --- |
-| CV OUT 1 | Tonhöhe Kanal A, 1V/Oct, mit Slide als Glide | — |
-| CV OUT 2 | Gate Kanal A | Tonhöhe Kanal B |
+| CV OUT 1 | Tonhöhe, 1V/Oct, mit Slide als Glide | — |
+| CV OUT 2 | Gate | — (weitere Belegungen erst mit Parallel-Modi, siehe D3) |
 | Gate IN 1 | Clock-Eingang, 1 Puls pro Step | 2, 4 oder 24 Pulse pro Viertel |
 | Gate IN 2 | Reset auf die steigende Flanke | Run (läuft, solange das Signal anliegt) |
 | CV IN 1 | Transponierung 1V/Oct, zu VR8 addiert | aus |
@@ -196,14 +204,14 @@ Kerne (header-only, ohne libDaisy, auf dem Host testbar):
 * **USB:** `MidiUsbHandler` mit `EXTERNAL`, wie in den bestehenden Firmwares.
 * **DIN:** `hw.midi` (`MidiUartHandler`). In diesem Repo nutzt bisher keine
   Firmware DIN-MIDI. Das ist neu und muss auf der Hardware geprüft werden.
-* **Ausgang:** Noten von Kanal A und B auf einstellbaren MIDI-Kanälen
-  (Vorschlag 1 und 2), Clock 24 PPQN, Start, Stop, Continue. Ausgegeben wird
-  auf USB und DIN gleichzeitig, jeder Ausgang ist im Editor abschaltbar.
-* **Eingang:** Clock, Start, Stop, Continue. Noten auf dem Kanal der Stimme
-  (Vorschlag 3) spielen die interne Stimme. CCs steuern Stimme und Effekte,
-  die Tabelle wird in Phase 2 festgelegt.
-* **Panic:** All Notes Off beim Stoppen, beim Moduswechsel mit Kanaländerung
-  und beim Trennen der USB-Verbindung.
+* **Ausgang:** Sequencer-Noten auf einem einstellbaren MIDI-Kanal (Vorschlag 1),
+  Clock 24 PPQN, Start, Stop, Continue. Ausgegeben wird auf USB und DIN
+  gleichzeitig, jeder Ausgang ist im Editor abschaltbar.
+* **Eingang:** Clock, Start, Stop, Continue (wirksam nur bei SW17 auf Run).
+  Noten auf dem Kanal der Stimme (Vorschlag 2) spielen die interne Stimme.
+  CCs steuern Stimme und Effekte, die Tabelle wird in Phase 2 festgelegt.
+* **Panic:** All Notes Off beim Stoppen, beim Wechsel des MIDI-Kanals und beim
+  Trennen der USB-Verbindung.
 
 ### 4.5 TB-303-Stimme (`acid-303`)
 
@@ -281,11 +289,12 @@ Kerne (header-only, ohne libDaisy, auf dem Host testbar):
   * **Versionierter Parametervertrag:** Komponente, stabile Parameter-ID, Typ,
     Einheit, Min, Max, Standardwert, CC-Nummer. So empfiehlt es
     `docs/MODULARITY_AUDIT_2026-10-25.md` § 3.
-  * **Pattern lesen und schreiben** (alle 16 Steps), Modus-Plätze, Kalibrierung.
-  * **Monitor ereignisbasiert:** Step-Wechsel, Gate, Modus, Schalterstellungen,
-    Clock-Quelle und Tempo, höchstens 50 Rahmen pro Sekunde.
-* **Speichern:** Firmware-Patterns liegen nur im RAM. Das Panel hält Patterns,
-  Modus-Plätze und Kalibrierung und sendet sie beim Verbinden ans Kit.
+  * **Pattern lesen und schreiben** (alle 16 Steps), Kalibrierung.
+  * **Monitor ereignisbasiert:** Step-Wechsel, Gate, Modus, Run/Stop,
+    Schalterstellungen, Clock-Quelle und Tempo, höchstens 50 Rahmen pro Sekunde.
+  * **Start/Stop vom Panel** wirkt nur, solange SW17 auf Run steht (4.2).
+* **Speichern:** Firmware-Patterns liegen nur im RAM. Das Panel hält Patterns
+  und Kalibrierung und sendet sie beim Verbinden ans Kit.
   Im VST3 sind sie Teil des Songzustands. SD folgt später, Flash nur mit
   Freigabe.
 * **Werkzeug für Tests:** `sequencers/step-seq/tools/sq_probe.py`, nach dem
@@ -365,8 +374,11 @@ Für jede Phase gilt:
   * LED-Mailbox nach dem Toy-Piano-Muster (höchstens alle 10 ms)
   * Bootloader-Einstieg und Callback-Diagnose
 * **Tests:**
-  * Jeder Modus mit erwarteter Step-Folge, auch bei Längen 1, 7, 8, 9 und 16 und
-    bei Moduswechsel mitten im Lauf.
+  * Vorwärts, Rückwärts und Zufall mit erwarteter Step-Folge, auch bei Längen
+    1, 7, 8, 9 und 16 und bei Moduswechsel mitten im Lauf.
+  * Start/Stop über SW17: Startpunkt je Richtung, sofortiger Stopp mit Panic,
+    Scharfschalten bei externer Clock, Vorrang von SW17 vor MIDI, Panel und
+    Gate IN 2, Einschalten mit SW17 auf Run.
   * Swing-Timing auf 1 ms genau.
   * Clock-Teiler, Reset und Run, Auto-Umschaltung der Clock-Quelle.
   * Lange und kurze Tastendrücke, Übernahme bei Bewegung, Hysterese.
@@ -376,11 +388,11 @@ Für jede Phase gilt:
   * CV-Werte nach Kalibrierung, gesperrte Ausgänge ohne Kalibrierung.
   * Kodierung des SQ-Protokolls mit Testvektoren.
   * Golden-Test: FNV-1a über eine feste Ereignisfolge (Pattern, 64 Steps, alle
-    Modi).
+    drei Modi).
 * **Hardwaretest (Benutzer):**
   * **Zuerst Diagnose H14:** Spannungen von CV OUT 1/2 bei mehreren DAC-Codes
     mit dem Multimeter messen. Daraus werden die Kalibrierwerte abgeleitet.
-  * Tasten und LEDs, alle sechs Modus-Plätze.
+  * Tasten und LEDs, die drei Modi an SW18, Start/Stop an SW17.
   * Gate an einem externen Synth.
   * 1V/Oct über 3 Oktaven mit einem Stimmgerät.
   * Clock an Gate IN 1, Reset an Gate IN 2.
@@ -459,12 +471,13 @@ Für jede Phase gilt:
 * **Umfang:**
   * Pattern-Raster mit 16 Steps und Notennamen
   * Lauflicht
-  * Modus-Plätze und Schalterstellungen
+  * Modus, Run/Stop und Schalterstellungen, Start/Stop-Taste (wirksam bei SW17
+    auf Run)
   * Clock-Quelle und Tempo
   * Kalibrierung und „CV aktiv“
   * MIDI-Einstellungen
   * Parameterseiten aus den Parameterbeschreibungen der Firmware
-  * Patterns, Modus-Plätze und Kalibrierung speichern und laden (Datei und
+  * Patterns und Kalibrierung speichern und laden (Datei und
     VST3-Songzustand) und beim Verbinden senden
 * **Tests:**
   * `make -C editors/mod-on-daisy test test-sanitize`.
@@ -482,7 +495,7 @@ Für jede Phase gilt:
   * Produktadapter mit Signalweg aus 4.9, Host-Mixer mit Dry/Wet je Effekt,
     Überblendungen, Soft-Limiter.
   * Tempo-Übergabe an das Delay.
-  * Stimme folgt Kanal A und MIDI-Kanal 3.
+  * Stimme folgt dem Sequencer und MIDI-Kanal 2.
   * Registereintrag, Manifest (`make PROJECT=acid-seq manifest`), README und
     CHANGELOG.
 * **Tests:**
@@ -491,7 +504,7 @@ Für jede Phase gilt:
   * Ressourcen: Speichergrenzen per ELF-Prüfskript nach dem Muster
     `check-tape-elf.py`.
 * **Hardwaretest (Benutzer):**
-  * Gesamttest: alle Modi, CV/Gate und MIDI gleichzeitig mit Audio.
+  * Gesamttest: drei Modi, Start/Stop, CV/Gate und MIDI gleichzeitig mit Audio.
   * CPU-Spitzen mit Callback-Diagnose, Langzeitlauf von 1 h.
 * **Release:** Nur der Benutzer startet den Release-Workflow und veröffentlicht
   erst nach der Hardware-Abnahme.
@@ -501,8 +514,8 @@ Für jede Phase gilt:
 | Nr. | Frage | Vorschlag |
 | --- | --- | --- |
 | D1 | Eigener SysEx-Kopf `7D 53 51` oder Erweiterung des Mod-on-Daisy-Protokolls? | Eigener Kopf. Das MD-Protokoll bleibt dann unverändert, und Firmware, `mod_probe.py`, beide Editoren und deren Tests müssen nicht gemeinsam geändert werden |
-| D2 | Start/Stop am Kit: Die Schalter wählen jetzt Modi | S1 halten und S16 kurz tippen. Bewusst nicht S9 + S16 wegen des Bootloaders. Außerdem MIDI Start/Stop, Gate IN 2 im Run-Modus und das Panel |
-| D3 | SQ-1-Modus CV/Duty übernehmen? | Nein, die Gate-Länge pro Step deckt ihn ab. Der Platz geht an Polyrhythmus |
+| D2 | **Entschieden 2026-10-26:** Start/Stop über einen Schalter, drei Modi über den anderen. Offen ist noch: (a) Der Benutzer nannte „Switch 2“ für Start/Stop. Ist SW17 gemeint? (b) Startet der Sequencer beim Einschalten, wenn SW17 auf Run steht? | (a) SW17, weil nur SW18 drei Stellungen hat. (b) Ja, die Stellung gibt den Zustand an. CV bleibt ohnehin gesperrt, bis kalibriert ist |
+| D3 | **Entschieden 2026-10-26:** zunächst nur drei Modi. Weitere Modi (Pendel, Brownian, Step Jump, Parallel 2 × 8, Polyrhythmus) vielleicht später über das Control Panel | Erst nach Phase 6 planen. Dann regeln, wie ein Panel-Modus sich zur Schalterstellung von SW18 verhält. CV/Duty bleibt draußen, weil die Gate-Länge pro Step ihn abdeckt |
 | D4 | Filter: Moog-Ladder (DaisySP) oder eigener Diode-Ladder? | Mit `LadderFilter` beginnen. Diode-Ladder als spätere Version mit neuem Golden-Hash |
 | D5 | 2-faches Oversampling für Hard und Fold? | Erst nach der CPU-Messung auf der Hardware entscheiden. Bis dahin ohne Oversampling |
 | D6 | Poti-Glättung von Toy Piano mitnutzen? | In den Sequencer kopieren, mit eigenem Test. Kein Umbau von Toy Piano, damit dessen Image unverändert bleibt |
@@ -524,8 +537,9 @@ Für jede Phase gilt:
   Werte.
 * **Die Auslagerung der Sättigung** könnte den Klang von Tape FX unbemerkt
   ändern. Abgesichert durch Schritt 3a mit Hash- und Referenztests.
-* **Kaum freie Hardware-Bedienelemente.** Start/Stop und Bootloader-Geste
-  dürfen nicht kollidieren (D2).
+* **SW17 startet sofort.** Steht der Schalter beim Einschalten auf Run, laufen
+  Sequencer und MIDI-Ausgabe sofort los (D2 b). Die CV-Ausgänge sind bis zur
+  Kalibrierung gesperrt (4.3).
 
 ## 8. Liste NICHT GEMESSEN (wird in den Phasen fortgeschrieben)
 
