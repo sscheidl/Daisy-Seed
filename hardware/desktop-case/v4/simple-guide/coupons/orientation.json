@@ -1,0 +1,152 @@
+{
+  "hardware": "NICHT GEMESSEN",
+  "frame": "RH: +X right/MIDI, +Y rear/audio, +Z up. Add installed_z_offset for PCB-top Z=0; no reflection on import.",
+  "oracle": "Actual STL solid-angle witnesses, functional PCB references and Y-reflection negative controls; no CAD generator imports",
+  "parts": {
+    "C2-direct-S": {
+      "sha256": "356745928da36998cf4564bc0cefc905b413d7edfbc6673b97e81a174a6a960b",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            80.2,
+            -71.14999999999999,
+            9.88
+          ],
+          "material_mm": [
+            81.0,
+            -71.14999999999999,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            80.2,
+            -69.55,
+            9.88
+          ],
+          "material_mm": [
+            81.0,
+            -69.55,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            81.8,
+            -69.55,
+            9.88
+          ],
+          "material_mm": [
+            82.6,
+            -69.55,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    },
+    "C2-direct-R": {
+      "sha256": "29482bc606d7a00f4f11d6d54ff1800165f5aaae119055a5273edf64ac27e4ea",
+      "checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_mm": [
+            80.2,
+            -71.14999999999999,
+            9.88
+          ],
+          "material_mm": [
+            81.0,
+            -71.14999999999999,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_mm": [
+            80.2,
+            -69.55,
+            9.88
+          ],
+          "material_mm": [
+            81.0,
+            -69.55,
+            9.88
+          ],
+          "opening_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_mm": [
+            81.8,
+            -69.55,
+            9.88
+          ],
+          "material_mm": [
+            82.6,
+            -69.55,
+            9.88
+          ],
+          "opening_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        }
+      ],
+      "reflected_negative_control_rejected": true,
+      "reflected_checks": [
+        {
+          "landmark": "chiral ID",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 1",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        },
+        {
+          "landmark": "chiral ID additional 2",
+          "opening_winding": 1.0,
+          "material_winding": 1.0
+        }
+      ],
+      "passed": true
+    }
+  },
+  "passed": true
+}

@@ -1,0 +1,1565 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "hardware": "NICHT GEMESSEN",
+  "frame": "PCB source X right, Y toward player; export X=x, Y=-y, Z up. Installed Z=0 is PCB top. Each STL is translated in Z onto the bed; manifest restores installation.",
+  "sources": {
+    "pcb": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a",
+    "concept": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN",
+    "bivar": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+  },
+  "print": {
+    "material": "PETG-CF schwarz",
+    "layer": {
+      "value": 0.12,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "User print specification"
+    },
+    "infill": {
+      "value": 40,
+      "unit": "%",
+      "status": "NOMINAL",
+      "source": "User print specification"
+    },
+    "perimeters": {
+      "value": 4,
+      "unit": "count",
+      "status": "NOMINAL",
+      "source": "User print specification"
+    },
+    "scale": {
+      "value": 1,
+      "unit": "ratio",
+      "status": "NOMINAL",
+      "source": "User print specification"
+    },
+    "hole_compensation": {
+      "value": 0,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "User print specification"
+    }
+  },
+  "general": {
+    "csg_margin": {
+      "value": 0.05,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "segments": {
+      "value": 80,
+      "unit": "count",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "label_height": {
+      "value": 2.8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "label_stroke": {
+      "value": 0.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "label_depth": {
+      "value": 0.24,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "label_pad_width": {
+      "value": 30,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "label_pad_depth": {
+      "value": 5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "label_pad_thickness": {
+      "value": 1.2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "marker_radius": {
+      "value": 0.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "marker_pitch": {
+      "value": 1.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "collision_tolerance": {
+      "value": 0.001,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "mesh_simplify_tolerance": {
+      "value": 0.0001,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "CSG sliver simplification before float32 STL; independently checked on reimport"
+    }
+  },
+  "board": {
+    "width": {
+      "value": 197,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+    },
+    "depth": {
+      "value": 111,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+    },
+    "thickness": {
+      "value": 1.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+    },
+    "mount_hole": {
+      "value": 3.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+    },
+    "h4_xy": {
+      "value": [
+        192,
+        106
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+    },
+    "key_x": {
+      "value": 69,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+    },
+    "key_y": {
+      "value": 85,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+    },
+    "pitch": {
+      "value": 12.2857142857,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+    },
+    "led_offset": {
+      "value": 7,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Rev4 KiCad, daisyaudio/Seed3-DevKit-Desktop@987297fb7c9a8c58721ef40abf6d6eedd1fcda2a"
+    },
+    "led_size": {
+      "value": [
+        1.6,
+        0.8,
+        0.8
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "0603 nominal XY 1.6 x 0.8; LED height 0.8 is an unmeasured trial assumption, not a KiCad Z measurement"
+    }
+  },
+  "screw": {
+    "clearance": {
+      "value": 3.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "head_diameter": {
+      "value": 5.7,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "head_height": {
+      "value": 1.65,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "counterbore_diameter": {
+      "value": 6.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "counterbore_depth": {
+      "value": 1.8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "nut_af": {
+      "value": 5.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "nut_height": {
+      "value": 2.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "nut_clearance": {
+      "value": 0.2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "insert_od": {
+      "value": 4.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ruthex RX-series manufacturer datasheet 2022-08-15: https://www.igo3d.com/mediafiles/Sonstiges/Ruthex/ruthex_Datenblatt_RX-Serie.pdf ; RX-M3Sx4,0"
+    },
+    "insert_length": {
+      "value": 4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ruthex RX-series manufacturer datasheet 2022-08-15: https://www.igo3d.com/mediafiles/Sonstiges/Ruthex/ruthex_Datenblatt_RX-Serie.pdf ; RX-M3Sx4,0"
+    },
+    "insert_pilot": {
+      "value": 4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ruthex RX-series manufacturer datasheet 2022-08-15: https://www.igo3d.com/mediafiles/Sonstiges/Ruthex/ruthex_Datenblatt_RX-Serie.pdf ; RX-M3Sx4,0"
+    },
+    "insert_tip_clearance": {
+      "value": 0.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "insert_bottom_allowance": {
+      "value": 1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ruthex RX-series manufacturer datasheet 2022-08-15: https://www.igo3d.com/mediafiles/Sonstiges/Ruthex/ruthex_Datenblatt_RX-Serie.pdf ; RX-M3Sx4,0; min L+1 hole depth"
+    },
+    "insert_article": "ruthex RX-M3Sx4.0 / GE-M3Sx40-002",
+    "thread_diameter": {
+      "value": 3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "M3 nominal major diameter, smooth collision envelope only"
+    }
+  },
+  "c1": {
+    "axes_x": {
+      "value": [
+        39.915,
+        62.4
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "planes_y": {
+      "value": [
+        3.5,
+        3.535
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "axis_z": {
+      "value": 8.14,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "hole": {
+      "value": 11.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "thicknesses": {
+      "value": [
+        2,
+        3
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "plane_step_x": {
+      "value": 51,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "x_min": {
+      "value": 26,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "x_max": {
+      "value": 76,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "bottom": {
+      "value": 0.8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "split_z": {
+      "value": 8.14,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "top": {
+      "value": 21,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "screw_x": {
+      "value": [
+        28,
+        73
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "closure_depth": {
+      "value": 6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "closure_gap": {
+      "value": 0,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "socket_diameter": {
+      "value": 16,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "socket_depth": {
+      "value": 12,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "nut_af": {
+      "value": 11,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "wrench_outer_width": {
+      "value": 20,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "wrench_depth": {
+      "value": 4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "wrench_length": {
+      "value": 26,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "nose_length": {
+      "value": 5.79,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; Neutrik st-nmj6hcd2.PDF"
+    },
+    "closure_fit_gap": {
+      "value": 0.15,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 removable closing-strip fingers behind panel, screw access from audio side"
+    },
+    "closure_screw_lengths": {
+      "value": [
+        8,
+        10
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "M3x8 for 2-mm panel, M3x10 for 3-mm panel; front screws into rear M3 nut pockets"
+    }
+  },
+  "c2": {
+    "count": {
+      "value": 3,
+      "unit": "count",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "gaps": {
+      "value": [
+        0.1,
+        0.2,
+        0.3
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "square_cap": {
+      "value": 5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "round_cap": {
+      "value": 5.08,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "cap_height_square": {
+      "value": 9,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "cap_height_round": {
+      "value": 9.05,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "cap_top": {
+      "value": 13,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "sleeve_wall": {
+      "value": 0.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "sleeve_top": {
+      "value": 9.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1: below paper PCB+10 even at flange upper stop (+0.4 lift), plus 0.1 nominal margin"
+    },
+    "sleeve_bottom": {
+      "value": 5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Trial open-bottom sleeve; clears conservative 4-mm switch housing even when pressed"
+    },
+    "flange": {
+      "value": 8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "flange_bottom": {
+      "value": 8.0,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "flange_thickness": {
+      "value": 0.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "flange_travel": {
+      "value": 0.3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Trial overload stop: typical .25 stroke plus .05 nominal reserve, must measure actual maximum"
+    },
+    "pocket_gap": {
+      "value": 0.05,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "plate_hole_square": {
+      "value": 7.1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "plate_hole_round": {
+      "value": 7.1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "cap_paper_square": {
+      "value": 5.8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "cap_paper_round": {
+      "value": 5.9,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "carrier_bottom": {
+      "value": 4.8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "carrier_top": {
+      "value": 9,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "lower_plate_thickness": {
+      "value": 1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "upper_plate_thickness": {
+      "value": 1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "paper_thickness": {
+      "value": 0.15,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "plate_margin_x": {
+      "value": 7,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "plate_y_min": {
+      "value": 72,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "plate_y_max": {
+      "value": 93,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "led_hole": {
+      "value": 3.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "led_tunnel": {
+      "value": 3.2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "latch_slot": {
+      "value": 0.65,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "latch_height": {
+      "value": 2.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "latch_tooth": {
+      "value": 0.15,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "latch_width": {
+      "value": 1.2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "fixture_screw_x": {
+      "value": [
+        61,
+        102
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "fixture_screw_y": {
+      "value": 90,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "stroke": {
+      "value": 0.25,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "aperture_web_target": {
+      "value": 1.2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "latch_anchor_height": {
+      "value": 0.3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; E-Switch 1SBLK.pdf / 1RLGR.pdf; sleeve dimensions are trials"
+    },
+    "switch_housing_box": {
+      "value": [
+        6,
+        6,
+        4
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Conservative envelope from TL1105T/SP drawing: 6x6 body, 3.6 case plus up to0.4 standoff; https://www.e-switch.com/wp-content/uploads/2022/06/TL1105.pdf ; not measured"
+    }
+  },
+  "c3": {
+    "wheel_center": {
+      "value": [
+        191.325,
+        91.6
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "wheel_radius": {
+      "value": 7,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "wheel_z_bottom": {
+      "value": 1.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "wheel_thickness": {
+      "value": 1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "faces_x": {
+      "value": [
+        199,
+        200
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "niche_y": {
+      "value": [
+        80,
+        101
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "window_bottom": {
+      "value": -3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "window_top": {
+      "value": 6.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "roof_top": {
+      "value": 9,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "roof_x_min": {
+      "value": 181,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "roof_y_min": {
+      "value": 80,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "roof_y_max": {
+      "value": 113,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "wall": {
+      "value": 2.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "chamfer": {
+      "value": 0.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "front_y": {
+      "value": 113,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "x_min": {
+      "value": 164,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "dome_radius": {
+      "value": 4.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "finger_radius": {
+      "value": 7,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "finger_angles": {
+      "value": [
+        -20,
+        -10,
+        0,
+        10,
+        20
+      ],
+      "unit": "degree",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "midi_axis": {
+      "value": [
+        197,
+        68.3,
+        10
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "midi_diameter": {
+      "value": 21,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "midi_length": {
+      "value": 25,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "headphone_axis": {
+      "value": [
+        173.6,
+        110.7,
+        2.5
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "headphone_diameter": {
+      "value": 10,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "headphone_length": {
+      "value": 25,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "headphone_hole": {
+      "value": 11,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "headphone_body": {
+      "value": [
+        170.6,
+        93.7,
+        0,
+        6,
+        14.5,
+        5
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "pcb_clearance": {
+      "value": 0.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; right-controls.json XY and wheel; headphone body H=5 per SJ-3523-SMT drawing, NOT old H=6"
+    },
+    "primary_face_x": {
+      "value": 199,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 preferred candidate; X200 retained as failing comparison"
+    },
+    "h4_post_clearance": {
+      "value": 6.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Trial clearance for M3 hex post AF5.5 (corners6.351), not a measured standoff"
+    }
+  },
+  "c4": {
+    "j7_center": {
+      "value": [
+        3.57,
+        41.09,
+        1.68
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "j7_shell": {
+      "value": [
+        7.7,
+        9,
+        3.36
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "seed_center": {
+      "value": [
+        3.97,
+        73.7,
+        1.3175
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Seed3 Rev5 FBX transformed as render_realistic_case.py; Z relative Seed PCB TOP, XY relative main PCB; USB whole-assembly bounds only, not shell seating faces"
+    },
+    "seed_shell": {
+      "value": [
+        7.7,
+        11.3,
+        3.885
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "plug_width": {
+      "value": 12,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "plug_height": {
+      "value": 6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "plug_length": {
+      "value": 20,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "shell_gap": {
+      "value": 0.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "stop_thickness": {
+      "value": 1.8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "rail": {
+      "value": 2.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "base_height": {
+      "value": 2.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "base_gap": {
+      "value": 0.3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "fixture_margin": {
+      "value": 5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "access_depth": {
+      "value": 4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "rear_stop_width": {
+      "value": 2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "screw_offset": {
+      "value": 8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; GCT USB4110 / Seed FBX reference only. J7 actual HYCW445-USBC16-730B unverified"
+    },
+    "shoulder_x_offset": {
+      "value": 2.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "UNVERIFIED shell-shoulder location behind mating face: measure actual J7 and Seed shell before fitting"
+    },
+    "boss_diameter": {
+      "value": 7,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 bridge mounting boss, untested"
+    },
+    "pilot": {
+      "value": 2.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 M3 tapped polymer pilot, bench coupon only"
+    },
+    "seed_pcb_top": {
+      "value": 9,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, unmeasured module seating height"
+    },
+    "seed_pcb_box": {
+      "value": [
+        1.4,
+        64.7,
+        51.15,
+        18,
+        1.115504
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Official Seed3 Rev5 FBX Board.001 bounds; XY seating provisional; conservative rectangle"
+    },
+    "removal_lift": {
+      "value": 10,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 removable cradle path after bridge removed"
+    },
+    "removal_steps": {
+      "value": 11,
+      "unit": "count",
+      "status": "NOMINAL",
+      "source": "Stage 1 path sampling"
+    }
+  },
+  "c5": {
+    "floor": {
+      "value": 3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "lower_post": {
+      "value": 10,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "upper_post": {
+      "value": 8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "male_thread": {
+      "value": 6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "washers": {
+      "value": 2,
+      "unit": "count",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "washer_thickness": {
+      "value": 0.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "bottom_screw": {
+      "value": 6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "carrier_screw": {
+      "value": 12,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "knurlie_usable": {
+      "value": 6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "upper_thread_depth": {
+      "value": 5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "lower_acrylic": {
+      "value": 1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "paper": {
+      "value": 0.15,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "upper_acrylic": {
+      "value": 1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "carrier_skin": {
+      "value": 3.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "plate_above_pcb": {
+      "value": 9,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "footprint": {
+      "value": [
+        28,
+        28
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "mount_xy": {
+      "value": [
+        5,
+        5
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "carrier_dome_xy": {
+      "value": [
+        -6,
+        5
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "carrier_dome_radius": {
+      "value": 4.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "dummy_pcb_xy": {
+      "value": [
+        0,
+        0
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "dummy_pcb_size": {
+      "value": [
+        19,
+        20
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "plate_xy": {
+      "value": [
+        -11,
+        -7
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "plate_size": {
+      "value": [
+        30,
+        27
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "carrier_depth": {
+      "value": 11,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN"
+    },
+    "post_af": {
+      "value": 5.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Unmeasured M3 metal standoff across flats; verify actual hardware"
+    },
+    "washer_od": {
+      "value": 7,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Trial M3 washer OD, thickness 0.5; verify actual shims"
+    }
+  },
+  "c6": {
+    "pairs": {
+      "value": 2,
+      "unit": "count",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "rod_diameter": {
+      "value": 3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "rod_bores": {
+      "value": [
+        3.1,
+        3.15,
+        3.2
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "led_air": {
+      "value": 0.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "shoulder_hole": {
+      "value": 2.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "shoulder_thickness": {
+      "value": 0.3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "top_gap": {
+      "value": 0.1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "lower_plate_z": {
+      "value": 9,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "tunnel_outer": {
+      "value": 5.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "pocket_floor": {
+      "value": 7.7,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "pocket_top": {
+      "value": 9,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "key_hole": {
+      "value": 7.1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "base_bottom": {
+      "value": 4.8,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "plate_y_min": {
+      "value": 74,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "plate_y_max": {
+      "value": 94,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "plate_margin_x": {
+      "value": 7,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "paper_hole": {
+      "value": 3.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "open_hole": {
+      "value": 3.2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "web_target": {
+      "value": 1.2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "rod_cut_kerf": {
+      "value": 0.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "rod_spares": {
+      "value": 4,
+      "unit": "count",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "rod_purchase_length": {
+      "value": 1000,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "plp_seat_z": {
+      "value": 7.55,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "plp_grip_thickness": {
+      "value": 1.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "plp_counterbore": {
+      "value": 3.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "plp_bottom_stop_z": {
+      "value": 1.1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "plp_quantity": {
+      "value": 20,
+      "unit": "count",
+      "status": "NOMINAL",
+      "source": "Stage 1 engineering trial, chosen 2026-10-25; not manufacturer fit data"
+    },
+    "fixture_screw_inset": {
+      "value": 2.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 screw inset from left/right boundary"
+    },
+    "fixture_screw_y": {
+      "value": 90,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Stage 1 M3x10 through both plate dummies and real paper"
+    },
+    "pocket_width": {
+      "value": 8.1,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Common square flange keep-out 8.1 wide: accepts square 8 and round diameter 8; Stage 1 trial"
+    }
+  },
+  "plp2": {
+    "article": "PLP2-250",
+    "material": "clear polycarbonate, no -D suffix",
+    "body_length": {
+      "value": 6.35,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "shaft_diameter": {
+      "value": 2.8448,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "head_diameter": {
+      "value": 3.302,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "head_height": {
+      "value": 0.762,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "rib_diameter_ref": {
+      "value": 3.0988,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "bore": {
+      "value": 2.921,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "bore_min": {
+      "value": 2.8702,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "bore_max": {
+      "value": 2.9972,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "panel_min": {
+      "value": 1.1938,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "panel_max": {
+      "value": 2.3622,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    },
+    "general_tolerance": {
+      "value": 0.127,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "https://www.bivar.com/parts_content/Datasheets/PLP2-XXX.pdf, Rev Y, sheet 1; inch dimensions converted exactly"
+    }
+  },
+  "c7": {
+    "fixed_xy": {
+      "value": [
+        43.5,
+        11
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "adjustable_xy": {
+      "value": [
+        144,
+        11
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "floor_z": {
+      "value": -14.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "floor": {
+      "value": 3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "radius": {
+      "value": 4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "base_width": {
+      "value": 14,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "fixed_gap": {
+      "value": 0.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "nylon_length": {
+      "value": 10,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "nylon_tip_diameter": {
+      "value": 3,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "nominal_adjustment_gap": {
+      "value": 0.2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "ALTERNATIVE_CONCEPT.md, corrected 2026-10-25; hardware NICHT GEMESSEN; support-location-review.json: Audio left/right both zero rear copper intersections; solder heights unknown"
+    },
+    "nylon_head_diameter": {
+      "value": 5.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Unverified M3 nylon pan-head trial, measure purchased screw"
+    },
+    "nylon_head_height": {
+      "value": 2,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Unverified M3 nylon pan-head trial, measure purchased screw"
+    }
+  }
+}

@@ -1,0 +1,1918 @@
+{
+  "schema": 1,
+  "hardware": "NICHT GEMESSEN",
+  "parameters": "v4-parameters.json",
+  "parameters_sha256": "7c19e3c7dd985d5616d05a5fef5fa669aecc17dbf0adf1c602a006f2655efcf1",
+  "generator_sha256": "007abfc5519cb87cf608f6962d55a11f30fbed3940e6aff3c387cb4f8e2ed456",
+  "frame": "RH: +X right/MIDI, +Y rear/audio, +Z up. Add installed_z_offset for PCB-top Z=0; no XY reflection on import.",
+  "parts": {
+    "C1-A2-upper": {
+      "file": "C1-A2-upper.stl",
+      "id": "C1-A2U",
+      "purpose": "split Neutrik panel; upper half",
+      "installed_z_offset": 8.140000343322754,
+      "print_orientation": "rear panel face on bed (proper 90-degree rotation)",
+      "supports": "support nut roofs only; remove completely",
+      "ear_source_xyz": [
+        -3.95,
+        1.5,
+        19.8
+      ],
+      "marker_source": {
+        "void": [
+          21.25,
+          5.6,
+          20.88
+        ],
+        "solid": [
+          22.05,
+          5.6,
+          20.88
+        ],
+        "additional": [
+          {
+            "void": [
+              21.25,
+              4.0,
+              20.88
+            ],
+            "solid": [
+              22.05,
+              4.0,
+              20.88
+            ]
+          },
+          {
+            "void": [
+              22.85,
+              4.0,
+              20.88
+            ],
+            "solid": [
+              23.650000000000002,
+              4.0,
+              20.88
+            ]
+          }
+        ]
+      },
+      "family": "C1",
+      "variant": "A",
+      "thickness": 2
+    },
+    "C1-A2-strip": {
+      "file": "C1-A2-strip.stl",
+      "id": "C1-A2L",
+      "purpose": "closing strip; two horizontal front screws (A2 M3x8 / A3 M3x10) into rear nuts",
+      "installed_z_offset": 0.800000011920929,
+      "print_orientation": "rear panel face on bed (proper 90-degree rotation)",
+      "supports": "none",
+      "ear_source_xyz": [
+        -3.95,
+        1.5,
+        0.8
+      ],
+      "marker_source": {
+        "void": [
+          21.25,
+          5.6,
+          1.88
+        ],
+        "solid": [
+          22.05,
+          5.6,
+          1.88
+        ],
+        "additional": [
+          {
+            "void": [
+              21.25,
+              4.0,
+              1.88
+            ],
+            "solid": [
+              22.05,
+              4.0,
+              1.88
+            ]
+          },
+          {
+            "void": [
+              22.85,
+              4.0,
+              1.88
+            ],
+            "solid": [
+              23.650000000000002,
+              4.0,
+              1.88
+            ]
+          }
+        ]
+      },
+      "family": "C1",
+      "variant": "A",
+      "thickness": 2
+    },
+    "C1-B2": {
+      "file": "C1-B2.stl",
+      "id": "C1-B2",
+      "purpose": "open-bottom U panel, NOT a load-approved design",
+      "installed_z_offset": 0.800000011920929,
+      "print_orientation": "rear panel face on bed (proper 90-degree rotation)",
+      "supports": "none",
+      "ear_source_xyz": [
+        -3.95,
+        1.5,
+        19.8
+      ],
+      "marker_source": {
+        "void": [
+          21.25,
+          5.6,
+          20.88
+        ],
+        "solid": [
+          22.05,
+          5.6,
+          20.88
+        ],
+        "additional": [
+          {
+            "void": [
+              21.25,
+              4.0,
+              20.88
+            ],
+            "solid": [
+              22.05,
+              4.0,
+              20.88
+            ]
+          },
+          {
+            "void": [
+              22.85,
+              4.0,
+              20.88
+            ],
+            "solid": [
+              23.650000000000002,
+              4.0,
+              20.88
+            ]
+          }
+        ]
+      },
+      "family": "C1",
+      "variant": "B",
+      "thickness": 2
+    },
+    "C1-A3-upper": {
+      "file": "C1-A3-upper.stl",
+      "id": "C1-A3U",
+      "purpose": "split Neutrik panel; upper half",
+      "installed_z_offset": 8.140000343322754,
+      "print_orientation": "rear panel face on bed (proper 90-degree rotation)",
+      "supports": "support nut roofs only; remove completely",
+      "ear_source_xyz": [
+        -3.95,
+        0.5,
+        19.8
+      ],
+      "marker_source": {
+        "void": [
+          21.25,
+          4.6,
+          20.88
+        ],
+        "solid": [
+          22.05,
+          4.6,
+          20.88
+        ],
+        "additional": [
+          {
+            "void": [
+              21.25,
+              3.0,
+              20.88
+            ],
+            "solid": [
+              22.05,
+              3.0,
+              20.88
+            ]
+          },
+          {
+            "void": [
+              22.85,
+              3.0,
+              20.88
+            ],
+            "solid": [
+              23.650000000000002,
+              3.0,
+              20.88
+            ]
+          }
+        ]
+      },
+      "family": "C1",
+      "variant": "A",
+      "thickness": 3
+    },
+    "C1-A3-strip": {
+      "file": "C1-A3-strip.stl",
+      "id": "C1-A3L",
+      "purpose": "closing strip; two horizontal front screws (A2 M3x8 / A3 M3x10) into rear nuts",
+      "installed_z_offset": 0.800000011920929,
+      "print_orientation": "rear panel face on bed (proper 90-degree rotation)",
+      "supports": "none",
+      "ear_source_xyz": [
+        -3.95,
+        0.5,
+        0.8
+      ],
+      "marker_source": {
+        "void": [
+          21.25,
+          4.6,
+          1.88
+        ],
+        "solid": [
+          22.05,
+          4.6,
+          1.88
+        ],
+        "additional": [
+          {
+            "void": [
+              21.25,
+              3.0,
+              1.88
+            ],
+            "solid": [
+              22.05,
+              3.0,
+              1.88
+            ]
+          },
+          {
+            "void": [
+              22.85,
+              3.0,
+              1.88
+            ],
+            "solid": [
+              23.650000000000002,
+              3.0,
+              1.88
+            ]
+          }
+        ]
+      },
+      "family": "C1",
+      "variant": "A",
+      "thickness": 3
+    },
+    "C1-B3": {
+      "file": "C1-B3.stl",
+      "id": "C1-B3",
+      "purpose": "open-bottom U panel, NOT a load-approved design",
+      "installed_z_offset": 0.800000011920929,
+      "print_orientation": "rear panel face on bed (proper 90-degree rotation)",
+      "supports": "none",
+      "ear_source_xyz": [
+        -3.95,
+        0.5,
+        19.8
+      ],
+      "marker_source": {
+        "void": [
+          21.25,
+          4.6,
+          20.88
+        ],
+        "solid": [
+          22.05,
+          4.6,
+          20.88
+        ],
+        "additional": [
+          {
+            "void": [
+              21.25,
+              3.0,
+              20.88
+            ],
+            "solid": [
+              22.05,
+              3.0,
+              20.88
+            ]
+          },
+          {
+            "void": [
+              22.85,
+              3.0,
+              20.88
+            ],
+            "solid": [
+              23.650000000000002,
+              3.0,
+              20.88
+            ]
+          }
+        ]
+      },
+      "family": "C1",
+      "variant": "B",
+      "thickness": 3
+    },
+    "C2-S-carrier": {
+      "file": "C2-S-carrier.stl",
+      "id": "C2-S",
+      "purpose": "three sleeve stations: per-side radial clearances 0.1 / 0.2 / 0.3",
+      "installed_z_offset": 4.800000190734863,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        55.0,
+        67.05,
+        4.8
+      ],
+      "marker_source": {
+        "void": [
+          80.2,
+          71.14999999999999,
+          5.88
+        ],
+        "solid": [
+          81.0,
+          71.14999999999999,
+          5.88
+        ],
+        "additional": [
+          {
+            "void": [
+              80.2,
+              69.55,
+              5.88
+            ],
+            "solid": [
+              81.0,
+              69.55,
+              5.88
+            ]
+          },
+          {
+            "void": [
+              81.8,
+              69.55,
+              5.88
+            ],
+            "solid": [
+              82.6,
+              69.55,
+              5.88
+            ]
+          }
+        ]
+      },
+      "family": "C2",
+      "shape": "square",
+      "role": "carrier"
+    },
+    "C2-S-lower": {
+      "file": "C2-S-lower.stl",
+      "id": "C2-SL",
+      "purpose": "opaque FDM plate DUMMY, not an optical acrylic substitute",
+      "installed_z_offset": 9.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        55.0,
+        67.05,
+        9
+      ],
+      "marker_source": {
+        "void": [
+          80.2,
+          71.14999999999999,
+          9.88
+        ],
+        "solid": [
+          81.0,
+          71.14999999999999,
+          9.88
+        ],
+        "additional": [
+          {
+            "void": [
+              80.2,
+              69.55,
+              9.88
+            ],
+            "solid": [
+              81.0,
+              69.55,
+              9.88
+            ]
+          },
+          {
+            "void": [
+              81.8,
+              69.55,
+              9.88
+            ],
+            "solid": [
+              82.6,
+              69.55,
+              9.88
+            ]
+          }
+        ]
+      },
+      "family": "C2",
+      "shape": "square",
+      "role": "lower"
+    },
+    "C2-S-upper": {
+      "file": "C2-S-upper.stl",
+      "id": "C2-SU",
+      "purpose": "opaque FDM plate DUMMY, not an optical acrylic substitute",
+      "installed_z_offset": 10.149999618530273,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        55.0,
+        67.05,
+        10.15
+      ],
+      "marker_source": {
+        "void": [
+          80.2,
+          71.14999999999999,
+          11.030000000000001
+        ],
+        "solid": [
+          81.0,
+          71.14999999999999,
+          11.030000000000001
+        ],
+        "additional": [
+          {
+            "void": [
+              80.2,
+              69.55,
+              11.030000000000001
+            ],
+            "solid": [
+              81.0,
+              69.55,
+              11.030000000000001
+            ]
+          },
+          {
+            "void": [
+              81.8,
+              69.55,
+              11.030000000000001
+            ],
+            "solid": [
+              82.6,
+              69.55,
+              11.030000000000001
+            ]
+          }
+        ]
+      },
+      "family": "C2",
+      "shape": "square",
+      "role": "upper"
+    },
+    "C2-S-sleeve-1": {
+      "file": "C2-S-sleeve-1.stl",
+      "id": "C2-S1",
+      "purpose": "trial cap grip; identify by 1=.1, 2=.2, 3=.3 mm PER SIDE",
+      "installed_z_offset": 5.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "local supports for flange; keep inside and fingers clear",
+      "ear_source_xyz": [
+        69.0,
+        85,
+        5
+      ],
+      "marker_source": {
+        "void": [
+          65.3,
+          85.3,
+          8.48
+        ],
+        "solid": [
+          72.7,
+          85,
+          8.48
+        ]
+      },
+      "family": "C2",
+      "shape": "square",
+      "role": "sleeve",
+      "station": 0,
+      "gap_per_side": 0.1,
+      "id_on_mesh": "1 / 2 / 3 dimples on flange; shape identifies S or R"
+    },
+    "C2-S-sleeve-2": {
+      "file": "C2-S-sleeve-2.stl",
+      "id": "C2-S2",
+      "purpose": "trial cap grip; identify by 1=.1, 2=.2, 3=.3 mm PER SIDE",
+      "installed_z_offset": 5.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "local supports for flange; keep inside and fingers clear",
+      "ear_source_xyz": [
+        81.2857142857,
+        85,
+        5
+      ],
+      "marker_source": {
+        "void": [
+          77.58571428569999,
+          85.3,
+          8.48
+        ],
+        "solid": [
+          84.9857142857,
+          85,
+          8.48
+        ]
+      },
+      "family": "C2",
+      "shape": "square",
+      "role": "sleeve",
+      "station": 1,
+      "gap_per_side": 0.2,
+      "id_on_mesh": "1 / 2 / 3 dimples on flange; shape identifies S or R"
+    },
+    "C2-S-sleeve-3": {
+      "file": "C2-S-sleeve-3.stl",
+      "id": "C2-S3",
+      "purpose": "trial cap grip; identify by 1=.1, 2=.2, 3=.3 mm PER SIDE",
+      "installed_z_offset": 5.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "local supports for flange; keep inside and fingers clear",
+      "ear_source_xyz": [
+        93.57142857139999,
+        85,
+        5
+      ],
+      "marker_source": {
+        "void": [
+          89.87142857139999,
+          85.3,
+          8.48
+        ],
+        "solid": [
+          97.2714285714,
+          85,
+          8.48
+        ]
+      },
+      "family": "C2",
+      "shape": "square",
+      "role": "sleeve",
+      "station": 2,
+      "gap_per_side": 0.3,
+      "id_on_mesh": "1 / 2 / 3 dimples on flange; shape identifies S or R"
+    },
+    "C2-R-carrier": {
+      "file": "C2-R-carrier.stl",
+      "id": "C2-R",
+      "purpose": "three sleeve stations: per-side radial clearances 0.1 / 0.2 / 0.3",
+      "installed_z_offset": 4.800000190734863,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        55.0,
+        67.05,
+        4.8
+      ],
+      "marker_source": {
+        "void": [
+          80.2,
+          71.14999999999999,
+          5.88
+        ],
+        "solid": [
+          81.0,
+          71.14999999999999,
+          5.88
+        ],
+        "additional": [
+          {
+            "void": [
+              80.2,
+              69.55,
+              5.88
+            ],
+            "solid": [
+              81.0,
+              69.55,
+              5.88
+            ]
+          },
+          {
+            "void": [
+              81.8,
+              69.55,
+              5.88
+            ],
+            "solid": [
+              82.6,
+              69.55,
+              5.88
+            ]
+          }
+        ]
+      },
+      "family": "C2",
+      "shape": "round",
+      "role": "carrier"
+    },
+    "C2-R-lower": {
+      "file": "C2-R-lower.stl",
+      "id": "C2-RL",
+      "purpose": "opaque FDM plate DUMMY, not an optical acrylic substitute",
+      "installed_z_offset": 9.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        55.0,
+        67.05,
+        9
+      ],
+      "marker_source": {
+        "void": [
+          80.2,
+          71.14999999999999,
+          9.88
+        ],
+        "solid": [
+          81.0,
+          71.14999999999999,
+          9.88
+        ],
+        "additional": [
+          {
+            "void": [
+              80.2,
+              69.55,
+              9.88
+            ],
+            "solid": [
+              81.0,
+              69.55,
+              9.88
+            ]
+          },
+          {
+            "void": [
+              81.8,
+              69.55,
+              9.88
+            ],
+            "solid": [
+              82.6,
+              69.55,
+              9.88
+            ]
+          }
+        ]
+      },
+      "family": "C2",
+      "shape": "round",
+      "role": "lower"
+    },
+    "C2-R-upper": {
+      "file": "C2-R-upper.stl",
+      "id": "C2-RU",
+      "purpose": "opaque FDM plate DUMMY, not an optical acrylic substitute",
+      "installed_z_offset": 10.149999618530273,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        55.0,
+        67.05,
+        10.15
+      ],
+      "marker_source": {
+        "void": [
+          80.2,
+          71.14999999999999,
+          11.030000000000001
+        ],
+        "solid": [
+          81.0,
+          71.14999999999999,
+          11.030000000000001
+        ],
+        "additional": [
+          {
+            "void": [
+              80.2,
+              69.55,
+              11.030000000000001
+            ],
+            "solid": [
+              81.0,
+              69.55,
+              11.030000000000001
+            ]
+          },
+          {
+            "void": [
+              81.8,
+              69.55,
+              11.030000000000001
+            ],
+            "solid": [
+              82.6,
+              69.55,
+              11.030000000000001
+            ]
+          }
+        ]
+      },
+      "family": "C2",
+      "shape": "round",
+      "role": "upper"
+    },
+    "C2-R-sleeve-1": {
+      "file": "C2-R-sleeve-1.stl",
+      "id": "C2-R1",
+      "purpose": "trial cap grip; identify by 1=.1, 2=.2, 3=.3 mm PER SIDE",
+      "installed_z_offset": 5.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "local supports for flange; keep inside and fingers clear",
+      "ear_source_xyz": [
+        69.0,
+        85,
+        5
+      ],
+      "marker_source": {
+        "void": [
+          65.3,
+          85.3,
+          8.48
+        ],
+        "solid": [
+          72.7,
+          85,
+          8.48
+        ]
+      },
+      "family": "C2",
+      "shape": "round",
+      "role": "sleeve",
+      "station": 0,
+      "gap_per_side": 0.1,
+      "id_on_mesh": "1 / 2 / 3 dimples on flange; shape identifies S or R"
+    },
+    "C2-R-sleeve-2": {
+      "file": "C2-R-sleeve-2.stl",
+      "id": "C2-R2",
+      "purpose": "trial cap grip; identify by 1=.1, 2=.2, 3=.3 mm PER SIDE",
+      "installed_z_offset": 5.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "local supports for flange; keep inside and fingers clear",
+      "ear_source_xyz": [
+        81.2857142857,
+        85,
+        5
+      ],
+      "marker_source": {
+        "void": [
+          77.58571428569999,
+          85.3,
+          8.48
+        ],
+        "solid": [
+          84.9857142857,
+          85,
+          8.48
+        ]
+      },
+      "family": "C2",
+      "shape": "round",
+      "role": "sleeve",
+      "station": 1,
+      "gap_per_side": 0.2,
+      "id_on_mesh": "1 / 2 / 3 dimples on flange; shape identifies S or R"
+    },
+    "C2-R-sleeve-3": {
+      "file": "C2-R-sleeve-3.stl",
+      "id": "C2-R3",
+      "purpose": "trial cap grip; identify by 1=.1, 2=.2, 3=.3 mm PER SIDE",
+      "installed_z_offset": 5.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "local supports for flange; keep inside and fingers clear",
+      "ear_source_xyz": [
+        93.57142857139999,
+        85,
+        5
+      ],
+      "marker_source": {
+        "void": [
+          89.87142857139999,
+          85.3,
+          8.48
+        ],
+        "solid": [
+          97.2714285714,
+          85,
+          8.48
+        ]
+      },
+      "family": "C2",
+      "shape": "round",
+      "role": "sleeve",
+      "station": 2,
+      "gap_per_side": 0.3,
+      "id_on_mesh": "1 / 2 / 3 dimples on flange; shape identifies S or R"
+    },
+    "C3-X199": {
+      "file": "C3-X199.stl",
+      "id": "C3-X199",
+      "purpose": "closed-roof right corner; H4 + J5 front + wheel niche; J10 plug gauge",
+      "installed_z_offset": -14.600000381469727,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "roof and headphone arch: removable supports, no support trapped at wheel",
+      "ear_source_xyz": [
+        164,
+        75.05,
+        -14.6
+      ],
+      "marker_source": {
+        "void": [
+          189.2,
+          79.14999999999999,
+          -13.52
+        ],
+        "solid": [
+          190.0,
+          79.14999999999999,
+          -13.52
+        ],
+        "additional": [
+          {
+            "void": [
+              189.2,
+              77.55,
+              -13.52
+            ],
+            "solid": [
+              190.0,
+              77.55,
+              -13.52
+            ]
+          },
+          {
+            "void": [
+              190.79999999999998,
+              77.55,
+              -13.52
+            ],
+            "solid": [
+              191.6,
+              77.55,
+              -13.52
+            ]
+          }
+        ]
+      },
+      "family": "C3",
+      "face_x": 199
+    },
+    "C3-X200": {
+      "file": "C3-X200.stl",
+      "id": "C3-X200",
+      "purpose": "closed-roof right corner; H4 + J5 front + wheel niche; J10 plug gauge",
+      "installed_z_offset": -14.600000381469727,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "roof and headphone arch: removable supports, no support trapped at wheel",
+      "ear_source_xyz": [
+        164,
+        75.05,
+        -14.6
+      ],
+      "marker_source": {
+        "void": [
+          189.2,
+          79.14999999999999,
+          -13.52
+        ],
+        "solid": [
+          190.0,
+          79.14999999999999,
+          -13.52
+        ],
+        "additional": [
+          {
+            "void": [
+              189.2,
+              77.55,
+              -13.52
+            ],
+            "solid": [
+              190.0,
+              77.55,
+              -13.52
+            ]
+          },
+          {
+            "void": [
+              190.79999999999998,
+              77.55,
+              -13.52
+            ],
+            "solid": [
+              191.6,
+              77.55,
+              -13.52
+            ]
+          }
+        ]
+      },
+      "family": "C3",
+      "face_x": 200
+    },
+    "C4-J7-cradle": {
+      "file": "C4-J7-cradle.stl",
+      "id": "C4-J7",
+      "purpose": "front/back shell-stop trial; use ONLY a dummy until shell shoulders measured",
+      "installed_z_offset": 0.30000001192092896,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "front hooks if required; do not fill socket",
+      "ear_source_xyz": [
+        -0.28000000000000025,
+        49.940000000000005,
+        0.3
+      ],
+      "marker_source": {
+        "void": [
+          24.919999999999998,
+          54.040000000000006,
+          1.38
+        ],
+        "solid": [
+          25.72,
+          54.040000000000006,
+          1.38
+        ],
+        "additional": [
+          {
+            "void": [
+              24.919999999999998,
+              52.440000000000005,
+              1.38
+            ],
+            "solid": [
+              25.72,
+              52.440000000000005,
+              1.38
+            ]
+          },
+          {
+            "void": [
+              26.52,
+              52.440000000000005,
+              1.38
+            ],
+            "solid": [
+              27.32,
+              52.440000000000005,
+              1.38
+            ]
+          }
+        ]
+      },
+      "family": "C4",
+      "connector": "j7",
+      "role": "cradle"
+    },
+    "C4-J7-bridge": {
+      "file": "C4-J7-bridge.stl",
+      "id": "C4-J7B",
+      "purpose": "removable bridge; M3 clamps at rails only, never Seed PCB",
+      "installed_z_offset": 3.859999895095825,
+      "print_orientation": "top face on bed (proper 180-degree rotation)",
+      "supports": "none",
+      "ear_source_xyz": [
+        -0.28000000000000025,
+        49.940000000000005,
+        3.86
+      ],
+      "marker_source": {
+        "void": [
+          24.919999999999998,
+          54.040000000000006,
+          4.9399999999999995
+        ],
+        "solid": [
+          25.72,
+          54.040000000000006,
+          4.9399999999999995
+        ],
+        "additional": [
+          {
+            "void": [
+              24.919999999999998,
+              52.440000000000005,
+              4.9399999999999995
+            ],
+            "solid": [
+              25.72,
+              52.440000000000005,
+              4.9399999999999995
+            ]
+          },
+          {
+            "void": [
+              26.52,
+              52.440000000000005,
+              4.9399999999999995
+            ],
+            "solid": [
+              27.32,
+              52.440000000000005,
+              4.9399999999999995
+            ]
+          }
+        ]
+      },
+      "family": "C4",
+      "connector": "j7",
+      "role": "bridge"
+    },
+    "C4-S-cradle": {
+      "file": "C4-S-cradle.stl",
+      "id": "C4-S",
+      "purpose": "front/back shell-stop trial; use ONLY a dummy until shell shoulders measured",
+      "installed_z_offset": 9.300000190734863,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "front hooks if required; do not fill socket",
+      "ear_source_xyz": [
+        0.1200000000000001,
+        82.55000000000001,
+        9.3
+      ],
+      "marker_source": {
+        "void": [
+          25.32,
+          86.65,
+          10.38
+        ],
+        "solid": [
+          26.12,
+          86.65,
+          10.38
+        ],
+        "additional": [
+          {
+            "void": [
+              25.32,
+              85.05000000000001,
+              10.38
+            ],
+            "solid": [
+              26.12,
+              85.05000000000001,
+              10.38
+            ]
+          },
+          {
+            "void": [
+              26.92,
+              85.05000000000001,
+              10.38
+            ],
+            "solid": [
+              27.720000000000002,
+              85.05000000000001,
+              10.38
+            ]
+          }
+        ]
+      },
+      "family": "C4",
+      "connector": "seed",
+      "role": "cradle"
+    },
+    "C4-S-bridge": {
+      "file": "C4-S-bridge.stl",
+      "id": "C4-SB",
+      "purpose": "removable bridge; M3 clamps at rails only, never Seed PCB",
+      "installed_z_offset": 12.760000228881836,
+      "print_orientation": "top face on bed (proper 180-degree rotation)",
+      "supports": "none",
+      "ear_source_xyz": [
+        0.1200000000000001,
+        82.55000000000001,
+        12.759999999999998
+      ],
+      "marker_source": {
+        "void": [
+          25.32,
+          86.65,
+          13.839999999999998
+        ],
+        "solid": [
+          26.12,
+          86.65,
+          13.839999999999998
+        ],
+        "additional": [
+          {
+            "void": [
+              25.32,
+              85.05000000000001,
+              13.839999999999998
+            ],
+            "solid": [
+              26.12,
+              85.05000000000001,
+              13.839999999999998
+            ]
+          },
+          {
+            "void": [
+              26.92,
+              85.05000000000001,
+              13.839999999999998
+            ],
+            "solid": [
+              27.720000000000002,
+              85.05000000000001,
+              13.839999999999998
+            ]
+          }
+        ]
+      },
+      "family": "C4",
+      "connector": "seed",
+      "role": "bridge"
+    },
+    "C5-floor": {
+      "file": "C5-floor.stl",
+      "id": "C5-F",
+      "purpose": "corner floor + off-PCB insert dome; real metal standoffs required",
+      "installed_z_offset": -14.600000381469727,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "insert/pilot axis vertical; none",
+      "ear_source_xyz": [
+        -10.5,
+        -18.95,
+        -14.6
+      ],
+      "marker_source": {
+        "void": [
+          14.7,
+          -14.85,
+          -13.52
+        ],
+        "solid": [
+          15.5,
+          -14.85,
+          -13.52
+        ],
+        "additional": [
+          {
+            "void": [
+              14.7,
+              -16.45,
+              -13.52
+            ],
+            "solid": [
+              15.5,
+              -16.45,
+              -13.52
+            ]
+          },
+          {
+            "void": [
+              16.3,
+              -16.45,
+              -13.52
+            ],
+            "solid": [
+              17.1,
+              -16.45,
+              -13.52
+            ]
+          }
+        ]
+      },
+      "family": "C5",
+      "role": "floor"
+    },
+    "C5-PCB-dummy": {
+      "file": "C5-PCB-dummy.stl",
+      "id": "C5-PCB",
+      "purpose": "PCB thickness dummy, NEVER put printed plastic between real post shoulders",
+      "installed_z_offset": -1.600000023841858,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        0,
+        -4.95,
+        -1.6
+      ],
+      "marker_source": {
+        "void": [
+          25.2,
+          -0.8500000000000001,
+          -0.5200000000000001
+        ],
+        "solid": [
+          26.0,
+          -0.8500000000000001,
+          -0.5200000000000001
+        ],
+        "additional": [
+          {
+            "void": [
+              25.2,
+              -2.45,
+              -0.5200000000000001
+            ],
+            "solid": [
+              26.0,
+              -2.45,
+              -0.5200000000000001
+            ]
+          },
+          {
+            "void": [
+              26.8,
+              -2.45,
+              -0.5200000000000001
+            ],
+            "solid": [
+              27.6,
+              -2.45,
+              -0.5200000000000001
+            ]
+          }
+        ]
+      },
+      "family": "C5",
+      "role": "pcb"
+    },
+    "C5-carrier": {
+      "file": "C5-carrier.stl",
+      "id": "C5-C",
+      "purpose": "local skin 3.6, outside-PCB M3x12 counterbore",
+      "installed_z_offset": 5.400000095367432,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        -11,
+        -11.95,
+        5.4
+      ],
+      "marker_source": {
+        "void": [
+          14.2,
+          -7.85,
+          6.48
+        ],
+        "solid": [
+          15.0,
+          -7.85,
+          6.48
+        ],
+        "additional": [
+          {
+            "void": [
+              14.2,
+              -9.45,
+              6.48
+            ],
+            "solid": [
+              15.0,
+              -9.45,
+              6.48
+            ]
+          },
+          {
+            "void": [
+              15.799999999999999,
+              -9.45,
+              6.48
+            ],
+            "solid": [
+              16.599999999999998,
+              -9.45,
+              6.48
+            ]
+          }
+        ]
+      },
+      "family": "C5",
+      "role": "carrier"
+    },
+    "C5-lower": {
+      "file": "C5-lower.stl",
+      "id": "C5-L",
+      "purpose": "plate DUMMY; use actual 0.15 paper between, no printed paper shim",
+      "installed_z_offset": 9.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        -11,
+        -11.95,
+        9
+      ],
+      "marker_source": {
+        "void": [
+          14.2,
+          -7.85,
+          9.88
+        ],
+        "solid": [
+          15.0,
+          -7.85,
+          9.88
+        ],
+        "additional": [
+          {
+            "void": [
+              14.2,
+              -9.45,
+              9.88
+            ],
+            "solid": [
+              15.0,
+              -9.45,
+              9.88
+            ]
+          },
+          {
+            "void": [
+              15.799999999999999,
+              -9.45,
+              9.88
+            ],
+            "solid": [
+              16.599999999999998,
+              -9.45,
+              9.88
+            ]
+          }
+        ]
+      },
+      "family": "C5",
+      "role": "lower"
+    },
+    "C5-upper": {
+      "file": "C5-upper.stl",
+      "id": "C5-U",
+      "purpose": "plate DUMMY; use actual 0.15 paper between, no printed paper shim",
+      "installed_z_offset": 10.149999618530273,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        -11,
+        -11.95,
+        10.15
+      ],
+      "marker_source": {
+        "void": [
+          14.2,
+          -7.85,
+          11.030000000000001
+        ],
+        "solid": [
+          15.0,
+          -7.85,
+          11.030000000000001
+        ],
+        "additional": [
+          {
+            "void": [
+              14.2,
+              -9.45,
+              11.030000000000001
+            ],
+            "solid": [
+              15.0,
+              -9.45,
+              11.030000000000001
+            ]
+          },
+          {
+            "void": [
+              15.799999999999999,
+              -9.45,
+              11.030000000000001
+            ],
+            "solid": [
+              16.599999999999998,
+              -9.45,
+              11.030000000000001
+            ]
+          }
+        ]
+      },
+      "family": "C5",
+      "role": "upper"
+    },
+    "C6-O": {
+      "file": "C6-O.stl",
+      "id": "C6-O",
+      "purpose": "optional LED comparison: O open, A PMMA rod, B clear PLP2-250",
+      "installed_z_offset": 0.8999999761581421,
+      "print_orientation": "flat TOP on bed (proper 180-degree rotation), tubes upward",
+      "supports": "none",
+      "ear_source_xyz": [
+        62.0,
+        69.05,
+        4.8
+      ],
+      "marker_source": {
+        "void": [
+          87.2,
+          73.14999999999999,
+          5.88
+        ],
+        "solid": [
+          88.0,
+          73.14999999999999,
+          5.88
+        ],
+        "additional": [
+          {
+            "void": [
+              87.2,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              88.0,
+              71.55,
+              5.88
+            ]
+          },
+          {
+            "void": [
+              88.8,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              89.6,
+              71.55,
+              5.88
+            ]
+          }
+        ]
+      },
+      "family": "C6",
+      "variant": "O",
+      "bore": 3.2,
+      "rod_length": null
+    },
+    "C6-A1": {
+      "file": "C6-A1.stl",
+      "id": "C6-A1",
+      "purpose": "optional LED comparison: O open, A PMMA rod, B clear PLP2-250",
+      "installed_z_offset": 0.8999999761581421,
+      "print_orientation": "flat TOP on bed (proper 180-degree rotation), tubes upward",
+      "supports": "none",
+      "ear_source_xyz": [
+        62.0,
+        69.05,
+        4.8
+      ],
+      "marker_source": {
+        "void": [
+          87.2,
+          73.14999999999999,
+          5.88
+        ],
+        "solid": [
+          88.0,
+          73.14999999999999,
+          5.88
+        ],
+        "additional": [
+          {
+            "void": [
+              87.2,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              88.0,
+              71.55,
+              5.88
+            ]
+          },
+          {
+            "void": [
+              88.8,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              89.6,
+              71.55,
+              5.88
+            ]
+          }
+        ]
+      },
+      "family": "C6",
+      "variant": "A1",
+      "bore": 3.1,
+      "rod_length": 7.7
+    },
+    "C6-A2": {
+      "file": "C6-A2.stl",
+      "id": "C6-A2",
+      "purpose": "optional LED comparison: O open, A PMMA rod, B clear PLP2-250",
+      "installed_z_offset": 0.8999999761581421,
+      "print_orientation": "flat TOP on bed (proper 180-degree rotation), tubes upward",
+      "supports": "none",
+      "ear_source_xyz": [
+        62.0,
+        69.05,
+        4.8
+      ],
+      "marker_source": {
+        "void": [
+          87.2,
+          73.14999999999999,
+          5.88
+        ],
+        "solid": [
+          88.0,
+          73.14999999999999,
+          5.88
+        ],
+        "additional": [
+          {
+            "void": [
+              87.2,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              88.0,
+              71.55,
+              5.88
+            ]
+          },
+          {
+            "void": [
+              88.8,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              89.6,
+              71.55,
+              5.88
+            ]
+          }
+        ]
+      },
+      "family": "C6",
+      "variant": "A2",
+      "bore": 3.15,
+      "rod_length": 7.7
+    },
+    "C6-A3": {
+      "file": "C6-A3.stl",
+      "id": "C6-A3",
+      "purpose": "optional LED comparison: O open, A PMMA rod, B clear PLP2-250",
+      "installed_z_offset": 0.8999999761581421,
+      "print_orientation": "flat TOP on bed (proper 180-degree rotation), tubes upward",
+      "supports": "none",
+      "ear_source_xyz": [
+        62.0,
+        69.05,
+        4.8
+      ],
+      "marker_source": {
+        "void": [
+          87.2,
+          73.14999999999999,
+          5.88
+        ],
+        "solid": [
+          88.0,
+          73.14999999999999,
+          5.88
+        ],
+        "additional": [
+          {
+            "void": [
+              87.2,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              88.0,
+              71.55,
+              5.88
+            ]
+          },
+          {
+            "void": [
+              88.8,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              89.6,
+              71.55,
+              5.88
+            ]
+          }
+        ]
+      },
+      "family": "C6",
+      "variant": "A3",
+      "bore": 3.2,
+      "rod_length": 7.7
+    },
+    "C6-B": {
+      "file": "C6-B.stl",
+      "id": "C6-B",
+      "purpose": "optional LED comparison: O open, A PMMA rod, B clear PLP2-250",
+      "installed_z_offset": 0.800000011920929,
+      "print_orientation": "flat TOP on bed (proper 180-degree rotation), tubes upward",
+      "supports": "none",
+      "ear_source_xyz": [
+        62.0,
+        69.05,
+        4.8
+      ],
+      "marker_source": {
+        "void": [
+          87.2,
+          73.14999999999999,
+          5.88
+        ],
+        "solid": [
+          88.0,
+          73.14999999999999,
+          5.88
+        ],
+        "additional": [
+          {
+            "void": [
+              87.2,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              88.0,
+              71.55,
+              5.88
+            ]
+          },
+          {
+            "void": [
+              88.8,
+              71.55,
+              5.88
+            ],
+            "solid": [
+              89.6,
+              71.55,
+              5.88
+            ]
+          }
+        ]
+      },
+      "family": "C6",
+      "variant": "B",
+      "bore": 2.921,
+      "rod_length": null
+    },
+    "C6-lower-dummy": {
+      "file": "C6-lower-dummy.stl",
+      "id": "C6-L",
+      "purpose": "closed opaque plate DUMMY: use transparent acrylic for light test",
+      "installed_z_offset": 9.0,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        62.0,
+        69.05,
+        9
+      ],
+      "marker_source": {
+        "void": [
+          87.2,
+          73.14999999999999,
+          9.88
+        ],
+        "solid": [
+          88.0,
+          73.14999999999999,
+          9.88
+        ],
+        "additional": [
+          {
+            "void": [
+              87.2,
+              71.55,
+              9.88
+            ],
+            "solid": [
+              88.0,
+              71.55,
+              9.88
+            ]
+          },
+          {
+            "void": [
+              88.8,
+              71.55,
+              9.88
+            ],
+            "solid": [
+              89.6,
+              71.55,
+              9.88
+            ]
+          }
+        ]
+      },
+      "family": "C6",
+      "variant": "lower"
+    },
+    "C6-upper-dummy": {
+      "file": "C6-upper-dummy.stl",
+      "id": "C6-U",
+      "purpose": "closed opaque plate DUMMY: use transparent acrylic for light test",
+      "installed_z_offset": 10.149999618530273,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        62.0,
+        69.05,
+        10.15
+      ],
+      "marker_source": {
+        "void": [
+          87.2,
+          73.14999999999999,
+          11.030000000000001
+        ],
+        "solid": [
+          88.0,
+          73.14999999999999,
+          11.030000000000001
+        ],
+        "additional": [
+          {
+            "void": [
+              87.2,
+              71.55,
+              11.030000000000001
+            ],
+            "solid": [
+              88.0,
+              71.55,
+              11.030000000000001
+            ]
+          },
+          {
+            "void": [
+              88.8,
+              71.55,
+              11.030000000000001
+            ],
+            "solid": [
+              89.6,
+              71.55,
+              11.030000000000001
+            ]
+          }
+        ]
+      },
+      "family": "C6",
+      "variant": "upper"
+    },
+    "C7-F": {
+      "file": "C7-F.stl",
+      "id": "C7-F",
+      "purpose": "F fixed non-contact gap / A captive M3 nut + nylon screw; isolated tip",
+      "installed_z_offset": -14.600000381469727,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        36.5,
+        -0.95,
+        -14.6
+      ],
+      "marker_source": {
+        "void": [
+          61.7,
+          3.1500000000000004,
+          -13.52
+        ],
+        "solid": [
+          62.5,
+          3.1500000000000004,
+          -13.52
+        ],
+        "additional": [
+          {
+            "void": [
+              61.7,
+              1.55,
+              -13.52
+            ],
+            "solid": [
+              62.5,
+              1.55,
+              -13.52
+            ]
+          },
+          {
+            "void": [
+              63.300000000000004,
+              1.55,
+              -13.52
+            ],
+            "solid": [
+              64.10000000000001,
+              1.55,
+              -13.52
+            ]
+          }
+        ]
+      },
+      "family": "C7",
+      "variant": "F"
+    },
+    "C7-A": {
+      "file": "C7-A.stl",
+      "id": "C7-A",
+      "purpose": "F fixed non-contact gap / A captive M3 nut + nylon screw; isolated tip",
+      "installed_z_offset": -14.600000381469727,
+      "print_orientation": "largest flat underside on bed",
+      "supports": "none",
+      "ear_source_xyz": [
+        137.0,
+        -0.95,
+        -14.6
+      ],
+      "marker_source": {
+        "void": [
+          162.2,
+          3.1500000000000004,
+          -13.52
+        ],
+        "solid": [
+          163.0,
+          3.1500000000000004,
+          -13.52
+        ],
+        "additional": [
+          {
+            "void": [
+              162.2,
+              1.55,
+              -13.52
+            ],
+            "solid": [
+              163.0,
+              1.55,
+              -13.52
+            ]
+          },
+          {
+            "void": [
+              163.79999999999998,
+              1.55,
+              -13.52
+            ],
+            "solid": [
+              164.6,
+              1.55,
+              -13.52
+            ]
+          }
+        ]
+      },
+      "family": "C7",
+      "variant": "A"
+    }
+  }
+}
