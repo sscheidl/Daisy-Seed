@@ -149,6 +149,12 @@ class ComponentTests(unittest.TestCase):
         mk = (ROOT / 'projects.mk').read_text()
         for project in ('step-seq', 'acid-303', 'drive-fx', 'delay-fx', 'acid-seq'):
             self.assertRegex(mk, r'PROJECT_STATUS_' + re.escape(project) + r'\s*:=\s*(planned|buildable)')
+        # Registered products name the device ID their firmware reports in IDENTIFY (D9).
+        for name, product in data['products'].items():
+            if 'device_id' not in product:
+                continue
+            source = ROOT / product['directory'].replace('/build', '') / 'src' / 'main.cpp'
+            self.assertIn(f'"{product["device_id"]}"', source.read_text(encoding='utf-8'), name)
 
     def test_component_kinds(self):
         data = json.loads((ROOT / 'components/registry.json').read_text())
@@ -175,6 +181,7 @@ class ComponentTests(unittest.TestCase):
         cases = {
             'sequencers/step-seq/include/step_seq/engine.h': ('stepseq', 'acidseq'),
             'sequencers/step-seq/src/main.cpp': ('stepseq', 'acidseq'),
+            'sequencers/step-seq/include/step_seq/sq_protocol.h': ('stepseq', 'acidseq', 'editor'),
             'instruments/acid-303/include/acid303/voice.h': ('acid303', 'acidseq'),
             # New effect cores and adapters also run the shared FX contract test.
             'effects/drive/include/drive/drive.h': ('drive', 'fx', 'acidseq'),

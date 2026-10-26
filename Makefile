@@ -8,6 +8,7 @@ manifest:
 	python3 scripts/component_manifest.py --project $(PROJECT) --built
 test-components:
 	python3 -m unittest discover -s tests -p test_components.py -v
+	python3 -m unittest discover -s tests -p test_firmware_checker.py -v
 test-fx:
 	$(MAKE) -C tests/fx test
 

@@ -27,6 +27,9 @@ def select_suites(changed):
     # The SQ protocol contract (vectors, parameter IDs) is shared by the firmware cores,
     # the product and the editor; the reference fixtures by Drive, Delay and the product.
     sq_contract = touched('sequencers/step-seq/contracts/', 'sequencers/step-seq/docs/PROTOCOL.md')
+    # The editor core compiles the firmware's SQ codec and device (tests/test_sq.cpp).
+    sq_codec = touched(*('sequencers/step-seq/include/step_seq/' + name for name in
+                         ('sq_protocol.h', 'device.h', 'param_table.h', 'pattern.h', 'cv.h')))
     fixtures = touched('tests/fixtures/acid-seq/', 'tests/test_acid_seq_contracts.py')
     diagnostics_adapter = touched('modules/mod-on-daisy/adapters/')
     acid_common = shared or diagnostics_adapter or sq_contract
@@ -43,7 +46,7 @@ def select_suites(changed):
         'reverb': shared or touched('effects/reverb/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),
         'mod': shared or touched('modules/mod-on-daisy/'),
-        'editor': shared or touched('editors/mod-on-daisy/') or mod_api or sq_contract,
+        'editor': shared or touched('editors/mod-on-daisy/') or mod_api or sq_contract or sq_codec,
         'diagnostics': shared or touched('diagnostics/'),
         'fx': shared or fx or dsp or acid_fx,
         'sd': shared or touched('common/sd/', 'scripts/check-sd-symbols.py'),

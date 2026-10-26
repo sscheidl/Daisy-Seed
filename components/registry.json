@@ -435,6 +435,22 @@
         "mod-editor-juce",
         "mod-editor-vst3"
       ]
+    },
+    "step-seq": {
+      "version": {
+        "type": "macro",
+        "path": "sequencers/step-seq/src/version.h",
+        "name": "STEP_SEQ_FIRMWARE_VERSION"
+      },
+      "directory": "sequencers/step-seq/build",
+      "image": "StepSeq",
+      "marker": "STEP-SEQ-FW-VERSION=",
+      "device_id": "step-seq",
+      "components": [
+        "step-seq",
+        "bootloader-entry"
+      ],
+      "panels": []
     }
   }
 }

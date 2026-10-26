@@ -1,6 +1,8 @@
 # SQ-Protokoll v1.0 (Acid Seq)
 
-**Stand:** 26. Oktober 2026 · **Status:** Entwurf aus Phase 0, Vertrag für Phase 1–6.
+**Stand:** 27. Oktober 2026 · **Status:** Vertrag aus Phase 0, umgesetzt in Phase 1
+(Geräteseite `include/step_seq/device.h`, Codec `sq_protocol.h`, Editor `SqSession.h` und
+`web/sq_protocol.js`, `tools/sq_probe.py`).
 Grundlage: [Arbeitsauftrag](../../../docs/acid-seq/ARBEITSAUFTRAG.md) 4.9 (R09, R10), D1.
 
 Das SQ-Protokoll konfiguriert und beobachtet Acid Seq und seine Einzelfirmwares
@@ -206,6 +208,7 @@ sonst `NAK NOT_ALLOWED`.
 | 4 | Revision | `u14` angenommen · `u14` angewandt |
 | 5 | Parameter | `u7` Komponente · `u14` Parameter-ID · `i32` Wert (Poti- oder CC-Änderung am Gerät) |
 | 6 | Zähler geändert | — (das Panel liest `GET_STATS`) |
+| 7 | Step am Kit geändert | `u7` Step · `step` (Poti oder Taste; je geändertem Step ein Rahmen) |
 
 * **Höchstens 50 Rahmen pro Sekunde.** Ereignisse gleicher Art werden zusammengefasst,
   das jüngste gewinnt. Step-Wechsel haben Vorrang.
@@ -243,6 +246,7 @@ sonst `NAK NOT_ALLOWED`.
 | 13 | `callback_overruns` |
 | 14 | `callback_peak_cycles` |
 | 15 | `queue_high_water` |
+| 16 | `stack_free_bytes` (nie benutzte Stack-Reserve, Stack-Probe) |
 
 Weitere Zähler werden hinten angehängt. Ein Client liest `n` und ignoriert
 unbekannte.

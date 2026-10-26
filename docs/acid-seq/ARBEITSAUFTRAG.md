@@ -720,6 +720,13 @@ Sollfolgen für den Transport (`transport_vectors.json`).
 
 ### Phase 1: Sequencer-Kern, Transport und Firmware `step-seq`
 
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-1`), Version 0.1.0.
+Host-, Sanitizer- und ARM-Prüfungen bestanden. Hardwaretest NICHT GEMESSEN, Plan in
+[HARDWARE_TEST.md](../../sequencers/step-seq/docs/HARDWARE_TEST.md). Abweichungen stehen im
+[CHANGELOG](../../sequencers/step-seq/CHANGELOG.md): Echo-Schutz im Auto-Modus, eigene
+Callback-Diagnose statt MD-Adapter, Monitor-Ereignis 7 und Zähler 16. Nach D15 folgt
+Phase 2 ohne Warten auf den Hardwaretest.
+
 **Ziel:** ein vollständiger Sequencer ohne Audio, nur CV/Gate und MIDI. Dazu
 SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
 
