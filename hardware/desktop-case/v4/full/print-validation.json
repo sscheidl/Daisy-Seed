@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-26T20:03:35.796534+00:00",
+  "generated_at_utc": "2026-10-26T21:06:22.483875+00:00",
   "passed": true,
   "hardware": "NICHT GEMESSEN",
   "print_part_count": 4,
@@ -8,7 +8,7 @@
   "plates": [
     {
       "file": "plates/plate-1-tray.3mf",
-      "sha256": "98425aa7445b75bc0570f0eb408bc8b403c07d99c052e617d574341e6980b784",
+      "sha256": "6b54af20a0d4f92102e414c77421d8c39c1d549a7503e1d113806a3c7415ea70",
       "passed": true,
       "parts": [
         {
@@ -35,7 +35,7 @@
     },
     {
       "file": "plates/plate-2-carrier.3mf",
-      "sha256": "277a26fe4331e4fd99afcb7b3b65f4a0b4d1d5f4b7b31ae7f64682c57fed028b",
+      "sha256": "aca276e800002824cb98085753a6f3157dffe4b377380909a710ca166f197f66",
       "passed": true,
       "parts": [
         {
@@ -62,7 +62,7 @@
     },
     {
       "file": "plates/plate-3-rear-and-service.3mf",
-      "sha256": "3108c4b34beb4e319f923922c763fbe406f454fe7ecba68125be0161c84386ef",
+      "sha256": "6ccd87ded45651782a77d20143a061609faf04fe68f82802f13d34f8ac0bca52",
       "passed": true,
       "parts": [
         {
@@ -108,25 +108,25 @@
       ]
     }
   ],
-  "parameters_sha256": "a8e94fd989902c17ad47be321c56f7693aa7bea16e04e880ca072e24f40be306",
+  "parameters_sha256": "e07b791ce82a8fd4ac6b70cea242f23e81f13b4993d337fbebdcf09209701e8c",
   "package_generator_sha256": "b5f505cde776b625c7c118b0893656d4bdfb2051a939261ab99e8e5704520c41",
   "contents": {
-    "print/tray.stl": "a854e2120731e7cb998af4b82b7c7c525075f7d36d60de9f750e9c21d20d5d7a",
-    "print/carrier.stl": "203ce22c941717a878a1306a73fefcb4c305aa99ca7ea77fa4a64b9b6c6ce83b",
+    "print/tray.stl": "2038bc0ffa2cdea1d6fe8bb2bcf700e19a24edab834c07be006ca110b03ff293",
+    "print/carrier.stl": "4cfd218d6470878fe05665c4c05de9214846ba86d7c0724c2e12f205925a7bc1",
     "print/rear-panel.stl": "e809840f10e64e947f3867dbd84b39977c9eca71aa13b05fb0c6a4e07d958199",
     "print/seed-service-cover.stl": "ed06eb327d1382a72e14810e861d69771ee18b8de975626e7b3378bb27622d5d",
     "sheets/lower-acrylic.svg": "d943fe6fdf876f32a99b78c3752b707c653904a31b1b41bb4aa0b6b034fb534e",
     "sheets/paper.svg": "099e6f803502ba25ecbef0ec63608aa3f4a6dbee6f8aefd8bdaddd590f261f4c",
     "sheets/upper-acrylic.svg": "070ce43f38aa918d8636684d0e81602504db0da1d88cffd3884900b46d7d3a25",
-    "plates/plate-1-tray.3mf": "98425aa7445b75bc0570f0eb408bc8b403c07d99c052e617d574341e6980b784",
-    "plates/plate-2-carrier.3mf": "277a26fe4331e4fd99afcb7b3b65f4a0b4d1d5f4b7b31ae7f64682c57fed028b",
-    "plates/plate-3-rear-and-service.3mf": "3108c4b34beb4e319f923922c763fbe406f454fe7ecba68125be0161c84386ef",
-    "V4.md": "90ad571283b4595818e8071520e4652d680943144fa25e1f89120c9863b478cd",
-    "manifest.json": "19f12cc01c754bb1768e7a188610d29390316ed13f29657f65a0ec1f3e891f31",
-    "validation.json": "b1a8043e53e25fa520d6a3b11cb69fffe7cb558183d3796d3ef72b094fbd48cb",
-    "images/v4-exploded.png": "292fb2c457c1743afe0684796f4310e7891cd56df68cb66d0a0552157306984a",
-    "images/v4-rear.png": "72f2a35347e2c99c5af371c266e007a24a2088c8c238b207373786dcb34a4019",
-    "images/v4-right.png": "63d9549db68a5b537e7f1651e60555f3fb23d7a31511e041a3fe9f80c1e722e8",
-    "images/v4-studio.png": "a11e1eb4823aa7f66fb3236fae16f237d7af2e31484d2087ce4559ecb1f097c8"
+    "plates/plate-1-tray.3mf": "6b54af20a0d4f92102e414c77421d8c39c1d549a7503e1d113806a3c7415ea70",
+    "plates/plate-2-carrier.3mf": "aca276e800002824cb98085753a6f3157dffe4b377380909a710ca166f197f66",
+    "plates/plate-3-rear-and-service.3mf": "6ccd87ded45651782a77d20143a061609faf04fe68f82802f13d34f8ac0bca52",
+    "V4.md": "a18135958a0e90e76439e36b3eccc4f4d2bbe8aab536f45f63a60d2cf708fb65",
+    "manifest.json": "00be3a6ad00e527147177131a10ee5a86feca387a97be6089b195efb67213864",
+    "validation.json": "7e39aacb1f149efe344bd518dff62fbaff58bff98cefc04e7928e53abec66d5f",
+    "images/v4-exploded.png": "2a3ac9c28ef073ac24da56db9087e04d6d79abc6d0f7b991189c137b98bf21c6",
+    "images/v4-rear.png": "d100e252cc7776c2bea072fcff7d7d0d8c963aaf5fc8af94f6f4b3c2f4470139",
+    "images/v4-right.png": "ce22e75a975fc7d421ae486d09d04d6437de207ca88829c413fda7e9d2082faf",
+    "images/v4-studio.png": "7b57cf1ad94629f0f227fc448b3e847602836e6c6da5d4762aad7cde03488f84"
   }
 }

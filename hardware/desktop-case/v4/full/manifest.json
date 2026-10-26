@@ -1,9 +1,9 @@
 {
-  "generated_at_utc": "2026-10-26T19:58:45.304867+00:00",
+  "generated_at_utc": "2026-10-26T21:04:37.706166+00:00",
   "hardware": "NICHT GEMESSEN",
   "parameters": "../v4-parameters.json",
-  "parameters_sha256": "a8e94fd989902c17ad47be321c56f7693aa7bea16e04e880ca072e24f40be306",
-  "generator_sha256": "d37174c193d4e4e6582f8791f8619cba60375da7be11d660b3790f08d06f98c9",
+  "parameters_sha256": "e07b791ce82a8fd4ac6b70cea242f23e81f13b4993d337fbebdcf09209701e8c",
+  "generator_sha256": "d50f643e238e2a35e7a1d820527da60332732f83843025d52fc623a49acd82b8",
   "geometry_helper_sha256": "007abfc5519cb87cf608f6962d55a11f30fbed3940e6aff3c387cb4f8e2ed456",
   "frame": "RH: +X right/MIDI, +Y rear/audio, +Z populated side up; add installed_z_offset to each STL for PCB top Z=0",
   "intent": "Full first print on nominal dimensions, explicitly requested 2026-10-26 instead of coupons; no sleeve capture or light pipes",
@@ -39,7 +39,7 @@
         0,
         0
       ],
-      "sha256": "a854e2120731e7cb998af4b82b7c7c525075f7d36d60de9f750e9c21d20d5d7a"
+      "sha256": "2038bc0ffa2cdea1d6fe8bb2bcf700e19a24edab834c07be006ca110b03ff293"
     },
     "carrier": {
       "file": "print/carrier.stl",
@@ -62,7 +62,7 @@
         0,
         0
       ],
-      "sha256": "203ce22c941717a878a1306a73fefcb4c305aa99ca7ea77fa4a64b9b6c6ce83b"
+      "sha256": "4cfd218d6470878fe05665c4c05de9214846ba86d7c0724c2e12f205925a7bc1"
     },
     "rear-panel": {
       "file": "print/rear-panel.stl",

@@ -17,7 +17,9 @@ Zwei 1-mm-Acrylplatten und neutrale Papierkontur als SVG. Anleitung und BOM:
 
 Lokale Prüfung: sieben tatsächliche STL-Dateien geschlossen, außenorientiert,
 je eine Komponente; RH mit gespiegelten Gegenproben und SVG-Landmarken bestanden.
-5.644 Intersektionsprüfungen ohne unerwartete Kollision. Hersteller-KiCad- und
+5.732 Intersektionsprüfungen ohne unerwartete Kollision, darunter
+Lüftungsschlitze (Wanne links unter dem Seed, Dach der Seed-Haube; 2 mm,
+offen für Ø1,6, sperrt den Ø2,5-IP3X-Prüfdraht; Temperatur NICHT GEMESSEN). Hersteller-KiCad- und
 Seed-Modellboxen konservativ einbezogen. Bericht `full/validation.json` bindet
 Parameter und Geometrien per SHA-256. `package_v4.py` prüft die drei 3MF-Platten
 nach erneutem Einlesen aller Vertices/Transformationen und den ZIP-Inhalt.

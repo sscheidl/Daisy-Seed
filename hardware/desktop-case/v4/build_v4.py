@@ -128,6 +128,19 @@ def port_cuts():
     return union(cuts)
 
 
+def tray_vents():
+    # Intake below the Seed: horizontal slots through the left tray wall,
+    # above the PCB plane so air reaches the Seed hood rather than the underside.
+    e=v('general','csg_margin'); x0=q('outer')[0]; w=q('vent_slot_width'); lo,hi=q('tray_vent_z')
+    return union([box(x0-e,y-w/2,lo,q('wall')+2*e,w,hi-lo) for y in q('tray_vent_y')])
+
+
+def roof_vents():
+    # Exhaust through the Seed hood roof beside the service recess.
+    e=v('general','csg_margin'); w=q('vent_slot_width'); lo,hi=q('seed_roof_vent_y')
+    return union([box(x-w/2,lo,q('seed_inner_roof')-e,w,hi-lo,q('wall')+2*e) for x in q('seed_roof_vent_x')])
+
+
 def engrave(solid,position,bottom=False):
     x,y,z=position; depth=v('general','label_depth'); e=v('general','csg_margin')
     pitch=v('general','marker_pitch'); rad=v('general','marker_radius')
@@ -189,7 +202,7 @@ def tray():
         a+=cyl(xx,yy,l['floor_top'],2*v('c7','radius'),top-l['floor_top'])
         a-=hole(xx,yy,l['bottom'],top)
         a-=c.hex_hole(xx,yy,top-v('screw','nut_height'),v('screw','nut_height')+v('general','csg_margin'))
-    return a-port_cuts()-pcb_clearance()
+    return a-port_cuts()-pcb_clearance()-tray_vents()
 
 
 def hood(xywh,inner_roof,left_wall=None,right_wall=None):
@@ -282,7 +295,7 @@ def carrier():
     for x,y in q('service_screws'):
         a+=cyl(x,y,q('service_boss_bottom'),q('service_boss_diameter'),cover_bottom-q('service_boss_bottom'))
         a-=cyl(x,y,q('service_boss_bottom')-e,v('screw','insert_pilot'),cover_bottom-q('service_boss_bottom')+2*e)
-    return a-port_cuts()-pcb_clearance()
+    return a-port_cuts()-pcb_clearance()-roof_vents()
 
 
 def rear_plate():

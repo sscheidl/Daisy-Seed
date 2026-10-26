@@ -63,6 +63,12 @@ class Validation:
             self.checks.append(dict(group=group,probe=label,part=name,intersection_mm3=round(vol,7),
                 required_clear=expected_clear,passed=vol<self.tol if expected_clear else True))
 
+    def blocked(self,group,label,probe,name):
+        # Touch protection: the rejection probe must hit material, not pass.
+        vol=max(0.,float((self.solids[name]^probe).volume()))
+        self.checks.append(dict(group=group,probe=label,part=name,intersection_mm3=round(vol,7),
+            required_clear=False,required_blocked=True,passed=vol>=self.tol))
+
     def landmarks(self):
         p=self.p; l=self.manifest['levels_pcb_relative']; z=(l['lower_bottom']+l['lower_top'])/2
         markers={}
@@ -76,9 +82,11 @@ class Validation:
         markers['tray'] += [('right wheel',(198.5,-91.6,tray_z),(198.5,-108,tray_z)),
             ('left USB',(-3,-41.09,1.68),(-3,-55,1.68)),
             ('rear audio',(39.915,7,2),(90,7,2))]
+        markers['tray'] += [('Seed intake vent',(-3,-58,2.9),(-3,-60,2.9))]
         markers['carrier'] += [('S1',(69,-85,8.5),(73,-85,8.5)),
             ('D1 behind S1',(69,-78,8.5),(72,-78,8.5)),
-            ('closed wheel roof',(198.5,-91.6,4),(198.5,-91.6,8.5))]
+            ('closed wheel roof',(198.5,-91.6,4),(198.5,-91.6,8.5)),
+            ('Seed roof vent',(33,-74,18),(35,-74,18))]
         panel_y=-(3.5-self.q('rear_plate_thickness')/2)
         markers['rear-panel'] += [('J4 axis',(39.915,panel_y,8.14),(53,panel_y,8.14))]
         for name in ['lower-acrylic','upper-acrylic','paper']:
@@ -201,6 +209,19 @@ class Validation:
             self.test('metal','upper spacer '+str(i),self.cylinder('upper-spacer-'+str(i),x,y,shims,postd,v('c5','upper_post')))
             self.test('metal','post shims '+str(i),self.cylinder('post-shims-'+str(i),x,y,0,v('c5','washer_od'),shims))
             self.test('access','Knurlie head '+str(i),self.cylinder('Knurlie-head-'+str(i),x,y,l['upper_top'],q('knurlie_head_diameter'),q('knurlie_head_height')+q('knurlie_washer')))
+        # Vents: a small probe proves each slot is open through the wall, the
+        # IP3X-sized rod must be rejected by the same slot (touch protection).
+        x0=self.q('outer')[0]; wall=q('wall'); lo,hi=q('tray_vent_z'); zmid=(lo+hi)/2
+        for y in q('tray_vent_y'):
+            self.test('vents','tray intake open Y'+str(y),self.cylinder(f'vent-tray-open-{y}',x0-1,y,zmid,q('vent_open_probe_diameter'),wall+2,'x'))
+            self.blocked('vents','tray intake rejects probe Y'+str(y),self.cylinder(f'vent-tray-probe-{y}',x0-1,y,zmid,q('vent_access_probe_diameter'),wall+2,'x'),'tray')
+        y0,y1=q('seed_roof_vent_y'); roof=q('seed_inner_roof')
+        for x in q('seed_roof_vent_x'):
+            self.test('vents','Seed roof exhaust open X'+str(x),self.cylinder(f'vent-roof-open-{x}',x,(y0+y1)/2,roof-1,q('vent_open_probe_diameter'),wall+2))
+            self.blocked('vents','Seed roof exhaust rejects probe X'+str(x),self.cylinder(f'vent-roof-probe-{x}',x,(y0+y1)/2,roof-1,q('vent_access_probe_diameter'),wall+2),'carrier')
+        w=q('vent_slot_width')
+        self.vent_area=dict(tray_intake_mm2=round(len(q('tray_vent_y'))*w*(hi-lo),3),
+            seed_roof_exhaust_mm2=round(len(q('seed_roof_vent_x'))*w*(y1-y0),3))
 
     def report(self):
         self.landmarks(); sheets=self.svg_checks()
@@ -212,11 +233,12 @@ class Validation:
             passed=passed,inputs_match_export=fresh,meaning='Actual STL/SVG digital integrity, orientation and specified nominal envelopes; not physical fit/force/strength acceptance.',
             parameters_sha256=hashlib.sha256((ROOT/'v4-parameters.json').read_bytes()).hexdigest(),
             validator_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),parts=self.parts,
-            orientation=self.orientation,svg=sheets,probes=self.probes,collisions=self.checks,failures=failures,
+            orientation=self.orientation,svg=sheets,vent_open_area_nominal=self.vent_area,probes=self.probes,collisions=self.checks,failures=failures,
             limitations=['HYCW J7 body/shoulders unmeasured; GCT remains reference. Fit USB saddles with insulating shims without forcing PCB.',
                 'Modeled component and Seed boxes are conservative CAD bounds, not measured solder profiles.',
                 'Seed seating9, cap height13, toggle shoulder and nuts remain nominal. Recovery access assumes cover removed.',
                 'Finger sphere sampled at five positions, no continuous human-hand or friction simulation.',
+                'Vent touch protection is nominal slot geometry against a rigid 2.5-mm probe; printed slot width, airflow and operating temperature are not measured.',
                 'No mechanical stress, thread torque, fatigue, acoustics or optical performance measured.'])
         (OUT/'validation.json').write_text(json.dumps(data,indent=2)+'\n',encoding='utf8',newline='\n')
         print(json.dumps(dict(passed=passed,parts={k:v['passed'] for k,v in self.parts.items()},orientation={k:v['passed'] for k,v in self.orientation.items()},svg=sheets,checks=len(self.checks),failures=failures),indent=2))

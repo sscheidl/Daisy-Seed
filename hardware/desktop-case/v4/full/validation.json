@@ -1,16 +1,16 @@
 {
-  "generated_at_utc": "2026-10-26T19:58:52.792901+00:00",
+  "generated_at_utc": "2026-10-26T21:04:45.892930+00:00",
   "hardware": "NICHT GEMESSEN",
   "dimensions": "NOMINAL",
   "passed": true,
   "inputs_match_export": true,
   "meaning": "Actual STL/SVG digital integrity, orientation and specified nominal envelopes; not physical fit/force/strength acceptance.",
-  "parameters_sha256": "a8e94fd989902c17ad47be321c56f7693aa7bea16e04e880ca072e24f40be306",
-  "validator_sha256": "f56a72da3965d80f338d29037c04567566ba25e06e9c6429fe502693250a061f",
+  "parameters_sha256": "e07b791ce82a8fd4ac6b70cea242f23e81f13b4993d337fbebdcf09209701e8c",
+  "validator_sha256": "8764d1646bb2570061b37f37048a6704558a930527a94f57dd13f7a869983d40",
   "parts": {
     "tray": {
       "file": "print/tray.stl",
-      "sha256": "a854e2120731e7cb998af4b82b7c7c525075f7d36d60de9f750e9c21d20d5d7a",
+      "sha256": "2038bc0ffa2cdea1d6fe8bb2bcf700e19a24edab834c07be006ca110b03ff293",
       "closed": true,
       "outward": true,
       "components": 1,
@@ -23,7 +23,7 @@
     },
     "carrier": {
       "file": "print/carrier.stl",
-      "sha256": "203ce22c941717a878a1306a73fefcb4c305aa99ca7ea77fa4a64b9b6c6ce83b",
+      "sha256": "4cfd218d6470878fe05665c4c05de9214846ba86d7c0724c2e12f205925a7bc1",
       "closed": true,
       "outward": true,
       "components": 1,
@@ -166,6 +166,22 @@
           "void_winding": -0.0,
           "material_winding": 1.0,
           "passed": true
+        },
+        {
+          "landmark": "Seed intake vent",
+          "void": [
+            -3,
+            -58,
+            2.9
+          ],
+          "material": [
+            -3,
+            -60,
+            2.9
+          ],
+          "void_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
         }
       ],
       "reflected_negative_control_rejected": true,
@@ -217,7 +233,7 @@
             -78,
             8.5
           ],
-          "void_winding": -0.0,
+          "void_winding": 0.0,
           "material_winding": 1.0,
           "passed": true
         },
@@ -234,6 +250,22 @@
             8.5
           ],
           "void_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "Seed roof vent",
+          "void": [
+            33,
+            -74,
+            18
+          ],
+          "material": [
+            35,
+            -74,
+            18
+          ],
+          "void_winding": -0.0,
           "material_winding": 1.0,
           "passed": true
         }
@@ -1071,6 +1103,10 @@
       ],
       "passed": true
     }
+  },
+  "vent_open_area_nominal": {
+    "tray_intake_mm2": 50.4,
+    "seed_roof_exhaust_mm2": 150.0
   },
   "probes": {
     "PCB": {
@@ -4204,6 +4240,94 @@
     "Knurlie-head-3": {
       "file": "build/v4-full/probes/Knurlie-head-3.stl",
       "sha256": "326edc7de9ca7124fecdaa75fa778b7756bbad157ee1b542f71056814872985a"
+    },
+    "vent-tray-open-58": {
+      "file": "build/v4-full/probes/vent-tray-open-58.stl",
+      "sha256": "124bfca4729333e577c12b9498a3fd0469a09c8e4aeaeff1071c8545a7ec6f8a"
+    },
+    "vent-tray-probe-58": {
+      "file": "build/v4-full/probes/vent-tray-probe-58.stl",
+      "sha256": "9beff7e97c846129ed86777269381452fbf083c6eb8e23f831bd95f5e395633e"
+    },
+    "vent-tray-open-62": {
+      "file": "build/v4-full/probes/vent-tray-open-62.stl",
+      "sha256": "460dcc6ebef249855ce6b5ae776beee949d5b78ce10f9b961249b275a5ed9096"
+    },
+    "vent-tray-probe-62": {
+      "file": "build/v4-full/probes/vent-tray-probe-62.stl",
+      "sha256": "75f98720dc914dc70eb332cdf08de8b8de988f47417200ebe663c41495d22318"
+    },
+    "vent-tray-open-66": {
+      "file": "build/v4-full/probes/vent-tray-open-66.stl",
+      "sha256": "a24dacc1e04c08fc49d7810d74004e1fa53697c922532d3800f621bf09530273"
+    },
+    "vent-tray-probe-66": {
+      "file": "build/v4-full/probes/vent-tray-probe-66.stl",
+      "sha256": "6c1515c39814af19ed1603efd2cafa9477577d7173fb602f77030383fb5cb784"
+    },
+    "vent-tray-open-70": {
+      "file": "build/v4-full/probes/vent-tray-open-70.stl",
+      "sha256": "af388b6cc81ac0cb181ca94b203f890baeba6890b95469bbe60528b54c2641a4"
+    },
+    "vent-tray-probe-70": {
+      "file": "build/v4-full/probes/vent-tray-probe-70.stl",
+      "sha256": "11ad5a32d54ab739156ef38ab2c54b4c2f9c0522418775c2c5451737b7af0599"
+    },
+    "vent-tray-open-74": {
+      "file": "build/v4-full/probes/vent-tray-open-74.stl",
+      "sha256": "e521df92e6c337de87582bf5979fcd0b95c7e34728f8a1df87b63dd7a741b36b"
+    },
+    "vent-tray-probe-74": {
+      "file": "build/v4-full/probes/vent-tray-probe-74.stl",
+      "sha256": "3a9b74727ee6a53520df5d1b41df1835f859f54c914545f052532b5794130fe2"
+    },
+    "vent-tray-open-78": {
+      "file": "build/v4-full/probes/vent-tray-open-78.stl",
+      "sha256": "81bff98007c8a58ed3c439ff48199efc17aef9d5d8d031b765b54d3dfc737f7b"
+    },
+    "vent-tray-probe-78": {
+      "file": "build/v4-full/probes/vent-tray-probe-78.stl",
+      "sha256": "24f882a78c1790cb26f4c3a48fec8261bf7ccda340e034abeff7dd9fe736cb3d"
+    },
+    "vent-roof-open-33": {
+      "file": "build/v4-full/probes/vent-roof-open-33.stl",
+      "sha256": "6a1b4412e56b1a551cccabe28b1a125b92dd17fe315421761b5018c0c2114dc6"
+    },
+    "vent-roof-probe-33": {
+      "file": "build/v4-full/probes/vent-roof-probe-33.stl",
+      "sha256": "f304f4e6a028a92ba2713a3846c0771f15108fdfbb0d04a13840e11f813d7670"
+    },
+    "vent-roof-open-37": {
+      "file": "build/v4-full/probes/vent-roof-open-37.stl",
+      "sha256": "69ef58159539be0e81618c8311981577d3f0c60d3c87b569962a96bb06631590"
+    },
+    "vent-roof-probe-37": {
+      "file": "build/v4-full/probes/vent-roof-probe-37.stl",
+      "sha256": "5c851a56d71d2294372656f280f53518402ef77766a44f9fd198878beb1dd3cf"
+    },
+    "vent-roof-open-41": {
+      "file": "build/v4-full/probes/vent-roof-open-41.stl",
+      "sha256": "7a01b1b467de0739ed0b4d7869e72c5f4b0e1c7c7b5c02b59201bcc09d6b82c7"
+    },
+    "vent-roof-probe-41": {
+      "file": "build/v4-full/probes/vent-roof-probe-41.stl",
+      "sha256": "bb334dbf929836b5d9cbb2f632ace0df962d5486375ef5caa886a1acdb42e6d9"
+    },
+    "vent-roof-open-45": {
+      "file": "build/v4-full/probes/vent-roof-open-45.stl",
+      "sha256": "1e0ef56e12c6e78f74b32e868b4d8243ef178398648719a2b91bf3071a291bfc"
+    },
+    "vent-roof-probe-45": {
+      "file": "build/v4-full/probes/vent-roof-probe-45.stl",
+      "sha256": "f89eeff71e576a16f43bd66d049292dda5d550acf8bc7174fadc515aed29d789"
+    },
+    "vent-roof-open-49": {
+      "file": "build/v4-full/probes/vent-roof-open-49.stl",
+      "sha256": "2b7f6fb1d602a9b03aaad21af04c5a9c7e64ca4604b945cc709fed3350a63bcd"
+    },
+    "vent-roof-probe-49": {
+      "file": "build/v4-full/probes/vent-roof-probe-49.stl",
+      "sha256": "45bcc37719aba7f3ad16f624bccfc5b077a3cad8ec14d269356fb0491d0bb631"
     }
   },
   "collisions": [
@@ -49358,6 +49482,721 @@
       "intersection_mm3": 0.0,
       "required_clear": true,
       "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y58",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y58",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y58",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y58",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y58",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y58",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y58",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake rejects probe Y58",
+      "part": "tray",
+      "intersection_mm3": 1.221359,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y62",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y62",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y62",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y62",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y62",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y62",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y62",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake rejects probe Y62",
+      "part": "tray",
+      "intersection_mm3": 1.221359,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y66",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y66",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y66",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y66",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y66",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y66",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y66",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake rejects probe Y66",
+      "part": "tray",
+      "intersection_mm3": 1.22136,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y70",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y70",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y70",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y70",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y70",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y70",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y70",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake rejects probe Y70",
+      "part": "tray",
+      "intersection_mm3": 1.22136,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y74",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y74",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y74",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y74",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y74",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y74",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y74",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake rejects probe Y74",
+      "part": "tray",
+      "intersection_mm3": 1.22136,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y78",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y78",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y78",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y78",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y78",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y78",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake open Y78",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "tray intake rejects probe Y78",
+      "part": "tray",
+      "intersection_mm3": 1.22136,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X33",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X33",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X33",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X33",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X33",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X33",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X33",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust rejects probe X33",
+      "part": "carrier",
+      "intersection_mm3": 1.2213593,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X37",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X37",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X37",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X37",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X37",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X37",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X37",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust rejects probe X37",
+      "part": "carrier",
+      "intersection_mm3": 1.2213606,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X41",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X41",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X41",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X41",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X41",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X41",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X41",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust rejects probe X41",
+      "part": "carrier",
+      "intersection_mm3": 1.2213606,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X45",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X45",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X45",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X45",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X45",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X45",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X45",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust rejects probe X45",
+      "part": "carrier",
+      "intersection_mm3": 1.2213606,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X49",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X49",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X49",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X49",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X49",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X49",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust open X49",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "vents",
+      "probe": "Seed roof exhaust rejects probe X49",
+      "part": "carrier",
+      "intersection_mm3": 1.2213606,
+      "required_clear": false,
+      "required_blocked": true,
+      "passed": true
     }
   ],
   "failures": [],
@@ -49366,6 +50205,7 @@
     "Modeled component and Seed boxes are conservative CAD bounds, not measured solder profiles.",
     "Seed seating9, cap height13, toggle shoulder and nuts remain nominal. Recovery access assumes cover removed.",
     "Finger sphere sampled at five positions, no continuous human-hand or friction simulation.",
+    "Vent touch protection is nominal slot geometry against a rigid 2.5-mm probe; printed slot width, airflow and operating temperature are not measured.",
     "No mechanical stress, thread torque, fatigue, acoustics or optical performance measured."
   ]
 }

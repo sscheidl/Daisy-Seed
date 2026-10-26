@@ -2742,6 +2742,67 @@
       "unit": "mm",
       "status": "NOMINAL",
       "source": "Nominal visual hardware envelopes only; verify actual purchased hardware, not a manufacturer solid model"
+    },
+    "vent_slot_width": {
+      "value": 2.0,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Touch protection: narrower than the 2.5-mm IEC 60529 IP3X access probe; nominal geometry, not a certification. V4 ventilation added 2026-10-26 on user request (DESIGN_REVIEW_2026-10-25 demands vents with touch protection); temperature NICHT GEMESSEN"
+    },
+    "vent_access_probe_diameter": {
+      "value": 2.5,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "IEC 60529 IP3X access probe diameter used as rejection probe in validate_v4.py. V4 ventilation added 2026-10-26 on user request (DESIGN_REVIEW_2026-10-25 demands vents with touch protection); temperature NICHT GEMESSEN"
+    },
+    "vent_open_probe_diameter": {
+      "value": 1.6,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Smaller probe proving each slot is actually open through the wall. V4 ventilation added 2026-10-26 on user request (DESIGN_REVIEW_2026-10-25 demands vents with touch protection); temperature NICHT GEMESSEN"
+    },
+    "tray_vent_y": {
+      "value": [
+        58,
+        62,
+        66,
+        70,
+        74,
+        78
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Intake slot centres in the tray left wall below the Seed; clear of J7 window, microSD window and the left-USB landmark material at Y55. V4 ventilation added 2026-10-26 on user request (DESIGN_REVIEW_2026-10-25 demands vents with touch protection); temperature NICHT GEMESSEN"
+    },
+    "tray_vent_z": {
+      "value": [
+        0.8,
+        5.0
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Intake slot Z range above PCB top, below tray rim deck_bottom6.6 leaving a 1.6-mm rim bar. V4 ventilation added 2026-10-26 on user request (DESIGN_REVIEW_2026-10-25 demands vents with touch protection); temperature NICHT GEMESSEN"
+    },
+    "seed_roof_vent_x": {
+      "value": [
+        33,
+        37,
+        41,
+        45,
+        49
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Exhaust slot centres in the Seed hood roof beside the service recess (X<=29.5) and service boss (X<=30.5), inside hood wall X53.3. V4 ventilation added 2026-10-26 on user request (DESIGN_REVIEW_2026-10-25 demands vents with touch protection); temperature NICHT GEMESSEN"
+    },
+    "seed_roof_vent_y": {
+      "value": [
+        66,
+        81
+      ],
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "Exhaust slot Y range inside hood interior Y63.4-84.1. V4 ventilation added 2026-10-26 on user request (DESIGN_REVIEW_2026-10-25 demands vents with touch protection); temperature NICHT GEMESSEN"
     }
   },
   "modeled_component_boxes": {
