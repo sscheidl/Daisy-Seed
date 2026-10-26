@@ -6,7 +6,7 @@ Stereo-/Ping-Pong-Delay für das Seed3 Desktop Dev Kit.
 * **Stand:** Fassung 2 vom 2026-10-26. Sie enthält die Befunde R01–R16 aus dem
   [Codex-Review](CODEX_REVIEW.md) (Urteil GO MIT KORREKTUREN, geprüft auf
   `3b119be`). Welcher Befund wo eingearbeitet ist, steht in Abschnitt 9.
-  Es gibt noch keinen Code.
+  Phase 0 (Gerüst und Verträge) ist umgesetzt, siehe Abschnitt 5.
 * **Basis:** `main` @ `1eb091c`, libDaisy `f715e487`, DaisySP `2c72eaf`,
   xPack GCC 13.2.1-1.1, JUCE 9.0.4. Diese Versionen werden nicht angehoben.
 * **Herkunft:** Die Eckdaten wurden mit dem Benutzer am 2026-10-26 im Gespräch
@@ -576,7 +576,9 @@ empfiehlt einen Parametervertrag, aber keinen zweiten Protokollkopf.
   idempotent behandelt.
 * Antworten tragen das Antwortbit und werden nie beantwortet.
 * Fehlerhafte, zu lange, doppelte und verlorene Rahmen werden verworfen und
-  gezählt, ebenso Rahmen mit eingestreuten Echtzeit-Bytes (F8 usw.).
+  gezählt. Eingestreute Echtzeit-Bytes (F8 usw.) trennt schon der libDaisy-Parser
+  ab, der Rahmen bleibt gültig (Phase 0, begründet in `PROTOCOL.md` § 2). Verworfen
+  werden Rahmen mit anderen Statusbytes.
 
 **Inhalt:**
 * **IDENTIFY:** Produkt, Version, Komponentenliste mit Schema-Version, Boot-ID
@@ -673,6 +675,14 @@ Host-Zeiten abgeleitet.
 ### Phase 0: Gerüst und Verträge
 
 Ohne Firmware, deshalb ohne ARM-Image und ohne Hardwaretest.
+
+**Stand 2026-10-26: umgesetzt** (Branch `claude/acid-seq-phase-0-f1c35b`). Verträge:
+[PROTOCOL.md](../../sequencers/step-seq/docs/PROTOCOL.md),
+[PARAMETERS.md](../../sequencers/step-seq/docs/PARAMETERS.md),
+[TRANSPORT.md](../../sequencers/step-seq/docs/TRANSPORT.md), Testvektoren in
+`sequencers/step-seq/contracts/`, Fixtures in `tests/fixtures/acid-seq/`, Prüfung
+durch `tests/test_acid_seq_contracts.py`. Neben den Vektoren für SQ entstanden auch
+Sollfolgen für den Transport (`transport_vectors.json`).
 
 * **Struktur:**
   * `sequencers/README.md` (Rubrik)
@@ -933,19 +943,21 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
 
 | Nr. | Thema | Stand |
 | --- | --- | --- |
-| D1 | SysEx-Namensraum | **Vorschlag, von Codex unterstützt:** eigener Namensraum `7D 53 51` mit gemeinsamem Parametervertrag für alle Komponenten. Bewusste Abweichung vom Audit, Aufwand und Dispatcher siehe 4.9. Kein weiteres eigenes Protokoll für Drive oder Delay |
+| D1 | SysEx-Namensraum | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** eigener Namensraum `7D 53 51` mit gemeinsamem Parametervertrag für alle Komponenten. Bewusste Abweichung vom Audit, Aufwand und Dispatcher siehe 4.9. Kein weiteres eigenes Protokoll für Drive oder Delay |
 | D2 | Start/Stop und Einschalten | **Entschieden 2026-10-26:** Start/Stop auf SW17, die Modi auf SW18. Steht SW17 beim Einschalten auf Run, startet die interne Clock nach der Initialisierung. Bei externer Clock wird scharfgeschaltet (4.3). |
 | D3 | Weitere Modi | **Entschieden 2026-10-26:** zunächst drei Modi. Weitere nach Phase 6 und nur mit festgelegtem Vorrang zwischen Panel und SW18. CV/Duty entfällt, weil die Gate-Länge pro Step ihn abdeckt |
-| D4 | Filter | **Vorschlag, von Codex unterstützt:** zuerst `LadderFilter`. Diode-Ladder später als absichtliche Klangänderung mit eigener Version und neuem Golden-Hash |
-| D5 | Oversampling für Drive | **Vorschlag, von Codex unterstützt:** zuerst ohne. Entschieden wird nach der CPU-Messung und dem Hörtest auf der Hardware |
-| D6 | Poti-Glättung | **Vorschlag, von Codex unterstützt:** in den Sequencer kopieren, mit eigenem Test und eigenen Stufen-Hysteresen. Toy Piano bleibt unverändert |
-| D7 | Delay-Umfang | **Vorschlag, von Codex unterstützt:** Stereo-Delay mit den Modi Ping-Pong (Grundeinstellung) und Stereo L/R, beide in Phase 4 (4.8) |
-| D8 | Lizenzen | **Vorschlag, von Codex unterstützt:** MIT für eigenen Code, AGPL für den Editor. Herkunftsvermerke bleiben |
+| D4 | Filter | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** zuerst `LadderFilter`. Diode-Ladder später als absichtliche Klangänderung mit eigener Version und neuem Golden-Hash |
+| D5 | Oversampling für Drive | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** zuerst ohne. Entschieden wird nach der CPU-Messung und dem Hörtest auf der Hardware |
+| D6 | Poti-Glättung | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** in den Sequencer kopieren, mit eigenem Test und eigenen Stufen-Hysteresen. Toy Piano bleibt unverändert |
+| D7 | Delay-Umfang | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** Stereo-Delay mit den Modi Ping-Pong (Grundeinstellung) und Stereo L/R, beide in Phase 4 (4.8) |
+| D8 | Lizenzen | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** MIT für eigenen Code, AGPL für den Editor. Herkunftsvermerke bleiben |
 | D9 | Namen | **Entschieden 2026-10-26:** `acid-seq`, `step-seq`, `acid-303`, `drive`, `stereo-delay` (vorher `ping-pong-delay`, wegen D7 umbenannt). Projekt-IDs `delay-fx` und `drive-fx`. |
 | D10 | Clock-Grundeinstellung | **Entschieden 2026-10-26:** „Intern“. „Auto“ ist nur eine Option, mit festgelegter Rangfolge und phasenrichtigem Wechsel (4.3). |
 | D11 | Skala „linear“ | **Entschieden 2026-10-26:** entfällt, weil die Tonhöhe auf Halbtöne quantisiert ist. Skalen: chromatisch, Dur, Moll. |
 | D12 | Delay-Speicher | **Entschieden 2026-10-26:** volle Sync-Spanne, 12 s je Leitung, rund 4,6 MB im SDRAM, statt die Notenwerte zu begrenzen. |
 | D13 | Verbinden des Panels | **Entschieden 2026-10-26:** Das Gerät hat Vorrang. Vom Panel aufs Gerät nur auf ausdrückliche Aktion. Im VST3 beim Songladen nach Bestätigung, mit der Option „immer“. |
+| D14 | CI-Änderungen aus Phase 0 | **Freigegeben 2026-10-26 vom Benutzer:** Pfadfilter `sequencers/**` in `quick.yml` und neue Verbraucherregeln in `scripts/select_test_suites.py` samt Testschritten der neuen Suites im bestehenden Linux-Job (R13). Ein Job, 15-Minuten-Limit, Abbruch überholter Läufe und Doku-Ausschlüsse bleiben. |
+| D15 | Ablauf der Phasen | **Entschieden 2026-10-26 vom Benutzer:** „Ziehe alle Phasen bis zur letzten durch. Dann macht Codex Fehlersuche.“ Die Phasen 1–6 werden nacheinander umgesetzt, ohne nach jeder Phase auf den Hardwaretest zu warten. Jede Phase behält ihren eigenen Branch und PR. Alle Hardwaretests bleiben NICHT GEMESSEN, bis der Benutzer sie durchführt; danach prüft Codex auf Fehler. |
 
 ## 7. Risiken
 

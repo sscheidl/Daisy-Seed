@@ -19,6 +19,27 @@ manifest = load('component_manifest')
 selection = load('select_test_suites')
 
 
+def copy_version_sources(data, root):
+    # Minimal checkout for registry validation: sources plus every version source.
+    for item in data['components'].values():
+        version = Path(item['version']['path'])
+        if Path(item['source']) != version:
+            (root / item['source']).mkdir(parents=True, exist_ok=True)
+        (root / version).parent.mkdir(parents=True, exist_ok=True)
+        (root / version).write_bytes((ROOT / version).read_bytes())
+    for item in data['products'].values():
+        if 'version' in item:
+            source = Path(item['version']['path'])
+            (root / source).parent.mkdir(parents=True, exist_ok=True)
+            (root / source).write_bytes((ROOT / source).read_bytes())
+    registry = root / 'components/registry.json'
+    registry.parent.mkdir(exist_ok=True)
+    return registry
+
+
+ACID_SEQ_SUITES = ('stepseq', 'acid303', 'drive', 'delay', 'acidseq')
+
+
 class ComponentTests(unittest.TestCase):
     def test_versions_and_project_coverage(self):
         data = manifest.load_registry()
@@ -57,18 +78,7 @@ class ComponentTests(unittest.TestCase):
         data = json.loads((ROOT / 'components/registry.json').read_text())
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            for item in data['components'].values():
-                (root / item['source']).mkdir(parents=True, exist_ok=True)
-                source = Path(item['version']['path'])
-                (root / source).parent.mkdir(parents=True, exist_ok=True)
-                (root / source).write_bytes((ROOT / source).read_bytes())
-            for item in data['products'].values():
-                if 'version' in item:
-                    source = Path(item['version']['path'])
-                    (root / source).parent.mkdir(parents=True, exist_ok=True)
-                    (root / source).write_bytes((ROOT / source).read_bytes())
-            registry = root / 'components/registry.json'
-            registry.parent.mkdir(exist_ok=True)
+            registry = copy_version_sources(data, root)
             data['components']['mod-on-daisy']['depends'] = ['missing']
             registry.write_text(json.dumps(data))
             with self.assertRaisesRegex(ValueError, 'Unknown component'):
@@ -123,6 +133,79 @@ class ComponentTests(unittest.TestCase):
         for key in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
         self.assertTrue(selection.select_suites(['Makefile'])['sd'])
+
+    def test_acid_seq_components(self):
+        # Components are registered with their version sources; products follow only
+        # with their first validated build (BUILDABLE_PROJECTS == products above).
+        data = manifest.load_registry()
+        expected = {'step-seq': 'sequencer', 'acid-303': 'instrument', 'saturation': 'dsp',
+                    'drive': 'effect', 'stereo-delay': 'effect'}
+        for key, kind in expected.items():
+            self.assertEqual(data['components'][key]['kind'], kind)
+            self.assertRegex(manifest.read_version(data['components'][key]['version']), r'^\d+\.\d+\.\d+$')
+        self.assertIn('saturation', data['components']['drive']['depends'])
+        self.assertIn('fx-contract', data['components']['stereo-delay']['depends'])
+        self.assertEqual(data['components']['saturation']['version']['path'], 'common/dsp/saturation.h')
+        mk = (ROOT / 'projects.mk').read_text()
+        for project in ('step-seq', 'acid-303', 'drive-fx', 'delay-fx', 'acid-seq'):
+            self.assertRegex(mk, r'PROJECT_STATUS_' + re.escape(project) + r'\s*:=\s*(planned|buildable)')
+
+    def test_component_kinds(self):
+        data = json.loads((ROOT / 'components/registry.json').read_text())
+        self.assertIn('sequencer', manifest.KINDS)
+        self.assertIn('dsp', manifest.KINDS)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            registry = copy_version_sources(data, root)
+            registry.write_text(json.dumps(data))
+            self.assertIn('step-seq', manifest.load_registry(root)['components'])
+            data['components']['saturation']['kind'] = 'library'
+            registry.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'Invalid kind'):
+                manifest.load_registry(root)
+
+    def assertOnly(self, suites, selected, label):
+        selected = set(selected) | {'components'}
+        for key, value in suites.items():
+            if key == 'submodules':
+                continue
+            self.assertEqual(value, key in selected, f'{label}: {key}')
+
+    def test_acid_seq_consumers(self):
+        cases = {
+            'sequencers/step-seq/include/step_seq/engine.h': ('stepseq', 'acidseq'),
+            'sequencers/step-seq/src/main.cpp': ('stepseq', 'acidseq'),
+            'instruments/acid-303/include/acid303/voice.h': ('acid303', 'acidseq'),
+            # New effect cores and adapters also run the shared FX contract test.
+            'effects/drive/include/drive/drive.h': ('drive', 'fx', 'acidseq'),
+            'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'acidseq'),
+            'sequencers/acid-seq/src/main.cpp': ('acidseq',),
+            # Shared saturation: its consumers only, no longer every suite.
+            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'fx', 'acidseq'),
+            'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq'),
+            'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor',),
+            'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor',),
+            'tests/fixtures/acid-seq/manifest.json': ('drive', 'delay', 'acidseq'),
+            'sequencers/README.md': (),
+            'sequencers/step-seq/README.md': ('stepseq', 'acidseq'),
+        }
+        for path, selected in cases.items():
+            suites = selection.select_suites([path])
+            self.assertOnly(suites, selected, path)
+            self.assertEqual(suites['submodules'], bool(set(selected) - {'fx', 'editor'}), path)
+        diagnostics = selection.select_suites(['modules/mod-on-daisy/adapters/callback_diagnostics.h'])
+        for key in ACID_SEQ_SUITES:
+            self.assertTrue(diagnostics[key], key)
+        for path in ('Makefile', 'projects.mk', 'common/bootloader/bootloader_entry.h', '.github/workflows/quick.yml'):
+            suites = selection.select_suites([path])
+            for key in ACID_SEQ_SUITES:
+                self.assertTrue(suites[key], f'{path}: {key}')
+        # Changes elsewhere leave the Acid Seq suites alone.
+        for path in ('instruments/toy-piano/src/toy_piano.cpp', 'effects/tape-fx/src/tape_fx.h',
+                     'editors/mod-on-daisy/web/mod_protocol.js', 'common/sd/ro_sd.c'):
+            suites = selection.select_suites([path])
+            for key in ACID_SEQ_SUITES:
+                self.assertFalse(suites[key], f'{path}: {key}')
 
 
 if __name__ == '__main__':

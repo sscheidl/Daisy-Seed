@@ -161,6 +161,58 @@
       "depends": [
         "mod-on-daisy"
       ]
+    },
+    "step-seq": {
+      "kind": "sequencer",
+      "source": "sequencers/step-seq",
+      "version": {
+        "type": "macro",
+        "path": "sequencers/step-seq/src/version.h",
+        "name": "STEP_SEQ_VERSION"
+      }
+    },
+    "acid-303": {
+      "kind": "instrument",
+      "source": "instruments/acid-303",
+      "version": {
+        "type": "macro",
+        "path": "instruments/acid-303/src/version.h",
+        "name": "ACID_303_VERSION"
+      }
+    },
+    "saturation": {
+      "kind": "dsp",
+      "source": "common/dsp/saturation.h",
+      "version": {
+        "type": "macro",
+        "path": "common/dsp/saturation.h",
+        "name": "SEED_SATURATION_VERSION"
+      }
+    },
+    "drive": {
+      "kind": "effect",
+      "source": "effects/drive",
+      "depends": [
+        "saturation",
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/drive/src/version.h",
+        "name": "DRIVE_VERSION"
+      }
+    },
+    "stereo-delay": {
+      "kind": "effect",
+      "source": "effects/stereo-delay",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/stereo-delay/src/version.h",
+        "name": "STEREO_DELAY_VERSION"
+      }
     }
   },
   "products": {

@@ -20,3 +20,4 @@ __pycache__/
 /modules/*/build/
 /editors/*/build/
 /modules/*/bench/build/
+/sequencers/*/build/

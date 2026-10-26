@@ -10,6 +10,7 @@ on:
       - 'scripts/**'
       - 'tests/**'
       - 'instruments/**'
+      - 'sequencers/**'
       - 'effects/**'
       - 'modules/**'
       - 'editors/**'
@@ -29,6 +30,7 @@ on:
       - 'scripts/**'
       - 'tests/**'
       - 'instruments/**'
+      - 'sequencers/**'
       - 'effects/**'
       - 'modules/**'
       - 'editors/**'
@@ -109,3 +111,18 @@ jobs:
       - name: Shared SD driver host tests (FAT32/exFAT images)
         if: steps.changes.outputs.sd == 'true'
         run: make -C common/sd test
+      - name: Acid Seq contracts (SQ vectors, parameter IDs, reference fixtures)
+        if: steps.changes.outputs.acidseq == 'true'
+        run: python3 -m unittest discover -s tests -p test_acid_seq_contracts.py -v
+      - name: Step Seq host tests
+        if: steps.changes.outputs.stepseq == 'true'
+        run: make -C sequencers/step-seq test
+      - name: Acid 303 host tests
+        if: steps.changes.outputs.acid303 == 'true'
+        run: make -C instruments/acid-303 test
+      - name: Drive host tests
+        if: steps.changes.outputs.drive == 'true'
+        run: make -C effects/drive test
+      - name: Stereo Delay host tests
+        if: steps.changes.outputs.delay == 'true'
+        run: make -C effects/stereo-delay test
