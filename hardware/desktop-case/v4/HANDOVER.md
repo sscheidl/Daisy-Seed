@@ -1,4 +1,36 @@
-# Gesicherter Stand – 25.10.2026
+# Gesicherter Stand – 26.10.2026
+
+**Aktuell: vollständiger V4-Erstdruck.** Der Nutzer hat ausdrücklich entschieden,
+wegen Bestell-/Abholaufwand direkt das ganze Gehäuse zu drucken. Diese Freigabe
+ersetzt die ältere Stufe-2-Sperre in diesem Dokument. Keine Couponmessung als
+Voraussetzung verlangen. Originalkappen aufstecken und seitlich führen reicht;
+keine 16 Hülsen und keine Lichtleiter.
+
+Branch `codex/case-v4`, Worktree `case-v4-full`, auf `codex/case-v4-coupons`
+9372cc9 / PR #50 aufbauend. Alle neuen Geometrien in `full/`, Generator
+`build_v4.py`, unabhängige Datei-/Kollisionsprüfung `validate_v4.py`,
+Druckpaket/3MF-Prüfung `package_v4.py`. Maße/Quellen zentral in
+`v4-parameters.json`, keine Hardwaremesswerte ergänzt. Vier Druckteile:
+Wanne, gemeinsamer Träger, separate Audio-Rückblende, Seed-Serviceverschluss.
+Zwei 1-mm-Acrylplatten und neutrale Papierkontur als SVG. Anleitung und BOM:
+[full/V4.md](full/V4.md). Keine Firmwareänderung, keine Actions, kein Hardwarezugriff.
+
+Lokale Prüfung: sieben tatsächliche STL-Dateien geschlossen, außenorientiert,
+je eine Komponente; RH mit gespiegelten Gegenproben und SVG-Landmarken bestanden.
+5.644 Intersektionsprüfungen ohne unerwartete Kollision. Hersteller-KiCad- und
+Seed-Modellboxen konservativ einbezogen. Bericht `full/validation.json` bindet
+Parameter und Geometrien per SHA-256. `package_v4.py` prüft die drei 3MF-Platten
+nach erneutem Einlesen aller Vertices/Transformationen und den ZIP-Inhalt.
+
+Reale Passung, USB-HYCW-Anschlagflächen, Kappen-/Seed-Steckhöhe,
+Schalterschulter und Muttern bleiben **NOMINAL / NICHT GEMESSEN**.
+USB-Anschläge mit isolierenden Beilagen spannungsfrei anpassen;
+Schaltermuttern ohne passende Auflage nicht anziehen. Audioblende axial über
+die vier Buchsennasen montieren. Seed-Taster durch Abschrauben des Deckels
+zugänglich. Nächster praktischer Schritt: Komplettdruck mit den Dateien aus
+`full/V4-KOMPLETTDRUCK.zip`, dann nur tatsächlich beobachtete Werte dokumentieren.
+
+## Historischer Stand – Coupons
 
 **Aktualisiert 26.10.2026:** Der Nutzer möchte deutlich weniger Druckaufwand
 und hat ausdrücklich „Stecken und seitlich führen reicht“ gewählt.
