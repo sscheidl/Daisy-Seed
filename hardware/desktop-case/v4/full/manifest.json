@@ -1,0 +1,183 @@
+{
+  "generated_at_utc": "2026-10-26T21:04:37.706166+00:00",
+  "hardware": "NICHT GEMESSEN",
+  "parameters": "../v4-parameters.json",
+  "parameters_sha256": "e07b791ce82a8fd4ac6b70cea242f23e81f13b4993d337fbebdcf09209701e8c",
+  "generator_sha256": "d50f643e238e2a35e7a1d820527da60332732f83843025d52fc623a49acd82b8",
+  "geometry_helper_sha256": "007abfc5519cb87cf608f6962d55a11f30fbed3940e6aff3c387cb4f8e2ed456",
+  "frame": "RH: +X right/MIDI, +Y rear/audio, +Z populated side up; add installed_z_offset to each STL for PCB top Z=0",
+  "intent": "Full first print on nominal dimensions, explicitly requested 2026-10-26 instead of coupons; no sleeve capture or light pipes",
+  "levels_pcb_relative": {
+    "bottom": -14.6,
+    "floor_top": -11.6,
+    "deck_bottom": 6.6,
+    "deck_top": 9,
+    "lower_bottom": 9,
+    "lower_top": 10,
+    "upper_bottom": 10.15,
+    "upper_top": 11.15
+  },
+  "parts": {
+    "tray": {
+      "file": "print/tray.stl",
+      "role": "print",
+      "installed_z_offset": -14.600000381469727,
+      "marker_source": {
+        "void": [
+          12,
+          13.6,
+          -14.48
+        ],
+        "solid": [
+          12.8,
+          13.6,
+          -14.48
+        ]
+      },
+      "rotation_for_print_degrees": [
+        0,
+        0,
+        0
+      ],
+      "sha256": "2038bc0ffa2cdea1d6fe8bb2bcf700e19a24edab834c07be006ca110b03ff293"
+    },
+    "carrier": {
+      "file": "print/carrier.stl",
+      "role": "print",
+      "installed_z_offset": 1.0,
+      "marker_source": {
+        "void": [
+          60,
+          71.6,
+          8.88
+        ],
+        "solid": [
+          60.8,
+          71.6,
+          8.88
+        ]
+      },
+      "rotation_for_print_degrees": [
+        0,
+        0,
+        0
+      ],
+      "sha256": "4cfd218d6470878fe05665c4c05de9214846ba86d7c0724c2e12f205925a7bc1"
+    },
+    "rear-panel": {
+      "file": "print/rear-panel.stl",
+      "role": "print",
+      "installed_z_offset": 0.800000011920929,
+      "marker_source": {
+        "void": [
+          85,
+          3.1350000000000002,
+          19.08
+        ],
+        "solid": [
+          85.8,
+          3.1350000000000002,
+          19.08
+        ]
+      },
+      "rotation_for_print_degrees": [
+        -90,
+        0,
+        0
+      ],
+      "sha256": "e809840f10e64e947f3867dbd84b39977c9eca71aa13b05fb0c6a4e07d958199"
+    },
+    "seed-service-cover": {
+      "file": "print/seed-service-cover.stl",
+      "role": "print",
+      "installed_z_offset": 17.399999618530273,
+      "marker_source": {
+        "void": [
+          9.5,
+          68.6,
+          19.08
+        ],
+        "solid": [
+          10.3,
+          68.6,
+          19.08
+        ]
+      },
+      "rotation_for_print_degrees": [
+        0,
+        0,
+        0
+      ],
+      "sha256": "ed06eb327d1382a72e14810e861d69771ee18b8de975626e7b3378bb27622d5d"
+    },
+    "lower-acrylic": {
+      "file": "reference-NOT-FOR-PRINT/lower-acrylic.stl",
+      "role": "reference",
+      "installed_z_offset": 9.0,
+      "marker_source": {
+        "void": [
+          69,
+          85,
+          9.5
+        ],
+        "solid": [
+          73,
+          85,
+          9.5
+        ]
+      },
+      "rotation_for_print_degrees": [
+        0,
+        0,
+        0
+      ],
+      "sha256": "7a7dbb0cef055af1aad9520ab45a079111f9e76e286ac63b253d3f36a6e67960"
+    },
+    "upper-acrylic": {
+      "file": "reference-NOT-FOR-PRINT/upper-acrylic.stl",
+      "role": "reference",
+      "installed_z_offset": 10.149999618530273,
+      "marker_source": {
+        "void": [
+          69,
+          85,
+          10.65
+        ],
+        "solid": [
+          73,
+          85,
+          10.65
+        ]
+      },
+      "rotation_for_print_degrees": [
+        0,
+        0,
+        0
+      ],
+      "sha256": "dfcaa3ea0f75016b8e4590c680fc721aff07be76514459f761802e467f43d4d5"
+    },
+    "paper": {
+      "file": "reference-NOT-FOR-PRINT/paper.stl",
+      "role": "reference",
+      "installed_z_offset": 10.0,
+      "marker_source": {
+        "void": [
+          69,
+          85,
+          10.075000000000001
+        ],
+        "solid": [
+          73,
+          85,
+          10.075000000000001
+        ]
+      },
+      "rotation_for_print_degrees": [
+        0,
+        0,
+        0
+      ],
+      "sha256": "323a4292de060b3025fc9e0619f4a78dda0df4211803a2f121af23019c6c7104"
+    }
+  }
+}

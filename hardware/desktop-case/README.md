@@ -1,9 +1,16 @@
 # Desktop-Gehäuse / Paper on Daisy
 
-**V4 vereinfacht, 26.10.2026:** [Ein Druckteil als Kappenprobe](v4/simple-guide/README.md).
-Originalkappen bleiben aufgesteckt und werden gemeinsam seitlich geführt;
-keine 16 separaten Haltehülsen. Der [ältere Katalog C1–C7](v4/COUPONS.md)
-bleibt optional. Hardware NICHT GEMESSEN.
+**Aktueller Stand, 26.10.2026:** [V4 als vollständiger erster Gehäusedruck](v4/full/V4.md),
+auf ausdrücklichen Nutzerwunsch ohne vorgeschaltete Couponbestellung.
+**Vier Druckteile**, zwei 1-mm-Acrylplatten und Papier; Originalkappen direkt
+aufstecken und seitlich führen. [Druckpaket](v4/full/V4-KOMPLETTDRUCK.zip)
+mit vier STLs, drei vorpositionierten 3MF-Platten, SVGs und Montage/Einkauf.
+Digital geprüft; Hardware **NICHT GEMESSEN**.
+
+Die folgenden Abschnitte dokumentieren ältere Entwürfe. Die frühere Empfehlung,
+vor dem Komplettdruck Coupons zu bestellen, ist für V4 durch die neue
+Nutzerentscheidung ersetzt. [Dreier-Lochprobe](v4/simple-guide/README.md)
+und [Katalog C1–C7](v4/COUPONS.md) bleiben optionale historische Hilfen.
 
 **Aktuelle Fehlerprüfung 25.10.2026:** Der [Vergleich von V3 und Claudes
 Gegenentwurf](DESIGN_REVIEW_2026-10-25.md) findet offene Anschlussabstützung,
