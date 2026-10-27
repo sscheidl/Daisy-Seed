@@ -1,11 +1,19 @@
 # Desktop-Gehäuse / Paper on Daisy
 
-**Aktueller Stand, 26.10.2026:** [V4 als vollständiger erster Gehäusedruck](v4/full/V4.md),
+**Aktueller Stand, 27.10.2026:** [V4 als vollständiger erster Gehäusedruck](v4/full/V4.md),
 auf ausdrücklichen Nutzerwunsch ohne vorgeschaltete Couponbestellung.
 **Vier Druckteile**, zwei 1-mm-Acrylplatten und Papier; Originalkappen direkt
 aufstecken und seitlich führen. [Druckpaket](v4/full/V4-KOMPLETTDRUCK.zip)
 mit vier STLs, drei vorpositionierten 3MF-Platten, SVGs und Montage/Einkauf.
 Digital geprüft; Hardware **NICHT GEMESSEN**.
+Rückblendenbefestigungen jetzt im freien Mittelbereich, einschließlich
+Kopf-/Werkzeug-/Mutternzugang geprüft. Die dünnen Stege zwischen den
+gepaarten Buchsentaschen sind entfernt. Das ZIP aus Stand b904a7e ist ersetzt.
+
+**Für die zunächst geplante reine Passprobe:** [Sparprofil und eigener Druckauftrag](v4/fit-print/README.md)
+mit [separatem ZIP](v4/fit-print/V4-PASSPROBE-SPARPROFIL.zip): gleiche vier geprüfte
+STLs, Anfrage für PLA / 0,20 mm / 20 % Füllung, ohne kosmetische Nachbearbeitung.
+Preisvorteil noch nicht kalkuliert; endgültiges Acryl zunächst zurückstellen.
 
 ## Fertigungsanbieter
 

@@ -1,12 +1,12 @@
 {
-  "generated_at_utc": "2026-10-26T21:04:45.892930+00:00",
+  "generated_at_utc": "2026-10-27T21:17:00.563779+00:00",
   "hardware": "NICHT GEMESSEN",
   "dimensions": "NOMINAL",
   "passed": true,
   "inputs_match_export": true,
   "meaning": "Actual STL/SVG digital integrity, orientation and specified nominal envelopes; not physical fit/force/strength acceptance.",
-  "parameters_sha256": "e07b791ce82a8fd4ac6b70cea242f23e81f13b4993d337fbebdcf09209701e8c",
-  "validator_sha256": "8764d1646bb2570061b37f37048a6704558a930527a94f57dd13f7a869983d40",
+  "parameters_sha256": "4ff4d04a8e6ffe9835b38c433b0111b8034883813d5650168a9aeb15e918c7b0",
+  "validator_sha256": "f8522fdf54a026b559881aed34511a5762926bc5b0e824ef0118ebbfa7c05230",
   "parts": {
     "tray": {
       "file": "print/tray.stl",
@@ -23,7 +23,7 @@
     },
     "carrier": {
       "file": "print/carrier.stl",
-      "sha256": "4cfd218d6470878fe05665c4c05de9214846ba86d7c0724c2e12f205925a7bc1",
+      "sha256": "e3bed78ab41b2a0c98d3e02cb5f9dc5ec87d30b53ba17571f597d4bd2d4c628a",
       "closed": true,
       "outward": true,
       "components": 1,
@@ -36,7 +36,7 @@
     },
     "rear-panel": {
       "file": "print/rear-panel.stl",
-      "sha256": "e809840f10e64e947f3867dbd84b39977c9eca71aa13b05fb0c6a4e07d958199",
+      "sha256": "142979c8aa08244348bd4bae836bb8a36480c61101dbef614a66cbd8b9a59387",
       "closed": true,
       "outward": true,
       "components": 1,
@@ -217,7 +217,7 @@
             -85,
             8.5
           ],
-          "void_winding": 0.0,
+          "void_winding": -0.0,
           "material_winding": 1.0,
           "passed": true
         },
@@ -265,7 +265,39 @@
             -74,
             18
           ],
-          "void_winding": -0.0,
+          "void_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "joined CV pocket rear",
+          "void": [
+            117.35,
+            -15.8,
+            8
+          ],
+          "material": [
+            117.35,
+            -23.6,
+            8
+          ],
+          "void_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "joined CV pocket front",
+          "void": [
+            117.35,
+            -31.4,
+            8
+          ],
+          "material": [
+            117.35,
+            -39,
+            8
+          ],
+          "void_winding": 0.0,
           "material_winding": 1.0,
           "passed": true
         }
@@ -287,7 +319,7 @@
             -3.1350000000000002,
             19.08
           ],
-          "void_winding": 0.0,
+          "void_winding": -0.0,
           "material_winding": 1.0,
           "passed": true
         },
@@ -302,6 +334,38 @@
             53,
             -2.5,
             8.14
+          ],
+          "void_winding": -0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "central fastener left",
+          "void": [
+            80.5,
+            -2.535,
+            16
+          ],
+          "material": [
+            85,
+            -2.535,
+            16
+          ],
+          "void_winding": 0.0,
+          "material_winding": 1.0,
+          "passed": true
+        },
+        {
+          "landmark": "central fastener right",
+          "void": [
+            124.5,
+            -2.535,
+            16
+          ],
+          "material": [
+            120,
+            -2.535,
+            16
           ],
           "void_winding": -0.0,
           "material_winding": 1.0,
@@ -4328,6 +4392,62 @@
     "vent-roof-probe-49": {
       "file": "build/v4-full/probes/vent-roof-probe-49.stl",
       "sha256": "45bcc37719aba7f3ad16f624bccfc5b077a3cad8ec14d269356fb0491d0bb631"
+    },
+    "rear-mount-1-head-seated": {
+      "file": "build/v4-full/probes/rear-mount-1-head-seated.stl",
+      "sha256": "0bedd61c17f1b4747e373d27312d5140b32733b14ce56ba5853e70dd3510162d"
+    },
+    "rear-mount-1-head-insertion": {
+      "file": "build/v4-full/probes/rear-mount-1-head-insertion.stl",
+      "sha256": "82442ba2c95900fdd82af89b154d17fee4ae0f2f565f9275047312bb36c0309b"
+    },
+    "rear-mount-1-straight-hex-key": {
+      "file": "build/v4-full/probes/rear-mount-1-straight-hex-key.stl",
+      "sha256": "c3dd7368682de9ab9d2ba6db94cb43f4c8edc8f97420af4116b92f1ac4ef7367"
+    },
+    "rear-mount-1-shaft-seated": {
+      "file": "build/v4-full/probes/rear-mount-1-shaft-seated.stl",
+      "sha256": "af6e59fef51b1383535b1bfe13fc7d583a4ac60baacfc78046e6a12a6a9c02ff"
+    },
+    "rear-mount-1-nut-seated": {
+      "file": "build/v4-full/probes/rear-mount-1-nut-seated.stl",
+      "sha256": "91388a25cdf9f82c3d3f953d6e4c2a1b51fc346f5aa925c925e151a642ac2b00"
+    },
+    "rear-mount-1-nut-insertion": {
+      "file": "build/v4-full/probes/rear-mount-1-nut-insertion.stl",
+      "sha256": "37d4e77579adf5a6022f574e539dab8d1882e3c67ac380d93a5ab5cad62a3b70"
+    },
+    "rear-mount-2-head-seated": {
+      "file": "build/v4-full/probes/rear-mount-2-head-seated.stl",
+      "sha256": "a5ba5933ecf3f6a62fcfcc5c295e06db35540baf473d185723cb4c4884ae20c2"
+    },
+    "rear-mount-2-head-insertion": {
+      "file": "build/v4-full/probes/rear-mount-2-head-insertion.stl",
+      "sha256": "678eba8f88589a88e5fbe15c6c5b3be68000aa570dfcb0b20441eb6a51deb851"
+    },
+    "rear-mount-2-straight-hex-key": {
+      "file": "build/v4-full/probes/rear-mount-2-straight-hex-key.stl",
+      "sha256": "017850f4f6123c612ed336327c84f1501bb735efc6f4a4bda57e878f547ee379"
+    },
+    "rear-mount-2-shaft-seated": {
+      "file": "build/v4-full/probes/rear-mount-2-shaft-seated.stl",
+      "sha256": "6e0db9da74c801b7a1c78ea5d1267447543736abe3102ba6c08abc901ccbaa44"
+    },
+    "rear-mount-2-nut-seated": {
+      "file": "build/v4-full/probes/rear-mount-2-nut-seated.stl",
+      "sha256": "13c83b4d6a06e730ad142adb806e2002b9bfcbc68f084da00924a4d6794ce0b4"
+    },
+    "rear-mount-2-nut-insertion": {
+      "file": "build/v4-full/probes/rear-mount-2-nut-insertion.stl",
+      "sha256": "ffd5c2133abe0b43387cdd3eff95dcebe7d4e42904d2e557a7985d173864e8a8"
+    },
+    "paired-jack-pocket-15.8": {
+      "file": "build/v4-full/probes/paired-jack-pocket-15.8.stl",
+      "sha256": "6589148f3133cc9e206b760ecc3973dcf4cd7329d4b12ab7037adf528d87856f"
+    },
+    "paired-jack-pocket-31.4": {
+      "file": "build/v4-full/probes/paired-jack-pocket-31.4.stl",
+      "sha256": "d4c9cfda44a884741f775722175df4f408cc706262cc514887d896fb7afe6fa5"
     }
   },
   "collisions": [
@@ -50196,6 +50316,790 @@
       "intersection_mm3": 1.2213606,
       "required_clear": false,
       "required_blocked": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head seated",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head seated",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head seated",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head seated",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head seated",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head seated",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head seated",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head insertion",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head insertion",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head insertion",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head insertion",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head insertion",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head insertion",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 head insertion",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 straight hex key",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 straight hex key",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 straight hex key",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 straight hex key",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 straight hex key",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 straight hex key",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 straight hex key",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 shaft seated",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 shaft seated",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 shaft seated",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 shaft seated",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 shaft seated",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 shaft seated",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 shaft seated",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut seated",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut seated",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut seated",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut seated",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut seated",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut seated",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut seated",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut insertion",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut insertion",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut insertion",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut insertion",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut insertion",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut insertion",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut insertion",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head seated",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head seated",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head seated",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head seated",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head seated",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head seated",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head seated",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head insertion",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head insertion",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head insertion",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head insertion",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head insertion",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head insertion",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 head insertion",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 straight hex key",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 straight hex key",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 straight hex key",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 straight hex key",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 straight hex key",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 straight hex key",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 straight hex key",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 shaft seated",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 shaft seated",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 shaft seated",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 shaft seated",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 shaft seated",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 shaft seated",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 shaft seated",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut seated",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut seated",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut seated",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut seated",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut seated",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut seated",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut seated",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut insertion",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut insertion",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut insertion",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut insertion",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut insertion",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut insertion",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut insertion",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y15.8",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y15.8",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y15.8",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y15.8",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y15.8",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y15.8",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y15.8",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y31.4",
+      "part": "tray",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y31.4",
+      "part": "carrier",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y31.4",
+      "part": "rear-panel",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y31.4",
+      "part": "seed-service-cover",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y31.4",
+      "part": "lower-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y31.4",
+      "part": "upper-acrylic",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
+      "passed": true
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y31.4",
+      "part": "paper",
+      "intersection_mm3": 0.0,
+      "required_clear": true,
       "passed": true
     }
   ],

@@ -1,4 +1,32 @@
-# Gesicherter Stand – 26.10.2026
+# Gesicherter Stand – 27.10.2026
+
+**Sparprofil für die mechanische Passprobe:** `fit-print/README.md` und
+`fit-print/V4-PASSPROBE-SPARPROFIL.zip`, erzeugt mit `package_fit_print.py`.
+Gleiche vier geprüfte STLs und Drucklagen wie der korrigierte V4-Stand.
+Anfrageprofil PLA / 0,20 mm / drei Wände / 20 % Füllung / mindestens 0,8 mm
+geschlossene Deck-/Bodenschichten, keine kosmetische Nachbearbeitung.
+Preis und Druckzeit NICHT GEMESSEN; 0,20-mm-Angebot beim Dienstleister
+bestätigen lassen. Keine Geometriedetails entfernt und keine neue Passung
+behauptet. Große Renderbilder fehlen im Spar-ZIP. Endgültige Acrylbestellung
+bis nach der gestalterischen Überarbeitung zurückstellen.
+
+**Korrektur Rückblende/Buchsentaschen:** Auf Nutzerbildern erkannter Fehler:
+die beiden M3×8-Köpfe bei X24/X176 sowie der Werkzeugweg waren durch den
+Träger blockiert. Neu bei X80,5/X124,5, Z16 im freien Mittelbereich, mit
+2,4-mm-Verbindungsstegen und passenden Freistellungen im Rückblendenrücklauf.
+Muttern axial vor Aufsetzen des Trägers einfädeln. Neue Prüfungen für Kopf,
+Zuführen, geraden Ø4-Inbusschlüssel, Schaft und Sechskantmutter samt Zuführen.
+Die 0,1-mm-Druckstege zwischen den eng gepaarten CV-Taschen entfallen;
+unteres Acryl und alle Buchsenbefestigungen bleiben unverändert.
+
+5.830 Intersektionsprüfungen bestanden. `verify_access_regression.py`
+reproduziert sechs alte Kopf-/Werkzeugkollisionen aus b904a7e und weist die
+alten STLs mit acht neuen Kollisionsbefunden plus vier Landmarken zurück.
+Nur `carrier.stl` und `rear-panel.stl` geometrisch geändert; weiterhin vier
+Druckteile. ZIP, 3MF, Bilder und Montageanleitung aktualisiert. Vorheriges ZIP
+aus b904a7e nicht mehr für den Auftrag verwenden. Hardware NICHT GEMESSEN.
+
+## Vorheriger Stand – 26.10.2026
 
 **Aktuell: vollständiger V4-Erstdruck.** Der Nutzer hat ausdrücklich entschieden,
 wegen Bestell-/Abholaufwand direkt das ganze Gehäuse zu drucken. Diese Freigabe
