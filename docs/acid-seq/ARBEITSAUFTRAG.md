@@ -1105,4 +1105,18 @@ Eingearbeitet am 2026-10-27, jeweils mit Regressionstest. Hardware bleibt NICHT 
 
 Alle Golden-Hashes bleiben unverändert. Der Browser-e2e-Test `e2e_sq.cjs` läuft lokal
 grün (Playwright 1.62.1 mit dem installierten Microsoft Edge, GEMESSEN 2026-10-27).
-Der JUCE-Build mit JUCE 9.0.4 ist weiter offen.
+
+Nachprüfung von `main` @ `d2a3e1f` nach dem Merge, GEMESSEN 2026-10-27:
+
+* **Linux, g++ 13:** `test-sanitize` (ASan/UBSan) und `test-thread` (TSan) für Step Seq,
+  Acid 303, Drive, Stereo Delay und Acid Seq sowie `test-sanitize` des Editors: alle elf
+  Ziele PASS. Die Goldens sind auch in diesen Builds unverändert. Es war ein einmaliger
+  Lauf auf eigenem Branch:
+  [Actions-Lauf 40542261037](https://github.com/sscheidl/Daisy-Seed/actions/runs/40542261037).
+* **JUCE 9.0.4** (Tag `3fb5cbc`, lokal unter `.tools`): Der Editor baut mit Visual Studio
+  2026 ohne lokale Anpassungen. `--selftest` gegen die Simulatoren ergibt alle neun
+  Abschnitte PASS, darunter die Acid-Seq-Seiten. Die Kalibrierung zeigt −409,6 exakt (F13).
+* Quick checks auf `main` nach dem Merge: grün.
+
+Offen bleiben nur die Hardwaretests (Abschnitt 8) und die Veröffentlichung des
+Testbuild-Entwurfs `acid-seq-v0.1.0-test1`. Beides entscheidet der Benutzer.
