@@ -535,9 +535,10 @@ Muster von `reverb-fx` und `tape-fx`.
 * **Ausschalten (R14), Reihenfolge:**
   1. Der Host blendet die Einspeisung ins Delay über 10 ms aus.
   2. Der Nachhall läuft mit dem eingestellten Feedback weiter.
-  * **Ende:** wenn der Wet-Pegel 500 ms lang unter −90 dBFS liegt.
-    Spätestens nach 20 s wird der Nachhall über 1 s ausgeblendet. Das schützt
-    vor endlosem Nachhall.
+  * **Ende:** wenn der Wet-Pegel 500 ms plus die Delay-Zeit lang unter −90 dBFS liegt
+    (Codex F02). Spätestens nach 20 s wird der Nachhall über 1 s ausgeblendet. Das
+    schützt vor endlosem Nachhall. Danach ist der Ausgang exakt trocken (Codex Q1),
+    und ein späteres Einschalten beginnt mit leeren Leitungen.
   * **Wieder einschalten während des Nachhalls:** Die Einspeisung wird
     eingeblendet, die Leitungen werden nicht gelöscht.
 * **Eigene Firmware `delay-fx`:** bearbeitet die Audioeingänge. Ohne externe

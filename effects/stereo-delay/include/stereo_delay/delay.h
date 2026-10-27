@@ -84,9 +84,20 @@ class StereoDelay {
             for(std::size_t i = 0; i < delay::kLineFrames; ++i)
                 line_[c][i] = 0.f;
         write_ = 0;
+        fresh_ = delay::kLineFrames; // all zero: every position is valid
         damp_[0] = damp_[1] = 0.f;
         fade_left_ = 0;
         snap_ = true;
+    }
+    // Marks the lines as stale without clearing them (allowed in the callback): positions
+    // written before this call read as silence (Codex F02, old echoes after Off).
+    void Invalidate() { fresh_ = 0; }
+    // How far back the read positions reach now, in samples (tail end, F02).
+    float ReachSamples() const {
+        float reach = delay_ > target_ ? delay_ : target_;
+        if(fade_left_ > 0 && fade_from_ > reach)
+            reach = fade_from_;
+        return reach;
     }
     // Observation: the delay in samples now, the target, and whether it was clamped.
     float DelaySamples() const { return delay_; }
@@ -159,6 +170,8 @@ class StereoDelay {
             line_[1][write_] = into_r;
             if(++write_ == delay::kLineFrames)
                 write_ = 0;
+            if(fresh_ < delay::kLineFrames)
+                ++fresh_;
             block.out_left[n] = tap_l;
             block.out_right[n] = tap_r;
         }
@@ -183,6 +196,8 @@ class StereoDelay {
     static float Clip(float x) { return 1.5f * seed::dsp::SaturateSoft(seed::dsp::SaturateClamp(x * (2.f / 3.f), -3.f, 3.f)); }
     // Linear interpolation `d` samples behind the write position (d >= 1).
     float Read(int channel, float d) const {
+        if(d > float(fresh_))
+            return 0.f; // stale since Invalidate()
         float pos = float(write_) - d;
         if(pos < 0.f)
             pos += float(delay::kLineFrames);
@@ -198,7 +213,7 @@ class StereoDelay {
     audio::Config config_;
     Parameters requested_;
     float* line_[2] = {nullptr, nullptr};
-    std::size_t write_ = 0;
+    std::size_t write_ = 0, fresh_ = delay::kLineFrames;
     bool ready_ = false, snap_ = true, clamped_ = false;
     float quarter_ = 24000.f; // 120 BPM
     float delay_ = 18000.f, target_ = 18000.f, fade_from_ = 0.f;
