@@ -30,9 +30,17 @@ def select_suites(changed):
     # The editor core compiles the firmware's SQ codec and device (tests/test_sq.cpp).
     sq_codec = touched(*('sequencers/step-seq/include/step_seq/' + name for name in
                          ('sq_protocol.h', 'device.h', 'param_table.h', 'pattern.h', 'cv.h')))
+    # The standalone Acid 303, Drive and Delay firmwares build on the Step Seq controls,
+    # SQ device, queues and diagnostics (controls.h pulls in engine.h and pattern.h) and
+    # their firmware tests on the Step Seq host fakes. Only midi_out.h and params.h are
+    # Step Seq's own (Codex F14).
+    stepseq_base = touched('sequencers/step-seq/tests/fakes/', *(
+        'sequencers/step-seq/include/step_seq/' + name for name in
+        ('controls.h', 'cv.h', 'device.h', 'diagnostics.h', 'engine.h', 'param_table.h', 'pattern.h',
+         'spsc.h', 'sq_protocol.h')))
     fixtures = touched('tests/fixtures/acid-seq/', 'tests/test_acid_seq_contracts.py')
     diagnostics_adapter = touched('modules/mod-on-daisy/adapters/')
-    acid_common = shared or diagnostics_adapter or sq_contract
+    acid_common = shared or diagnostics_adapter or sq_contract or stepseq_base
     stepseq = acid_common or touched('sequencers/step-seq/')
     acid303 = acid_common or fixtures or touched('instruments/acid-303/') # renders the 303 fixture
     drive = acid_common or dsp or fx_contract or fixtures or touched('effects/drive/')

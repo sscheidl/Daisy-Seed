@@ -211,7 +211,9 @@ sonst `NAK NOT_ALLOWED`.
 | 7 | Step am Kit geändert | `u7` Step · `step` (Poti oder Taste; je geändertem Step ein Rahmen) |
 
 * **Höchstens 50 Rahmen pro Sekunde.** Ereignisse gleicher Art werden zusammengefasst,
-  das jüngste gewinnt. Step-Wechsel haben Vorrang.
+  das jüngste gewinnt. Parameter werden je Komponente und Parameter zusammengefasst:
+  Ändern sich mehrere Parameter vor dem nächsten Rahmen, folgt für jeden ein eigener
+  Rahmen mit seinem neuesten Wert. Step-Wechsel haben Vorrang.
 * Der Monitor endet **3 s nach der letzten `MONITOR`-Anfrage**. Das Panel erneuert ihn
   jede Sekunde.
 * Außer Monitorrahmen sendet das Gerät nie ungefragt.

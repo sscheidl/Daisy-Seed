@@ -21,7 +21,8 @@ struct OutputCal {
 };
 
 inline bool ValidCal(const OutputCal& c) {
-    const int32_t magnitude = c.scale < 0 ? -c.scale : c.scale;
+    // Widened: -INT32_MIN would overflow (a valid i32 on the wire, never a valid scale).
+    const int64_t magnitude = c.scale < 0 ? -int64_t(c.scale) : int64_t(c.scale);
     if(magnitude < kMinScale || magnitude > kMaxScale)
         return false;
     if(c.offset < 0 || c.offset > int32_t(kDacMax) * 1000)

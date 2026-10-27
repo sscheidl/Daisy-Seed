@@ -10,6 +10,7 @@ const char acid_303_firmware_version[] = "ACID-303-FW-VERSION=" ACID_303_FIRMWAR
 #include "bootloader_daisy.h"
 #include "bootloader_midi.h"
 #include "usbd_core.h"
+#include "acid303/critical.h"
 #include "acid303/params.h"
 #include "acid303/voice.h"
 #include "step_seq/controls.h"
@@ -29,12 +30,14 @@ constexpr uint8_t kAccentThreshold = 101; // MIDI velocity above 100 plays an ac
 struct Command {
     enum class Kind : uint8_t { Param, NoteOn, NoteOff, AllOff, Mute };
     Kind kind = Kind::Param;
-    uint16_t id = 0;
+    uint16_t id = 0, revision = 0;
+    bool from_sq = false; // SQ parameter: `revision` is applied (Codex F10)
     int32_t value = 0;
     uint8_t note = 0, velocity = 0;
 };
 struct Snapshot {
     acid303::Params params;
+    uint16_t applied_revision = 0;
     uint16_t keys = 0;
     uint8_t note = 0;
     bool gate = false;
@@ -50,6 +53,7 @@ static step_seq::Switch3Debounce sw18;
 static step_seq::CallbackMeter meter;
 static step_seq::SpscQueue<fw::Command, 64> commands;
 static step_seq::TripleBuffer<fw::Snapshot> snapshots;
+static acid303::CriticalInputs critical; // Note-Off, All-Off, Mute when the queue is full
 static std::atomic<uint32_t> mute_ack{0};
 static bootloader::KeyCombo boot_keys;
 static bootloader::Request boot_request;
@@ -58,12 +62,18 @@ static float last_pot[8] = {};
 static bool pots_started = false;
 static uint16_t held = 0;
 static uint32_t control_ms = 0, mutes = 0, key_tag = 1u << 24;
+static uint16_t applied_revision = 0;
+static int sw18_position = -1; // last debounced SW18 position, -1 before the first read
 
 // ----- audio callback ---------------------------------------------------------------------
 static void ApplyCommand(const fw::Command& c) {
     using K = fw::Command::Kind;
     switch(c.kind) {
-        case K::Param: acid303::WriteParam(params, c.id, c.value); break;
+        case K::Param:
+            acid303::WriteParam(params, c.id, c.value);
+            if(c.from_sq)
+                applied_revision = c.revision;
+            break;
         case K::NoteOn: {
             const bool accent = c.velocity >= fw::kAccentThreshold;
             voice.NoteOn(c.note, c.velocity, accent, false, acid303::Source::MidiIn, ++key_tag);
@@ -140,19 +150,26 @@ static void AudioCallback(AudioHandle::InputBuffer, AudioHandle::OutputBuffer ou
     fw::Command c;
     while(commands.Pop(c))
         ApplyCommand(c);
+    if(critical.Apply(voice, acid303::Source::MidiIn))
+        ++mutes;
     if(mutes)
         mute_ack.store(mutes, std::memory_order_release);
     Pots();
     const int sw = hw.tog_sw18.Read();
     const int position = sw18.Process(sw == Switch3::POS_UP ? 0 : (sw == Switch3::POS_DOWN ? 2 : 1), control_ms);
-    params.slide_mode = position == 0 ? acid303::SlideMode::Off
-                                      : (position == 1 ? acid303::SlideMode::Legato : acid303::SlideMode::Always);
+    // SW18 sets the slide mode when it moves (and at power-up); an SQ or CC value stays
+    // until then, like the pots (Codex F12).
+    if(position != sw18_position)
+        params.slide_mode = position == 0 ? acid303::SlideMode::Off
+                                          : (position == 1 ? acid303::SlideMode::Legato : acid303::SlideMode::Always);
+    sw18_position = position;
     voice.SetParams(params);
     Keys();
     for(size_t i = 0; i < n; ++i)
         out[0][i] = out[1][i] = voice.Process(); // mono voice on both outputs and the headphones
     fw::Snapshot& s = snapshots.Back();
     s.params = params;
+    s.applied_revision = applied_revision;
     s.keys = held;
     s.note = voice.SoundingNote();
     s.gate = voice.Gate();
@@ -173,11 +190,13 @@ static sq::Component components[] = {
 };
 class Host : public sq::Host {
   public:
-    bool PushParam(uint8_t, uint16_t id, int32_t value, uint16_t) override {
+    bool PushParam(uint8_t, uint16_t id, int32_t value, uint16_t revision) override {
         Command c;
         c.kind = Command::Kind::Param;
         c.id = id;
         c.value = value;
+        c.revision = revision;
+        c.from_sq = true;
         return commands.Push(c);
     }
     bool PushPattern(const step_seq::Pattern&, uint16_t) override { return false; }
@@ -191,7 +210,19 @@ static Host host;
 static sq::Device device(host);
 static acid303::Params last_params;
 
-static void Push(const Command& c) { commands.Push(c); }
+// A full queue drops Note-Ons and CCs (counted); Note-Off, All-Off and Mute take the
+// fallback path and are never lost (Codex F01).
+static void Push(const Command& c) {
+    if(commands.Push(c))
+        return;
+    ++device.counters[sq::CntMidiQueueOverflow];
+    switch(c.kind) {
+        case Command::Kind::NoteOff: critical.NoteOff(c.note); break;
+        case Command::Kind::AllOff: critical.AllOff(); break;
+        case Command::Kind::Mute: critical.Mute(); break;
+        default: break;
+    }
+}
 
 static void HandleEvent(MidiEvent e, bool usb) {
     Command c;
@@ -263,6 +294,7 @@ static void ServiceSnapshot() {
     }
     last_params = s.params;
     device.view.gate = s.gate;
+    device.view.applied_revision = s.applied_revision;
     device.view.usb_connected = usb_connected;
 }
 
@@ -308,7 +340,7 @@ static void ServiceBootloader() {
     const uint32_t before = mute_ack.load(std::memory_order_acquire);
     Command c;
     c.kind = Command::Kind::Mute;
-    commands.Push(c);
+    Push(c);
     const uint32_t start = System::GetNow();
     while(mute_ack.load(std::memory_order_acquire) == before && System::GetNow() - start < 50)
         System::Delay(1);
