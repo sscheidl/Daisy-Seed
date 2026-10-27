@@ -118,7 +118,8 @@
       "source": "editors/mod-on-daisy/src",
       "depends": [
         "mod-on-daisy",
-        "bootloader-entry"
+        "bootloader-entry",
+        "step-seq"
       ],
       "version": {
         "type": "cmake",
@@ -130,7 +131,8 @@
       "source": "editors/mod-on-daisy/src/plugin",
       "depends": [
         "mod-on-daisy",
-        "bootloader-entry"
+        "bootloader-entry",
+        "step-seq"
       ],
       "version": {
         "type": "cmake",
@@ -142,7 +144,8 @@
       "source": "editors/mod-on-daisy/web",
       "depends": [
         "mod-on-daisy",
-        "bootloader-entry"
+        "bootloader-entry",
+        "step-seq"
       ],
       "version": {
         "type": "javascript",
@@ -161,6 +164,70 @@
       "depends": [
         "mod-on-daisy"
       ]
+    },
+    "step-seq": {
+      "kind": "sequencer",
+      "source": "sequencers/step-seq",
+      "version": {
+        "type": "macro",
+        "path": "sequencers/step-seq/src/version.h",
+        "name": "STEP_SEQ_VERSION"
+      }
+    },
+    "acid-303": {
+      "kind": "instrument",
+      "source": "instruments/acid-303",
+      "version": {
+        "type": "macro",
+        "path": "instruments/acid-303/src/version.h",
+        "name": "ACID_303_VERSION"
+      }
+    },
+    "saturation": {
+      "kind": "dsp",
+      "source": "common/dsp/saturation.h",
+      "version": {
+        "type": "macro",
+        "path": "common/dsp/saturation.h",
+        "name": "SEED_SATURATION_VERSION"
+      }
+    },
+    "drive": {
+      "kind": "effect",
+      "source": "effects/drive/include",
+      "depends": [
+        "saturation",
+        "fast-math",
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/drive/src/version.h",
+        "name": "DRIVE_VERSION"
+      }
+    },
+    "stereo-delay": {
+      "kind": "effect",
+      "source": "effects/stereo-delay/include",
+      "depends": [
+        "saturation",
+        "fast-math",
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/stereo-delay/src/version.h",
+        "name": "STEREO_DELAY_VERSION"
+      }
+    },
+    "fast-math": {
+      "kind": "dsp",
+      "source": "common/dsp/fastmath.h",
+      "version": {
+        "type": "macro",
+        "path": "common/dsp/fastmath.h",
+        "name": "SEED_FAST_MATH_VERSION"
+      }
     }
   },
   "products": {
@@ -375,6 +442,112 @@
         "tape-fx",
         "mod-on-daisy",
         "callback-diagnostics",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "step-seq": {
+      "version": {
+        "type": "macro",
+        "path": "sequencers/step-seq/src/version.h",
+        "name": "STEP_SEQ_FIRMWARE_VERSION"
+      },
+      "directory": "sequencers/step-seq/build",
+      "image": "StepSeq",
+      "marker": "STEP-SEQ-FW-VERSION=",
+      "device_id": "step-seq",
+      "components": [
+        "step-seq",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "acid-303": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/acid-303/src/version.h",
+        "name": "ACID_303_FIRMWARE_VERSION"
+      },
+      "directory": "instruments/acid-303/build",
+      "image": "Acid303",
+      "marker": "ACID-303-FW-VERSION=",
+      "device_id": "acid-303",
+      "components": [
+        "acid-303",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "drive-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/drive/src/version.h",
+        "name": "DRIVE_FIRMWARE_VERSION"
+      },
+      "directory": "effects/drive/build",
+      "image": "DriveFx",
+      "marker": "DRIVE-FX-VERSION=",
+      "device_id": "drive-fx",
+      "components": [
+        "drive",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "delay-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/stereo-delay/src/version.h",
+        "name": "STEREO_DELAY_FIRMWARE_VERSION"
+      },
+      "directory": "effects/stereo-delay/build",
+      "image": "DelayFx",
+      "marker": "DELAY-FX-VERSION=",
+      "device_id": "delay-fx",
+      "components": [
+        "stereo-delay",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "acid-seq": {
+      "version": {
+        "type": "macro",
+        "path": "sequencers/acid-seq/src/composed_version.h",
+        "name": "ACID_SEQ_VERSION"
+      },
+      "directory": "sequencers/acid-seq/build",
+      "image": "AcidSeq",
+      "marker": "ACID-SEQ-FW-VERSION=",
+      "device_id": "acid-seq",
+      "components": [
+        "step-seq",
+        "acid-303",
+        "drive",
+        "stereo-delay",
+        "saturation",
+        "fast-math",
         "fx-contract",
         "bootloader-entry"
       ],

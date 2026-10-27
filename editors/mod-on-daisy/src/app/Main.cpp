@@ -39,6 +39,7 @@ class SelfTest {
         Corrections();
         Offline();
         ProjectPatch();
+        AcidSeq();
         if(failures_)
             Say("FAIL: " + juce::String(failures_) + " checks");
         else
@@ -311,6 +312,57 @@ class SelfTest {
         e_.patch_changed = nullptr;
         e_.Disconnect();
         Say("PASS plugin: project patch shown offline, sent to the device on connecting");
+    }
+
+    // Acid Seq (SQ protocol): pages from the device's descriptors, edits, project patch with
+    // the confirmation of the device-first rule (D13).
+    void AcidSeq() {
+        e_.ConnectTo(PortIndex("Acid Seq (Sim)"));
+        SqSession& s = e_.GetSqSession();
+        for(int i = 0; i < 2000 && !s.Ready(); ++i)
+            e_.Step(1);
+        e_.RefreshNow();
+        SELFTEST_CHECK(s.Ready() && s.Components().size() == 4 && e_.GetSqPanel().isVisible());
+        SELFTEST_CHECK(e_.GetSqSimulator() && e_.GetSqSimulator()->Writes() == 0); // reading wrote nothing
+        SELFTEST_CHECK(e_.GetSqPanel().ParamRows() >= 10);
+        Shot("acid-seq-sequencer.png");
+        e_.GetSqPanel().SelectTab(1); // voice
+        SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("cutoff") != nullptr);
+        s.SetParam(1, "cutoff", 3000);
+        e_.Step(10);
+        e_.RefreshNow();
+        SELFTEST_CHECK(e_.GetSqSimulator()->Value(1, 4) == 3000000);
+        SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("cutoff")->getValue() == 3000.0);
+        Shot("acid-seq-voice.png");
+        // Song state: the patch text is the Acid Seq patch; a project load asks first.
+        const std::string project = e_.PatchText();
+        SELFTEST_CHECK(project.find("acid-seq-patch") != std::string::npos);
+        s.SetParam(1, "cutoff", 500);
+        e_.Step(10);
+        int asked = 0;
+        e_.sq_upload_decision = [&](const AcidCompat& c) {
+            ++asked;
+            return c.Clean() ? 0 : 0; // "Nicht übertragen": the device keeps its state
+        };
+        e_.LoadProjectPatch(project);
+        e_.Step(50);
+        SELFTEST_CHECK(asked == 1 && e_.GetSqSimulator()->Value(1, 4) == 500000);
+        e_.sq_upload_decision = [&](const AcidCompat&) {
+            ++asked;
+            return 2; // "Immer übertragen"
+        };
+        e_.LoadProjectPatch(project);
+        for(int i = 0; i < 400; ++i)
+            e_.Step(1);
+        SELFTEST_CHECK(asked == 2 && e_.GetSqSimulator()->Value(1, 4) == 3000000);
+        e_.LoadProjectPatch(project); // "always": no question any more
+        e_.Step(100);
+        SELFTEST_CHECK(asked == 2);
+        e_.sq_upload_decision = nullptr;
+        e_.Disconnect();
+        e_.RefreshNow();
+        SELFTEST_CHECK(!e_.GetSqPanel().isVisible() && !e_.SqActive());
+        Say("PASS Acid Seq: SQ pages from descriptors, edits confirmed, song patch asks first (no / always)");
     }
 
     EditorComponent& e_;

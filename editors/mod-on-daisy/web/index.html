@@ -105,7 +105,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
   <span id="status" class="pill">offline</span>
   <span id="mode" class="pill" hidden></span>
 </header>
-<main>
+<main id="mdMain">
   <section class="card">
     <h2>Modulationsmatrix</h2>
     <div class="gridwrap"><table class="grid" id="grid" tabindex="0" aria-label="Modulationsmatrix 8 × 8"></table></div>
@@ -131,10 +131,12 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     <button id="clearBtn" title="Setzt alle Tiefen auf 0 und schaltet alle Verbindungen aus. LFOs, Random und Name bleiben.">Matrix leeren</button>
     <button id="pullBtn" disabled>Vom Gerät neu laden</button>
     <button id="demoBtn" title="Spalten von Toy Piano v0.3 und ein Beispiel-Patch, ohne Gerät">Demo (offline)</button>
+    <button id="sqDemoBtn" title="Die Seiten von Acid Seq mit den Parametern aus dem Vertrag, ohne Gerät (auch zum Bearbeiten und Speichern von Patches)">Acid Seq offline</button>
     <span id="log" role="status"></span>
     <span class="hint" id="panelBuild"></span>
   </section>
 </main>
+<main id="sqMain" hidden style="display:block"></main>
 <dialog id="compatDialog">
   <form method="dialog">
     <h3>Patch passt nicht genau zu diesem Gerät</h3>
@@ -149,6 +151,9 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
 </dialog>
 <script src="version.js"></script>
 <script src="mod_protocol.js"></script>
+<script src="sq_contract.js"></script>
+<script src="sq_protocol.js"></script>
+<script src="sq_panel.js"></script>
 <script>
 'use strict';
 document.getElementById('panelBuild').textContent = `HTML Editor ${MOD_ON_DAISY_WEB_VERSION}`;
@@ -716,6 +721,11 @@ async function initMidi() {
     fill($('inPort'), [...midiAccess.inputs.values()]);
     const link = state.link;
     const present = (map, port) => [...map.values()].some((p) => p === port && p.state === 'connected');
+    const sq = state.sq;
+    if (sq && (!present(midiAccess.outputs, sq.out) || !present(midiAccess.inputs, sq.inp))) {
+      disconnectSq('Gerät getrennt');
+      log('Die Verbindung zum Acid-Seq-Gerät ist abgerissen.', 'err');
+    }
     if (link && (!present(midiAccess.outputs, link.output) || !present(midiAccess.inputs, link.input))) {
       disconnect('Gerät getrennt');
       log('Die Verbindung zum Daisy ist abgerissen. Bearbeitung geht offline weiter.', 'err');
@@ -766,6 +776,7 @@ function checkHealth() {
 }
 
 async function connect() {
+  if (state.sq) return disconnectSq();
   if (state.link) return disconnect();
   if (connecting) return;
   if (!midiAccess) await initMidi();
@@ -783,10 +794,67 @@ async function connect() {
       closePorts(opened); // output open, input taken: release the output again
       return log('Port kann nicht geöffnet werden – ist er von einer anderen Anwendung belegt (z. B. Studio One)? ' + e.message, 'err');
     }
-    await connectLink(out, inp);
+    if (!(await connectSq(out, inp))) await connectLink(out, inp);
   } finally {
     connecting = false;
   }
+}
+
+// ------------------------------------------------------------------ Acid Seq (SQ protocol)
+// A device answering SQ IDENTIFY gets the Acid Seq pages; no MD matrix is read from it
+// (R09). The device has priority: the panel only reads on connect (D13).
+const sqPanel = window.SqPanel.mount(document.getElementById('sqMain'), { log, onClose: () => hideSq() });
+let sqTimer = null;
+function showSq(client) {
+  $('mdMain').hidden = true;
+  $('sqMain').hidden = false;
+  sqPanel.attach(client);
+}
+function hideSq() {
+  sqPanel.detach();
+  $('sqMain').hidden = true;
+  $('mdMain').hidden = false;
+}
+async function connectSq(out, inp) {
+  const client = new window.SqProtocol.Client((frame) => out.send(frame), { retries: 1 });
+  inp.onmidimessage = (e) => client.onMessage(Array.from(e.data));
+  setStatus('verbinde …');
+  try {
+    await client.request(window.SqProtocol.TYPE.identify);
+  } catch (e) {
+    inp.onmidimessage = null; // no SQ device: Mod on Daisy next
+    return false;
+  }
+  client.retries = window.SqProtocol.RETRIES;
+  try {
+    await client.readAll();
+  } catch (e) {
+    inp.onmidimessage = null;
+    closePorts(out, inp);
+    setStatus('Fehler', 'err');
+    log('Acid Seq: ' + e.message, 'err');
+    return true;
+  }
+  state.sq = { client, out, inp };
+  state.statusBase = `${client.identity.product} ${client.identity.version} · SQ`;
+  setStatus(state.statusBase, 'ok');
+  $('connect').textContent = 'Trennen';
+  showSq(client);
+  sqTimer = setInterval(() => client.request(window.SqProtocol.TYPE.monitor, [1]).catch(() => {}), 1000);
+  log('Verbunden. Der Zustand des Geräts wurde geladen.', 'ok');
+  return true;
+}
+function disconnectSq(reason) {
+  const sq = state.sq;
+  state.sq = null;
+  clearInterval(sqTimer);
+  if (sq) {
+    sq.inp.onmidimessage = null;
+    closePorts(sq.out, sq.inp);
+  }
+  hideSq();
+  setStatus(reason || 'offline', reason ? 'err' : '');
+  $('connect').textContent = 'Verbinden';
 }
 
 async function connectLink(out, inp) {
@@ -1065,6 +1133,13 @@ async function firmwareUpdate() {
 // ------------------------------------------------------------------ wiring
 $('updateBtn').addEventListener('click', firmwareUpdate);
 $('demoBtn').addEventListener('click', loadDemo);
+// Acid Seq pages without a device: the contract's parameters, patches edit and save offline.
+$('sqDemoBtn').addEventListener('click', () => {
+  if (state.sq) return log('Erst trennen, dann offline bearbeiten.', 'warn');
+  if (!$('sqMain').hidden) return hideSq();
+  showSq(new window.SqPanel.OfflineClient());
+  log('Acid Seq offline: Werte und Pattern lassen sich bearbeiten und als Patch speichern.', 'ok');
+});
 $('connect').addEventListener('click', connect);
 $('pullBtn').addEventListener('click', () => pull().then(() => log('Vom Gerät geladen.', 'ok')).catch((e) => log(e.message, 'err')));
 $('saveBtn').addEventListener('click', savePatch);

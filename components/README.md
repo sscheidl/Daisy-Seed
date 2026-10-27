@@ -33,4 +33,14 @@ bekannte abweichende IDENTIFY-Kennung hin. Das Manifest ist ein Build-Artefakt,
 keine neue SysEx-Nachricht. Die Zusammensetzung wird noch nicht live im Panel
 angezeigt.
 
+**Acid Seq** (Arbeitsauftrag 3.1, R12): Die Komponenten `step-seq` (Art
+`sequencer`), `acid-303`, `saturation` (Art `dsp`, Version im Makro
+`SEED_SATURATION_VERSION` von `common/dsp/saturation.h`), `drive` und
+`stereo-delay` sowie `fast-math` (Art `dsp`, `common/dsp/fastmath.h`) stehen im Register, sobald ihre
+Versionsquelle existiert. Ihre
+Firmwareprodukte (`step-seq`, `acid-303`, `drive-fx`, `delay-fx`, `acid-seq`) kommen
+erst mit dem ersten validierten Build dazu, weil die Produktliste genau
+`BUILDABLE_PROJECTS` entsprechen muss. Gültige Arten: `instrument`, `effect`,
+`control`, `panel`, `contract`, `sequencer`, `dsp`.
+
 Audiovertrag und genaue Grenzen: [MODULAR_COMPONENTS.md](../docs/MODULAR_COMPONENTS.md).

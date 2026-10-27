@@ -1,0 +1,81 @@
+{
+  "format_version": 1,
+  "fixture_version": "1.0.0",
+  "sample_rate": 48000,
+  "channels": 1,
+  "frames": 48000,
+  "format": "float32 little-endian",
+  "files": {
+    "saw_lp1": {
+      "file": "saw_lp1.f32",
+      "description": "band-limited saw 93.75 Hz, RBJ low-pass 300 Hz Q 0.707, peak -6 dBFS",
+      "sha256": "a758e58e8612d2f70a4186350369fcf7dee43eac01fde8256e73513941c4eca8",
+      "peak": 0.5,
+      "rms": 0.297799
+    },
+    "square_lp1": {
+      "file": "square_lp1.f32",
+      "description": "band-limited square 93.75 Hz, RBJ low-pass 300 Hz Q 0.707, peak -6 dBFS",
+      "sha256": "42d32406e3fd54ecd595b924029787f98ade4d94ff741a7c2aa48f049a752f8e",
+      "peak": 0.5,
+      "rms": 0.42646
+    },
+    "saw_lp2": {
+      "file": "saw_lp2.f32",
+      "description": "band-limited saw 93.75 Hz, RBJ low-pass 1200 Hz Q 0.707, peak -6 dBFS",
+      "sha256": "94b6474748cb4af7e9fcfca7878d292377b2f6f45aeec3ee2d14862050d5ae9b",
+      "peak": 0.5,
+      "rms": 0.27704
+    },
+    "square_lp2": {
+      "file": "square_lp2.f32",
+      "description": "band-limited square 93.75 Hz, RBJ low-pass 1200 Hz Q 0.707, peak -6 dBFS",
+      "sha256": "cbc59899ef922dc327b85f10444fbc37d873f18ba454ec7dbdb3bd705b0b0473",
+      "peak": 0.5,
+      "rms": 0.451727
+    },
+    "saw_lp3": {
+      "file": "saw_lp3.f32",
+      "description": "band-limited saw 93.75 Hz, RBJ low-pass 5000 Hz Q 0.707, peak -6 dBFS",
+      "sha256": "27e628167e97a2878c0870aa5ce35641a554f3a6bb5627268271f3f2dfa7bc2a",
+      "peak": 0.5,
+      "rms": 0.266339
+    },
+    "square_lp3": {
+      "file": "square_lp3.f32",
+      "description": "band-limited square 93.75 Hz, RBJ low-pass 5000 Hz Q 0.707, peak -6 dBFS",
+      "sha256": "b5806ae58d283589294dd32593803e90cacaa8f6eb07cb9657528d5c2433025d",
+      "peak": 0.5,
+      "rms": 0.453749
+    },
+    "saw_resonance": {
+      "file": "saw_resonance.f32",
+      "description": "band-limited saw 93.75 Hz, RBJ low-pass 1000 Hz Q 8 (resonance peak), peak -6 dBFS",
+      "sha256": "b72d1e2809e7a82674d6690390bb502df3f7ce401dd1fa40883e903b97039834",
+      "peak": 0.5,
+      "rms": 0.147157
+    },
+    "impulse": {
+      "file": "impulse.f32",
+      "description": "unit impulse at sample 0",
+      "sha256": "c390f5f20f24bfa7319aa156c7702e8685a6de82d6669bf6649c832067af8e21",
+      "peak": 1.0,
+      "rms": 0.004564
+    },
+    "silence": {
+      "file": "silence.f32",
+      "description": "digital silence",
+      "sha256": "ea0787f65f73b0013d03b359490e3125211b28ad5c1502ffb1544c0ded4192f5",
+      "peak": 0.0,
+      "rms": 0.0
+    },
+    "acid303_phrase": {
+      "file": "acid303_phrase.f32",
+      "description": "Acid 303 voice 0.1.0, default parameters, saw: 1 s of the test phrase (instruments/acid-303, make fixture); input for the auto-level acceptance",
+      "sha256": "52e6bb7c6ed0d1a1ca661752ab5df0d40f7e6b2584a42d08935c62e95f4130e5",
+      "rendered": true,
+      "peak": 0.251486,
+      "rms": 0.057548
+    }
+  }
+}

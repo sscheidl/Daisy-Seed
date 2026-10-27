@@ -1,0 +1,2 @@
+# Reference fixtures are raw float32 data.
+*.f32 binary

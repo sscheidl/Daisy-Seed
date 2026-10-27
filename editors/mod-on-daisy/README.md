@@ -13,6 +13,49 @@ Verbindung zum Daisy läuft über USB-MIDI.
 
 Beide Fassungen lesen und schreiben dieselben `.modpatch`-Dateien.
 
+## Acid Seq (SQ-Protokoll)
+
+Seit Acid Seq Phase 5 bedienen alle drei Fassungen auch die Acid-Seq-Firmwares (`acid-seq`,
+`step-seq`, `acid-303`, `drive-fx`, `delay-fx`) über das
+[SQ-Protokoll](../../sequencers/step-seq/docs/PROTOCOL.md) (`F0 7D 53 51`).
+
+* **Erkennung:** Beim Verbinden fragt der Editor zuerst SQ ab. Antwortet das Gerät, erscheinen
+  die Acid-Seq-Seiten, und es wird keine Matrix gelesen. Ohne Antwort (rund 0,4 s) läuft die
+  bisherige Mod-on-Daisy-Verbindung, Mod on Daisy v1 bleibt unverändert.
+* **Das Gerät hat Vorrang:** Beim Verbinden wird nur gelesen (Komponenten, Parameter,
+  Pattern, Zustand, Kalibrierung). Geschrieben wird nur bei einer Änderung oder mit
+  „Auf Gerät übertragen“.
+* **Seiten:**
+  * Status mit Transportzustand (STOP/WARTET/LÄUFT/PAUSE), SW17, SW18, Clock-Quelle,
+    Tempo und angewandter bzw. angenommener Revision.
+  * Start/Stopp (wirkt nur mit SW17 auf Run).
+  * Pattern-Raster mit 16 Steps, Notennamen und Lauflicht, dazu ein Step-Editor.
+  * Parameterseiten Sequencer, Stimme, Drive, Delay und MIDI. Sie entstehen aus den
+    Deskriptoren des Geräts, die Beschriftungen kommen aus dem Parametervertrag.
+  * Kalibrierung beider CV-Ausgänge mit getrennter Freigabe. Die Freigabe wird nie
+    gespeichert. Der Browser merkt sich Kalibrierdaten je Kit-UID.
+  * Fehlerzähler.
+* **Patch** (`.acidpatch`, JSON): Pattern und alle Parameter aller Komponenten, je mit
+  Komponenten- und Schema-Version. Er lässt sich ohne Gerät laden (Browser: „Acid Seq
+  offline“). Fehlende oder inkompatible Komponenten werden angezeigt und übersprungen.
+  Die Kalibrierung gehört zum Kit und steht nicht im Patch. `.modpatch` bleibt
+  unverändert lesbar.
+* **VST3:** Bei einem Acid-Seq-Gerät ist der Songzustand der `.acidpatch`. Beim Laden eines
+  Songs fragt das Plugin, ob der Patch übertragen werden soll: „Übertragen“, „Immer
+  übertragen“ (für diese Plugin-Instanz) oder „Nicht übertragen“.
+* **Simulator:** Mit `--simulators` gibt es den Port „Acid Seq (Sim)“, die
+  SQ-Geräteseite der Firmware auf dem PC.
+* **Korrekturen nach der Codex-Fehlersuche** (2026-10-27,
+  [Bericht](../../docs/acid-seq/CODEX_FEHLERSUCHE.md)):
+  * Browser: Die Timer laufen jetzt auch in Chromium (F16). Vorher scheiterte jede
+    Verbindung zu einem SQ-Gerät.
+  * JUCE: „Verbunden“ erst, wenn alle Deskriptoren, Werte und Labels gelesen sind (F05).
+  * Beide Fassungen:
+    * `.acidpatch` mit ungültigen Zahlen wird abgelehnt (F07).
+    * Werte werden vor dem Senden auf den Bereich des Geräts begrenzt.
+  * JUCE: Die Kalibrierung zeigt und sendet Bruchteile exakt (F13).
+  * Browser: Die Kalibrierung zeigt nach dem Senden „gültig“.
+
 ## JUCE-Editor
 
 ### Windows-Programm holen

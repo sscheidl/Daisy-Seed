@@ -8,6 +8,8 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
+# 'sequencer' (sequencers/) and 'dsp' (shared header-only DSP in common/dsp) came with Acid Seq.
+KINDS = ('instrument', 'effect', 'control', 'panel', 'contract', 'sequencer', 'dsp')
 
 
 def read_version(spec, root=ROOT):
@@ -48,7 +50,7 @@ def load_registry(root=ROOT):
     for key, item in components.items():
         if not re.fullmatch(r'[a-z][a-z0-9-]*', key):
             raise ValueError(f'Invalid component ID {key}')
-        if item['kind'] not in ('instrument', 'effect', 'control', 'panel', 'contract'):
+        if item['kind'] not in KINDS:
             raise ValueError(f'Invalid kind for {key}')
         if not (root / item['source']).exists():
             raise ValueError(f'Missing component source {key}')

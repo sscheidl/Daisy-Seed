@@ -8,33 +8,68 @@ import subprocess
 def select_suites(changed):
     def touched(*prefixes):
         return any(p.startswith(prefixes) for p in changed)
-    # common/audio/ (FX contract) and common/sd/ (not used by any firmware yet) have
-    # their own consumer rules instead of selecting every firmware suite.
+    # common/audio/ (FX contract), common/dsp/ (shared saturation) and common/sd/ (not
+    # used by any firmware yet) have their own consumer rules instead of selecting
+    # every firmware suite.
     shared = any(p in ('Makefile', 'projects.mk', 'libDaisy', 'DaisySP') or
-                 (p.startswith('common/') and not p.startswith(('common/audio/', 'common/sd/')))
+                 (p.startswith('common/') and
+                  not p.startswith(('common/audio/', 'common/dsp/', 'common/sd/')))
                  for p in changed)
     mod_api = touched('modules/mod-on-daisy/include/', 'modules/mod-on-daisy/adapters/')
     fx = touched('common/audio/', 'effects/torus-reverb/', 'effects/reverb/src/', 'effects/tape-fx/src/', 'tests/fx/',
                  'instruments/physical-modeling/torus/dsp/fx/',
                  'instruments/physical-modeling/third_party/stmlib/')
+    # Shared saturation curves (common/dsp/): Tape FX, its Toy Piano build and Drive.
+    dsp = touched('common/dsp/')
+    # Acid Seq effects: their wet-only cores and adapters run in the shared FX test.
+    acid_fx = touched('effects/drive/', 'effects/stereo-delay/')
+    fx_contract = touched('common/audio/', 'tests/fx/')
+    # The SQ protocol contract (vectors, parameter IDs) is shared by the firmware cores,
+    # the product and the editor; the reference fixtures by Drive, Delay and the product.
+    sq_contract = touched('sequencers/step-seq/contracts/', 'sequencers/step-seq/docs/PROTOCOL.md')
+    # The editor core compiles the firmware's SQ codec and device (tests/test_sq.cpp).
+    sq_codec = touched(*('sequencers/step-seq/include/step_seq/' + name for name in
+                         ('sq_protocol.h', 'device.h', 'param_table.h', 'pattern.h', 'cv.h')))
+    # The standalone Acid 303, Drive and Delay firmwares build on the Step Seq controls,
+    # SQ device, queues and diagnostics (controls.h pulls in engine.h and pattern.h) and
+    # their firmware tests on the Step Seq host fakes. Only midi_out.h and params.h are
+    # Step Seq's own (Codex F14).
+    stepseq_base = touched('sequencers/step-seq/tests/fakes/', *(
+        'sequencers/step-seq/include/step_seq/' + name for name in
+        ('controls.h', 'cv.h', 'device.h', 'diagnostics.h', 'engine.h', 'param_table.h', 'pattern.h',
+         'spsc.h', 'sq_protocol.h')))
+    fixtures = touched('tests/fixtures/acid-seq/', 'tests/test_acid_seq_contracts.py')
+    diagnostics_adapter = touched('modules/mod-on-daisy/adapters/')
+    acid_common = shared or diagnostics_adapter or sq_contract or stepseq_base
+    stepseq = acid_common or touched('sequencers/step-seq/')
+    acid303 = acid_common or fixtures or touched('instruments/acid-303/') # renders the 303 fixture
+    drive = acid_common or dsp or fx_contract or fixtures or touched('effects/drive/')
+    delay = acid_common or dsp or fx_contract or fixtures or touched('effects/stereo-delay/')
     suites = {
         'bootloader': shared or touched('common/bootloader/'),
-        'toy': shared or touched('instruments/toy-piano/') or mod_api or fx,
+        'toy': shared or touched('instruments/toy-piano/') or mod_api or fx or dsp,
         'physical': shared or touched('instruments/physical-modeling/') or mod_api or fx,
         'granular': shared or touched('instruments/granular/'),
         'looper': shared or touched('instruments/looper/') or mod_api,
         'reverb': shared or touched('effects/reverb/'),
-        'tape': shared or fx or touched('effects/tape-fx/'),
+        'tape': shared or fx or dsp or touched('effects/tape-fx/'),
         'mod': shared or touched('modules/mod-on-daisy/'),
-        'editor': shared or touched('editors/mod-on-daisy/') or mod_api,
+        'editor': shared or touched('editors/mod-on-daisy/') or mod_api or sq_contract or sq_codec,
         'diagnostics': shared or touched('diagnostics/'),
-        'fx': shared or fx,
+        'fx': shared or fx or dsp or acid_fx,
         'sd': shared or touched('common/sd/', 'scripts/check-sd-symbols.py'),
+        'stepseq': stepseq,
+        'acid303': acid303,
+        'drive': drive,
+        'delay': delay,
+        # Any change to one of its cores also tests the composed product.
+        'acidseq': stepseq or acid303 or drive or delay or touched('sequencers/acid-seq/'),
         'components': True, # tiny registry/selection tests; no compiler or dependencies
     }
     if '.github/workflows/quick.yml' in changed:
         suites = {key: True for key in suites}
-    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape'))
+    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape',
+                                                    'stepseq', 'acid303', 'drive', 'delay', 'acidseq'))
     return suites
 
 

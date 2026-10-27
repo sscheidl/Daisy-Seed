@@ -7,7 +7,8 @@ Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
 effects/tape-fx/build/TapeFx-v<version>.bin, build/tape/ToyPianoTape-v<version>.bin,
 PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
 instruments/looper/build/Looper-v<version>.bin, build/mod/LooperMod-v<version>.bin and
-modules/mod-on-daisy/bench/build/ModBench-v<version>.bin.
+modules/mod-on-daisy/bench/build/ModBench-v<version>.bin and the Acid Seq images in
+ACID_SEQ (sequencers/step-seq/build/StepSeq-v<version>.bin, ...).
 This does not replace a hardware test.
 """
 import pathlib
@@ -22,7 +23,23 @@ assert match, "Could not read the version from src/version.h"
 version = match.group(1)
 
 path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else project / 'build' / f'ToyPiano-v{version}.bin'
-if path.name.startswith('ToyPianoTape-v'):
+# Acid Seq firmwares (docs/acid-seq/ARBEITSAUFTRAG.md 3.1): image prefix -> version source, marker.
+ACID_SEQ = {
+    'StepSeq-v': ('sequencers/step-seq/src/version.h', 'STEP_SEQ_FIRMWARE_VERSION', 'STEP-SEQ-FW-VERSION='),
+    'Acid303-v': ('instruments/acid-303/src/version.h', 'ACID_303_FIRMWARE_VERSION', 'ACID-303-FW-VERSION='),
+    'DriveFx-v': ('effects/drive/src/version.h', 'DRIVE_FIRMWARE_VERSION', 'DRIVE-FX-VERSION='),
+    'DelayFx-v': ('effects/stereo-delay/src/version.h', 'STEREO_DELAY_FIRMWARE_VERSION', 'DELAY-FX-VERSION='),
+    'AcidSeq-v': ('sequencers/acid-seq/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
+}
+acid = next((prefix for prefix in ACID_SEQ if path.name.startswith(prefix)), None)
+if acid:
+    source, macro, label = ACID_SEQ[acid]
+    match = re.search(macro + r'\s+"([^"]+)"', (root / source).read_text())
+    assert match, f'Could not read {macro} from {source}'
+    version = match.group(1)
+    expected_name = f'{acid}{version}.bin'
+    marker = re.escape(label).encode() + rb'([0-9.]+)\x00'
+elif path.name.startswith('ToyPianoTape-v'):
     match = re.search(r'TOY_PIANO_TAPE_VERSION\s+"([^\"]+)"', (project / 'src' / 'composed_version.h').read_text())
     assert match, 'Missing composed Toy Piano Tape version'
     version = match.group(1)

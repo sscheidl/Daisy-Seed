@@ -10,9 +10,10 @@ Effekt durch folgende eigene Programme abgelöst bzw. erweitert werden:
 
 Der vorhandene Ambient-Reverb ist eine eigene Entwicklung mit Slöer als
 Gestaltungsreferenz. Er ist kein identifizierter Original-Walrus-Algorithmus.
-Ein Stereo-Delay ist noch nicht als eigenes Projekt implementiert. Zuordnung
-zu konkreten Instrument-Firmwares, Wahl zwischen Programmen und ein möglicher
-gleichzeitiger Betrieb bleiben bei der Umsetzung festzulegen.
+Das Stereo-Delay gibt es seit Acid Seq Phase 4 als Komponente `stereo-delay` mit eigener
+Firmware `delay-fx` ([effects/stereo-delay](../effects/stereo-delay/)): Ping-Pong und
+Stereo L/R, Sync bis 12 s im SDRAM. Das Produkt Acid Seq setzt es hinter den Drive. Andere
+Instrument-Firmwares binden es noch nicht ein.
 
 Die Erwartung ist, dass Seed3-Leistung und Speicher ausreichen. **CPU-Reserve,
 Callback-Spitzen, RAM/SDRAM-Belegung und Verhalten der Kombination sind

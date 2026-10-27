@@ -47,3 +47,21 @@ PROJECT_STATUS_tape-fx := buildable
 PROJECT_DIR_toy-piano-tape := instruments/toy-piano
 PROJECT_ARGS_toy-piano-tape := TAPE=1
 PROJECT_STATUS_toy-piano-tape := buildable
+# Acid Seq (docs/acid-seq/ARBEITSAUFTRAG.md): components with standalone test firmwares
+# and the composed product. Each joins BUILDABLE_PROJECTS with its first validated build.
+PROJECTS += step-seq acid-303 drive-fx delay-fx acid-seq
+PROJECT_DIR_step-seq := sequencers/step-seq
+PROJECT_STATUS_step-seq := buildable
+BUILDABLE_PROJECTS += step-seq
+PROJECT_DIR_acid-303 := instruments/acid-303
+PROJECT_STATUS_acid-303 := buildable
+BUILDABLE_PROJECTS += acid-303
+PROJECT_DIR_drive-fx := effects/drive
+PROJECT_STATUS_drive-fx := buildable
+BUILDABLE_PROJECTS += drive-fx
+PROJECT_DIR_delay-fx := effects/stereo-delay
+PROJECT_STATUS_delay-fx := buildable
+BUILDABLE_PROJECTS += delay-fx
+PROJECT_DIR_acid-seq := sequencers/acid-seq
+PROJECT_STATUS_acid-seq := buildable
+BUILDABLE_PROJECTS += acid-seq

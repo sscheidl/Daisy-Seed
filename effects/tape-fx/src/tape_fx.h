@@ -6,6 +6,7 @@
 // common/audio/fx_contract.h: the host owns dry/wet, bypass and output protection
 // (tape_mixer.h). Every constant is the TapeVibe/MixForge value at 48 kHz.
 #include "../../../common/audio/fx_contract.h"
+#include "../../../common/dsp/saturation.h"
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -48,20 +49,12 @@ static_assert(sizeof(Storage) == 16384, "TapeVibe's 2 x 2048 float delay lines")
 inline float ClampFloat(float value, float lo, float hi) {
     return value < lo ? lo : (value > hi ? hi : value);
 }
-inline float SaturateSoft(float x) {
-    const float x2 = x * x;
-    return x * (27.0f + x2) / (27.0f + 9.0f * x2);
-}
-inline float SaturateHard(float x) { return ClampFloat(x, -1.0f, 1.0f); }
-inline float SaturateTape(float x) {
-    const float biased = x + 0.055f;
-    return SaturateSoft(biased) - 0.052f;
-}
-inline float SaturateFold(float x) {
-    if(x > 1.0f || x < -1.0f)
-        x = 2.0f * std::fabs(0.5f * x + 0.5f - std::floor(0.5f * x + 1.0f)) - 1.0f;
-    return x;
-}
+// The MixForge curves live in common/dsp/saturation.h (shared with Drive); these names
+// stay for the existing callers.
+inline float SaturateSoft(float x) { return ::seed::dsp::SaturateSoft(x); }
+inline float SaturateHard(float x) { return ::seed::dsp::SaturateHard(x); }
+inline float SaturateTape(float x) { return ::seed::dsp::SaturateTape(x); }
+inline float SaturateFold(float x) { return ::seed::dsp::SaturateFold(x); }
 // sin(x) for x in [0, 2 pi): quadrant folding and an odd Taylor polynomial to x^11
 // (truncation error < 6e-8 on [-pi/2, pi/2]), about 12 flops instead of a libm call.
 inline float Sine(float x) {

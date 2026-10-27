@@ -6,7 +6,7 @@ Stereo-/Ping-Pong-Delay für das Seed3 Desktop Dev Kit.
 * **Stand:** Fassung 2 vom 2026-10-26. Sie enthält die Befunde R01–R16 aus dem
   [Codex-Review](CODEX_REVIEW.md) (Urteil GO MIT KORREKTUREN, geprüft auf
   `3b119be`). Welcher Befund wo eingearbeitet ist, steht in Abschnitt 9.
-  Es gibt noch keinen Code.
+  Phase 0 (Gerüst und Verträge) ist umgesetzt, siehe Abschnitt 5.
 * **Basis:** `main` @ `1eb091c`, libDaisy `f715e487`, DaisySP `2c72eaf`,
   xPack GCC 13.2.1-1.1, JUCE 9.0.4. Diese Versionen werden nicht angehoben.
 * **Herkunft:** Die Eckdaten wurden mit dem Benutzer am 2026-10-26 im Gespräch
@@ -535,9 +535,10 @@ Muster von `reverb-fx` und `tape-fx`.
 * **Ausschalten (R14), Reihenfolge:**
   1. Der Host blendet die Einspeisung ins Delay über 10 ms aus.
   2. Der Nachhall läuft mit dem eingestellten Feedback weiter.
-  * **Ende:** wenn der Wet-Pegel 500 ms lang unter −90 dBFS liegt.
-    Spätestens nach 20 s wird der Nachhall über 1 s ausgeblendet. Das schützt
-    vor endlosem Nachhall.
+  * **Ende:** wenn der Wet-Pegel 500 ms plus die Delay-Zeit lang unter −90 dBFS liegt
+    (Codex F02). Spätestens nach 20 s wird der Nachhall über 1 s ausgeblendet. Das
+    schützt vor endlosem Nachhall. Danach ist der Ausgang exakt trocken (Codex Q1),
+    und ein späteres Einschalten beginnt mit leeren Leitungen.
   * **Wieder einschalten während des Nachhalls:** Die Einspeisung wird
     eingeblendet, die Leitungen werden nicht gelöscht.
 * **Eigene Firmware `delay-fx`:** bearbeitet die Audioeingänge. Ohne externe
@@ -576,7 +577,9 @@ empfiehlt einen Parametervertrag, aber keinen zweiten Protokollkopf.
   idempotent behandelt.
 * Antworten tragen das Antwortbit und werden nie beantwortet.
 * Fehlerhafte, zu lange, doppelte und verlorene Rahmen werden verworfen und
-  gezählt, ebenso Rahmen mit eingestreuten Echtzeit-Bytes (F8 usw.).
+  gezählt. Eingestreute Echtzeit-Bytes (F8 usw.) trennt schon der libDaisy-Parser
+  ab, der Rahmen bleibt gültig (Phase 0, begründet in `PROTOCOL.md` § 2). Verworfen
+  werden Rahmen mit anderen Statusbytes.
 
 **Inhalt:**
 * **IDENTIFY:** Produkt, Version, Komponentenliste mit Schema-Version, Boot-ID
@@ -615,7 +618,9 @@ von `mod_probe.py`).
 * **Signalweg:** Sequencer → Stimme → Drive → Delay → Host-Mixer (Dry/Wet je
   Effekt, Überblendungen) → Soft-Limiter → Ausgang.
 * **Komponenten:** `step-seq`, `acid-303`, `saturation`, `drive`,
-  `stereo-delay`, `fx-contract`, `bootloader-entry`, `callback-diagnostics`.
+  `stereo-delay`, `fx-contract`, `bootloader-entry`. Die Callback-Diagnose kommt aus
+  `step_seq/diagnostics.h`, nicht aus dem Mod-on-Daisy-Adapter `callback-diagnostics`
+  (D16, Codex Q2).
 * **Version:** eine eigene Produktversion in `composed_version.h`, wie bei
   `physical-modeling-fx-*`.
 * **Ohne angeschlossenen Audioausgang** laufen CV/Gate und MIDI unverändert.
@@ -674,6 +679,14 @@ Host-Zeiten abgeleitet.
 
 Ohne Firmware, deshalb ohne ARM-Image und ohne Hardwaretest.
 
+**Stand 2026-10-26: umgesetzt** (Branch `claude/acid-seq-phase-0-f1c35b`). Verträge:
+[PROTOCOL.md](../../sequencers/step-seq/docs/PROTOCOL.md),
+[PARAMETERS.md](../../sequencers/step-seq/docs/PARAMETERS.md),
+[TRANSPORT.md](../../sequencers/step-seq/docs/TRANSPORT.md), Testvektoren in
+`sequencers/step-seq/contracts/`, Fixtures in `tests/fixtures/acid-seq/`, Prüfung
+durch `tests/test_acid_seq_contracts.py`. Neben den Vektoren für SQ entstanden auch
+Sollfolgen für den Transport (`transport_vectors.json`).
+
 * **Struktur:**
   * `sequencers/README.md` (Rubrik)
   * Ordnergerüste für `step-seq`, `acid-303`, `drive` und `stereo-delay`, je
@@ -709,6 +722,13 @@ Ohne Firmware, deshalb ohne ARM-Image und ohne Hardwaretest.
   * Die bestehenden Suites sind unverändert grün.
 
 ### Phase 1: Sequencer-Kern, Transport und Firmware `step-seq`
+
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-1`), Version 0.1.0.
+Host-, Sanitizer- und ARM-Prüfungen bestanden. Hardwaretest NICHT GEMESSEN, Plan in
+[HARDWARE_TEST.md](../../sequencers/step-seq/docs/HARDWARE_TEST.md). Abweichungen stehen im
+[CHANGELOG](../../sequencers/step-seq/CHANGELOG.md): Echo-Schutz im Auto-Modus, eigene
+Callback-Diagnose statt MD-Adapter, Monitor-Ereignis 7 und Zähler 16. Nach D15 folgt
+Phase 2 ohne Warten auf den Hardwaretest.
 
 **Ziel:** ein vollständiger Sequencer ohne Audio, nur CV/Gate und MIDI. Dazu
 SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
@@ -802,6 +822,13 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
 
 ### Phase 2: TB-303-Stimme und Firmware `acid-303`
 
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-2`), Version 0.1.0.
+Host-, Sanitizer- und ARM-Prüfungen bestanden. Golden-Hashes und die versionierte
+303-Fixture liegen vor. Hardwaretest NICHT GEMESSEN
+([HARDWARE_TEST.md](../../instruments/acid-303/docs/HARDWARE_TEST.md)). Festlegungen
+(Accent ab Anschlag 101, omni in der eigenen Firmware, Bezugswert des Klick-Kriteriums)
+stehen im [CHANGELOG](../../instruments/acid-303/CHANGELOG.md).
+
 * **Ziel:** die Stimme aus 4.6 als header-only Kern
   `instruments/acid-303/include/acid303/` und als eigenständiges Instrument.
 * **Umfang:**
@@ -830,6 +857,13 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
 
 ### Phase 3: Sättigung auslagern und Effekt `drive`
 
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-3`), Drive 0.1.0.
+3a als eigener Commit: Tape-FX-BINs bytegleich, Hashes und Referenztests unverändert.
+3b: Pegeltest ±1 dB bestanden (größte Abweichung 0,41 dB), mit zwei begründeten
+Abweichungen: Die feste Kurve hängt vom Pegel in die Kurve ab, Fold auf Rechtecken bleibt
+leiser ([CHANGELOG](../../effects/drive/CHANGELOG.md)). Hardwaretest NICHT GEMESSEN
+([HARDWARE_TEST.md](../../effects/drive/docs/HARDWARE_TEST.md)).
+
 * **Ziel:** die Kurven aus `tape-fx` ohne Klangänderung nach
   `common/dsp/saturation.h` verschieben und darauf den Effekt `drive` bauen.
 * **Schritt 3a, Auslagern (eigener Commit):**
@@ -849,6 +883,11 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
   * **Pegeltest:** Drive 0–100 %, alle Kurven, Ausgleich 100 %.
     * Zielversatz 0 dB: Ausgangs-RMS innerhalb von ±1 dB um den Eingangs-RMS.
     * Zielversatz −1,5 dB: innerhalb von ±1 dB um Eingangs-RMS − 1,5 dB.
+    * Der feste Ausgleich hängt vom Pegel in die Kurve ab, nicht vom Drive allein (D16,
+      Codex Q3).
+    * **Ausnahme Fold auf Rechtecken** (D16, Codex Q4): Die Dreiecksfaltung bildet flache
+      Dächer bei bestimmten Drive-Werten genau auf 0 ab (−22 dB bei `square_lp3`, Drive
+      48 %). Dort gilt nur „nie mehr als +1 dB über dem Ziel“.
     * Erst mit den Fixtures aus Phase 0, zur Abnahme mit der 303-Fixture aus
       Phase 2.
   * **Nachregelung:** innerhalb von ±3 dB, hält in der Stille.
@@ -860,6 +899,10 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
   * Ressourcen-PASS.
 
 ### Phase 4: Effekt `stereo-delay`
+
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-4`), Version 0.1.0.
+Alle Tests aus der Liste bestanden, Speicher laut ELF im SDRAM (4 608 512 Byte). Hardwaretest
+NICHT GEMESSEN ([HARDWARE_TEST.md](../../effects/stereo-delay/docs/HARDWARE_TEST.md)).
 
 * **Ziel:** das Delay aus 4.8 (Ping-Pong und Stereo L/R) als Kern nach
   FX-Vertrag 1.0 und als Firmware `delay-fx`.
@@ -884,6 +927,15 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
   * Ressourcen-PASS mit Feedback 95 %.
 
 ### Phase 5: Panel-Variante (Web, JUCE, VST3)
+
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-5`), Panels 0.2.0.
+* **Kern:** SQ-Client, `.acidpatch` und SQ-Simulator, getestet gegen die Geräteseite der
+  Firmware (C++ und JavaScript).
+* **Browser:** Seiten und Offline-Ansicht, im eingebauten Browser geprüft.
+* **JUCE und VST3:** Seiten und Songzustand mit Bestätigung, Selbsttest. Lokal nur gegen
+  JUCE 9.0.0 gebaut. Der Build mit der gepinnten Version 9.0.4 und der Playwright-e2e-Test
+  laufen lokal nicht, sie sind NICHT AUSGEFÜHRT (PR).
+* Hardwaretest NICHT GEMESSEN.
 
 * **Ziel:** Seiten für Sequencer, Stimme, Drive und Delay in allen drei
   Editor-Varianten. Sie erscheinen je nach Komponentenliste in IDENTIFY.
@@ -911,6 +963,19 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
 
 ### Phase 6: Produkt `acid-seq`
 
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-6`), Version 0.1.0.
+* **Signalweg** `sequencers/acid-seq/include/acid_seq/chain.h`, gemeinsam für Firmware und
+  End-to-End-Golden `0xBC3D9C4E`. Die Golden-Hashes der Komponenten sind unverändert.
+* **Stimmenbesitz** Sequencer/MIDI-Stimmen-Kanal, Tempo-Übergabe an das Delay, alle vier
+  Komponenten im SQ-Protokoll.
+* ARM-Build, `check-firmware.py`, ELF-Prüfung mit `delay_memory` im SDRAM, Register,
+  Manifest und CI-Schritt.
+* Abweichung von 4.10: `callback-diagnostics` (Mod-on-Daisy-Adapter) ist keine Komponente
+  des Produkts. Die Diagnose kommt aus `step_seq/diagnostics.h`.
+* Nach dem Delay-Nachhall ist das Produkt exakt trocken (Dry/Wet auf 0 %). `delay-fx` behält
+  `dry · (1 − mix)`, zur Prüfung durch Codex.
+* Hardwaretest NICHT GEMESSEN. Kein Release, der Lieferweg ist offen (4.10).
+
 * **Ziel:** alle Kerne in `sequencers/acid-seq/` zusammenführen, nach dem
   Muster der zusammengesetzten Produkte.
 * **Umfang:**
@@ -933,19 +998,22 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
 
 | Nr. | Thema | Stand |
 | --- | --- | --- |
-| D1 | SysEx-Namensraum | **Vorschlag, von Codex unterstützt:** eigener Namensraum `7D 53 51` mit gemeinsamem Parametervertrag für alle Komponenten. Bewusste Abweichung vom Audit, Aufwand und Dispatcher siehe 4.9. Kein weiteres eigenes Protokoll für Drive oder Delay |
+| D1 | SysEx-Namensraum | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** eigener Namensraum `7D 53 51` mit gemeinsamem Parametervertrag für alle Komponenten. Bewusste Abweichung vom Audit, Aufwand und Dispatcher siehe 4.9. Kein weiteres eigenes Protokoll für Drive oder Delay |
 | D2 | Start/Stop und Einschalten | **Entschieden 2026-10-26:** Start/Stop auf SW17, die Modi auf SW18. Steht SW17 beim Einschalten auf Run, startet die interne Clock nach der Initialisierung. Bei externer Clock wird scharfgeschaltet (4.3). |
 | D3 | Weitere Modi | **Entschieden 2026-10-26:** zunächst drei Modi. Weitere nach Phase 6 und nur mit festgelegtem Vorrang zwischen Panel und SW18. CV/Duty entfällt, weil die Gate-Länge pro Step ihn abdeckt |
-| D4 | Filter | **Vorschlag, von Codex unterstützt:** zuerst `LadderFilter`. Diode-Ladder später als absichtliche Klangänderung mit eigener Version und neuem Golden-Hash |
-| D5 | Oversampling für Drive | **Vorschlag, von Codex unterstützt:** zuerst ohne. Entschieden wird nach der CPU-Messung und dem Hörtest auf der Hardware |
-| D6 | Poti-Glättung | **Vorschlag, von Codex unterstützt:** in den Sequencer kopieren, mit eigenem Test und eigenen Stufen-Hysteresen. Toy Piano bleibt unverändert |
-| D7 | Delay-Umfang | **Vorschlag, von Codex unterstützt:** Stereo-Delay mit den Modi Ping-Pong (Grundeinstellung) und Stereo L/R, beide in Phase 4 (4.8) |
-| D8 | Lizenzen | **Vorschlag, von Codex unterstützt:** MIT für eigenen Code, AGPL für den Editor. Herkunftsvermerke bleiben |
+| D4 | Filter | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** zuerst `LadderFilter`. Diode-Ladder später als absichtliche Klangänderung mit eigener Version und neuem Golden-Hash |
+| D5 | Oversampling für Drive | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** zuerst ohne. Entschieden wird nach der CPU-Messung und dem Hörtest auf der Hardware |
+| D6 | Poti-Glättung | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** in den Sequencer kopieren, mit eigenem Test und eigenen Stufen-Hysteresen. Toy Piano bleibt unverändert |
+| D7 | Delay-Umfang | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** Stereo-Delay mit den Modi Ping-Pong (Grundeinstellung) und Stereo L/R, beide in Phase 4 (4.8) |
+| D8 | Lizenzen | **Entschieden 2026-10-26 (vom Benutzer bestätigt, von Codex unterstützt):** MIT für eigenen Code, AGPL für den Editor. Herkunftsvermerke bleiben |
 | D9 | Namen | **Entschieden 2026-10-26:** `acid-seq`, `step-seq`, `acid-303`, `drive`, `stereo-delay` (vorher `ping-pong-delay`, wegen D7 umbenannt). Projekt-IDs `delay-fx` und `drive-fx`. |
 | D10 | Clock-Grundeinstellung | **Entschieden 2026-10-26:** „Intern“. „Auto“ ist nur eine Option, mit festgelegter Rangfolge und phasenrichtigem Wechsel (4.3). |
 | D11 | Skala „linear“ | **Entschieden 2026-10-26:** entfällt, weil die Tonhöhe auf Halbtöne quantisiert ist. Skalen: chromatisch, Dur, Moll. |
 | D12 | Delay-Speicher | **Entschieden 2026-10-26:** volle Sync-Spanne, 12 s je Leitung, rund 4,6 MB im SDRAM, statt die Notenwerte zu begrenzen. |
 | D13 | Verbinden des Panels | **Entschieden 2026-10-26:** Das Gerät hat Vorrang. Vom Panel aufs Gerät nur auf ausdrückliche Aktion. Im VST3 beim Songladen nach Bestätigung, mit der Option „immer“. |
+| D14 | CI-Änderungen aus Phase 0 | **Freigegeben 2026-10-26 vom Benutzer:** Pfadfilter `sequencers/**` in `quick.yml` und neue Verbraucherregeln in `scripts/select_test_suites.py` samt Testschritten der neuen Suites im bestehenden Linux-Job (R13). Ein Job, 15-Minuten-Limit, Abbruch überholter Läufe und Doku-Ausschlüsse bleiben. |
+| D16 | Codex-Fehlersuche Q1–Q4 | **Entschieden 2026-10-27 vom Benutzer:** Q1 `delay-fx` ausgeschaltet exakt trocken wie das Produkt. Q2 und Q3 akzeptiert. Q4 zuerst „Fold muss ±1 dB halten“. Nach dem Nachweis, dass das nur mit bis zu +24 dB Anhebung und Pegelsprüngen bei Signalwechseln geht, als begrenzte Ausnahme akzeptiert. Befunde phasenweise in die Branches. |
+| D15 | Ablauf der Phasen | **Entschieden 2026-10-26 vom Benutzer:** „Ziehe alle Phasen bis zur letzten durch. Dann macht Codex Fehlersuche.“ Die Phasen 1–6 werden nacheinander umgesetzt, ohne nach jeder Phase auf den Hardwaretest zu warten. Jede Phase behält ihren eigenen Branch und PR. Alle Hardwaretests bleiben NICHT GEMESSEN, bis der Benutzer sie durchführt; danach prüft Codex auf Fehler. |
 
 ## 7. Risiken
 
@@ -984,6 +1052,7 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
 | Auto-Level im Hörtest, Zielversatz | 3 | NICHT GEMESSEN |
 | Delay im Hörtest, Sync | 4 | NICHT GEMESSEN |
 | Callback-Spitzen, Stack-Hochwasserstand, Queue-Belegung je Firmware | 1–6 | NICHT GEMESSEN |
+| Gesamttest des Produkts, voller Stressfall, Langzeitlauf 1 h | 6 | NICHT GEMESSEN |
 
 ## 9. Einarbeitung des Codex-Reviews
 
@@ -1007,3 +1076,33 @@ SQ-Codecs, `sq_probe.py` und ein Handshake-Test im Editor-Kern.
 | R16 Produkt-Patch, Verbinden, Stimmenbesitz | P2 | 4.6, 4.9, D13, Phase 6 |
 | P3 Aussage zum Looper | P3 | 4.7 |
 | P3 Lieferweg für Releases | P3 | 4.10, Phase 6 |
+
+## 10. Einarbeitung der Codex-Fehlersuche
+
+Bericht: [CODEX_FEHLERSUCHE.md](CODEX_FEHLERSUCHE.md) (Stand `d3297fd`, 6 P1, 11 P2, 1 P3).
+Eingearbeitet am 2026-10-27, jeweils mit Regressionstest. Hardware bleibt NICHT GEMESSEN.
+
+| Befund | Schwere | Phase | Korrektur |
+| --- | --- | --- | --- |
+| F01 Note-Off, All-Off, Mute bei voller Queue verloren | P1 | 2, 6 | Ersatzweg `acid303/critical.h` |
+| F02 Nachhall endet in Echo-Pausen, alte Echos nach Off | P1 | 4 | Ende nach 500 ms plus Delay-Zeit, `Invalidate()` |
+| F03 MIDI-Slide wird Retrigger | P1 | 1 | Abgleich der Note-Offs erst nach leerer Queue |
+| F04 Clock-Quellenwechsel im Lauf | P1 | 1 | Neustart des Transports wie SW17 aus/an |
+| F05 JUCE „Verbunden“ vor den Deskriptoren | P1 | 5 | Ready erst nach dem letzten Lesen |
+| F16 Browser-Timer „Illegal invocation“ | P1 | 5 | Timer gekapselt, strikte Timer im Node-Test |
+| F06 Monitor verliert Parameteränderungen | P2 | 1 | Zusammenfassen je Parameter im Gerät |
+| F07 Patchzahlen vor der Prüfung gecastet | P2 | 5 | Prüfung vor dem Cast (C++, JS), Begrenzen vor dem Senden |
+| F08 `INT32_MIN` in der Kalibrierprüfung | P2 | 1 | 64-Bit-Betrag |
+| F09 `sq_probe.py` prüft Antworten nicht | P2 | 1 | `sq_codec.decode_reply` |
+| F10 Revision geht in den Einzel-Firmwares verloren | P2 | 2, 3, 4 | Revision im Befehl bis zum Snapshot |
+| F11 angewandte Revision läuft rückwärts | P2 | 6 | `ParameterApplied` ignoriert ältere Revisionen (14 Bit, über den Überlauf) |
+| F12 Slide-Modus von SW18 überschrieben | P2 | 2 | SW18 gilt nur beim Bewegen und Einschalten |
+| F13 JUCE-Kalibrierung verliert Bruchteile | P2 | 5 | `CalText`/`CalMilli` |
+| F14 CI-Auswahl für den Step-Seq-Unterbau | P2 | 2 | Verbraucherregel `stepseq_base` |
+| F17 e2e ohne gültige Test-Kalibrierung | P2 | 5 | Simulator-Kalibrierung im Test, Neuzeichnen nach dem Senden |
+| F18 e2e beendet `mod_sim` mit `Q` | P2 | 5 | Ende über EOF |
+| F15 PASS-Zeile „exakt trocken“ | P3 | 4 | mit Q1 jetzt zutreffend |
+
+Alle Golden-Hashes bleiben unverändert. Der Browser-e2e-Test `e2e_sq.cjs` läuft lokal
+grün (Playwright 1.62.1 mit dem installierten Microsoft Edge, GEMESSEN 2026-10-27).
+Der JUCE-Build mit JUCE 9.0.4 ist weiter offen.

@@ -1,0 +1,314 @@
+{
+  "format_version": 1,
+  "note": "Step numbers are 1-based (A1..A8 = 1..8, B1..B8 = 9..16). 'changes' apply at the step boundary after the given count of played steps (TRANSPORT.md, ARBEITSAUFTRAG 4.2).",
+  "tick_order": [
+    "gate_off",
+    "reset",
+    "step",
+    "gate_on"
+  ],
+  "random": {
+    "generator": "xorshift32: x ^= x << 13; x ^= x >> 17; x ^= x << 5 (32 bit); step = 1 + x % length",
+    "default_seed": 625341585,
+    "zero_seed_replaced_by_default": true,
+    "draws": [
+      {
+        "seed": 1,
+        "length": 16,
+        "steps": [
+          2,
+          2,
+          6,
+          16,
+          2,
+          1,
+          11,
+          3,
+          6,
+          5,
+          12,
+          8
+        ]
+      },
+      {
+        "seed": 0,
+        "length": 16,
+        "steps": [
+          11,
+          12,
+          13,
+          7,
+          16,
+          4,
+          11,
+          2,
+          13,
+          2,
+          14,
+          2
+        ]
+      },
+      {
+        "seed": 625341585,
+        "length": 16,
+        "steps": [
+          11,
+          12,
+          13,
+          7,
+          16,
+          4,
+          11,
+          2,
+          13,
+          2,
+          14,
+          2
+        ]
+      },
+      {
+        "seed": 12345,
+        "length": 3,
+        "steps": [
+          3,
+          1,
+          2,
+          3,
+          3,
+          1,
+          1,
+          3,
+          2,
+          2,
+          1,
+          2
+        ]
+      },
+      {
+        "seed": 7,
+        "length": 1,
+        "steps": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "sequences": [
+    {
+      "name": "forward length 3",
+      "mode": "forward",
+      "length": 3,
+      "steps": [
+        1,
+        2,
+        3,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "name": "reverse length 3",
+      "mode": "reverse",
+      "length": 3,
+      "steps": [
+        3,
+        2,
+        1,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "name": "forward length 1",
+      "mode": "forward",
+      "length": 1,
+      "steps": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "reverse length 1",
+      "mode": "reverse",
+      "length": 1,
+      "steps": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "forward length 16",
+      "mode": "forward",
+      "length": 16,
+      "steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        1
+      ]
+    },
+    {
+      "name": "forward length 9 crosses into B",
+      "mode": "forward",
+      "length": 9,
+      "steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        1
+      ]
+    },
+    {
+      "name": "shorter length, position outside (forward)",
+      "mode": "forward",
+      "length": 8,
+      "changes": [
+        {
+          "after": 6,
+          "length": 4
+        }
+      ],
+      "steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        1,
+        2,
+        3,
+        4,
+        1
+      ]
+    },
+    {
+      "name": "shorter length, position inside (forward)",
+      "mode": "forward",
+      "length": 8,
+      "changes": [
+        {
+          "after": 2,
+          "length": 4
+        }
+      ],
+      "steps": [
+        1,
+        2,
+        3,
+        4,
+        1,
+        2
+      ]
+    },
+    {
+      "name": "shorter length, position outside (reverse)",
+      "mode": "reverse",
+      "length": 8,
+      "changes": [
+        {
+          "after": 3,
+          "length": 4
+        }
+      ],
+      "steps": [
+        8,
+        7,
+        6,
+        4,
+        3,
+        2,
+        1,
+        4
+      ]
+    },
+    {
+      "name": "longer length (forward)",
+      "mode": "forward",
+      "length": 4,
+      "changes": [
+        {
+          "after": 4,
+          "length": 6
+        }
+      ],
+      "steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        1
+      ]
+    },
+    {
+      "name": "forward to reverse keeps position",
+      "mode": "forward",
+      "length": 8,
+      "changes": [
+        {
+          "after": 3,
+          "mode": "reverse"
+        }
+      ],
+      "steps": [
+        1,
+        2,
+        3,
+        2,
+        1,
+        8,
+        7
+      ]
+    },
+    {
+      "name": "reverse to forward keeps position",
+      "mode": "reverse",
+      "length": 8,
+      "changes": [
+        {
+          "after": 2,
+          "mode": "forward"
+        }
+      ],
+      "steps": [
+        8,
+        7,
+        8,
+        1,
+        2
+      ]
+    }
+  ]
+}
