@@ -25,3 +25,19 @@ Festlegungen aus dem Auftrag, die in 4.6 noch offen waren:
 * **Klick-Kriterium:** Bezugswert ist der eingeschwungene Wert der lauteren der beiden
   Einstellungen. Bei einem Sprung nach leise wäre der Wert nach dem Sprung kleiner als
   die normale Steigung davor.
+
+Korrekturen nach der Codex-Fehlersuche (2026-10-27, `docs/acid-seq/CODEX_FEHLERSUCHE.md`):
+
+* **F01 volle Queue:** Ist die Befehls-Queue voll, gehen Note-Off, All-Off und Mute über
+  einen eigenen Weg (`include/acid303/critical.h`), den der Callback direkt nach der
+  Queue abarbeitet. Sie gehen nie verloren. Verworfene Note-Ons und CCs zählt
+  `midi_queue_overflow`.
+* **F10 Revision:** SQ-Parameter tragen ihre Revision bis zur Übernahme im Callback.
+  Das Gerät meldet danach `applied` gleich `accepted`.
+* **F12 Slide-Modus:** SW18 setzt den Slide-Modus beim Einschalten und wenn er bewegt
+  wird. Ein Wert vom Panel oder per CC bleibt bis dahin bestehen.
+* **F14 CI-Auswahl:** Änderungen am gemeinsamen Step-Seq-Unterbau (Bedienung,
+  SQ-Gerät, Queues, Diagnose, Host-Fakes) wählen auch die Tests von Acid 303, Drive und
+  Delay.
+
+Die Golden-Hashes `0xB05F5A1F` und `0x355159C8` bleiben unverändert.

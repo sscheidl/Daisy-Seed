@@ -26,7 +26,7 @@ Klangänderung mit neuem Golden-Hash.
 | VR5 / VR6 | Accent-Stärke / Tuning ±12 Halbtöne (gerastet) |
 | VR7 / VR8 | Lautstärke / Wellenform (links Säge, rechts Rechteck) |
 | SW17 | Accent für die Tasten |
-| SW18 | oben Slide aus, Mitte Slide bei gehaltener Taste (Legato), unten Slide immer |
+| SW18 | oben Slide aus, Mitte Slide bei gehaltener Taste (Legato), unten Slide immer. Gilt beim Einschalten und wenn der Schalter bewegt wird; ein Wert vom Panel oder per CC bleibt bis dahin |
 | S9 + S16 (5 s) | Bootloader. Vorher wird die Stimme stummgeschaltet |
 
 Potis wirken erst, wenn sie sich bewegen. Bis dahin gilt der zuletzt per MIDI-CC oder

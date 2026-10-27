@@ -179,9 +179,18 @@ class ComponentTests(unittest.TestCase):
 
     def test_acid_seq_consumers(self):
         cases = {
-            'sequencers/step-seq/include/step_seq/engine.h': ('stepseq', 'acidseq'),
+            # Shared Step Seq base: every standalone firmware built on it (Codex F14).
+            'sequencers/step-seq/include/step_seq/engine.h': ACID_SEQ_SUITES,
+            'sequencers/step-seq/include/step_seq/spsc.h': ACID_SEQ_SUITES,
+            'sequencers/step-seq/include/step_seq/controls.h': ACID_SEQ_SUITES,
+            'sequencers/step-seq/include/step_seq/diagnostics.h': ACID_SEQ_SUITES,
+            'sequencers/step-seq/tests/fakes/desktop_devkit.h': ACID_SEQ_SUITES,
+            'sequencers/step-seq/include/step_seq/device.h': ACID_SEQ_SUITES + ('editor',),
+            'sequencers/step-seq/include/step_seq/sq_protocol.h': ACID_SEQ_SUITES + ('editor',),
+            # Step Seq's own parts.
+            'sequencers/step-seq/include/step_seq/midi_out.h': ('stepseq', 'acidseq'),
+            'sequencers/step-seq/include/step_seq/params.h': ('stepseq', 'acidseq'),
             'sequencers/step-seq/src/main.cpp': ('stepseq', 'acidseq'),
-            'sequencers/step-seq/include/step_seq/sq_protocol.h': ('stepseq', 'acidseq', 'editor'),
             'instruments/acid-303/include/acid303/voice.h': ('acid303', 'acidseq'),
             # New effect cores and adapters also run the shared FX contract test.
             'effects/drive/include/drive/drive.h': ('drive', 'fx', 'acidseq'),
