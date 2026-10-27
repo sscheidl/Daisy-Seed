@@ -75,7 +75,11 @@ void Synth::Render(float* left, float* right) {
         // input would otherwise cancel at Position=.5. Wet polarity is global.
         wet_left[i] = left[i]; wet_right[i] = right[i];
     }
-    reverb_.Process(wet_left, wet_right, kQuantum);
+    {
+        torus::profile::Scope timing(torus::profile::Reverb);
+        reverb_.Process(wet_left, wet_right, kQuantum);
+    }
+    torus::profile::Scope output_timing(torus::profile::Output);
 #if PHYSICAL_MODELING_MOD
     // Level column (Mod on Daisy): exactly 1 with an empty matrix, so master * 1 is unchanged.
     const float level = parameters.Level();

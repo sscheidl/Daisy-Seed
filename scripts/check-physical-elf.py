@@ -34,7 +34,50 @@ for index in range(phnum):
         start = paddr - 0x24000000
         assert image[start:start + filesz] == data[off:off + filesz], 'BIN differs from ELF'
 assert regions['DTCM'][1] - used['DTCM'] >= 8192, 'Less than 8 KiB static DTCM stack reserve'
-assert used['SDRAM'] >= 65536, 'DSP/reverb reservation missing'
+# NOLOAD DSP data may reside in external SDRAM or in the explicitly reserved
+# AXI section. Program headers alone cannot establish heap/object separation.
+sections = [struct.unpack_from('<IIIIIIIIII', data, shoff + i * shsize) for i in range(shnum)]
+assert shsize == 40 and shstr < shnum, 'Invalid ELF section table'
+strings_header = sections[shstr]
+names = data[strings_header[4]:strings_header[4] + strings_header[5]]
+def name_at(table, offset):
+    return table[offset:table.index(b'\0', offset)].decode('ascii')
+named = {name_at(names, s[0]): s for s in sections}
+symbols = {}
+for section in sections:
+    if section[1] != 2:
+        continue
+    strings_header = sections[section[6]]
+    strings = data[strings_header[4]:strings_header[4] + strings_header[5]]
+    assert section[9] == 16, 'Invalid ELF symbol size'
+    for offset in range(section[4], section[4] + section[5], 16):
+        name, value, size, info, other, index = struct.unpack_from('<IIIBBH', data, offset)
+        if name:
+            symbols[name_at(strings, name)] = (value, size, index)
+
+def object_named(fragment):
+    matches = [s for name, s in symbols.items() if fragment in name and s[1]]
+    assert len(matches) == 1, f'Missing/ambiguous DSP object: {fragment}'
+    return matches[0]
+
+arena, sine = object_named('synth_storage'), object_named('lut_sine')
+assert arena[1] >= 65536 and sine[1] == 5121 * 4, 'DSP/LUT reservation missing'
+axi = named.get('.axi_bss')
+if axi and axi[5]:
+    assert axi[1] == 8, 'AXI DSP section must be NOLOAD/NOBITS'
+    start, stop = axi[3], axi[3] + axi[5]
+    assert 0x24000000 + len(image) <= start, 'AXI DSP overlaps BOOT_SRAM image'
+    assert stop + 8192 <= 0x24078000, 'Insufficient AXI DSP/code growth reserve'
+    for address, size, index in (arena, sine):
+        assert start <= address and address + size <= stop, 'DSP object outside AXI reservation'
+    heap = symbols.get('end')
+    assert heap and 0x30008000 <= heap[0] < 0x30048000, 'Invalid D2 heap start'
+    assert not start <= heap[0] < stop, 'DSP overlaps heap'
+    print(f'PASS AXI DSP: {axi[5]} bytes; {0x24078000 - stop} bytes growth reserve; D2 heap separate')
+else:
+    for address, size, index in (arena, sine):
+        assert 0xc0000000 <= address and address + size <= 0xc4000000, 'DSP object outside SDRAM'
+    assert used['SDRAM'] >= 65536, 'DSP/reverb reservation missing'
 for name, (_, capacity) in regions.items():
     print(f'PASS {name}: {used[name]} / {capacity} bytes; static reserve {capacity - used[name]}')
 print('PASS ARM hard-float ELF, reset entry, load regions and byte-identical BOOT_SRAM image')

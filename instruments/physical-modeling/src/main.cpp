@@ -6,9 +6,13 @@
 #include "spsc_queue.h"
 #include "version.h"
 #include "cpu_telemetry.h"
+#include "dsp_memory.h"
 #include "usbd_core.h"
 #include <atomic>
 #include <new>
+#if PM_RENDER_HASH
+#include "performance_render.h"
+#endif
 #if PHYSICAL_MODELING_COMPOSED
 #include "composed_version.h"
 #endif
@@ -31,8 +35,8 @@ const char kFirmwareId[] = "PHYSICAL-MODELING-VERSION=" PHYSICAL_MODELING_VERSIO
 #endif
 daisy::desktop_devkit::Hardware hw;
 daisy::MidiUsbHandler midi;
-// SDRAM is initialized by hw.Init(). Construct DSP there only afterwards.
-alignas(Synth) unsigned char DSY_SDRAM_BSS synth_storage[sizeof(Synth)];
+// NOLOAD memory is explicitly initialized after hw.Init(), for both placements.
+alignas(Synth) unsigned char PM_DSP_STORAGE synth_storage[sizeof(Synth)];
 Synth* synth = nullptr;
 SpscQueue<MidiMessage, 256> midi_in;
 std::atomic<uint32_t> led_mask{0};
@@ -41,6 +45,11 @@ CpuTelemetry cpu_meter;
 std::atomic<uint32_t> cpu_request{0};
 SpscQueue<CpuSnapshot, 4> cpu_snapshots;
 bool cpu_reply_pending = false; // Main loop only; at most one outstanding request.
+#if PM_PROFILE
+std::atomic<uint32_t> profile_request{0};
+SpscQueue<torus::profile::Snapshot, 4> profile_snapshots;
+bool profile_pending = false;
+#endif
 uint32_t held = 0;
 // Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 bootloader::KeyCombo boot_keys; // audio callback only
@@ -90,7 +99,7 @@ void Modulate(size_t size) {
 #endif
 
 void InitializeSynth() {
-    // .sdram_bss is NOLOAD and is not cleared by the BOOT_SRAM startup.
+    // DSP NOLOAD storage is not cleared by the BOOT_SRAM startup.
     // Upstream DSP constructors assume zero-backed static storage.
     std::fill_n(synth_storage, sizeof(synth_storage), static_cast<unsigned char>(0));
     synth = new(synth_storage) Synth{};
@@ -101,6 +110,10 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
                    daisy::AudioHandle::OutputBuffer out, size_t size) {
     const uint32_t request = cpu_request.exchange(0, std::memory_order_relaxed);
     cpu_meter.Begin(request == 2);
+#if PM_PROFILE
+    const uint32_t diagnostic = profile_request.exchange(0, std::memory_order_relaxed);
+    if(diagnostic == 22) torus::profile::Reset();
+#endif
     hw.UpdateAllControls();
 #if PHYSICAL_MODELING_MOD
     Modulate(size);
@@ -139,6 +152,10 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
         boot_request.Set(bootloader::Request::kKeys);
     synth->Process(out[0], out[1], size);
     cpu_meter.End();
+#if PM_PROFILE
+    torus::profile::EndBlock();
+    if(diagnostic) profile_snapshots.Push(torus::profile::Get(diagnostic == 22 ? 0 : diagnostic - 16));
+#endif
     if(request) cpu_snapshots.Push(cpu_meter.Snapshot(synth->ModelIndex()));
 }
 void ServiceMidi() {
@@ -157,6 +174,16 @@ void ServiceMidi() {
             boot_request.Set(bootloader::Request::kSysEx);
             continue;
         }
+#if PM_PROFILE
+        if(event.type == daisy::ControlChange &&
+           torus::profile::Request(event.channel, event.data[0], event.data[1])) {
+            if(!profile_pending) {
+                profile_pending = true;
+                profile_request.store(event.data[1], std::memory_order_relaxed);
+            }
+            continue;
+        }
+#endif
         if(event.type == daisy::ControlChange && CpuRequest(event.channel, event.data[0], event.data[1])) {
             if(!cpu_reply_pending) {
                 cpu_reply_pending = true;
@@ -180,6 +207,16 @@ void ServiceMidi() {
     }
 }
 void ServiceCpuTelemetry() {
+#if PM_PROFILE
+    torus::profile::Snapshot detail;
+    if(profile_snapshots.Pop(detail)) {
+        profile_pending = false;
+        if(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED) {
+            auto packet = torus::profile::Encode(detail);
+            midi.SendMessage(packet.data(), packet.size());
+        }
+    }
+#endif
     CpuSnapshot snapshot;
     if(!cpu_snapshots.Pop(snapshot)) return;
     cpu_reply_pending = false;
@@ -210,6 +247,18 @@ int main() {
     asm volatile("" : : "r"(kFirmwareId));
     hw.Init();
     InitializeSynth();
+#if PM_PROFILE
+    torus::profile::Init(daisy::System::GetSysClkFreq());
+#if PM_RENDER_HASH
+    const uint32_t random_before = stmlib::Random::state();
+    torus::profile::render_hash = RenderPerformance(*synth);
+    torus::profile::corpus_version = 1;
+    synth->~Synth();
+    InitializeSynth();
+    stmlib::Random::Seed(random_before);
+#endif
+    torus::profile::Reset();
+#endif
 #if PHYSICAL_MODELING_MOD
     InitModulation(48000.0f);
 #endif

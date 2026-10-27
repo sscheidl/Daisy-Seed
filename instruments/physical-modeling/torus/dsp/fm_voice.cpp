@@ -69,11 +69,28 @@ void FMVoice::Init()
         8.0f / kSampleRate, 160.0f / kSampleRate, 1600.0f / kSampleRate);
 }
 
+FMDecay FMDecay::Compute(float damping) {
+    float amplitude_rt60 = 0.1f * SemitonesToRatio(damping * 96.0f) * kSampleRate;
+    float amplitude_decay = 1.0f - powf(0.001f, 1.0f / amplitude_rt60);
+    float brightness_rt60 = 0.1f * SemitonesToRatio(damping * 84.0f) * kSampleRate;
+    float brightness_decay = 1.0f - powf(0.001f, 1.0f / brightness_rt60);
+    return {amplitude_decay, brightness_decay};
+}
+
+#if TORUS_OPTIMIZE
+void FMVoice::Process(const float* in, float* out, float* aux, size_t size, const FMDecay* decay)
+#else
 void FMVoice::Process(const float* in, float* out, float* aux, size_t size)
+#endif
 {
     // Interpolate between the "oscillator" behaviour and the "FMLPGed thing"
     // behaviour.
     float envelope_amount = damping_ < 0.9f ? 1.0f : (1.0f - damping_) * 10.0f;
+#if TORUS_OPTIMIZE
+    const FMDecay coefficients = decay ? *decay : FMDecay::Compute(damping_);
+    const float amplitude_decay = coefficients.amplitude;
+    const float brightness_decay = coefficients.brightness;
+#else
     float amplitude_rt60
         = 0.1f * SemitonesToRatio(damping_ * 96.0f) * kSampleRate;
     float amplitude_decay = 1.0f - powf(0.001f, 1.0f / amplitude_rt60);
@@ -81,6 +98,7 @@ void FMVoice::Process(const float* in, float* out, float* aux, size_t size)
     float brightness_rt60
         = 0.1f * SemitonesToRatio(damping_ * 84.0f) * kSampleRate;
     float brightness_decay = 1.0f - powf(0.001f, 1.0f / brightness_rt60);
+#endif
 
     float ratio = Interpolate(lut_fm_frequency_quantizer, ratio_, 128.0f);
     float modulator_frequency = carrier_frequency_ * SemitonesToRatio(ratio);

@@ -39,6 +39,9 @@ using namespace stmlib;
 
 void Part::Init()
 {
+#if TORUS_OPTIMIZE
+    fm_decay_valid_ = false;
+#endif
     active_voice_ = kMaxPolyphony - 1;
 
     fill(&note_[0], &note_[kMaxPolyphony], 0.0f);
@@ -125,6 +128,9 @@ void Part::ConfigureResonators()
 
         case RESONATOR_MODEL_FM_VOICE:
         {
+#if TORUS_OPTIMIZE
+            fm_decay_valid_ = false;
+#endif
             for(int32_t i = 0; i < polyphony_; ++i)
             {
                 fm_voice_[i].Init();
@@ -352,7 +358,18 @@ void Part::RenderFMVoice(int32_t                 voice,
     v.set_feedback_amount(patch.position);
     v.set_position(/*patch.position*/ 0.0f);
     v.set_damping(patch.damping);
+#if TORUS_OPTIMIZE
+    const uint32_t damping_bits = FloatBits(patch.damping);
+    if(!fm_decay_valid_ || damping_bits != fm_damping_bits_) {
+        fm_decay_ = FMDecay::Compute(patch.damping);
+        fm_damping_bits_ = damping_bits;
+        fm_decay_valid_ = true;
+    }
+    // A per-voice MOD patch can have different damping: compare every voice.
+    v.Process(resonator_input_, out_buffer_, aux_buffer_, size, &fm_decay_);
+#else
     v.Process(resonator_input_, out_buffer_, aux_buffer_, size);
+#endif
 }
 
 void Part::RenderStringVoice(int32_t                 voice,
@@ -489,6 +506,7 @@ void Part::Process(const PerformanceState& performance_state,
                    float*                  aux,
                    size_t                  size)
 {
+    profile::Scope timing(profile::Voices);
     // Copy inputs to outputs when bypass mode is enabled.
     if(bypass_)
     {

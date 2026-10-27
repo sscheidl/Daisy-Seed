@@ -186,6 +186,11 @@ class Part
     String                   string_[kNumStrings];
     stmlib::CosineOscillator lfo_[kNumStrings];
     FMVoice                  fm_voice_[kMaxPolyphony];
+#if TORUS_OPTIMIZE
+    FMDecay                  fm_decay_;
+    uint32_t                 fm_damping_bits_ = 0;
+    bool                     fm_decay_valid_ = false;
+#endif
 
     stmlib::Svf       excitation_filter_[kMaxPolyphony];
     stmlib::DCBlocker dc_blocker_[kMaxPolyphony];

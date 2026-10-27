@@ -41,6 +41,9 @@ using namespace stmlib;
 
 void Resonator::Init()
 {
+#if TORUS_OPTIMIZE
+    filters_valid_ = false;
+#endif
     for(int32_t i = 0; i < kMaxModes; ++i)
     {
         f_[i].Init();
@@ -57,6 +60,13 @@ void Resonator::Init()
 
 int32_t Resonator::ComputeFilters()
 {
+    profile::Scope timing(profile::Filters);
+#if TORUS_OPTIMIZE
+    const std::array<uint32_t, 5> key = {
+        FloatBits(frequency_), FloatBits(structure_), FloatBits(brightness_),
+        FloatBits(damping_), static_cast<uint32_t>(resolution_)};
+    if(filters_valid_ && key == filter_key_) return cached_num_modes_;
+#endif
     float stiffness      = Interpolate(lut_stiffness, structure_, 256.0f);
     float harmonic       = frequency_;
     float stretch_factor = 1.0f;
@@ -101,6 +111,11 @@ int32_t Resonator::ComputeFilters()
         q *= q_loss;
     }
 
+#if TORUS_OPTIMIZE
+    filter_key_ = key;
+    cached_num_modes_ = num_modes;
+    filters_valid_ = true;
+#endif
     return num_modes;
 }
 
