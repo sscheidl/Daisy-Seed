@@ -13,6 +13,12 @@
 
 namespace editor {
 
+// GCC 13 (x86-64, -O2) reports a false -Wstringop-overflow for the vectorized demo pattern
+// stores in the constructor (offsets 5, 10, 15 "into Step::gate"); clang and ARM GCC do not.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 class SqSimulator : private sq::Host {
   public:
     using Out = std::function<void(const uint8_t*, std::size_t)>;
@@ -50,8 +56,10 @@ class SqSimulator : private sq::Host {
         device_.components = components_.data();
         device_.component_count = uint8_t(components_.size());
         for(int i = 0; i < step_seq::kSteps; ++i) {
-            device_.view.pattern[std::size_t(i)].note = uint8_t(24 + (i * 5) % 12);
-            device_.view.pattern[std::size_t(i)].gate = i % 4 != 3;
+            step_seq::Step s;
+            s.note = uint8_t(24 + (i * 5) % 12);
+            s.gate = i % 4 != 3;
+            device_.view.pattern[std::size_t(i)] = s;
         }
         device_.view.sw17 = 1;
         device_.view.state = 2; // running
@@ -145,5 +153,9 @@ class SqSimulator : private sq::Host {
     uint32_t last_step_ = 0;
     unsigned writes_ = 0;
 };
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 } // namespace editor
