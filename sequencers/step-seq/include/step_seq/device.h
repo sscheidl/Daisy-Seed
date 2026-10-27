@@ -7,6 +7,7 @@
 #include "param_table.h"
 #include "pattern.h"
 #include "sq_protocol.h"
+#include <cstddef>
 #include <cstring>
 
 namespace sq {
@@ -137,12 +138,18 @@ class Device {
             }
         }
     }
-    // A parameter changed on the kit (pot, switch, CC): report it in the monitor.
+    // A parameter changed on the kit (pot, switch, CC): report it in the monitor. Changes
+    // coalesce per parameter (the latest value wins), so no parameter is ever left out.
     void ParamChanged(uint8_t component, uint16_t id) {
-        param_component_ = component;
-        param_id_ = id;
-        if(monitor_ && (pending_ & (1u << EvParam)))
-            ++counters[CntMonitorDropped]; // coalesced: only the latest change is reported
+        const ParamDesc* d = component < component_count && components[component].params
+                                 ? FindParam(*components[component].params, id)
+                                 : nullptr;
+        const std::ptrdiff_t index = d ? d - components[component].params->params : -1;
+        if(component >= kMaxMonitorComponents || index < 0 || index >= 64) {
+            ++counters[CntMonitorDropped]; // outside the table: cannot be reported
+            return;
+        }
+        param_dirty_[component] |= uint64_t(1) << index;
         pending_ |= 1u << EvParam;
     }
     uint16_t AcceptedRevision() const { return accepted_; }
@@ -487,12 +494,30 @@ class Device {
                 w.U14(view.applied_revision);
                 break;
             case EvParam: {
-                const Component& c = components[param_component_];
-                const ParamDesc* d = c.params ? FindParam(*c.params, param_id_) : nullptr;
-                w.U7(param_component_);
-                w.U14(param_id_);
-                w.I32(d ? c.values[d - c.params->params] : 0);
-                break;
+                uint8_t component = 0;
+                while(component < kMaxMonitorComponents && !param_dirty_[component])
+                    ++component;
+                if(component == kMaxMonitorComponents) {
+                    pending_ &= ~(1u << code);
+                    return false;
+                }
+                int index = 0;
+                while(!(param_dirty_[component] & (uint64_t(1) << index)))
+                    ++index;
+                param_dirty_[component] &= ~(uint64_t(1) << index);
+                const Component& c = components[component];
+                w.U7(component);
+                w.U14(c.params->params[index].id);
+                w.I32(c.values[index]);
+                const std::size_t n = w.End();
+                bool more = false;
+                for(uint64_t bits : param_dirty_)
+                    more = more || bits;
+                if(!more)
+                    pending_ &= ~(1u << code); // more changed parameters follow otherwise
+                monitor_rid_ = uint8_t((monitor_rid_ + 1) & 0x7F);
+                host_.Send(frame, n);
+                return true;
             }
             case EvStepEdit: {
                 int index = 0;
@@ -535,8 +560,8 @@ class Device {
     uint32_t monitor_since_ = 0, last_monitor_ = 0;
     uint32_t pending_ = 0, edited_ = 0;
     uint8_t monitor_rid_ = 0;
-    uint8_t param_component_ = 0;
-    uint16_t param_id_ = 0;
+    static constexpr uint8_t kMaxMonitorComponents = 8; // up to 64 parameters each
+    uint64_t param_dirty_[kMaxMonitorComponents] = {};
     View seen_;
 };
 
