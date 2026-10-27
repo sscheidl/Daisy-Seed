@@ -163,6 +163,24 @@ def classify(frame):
     return 'ok', (frame[5], frame[6], frame[8:-3])
 
 
+def decode_reply(frame):
+    """Panel/probe-side check of a received frame: header, F7, 7-bit bytes, length,
+    version and CRC. Returns (type, rid, payload) or None for a frame to be ignored.
+    Unlike classify(), reply-class frames are what is wanted here.
+    """
+    frame = list(frame)
+    if len(frame) < OVERHEAD or len(frame) > MAX_FRAME or tuple(frame[:4]) != HEADER or frame[-1] != 0xF7:
+        return None
+    if any(b & 0x80 for b in frame[1:-1]):
+        return None
+    if frame[4] != VERSION or frame[7] != len(frame) - OVERHEAD:
+        return None
+    crc = crc8(frame[4:-3])
+    if frame[-3:-1] != [crc >> 7, crc & 0x7F]:
+        return None
+    return frame[5], frame[6], frame[8:-3]
+
+
 def step(note, gate_length, gate=True, accent=False, slide=False):
     return u7(note) + u7(gate_length) + u7(int(gate) | int(accent) << 1 | int(slide) << 2)
 

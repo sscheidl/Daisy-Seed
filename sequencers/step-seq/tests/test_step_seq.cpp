@@ -9,6 +9,7 @@
 #include "step_seq/params.h"
 #include "step_seq/sq_protocol.h"
 #include "vectors.h"
+#include <climits>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -284,6 +285,36 @@ static void TestTransportGate() {
     r.Clear();
     r.Pulse();
     CHECK(r.StepList() == std::vector<int>({1}));
+}
+
+// F04: a clock source change while running restarts the transport with the new source.
+static void TestClockSourceChange() {
+    Rig r;
+    r.engine.pattern[0].gate = true;
+    r.Run();
+    r.Tick(200);
+    CHECK(r.engine.GetState() == State::Running && r.engine.GetActive() == Active::Internal);
+    r.Clear();
+    r.engine.settings.clock_source = ClockSource::GateIn1;
+    r.Tick();
+    CHECK(r.engine.GetState() == State::Waiting && r.Count(Kind::Panic) == 1 && !r.engine.GateHigh());
+    r.Tick(1000);
+    CHECK(r.steps.empty() && r.Count(Kind::NoteOn) == 0);
+    r.Pulse();
+    CHECK(r.engine.GetState() == State::Running && r.engine.GetActive() == Active::Gate &&
+          r.StepList() == std::vector<int>({1}));
+    // Back to internal from an external source: it starts at once instead of waiting.
+    r.Clear();
+    r.engine.settings.clock_source = ClockSource::Internal;
+    r.Tick();
+    CHECK(r.engine.GetState() == State::Running && r.engine.GetActive() == Active::Internal &&
+          r.StepList() == std::vector<int>({1}));
+    // SW17 off: the setting stays, nothing restarts.
+    r.in.run_switch = false;
+    r.Tick();
+    r.engine.settings.clock_source = ClockSource::GateIn1;
+    r.Tick(10);
+    CHECK(r.engine.GetState() == State::Stop);
 }
 
 static void TestTransportMidi() {
@@ -782,6 +813,49 @@ static void TestMidiOut() {
     for(int pass = 0; pass < 20; ++pass)
         ServiceMidi(full, 1, true, usb, din);
     CHECK(!usb.AnySent(1) && !din.AnySent(1));
+    // Legato (F03): the new Note-On goes out before the old Note-Off, with no gap.
+    {
+        std::vector<std::vector<uint8_t>> log;
+        MidiPort<Sink> port(Sink{&log}, 1 << 30), off(Sink{&log}, 24);
+        off.enabled = false;
+        NoteFeed legato;
+        TickOutput t;
+        OutEvent on;
+        on.kind = Kind::NoteOn;
+        on.note = 60;
+        on.velocity = 100;
+        t.Push(on);
+        legato.Feed(t);
+        ServiceMidi(legato, 1, true, port, off);
+        log.clear();
+        t.count = 0;
+        OutEvent slide;
+        slide.kind = Kind::Legato;
+        slide.note = 62;
+        slide.prev_note = 60;
+        slide.velocity = 100;
+        t.Push(slide);
+        legato.Feed(t);
+        ServiceMidi(legato, 1, true, port, off);
+        CHECK(log.size() == 2 && log[0][0] == 0x90 && log[0][1] == 62 && log[1][0] == 0x80 && log[1][1] == 60);
+        // A dropped Off (full queue) is still reconciled once the queue is empty.
+        log.clear();
+        for(int i = 0; i < 64; ++i) {
+            MidiMsg clock;
+            clock.kind = MidiMsg::Kind::Clock;
+            legato.queue.Push(clock);
+        }
+        t.count = 0;
+        OutEvent end;
+        end.kind = Kind::NoteOff;
+        end.note = 62;
+        t.Push(end);
+        legato.Feed(t);
+        CHECK(legato.overflow.load() == 1);
+        for(int pass = 0; pass < 10; ++pass)
+            ServiceMidi(legato, 1, false, port, off);
+        CHECK(!port.AnySent(1) && Notes(log, 0x80) == 1);
+    }
     // Send budget: at most 8 note messages per port and pass, DIN at most 24 bytes.
     NoteFeed busy;
     for(int i = 0; i < 20; ++i) {
@@ -836,6 +910,11 @@ static void TestCv() {
     CHECK(!cv.cal[1].valid);
     bad = GoodCal();
     bad.scale = 50000;
+    CHECK(!ValidCal(bad));
+    bad = GoodCal();
+    bad.scale = INT32_MIN; // F08: rejected without overflowing in the magnitude
+    CHECK(!ValidCal(bad));
+    bad.scale = INT32_MAX;
     CHECK(!ValidCal(bad));
     bad = GoodCal();
     bad.clamp_min = 3000;
@@ -1020,14 +1099,14 @@ static void TestDevice() {
         for(int k = 0; k < 5; ++k)
             v.push_back(uint8_t((x >> (7 * k)) & 0x7F));
     };
-    auto cal_frame = [&](uint32_t uid0, uint8_t output, uint16_t gate_high) {
+    auto cal_frame = [&](uint32_t uid0, uint8_t output, uint16_t gate_high, uint32_t scale = uint32_t(-409600)) {
         std::vector<uint8_t> v;
         u32(v, uid0);
         u32(v, 2);
         u32(v, 3);
         v.push_back(output);
         u32(v, 2048000);
-        u32(v, uint32_t(-409600));
+        u32(v, scale);
         for(uint16_t code : {uint16_t(2048), gate_high, uint16_t(0), uint16_t(4095)}) {
             v.push_back(code & 0x7F);
             v.push_back(uint8_t(code >> 7));
@@ -1044,6 +1123,8 @@ static void TestDevice() {
     reply = send(Request(sq::SetCal, 9, cal_frame(99, 0, 410)));
     CHECK(reply[5] == sq::kNak && reply[9] == sq::ErrUidMismatch);
     reply = send(Request(sq::SetCal, 10, cal_frame(1, 0, 2048)));
+    CHECK(reply[5] == sq::kNak && reply[9] == sq::ErrBadArgument);
+    reply = send(Request(sq::SetCal, 10, cal_frame(1, 0, 410, 0x80000000u)));
     CHECK(reply[5] == sq::kNak && reply[9] == sq::ErrBadArgument);
     CHECK(send(Request(sq::SetCal, 11, cal_frame(1, 0, 410)))[5] == (sq::SetCal | sq::kResponse));
     CHECK(send(Request(sq::SetCal, 12, cal_frame(1, 1, 410)))[5] == (sq::SetCal | sq::kResponse));
@@ -1082,6 +1163,33 @@ static void TestDevice() {
         dev.Service(ms);
     }
     CHECK(host.sent.empty());
+    // F06: two parameters changed before the next frame both arrive with their values.
+    const std::vector<uint8_t> monitor = Request(sq::Monitor, 19, {1});
+    dev.Handle(monitor.data(), monitor.size(), 3500);
+    for(uint32_t ms = 3500; ms < 3600; ++ms)
+        dev.Service(ms);
+    host.sent.clear();
+    values[0] = 140000; // tempo
+    dev.ParamChanged(0, 1);
+    values[1] = 60000; // swing
+    dev.ParamChanged(0, 2);
+    values[0] = 141000; // tempo again: the latest value wins
+    dev.ParamChanged(0, 1);
+    for(uint32_t ms = 3600; ms < 3700; ++ms)
+        dev.Service(ms);
+    int32_t got_tempo = 0, got_swing = 0;
+    int param_frames = 0;
+    for(auto& f : host.sent) {
+        if(f[5] != sq::kMonitorEvent || f[8] != 5)
+            continue;
+        ++param_frames;
+        sq::Reader ev(f.data() + 9, f.size() - 12);
+        CHECK(ev.U7() == 0);
+        const uint16_t id = ev.U14();
+        (id == 1 ? got_tempo : got_swing) = ev.I32();
+    }
+    CHECK(param_frames == 2 && got_tempo == 141000 && got_swing == 60000);
+    CHECK(dev.counters[sq::CntMonitorDropped] == 0);
     // GET_STATS lists all counters.
     reply = send(Request(sq::GetStats, 18, {}));
     CHECK(reply[8] == sq::kCounters && reply.size() == 11 + 1 + 5 * sq::kCounters);
@@ -1155,6 +1263,7 @@ int main() {
     TestLengths();
     TestTransportInternal();
     TestTransportGate();
+    TestClockSourceChange();
     TestTransportMidi();
     TestTransportAuto();
     TestGate2Run();
