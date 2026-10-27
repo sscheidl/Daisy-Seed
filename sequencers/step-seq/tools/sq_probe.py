@@ -76,17 +76,18 @@ class Link:
         for _ in range(RETRIES + 1):
             self.send_raw(frame)
             for reply in self.frames(TIMEOUT):
-                body = reply[1:-1]
-                if len(body) < 7 or tuple(reply[:4]) != sq.HEADER or reply[6] != self.rid:
+                decoded = sq.decode_reply(reply)  # damaged frames count as no reply
+                if decoded is None or decoded[1] != self.rid:
                     continue
-                if reply[5] == sq.NAK:
-                    r = sq.Reader(reply[8:-3])
+                reply_type, _, payload = decoded
+                if reply_type == sq.NAK:
+                    r = sq.Reader(payload)
                     r.u7()
                     code = r.u7()
                     name = next((k for k, v in sq.ERRORS.items() if v == code), str(code))
                     raise SystemExit(f'NAK {name}')
-                if reply[5] == kind | sq.RESPONSE:
-                    return sq.Reader(reply[8:-3])
+                if reply_type == kind | sq.RESPONSE:
+                    return sq.Reader(payload)
         self.lost += 1
         raise SystemExit(f'No reply to {kind:#04x} after {RETRIES} retries')
 

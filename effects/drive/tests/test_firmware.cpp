@@ -118,6 +118,19 @@ int main() {
     usb_midi.incoming.push_back(e);
     Tick(2);
     CHECK(!usb_midi.sent.empty() && usb_midi.sent.back()[5] == (sq::Identify | sq::kResponse));
+    // F10: SET_PARAM tone; once the callback took it, applied equals accepted.
+    w.Begin(sq::SetParam, 4);
+    w.U7(0);
+    w.U14(4);
+    w.I32(40000);
+    const std::size_t set_size = w.End();
+    e.sysex_message_len = uint8_t(set_size - 2);
+    for(std::size_t i = 1; i + 1 < set_size; ++i)
+        e.sysex_data[i - 1] = buffer[i];
+    usb_midi.incoming.push_back(e);
+    Tick(3);
+    CHECK(std::fabs(params.tone - 40.f) < 0.01f);
+    CHECK(fw::device.AcceptedRevision() == 1 && fw::device.view.applied_revision == 1);
     // Bootloader keys.
     const unsigned resets = daisy::System::bootloader_resets;
     hw.pressed[8] = hw.pressed[15] = true;

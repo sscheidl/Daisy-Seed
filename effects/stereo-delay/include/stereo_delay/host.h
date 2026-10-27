@@ -3,8 +3,11 @@
 // Host side of the Stereo Delay (FX contract: the host owns feed, dry/wet and transitions;
 // ARBEITSAUFTRAG 4.8, R14). Switching off first fades the feed into the delay out over
 // 10 ms; the tail keeps running with the set feedback until the wet level stays under
-// -90 dBFS for 500 ms, at the latest 20 s after switching off it fades over 1 s. Switching
-// on during the tail fades the feed back in and keeps the lines.
+// -90 dBFS for 500 ms plus the delay time (no echo can still be on its way), at the latest
+// 20 s after switching off it fades over 1 s. Once off, dry/wet fades to 0 % in 10 ms and
+// the output is exactly dry (unity bypass, Codex Q1). Switching on during the tail fades
+// the feed back in and keeps the lines; switching on after the tail starts with silent
+// lines (Codex F02) without clearing them in the callback.
 #include "delay.h"
 
 namespace seed::fx {
@@ -28,7 +31,9 @@ class DelayHost {
     }
     void SetEnabled(bool on) {
         if(on && state_ != State::On) {
-            state_ = State::On; // the lines stay, the feed fades back in
+            if(state_ == State::Off)
+                delay_.Invalidate(); // nothing of an ended (or faded) tail comes back
+            state_ = State::On; // during the tail the lines stay, the feed fades back in
             tail_gain_ = 1.f;
         } else if(!on && state_ == State::On) {
             state_ = State::Tail;
@@ -63,7 +68,7 @@ class DelayHost {
                 tail_gain_ = Step(tail_gain_, 0.f, 1.f / float(kTailFadeFrames));
             wet_l[i] *= tail_gain_;
             wet_r[i] *= tail_gain_;
-            mix_ = Step(mix_, mix_target_, 1.f / float(kFeedFadeFrames));
+            mix_ = Step(mix_, state_ == State::Off ? 0.f : mix_target_, 1.f / float(kFeedFadeFrames));
             out_l[i] = in_l[i] * (1.f - mix_) + wet_l[i] * mix_;
             out_r[i] = in_r[i] * (1.f - mix_) + wet_r[i] * mix_;
             const float a = wet_l[i] < 0.f ? -wet_l[i] : wet_l[i], b = wet_r[i] < 0.f ? -wet_r[i] : wet_r[i];
@@ -73,7 +78,7 @@ class DelayHost {
         if(state_ == State::Tail) {
             since_off_ += unsigned(n);
             quiet_ = peak < kQuiet ? quiet_ + unsigned(n) : 0;
-            if(quiet_ >= kQuietFrames || tail_gain_ == 0.f)
+            if(quiet_ >= kQuietFrames + unsigned(delay_.ReachSamples()) || tail_gain_ == 0.f)
                 state_ = State::Off; // the tail has ended: no more delay processing
         }
     }

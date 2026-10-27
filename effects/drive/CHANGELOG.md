@@ -32,3 +32,19 @@ Begründete Abweichungen vom Auftrag (4.7):
 * **Soft und Tape:** Ihr Eingang ist auf ±3 begrenzt. Dort erreichen die rationalen
   Kurven ±1 und steigen danach wieder an (Tape FX begrenzt stattdessen die
   Drive-Verstärkung).
+
+Korrekturen und Entscheidungen nach der Codex-Fehlersuche (2026-10-27,
+`docs/acid-seq/CODEX_FEHLERSUCHE.md`):
+
+* **F10 Revision:** SQ-Parameter tragen ihre Revision bis zur Übernahme im Callback.
+  Das Gerät meldet danach `applied` gleich `accepted`.
+* **Q3 Ausgleich nach Eingangspegel:** vom Benutzer akzeptiert (Auftrag 4.7 angepasst).
+* **Q4 Fold auf Rechtecken:** vom Benutzer als begrenzte Ausnahme akzeptiert. Die
+  Dreiecksfaltung bildet flache Dächer bei bestimmten Drive-Werten genau auf 0 ab. Bei
+  `square_lp3` und Drive 48 % bleiben nur die Flanken, −22 dB gegenüber dem Eingang
+  (1-%-Raster, GEMESSEN 2026-10-27 am Host). ±1 dB hätte bis zu +24 dB Anhebung dieser
+  Flankenreste verlangt. Ein Versuch mit Anhebung und Schutzfenster ließ bei einem
+  Signalwechsel +7 bis +13 dB für 10–50 ms durch. Es bleibt deshalb bei „nie lauter als
+  das Ziel“.
+
+Der Golden-Hash `0x50B9CF6E` bleibt unverändert.

@@ -303,7 +303,14 @@ static void TestHost() {
         ++ms;
     }
     CHECK(host.GetState() == DelayHost::State::Off && ms < 5000);
-    CHECK(block(true) == 0.f); // off: only the dry path with mix 100 % -> silence
+    // Off (Codex Q1): dry/wet fades to 0 % in 10 ms, then the output is exactly dry.
+    for(int b = 0; b < 10; ++b)
+        block(true);
+    block(true);
+    bool exact_dry = true;
+    for(int i = 0; i < 48; ++i)
+        exact_dry = exact_dry && ol[i] == il[i] && orr[i] == ir[i];
+    CHECK(exact_dry);
     // Feedback 95 % with 1 s echoes (-0.45 dB per second): the 20 s limit fades the tail over 1 s.
     p.feedback = 95.f;
     p.time_ms = 1000.f;
@@ -329,6 +336,61 @@ static void TestHost() {
     host.SetEnabled(true);
     CHECK(host.GetState() == DelayHost::State::On);
     CHECK(block(false) > 0.001f); // the echoes were not cleared
+}
+
+// Codex F02: an echo 1 s after the input must still come although the output is silent
+// for longer than 500 ms, and an ended tail must not come back after switching on again.
+static void TestLongGapTail() {
+    delay::Parameters p;
+    p.sync = false;
+    p.time_ms = 1000.f;
+    p.feedback = 0.f;
+    StereoDelay fx;
+    fx.SetParameters(p);
+    fx.Prepare({48000, 48}, *storage);
+    DelayHost host(fx);
+    host.Reset(true);
+    host.SetMix(100.f);
+    float il[48] = {}, ir[48] = {}, ol[48], orr[48];
+    il[0] = ir[0] = 0.5f;
+    host.Process(il, ir, ol, orr, 48);
+    il[0] = ir[0] = 0.f;
+    host.SetEnabled(false);
+    float first_echo = 0.f;
+    for(int b = 0; b < 1500; ++b) {
+        host.Process(il, ir, ol, orr, 48);
+        for(int i = 0; i < 48; ++i)
+            first_echo = std::fmax(first_echo, std::fmax(std::fabs(ol[i]), std::fabs(orr[i])));
+    }
+    CHECK(first_echo > 0.49f && host.GetState() == DelayHost::State::Tail);
+    int ms = 0;
+    while(host.GetState() != DelayHost::State::Off && ms < 10000) {
+        host.Process(il, ir, ol, orr, 48);
+        ++ms;
+    }
+    CHECK(host.GetState() == DelayHost::State::Off);
+    // Lines that still hold echoes when the 20 s limit ends a tail: also gone after Off.
+    p.feedback = 95.f;
+    fx.SetParameters(p);
+    host.SetEnabled(true);
+    il[0] = ir[0] = 0.5f;
+    host.Process(il, ir, ol, orr, 48);
+    il[0] = ir[0] = 0.f;
+    host.SetEnabled(false);
+    ms = 0;
+    while(host.GetState() != DelayHost::State::Off && ms < 30000) {
+        host.Process(il, ir, ol, orr, 48);
+        ++ms;
+    }
+    CHECK(host.GetState() == DelayHost::State::Off && ms >= 20000);
+    host.SetEnabled(true);
+    float stale = 0.f;
+    for(int b = 0; b < 3000; ++b) {
+        host.Process(il, ir, ol, orr, 48);
+        for(int i = 0; i < 48; ++i)
+            stale = std::fmax(stale, std::fmax(std::fabs(ol[i]), std::fabs(orr[i])));
+    }
+    CHECK(stale == 0.f);
 }
 
 static void TestParamsAndGolden() {
@@ -374,6 +436,7 @@ int main() {
     TestTimeChange();
     TestFeedbackAndDamping();
     TestHost();
+    TestLongGapTail();
     TestParamsAndGolden();
     if(failures) {
         std::printf("FAIL: %d checks\n", failures);
