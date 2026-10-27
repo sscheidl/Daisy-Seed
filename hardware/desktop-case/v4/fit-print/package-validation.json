@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "purpose": "Mechanical fit trial; no geometry changes",
+  "hardware": "NICHT GEMESSEN",
+  "print_part_count": 4,
+  "geometry_check_count": 5830,
+  "parameters_sha256": "4ff4d04a8e6ffe9835b38c433b0111b8034883813d5650168a9aeb15e918c7b0",
+  "requested_profile": {
+    "material": "PLA",
+    "layer_height_mm": 0.2,
+    "perimeters": 3,
+    "infill_percent": 20,
+    "minimum_top_bottom_thickness_mm": 0.8,
+    "scale_percent": 100,
+    "embedded_in_3mf": false
+  },
+  "price_and_print_time": "NICHT GEMESSEN; request supplier quote; 0.20 mm availability unconfirmed",
+  "generator_sha256": "1de55b6822cdffe4c7624fd28bde3b84dcc7f91ecc37811c6fd75886579e2dd0",
+  "request_source_sha256": "85fc9359fad06ff9096e0b712fa20a5a7d588361b5731ec58387b935bcb8f318",
+  "contents": {
+    "print/tray.stl": "2038bc0ffa2cdea1d6fe8bb2bcf700e19a24edab834c07be006ca110b03ff293",
+    "print/carrier.stl": "e3bed78ab41b2a0c98d3e02cb5f9dc5ec87d30b53ba17571f597d4bd2d4c628a",
+    "print/rear-panel.stl": "142979c8aa08244348bd4bae836bb8a36480c61101dbef614a66cbd8b9a59387",
+    "print/seed-service-cover.stl": "ed06eb327d1382a72e14810e861d69771ee18b8de975626e7b3378bb27622d5d",
+    "plates/plate-1-tray.3mf": "d31567e5e48ebeab4c84a6c6813981968c946787770e6f20526cfc21d52bb35d",
+    "plates/plate-2-carrier.3mf": "65bbeedf405475ab899ced5698d94b9b77f37301cde76863d3dc50c7268b58db",
+    "plates/plate-3-rear-and-service.3mf": "0bd705080acf23e7bbf82cabda9d31ea731d800a527af5afeee7b1d1926d1e3a",
+    "sheets/lower-acrylic.svg": "d943fe6fdf876f32a99b78c3752b707c653904a31b1b41bb4aa0b6b034fb534e",
+    "sheets/paper.svg": "099e6f803502ba25ecbef0ec63608aa3f4a6dbee6f8aefd8bdaddd590f261f4c",
+    "sheets/upper-acrylic.svg": "070ce43f38aa918d8636684d0e81602504db0da1d88cffd3884900b46d7d3a25",
+    "validation.json": "80659c753cb6edbfa0579c1ae2150dadcc2c1332ab09b9fa1fa60bb711f6cfc1",
+    "access-regression.json": "1599e42499d8f58ae6e8fbdfa285a5357fcb2bfe083b14a6f2bd2439f6e629a0",
+    "manifest.json": "8d8b24057e0614a23ee7eab702e93e51f3cd4fb1f23cf873e0f7e77569698bb9",
+    "MONTAGE_V4.md": "3a94ef93e51040f36f051c53073e784d4a7603c2e17758b2b180fa2e0a0b07bc",
+    "DRUCKAUFTRAG.md": "ce734f24c93ff19b2d879d80f2c846e41664822f83ea65166f36ba7a0e917009"
+  }
+}
