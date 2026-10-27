@@ -3,6 +3,7 @@
 // No JUCE. make -C editors/mod-on-daisy test
 #include "../src/core/AcidPatch.h"
 #include "../src/core/SqSimulator.h"
+#include <climits>
 #include <cstdio>
 #include <deque>
 #include <vector>
@@ -149,6 +150,39 @@ static void TestReadAndEdit() {
     CHECK(changes > 10);
 }
 
+// Codex F05: the first Ready already has every descriptor, value and label; Codex F06:
+// two pots turned before the next monitor frame both reach the editor's values.
+static void TestReadyAfterCompleteRead() {
+    Link link;
+    editor::SqSession s(link);
+    double now = 0;
+    bool checked = false;
+    s.changed = [&] {
+        if(!s.Ready() || checked)
+            return;
+        checked = true;
+        CHECK(s.Idle());
+        for(const auto& c : s.Components())
+            for(const auto& p : c.parameters)
+                CHECK(!p.key.empty() && (p.type != sq::TypeEnum || !p.enum_keys.empty()));
+    };
+    s.Connect(now);
+    Pump(link, s, now, 400);
+    CHECK(checked && s.Ready());
+    link.sim.TurnKnob(0, 1, 140000);
+    link.sim.TurnKnob(0, 2, 60000);
+    Pump(link, s, now, 1000);
+    CHECK(s.Components()[0].Find("tempo")->Value() == 140.0 && s.Components()[0].Find("swing")->Value() == 60.0);
+}
+
+// Codex F13: calibration shown in the panel and sent back unchanged keeps its wire value.
+static void TestCalText() {
+    for(int32_t milli : {-409600, 2048500, 2048000, -410, 1, -1, 0, 409999, INT32_MIN, INT32_MAX})
+        CHECK(editor::CalMilli(std::stod(editor::CalText(milli))) == milli);
+    CHECK(editor::CalText(-409600) == "-409.6" && editor::CalText(2048500) == "2048.5" && editor::CalText(2048000) == "2048");
+    CHECK(editor::CalMilli(1e300) == INT32_MAX && editor::CalMilli(-1e300) == INT32_MIN);
+}
+
 static void TestLossAndRestart() {
     Link link("step-seq");
     editor::SqSession s(link);
@@ -240,11 +274,31 @@ static void TestPatch() {
     std::string bad = text;
     bad.replace(bad.find("\"note\": 33"), 10, "\"note\": 70");
     CHECK(!editor::ParseAcidPatch(bad, error));
+    // Codex F07: numbers are checked before any cast (no undefined behaviour); the same
+    // cases run in the browser test (sq_client.test.cjs).
+    const char* const invalid[] = {
+        "{\"format\":\"acid-seq-patch\",\"format_version\":1e999}",
+        "{\"format\":\"acid-seq-patch\",\"format_version\":-1e999}",
+        "{\"format\":\"acid-seq-patch\",\"format_version\":1.5}",
+        "{\"format\":\"acid-seq-patch\",\"format_version\":1,\"components\":[{\"id\":\"drive\",\"schema\":1e999}]}",
+        "{\"format\":\"acid-seq-patch\",\"format_version\":1,\"components\":[{\"id\":\"drive\",\"params\":{\"drive\":1e999}}]}",
+        "{\"format\":\"acid-seq-patch\",\"format_version\":1,\"components\":[{\"id\":\"drive\",\"params\":{\"drive\":3e9}}]}",
+    };
+    for(const char* text_case : invalid)
+        CHECK(!editor::ParseAcidPatch(text_case, error) && !error.empty());
+    std::string huge_note = text;
+    huge_note.replace(huge_note.find("\"note\": 33"), 10, "\"note\": 1e999");
+    CHECK(!editor::ParseAcidPatch(huge_note, error));
+    std::string half_note = text;
+    half_note.replace(half_note.find("\"note\": 33"), 10, "\"note\": 33.5");
+    CHECK(!editor::ParseAcidPatch(half_note, error));
 }
 
 int main() {
     TestDispatcher();
     TestReadAndEdit();
+    TestReadyAfterCompleteRead();
+    TestCalText();
     TestLossAndRestart();
     TestPatch();
     if(failures) {

@@ -45,6 +45,16 @@ Seit Acid Seq Phase 5 bedienen alle drei Fassungen auch die Acid-Seq-Firmwares (
   übertragen“ (für diese Plugin-Instanz) oder „Nicht übertragen“.
 * **Simulator:** Mit `--simulators` gibt es den Port „Acid Seq (Sim)“, die
   SQ-Geräteseite der Firmware auf dem PC.
+* **Korrekturen nach der Codex-Fehlersuche** (2026-10-27,
+  [Bericht](../../docs/acid-seq/CODEX_FEHLERSUCHE.md)):
+  * Browser: Die Timer laufen jetzt auch in Chromium (F16). Vorher scheiterte jede
+    Verbindung zu einem SQ-Gerät.
+  * JUCE: „Verbunden“ erst, wenn alle Deskriptoren, Werte und Labels gelesen sind (F05).
+  * Beide Fassungen:
+    * `.acidpatch` mit ungültigen Zahlen wird abgelehnt (F07).
+    * Werte werden vor dem Senden auf den Bereich des Geräts begrenzt.
+  * JUCE: Die Kalibrierung zeigt und sendet Bruchteile exakt (F13).
+  * Browser: Die Kalibrierung zeigt nach dem Senden „gültig“.
 
 ## JUCE-Editor
 

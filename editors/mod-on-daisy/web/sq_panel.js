@@ -202,7 +202,8 @@
           ...fields.map(([k, t]) => el('label', {}, t, inputs[k])),
           el('button', { id: `sqCalSend${o}`, disabled: client.offline, onclick: () => {
             const v = Object.fromEntries(fields.map(([k]) => [k, +inputs[k].value]));
-            run(client.setCal(o, v), 'Kalibrierung übernommen, CV gesperrt');
+            // Redrawn once the device confirmed: the output then shows "gültig".
+            run(client.setCal(o, v).then(renderCal), 'Kalibrierung übernommen, CV gesperrt');
           } }, 'Senden'));
       });
       const uid = client.identity.uid.map((u) => u.toString(16).toUpperCase().padStart(8, '0')).join('-');

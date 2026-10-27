@@ -12,6 +12,8 @@
 #include "Session.h"
 #include "step_seq/pattern.h"
 #include "step_seq/sq_protocol.h"
+#include <climits>
+#include <cmath>
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -88,6 +90,27 @@ struct SqCal {
     uint16_t gate_low = 0, gate_high = 0, clamp_min = 0, clamp_max = 4095;
 };
 
+// Calibration offset/scale in the panel: milli-codes shown as codes with up to three
+// decimals and read back exactly (Codex F13: -409600 must not become -409000).
+inline std::string CalText(int32_t milli) {
+    const int64_t m = milli;
+    const int64_t whole = (m < 0 ? -m : m) / 1000, frac = (m < 0 ? -m : m) % 1000;
+    std::string text = (m < 0 ? "-" : "") + std::to_string(whole);
+    if(frac) {
+        std::string digits = std::to_string(1000 + frac).substr(1);
+        while(digits.back() == '0')
+            digits.pop_back();
+        text += "." + digits;
+    }
+    return text;
+}
+inline int32_t CalMilli(double codes) {
+    const double milli = codes * 1000.0;
+    if(!(milli > -2147483648.0 && milli < 2147483647.0))
+        return milli > 0 ? INT32_MAX : INT32_MIN; // refused by the device's range check
+    return int32_t(milli < 0 ? milli - 0.5 : milli + 0.5);
+}
+
 inline const char* SqStateName(uint8_t s) {
     static const char* names[] = {"STOP", "WARTET", "LÄUFT", "PAUSE"};
     return s < 4 ? names[s] : "?";
@@ -146,8 +169,11 @@ class SqSession {
         if(component >= components_.size())
             return false;
         const SqParam* p = components_[component].Find(key);
-        if(!p || p->Readonly())
+        if(!p || p->Readonly() || !std::isfinite(value))
             return false;
+        // Into the descriptor's range before the cast (Codex F07): no overflow for any input.
+        const double lo = p->min / 1000.0, hi = p->max / 1000.0;
+        value = value < lo ? lo : (value > hi ? hi : value);
         const int32_t milli = int32_t(value * 1000.0 + (value < 0 ? -0.5 : 0.5));
         std::vector<uint8_t> w;
         U7(w, uint8_t(component));
@@ -279,6 +305,7 @@ class SqSession {
         } else {
             req.handle(false, 0, r);
         }
+        FinishReading();
         SendNext();
     }
 
@@ -383,6 +410,7 @@ class SqSession {
         state_ = SqState{};
         stats_.clear();
         restarted_ = false;
+        monitor_started_ = false;
     }
     void Changed() {
         if(changed)
@@ -452,13 +480,20 @@ class SqSession {
                 ReadCal(1);
             }
             Enqueue(sq::Monitor, {1}, [this](bool, uint8_t, sq::Reader&) {
-                phase_ = Phase::Ready;
+                monitor_started_ = true;
                 monitor_renewed_ = now_;
-                if(log)
-                    log(LogKind::Ok, "Verbunden: " + identity_.product + " " + identity_.version + " (SQ)");
-                Changed();
             });
         });
+    }
+    // Ready only after the last read (Codex F05): descriptor, value and label requests are
+    // queued behind the monitor request by the component replies.
+    void FinishReading() {
+        if(phase_ != Phase::Reading || !monitor_started_ || !queue_.empty())
+            return;
+        phase_ = Phase::Ready;
+        if(log)
+            log(LogKind::Ok, "Verbunden: " + identity_.product + " " + identity_.version + " (SQ)");
+        Changed();
     }
     void Fail(const std::string& what) {
         phase_ = Phase::Failed;
@@ -628,6 +663,7 @@ class SqSession {
 
     editor::Transport& transport_;
     Phase phase_ = Phase::Offline;
+    bool monitor_started_ = false;
     std::deque<Request> queue_;
     uint8_t rid_ = 0, last_error_ = 0;
     double now_ = 0, last_answer_ = 0, monitor_renewed_ = 0;
