@@ -1,5 +1,14 @@
 # Gesicherter Stand – 27.10.2026
 
+**Neuer Chat / nächste Phase:** [Aktuelle Übergabe nach Testdruck](POST_PRINT_HANDOVER.md)
+und [kopierbarer Einstiegstext](START_NEXT_CHAT.md). Ziel: reale Passprobe
+auswerten und danach einen optisch gefälligeren Stil mit ruhigeren
+Höhenübergängen entwickeln. Der Nutzer lässt jetzt den bestehenden Satz
+fertigen; bekannte Reststege werden vor diesem Druck nicht mehr geändert.
+Zuletzt gezeigter Warenkorb: PETG grau (Wanne), ASA weiß (Träger), PETG rot
+(Rückblende/Seed-Deckel), überall 20 % Füllung. Die folgende PLA-Sparanfrage
+ist deshalb nicht als bestätigter Auftrag oder tatsächliches Druckprofil lesen.
+
 **Sparprofil für die mechanische Passprobe:** `fit-print/README.md` und
 `fit-print/V4-PASSPROBE-SPARPROFIL.zip`, erzeugt mit `package_fit_print.py`.
 Gleiche vier geprüfte STLs und Drucklagen wie der korrigierte V4-Stand.
