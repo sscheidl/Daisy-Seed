@@ -1,0 +1,150 @@
+{
+  "passed": true,
+  "old_git_reference": "b904a7e",
+  "old_stl_sha256": {
+    "tray": "2038bc0ffa2cdea1d6fe8bb2bcf700e19a24edab834c07be006ca110b03ff293",
+    "carrier": "4cfd218d6470878fe05665c4c05de9214846ba86d7c0724c2e12f205925a7bc1",
+    "rear-panel": "e809840f10e64e947f3867dbd84b39977c9eca71aa13b05fb0c6a4e07d958199",
+    "seed-service-cover": "ed06eb327d1382a72e14810e861d69771ee18b8de975626e7b3378bb27622d5d",
+    "lower-acrylic": "7a7dbb0cef055af1aad9520ab45a079111f9e76e286ac63b253d3f36a6e67960",
+    "upper-acrylic": "dfcaa3ea0f75016b8e4590c680fc721aff07be76514459f761802e467f43d4d5",
+    "paper": "323a4292de060b3025fc9e0619f4a78dda0df4211803a2f121af23019c6c7104"
+  },
+  "parameters_sha256": "4ff4d04a8e6ffe9835b38c433b0111b8034883813d5650168a9aeb15e918c7b0",
+  "original_fastener_obstructions": [
+    {
+      "mount_x": 24,
+      "test": "head seated",
+      "blocked_by": "carrier",
+      "intersection_mm3": 5.9726912
+    },
+    {
+      "mount_x": 24,
+      "test": "head insertion",
+      "blocked_by": "carrier",
+      "intersection_mm3": 97.0154103
+    },
+    {
+      "mount_x": 24,
+      "test": "straight hex key",
+      "blocked_by": "carrier",
+      "intersection_mm3": 35.0137252
+    },
+    {
+      "mount_x": 176,
+      "test": "head seated",
+      "blocked_by": "carrier",
+      "intersection_mm3": 5.1692507
+    },
+    {
+      "mount_x": 176,
+      "test": "head insertion",
+      "blocked_by": "carrier",
+      "intersection_mm3": 41.0852059
+    },
+    {
+      "mount_x": 176,
+      "test": "straight hex key",
+      "blocked_by": "carrier",
+      "intersection_mm3": 6.4713865
+    }
+  ],
+  "new_checks_reject_old_geometry": [
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 shaft seated",
+      "part": "rear-panel",
+      "intersection_mm3": 31.7759272,
+      "required_clear": true,
+      "passed": false
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut seated",
+      "part": "rear-panel",
+      "intersection_mm3": 25.6934008,
+      "required_clear": true,
+      "passed": false
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 1 nut insertion",
+      "part": "rear-panel",
+      "intersection_mm3": 25.6934008,
+      "required_clear": true,
+      "passed": false
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 shaft seated",
+      "part": "rear-panel",
+      "intersection_mm3": 31.7759272,
+      "required_clear": true,
+      "passed": false
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut seated",
+      "part": "rear-panel",
+      "intersection_mm3": 25.6934008,
+      "required_clear": true,
+      "passed": false
+    },
+    {
+      "group": "rear_fasteners",
+      "probe": "mount 2 nut insertion",
+      "part": "rear-panel",
+      "intersection_mm3": 25.6934008,
+      "required_clear": true,
+      "passed": false
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y15.8",
+      "part": "carrier",
+      "intersection_mm3": 2.7369578,
+      "required_clear": true,
+      "passed": false
+    },
+    {
+      "group": "paired_jacks",
+      "probe": "shared pocket Y31.4",
+      "part": "carrier",
+      "intersection_mm3": 2.7369574,
+      "required_clear": true,
+      "passed": false
+    }
+  ],
+  "old_geometry_failed_landmarks": [
+    {
+      "part": "carrier",
+      "landmark": "joined CV pocket rear"
+    },
+    {
+      "part": "carrier",
+      "landmark": "joined CV pocket front"
+    },
+    {
+      "part": "rear-panel",
+      "landmark": "central fastener left"
+    },
+    {
+      "part": "rear-panel",
+      "landmark": "central fastener right"
+    }
+  ],
+  "new_geometry_targeted_checks": 98,
+  "new_geometry_failures": 0,
+  "corrected_stl_sha256": {
+    "tray": "2038bc0ffa2cdea1d6fe8bb2bcf700e19a24edab834c07be006ca110b03ff293",
+    "carrier": "e3bed78ab41b2a0c98d3e02cb5f9dc5ec87d30b53ba17571f597d4bd2d4c628a",
+    "rear-panel": "142979c8aa08244348bd4bae836bb8a36480c61101dbef614a66cbd8b9a59387",
+    "seed-service-cover": "ed06eb327d1382a72e14810e861d69771ee18b8de975626e7b3378bb27622d5d",
+    "lower-acrylic": "7a7dbb0cef055af1aad9520ab45a079111f9e76e286ac63b253d3f36a6e67960",
+    "upper-acrylic": "dfcaa3ea0f75016b8e4590c680fc721aff07be76514459f761802e467f43d4d5",
+    "paper": "323a4292de060b3025fc9e0619f4a78dda0df4211803a2f121af23019c6c7104"
+  },
+  "hardware": "NICHT GEMESSEN",
+  "validator_sha256": "f8522fdf54a026b559881aed34511a5762926bc5b0e824ef0118ebbfa7c05230",
+  "regression_script_sha256": "1e97064f16961beb05ca8a5e3a9ea1c57911c36476d2e683a34fb7ad243186c3"
+}

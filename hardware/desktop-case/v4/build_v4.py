@@ -242,6 +242,12 @@ def carrier():
     for x,y in v('full_board','jacks'):
         w,d=q('jack_body_pocket')
         a-=box(x-w/2,y+q('jack_body_offset_y')-e,l['deck_bottom']-e,w,d,q('skin')+2*e)
+    # The close input/gate pair left a 0.1-mm web between its two pockets.
+    # Open one shared pocket per row; the lower acrylic still supports each jack.
+    for y in sorted({xy[1] for xy in v('full_board','jacks')}):
+        x1,x2=sorted(xy[0] for xy in v('full_board','jacks') if xy[1]==y)[-2:]
+        a-=box(x1,y+q('jack_body_offset_y')-e,l['deck_bottom']-e,x2-x1,
+               q('jack_body_pocket')[1],q('skin')+2*e)
     for x,y in v('full_board','toggles'):
         w,d,h=q('toggle_body')
         a-=box(x-w/2-e,y-d/2-e,l['deck_bottom']-e,w+2*e,d+2*e,h+q('underside_component_gap')-l['deck_bottom']+e)
@@ -256,6 +262,10 @@ def carrier():
     # Rear-panel fasteners face horizontally outward and are clear of PCB.
     for x,z in q('rear_plate_mounts'):
         plane=q('audio_planes_y')[0 if x<q('rear_plate_step_x') else 1]
+        left=q('left_audio_hood'); right=q('right_audio_hood')
+        edge=left[0]+left[2]-q('wall') if x<(left[0]+left[2]+right[0])/2 else right[0]+q('wall')
+        a+=box(min(x,edge),plane,z-q('rear_mount_pad_diameter')/2,
+               abs(edge-x),q('rear_mount_pad_length'),q('rear_mount_web_thickness'))
         a+=c.y_cyl(x,plane,z,q('rear_mount_pad_diameter'),q('rear_mount_pad_length'))
         a-=c.y_cyl(x,plane-e,z,v('screw','clearance'),q('rear_mount_pad_length')+2*e)
         af=v('screw','nut_af')+v('screw','nut_clearance'); nh=v('screw','nut_height')
@@ -312,6 +322,11 @@ def rear_plate():
     for lo,hi in [(left[0]+left[2]-q('wall'),left[0]+left[2]),(right[0],right[0]+q('wall'))]:
         a-=box(lo-gap,p1+gap/2,flange_z-q('rear_plate_flange_thickness')-e,
             hi-lo+2*gap,q('rear_plate_flange_depth'),q('rear_plate_flange_thickness')+2*e)
+    # Relieve the return around the central fastening pads and their nut pockets.
+    for x,z in q('rear_plate_mounts'):
+        r=q('rear_mount_pad_diameter')/2+gap
+        a-=box(x-r,p1,flange_z-q('rear_plate_flange_thickness')-e,
+               2*r,q('rear_plate_flange_depth')+e,q('rear_plate_flange_thickness')+2*e)
     for x,plane in zip(q('audio_axis_x'),q('audio_planes_y')):
         a-=c.y_cyl(x,plane-t-e,v('c1','axis_z'),v('c1','hole'),t+2*e)
     for x,z in q('rear_plate_mounts'):

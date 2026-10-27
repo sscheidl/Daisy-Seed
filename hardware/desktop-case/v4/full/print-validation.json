@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-26T21:06:22.483875+00:00",
+  "generated_at_utc": "2026-10-27T21:20:52.047367+00:00",
   "passed": true,
   "hardware": "NICHT GEMESSEN",
   "print_part_count": 4,
@@ -8,7 +8,7 @@
   "plates": [
     {
       "file": "plates/plate-1-tray.3mf",
-      "sha256": "6b54af20a0d4f92102e414c77421d8c39c1d549a7503e1d113806a3c7415ea70",
+      "sha256": "d31567e5e48ebeab4c84a6c6813981968c946787770e6f20526cfc21d52bb35d",
       "passed": true,
       "parts": [
         {
@@ -35,7 +35,7 @@
     },
     {
       "file": "plates/plate-2-carrier.3mf",
-      "sha256": "aca276e800002824cb98085753a6f3157dffe4b377380909a710ca166f197f66",
+      "sha256": "65bbeedf405475ab899ced5698d94b9b77f37301cde76863d3dc50c7268b58db",
       "passed": true,
       "parts": [
         {
@@ -62,7 +62,7 @@
     },
     {
       "file": "plates/plate-3-rear-and-service.3mf",
-      "sha256": "6ccd87ded45651782a77d20143a061609faf04fe68f82802f13d34f8ac0bca52",
+      "sha256": "0bd705080acf23e7bbf82cabda9d31ea731d800a527af5afeee7b1d1926d1e3a",
       "passed": true,
       "parts": [
         {
@@ -108,25 +108,26 @@
       ]
     }
   ],
-  "parameters_sha256": "e07b791ce82a8fd4ac6b70cea242f23e81f13b4993d337fbebdcf09209701e8c",
-  "package_generator_sha256": "b5f505cde776b625c7c118b0893656d4bdfb2051a939261ab99e8e5704520c41",
+  "parameters_sha256": "4ff4d04a8e6ffe9835b38c433b0111b8034883813d5650168a9aeb15e918c7b0",
+  "package_generator_sha256": "21c19d47a5412d3f8cb5ca59d506e15d94c0d4c3f6c48ac95fba2d07734c1ecf",
   "contents": {
     "print/tray.stl": "2038bc0ffa2cdea1d6fe8bb2bcf700e19a24edab834c07be006ca110b03ff293",
-    "print/carrier.stl": "4cfd218d6470878fe05665c4c05de9214846ba86d7c0724c2e12f205925a7bc1",
-    "print/rear-panel.stl": "e809840f10e64e947f3867dbd84b39977c9eca71aa13b05fb0c6a4e07d958199",
+    "print/carrier.stl": "e3bed78ab41b2a0c98d3e02cb5f9dc5ec87d30b53ba17571f597d4bd2d4c628a",
+    "print/rear-panel.stl": "142979c8aa08244348bd4bae836bb8a36480c61101dbef614a66cbd8b9a59387",
     "print/seed-service-cover.stl": "ed06eb327d1382a72e14810e861d69771ee18b8de975626e7b3378bb27622d5d",
     "sheets/lower-acrylic.svg": "d943fe6fdf876f32a99b78c3752b707c653904a31b1b41bb4aa0b6b034fb534e",
     "sheets/paper.svg": "099e6f803502ba25ecbef0ec63608aa3f4a6dbee6f8aefd8bdaddd590f261f4c",
     "sheets/upper-acrylic.svg": "070ce43f38aa918d8636684d0e81602504db0da1d88cffd3884900b46d7d3a25",
-    "plates/plate-1-tray.3mf": "6b54af20a0d4f92102e414c77421d8c39c1d549a7503e1d113806a3c7415ea70",
-    "plates/plate-2-carrier.3mf": "aca276e800002824cb98085753a6f3157dffe4b377380909a710ca166f197f66",
-    "plates/plate-3-rear-and-service.3mf": "6ccd87ded45651782a77d20143a061609faf04fe68f82802f13d34f8ac0bca52",
-    "V4.md": "a18135958a0e90e76439e36b3eccc4f4d2bbe8aab536f45f63a60d2cf708fb65",
-    "manifest.json": "00be3a6ad00e527147177131a10ee5a86feca387a97be6089b195efb67213864",
-    "validation.json": "7e39aacb1f149efe344bd518dff62fbaff58bff98cefc04e7928e53abec66d5f",
-    "images/v4-exploded.png": "2a3ac9c28ef073ac24da56db9087e04d6d79abc6d0f7b991189c137b98bf21c6",
-    "images/v4-rear.png": "d100e252cc7776c2bea072fcff7d7d0d8c963aaf5fc8af94f6f4b3c2f4470139",
-    "images/v4-right.png": "ce22e75a975fc7d421ae486d09d04d6437de207ca88829c413fda7e9d2082faf",
-    "images/v4-studio.png": "7b57cf1ad94629f0f227fc448b3e847602836e6c6da5d4762aad7cde03488f84"
+    "plates/plate-1-tray.3mf": "d31567e5e48ebeab4c84a6c6813981968c946787770e6f20526cfc21d52bb35d",
+    "plates/plate-2-carrier.3mf": "65bbeedf405475ab899ced5698d94b9b77f37301cde76863d3dc50c7268b58db",
+    "plates/plate-3-rear-and-service.3mf": "0bd705080acf23e7bbf82cabda9d31ea731d800a527af5afeee7b1d1926d1e3a",
+    "V4.md": "3a94ef93e51040f36f051c53073e784d4a7603c2e17758b2b180fa2e0a0b07bc",
+    "manifest.json": "8d8b24057e0614a23ee7eab702e93e51f3cd4fb1f23cf873e0f7e77569698bb9",
+    "validation.json": "80659c753cb6edbfa0579c1ae2150dadcc2c1332ab09b9fa1fa60bb711f6cfc1",
+    "access-regression.json": "1599e42499d8f58ae6e8fbdfa285a5357fcb2bfe083b14a6f2bd2439f6e629a0",
+    "images/v4-exploded.png": "083f56cdc36f1a0605d812010860a8e565697b5603c6aa3f4477f8223b985159",
+    "images/v4-rear.png": "71b513fcd7184bd53b1b18a02c772bfb7974795d85dead6e9f0bc02fdc31bb0a",
+    "images/v4-right.png": "a1c51a8c2aa4828aaa1f788c9027992313937f1e38c5504e18360f486018e4e9",
+    "images/v4-studio.png": "8b5a0fd84d78913538cc777c321b02c3df9071860c87282c0e75eb71379ad038"
   }
 }

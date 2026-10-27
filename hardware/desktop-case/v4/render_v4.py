@@ -147,6 +147,12 @@ for x,y in q('mounting_domes'):
     hardware.append(ring('Carrier screw head',x,y,L['deck_top']-v('screw','counterbore_depth'),v('screw','head_diameter'),v('screw','thread_diameter'),v('screw','head_height'),steel))
 for x,y in q('service_screws'):
     hardware.append(ring('Service screw head',x,y,q('seed_inner_roof')+q('wall'),v('screw','head_diameter'),v('screw','thread_diameter'),v('screw','head_height'),steel))
+for i,(x,z) in enumerate(q('rear_plate_mounts')):
+    plane=q('audio_planes_y')[0 if x<q('rear_plate_step_x') else 1]
+    face=plane-q('rear_plate_thickness')
+    hardware.append(ring('Rear panel M3x8 head',x,face-v('screw','head_height'),z,
+        v('screw','head_diameter'),v('screw','thread_diameter'),v('screw','head_height'),steel,'y'))
+    hardware.append(load_stl(PROBES/f'rear-mount-{i+1}-nut-seated.stl','Rear panel M3 nut',steel,PCB))
 for x,y in q('nylon_supports'):
     z=-v('board','thickness')-v('c7','nominal_adjustment_gap')-v('c7','nylon_head_height')
     hardware.append(ring('Nylon PCB support head',x,y,z,v('c7','nylon_head_diameter'),v('screw','thread_diameter'),v('c7','nylon_head_height'),nylon))
@@ -171,7 +177,8 @@ bpy.ops.object.camera_add(); camera=bpy.context.object; camera.data.type='ORTHO'
 scene.render.resolution_x=1900; scene.render.resolution_y=1300; scene.render.resolution_percentage=100
 scene.render.image_settings.file_format='PNG'; scene.view_settings.view_transform='AgX'
 config=dict(studio=((290,-230,210),(98,-54,20),285),rear=((265,150,140),(100,-35,22),275),
-    right=((275,-150,75),(178,-91,19),125),exploded=((290,-230,230),(98,-54,40),300))
+    right=((275,-150,75),(178,-91,19),125),exploded=((290,-230,230),(98,-54,40),300),
+    **{'rear-access':((103,160,55),(103,0,PCB+16),205)})
 OUT.joinpath('images').mkdir(exist_ok=True)
 for view in views:
     if view=='exploded':
@@ -179,9 +186,13 @@ for view in views:
         parts['seed-service-cover'].location.z+=65
         for name,dz in [('lower-acrylic',40),('paper',47),('upper-acrylic',54)]: parts[name].location.z+=dz
         for o in labels: o.location.z+=47
+        for o in hardware:
+            if o.name.startswith('Rear panel M3x8 head'): o.location.y+=35; o.location.z+=15
+            elif o.name.startswith('Rear panel M3 nut'): o.location.z+=25
     position,target,scale=config[view]; camera.location=position
     camera.rotation_euler=(Vector(target)-camera.location).to_track_quat('-Z','Y').to_euler(); camera.data.ortho_scale=scale
-    scene.render.filepath=str(OUT/'images'/('v4-'+view+'.png')); bpy.ops.render.render(write_still=True)
+    image_dir=REPO/'build/v4-full' if view=='rear-access' else OUT/'images'
+    scene.render.filepath=str(image_dir/('v4-'+view+'.png')); bpy.ops.render.render(write_still=True)
     if view=='studio':
         local=REPO/'build/v4-full/assembly.blend'; local.parent.mkdir(parents=True,exist_ok=True)
         bpy.ops.wm.save_as_mainfile(filepath=str(local))

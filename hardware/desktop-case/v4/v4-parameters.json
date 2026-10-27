@@ -2141,17 +2141,41 @@
     "rear_plate_mounts": {
       "value": [
         [
-          24,
+          80.5,
           16
         ],
         [
-          176,
+          124.5,
           16
         ]
       ],
       "unit": "mm",
       "status": "NOMINAL",
-      "source": "V4 complete first-print design 2026-10-26; user accepts nominal whole-case trial without coupons; hardware NICHT GEMESSEN"
+      "source": "V4 correction 2026-10-27: move both fasteners into the central rear gap for straight screw, driver and nut insertion. Source PCB coordinates; hardware NICHT GEMESSEN."
+    },
+    "rear_mount_web_thickness": {
+      "value": 2.4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "V4 correction 2026-10-27: solid lower webs connect central fastening pads to the adjacent audio hood walls; no strength measurement."
+    },
+    "rear_driver_diameter": {
+      "value": 4,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "V4 correction 2026-10-27: conservative straight tool envelope for an M3 ISO7380 SW2 hex key, not a bulky bit holder."
+    },
+    "rear_driver_reach": {
+      "value": 30,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "V4 correction 2026-10-27: continuous straight tool corridor from behind the rear enclosure to the screw head."
+    },
+    "rear_nut_insertion_distance": {
+      "value": 10,
+      "unit": "mm",
+      "status": "NOMINAL",
+      "source": "V4 correction 2026-10-27: clear axial M3 nut insertion corridor behind the carrier pad; nuts fitted before installing the carrier."
     },
     "rear_mount_pad_diameter": {
       "value": 7.8,

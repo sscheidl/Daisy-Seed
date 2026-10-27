@@ -1,4 +1,22 @@
-# Gesicherter Stand – 26.10.2026
+# Gesicherter Stand – 27.10.2026
+
+**Korrektur Rückblende/Buchsentaschen:** Auf Nutzerbildern erkannter Fehler:
+die beiden M3×8-Köpfe bei X24/X176 sowie der Werkzeugweg waren durch den
+Träger blockiert. Neu bei X80,5/X124,5, Z16 im freien Mittelbereich, mit
+2,4-mm-Verbindungsstegen und passenden Freistellungen im Rückblendenrücklauf.
+Muttern axial vor Aufsetzen des Trägers einfädeln. Neue Prüfungen für Kopf,
+Zuführen, geraden Ø4-Inbusschlüssel, Schaft und Sechskantmutter samt Zuführen.
+Die 0,1-mm-Druckstege zwischen den eng gepaarten CV-Taschen entfallen;
+unteres Acryl und alle Buchsenbefestigungen bleiben unverändert.
+
+5.830 Intersektionsprüfungen bestanden. `verify_access_regression.py`
+reproduziert sechs alte Kopf-/Werkzeugkollisionen aus b904a7e und weist die
+alten STLs mit acht neuen Kollisionsbefunden plus vier Landmarken zurück.
+Nur `carrier.stl` und `rear-panel.stl` geometrisch geändert; weiterhin vier
+Druckteile. ZIP, 3MF, Bilder und Montageanleitung aktualisiert. Vorheriges ZIP
+aus b904a7e nicht mehr für den Auftrag verwenden. Hardware NICHT GEMESSEN.
+
+## Vorheriger Stand – 26.10.2026
 
 **Aktuell: vollständiger V4-Erstdruck.** Der Nutzer hat ausdrücklich entschieden,
 wegen Bestell-/Abholaufwand direkt das ganze Gehäuse zu drucken. Diese Freigabe
