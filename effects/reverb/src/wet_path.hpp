@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: MIT
 #include "ambient_reverb.hpp"
 
+#ifndef AMBIENT_CONTIGUOUS_FIR
+#define AMBIENT_CONTIGUOUS_FIR 0
+#endif
+
 namespace ambient {
 // Keeps dry audio at codec rate. The wet engine is clocked at 12–48 kHz by a
 // fractional scheduler; a 64-tap low-pass FIR precedes decimation and the wet
@@ -26,7 +30,14 @@ class WetPath {
     Parameters parameters_{};
     float sampleRate_ = 48000, ratio_ = 1, targetRatio_ = 1, phase_ = 0;
     float filterRatio_ = -1;
+#if AMBIENT_CONTIGUOUS_FIR
+    // Diagnostic (default off): each sample is stored twice, so the newest kTaps
+    // samples are contiguous; the summation order is unchanged (bit-identical).
+    std::array<float, kTaps> coefficients_{};
+    std::array<float, 2 * kTaps> historyLeft_{}, historyRight_{};
+#else
     std::array<float, kTaps> coefficients_{}, historyLeft_{}, historyRight_{};
+#endif
     std::array<std::array<float, kTaps>, kFilterBands> coefficientBank_{};
     unsigned historyIndex_ = 0;
     Stereo previousWet_{}, currentWet_{};

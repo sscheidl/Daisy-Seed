@@ -8,7 +8,12 @@
 namespace toy_piano {
 class AmbientHost {
   public:
+#if AMBIENT_COMPACT_48K
+    bool Prepare(ambient::FastMemory* fast) {
+        memory_.fast = fast;
+#else
     bool Prepare() {
+#endif
         count_ = 0;
         selected_ = candidate_ = 0;
         stable_ = 0;

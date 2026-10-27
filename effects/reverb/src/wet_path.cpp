@@ -101,6 +101,18 @@ void WetPath::ConfigureFilter(float safeRatio) {
                            blend * (coefficientBank_[upper][i] - coefficientBank_[lower][i]);
 }
 Stereo WetPath::Filter(Stereo input) {
+#if AMBIENT_CONTIGUOUS_FIR
+    historyLeft_[historyIndex_] = historyLeft_[historyIndex_ + kTaps] = input.left;
+    historyRight_[historyIndex_] = historyRight_[historyIndex_ + kTaps] = input.right;
+    // Newest first, as in the ring version: tap k reads the sample k steps back.
+    const float *left = historyLeft_.data() + historyIndex_ + kTaps;
+    const float *right = historyRight_.data() + historyIndex_ + kTaps;
+    Stereo result{};
+    for (unsigned k = 0; k < kTaps; ++k) {
+        result.left += coefficients_[k] * left[-int(k)];
+        result.right += coefficients_[k] * right[-int(k)];
+    }
+#else
     historyLeft_[historyIndex_] = input.left;
     historyRight_[historyIndex_] = input.right;
     Stereo result{};
@@ -110,6 +122,7 @@ Stereo WetPath::Filter(Stereo input) {
         result.right += c * historyRight_[index];
         index = (index - 1) & (kTaps - 1);
     }
+#endif
     historyIndex_ = (historyIndex_ + 1) & (kTaps - 1);
     return result;
 }

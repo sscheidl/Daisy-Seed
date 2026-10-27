@@ -38,11 +38,46 @@ toy_piano::ToyPiano piano;
 alignas(toy_piano::AmbientHost) unsigned char DSY_SDRAM_BSS fx_storage[sizeof(toy_piano::AmbientHost)];
 toy_piano::AmbientHost* fx = nullptr;
 mod::adapter::CallbackDiagnostics callback_diagnostics;
+#if AMBIENT_COMPACT_48K
+// Diagnostic: all-pass and pitch lines in AXI SRAM behind the image (NOLOAD,
+// cleared by Prepare). Requires ld/toy_piano_axi.lds.
+#if defined(__arm__)
+__attribute__((section(".tp_axi_bss"), aligned(32)))
+#endif
+ambient::FastMemory fast_memory;
+#endif
 bool InitializeFx() {
     std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
     fx = new(fx_storage) toy_piano::AmbientHost{};
+#if AMBIENT_COMPACT_48K
+    return fx->Prepare(&fast_memory);
+#else
     return fx->Prepare();
+#endif
 }
+#if AMBIENT_SDRAM_WRITE_ALLOCATE && defined(__arm__)
+// Diagnostic: libDaisy maps SDRAM write-back without write-allocate, so every
+// delay-line write is a single bus transaction. Same region, TEX=1 adds
+// write-allocate. Only fx_storage lives in SDRAM; no DMA touches it.
+void EnableSdramWriteAllocate() {
+    SCB_CleanInvalidateDCache();
+    HAL_MPU_Disable();
+    MPU_Region_InitTypeDef region{};
+    region.Enable = MPU_REGION_ENABLE;
+    region.Number = MPU_REGION_NUMBER1;
+    region.BaseAddress = 0xC0000000;
+    region.Size = MPU_REGION_SIZE_64MB;
+    region.AccessPermission = MPU_REGION_FULL_ACCESS;
+    region.IsBufferable = MPU_ACCESS_BUFFERABLE;
+    region.IsCacheable = MPU_ACCESS_CACHEABLE;
+    region.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+    region.TypeExtField = MPU_TEX_LEVEL1;
+    region.SubRegionDisable = 0x00;
+    region.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+    HAL_MPU_ConfigRegion(&region);
+    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+}
+#endif
 #elif TOY_PIANO_TAPE
 // Host incl. the 16 KiB delay lines in SDRAM: default .bss would be the nearly full DTCM.
 alignas(toy_piano::TapeHost) unsigned char DSY_SDRAM_BSS fx_storage[sizeof(toy_piano::TapeHost)];
@@ -326,6 +361,9 @@ void ServiceBootloader() {
 int main() {
     asm volatile("" : : "r"(kFirmwareId)); // Keep the version string in the image.
     hw.Init();
+#if TOY_PIANO_FX && AMBIENT_SDRAM_WRITE_ALLOCATE && defined(__arm__)
+    EnableSdramWriteAllocate(); // Before any SDRAM content is initialized.
+#endif
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(toy_piano::kBlockSize);
     piano.Init(hw.seed.AudioSampleRate());
