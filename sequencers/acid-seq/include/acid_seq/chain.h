@@ -85,7 +85,9 @@ class Chain {
         // instead of keeping the dry part at 1 - mix as the standalone delay-fx does.
         const bool silent = !delay_params.enabled && delay_host_.GetState() == ::seed::fx::DelayHost::State::Off;
         delay_host_.SetMix(silent ? 0.f : delay_params.mix);
-        float voice[kBlock], wet_l[kBlock], wet_r[kBlock], drv_l[kBlock], drv_r[kBlock];
+        // drv_l/drv_r are zeroed only because x86 GCC 13 -O2 reports a false
+        // -Wmaybe-uninitialized for them; DriveMixer::Process writes all n samples.
+        float voice[kBlock], wet_l[kBlock], wet_r[kBlock], drv_l[kBlock] = {}, drv_r[kBlock] = {};
         voice_.ProcessBlock(voice, n);
         if(!drive_.Process({voice, voice, wet_l, wet_r, n}))
             for(std::size_t i = 0; i < n; ++i)
