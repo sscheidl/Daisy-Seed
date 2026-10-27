@@ -63,4 +63,5 @@ PROJECT_DIR_delay-fx := effects/stereo-delay
 PROJECT_STATUS_delay-fx := buildable
 BUILDABLE_PROJECTS += delay-fx
 PROJECT_DIR_acid-seq := sequencers/acid-seq
-PROJECT_STATUS_acid-seq := planned
+PROJECT_STATUS_acid-seq := buildable
+BUILDABLE_PROJECTS += acid-seq

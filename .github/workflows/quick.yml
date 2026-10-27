@@ -126,3 +126,6 @@ jobs:
       - name: Stereo Delay host tests
         if: steps.changes.outputs.delay == 'true'
         run: make -C effects/stereo-delay test
+      - name: Acid Seq product host tests (end-to-end golden, firmware on fakes)
+        if: steps.changes.outputs.acidseq == 'true'
+        run: make -C sequencers/acid-seq test

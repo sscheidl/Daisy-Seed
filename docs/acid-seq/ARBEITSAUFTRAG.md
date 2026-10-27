@@ -955,6 +955,19 @@ NICHT GEMESSEN ([HARDWARE_TEST.md](../../effects/stereo-delay/docs/HARDWARE_TEST
 
 ### Phase 6: Produkt `acid-seq`
 
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-6`), Version 0.1.0.
+* **Signalweg** `sequencers/acid-seq/include/acid_seq/chain.h`, gemeinsam für Firmware und
+  End-to-End-Golden `0xBC3D9C4E`. Die Golden-Hashes der Komponenten sind unverändert.
+* **Stimmenbesitz** Sequencer/MIDI-Stimmen-Kanal, Tempo-Übergabe an das Delay, alle vier
+  Komponenten im SQ-Protokoll.
+* ARM-Build, `check-firmware.py`, ELF-Prüfung mit `delay_memory` im SDRAM, Register,
+  Manifest und CI-Schritt.
+* Abweichung von 4.10: `callback-diagnostics` (Mod-on-Daisy-Adapter) ist keine Komponente
+  des Produkts. Die Diagnose kommt aus `step_seq/diagnostics.h`.
+* Nach dem Delay-Nachhall ist das Produkt exakt trocken (Dry/Wet auf 0 %). `delay-fx` behält
+  `dry · (1 − mix)`, zur Prüfung durch Codex.
+* Hardwaretest NICHT GEMESSEN. Kein Release, der Lieferweg ist offen (4.10).
+
 * **Ziel:** alle Kerne in `sequencers/acid-seq/` zusammenführen, nach dem
   Muster der zusammengesetzten Produkte.
 * **Umfang:**
@@ -1030,6 +1043,7 @@ NICHT GEMESSEN ([HARDWARE_TEST.md](../../effects/stereo-delay/docs/HARDWARE_TEST
 | Auto-Level im Hörtest, Zielversatz | 3 | NICHT GEMESSEN |
 | Delay im Hörtest, Sync | 4 | NICHT GEMESSEN |
 | Callback-Spitzen, Stack-Hochwasserstand, Queue-Belegung je Firmware | 1–6 | NICHT GEMESSEN |
+| Gesamttest des Produkts, voller Stressfall, Langzeitlauf 1 h | 6 | NICHT GEMESSEN |
 
 ## 9. Einarbeitung des Codex-Reviews
 

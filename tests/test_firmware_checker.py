@@ -15,6 +15,7 @@ IMAGES = [
     ('Acid303-v', 'instruments/acid-303/src/version.h', 'ACID_303_FIRMWARE_VERSION', 'ACID-303-FW-VERSION='),
     ('DriveFx-v', 'effects/drive/src/version.h', 'DRIVE_FIRMWARE_VERSION', 'DRIVE-FX-VERSION='),
     ('DelayFx-v', 'effects/stereo-delay/src/version.h', 'STEREO_DELAY_FIRMWARE_VERSION', 'DELAY-FX-VERSION='),
+    ('AcidSeq-v', 'sequencers/acid-seq/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
 ]
 
 

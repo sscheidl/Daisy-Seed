@@ -24,7 +24,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Acid 303 v0.1.0](instruments/acid-303/) | `instruments/acid-303/` | Monophonic TB-303-style voice (DaisySP PolyBLEP and ladder filter with self-oscillation, accent, slide, two-source note stack) and standalone firmware `acid-303` with MIDI USB+DIN and CC plan; golden tests; host/sanitizer/ARM checks pass, hardware untested |
 | [Drive v0.1.0](effects/drive/) | `effects/drive/` | Soft/Hard/Tape/Fold saturation shared with Tape FX (`common/dsp/saturation.h`, Tape FX images byte-identical after the move), tone, auto level within 1 dB, wet-only FX contract; standalone `drive-fx` firmware; host/sanitizer/ARM checks pass, hardware untested |
 | [Stereo Delay v0.1.0](effects/stereo-delay/) | `effects/stereo-delay/` | Ping-pong and stereo L/R delay, free or synced up to 12 s (dotted whole at 30 BPM, 4.6 MB in SDRAM), feedback 95 % bounded, damping, host tail handling; standalone `delay-fx` firmware with MIDI clock; host/sanitizer/ARM checks pass, hardware untested |
-| [Acid Seq](sequencers/acid-seq/) | `sequencers/acid-seq/` | Planned product (phase 6) composed of the four components above ([work order](docs/acid-seq/ARBEITSAUFTRAG.md)) |
+| [Acid Seq v0.1.0](sequencers/acid-seq/) | `sequencers/acid-seq/` | Product firmware `acid-seq` composed of the four components above: sequencer → voice → Drive → Delay → soft limiter, voice shared with MIDI channel 2, delay synced to the sequencer, all components over SQ; end-to-end golden; host/sanitizer/ARM checks pass, hardware untested, no release ([work order](docs/acid-seq/ARBEITSAUFTRAG.md)) |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 | [Mod on Daisy](modules/mod-on-daisy/) | `modules/mod-on-daisy/`, editor in `editors/mod-on-daisy/` | Reusable 8×8 modulation matrix (header-only module, no instrument firmware). Phase 2 software done: core, host tests (ASan/UBSan/TSan, fuzzing), bench firmware `make PROJECT=mod-bench`, `tools/mod_probe.py`; hardware measurements pending ([validation](modules/mod-on-daisy/docs/VALIDATION.md)). Spec: [decisions](modules/mod-on-daisy/docs/DECISIONS.md), [architecture](modules/mod-on-daisy/docs/ARCHITECTURE.md), [MIDI protocol](modules/mod-on-daisy/docs/PROTOCOL.md), [storage](modules/mod-on-daisy/docs/STORAGE.md) |
 | [Mod on Daisy Editor](editors/mod-on-daisy/) | `editors/mod-on-daisy/` (`src/` JUCE, `web/` browser) | Matrix/source panel as JUCE standalone, browser and VST3 device editor. Simulators are opt-in. Core/protocol tests cover lost/corrupted frames; VST3 passes PC audio through and stores the modulation patch, not the complete instrument/FX state |
@@ -43,7 +43,7 @@ Daisy-Seed/
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
 │   ├── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
 │   └── looper/             # Stardust analysis and buildable engine core
-├── sequencers/             # step-seq core and contracts, acid-seq product (planned)
+├── sequencers/             # step-seq core and contracts, acid-seq product
 ├── effects/
 │   ├── reverb/             # buildable original Ambient Reverb
 │   ├── tape-fx/            # Tape FX component (TapeVibe/MixForge port) and standalone firmware

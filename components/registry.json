@@ -530,6 +530,32 @@
         "mod-editor-juce",
         "mod-editor-vst3"
       ]
+    },
+    "acid-seq": {
+      "version": {
+        "type": "macro",
+        "path": "sequencers/acid-seq/src/composed_version.h",
+        "name": "ACID_SEQ_VERSION"
+      },
+      "directory": "sequencers/acid-seq/build",
+      "image": "AcidSeq",
+      "marker": "ACID-SEQ-FW-VERSION=",
+      "device_id": "acid-seq",
+      "components": [
+        "step-seq",
+        "acid-303",
+        "drive",
+        "stereo-delay",
+        "saturation",
+        "fast-math",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
     }
   }
 }
