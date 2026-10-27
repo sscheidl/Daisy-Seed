@@ -1,5 +1,15 @@
 # Gesicherter Stand – 27.10.2026
 
+**Sparprofil für die mechanische Passprobe:** `fit-print/README.md` und
+`fit-print/V4-PASSPROBE-SPARPROFIL.zip`, erzeugt mit `package_fit_print.py`.
+Gleiche vier geprüfte STLs und Drucklagen wie der korrigierte V4-Stand.
+Anfrageprofil PLA / 0,20 mm / drei Wände / 20 % Füllung / mindestens 0,8 mm
+geschlossene Deck-/Bodenschichten, keine kosmetische Nachbearbeitung.
+Preis und Druckzeit NICHT GEMESSEN; 0,20-mm-Angebot beim Dienstleister
+bestätigen lassen. Keine Geometriedetails entfernt und keine neue Passung
+behauptet. Große Renderbilder fehlen im Spar-ZIP. Endgültige Acrylbestellung
+bis nach der gestalterischen Überarbeitung zurückstellen.
+
 **Korrektur Rückblende/Buchsentaschen:** Auf Nutzerbildern erkannter Fehler:
 die beiden M3×8-Köpfe bei X24/X176 sowie der Werkzeugweg waren durch den
 Träger blockiert. Neu bei X80,5/X124,5, Z16 im freien Mittelbereich, mit
