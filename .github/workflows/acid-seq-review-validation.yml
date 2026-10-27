@@ -1,0 +1,75 @@
+name: Acid Seq review validation
+# Isolated one-off review runner; no product changes and no release.
+on:
+  push:
+    branches: [codex/acid-seq-review-validation-20261027]
+    paths: [.github/workflows/acid-seq-review-validation.yml]
+permissions:
+  contents: read
+concurrency:
+  group: acid-seq-review-validation
+  cancel-in-progress: true
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: d3297fdc6f7c2faf0b781f7cb1b5b25364c24170
+      - name: Fetch the two pinned firmware source dependencies
+        run: git submodule update --init libDaisy DaisySP
+      - name: Linux compiler, ASan, UBSan and TSan checks
+        shell: bash
+        run: |
+          set +e
+          mkdir -p review-validation
+          {
+            uname -a
+            g++-13 --version
+            node --version
+            python3 --version
+            git rev-parse HEAD
+            git submodule status
+            sysctl vm.mmap_rnd_bits
+          } | tee review-validation/environment.log
+          : > review-validation/results.tsv
+          run_check() {
+            label="$1"
+            shift
+            echo "::group::$label"
+            "$@" 2>&1 | tee "review-validation/$label.log"
+            result=${PIPESTATUS[0]}
+            printf '%s\t%s\n' "$label" "$result" >> review-validation/results.tsv
+            echo "::endgroup::"
+          }
+          for item in step:sequencers/step-seq voice:instruments/acid-303 drive:effects/drive delay:effects/stereo-delay product:sequencers/acid-seq; do
+            label="${item%%:*}"
+            dir="${item#*:}"
+            run_check "$label-sanitize" make -C "$dir" test-sanitize HOST_CXX=g++-13
+            run_check "$label-thread" setarch "$(uname -m)" -R make -C "$dir" test-thread HOST_CXX=g++-13
+          done
+          run_check editor-sanitize make -C editors/mod-on-daisy test-sanitize HOST_CXX=g++-13
+          {
+            echo 'Optional dependencies: inventory only; no install or download.'
+            find /opt /usr/local -maxdepth 6 -name JUCEConfigVersion.cmake -print 2>/dev/null
+            ls -d "$HOME"/.cache/ms-playwright/* /opt/google/chrome/* /opt/microsoft/msedge/* 2>/dev/null
+          } > review-validation/optional-dependencies.log
+          cat review-validation/results.tsv
+          {
+            echo '## Acid Seq review validation'
+            echo 'Audited source: d3297fdc6f7c2faf0b781f7cb1b5b25364c24170'
+            echo
+            echo '| Check | Exit |'
+            echo '| --- | --- |'
+            while IFS=$'\t' read -r label result; do
+              printf '| %s | %s |\n' "$label" "$result"
+            done < review-validation/results.tsv
+          } >> "$GITHUB_STEP_SUMMARY"
+          awk -F '\t' '$2 != 0 { failed=1 } END { exit failed }' review-validation/results.tsv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acid-seq-review-validation-linux
+          path: review-validation
+          retention-days: 3
