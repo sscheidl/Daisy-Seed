@@ -21,3 +21,19 @@ Festlegungen, die der Auftrag offenließ:
 * Ein Moduswechsel gilt sofort, ohne Überblenden.
 * SW18 der eigenen Firmware wählt Modus und Sync in drei Stellungen. Stereo L/R frei geht
   nur per CC oder Panel.
+
+Korrekturen nach der Codex-Fehlersuche (2026-10-27, `docs/acid-seq/CODEX_FEHLERSUCHE.md`):
+
+* **F02 Nachhall-Ende:** Der Nachhall endet erst, wenn der Wet-Pegel 500 ms plus die
+  aktuelle Delay-Zeit unter −90 dBFS liegt. Ein Echo nach einer langen Pause (z. B. 1 s
+  Delay ohne Feedback) geht nicht mehr verloren. Nach dem Ende markiert
+  `StereoDelay::Invalidate()` die Leitungen als leer, ohne sie im Callback zu löschen.
+  Beim Wiedereinschalten kommen alte Echos nicht zurück, auch nicht nach dem
+  20-s-Ausblenden.
+* **Q1 Unity-Bypass** (vom Benutzer entschieden): Nach dem Ende des Nachhalls blendet der
+  Host Dry/Wet in 10 ms auf 0 %. `delay-fx` ist ausgeschaltet exakt trocken wie das
+  Produkt, statt `dry · (1 − mix)`.
+* **F10 Revision:** SQ-Parameter tragen ihre Revision bis zur Übernahme im Callback.
+* **F15:** Der Firmware-Test prüft jetzt wirklich „exakt trocken“, wie die PASS-Zeile sagt.
+
+Der Golden-Hash `0xD11BFF18` bleibt unverändert (er läuft ohne Ausschalten).

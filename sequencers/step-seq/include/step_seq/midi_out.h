@@ -176,21 +176,14 @@ class MidiPort {
     int messages_ = 8, bytes_ = 0;
 };
 
-// One main-loop pass: reconcile Note-Offs from `wanted` first, then queued events within
-// the budget. Clock bytes go before notes; events wait in the queue when a port is full.
+// One main-loop pass: queued events within the budget, then Note-Offs reconciled from
+// `wanted`. Clock bytes go before notes; events wait in the queue when a port is full.
+// Reconciling only once the queue is empty keeps a queued legato (new On before old Off)
+// intact; it catches the Offs a full queue dropped.
 template <class Usb, class Din>
 inline void ServiceMidi(NoteFeed& feed, uint8_t channel, bool clock_out, Usb& usb, Din& din) {
     usb.BeginPass();
     din.BeginPass();
-    for(int n = 0; n < 128; ++n) {
-        const uint8_t note = uint8_t(n);
-        if(feed.Wanted(note))
-            continue;
-        if(usb.Has(channel, note) && usb.CanNote())
-            usb.NoteOff(channel, note);
-        if(din.Has(channel, note) && din.CanNote())
-            din.NoteOff(channel, note);
-    }
     while(const MidiMsg* m = feed.queue.Peek()) {
         const bool rt = m->kind == MidiMsg::Kind::Clock || m->kind == MidiMsg::Kind::Start ||
                         m->kind == MidiMsg::Kind::Stop || m->kind == MidiMsg::Kind::Continue;
@@ -228,6 +221,17 @@ inline void ServiceMidi(NoteFeed& feed, uint8_t channel, bool clock_out, Usb& us
         }
         MidiMsg done;
         feed.queue.Pop(done);
+    }
+    for(int n = 0; n < 128; ++n) {
+        const uint8_t note = uint8_t(n);
+        if(feed.queue.Peek())
+            break; // checked per note: the callback may queue a legato meanwhile
+        if(feed.Wanted(note))
+            continue;
+        if(usb.Has(channel, note) && usb.CanNote())
+            usb.NoteOff(channel, note);
+        if(din.Has(channel, note) && din.CanNote())
+            din.NoteOff(channel, note);
     }
 }
 

@@ -224,8 +224,13 @@ class Engine {
 
         // Transport: enable (SW17, Gate IN 2 in Run mode), clock pulses, timeouts.
         const bool enable = in.run_switch && (settings.gate2_mode != Gate2Mode::Run || in.gate2_high);
+        // A clock source change while enabled restarts the transport like SW17 off and on:
+        // notes end, the start point plays with the new source (internal) or it arms.
+        if(enabled_ && settings.clock_source != enabled_source_)
+            Disable();
         if(enable && !enabled_) {
             enabled_ = true;
+            enabled_source_ = settings.clock_source;
             playhead_.Restart();
             step_count_ = 0;
             if(UsesInternalStart())
@@ -233,16 +238,7 @@ class Engine {
             else
                 EnterWaiting();
         } else if(!enable && enabled_) {
-            enabled_ = false;
-            if(state_ == State::Running && ClockOutActive())
-                EmitRt(OutEvent::Kind::Stop);
-            state_ = State::Stop;
-            active_ = Active::None;
-            midi_port_ = Active::None;
-            pending_source_ = Active::None;
-            panic_request_ = true;
-            start_now_ = false;
-            playhead_.Restart();
+            Disable();
         }
         if(in.gate1_rise)
             Pulse(Active::Gate);
@@ -324,6 +320,18 @@ class Engine {
     }
     bool ExternalActive() const { return active_ == Active::Gate || active_ == Active::Usb || active_ == Active::Din; }
 
+    void Disable() {
+        enabled_ = false;
+        if(state_ == State::Running && ClockOutActive())
+            EmitRt(OutEvent::Kind::Stop);
+        state_ = State::Stop;
+        active_ = Active::None;
+        midi_port_ = Active::None;
+        pending_source_ = Active::None;
+        panic_request_ = true;
+        start_now_ = false;
+        playhead_.Restart();
+    }
     void StartInternal() {
         EndPreview();
         state_ = State::Running;
@@ -741,6 +749,7 @@ class Engine {
     Xorshift32 rng_;
     Playhead playhead_;
     State state_ = State::Stop;
+    ClockSource enabled_source_ = ClockSource::Internal; // clock source at enable
     Active active_ = Active::None, midi_port_ = Active::None, pending_source_ = Active::None;
     bool enabled_ = false, timed_out_ = false, await_clock_ = false, external_boundary_ = false;
     bool start_now_ = false;

@@ -28,6 +28,17 @@ function startSim(product) {
 const hex = (bytes) => bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
 const bytes = (h) => h.match(/../g).map((b) => parseInt(b, 16));
 
+// Browser timers refuse to run as methods of another object ("Illegal invocation",
+// Codex F16); these stand-ins do the same, Node's own timers would not.
+function strictSetTimer(fn, ms) {
+  if (this !== undefined) throw new TypeError('Illegal invocation');
+  return setTimeout(fn, ms);
+}
+function strictClearTimer(timer) {
+  if (this !== undefined) throw new TypeError('Illegal invocation');
+  clearTimeout(timer);
+}
+
 function connect(sim, { drop = 0 } = {}) {
   const sent = [];
   let dropped = 0;
@@ -35,7 +46,7 @@ function connect(sim, { drop = 0 } = {}) {
     sent.push(frame);
     if (dropped < drop) { dropped += 1; return; }
     sim.command('S ' + hex(frame)).then((lines) => lines.filter((l) => l.startsWith('R ')).forEach((l) => client.onMessage(bytes(l.slice(2)))));
-  }, { timeoutMs: 50 });
+  }, { timeoutMs: 50, setTimer: strictSetTimer, clearTimer: strictClearTimer });
   return { client, sent };
 }
 
@@ -98,6 +109,20 @@ function connect(sim, { drop = 0 } = {}) {
   assert.ok(compat.patternSkipped && !compat.clean);
   assert.throws(() => S.parsePatch('{"format":"other"}'));
   assert.throws(() => S.parsePatch('{"format":"acid-seq-patch","format_version":9}'));
+  // Codex F07: the same invalid numbers as tests/test_sq.cpp.
+  for (const bad of [
+    '{"format":"acid-seq-patch","format_version":1e999}',
+    '{"format":"acid-seq-patch","format_version":-1e999}',
+    '{"format":"acid-seq-patch","format_version":1.5}',
+    '{"format":"acid-seq-patch","format_version":1,"components":[{"id":"drive","schema":1e999}]}',
+    '{"format":"acid-seq-patch","format_version":1,"components":[{"id":"drive","params":{"drive":1e999}}]}',
+    '{"format":"acid-seq-patch","format_version":1,"components":[{"id":"drive","params":{"drive":3e9}}]}',
+    text.replace('"note": 33', '"note": 1e999'),
+    text.replace('"note": 33', '"note": 33.5'),
+  ]) assert.throws(() => S.parsePatch(bad), bad);
+  // Out-of-range values are clamped to the descriptor before sending, never wrapped.
+  assert.strictEqual(await client.setParam('acid-303', 'cutoff', 1e12), client.component('acid-303').parameters.find((p) => p.key === 'cutoff').max);
+  await assert.rejects(client.setParam('acid-303', 'cutoff', NaN));
   for (const s of [sim, other, fx]) { s.proc.stdin.write('Q\n'); }
   console.log('PASS: browser SQ client against the firmware device (retry, read-only connect, edits, NAK, '
     + 'calibration/enable, monitor, stats) and .acidpatch (round trip, explicit upload, compatibility)');

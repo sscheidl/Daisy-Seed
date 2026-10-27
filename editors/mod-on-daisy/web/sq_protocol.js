@@ -216,8 +216,10 @@
       this.send = send;
       this.timeoutMs = timeoutMs;
       this.retries = retries;
-      this.setTimer = setTimer;
-      this.clearTimer = clearTimer;
+      // Wrapped: browser timers throw "Illegal invocation" when called as methods of
+      // another object (Codex F16); Node accepts that, so only a browser shows it.
+      this.setTimer = (fn, ms) => setTimer(fn, ms);
+      this.clearTimer = (timer) => clearTimer(timer);
       this.rid = 0;
       this.queue = [];
       this.identity = null;
@@ -352,7 +354,10 @@
       const ci = this.componentIndex(componentId);
       const p = ci >= 0 && this.components[ci].parameters.find((q) => q.key === key);
       if (!p || p.flags & 1) throw new Error('Parameter nicht schreibbar: ' + componentId + '.' + key);
-      const r = await this.request(TYPE.setParam, new Writer().u7(ci).u14(p.id).i32(Math.round(value * 1000)).bytes);
+      if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('ungültiger Wert für ' + key);
+      // Into the descriptor's range before encoding (Codex F07): no i32 wrap-around.
+      const clamped = Math.min(p.max, Math.max(p.min, value));
+      const r = await this.request(TYPE.setParam, new Writer().u7(ci).u14(p.id).i32(Math.round(clamped * 1000)).bytes);
       r.u7(); r.u14();
       p.value = r.i32() / 1000;
       this.state.accepted = r.u14();
@@ -442,19 +447,36 @@
     }
     return out + '\n}\n';
   }
+  // Whole number within [lo, hi]; checked before use (Codex F07: 1e999, 3.5, strings).
+  const isInt = (v, lo, hi) => typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi;
   function parsePatch(text) {
     let root;
     try { root = JSON.parse(text); } catch (e) { throw new Error('keine gültige JSON-Datei'); }
-    if (!root || root.format !== 'acid-seq-patch') throw new Error('kein Acid-Seq-Patch');
+    if (!root || typeof root !== 'object' || root.format !== 'acid-seq-patch' || !isInt(root.format_version, 1, 1e6)) {
+      throw new Error('kein Acid-Seq-Patch');
+    }
     if (root.format_version > 1) throw new Error('Patch-Format ' + root.format_version + ' ist neuer als dieser Editor');
+    if (root.pattern !== undefined && (!Array.isArray(root.pattern) || root.pattern.length !== 16)) {
+      throw new Error('Pattern braucht 16 Steps');
+    }
     const pattern = root.pattern ? root.pattern.map((s, i) => {
-      const step = { note: s.note | 0, gateLength: s.gate_length | 0, gate: !!s.gate, accent: !!s.accent, slide: !!s.slide };
-      if (step.note < 0 || step.note > 59 || step.gateLength < 5 || step.gateLength > 100) throw new Error('ungültiger Step ' + (i + 1));
-      return step;
+      const note = s && s.note !== undefined ? s.note : 0, gateLength = s && s.gate_length !== undefined ? s.gate_length : 50;
+      if (!s || typeof s !== 'object' || !isInt(note, 0, 59) || !isInt(gateLength, 5, 100)) throw new Error('ungültiger Step ' + (i + 1));
+      return { note, gateLength, gate: !!s.gate, accent: !!s.accent, slide: !!s.slide };
     }) : null;
-    if (pattern && pattern.length !== 16) throw new Error('Pattern braucht 16 Steps');
-    return { product: root.product || '', components: (root.components || []).map((c) => ({ id: c.id, version: c.version,
-      schema: c.schema, params: { ...c.params } })), pattern };
+    if (root.components !== undefined && !Array.isArray(root.components)) throw new Error('kein Acid-Seq-Patch');
+    const components = (root.components || []).map((c) => {
+      if (!c || typeof c.id !== 'string' || !c.id) throw new Error('Komponente ohne ID');
+      if (c.schema !== undefined && !isInt(c.schema, 0, 127)) throw new Error('ungültige Schema-Version');
+      const params = {};
+      for (const [k, v] of Object.entries(c.params && typeof c.params === 'object' ? c.params : {})) {
+        if (typeof v === 'boolean') params[k] = v ? 1 : 0;
+        else if (typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 2147483) params[k] = v;
+        else throw new Error('ungültiger Wert für ' + k);
+      }
+      return { id: c.id, version: c.version, schema: c.schema, params };
+    });
+    return { product: root.product || '', components, pattern };
   }
   function checkPatch(p, client) {
     const result = { missing: [], incompatible: [], unknown: [], patternSkipped: false };

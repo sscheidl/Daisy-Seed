@@ -25,9 +25,13 @@ Kern nach FX-Vertrag 1.0 (wet-only), eigene Firmware `delay-fx` für die Stereo-
 * **Feedback** 0–95 %, ein Soft-Clip in der Schleife hält es begrenzt. **Dämpfung:**
   Tiefpass erster Ordnung in der Rückkopplung, 20 kHz bis 1 kHz.
 * **Ausschalten** (Host, `host.h`): Zuerst wird die Einspeisung über 10 ms ausgeblendet,
-  der Nachhall läuft weiter. Er endet, wenn der Wet-Pegel 500 ms unter −90 dBFS liegt,
-  spätestens 20 s nach dem Ausschalten mit 1 s Ausblenden. Wird während des Nachhalls
-  wieder eingeschaltet, blendet die Einspeisung ein, die Leitungen bleiben.
+  der Nachhall läuft weiter. Er endet, wenn der Wet-Pegel 500 ms plus die Delay-Zeit
+  unter −90 dBFS liegt (so geht kein Echo verloren, das noch unterwegs ist), spätestens
+  20 s nach dem Ausschalten mit 1 s Ausblenden. Danach blendet Dry/Wet in 10 ms auf 0 %,
+  der Ausgang ist exakt trocken. Wird während des Nachhalls wieder eingeschaltet, blendet
+  die Einspeisung ein, die Leitungen bleiben. Nach dem Ende des Nachhalls beginnt das
+  Delay mit leeren Leitungen. Alte Echos kommen nicht zurück, ohne dass der Callback die
+  4,6 MB löschen muss.
 
 ## Bedienung (Firmware `delay-fx`)
 

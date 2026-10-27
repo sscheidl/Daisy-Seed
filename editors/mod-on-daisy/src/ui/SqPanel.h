@@ -122,10 +122,12 @@ class SqPanel : public juce::Component {
         const bool cv = s_.Identity().capabilities & 32;
         for(int o = 0; o < 2; ++o) {
             const SqCal& c = s_.Cal(o);
-            const int32_t values[] = {c.offset / 1000, c.scale / 1000, c.gate_low, c.gate_high, c.clamp_min, c.clamp_max};
+            const std::string values[] = {CalText(c.offset), CalText(c.scale), std::to_string(c.gate_low),
+                                          std::to_string(c.gate_high), std::to_string(c.clamp_min),
+                                          std::to_string(c.clamp_max)};
             for(int f = 0; f < 6; ++f) {
                 if(!cal_edit_[o][f].hasKeyboardFocus(true) && (c.valid || cal_edit_[o][f].isEmpty()))
-                    cal_edit_[o][f].setText(juce::String(c.valid ? values[f] : kCalDefaults[f]), false);
+                    cal_edit_[o][f].setText(c.valid ? juce::String(values[f]) : juce::String(kCalDefaults[f]), false);
                 cal_edit_[o][f].setVisible(cv);
                 cal_label_[o][f].setVisible(cv);
             }
@@ -253,7 +255,7 @@ class SqPanel : public juce::Component {
   private:
     static constexpr const char* kTabNames[5] = {"Sequencer", "Stimme", "Drive", "Delay", "MIDI"};
     static constexpr const char* kTabComponents[5] = {"step-seq", "acid-303", "drive", "stereo-delay", "step-seq"};
-    static constexpr int kCalDefaults[6] = {2048, -410, 2048, 410, 0, 4095};
+    static constexpr const char* kCalDefaults[6] = {"2048", "-409.6", "2048", "410", "0", "4095"};
     static bool MidiKey(const std::string& k) {
         return k == "seq_channel" || k == "voice_channel" || k == "usb_out" || k == "din_out" || k == "velocity" ||
                k == "accent_velocity" || k == "clock_out";
@@ -348,8 +350,8 @@ class SqPanel : public juce::Component {
     }
     void SendCal(int o) {
         SqCal c;
-        c.offset = cal_edit_[o][0].getText().getIntValue() * 1000;
-        c.scale = int32_t(cal_edit_[o][1].getText().getDoubleValue() * 1000.0);
+        c.offset = CalMilli(cal_edit_[o][0].getText().getDoubleValue());
+        c.scale = CalMilli(cal_edit_[o][1].getText().getDoubleValue());
         c.gate_low = uint16_t(cal_edit_[o][2].getText().getIntValue());
         c.gate_high = uint16_t(cal_edit_[o][3].getText().getIntValue());
         c.clamp_min = uint16_t(cal_edit_[o][4].getText().getIntValue());

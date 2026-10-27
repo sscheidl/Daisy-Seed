@@ -27,12 +27,14 @@ constexpr uint32_t kLedPeriodMs = 10, kClockTimeoutMs = 2000;
 struct Command {
     enum class Kind : uint8_t { Param, Tempo };
     Kind kind = Kind::Param;
-    uint16_t id = 0;
+    uint16_t id = 0, revision = 0;
+    bool from_sq = false; // SQ parameter: `revision` is applied (Codex F10)
     int32_t value = 0;
     float quarter = 0.f;
 };
 struct Snapshot {
     ::seed::fx::delay::Parameters params;
+    uint16_t applied_revision = 0;
     bool clamped = false, overrun = false, external = false;
     uint8_t state = 0;
     float quarter = 24000.f;
@@ -58,6 +60,7 @@ static bool pots_started = false, last_sw17 = false, overrun_seen = false, exter
 static int last_sw18 = -1;
 static float pot_quarter = 24000.f;
 static uint32_t control_ms = 0;
+static uint16_t applied_revision = 0;
 
 // ----- audio callback ---------------------------------------------------------------------
 static void Controls() {
@@ -120,6 +123,8 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
             external_tempo = c.quarter > 0.f;
         } else {
             ::seed::fx::delay::WriteParam(params, c.id, c.value);
+            if(c.from_sq)
+                applied_revision = c.revision;
         }
     }
     Controls();
@@ -136,6 +141,7 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
     }
     fw::Snapshot& s = snapshots.Back();
     s.params = params;
+    s.applied_revision = applied_revision;
     s.clamped = delay.Clamped();
     s.overrun = overrun_seen;
     s.external = external_tempo;
@@ -159,10 +165,12 @@ static sq::Component components[] = {
     {"stereo-delay", sq::KindEffect, STEREO_DELAY_VERSION, &sq::kStereoDelayComponent, values}};
 class Host : public sq::Host {
   public:
-    bool PushParam(uint8_t, uint16_t id, int32_t value, uint16_t) override {
+    bool PushParam(uint8_t, uint16_t id, int32_t value, uint16_t revision) override {
         Command c;
         c.id = id;
         c.value = value;
+        c.revision = revision;
+        c.from_sq = true;
         return commands.Push(c);
     }
     bool PushPattern(const step_seq::Pattern&, uint16_t) override { return false; }
@@ -256,6 +264,7 @@ static void ServiceMainLoop() {
                 device.ParamChanged(0, id);
         }
         last_params = s.params;
+        device.view.applied_revision = s.applied_revision;
         device.view.tempo_milli = int32_t(48000.f * 60.f / s.quarter * 1000.f);
     }
     device.counters[sq::CntCallbackOverruns] = meter.Overruns();

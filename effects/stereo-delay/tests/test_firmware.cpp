@@ -52,9 +52,7 @@ static void Tick(unsigned count = 1, bool sound = true) {
         for(unsigned i = 0; i < 48; ++i) {
             CHECK(std::isfinite(out_l[i]) && std::fabs(out_l[i]) <= 1.f);
             const float right = hw.right_detect.pressed ? in_r[i] : in_l[i];
-            const float mix = params.mix * 0.01f;
-            dry_exact &= std::fabs(out_l[i] - in_l[i] * (1.f - mix)) < 1e-7f &&
-                         std::fabs(out_r[i] - right * (1.f - mix)) < 1e-7f;
+            dry_exact &= std::fabs(out_l[i] - in_l[i]) < 1e-7f && std::fabs(out_r[i] - right) < 1e-7f;
         }
     }
 }
@@ -89,7 +87,7 @@ int main() {
     CHECK(external_tempo && std::fabs(delay.Tempo() - 21.f * 24.f * 48.f) < 50.f);
     Tick(2100);
     CHECK(!external_tempo);
-    // SW17 off: the tail rings, then the output is exactly dry * (1 - mix).
+    // SW17 off: the tail rings, then the output is exactly dry (unity bypass, Codex Q1/F15).
     hw.tog_sw17.pressed = false;
     Tick(50);
     CHECK(!dry_exact && host.GetState() == ::seed::fx::DelayHost::State::Tail);
@@ -119,6 +117,19 @@ int main() {
     usb_midi.incoming.push_back(e);
     Tick(2);
     CHECK(!usb_midi.sent.empty() && usb_midi.sent.back()[5] == (sq::Identify | sq::kResponse));
+    // F10: SET_PARAM feedback; once the callback took it, applied equals accepted.
+    w.Begin(sq::SetParam, 10);
+    w.U7(0);
+    w.U14(6);
+    w.I32(40000);
+    const std::size_t set_size = w.End();
+    e.sysex_message_len = uint8_t(set_size - 2);
+    for(std::size_t i = 1; i + 1 < set_size; ++i)
+        e.sysex_data[i - 1] = buffer[i];
+    usb_midi.incoming.push_back(e);
+    Tick(3);
+    CHECK(params.feedback == 40.f);
+    CHECK(fw::device.AcceptedRevision() == 1 && fw::device.view.applied_revision == 1);
     const unsigned resets = daisy::System::bootloader_resets;
     hw.pressed[8] = hw.pressed[15] = true;
     Tick(5100);

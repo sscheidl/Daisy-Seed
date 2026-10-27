@@ -247,6 +247,15 @@ inline std::string SerializeAcidPatch(const AcidPatch& p) {
     return out + "\n}\n";
 }
 
+// A whole number within [lo, hi], checked before any cast (Codex F07: 1e999 or 3.5).
+inline bool AcidInt(const acid_json::Value* v, double lo, double hi, int& out) {
+    if(!v || v->kind != acid_json::Value::Kind::Number || !std::isfinite(v->n) || v->n != std::floor(v->n) ||
+       v->n < lo || v->n > hi)
+        return false;
+    out = int(v->n);
+    return true;
+}
+
 // nullopt with `error` set for anything that is not a valid patch.
 inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::string& error) {
     acid_json::Value root;
@@ -256,12 +265,13 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
     }
     const acid_json::Value* format = root.Get("format");
     const acid_json::Value* version = root.Get("format_version");
-    if(!format || format->s != "acid-seq-patch" || !version || version->kind != acid_json::Value::Kind::Number) {
+    int format_version = 0;
+    if(!format || format->s != "acid-seq-patch" || !AcidInt(version, 1, 1e6, format_version)) {
         error = "kein Acid-Seq-Patch";
         return std::nullopt;
     }
-    if(int(version->n) > kAcidPatchFormat) {
-        error = "Patch-Format " + std::to_string(int(version->n)) + " ist neuer als dieser Editor";
+    if(format_version > kAcidPatchFormat) {
+        error = "Patch-Format " + std::to_string(format_version) + " ist neuer als dieser Editor";
         return std::nullopt;
     }
     AcidPatch p;
@@ -275,11 +285,23 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
             if(const acid_json::Value* v = c.Get("version"))
                 pc.version = v->s;
             if(const acid_json::Value* s = c.Get("schema"))
-                pc.schema = int(s->n);
+                if(!AcidInt(s, 0, 127, pc.schema)) {
+                    error = "ungültige Schema-Version";
+                    return std::nullopt;
+                }
             if(const acid_json::Value* params = c.Get("params"))
-                for(const auto& kv : params->o)
-                    if(kv.second.kind == acid_json::Value::Kind::Number || kv.second.kind == acid_json::Value::Kind::Bool)
-                        pc.params[kv.first] = kv.second.kind == acid_json::Value::Kind::Bool ? (kv.second.b ? 1 : 0) : kv.second.n;
+                for(const auto& kv : params->o) {
+                    if(kv.second.kind == acid_json::Value::Kind::Bool) {
+                        pc.params[kv.first] = kv.second.b ? 1 : 0;
+                    } else if(kv.second.kind == acid_json::Value::Kind::Number) {
+                        // Any finite value fits: the device's range clamps it when sent.
+                        if(!std::isfinite(kv.second.n) || std::fabs(kv.second.n) > 2147483.0) {
+                            error = "ungültiger Wert für " + kv.first;
+                            return std::nullopt;
+                        }
+                        pc.params[kv.first] = kv.second.n;
+                    }
+                }
             if(pc.id.empty()) {
                 error = "Komponente ohne ID";
                 return std::nullopt;
@@ -296,8 +318,13 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
             step_seq::Step& st = p.pattern[i];
             const acid_json::Value* note = s.Get("note");
             const acid_json::Value* length = s.Get("gate_length");
-            st.note = uint8_t(note ? note->n : 0);
-            st.gate_percent = uint8_t(length ? length->n : 50);
+            int note_value = 0, length_value = 50;
+            if((note && !AcidInt(note, 0, 127, note_value)) || (length && !AcidInt(length, 0, 100, length_value))) {
+                error = "ungültiger Step " + std::to_string(i + 1);
+                return std::nullopt;
+            }
+            st.note = uint8_t(note_value);
+            st.gate_percent = uint8_t(length_value);
             st.gate = s.Get("gate") && s.Get("gate")->b;
             st.accent = s.Get("accent") && s.Get("accent")->b;
             st.slide = s.Get("slide") && s.Get("slide")->b;
