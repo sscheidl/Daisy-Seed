@@ -1,14 +1,21 @@
 #pragma once
 // SQ protocol on the editor side (sequencers/step-seq/docs/PROTOCOL.md, ARBEITSAUFTRAG
-// 4.9, R09): a dispatcher that keeps Mod on Daisy (7D 4D 44), SQ (7D 53 51) and the
-// bootloader reply (7D 42 4C) apart, and the SQ handshake (IDENTIFY, then the component
-// list). Phase 1 delivers the handshake only; the pages follow in phase 5. The device
-// state has priority: nothing is sent to the device without an explicit action (D13).
+// 4.9, R09/R10/R16): a dispatcher that keeps Mod on Daisy (7D 4D 44), SQ (7D 53 51) and the
+// bootloader reply (7D 42 4C) apart, and the SQ client of the Acid Seq panel pages.
 //
-// Single-threaded like Session: OnMessage(), Tick() and Connect() on the GUI thread.
+// Connect() reads the device first (D13: the device has priority): IDENTIFY, components,
+// parameter descriptors and enum labels, values, pattern, state, calibration, then the
+// monitor. Nothing is written to the device without an explicit call (an edit or
+// Upload()). One request at a time, 200 ms timeout, three retries with the same request ID.
+//
+// Single-threaded: OnMessage(), Tick() and all calls on the GUI thread.
 #include "Session.h"
+#include "step_seq/pattern.h"
 #include "step_seq/sq_protocol.h"
 #include <cstdint>
+#include <deque>
+#include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -29,9 +36,33 @@ inline Protocol ClassifySysEx(const uint8_t* m, std::size_t n) {
     return Protocol::Unknown;
 }
 
+struct SqParam {
+    uint16_t id = 0;
+    std::string key;
+    uint8_t type = 0, unit = 0, flags = 0, cc = 127;
+    int32_t min = 0, max = 0, def = 0, value = 0;
+    std::vector<std::string> enum_keys;
+    bool Readonly() const { return flags & 1; }
+    bool Log() const { return flags & 2; }
+    double Value() const { return value / 1000.0; }
+};
+
 struct SqComponent {
     std::string id, version;
     uint8_t kind = 0, schema = 0, params = 0;
+    std::vector<SqParam> parameters;
+    const SqParam* Find(const std::string& key) const {
+        for(const auto& p : parameters)
+            if(p.key == key)
+                return &p;
+        return nullptr;
+    }
+    SqParam* Find(const std::string& key) {
+        for(auto& p : parameters)
+            if(p.key == key)
+                return &p;
+        return nullptr;
+    }
 };
 
 struct SqIdentity {
@@ -42,164 +73,572 @@ struct SqIdentity {
     uint8_t component_count = 0;
 };
 
+struct SqState {
+    uint8_t state = 0, mode = 0, sw17 = 0, sw18 = 1, source = 0;
+    int step = -1;
+    bool gate = false;
+    double bpm = 120;
+    uint16_t accepted = 0, applied = 0;
+    bool cv_enabled = false, usb = false;
+};
+
+struct SqCal {
+    bool valid = false;
+    int32_t offset = 0, scale = 0;
+    uint16_t gate_low = 0, gate_high = 0, clamp_min = 0, clamp_max = 4095;
+};
+
+inline const char* SqStateName(uint8_t s) {
+    static const char* names[] = {"STOP", "WARTET", "LÄUFT", "PAUSE"};
+    return s < 4 ? names[s] : "?";
+}
+inline std::string SqNoteName(int note) { // step note 0..59 relative to C1
+    static const char* names[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H"};
+    return std::string(names[note % 12]) + std::to_string(note / 12 + 1);
+}
+inline std::string SqErrorText(uint8_t code) {
+    switch(code) {
+        case 1: return "Länge";
+        case 2: return "Prüfsumme";
+        case 3: return "unbekannter Typ";
+        case 4: return "Wert außerhalb des Bereichs";
+        case 5: return "beschäftigt";
+        case 6: return "Protokollversion";
+        case 7: return "anderes Kit (UID)";
+        case 8: return "nicht kalibriert";
+        case 9: return "im aktuellen Zustand nicht erlaubt";
+        default: return "Fehler " + std::to_string(code);
+    }
+}
+
 class SqSession {
   public:
     static constexpr double kTimeoutMs = 200.0;
     static constexpr int kRetries = 3;
-    enum class Phase { Offline, Identify, Components, Ready, Failed };
+    static constexpr double kMonitorRenewMs = 1000.0;
+    enum class Phase { Offline, Reading, Ready, Failed };
+    using Done = std::function<void(bool ok, uint8_t error)>;
 
-    explicit SqSession(Transport& transport) : transport_(transport) {}
+    explicit SqSession(editor::Transport& transport) : transport_(transport) {}
+    // Any change of the model: the UI redraws.
+    std::function<void()> changed;
+    // Log lines for the UI (German, as the rest of the editor).
+    std::function<void(LogKind, const std::string&)> log;
 
-    // Starts the handshake: IDENTIFY, then GET_COMPONENT for each component.
-    void Connect(double now_ms) {
-        identity_ = SqIdentity{};
-        components_.clear();
-        phase_ = Phase::Identify;
-        lost_ = 0;
-        Request(sq::Identify, {}, now_ms);
+    // Starts reading the device (nothing is written).
+    // identify_retries: fewer retries when probing a port that may hold an MD device.
+    void Connect(double now_ms, int identify_retries = kRetries) {
+        Reset();
+        phase_ = Phase::Reading;
+        now_ = now_ms;
+        ReadAll();
+        if(!queue_.empty())
+            queue_.front().retries = identify_retries;
     }
-    // One complete SQ frame from the device. Returns true if it was consumed.
-    bool OnMessage(const uint8_t* m, std::size_t n, double now_ms) {
-        if(ClassifySysEx(m, n) != Protocol::Sq)
+    void Disconnect() {
+        Reset();
+        phase_ = Phase::Offline;
+        Changed();
+    }
+
+    // ----- explicit edits (each one request, confirmed by the device) -----
+    bool SetParam(std::size_t component, const std::string& key, double value, Done done = {}) {
+        if(component >= components_.size())
             return false;
-        const bool reply_class = n >= 6 && (m[5] & sq::kResponse);
-        if(!reply_class || n < sq::kOverhead) {
-            ++ignored_; // requests from the other side or broken frames
-            return true;
-        }
-        if(m[n - 1] != 0xF7 || m[7] != n - sq::kOverhead) {
+        const SqParam* p = components_[component].Find(key);
+        if(!p || p->Readonly())
+            return false;
+        const int32_t milli = int32_t(value * 1000.0 + (value < 0 ? -0.5 : 0.5));
+        std::vector<uint8_t> w;
+        U7(w, uint8_t(component));
+        U14(w, p->id);
+        I32(w, milli);
+        Enqueue(sq::SetParam, w, [this, component, id = p->id, done](bool ok, uint8_t err, sq::Reader& r) {
+            if(ok) {
+                r.U7();
+                r.U14();
+                const int32_t v = r.I32();
+                state_.accepted = r.U14();
+                for(auto& q : components_[component].parameters)
+                    if(q.id == id)
+                        q.value = v;
+            }
+            Finish(done, ok, err);
+        });
+        return true;
+    }
+    void SetStep(int index, const step_seq::Step& s, Done done = {}) {
+        std::vector<uint8_t> w;
+        U7(w, uint8_t(index));
+        Step(w, s);
+        Enqueue(sq::SetStep, w, [this, index, s, done](bool ok, uint8_t err, sq::Reader& r) {
+            if(ok) {
+                r.U7();
+                state_.accepted = r.U14();
+                pattern_[std::size_t(index)] = s;
+            }
+            Finish(done, ok, err);
+        });
+    }
+    void SetPattern(const step_seq::Pattern& p, Done done = {}) {
+        std::vector<uint8_t> w;
+        for(const auto& s : p)
+            Step(w, s);
+        Enqueue(sq::SetPattern, w, [this, p, done](bool ok, uint8_t err, sq::Reader& r) {
+            if(ok) {
+                r.U7();
+                state_.accepted = r.U14();
+                pattern_ = p;
+            }
+            Finish(done, ok, err);
+        });
+    }
+    void StartStop(bool start, Done done = {}) {
+        Enqueue(sq::TransportCmd, {uint8_t(start ? 1 : 0)}, [this, done](bool ok, uint8_t err, sq::Reader&) {
+            if(!ok && log)
+                log(LogKind::Warn, "Start/Stopp abgelehnt: " + SqErrorText(err) + " (SW17 auf Run?)");
+            Finish(done, ok, err);
+        });
+    }
+    void SetCal(int output, const SqCal& c, Done done = {}) {
+        std::vector<uint8_t> w;
+        Uid(w);
+        U7(w, uint8_t(output));
+        I32(w, c.offset);
+        I32(w, c.scale);
+        U14(w, c.gate_low);
+        U14(w, c.gate_high);
+        U14(w, c.clamp_min);
+        U14(w, c.clamp_max);
+        Enqueue(sq::SetCal, w, [this, output, c, done](bool ok, uint8_t err, sq::Reader&) {
+            if(ok) {
+                cal_[output & 1] = c;
+                cal_[output & 1].valid = true;
+                state_.cv_enabled = false; // new calibration withdraws the enable
+            }
+            Finish(done, ok, err);
+        });
+    }
+    void CvEnable(bool on, Done done = {}) {
+        std::vector<uint8_t> w;
+        Uid(w);
+        U7(w, on ? 1 : 0);
+        Enqueue(sq::CvEnable, w, [this, on, done](bool ok, uint8_t err, sq::Reader&) {
+            if(ok)
+                state_.cv_enabled = on;
+            Finish(done, ok, err);
+        });
+    }
+    void ReadStats(Done done = {}) {
+        Enqueue(sq::GetStats, {}, [this, done](bool ok, uint8_t err, sq::Reader& r) {
+            if(ok) {
+                stats_.clear();
+                const uint8_t n = r.U7();
+                for(uint8_t i = 0; i < n; ++i)
+                    stats_.push_back(r.U32());
+            }
+            Finish(done, ok, err);
+        });
+    }
+    // Re-reads everything from the device (button "Vom Gerät lesen").
+    void Pull() { ReadAll(); }
+
+    void OnMessage(const uint8_t* m, std::size_t n, double now_ms) {
+        now_ = now_ms;
+        if(ClassifySysEx(m, n) != Protocol::Sq)
+            return;
+        if(n < sq::kOverhead || !(m[5] & sq::kResponse) || m[n - 1] != 0xF7 || m[7] != n - sq::kOverhead) {
             ++ignored_;
-            return true;
+            return;
         }
         const uint8_t crc = sq::Crc8(m + 4, n - 7);
         if(m[n - 3] != (crc >> 7) || m[n - 2] != (crc & 0x7F)) {
             ++ignored_;
-            return true;
-        }
-        if(m[5] == sq::kMonitorEvent) {
-            ++monitor_frames_;
-            return true;
-        }
-        if(!waiting_ || m[6] != rid_) {
-            ++ignored_; // stale or duplicate reply
-            return true;
+            return;
         }
         sq::Reader r(m + 8, n - sq::kOverhead);
+        if(m[5] == sq::kMonitorEvent) {
+            ++monitor_frames_;
+            Monitor(r);
+            return;
+        }
+        if(queue_.empty() || !queue_.front().sent || m[6] != queue_.front().rid) {
+            ++ignored_; // stale, duplicate or unexpected reply
+            return;
+        }
+        Request req = std::move(queue_.front());
+        queue_.pop_front();
+        last_answer_ = now_ms;
         if(m[5] == sq::kNak) {
-            waiting_ = false;
             r.U7();
-            last_error_ = r.U7();
-            phase_ = Phase::Failed;
-            return true;
+            const uint8_t error = r.U7();
+            last_error_ = error;
+            req.handle(false, error, r);
+        } else if(m[5] == (req.type | sq::kResponse)) {
+            req.handle(true, 0, r);
+        } else {
+            req.handle(false, 0, r);
         }
-        if(m[5] != (request_type_ | sq::kResponse)) {
-            ++ignored_;
-            return true;
-        }
-        waiting_ = false;
-        if(request_type_ == sq::Identify) {
-            identity_.protocol_major = r.U7();
-            identity_.protocol_minor = r.U7();
-            identity_.product = Text(r);
-            identity_.version = Text(r);
-            identity_.boot_id = r.U32();
-            for(auto& w : identity_.uid)
-                w = r.U32();
-            identity_.capabilities = r.U14();
-            identity_.component_count = r.U7();
-            if(!r.Ok() || identity_.protocol_major != sq::kVersion) {
-                phase_ = Phase::Failed;
-                return true;
-            }
-            NextComponent(now_ms);
-        } else if(request_type_ == sq::GetComponent) {
-            SqComponent c;
-            r.U7();
-            r.U7();
-            c.id = Text(r);
-            c.kind = r.U7();
-            c.version = Text(r);
-            c.schema = r.U7();
-            c.params = r.U7();
-            if(!r.Ok()) {
-                phase_ = Phase::Failed;
-                return true;
-            }
-            components_.push_back(c);
-            NextComponent(now_ms);
-        }
-        return true;
+        SendNext();
     }
-    // Retries after 200 ms with the same request ID (idempotent on the device).
+
     void Tick(double now_ms) {
-        if(!waiting_ || now_ms - sent_at_ < kTimeoutMs)
-            return;
-        if(tries_ > kRetries) {
-            waiting_ = false;
-            ++lost_;
-            phase_ = Phase::Failed;
-            return;
+        now_ = now_ms;
+        if(!queue_.empty() && queue_.front().sent && now_ms - queue_.front().sent_at >= kTimeoutMs) {
+            if(queue_.front().tries > queue_.front().retries) {
+                Request req = std::move(queue_.front());
+                queue_.pop_front();
+                ++lost_;
+                sq::Reader none(nullptr, 0);
+                req.handle(false, 0, none);
+                if(phase_ == Phase::Reading) {
+                    phase_ = Phase::Failed;
+                    queue_.clear();
+                    if(log)
+                        log(LogKind::Error, "SQ-Gerät antwortet nicht");
+                    Changed();
+                }
+                SendNext();
+            } else {
+                Transmit(queue_.front());
+            }
         }
-        Send(now_ms);
+        if(phase_ == Phase::Ready && now_ms - monitor_renewed_ >= kMonitorRenewMs) {
+            monitor_renewed_ = now_ms;
+            Enqueue(sq::Monitor, {1}, [](bool, uint8_t, sq::Reader&) {});
+        }
     }
 
     Phase GetPhase() const { return phase_; }
+    bool Ready() const { return phase_ == Phase::Ready; }
+    bool Idle() const { return queue_.empty(); }
     const SqIdentity& Identity() const { return identity_; }
     const std::vector<SqComponent>& Components() const { return components_; }
-    bool HasComponent(const std::string& id) const {
-        for(const auto& c : components_)
-            if(c.id == id)
-                return true;
-        return false;
+    std::vector<SqComponent>& MutableComponents() { return components_; }
+    int ComponentIndex(const std::string& id) const {
+        for(std::size_t i = 0; i < components_.size(); ++i)
+            if(components_[i].id == id)
+                return int(i);
+        return -1;
     }
+    bool HasComponent(const std::string& id) const { return ComponentIndex(id) >= 0; }
+    const step_seq::Pattern& Pattern() const { return pattern_; }
+    const SqState& State() const { return state_; }
+    const SqCal& Cal(int output) const { return cal_[output & 1]; }
+    const std::vector<uint32_t>& Stats() const { return stats_; }
     unsigned Lost() const { return lost_; }
     unsigned Ignored() const { return ignored_; }
     unsigned MonitorFrames() const { return monitor_frames_; }
     uint8_t LastError() const { return last_error_; }
+    // The device restarted since the last read (boot ID changed): re-read.
+    bool Restarted() const { return restarted_; }
 
   private:
+    struct Request {
+        uint8_t type = 0, rid = 0;
+        std::vector<uint8_t> frame;
+        std::function<void(bool, uint8_t, sq::Reader&)> handle;
+        bool sent = false;
+        int tries = 0, retries = kRetries;
+        double sent_at = 0;
+    };
+    static void U7(std::vector<uint8_t>& w, uint8_t v) { w.push_back(v & 0x7F); }
+    static void U14(std::vector<uint8_t>& w, uint16_t v) {
+        w.push_back(v & 0x7F);
+        w.push_back(uint8_t((v >> 7) & 0x7F));
+    }
+    static void U32(std::vector<uint8_t>& w, uint32_t v) {
+        for(int i = 0; i < 5; ++i)
+            w.push_back(uint8_t((v >> (7 * i)) & 0x7F));
+    }
+    static void I32(std::vector<uint8_t>& w, int32_t v) { U32(w, uint32_t(v)); }
+    static void Step(std::vector<uint8_t>& w, const step_seq::Step& s) {
+        U7(w, s.note);
+        U7(w, s.gate_percent);
+        U7(w, s.Bits());
+    }
+    void Uid(std::vector<uint8_t>& w) const {
+        for(uint32_t word : identity_.uid)
+            U32(w, word);
+    }
     static std::string Text(sq::Reader& r) {
-        char buffer[32];
+        char buffer[40];
         r.Str(buffer, sizeof(buffer));
         return buffer;
     }
-    void NextComponent(double now_ms) {
-        if(components_.size() < identity_.component_count) {
-            Request(sq::GetComponent, {uint8_t(components_.size())}, now_ms);
-            phase_ = Phase::Components;
-        } else {
-            phase_ = Phase::Ready;
-        }
+    static step_seq::Step ReadStep(sq::Reader& r) {
+        step_seq::Step s;
+        s.note = r.U7();
+        s.gate_percent = r.U7();
+        const uint8_t bits = r.U7();
+        s.gate = bits & 1;
+        s.accent = bits & 2;
+        s.slide = bits & 4;
+        return s;
     }
-    void Request(uint8_t type, std::vector<uint8_t> payload, double now_ms) {
+    void Reset() {
+        queue_.clear();
+        components_.clear();
+        identity_ = SqIdentity{};
+        state_ = SqState{};
+        stats_.clear();
+        restarted_ = false;
+    }
+    void Changed() {
+        if(changed)
+            changed();
+    }
+    void Finish(const Done& done, bool ok, uint8_t err) {
+        if(!ok && err && log)
+            log(LogKind::Warn, "Gerät lehnt ab: " + SqErrorText(err));
+        if(done)
+            done(ok, err);
+        Changed();
+    }
+    void Enqueue(uint8_t type, const std::vector<uint8_t>& payload, std::function<void(bool, uint8_t, sq::Reader&)> h) {
+        Request req;
+        req.type = type;
         rid_ = uint8_t((rid_ + 1) & 0x7F);
-        request_type_ = type;
+        req.rid = rid_;
         uint8_t buffer[sq::kMaxFrame];
         sq::Writer w(buffer, sizeof(buffer));
-        w.Begin(type, rid_);
+        w.Begin(type, req.rid);
         for(uint8_t b : payload)
             w.U7(b);
-        frame_.assign(buffer, buffer + w.End());
-        tries_ = 0;
-        waiting_ = true;
-        Send(now_ms);
+        req.frame.assign(buffer, buffer + w.End());
+        req.handle = std::move(h);
+        queue_.push_back(std::move(req));
+        if(queue_.size() == 1)
+            SendNext();
     }
-    void Send(double now_ms) {
-        ++tries_;
-        sent_at_ = now_ms;
-        transport_.Send(frame_.data(), frame_.size());
+    void SendNext() {
+        if(!queue_.empty() && !queue_.front().sent)
+            Transmit(queue_.front());
+    }
+    void Transmit(Request& req) {
+        req.sent = true;
+        ++req.tries;
+        req.sent_at = now_;
+        transport_.Send(req.frame.data(), req.frame.size());
     }
 
-    Transport& transport_;
+    // The read sequence of Connect()/Pull(); each step queues the next.
+    void ReadAll() {
+        const uint32_t old_boot = identity_.boot_id;
+        Enqueue(sq::Identify, {}, [this, old_boot](bool ok, uint8_t, sq::Reader& r) {
+            if(!ok)
+                return Fail("IDENTIFY");
+            SqIdentity id;
+            id.protocol_major = r.U7();
+            id.protocol_minor = r.U7();
+            id.product = Text(r);
+            id.version = Text(r);
+            id.boot_id = r.U32();
+            for(auto& w : id.uid)
+                w = r.U32();
+            id.capabilities = r.U14();
+            id.component_count = r.U7();
+            if(!r.Ok() || id.protocol_major != sq::kVersion)
+                return Fail("IDENTIFY (Protokollversion)");
+            restarted_ = old_boot && old_boot != id.boot_id;
+            identity_ = id;
+            components_.assign(id.component_count, SqComponent{});
+            for(uint8_t c = 0; c < id.component_count; ++c)
+                ReadComponent(c);
+            ReadPattern();
+            ReadState();
+            if(id.capabilities & 32) {
+                ReadCal(0);
+                ReadCal(1);
+            }
+            Enqueue(sq::Monitor, {1}, [this](bool, uint8_t, sq::Reader&) {
+                phase_ = Phase::Ready;
+                monitor_renewed_ = now_;
+                if(log)
+                    log(LogKind::Ok, "Verbunden: " + identity_.product + " " + identity_.version + " (SQ)");
+                Changed();
+            });
+        });
+    }
+    void Fail(const std::string& what) {
+        phase_ = Phase::Failed;
+        queue_.clear();
+        if(log)
+            log(LogKind::Error, "SQ: ungültige Antwort auf " + what);
+        Changed();
+    }
+    void ReadComponent(uint8_t c) {
+        Enqueue(sq::GetComponent, {c}, [this, c](bool ok, uint8_t, sq::Reader& r) {
+            if(!ok)
+                return;
+            SqComponent& comp = components_[c];
+            r.U7();
+            r.U7();
+            comp.id = Text(r);
+            comp.kind = r.U7();
+            comp.version = Text(r);
+            comp.schema = r.U7();
+            comp.params = r.U7();
+            comp.parameters.assign(comp.params, SqParam{});
+            for(uint8_t i = 0; i < comp.params; ++i)
+                ReadDescriptor(c, i);
+            ReadValues(c, 0);
+        });
+    }
+    void ReadDescriptor(uint8_t c, uint8_t i) {
+        Enqueue(sq::GetParamDesc, {c, i}, [this, c, i](bool ok, uint8_t, sq::Reader& r) {
+            if(!ok)
+                return;
+            SqParam& p = components_[c].parameters[i];
+            r.U7();
+            r.U7();
+            r.U7();
+            p.id = r.U14();
+            p.type = r.U7();
+            p.unit = r.U7();
+            p.flags = r.U7();
+            p.min = r.I32();
+            p.max = r.I32();
+            p.def = r.I32();
+            p.cc = r.U7();
+            p.key = Text(r);
+            if(p.type == 2) // enum: the keys of its values
+                for(int v = 0; v <= p.max / 1000; ++v)
+                    ReadEnumLabel(c, i, uint8_t(v));
+        });
+    }
+    void ReadEnumLabel(uint8_t c, uint8_t i, uint8_t value) {
+        const uint16_t id = components_[c].parameters[i].id;
+        std::vector<uint8_t> w = {c};
+        U14(w, id);
+        U7(w, value);
+        Enqueue(sq::GetEnumLabel, w, [this, c, i, value](bool ok, uint8_t, sq::Reader& r) {
+            if(!ok)
+                return;
+            r.U7();
+            r.U14();
+            r.U7();
+            auto& keys = components_[c].parameters[i].enum_keys;
+            if(keys.size() <= value)
+                keys.resize(value + 1u);
+            keys[value] = Text(r);
+        });
+    }
+    void ReadValues(uint8_t c, uint8_t first) {
+        Enqueue(sq::GetParams, {c, first}, [this, c](bool ok, uint8_t, sq::Reader& r) {
+            if(!ok)
+                return;
+            r.U7();
+            const uint8_t start = r.U7(), total = r.U7(), n = r.U7();
+            for(uint8_t k = 0; k < n; ++k) {
+                const uint16_t id = r.U14();
+                const int32_t v = r.I32();
+                for(auto& p : components_[c].parameters)
+                    if(p.id == id)
+                        p.value = v;
+            }
+            if(start + n < total) // fragments: index and total in every reply
+                ReadValues(c, uint8_t(start + n));
+        });
+    }
+    void ReadPattern() {
+        Enqueue(sq::GetPattern, {}, [this](bool ok, uint8_t, sq::Reader& r) {
+            if(!ok)
+                return;
+            state_.accepted = r.U14();
+            state_.applied = r.U14();
+            for(auto& s : pattern_)
+                s = ReadStep(r);
+        });
+    }
+    void ReadState() {
+        Enqueue(sq::GetState, {}, [this](bool ok, uint8_t, sq::Reader& r) {
+            if(!ok)
+                return;
+            state_.state = r.U7();
+            state_.mode = r.U7();
+            state_.sw17 = r.U7();
+            state_.sw18 = r.U7();
+            state_.source = r.U7();
+            const uint8_t step = r.U7();
+            state_.step = step > 15 ? -1 : step;
+            state_.bpm = r.I32() / 1000.0;
+            state_.accepted = r.U14();
+            state_.applied = r.U14();
+            state_.cv_enabled = r.U7();
+            state_.usb = r.U7();
+        });
+    }
+    void ReadCal(uint8_t output) {
+        Enqueue(sq::GetCal, {output}, [this, output](bool ok, uint8_t, sq::Reader& r) {
+            if(!ok)
+                return;
+            r.U7();
+            SqCal& c = cal_[output];
+            c.valid = r.U7();
+            c.offset = r.I32();
+            c.scale = r.I32();
+            c.gate_low = r.U14();
+            c.gate_high = r.U14();
+            c.clamp_min = r.U14();
+            c.clamp_max = r.U14();
+        });
+    }
+    void Monitor(sq::Reader& r) {
+        switch(r.U7()) {
+            case sq::EvStep: {
+                const uint8_t step = r.U7();
+                state_.step = step > 15 ? -1 : step;
+                state_.gate = r.U7();
+                break;
+            }
+            case sq::EvState:
+                state_.state = r.U7();
+                state_.mode = r.U7();
+                state_.sw17 = r.U7();
+                state_.sw18 = r.U7();
+                state_.source = r.U7();
+                break;
+            case sq::EvTempo: state_.bpm = r.I32() / 1000.0; break;
+            case sq::EvRevision:
+                state_.accepted = r.U14();
+                state_.applied = r.U14();
+                break;
+            case sq::EvParam: {
+                const uint8_t c = r.U7();
+                const uint16_t id = r.U14();
+                const int32_t v = r.I32();
+                if(c < components_.size())
+                    for(auto& p : components_[c].parameters)
+                        if(p.id == id)
+                            p.value = v;
+                break;
+            }
+            case sq::EvStepEdit: {
+                const uint8_t i = r.U7();
+                const step_seq::Step s = ReadStep(r);
+                if(i < 16 && r.Ok())
+                    pattern_[i] = s;
+                break;
+            }
+            default: break;
+        }
+        Changed();
+    }
+
+    editor::Transport& transport_;
     Phase phase_ = Phase::Offline;
+    std::deque<Request> queue_;
+    uint8_t rid_ = 0, last_error_ = 0;
+    double now_ = 0, last_answer_ = 0, monitor_renewed_ = 0;
     SqIdentity identity_;
     std::vector<SqComponent> components_;
-    std::vector<uint8_t> frame_;
-    uint8_t rid_ = 0, request_type_ = 0, last_error_ = 0;
-    bool waiting_ = false;
-    int tries_ = 0;
-    double sent_at_ = 0;
+    step_seq::Pattern pattern_{};
+    SqState state_;
+    SqCal cal_[2];
+    std::vector<uint32_t> stats_;
     unsigned lost_ = 0, ignored_ = 0, monitor_frames_ = 0;
+    bool restarted_ = false;
 };
 
 } // namespace editor

@@ -196,9 +196,301 @@
     }
   }
 
+  const STATE_NAMES = ['STOP', 'WARTET', 'LÄUFT', 'PAUSE'];
+  const SOURCE_NAMES = ['intern', 'Gate IN 1', 'MIDI USB', 'MIDI DIN'];
+  const UNIT_TEXT = ['', '%', 'Hz', 'ms', 'dB', 'HT', 'ct', 'BPM', '', ''];
+  const MONITOR = { step: 1, state: 2, tempo: 3, revision: 4, param: 5, stats: 6, stepEdit: 7 };
+  const noteName = (n) => ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'][n % 12] + (Math.floor(n / 12) + 1);
+
+  const readStep = (r) => {
+    const note = r.u7(), gateLength = r.u7(), bits = r.u7();
+    return { note, gateLength, gate: !!(bits & 1), accent: !!(bits & 2), slide: !!(bits & 4) };
+  };
+  const writeStep = (w, s) => w.u7(s.note).u7(s.gateLength).u7((s.gate ? 1 : 0) | (s.accent ? 2 : 0) | (s.slide ? 4 : 0));
+
+  // The Acid Seq panel client (mirror of src/core/SqSession.h): reads the device first
+  // (D13), one request at a time with 200 ms timeout and three retries (same request ID),
+  // explicit edits only. send(frame) transmits; feed every received SysEx into onMessage().
+  class Client {
+    constructor(send, { timeoutMs = TIMEOUT_MS, retries = RETRIES, setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
+      this.send = send;
+      this.timeoutMs = timeoutMs;
+      this.retries = retries;
+      this.setTimer = setTimer;
+      this.clearTimer = clearTimer;
+      this.rid = 0;
+      this.queue = [];
+      this.identity = null;
+      this.components = [];
+      this.pattern = [];
+      this.state = { state: 0, mode: 0, sw17: 0, sw18: 1, source: 0, step: -1, gate: false, bpm: 120,
+        accepted: 0, applied: 0, cvEnabled: false, usb: false };
+      this.cal = [{ valid: false }, { valid: false }];
+      this.stats = [];
+      this.lost = 0;
+      this.ignored = 0;
+      this.monitorFrames = 0;
+      this.onChange = () => {};
+    }
+    request(type, payload = []) {
+      return new Promise((resolve, reject) => {
+        this.rid = (this.rid + 1) & 0x7f;
+        this.queue.push({ type, rid: this.rid, frame: encode(type, this.rid, payload), resolve, reject, tries: 0, timer: null });
+        if (this.queue.length === 1) this.transmit();
+      });
+    }
+    transmit() {
+      const req = this.queue[0];
+      if (!req) return;
+      req.tries += 1;
+      this.send(req.frame);
+      req.timer = this.setTimer(() => {
+        if (this.queue[0] !== req) return;
+        if (req.tries > this.retries) {
+          this.queue.shift();
+          this.lost += 1;
+          req.reject(new Error('keine Antwort'));
+          this.transmit();
+        } else {
+          this.transmit();
+        }
+      }, this.timeoutMs);
+    }
+    onMessage(frame) {
+      if (protocolOf(frame) !== 'sq') return false;
+      const reply = parseReply(frame);
+      if (!reply) { this.ignored += 1; return true; }
+      if (reply.type === MONITOR_EVENT) { this.monitorFrames += 1; this.monitor(new Reader(reply.payload)); return true; }
+      const req = this.queue[0];
+      if (!req || reply.rid !== req.rid) { this.ignored += 1; return true; }
+      this.clearTimer(req.timer);
+      this.queue.shift();
+      const r = new Reader(reply.payload);
+      if (reply.type === NAK) {
+        r.u7();
+        const code = r.u7();
+        const error = new Error(ERROR_TEXT[code] || 'Fehler ' + code);
+        error.code = code;
+        req.reject(error);
+      } else if (reply.type === (req.type | RESPONSE)) {
+        req.resolve(r);
+      } else {
+        req.reject(new Error('unerwartete Antwort'));
+      }
+      this.transmit();
+      return true;
+    }
+    async readAll() {
+      let r = await this.request(TYPE.identify);
+      const id = { protocol: `${r.u7()}.${r.u7()}`, product: r.str(), version: r.str(), bootId: r.u32(),
+        uid: [r.u32(), r.u32(), r.u32()], capabilities: r.u14(), componentCount: r.u7() };
+      this.restarted = !!(this.identity && this.identity.bootId !== id.bootId);
+      this.identity = id;
+      this.components = [];
+      for (let c = 0; c < id.componentCount; ++c) {
+        r = await this.request(TYPE.getComponent, [c]);
+        r.u7(); r.u7();
+        const comp = { id: r.str(), kind: r.u7(), version: r.str(), schema: r.u7(), parameters: [] };
+        const count = r.u7();
+        for (let i = 0; i < count; ++i) {
+          const d = await this.request(TYPE.getParamDesc, [c, i]);
+          d.u7(); d.u7(); d.u7();
+          const p = { id: d.u14(), type: d.u7(), unit: d.u7(), flags: d.u7(), min: d.i32() / 1000, max: d.i32() / 1000,
+            def: d.i32() / 1000, cc: d.u7(), key: d.str(), enumKeys: [], value: 0 };
+          p.value = p.def;
+          if (p.type === 2) {
+            for (let v = 0; v <= p.max; ++v) {
+              const e = await this.request(TYPE.getEnumLabel, new Writer().u7(c).u14(p.id).u7(v).bytes);
+              e.u7(); e.u14(); e.u7();
+              p.enumKeys.push(e.str());
+            }
+          }
+          comp.parameters.push(p);
+        }
+        for (let first = 0; first < count;) {
+          const v = await this.request(TYPE.getParams, [c, first]);
+          v.u7(); const start = v.u7(); v.u7(); const n = v.u7();
+          for (let k = 0; k < n; ++k) {
+            const pid = v.u14(), value = v.i32() / 1000;
+            const p = comp.parameters.find((q) => q.id === pid);
+            if (p) p.value = value;
+          }
+          first = start + n;
+          if (!n) break;
+        }
+        this.components.push(comp);
+      }
+      if (this.component('step-seq')) {
+        r = await this.request(TYPE.getPattern);
+        this.state.accepted = r.u14();
+        this.state.applied = r.u14();
+        this.pattern = Array.from({ length: 16 }, () => readStep(r));
+        await this.readState();
+      }
+      if (id.capabilities & 32) for (const o of [0, 1]) await this.readCal(o);
+      await this.request(TYPE.monitor, [1]);
+      this.onChange();
+      return this;
+    }
+    async readState() {
+      const r = await this.request(TYPE.getState);
+      const s = this.state;
+      s.state = r.u7(); s.mode = r.u7(); s.sw17 = r.u7(); s.sw18 = r.u7(); s.source = r.u7();
+      const step = r.u7();
+      s.step = step > 15 ? -1 : step;
+      s.bpm = r.i32() / 1000; s.accepted = r.u14(); s.applied = r.u14(); s.cvEnabled = !!r.u7(); s.usb = !!r.u7();
+    }
+    async readCal(output) {
+      const r = await this.request(TYPE.getCal, [output]);
+      r.u7();
+      this.cal[output] = { valid: !!r.u7(), offset: r.i32() / 1000, scale: r.i32() / 1000, gateLow: r.u14(),
+        gateHigh: r.u14(), clampMin: r.u14(), clampMax: r.u14() };
+    }
+    component(id) { return this.components.find((c) => c.id === id); }
+    componentIndex(id) { return this.components.findIndex((c) => c.id === id); }
+    async setParam(componentId, key, value) {
+      const ci = this.componentIndex(componentId);
+      const p = ci >= 0 && this.components[ci].parameters.find((q) => q.key === key);
+      if (!p || p.flags & 1) throw new Error('Parameter nicht schreibbar: ' + componentId + '.' + key);
+      const r = await this.request(TYPE.setParam, new Writer().u7(ci).u14(p.id).i32(Math.round(value * 1000)).bytes);
+      r.u7(); r.u14();
+      p.value = r.i32() / 1000;
+      this.state.accepted = r.u14();
+      this.onChange();
+      return p.value;
+    }
+    async setStep(index, step) {
+      const w = new Writer().u7(index);
+      writeStep(w, step);
+      const r = await this.request(TYPE.setStep, w.bytes);
+      r.u7();
+      this.state.accepted = r.u14();
+      this.pattern[index] = { ...step };
+      this.onChange();
+    }
+    async setPattern(steps) {
+      const w = new Writer();
+      steps.forEach((s) => writeStep(w, s));
+      const r = await this.request(TYPE.setPattern, w.bytes);
+      r.u7();
+      this.state.accepted = r.u14();
+      this.pattern = steps.map((s) => ({ ...s }));
+      this.onChange();
+    }
+    async transport(start) { await this.request(TYPE.transport, [start ? 1 : 0]); }
+    uidBytes() { const w = new Writer(); this.identity.uid.forEach((u) => w.u32(u)); return w; }
+    async setCal(output, c) {
+      const w = this.uidBytes().u7(output).i32(Math.round(c.offset * 1000)).i32(Math.round(c.scale * 1000))
+        .u14(c.gateLow).u14(c.gateHigh).u14(c.clampMin).u14(c.clampMax);
+      await this.request(TYPE.setCal, w.bytes);
+      this.cal[output] = { ...c, valid: true };
+      this.state.cvEnabled = false;
+      this.onChange();
+    }
+    async cvEnable(on) {
+      await this.request(TYPE.cvEnable, this.uidBytes().u7(on ? 1 : 0).bytes);
+      this.state.cvEnabled = on;
+      this.onChange();
+    }
+    async readStats() {
+      const r = await this.request(TYPE.getStats);
+      const n = r.u7();
+      this.stats = Array.from({ length: n }, () => r.u32());
+      return this.stats;
+    }
+    monitor(r) {
+      const s = this.state;
+      const code = r.u7();
+      if (code === MONITOR.step) { const step = r.u7(); s.step = step > 15 ? -1 : step; s.gate = !!r.u7(); }
+      else if (code === MONITOR.state) { s.state = r.u7(); s.mode = r.u7(); s.sw17 = r.u7(); s.sw18 = r.u7(); s.source = r.u7(); }
+      else if (code === MONITOR.tempo) s.bpm = r.i32() / 1000;
+      else if (code === MONITOR.revision) { s.accepted = r.u14(); s.applied = r.u14(); }
+      else if (code === MONITOR.param) {
+        const c = this.components[r.u7()], pid = r.u14(), value = r.i32() / 1000;
+        const p = c && c.parameters.find((q) => q.id === pid);
+        if (p) p.value = value;
+      } else if (code === MONITOR.stepEdit) { const i = r.u7(); this.pattern[i] = readStep(r); }
+      this.onChange();
+    }
+  }
+
+  // ---- product patch (.acidpatch), same format and text as src/core/AcidPatch.h ----
+  const number = (v) => {
+    let s = (Math.round(v * 1000) / 1000).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+    return s === '-0' ? '0' : s;
+  };
+  function patchFromClient(client) {
+    return {
+      product: client.identity ? client.identity.product : '',
+      components: client.components.map((c) => ({ id: c.id, version: c.version, schema: c.schema,
+        params: Object.fromEntries(c.parameters.filter((p) => !(p.flags & 1)).map((p) => [p.key, p.value])) })),
+      pattern: client.component('step-seq') ? client.pattern.map((s) => ({ ...s })) : null,
+    };
+  }
+  function serializePatch(p) {
+    const q = JSON.stringify;
+    let out = '{\n  "format": "acid-seq-patch",\n  "format_version": 1,\n  "product": ' + q(p.product) + ',\n  "components": [';
+    p.components.forEach((c, i) => {
+      const keys = Object.keys(c.params).sort();
+      out += (i ? ',' : '') + '\n    {"id": ' + q(c.id) + ', "version": ' + q(c.version) + ', "schema": ' + c.schema +
+        ', "params": {' + keys.map((k) => q(k) + ': ' + number(c.params[k])).join(', ') + '}}';
+    });
+    out += '\n  ]';
+    if (p.pattern) {
+      out += ',\n  "pattern": [' + p.pattern.map((s, i) => (i ? ',' : '') + '\n    {"note": ' + s.note + ', "gate_length": ' +
+        s.gateLength + ', "gate": ' + s.gate + ', "accent": ' + s.accent + ', "slide": ' + s.slide + '}').join('') + '\n  ]';
+    }
+    return out + '\n}\n';
+  }
+  function parsePatch(text) {
+    let root;
+    try { root = JSON.parse(text); } catch (e) { throw new Error('keine gültige JSON-Datei'); }
+    if (!root || root.format !== 'acid-seq-patch') throw new Error('kein Acid-Seq-Patch');
+    if (root.format_version > 1) throw new Error('Patch-Format ' + root.format_version + ' ist neuer als dieser Editor');
+    const pattern = root.pattern ? root.pattern.map((s, i) => {
+      const step = { note: s.note | 0, gateLength: s.gate_length | 0, gate: !!s.gate, accent: !!s.accent, slide: !!s.slide };
+      if (step.note < 0 || step.note > 59 || step.gateLength < 5 || step.gateLength > 100) throw new Error('ungültiger Step ' + (i + 1));
+      return step;
+    }) : null;
+    if (pattern && pattern.length !== 16) throw new Error('Pattern braucht 16 Steps');
+    return { product: root.product || '', components: (root.components || []).map((c) => ({ id: c.id, version: c.version,
+      schema: c.schema, params: { ...c.params } })), pattern };
+  }
+  function checkPatch(p, client) {
+    const result = { missing: [], incompatible: [], unknown: [], patternSkipped: false };
+    for (const c of p.components) {
+      const dev = client.component(c.id);
+      if (!dev) { result.missing.push(c.id); continue; }
+      if (dev.schema !== c.schema) { result.incompatible.push(c.id); continue; }
+      for (const k of Object.keys(c.params)) {
+        const q = dev.parameters.find((x) => x.key === k);
+        if (!q || q.flags & 1) result.unknown.push(c.id + '.' + k);
+      }
+    }
+    result.patternSkipped = !!p.pattern && !client.component('step-seq');
+    result.clean = !result.missing.length && !result.incompatible.length && !result.unknown.length && !result.patternSkipped;
+    return result;
+  }
+  async function uploadPatch(p, client) {
+    let sent = 0;
+    for (const c of p.components) {
+      const dev = client.component(c.id);
+      if (!dev || dev.schema !== c.schema) continue;
+      for (const [k, v] of Object.entries(c.params)) {
+        const q = dev.parameters.find((x) => x.key === k);
+        if (!q || q.flags & 1) continue;
+        await client.setParam(c.id, k, v);
+        sent += 1;
+      }
+    }
+    if (p.pattern && client.component('step-seq')) { await client.setPattern(p.pattern); sent += 1; }
+    return sent;
+  }
+
   return {
     HEADER, VERSION, VERSION_MINOR, MAX_FRAME, OVERHEAD, MAX_PAYLOAD, RESPONSE, MONITOR_EVENT, NAK,
-    TYPE, ERROR, ERROR_TEXT, TIMEOUT_MS, RETRIES,
-    crc8, Writer, Reader, encode, assemble, classify, parseReply, protocolOf, Session,
+    TYPE, ERROR, ERROR_TEXT, TIMEOUT_MS, RETRIES, STATE_NAMES, SOURCE_NAMES, UNIT_TEXT, MONITOR,
+    crc8, Writer, Reader, encode, assemble, classify, parseReply, protocolOf, Session, Client, noteName,
+    patchFromClient, serializePatch, parsePatch, checkPatch, uploadPatch,
   };
 });

@@ -920,6 +920,15 @@ NICHT GEMESSEN ([HARDWARE_TEST.md](../../effects/stereo-delay/docs/HARDWARE_TEST
 
 ### Phase 5: Panel-Variante (Web, JUCE, VST3)
 
+**Stand 2026-10-27: Software umgesetzt** (Branch `claude/acid-seq-phase-5`), Panels 0.2.0.
+* **Kern:** SQ-Client, `.acidpatch` und SQ-Simulator, getestet gegen die Geräteseite der
+  Firmware (C++ und JavaScript).
+* **Browser:** Seiten und Offline-Ansicht, im eingebauten Browser geprüft.
+* **JUCE und VST3:** Seiten und Songzustand mit Bestätigung, Selbsttest. Lokal nur gegen
+  JUCE 9.0.0 gebaut. Der Build mit der gepinnten Version 9.0.4 und der Playwright-e2e-Test
+  laufen lokal nicht, sie sind NICHT AUSGEFÜHRT (PR).
+* Hardwaretest NICHT GEMESSEN.
+
 * **Ziel:** Seiten für Sequencer, Stimme, Drive und Delay in allen drei
   Editor-Varianten. Sie erscheinen je nach Komponentenliste in IDENTIFY.
 * **Umfang:**

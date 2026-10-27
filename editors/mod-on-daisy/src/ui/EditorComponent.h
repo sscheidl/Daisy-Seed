@@ -6,10 +6,13 @@
 #include "../core/PatchFile.h"
 #include "../core/SimInstruments.h"
 #include "../core/Simulator.h"
+#include "../core/SqSimulator.h"
 #include "MatrixGrid.h"
 #include "MidiPort.h"
+#include "SqPanel.h"
 #include "SourcePanel.h"
 #include "Theme.h"
+#include <deque>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -39,6 +42,16 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     bool SaveFile(const juce::File& file);
     Model& GetModel() { return model_; }
     Session& GetSession() { return session_; }
+    // Acid Seq (SQ protocol): the session and its pages; active while an SQ device is read or connected.
+    SqSession& GetSqSession() { return sq_session_; }
+    SqPanel& GetSqPanel() { return sq_panel_; }
+    SqSimulator* GetSqSimulator() { return sq_sim_.get(); }
+    bool SqActive() const {
+        return sq_session_.GetPhase() == SqSession::Phase::Reading || sq_session_.GetPhase() == SqSession::Phase::Ready;
+    }
+    // Answer to "send the project's Acid Seq patch?" (VST3 song state): 0 no, 1 yes, 2 always.
+    // Set by the self-test; otherwise a dialog asks.
+    std::function<int(const AcidCompat&)> sq_upload_decision;
     Simulator* GetSimulator() { return simulator_.get(); }
     MatrixGrid& Grid() { return grid_; }
     SourcePanel& Source(int i) { return *sources_[std::size_t(i)]; }
@@ -93,11 +106,27 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     void SendProjectPatch(const LoadedPatch& loaded);
     void ConfirmFirmwareUpdate();
     void FinishFirmwareUpdate(BootRequest::Result result);
+    void AskProjectUpload();
+
+    // Sends to whatever carries the SQ conversation: the MIDI port or the SQ simulator.
+    struct SqLink : Transport {
+        std::function<bool(const uint8_t*, std::size_t)> send;
+        bool Send(const uint8_t* bytes, std::size_t size) override { return send && send(bytes, size); }
+    };
 
     LookAndFeel look_;
     Model model_;
     Session session_;
     std::unique_ptr<Simulator> simulator_;
+    SqLink sq_link_;
+    SqSession sq_session_{sq_link_};
+    std::unique_ptr<SqSimulator> sq_sim_;
+    std::deque<std::vector<uint8_t>> sq_sim_out_;
+    SqPanel sq_panel_{sq_session_};
+    bool md_pending_ = false;        // real port: Mod on Daisy is tried once SQ did not answer
+    bool sq_was_ready_ = false;
+    bool sq_always_upload_ = false;  // VST3: "immer" chosen for this plugin instance
+    std::optional<AcidPatch> sq_project_; // Acid Seq song state waiting for a device and a decision
     std::unique_ptr<MidiPort> midi_;
     BootRequest boot_;
     std::unique_ptr<MidiPort> boot_port_; // opened only for the request while offline

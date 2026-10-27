@@ -4,7 +4,8 @@
 // Daisy's MIDI port (Windows MIDI Services shares it with Studio One, E7b of 24.10.2026)
 // and keeps the editor alive while its window is closed, so the connection and the
 // monitor survive. The patch is stored in the project and sent to the device when the
-// project is loaded (now or at the next connection).
+// project is loaded (now or at the next connection). With an Acid Seq device the song state
+// is its .acidpatch; loading a song asks before sending it (device first, D13).
 #include "../ui/EditorComponent.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <mutex>

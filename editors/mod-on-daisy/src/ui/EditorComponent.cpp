@@ -3,6 +3,7 @@
 namespace editor::ui {
 namespace {
 constexpr int kHeader = 56, kCellCard = 300, kSourcesHeight = 250, kFooter = 56, kPad = 14;
+constexpr int kSqSimulator = -2; // Port::simulator of "Acid Seq (Sim)"
 
 juce::Colour LogColour(LogKind k) {
     switch(k) {
@@ -33,12 +34,14 @@ EditorComponent::EditorComponent(bool with_simulators)
                 m.ClockState(model_.SourceParam(i, mod::ParamSync), model_.SourceParam(i, mod::ParamGate)));
     };
 
+    sq_session_.changed = [this] { triggerAsyncUpdate(); };
+    sq_session_.log = [this](LogKind k, const std::string& text) { Log(k, U(text)); };
     addAndMakeVisible(port_);
     port_.setTooltip(U("Gerät: MIDI-Port des Daisy („Daisy Seed External“)"));
     addAndMakeVisible(connect_);
     connect_.setColour(juce::TextButton::buttonColourId, colour::accent);
     connect_.onClick = [this] {
-        if(session_.State() != LinkState::Offline) {
+        if(session_.State() != LinkState::Offline || SqActive() || md_pending_) {
             user_disconnected_ = true; // the plugin stays offline until "Verbinden"
             Disconnect();
         } else {
@@ -125,6 +128,7 @@ EditorComponent::EditorComponent(bool with_simulators)
     };
     addAndMakeVisible(log_);
     log_.setFont(juce::FontOptions(13.0f));
+    addChildComponent(sq_panel_); // over the matrix pages while an Acid Seq device is connected
 
     RefreshPorts();
     RefreshAll();
@@ -147,6 +151,8 @@ void EditorComponent::RefreshPorts() {
     std::vector<Port> ports;
     for(int i = 0; with_simulators_ && i < int(std::size(kSimInstruments)); ++i)
         ports.push_back({U(kSimInstruments[i].label), i, {}, {}});
+    if(with_simulators_)
+        ports.push_back({U("Acid Seq (Sim)"), kSqSimulator, {}, {}});
     for(const auto& out : outs) {
         // The input with the same name, else one that also says "Daisy".
         juce::MidiDeviceInfo in;
@@ -180,7 +186,7 @@ void EditorComponent::RefreshPorts() {
     const juce::String previous = port_.getText();
     // While offline, a Daisy that appears later replaces a non-Daisy suggestion (the kit is
     // often plugged in or leaves the bootloader after the editor started).
-    const bool keep = midi_ || simulator_ || previous.containsIgnoreCase("daisy");
+    const bool keep = midi_ || simulator_ || sq_sim_ || previous.containsIgnoreCase("daisy");
     ports_ = std::move(ports);
     port_.clear(juce::dontSendNotification);
     int same_label = -1, daisy = -1;
@@ -188,7 +194,7 @@ void EditorComponent::RefreshPorts() {
         port_.addItem(ports_[i].label, int(i) + 1);
         if(same_label < 0 && previous.isNotEmpty() && ports_[i].label == previous)
             same_label = int(i);
-        if(daisy < 0 && ports_[i].simulator < 0 && ports_[i].label.containsIgnoreCase("daisy"))
+        if(daisy < 0 && ports_[i].simulator == -1 && ports_[i].label.containsIgnoreCase("daisy"))
             daisy = int(i); // a connected Daisy is the first suggestion
     }
     const int choose = (keep && same_label >= 0) ? same_label : daisy >= 0 ? daisy : std::max(same_label, 0);
@@ -207,7 +213,15 @@ void EditorComponent::ConnectTo(int index) {
     if(index < 0 || index >= int(ports_.size()))
         return Log(LogKind::Warn, U("Bitte ein Gerät wählen."));
     const Port& p = ports_[std::size_t(index)];
-    if(p.simulator >= 0) {
+    if(p.simulator == kSqSimulator) {
+        sq_sim_ = std::make_unique<SqSimulator>("acid-seq");
+        sq_sim_->SetOut([this](const uint8_t* b, std::size_t n) { sq_sim_out_.emplace_back(b, b + n); });
+        sq_link_.send = [this](const uint8_t* b, std::size_t n) {
+            sq_sim_->Receive(b, n, now_);
+            return true;
+        };
+        sq_session_.Connect(now_);
+    } else if(p.simulator >= 0) {
         simulator_ = std::make_unique<Simulator>(kSimInstruments[p.simulator].make(),
                                                  uint32_t(juce::Random::getSystemRandom().nextInt()));
         simulator_->bases = kSimInstruments[p.simulator].bases;
@@ -219,7 +233,10 @@ void EditorComponent::ConnectTo(int index) {
         midi_ = MidiPort::Open(p.out, p.in, error);
         if(!midi_)
             return Log(LogKind::Error, error);
-        session_.Connect(*midi_, now_);
+        // SQ first (Acid Seq firmwares); without an answer Mod on Daisy follows (R09).
+        sq_link_.send = [this](const uint8_t* b, std::size_t n) { return midi_ && midi_->Send(b, n); };
+        sq_session_.Connect(now_, 1);
+        md_pending_ = true;
     }
     port_.setSelectedItemIndex(index, juce::dontSendNotification);
     last_alert_ = 0; // messages of the previous device are over
@@ -228,6 +245,8 @@ void EditorComponent::ConnectTo(int index) {
 }
 
 void EditorComponent::Disconnect() {
+    md_pending_ = false;
+    sq_session_.Disconnect();
     session_.Disconnect("");
     ReleasePort();
 }
@@ -273,7 +292,7 @@ void EditorComponent::AutoConnect() {
         return;
     auto_tried_ = list;
     for(std::size_t i = 0; i < ports_.size(); ++i)
-        if(ports_[i].simulator < 0 && ports_[i].label.containsIgnoreCase("daisy")) {
+        if(ports_[i].simulator == -1 && ports_[i].label.containsIgnoreCase("daisy")) {
             port_.setSelectedItemIndex(int(i), juce::dontSendNotification);
             ConnectTo(int(i));
             return;
@@ -281,10 +300,23 @@ void EditorComponent::AutoConnect() {
 }
 
 std::string EditorComponent::PatchText() const {
+    if(sq_session_.Ready()) // an Acid Seq device: the product patch is the song state
+        return SerializeAcidPatch(PatchFromSession(sq_session_));
     return SavePatch(model_, session_.Connected() ? &session_.Device() : nullptr);
 }
 
 void EditorComponent::LoadProjectPatch(const std::string& text) {
+    if(text.find("\"acid-seq-patch\"") != std::string::npos) {
+        std::string error;
+        sq_project_ = ParseAcidPatch(text, error);
+        if(!sq_project_)
+            return Log(LogKind::Error, U("Acid-Seq-Patch im Projekt nicht lesbar: ") + U(error));
+        if(sq_session_.Ready())
+            AskProjectUpload();
+        else
+            Log(LogKind::Info, U("Acid-Seq-Patch aus dem Projekt geladen; beim Verbinden wird gefragt, ob er übertragen wird."));
+        return;
+    }
     const LoadedPatch loaded = LoadPatch(text, model_);
     if(!loaded.ok) {
         Log(LogKind::Error, U("Patch im Projekt nicht lesbar: ") + U(loaded.error));
@@ -310,18 +342,35 @@ void EditorComponent::Advance(uint32_t now_ms) {
     now_ = now_ms;
     if(simulator_)
         simulator_->Advance(1, [this](const uint8_t* b, std::size_t n) { session_.OnMessage(b, n); });
+    if(sq_sim_) {
+        sq_sim_->Advance(now_);
+        while(!sq_sim_out_.empty()) {
+            const std::vector<uint8_t> m = std::move(sq_sim_out_.front());
+            sq_sim_out_.pop_front();
+            sq_session_.OnMessage(m.data(), m.size(), now_);
+        }
+    }
     if(midi_)
         for(const std::vector<uint8_t>& m : midi_->Take()) {
             boot_.OnMessage(m.data(), m.size());
-            session_.OnMessage(m.data(), m.size());
+            if(ClassifySysEx(m.data(), m.size()) == Protocol::Sq)
+                sq_session_.OnMessage(m.data(), m.size(), now_);
+            else
+                session_.OnMessage(m.data(), m.size());
         }
+    sq_session_.Tick(now_);
+    if(md_pending_ && midi_ && sq_session_.GetPhase() == SqSession::Phase::Failed) {
+        md_pending_ = false; // no SQ device: a Mod on Daisy firmware, as before
+        sq_session_.Disconnect();
+        session_.Connect(*midi_, now_);
+    }
     if(boot_port_)
         for(const std::vector<uint8_t>& m : boot_port_->Take())
             boot_.OnMessage(m.data(), m.size());
     session_.Tick(now_);
     // The session gave up (no answer to IDENTIFY, refused send, wrong protocol): the
     // port is released at once, so another application or a new attempt can open it.
-    if(session_.State() == LinkState::Offline && (midi_ || simulator_))
+    if(session_.State() == LinkState::Offline && !md_pending_ && !SqActive() && (midi_ || simulator_ || sq_sim_))
         ReleasePort();
     FinishFirmwareUpdate(boot_.Poll(now_));
 }
@@ -351,7 +400,7 @@ void EditorComponent::StartFirmwareUpdate(int index) {
     if(boot_.Waiting())
         return;
     const bool valid = index >= 0 && index < int(ports_.size());
-    if(simulator_ || (!midi_ && valid && ports_[std::size_t(index)].simulator >= 0))
+    if(simulator_ || sq_sim_ || (!midi_ && valid && ports_[std::size_t(index)].simulator != -1))
         return Log(LogKind::Warn, U("Ein Simulator hat keinen Bootloader."));
     MidiPort* port = midi_.get();
     if(!port) {
@@ -391,6 +440,9 @@ void EditorComponent::FinishFirmwareUpdate(BootRequest::Result result) {
 void EditorComponent::ReleasePort() {
     grid_.ClearMonitor();
     simulator_.reset();
+    sq_link_.send = {};
+    sq_sim_.reset();
+    sq_sim_out_.clear();
     midi_.reset();
     RefreshAll();
 }
@@ -420,7 +472,61 @@ void EditorComponent::RefreshMode() {
     mode_.setTooltip(tip);
 }
 
+// The device has priority (D13): a song's patch is sent only after confirmation, or
+// always once "Immer" was chosen for this plugin instance.
+void EditorComponent::AskProjectUpload() {
+    if(!sq_project_ || !sq_session_.Ready())
+        return;
+    const AcidPatch patch = std::move(*sq_project_);
+    sq_project_.reset();
+    sq_panel_.SetPendingPatch(patch);
+    const AcidCompat compat = CheckAcidPatch(patch, sq_session_);
+    const auto apply = [this](int choice) {
+        if(choice == 2)
+            sq_always_upload_ = true;
+        if(choice >= 1) {
+            const int n = sq_panel_.Upload();
+            Log(LogKind::Ok, U("Patch aus dem Projekt übertragen (") + juce::String(n) + U(" Werte)."));
+        } else {
+            Log(LogKind::Info, U("Patch aus dem Projekt nicht übertragen; das Gerät behält seinen Zustand."));
+        }
+    };
+    if(sq_always_upload_)
+        return apply(1);
+    if(sq_upload_decision)
+        return apply(sq_upload_decision(compat));
+    juce::String text = U("Das Projekt enthält einen Acid-Seq-Patch. Das Gerät hat Vorrang: Ohne Bestätigung bleibt sein Zustand.");
+    if(!compat.Clean())
+        text << U("\nNicht passende Teile werden übersprungen.");
+    auto* w = new juce::AlertWindow(U("Patch aus dem Projekt übertragen?"), text, juce::MessageBoxIconType::QuestionIcon, this);
+    w->addButton(U("Übertragen"), 1);
+    w->addButton(U("Immer übertragen"), 2);
+    w->addButton(U("Nicht übertragen"), 0);
+    w->enterModalState(true, juce::ModalCallbackFunction::create(apply), true);
+}
+
 void EditorComponent::RefreshAll() {
+    const bool sq_ready = sq_session_.Ready();
+    if(sq_ready && !sq_was_ready_)
+        AskProjectUpload(); // the device state has just been read
+    sq_was_ready_ = sq_ready;
+    sq_panel_.setVisible(sq_ready);
+    if(sq_ready) {
+        sq_panel_.Refresh();
+        status_.setText(U(sq_session_.Identity().product + " " + sq_session_.Identity().version + " · SQ"),
+                        juce::dontSendNotification);
+        status_.setColour(juce::Label::textColourId, colour::ok);
+        connect_.setButtonText("Trennen");
+        port_.setEnabled(false);
+        if(patch_changed) {
+            std::string text = PatchText();
+            if(text != last_patch_text_) {
+                last_patch_text_ = std::move(text);
+                patch_changed(last_patch_text_);
+            }
+        }
+        return;
+    }
     const bool connected = session_.Connected();
     if(connected && !was_connected_ && pending_project_) { // the device state has just been read
         const LoadedPatch project = std::move(*pending_project_);
@@ -443,9 +549,10 @@ void EditorComponent::RefreshAll() {
                                                    : health == Health::NoLiveData ? colour::warn : colour::err)
                                                 : (session_.StatusText() == "offline" ? colour::muted : colour::err));
     status_.setColour(juce::Label::outlineColourId, status_.findColour(juce::Label::textColourId));
-    connect_.setButtonText(s == LinkState::Offline ? "Verbinden" : "Trennen");
+    const bool busy = s != LinkState::Offline || SqActive() || md_pending_;
+    connect_.setButtonText(busy ? "Trennen" : "Verbinden");
     RefreshMode();
-    port_.setEnabled(s == LinkState::Offline);
+    port_.setEnabled(!busy);
     update_.setEnabled(!boot_.Waiting() && !simulator_ && !ports_.empty());
     pull_.setEnabled(session_.Connected());
     count_.setText(U("Aktive Verbindungen: ") + juce::String(model_.ActiveCount()) + " / "
@@ -525,6 +632,7 @@ void EditorComponent::paint(juce::Graphics& g) {
 
 void EditorComponent::resized() {
     juce::Rectangle<int> r = getLocalBounds();
+    sq_panel_.setBounds(r.withTrimmedTop(kHeader));
     header_area_ = r.removeFromTop(kHeader);
     {
         juce::Rectangle<int> h = header_area_.reduced(kPad, 12).withTrimmedLeft(170);

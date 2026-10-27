@@ -5,7 +5,7 @@ HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -Wshadow -pthread
 INCLUDES = -I../../modules/mod-on-daisy/include -I../../common/bootloader -DMOD_ON_DAISY_EXTENSIONS=1 # monitor extensions, LFO cross modulation
 HEADERS = $(wildcard src/core/*.h) $(wildcard ../../sequencers/step-seq/include/step_seq/*.h) $(wildcard ../../modules/mod-on-daisy/include/mod_on_daisy/*.h) $(wildcard ../../common/bootloader/*.h)
 
-.PHONY: test test-sanitize app clean
+.PHONY: test test-sanitize test-editor-sq app clean
 SQ_INCLUDES = -I../../sequencers/step-seq/include
 test: $(HEADERS) tests/test_core.cpp tests/test_sq.cpp
 	mkdir -p build/host
@@ -13,7 +13,14 @@ test: $(HEADERS) tests/test_core.cpp tests/test_sq.cpp
 	./build/host/test_core
 	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/test_sq.cpp -o build/host/test_sq
 	./build/host/test_sq
+	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/sq_sim.cpp -o build/host/sq_sim
 	node web/tests/sq_protocol.test.cjs
+	node web/tests/sq_client.test.cjs build/host/sq_sim
+	python3 ../../sequencers/step-seq/tools/gen_params.py --check
+
+# Browser e2e of the Acid Seq pages (Playwright with Chromium); MOD_SIM: mod_sim for the MD check.
+test-editor-sq: test
+	PLAYWRIGHT_MODULE=$(PLAYWRIGHT_MODULE) node web/tests/e2e_sq.cjs build/host/sq_sim $(MOD_SIM) build/host
 
 test-sanitize:
 	$(MAKE) test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -Wshadow -pthread -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"

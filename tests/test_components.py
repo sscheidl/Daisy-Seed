@@ -51,7 +51,7 @@ class ComponentTests(unittest.TestCase):
                 buildable.extend(match.group(1).split())
         self.assertEqual(set(buildable), set(data['products']))
         self.assertEqual(manifest.read_version(data['components']['mod-on-daisy']['version']), '0.1.0')
-        self.assertEqual(manifest.read_version(data['components']['mod-editor-web']['version']), '0.1.1')
+        self.assertEqual(manifest.read_version(data['components']['mod-editor-web']['version']), '0.2.0')
 
     def test_composition_and_image_identity(self):
         for effect in ('torus', 'ambient'):

@@ -118,7 +118,8 @@
       "source": "editors/mod-on-daisy/src",
       "depends": [
         "mod-on-daisy",
-        "bootloader-entry"
+        "bootloader-entry",
+        "step-seq"
       ],
       "version": {
         "type": "cmake",
@@ -130,7 +131,8 @@
       "source": "editors/mod-on-daisy/src/plugin",
       "depends": [
         "mod-on-daisy",
-        "bootloader-entry"
+        "bootloader-entry",
+        "step-seq"
       ],
       "version": {
         "type": "cmake",
@@ -142,7 +144,8 @@
       "source": "editors/mod-on-daisy/web",
       "depends": [
         "mod-on-daisy",
-        "bootloader-entry"
+        "bootloader-entry",
+        "step-seq"
       ],
       "version": {
         "type": "javascript",
@@ -462,7 +465,11 @@
         "step-seq",
         "bootloader-entry"
       ],
-      "panels": []
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
     },
     "acid-303": {
       "version": {
@@ -478,7 +485,11 @@
         "acid-303",
         "bootloader-entry"
       ],
-      "panels": []
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
     },
     "drive-fx": {
       "version": {
@@ -494,7 +505,11 @@
         "drive",
         "bootloader-entry"
       ],
-      "panels": []
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
     },
     "delay-fx": {
       "version": {
@@ -510,7 +525,11 @@
         "stereo-delay",
         "bootloader-entry"
       ],
-      "panels": []
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
     }
   }
 }
