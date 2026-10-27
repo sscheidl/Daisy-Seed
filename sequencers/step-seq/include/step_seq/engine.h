@@ -185,11 +185,12 @@ class Engine {
         QueuePattern(next, revision);
     }
     // Parameters arrive at the block boundary; their revision counts as applied then.
+    // An older revision never replaces a newer one (Codex F11: the product applies two
+    // queues per block); 14-bit revisions compare across the wrap.
     void ParameterApplied(uint16_t revision) {
-        if(!pattern_queued_)
-            applied_revision_ = revision;
-        else
-            queued_revision_ = revision; // reported with the pending pattern
+        uint16_t& current = pattern_queued_ ? queued_revision_ : applied_revision_;
+        if(uint16_t(uint16_t(revision - current) & 0x3FFF) - 1u < 0x1FFFu)
+            current = revision; // with a pending pattern: reported when it is applied
     }
     uint16_t AppliedRevision() const { return applied_revision_; }
     void SetAppliedRevision(uint16_t r) { applied_revision_ = r; }

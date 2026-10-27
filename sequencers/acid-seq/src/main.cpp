@@ -90,6 +90,8 @@ static acid_seq::Chain chain;
 static DSY_SDRAM_BSS ::seed::fx::StereoDelay::Storage delay_memory; // 4.6 MB, never in DTCM
 static step_seq::SpscQueue<fw::Command, 16> commands;
 static step_seq::SpscQueue<fw::VoiceCommand, 64> voice_commands;
+static acid303::CriticalInputs critical; // Note-Off, All-Off, Mute when voice_commands is full
+static uint32_t voice_input_dropped = 0; // main only: Note-Ons and CCs a full voice queue dropped
 static step_seq::SpscQueue<fw::MidiIn, 64> midi_in;
 static step_seq::TripleBuffer<fw::Snapshot> snapshots;
 static std::atomic<uint32_t> led_state{0};
@@ -185,6 +187,7 @@ static void AudioCallback(AudioHandle::InputBuffer, AudioHandle::OutputBuffer ou
     fw::VoiceCommand v;
     while(voice_commands.Pop(v))
         ApplyVoiceCommand(v);
+    chain.ApplyCritical(critical);
     if(panic_count)
         panic_ack.store(panic_count, std::memory_order_release);
     fw::MidiIn m;
@@ -373,12 +376,22 @@ static void RequestPanic() {
     c.kind = Command::Kind::Panic;
     commands.Push(c);
 }
+// A full voice queue drops Note-Ons and CCs (counted); Note-Off, All-Off and Mute take the
+// fallback path and are never lost (Codex F01).
 static void PushVoice(VoiceCommand::Kind kind, uint8_t note = 0, uint8_t velocity = 0) {
     VoiceCommand v;
     v.kind = kind;
     v.note = note;
     v.velocity = velocity;
-    voice_commands.Push(v);
+    if(voice_commands.Push(v))
+        return;
+    ++voice_input_dropped;
+    switch(kind) {
+        case VoiceCommand::Kind::NoteOff: critical.NoteOff(note); break;
+        case VoiceCommand::Kind::AllOff: critical.AllOff(); break;
+        case VoiceCommand::Kind::Mute: critical.Mute(); break;
+        default: break;
+    }
 }
 
 static void HandleRealtime(const MidiEvent& e, Port port) {
@@ -415,7 +428,8 @@ static void HandleVoiceChannel(const MidiEvent& e) {
                     v.component = k;
                     v.id = d->id;
                     v.value = acid303::FromCc(*d, e.data[1]);
-                    voice_commands.Push(v);
+                    if(!voice_commands.Push(v))
+                        ++voice_input_dropped;
                     break;
                 }
             break;
@@ -535,7 +549,7 @@ static uint32_t StackFreeBytes() { return stack_high > stack_low ? StackProbe::F
 
 static void ServiceStats() {
     device.counters[sq::CntNoteOnDropped] = feed.dropped_on.load(std::memory_order_relaxed);
-    device.counters[sq::CntMidiQueueOverflow] = feed.overflow.load(std::memory_order_relaxed);
+    device.counters[sq::CntMidiQueueOverflow] = feed.overflow.load(std::memory_order_relaxed) + voice_input_dropped;
     device.counters[sq::CntClockIgnored] = snapshots.Front().clock_ignored;
     device.counters[sq::CntCallbackOverruns] = meter.Overruns();
     device.counters[sq::CntCallbackPeak] = meter.Peak();

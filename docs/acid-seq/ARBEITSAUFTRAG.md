@@ -618,7 +618,9 @@ von `mod_probe.py`).
 * **Signalweg:** Sequencer → Stimme → Drive → Delay → Host-Mixer (Dry/Wet je
   Effekt, Überblendungen) → Soft-Limiter → Ausgang.
 * **Komponenten:** `step-seq`, `acid-303`, `saturation`, `drive`,
-  `stereo-delay`, `fx-contract`, `bootloader-entry`, `callback-diagnostics`.
+  `stereo-delay`, `fx-contract`, `bootloader-entry`. Die Callback-Diagnose kommt aus
+  `step_seq/diagnostics.h`, nicht aus dem Mod-on-Daisy-Adapter `callback-diagnostics`
+  (D16, Codex Q2).
 * **Version:** eine eigene Produktversion in `composed_version.h`, wie bei
   `physical-modeling-fx-*`.
 * **Ohne angeschlossenen Audioausgang** laufen CV/Gate und MIDI unverändert.
@@ -881,6 +883,11 @@ leiser ([CHANGELOG](../../effects/drive/CHANGELOG.md)). Hardwaretest NICHT GEMES
   * **Pegeltest:** Drive 0–100 %, alle Kurven, Ausgleich 100 %.
     * Zielversatz 0 dB: Ausgangs-RMS innerhalb von ±1 dB um den Eingangs-RMS.
     * Zielversatz −1,5 dB: innerhalb von ±1 dB um Eingangs-RMS − 1,5 dB.
+    * Der feste Ausgleich hängt vom Pegel in die Kurve ab, nicht vom Drive allein (D16,
+      Codex Q3).
+    * **Ausnahme Fold auf Rechtecken** (D16, Codex Q4): Die Dreiecksfaltung bildet flache
+      Dächer bei bestimmten Drive-Werten genau auf 0 ab (−22 dB bei `square_lp3`, Drive
+      48 %). Dort gilt nur „nie mehr als +1 dB über dem Ziel“.
     * Erst mit den Fixtures aus Phase 0, zur Abnahme mit der 303-Fixture aus
       Phase 2.
   * **Nachregelung:** innerhalb von ±3 dB, hält in der Stille.
@@ -1005,6 +1012,7 @@ NICHT GEMESSEN ([HARDWARE_TEST.md](../../effects/stereo-delay/docs/HARDWARE_TEST
 | D12 | Delay-Speicher | **Entschieden 2026-10-26:** volle Sync-Spanne, 12 s je Leitung, rund 4,6 MB im SDRAM, statt die Notenwerte zu begrenzen. |
 | D13 | Verbinden des Panels | **Entschieden 2026-10-26:** Das Gerät hat Vorrang. Vom Panel aufs Gerät nur auf ausdrückliche Aktion. Im VST3 beim Songladen nach Bestätigung, mit der Option „immer“. |
 | D14 | CI-Änderungen aus Phase 0 | **Freigegeben 2026-10-26 vom Benutzer:** Pfadfilter `sequencers/**` in `quick.yml` und neue Verbraucherregeln in `scripts/select_test_suites.py` samt Testschritten der neuen Suites im bestehenden Linux-Job (R13). Ein Job, 15-Minuten-Limit, Abbruch überholter Läufe und Doku-Ausschlüsse bleiben. |
+| D16 | Codex-Fehlersuche Q1–Q4 | **Entschieden 2026-10-27 vom Benutzer:** Q1 `delay-fx` ausgeschaltet exakt trocken wie das Produkt. Q2 und Q3 akzeptiert. Q4 zuerst „Fold muss ±1 dB halten“. Nach dem Nachweis, dass das nur mit bis zu +24 dB Anhebung und Pegelsprüngen bei Signalwechseln geht, als begrenzte Ausnahme akzeptiert. Befunde phasenweise in die Branches. |
 | D15 | Ablauf der Phasen | **Entschieden 2026-10-26 vom Benutzer:** „Ziehe alle Phasen bis zur letzten durch. Dann macht Codex Fehlersuche.“ Die Phasen 1–6 werden nacheinander umgesetzt, ohne nach jeder Phase auf den Hardwaretest zu warten. Jede Phase behält ihren eigenen Branch und PR. Alle Hardwaretests bleiben NICHT GEMESSEN, bis der Benutzer sie durchführt; danach prüft Codex auf Fehler. |
 
 ## 7. Risiken
@@ -1068,3 +1076,33 @@ NICHT GEMESSEN ([HARDWARE_TEST.md](../../effects/stereo-delay/docs/HARDWARE_TEST
 | R16 Produkt-Patch, Verbinden, Stimmenbesitz | P2 | 4.6, 4.9, D13, Phase 6 |
 | P3 Aussage zum Looper | P3 | 4.7 |
 | P3 Lieferweg für Releases | P3 | 4.10, Phase 6 |
+
+## 10. Einarbeitung der Codex-Fehlersuche
+
+Bericht: [CODEX_FEHLERSUCHE.md](CODEX_FEHLERSUCHE.md) (Stand `d3297fd`, 6 P1, 11 P2, 1 P3).
+Eingearbeitet am 2026-10-27, jeweils mit Regressionstest. Hardware bleibt NICHT GEMESSEN.
+
+| Befund | Schwere | Phase | Korrektur |
+| --- | --- | --- | --- |
+| F01 Note-Off, All-Off, Mute bei voller Queue verloren | P1 | 2, 6 | Ersatzweg `acid303/critical.h` |
+| F02 Nachhall endet in Echo-Pausen, alte Echos nach Off | P1 | 4 | Ende nach 500 ms plus Delay-Zeit, `Invalidate()` |
+| F03 MIDI-Slide wird Retrigger | P1 | 1 | Abgleich der Note-Offs erst nach leerer Queue |
+| F04 Clock-Quellenwechsel im Lauf | P1 | 1 | Neustart des Transports wie SW17 aus/an |
+| F05 JUCE „Verbunden“ vor den Deskriptoren | P1 | 5 | Ready erst nach dem letzten Lesen |
+| F16 Browser-Timer „Illegal invocation“ | P1 | 5 | Timer gekapselt, strikte Timer im Node-Test |
+| F06 Monitor verliert Parameteränderungen | P2 | 1 | Zusammenfassen je Parameter im Gerät |
+| F07 Patchzahlen vor der Prüfung gecastet | P2 | 5 | Prüfung vor dem Cast (C++, JS), Begrenzen vor dem Senden |
+| F08 `INT32_MIN` in der Kalibrierprüfung | P2 | 1 | 64-Bit-Betrag |
+| F09 `sq_probe.py` prüft Antworten nicht | P2 | 1 | `sq_codec.decode_reply` |
+| F10 Revision geht in den Einzel-Firmwares verloren | P2 | 2, 3, 4 | Revision im Befehl bis zum Snapshot |
+| F11 angewandte Revision läuft rückwärts | P2 | 6 | `ParameterApplied` ignoriert ältere Revisionen (14 Bit, über den Überlauf) |
+| F12 Slide-Modus von SW18 überschrieben | P2 | 2 | SW18 gilt nur beim Bewegen und Einschalten |
+| F13 JUCE-Kalibrierung verliert Bruchteile | P2 | 5 | `CalText`/`CalMilli` |
+| F14 CI-Auswahl für den Step-Seq-Unterbau | P2 | 2 | Verbraucherregel `stepseq_base` |
+| F17 e2e ohne gültige Test-Kalibrierung | P2 | 5 | Simulator-Kalibrierung im Test, Neuzeichnen nach dem Senden |
+| F18 e2e beendet `mod_sim` mit `Q` | P2 | 5 | Ende über EOF |
+| F15 PASS-Zeile „exakt trocken“ | P3 | 4 | mit Q1 jetzt zutreffend |
+
+Alle Golden-Hashes bleiben unverändert. Der Browser-e2e-Test `e2e_sq.cjs` läuft lokal
+grün (Playwright 1.62.1 mit dem installierten Microsoft Edge, GEMESSEN 2026-10-27).
+Der JUCE-Build mit JUCE 9.0.4 ist weiter offen.

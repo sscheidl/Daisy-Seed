@@ -220,6 +220,22 @@ int main() {
     Tick(3);
     CHECK(!chain.delay_params.enabled && chain.GetDelayHost().GetState() != ::seed::fx::DelayHost::State::On);
 
+    // F11: a voice parameter and then a sequencer parameter before the same callback: the
+    // applied revision ends at the newer one although the queues are applied in turn.
+    usb_midi.incoming.push_back(SetParam(8, fw::kVoice, 4, 1000000));
+    usb_midi.incoming.push_back(SetParam(9, fw::kSeq, 2, 55000));
+    Tick(3);
+    CHECK(fw::device.AcceptedRevision() >= 2 && fw::device.view.applied_revision == fw::device.AcceptedRevision());
+    // F01: a full voice queue drops CCs but never the Note-Off.
+    usb_midi.incoming.push_back(Note(true, 64, 5));
+    Tick(3);
+    CHECK(V().Gate() && V().SoundingNote() == 64);
+    for(int i = 0; i < 80; ++i)
+        usb_midi.incoming.push_back(Cc(74, uint8_t(i), 5));
+    usb_midi.incoming.push_back(Note(false, 64, 5));
+    Tick(3);
+    CHECK(!V().Gate() && fw::device.counters[sq::CntMidiQueueOverflow] > 0);
+
     // Bootloader: S9 + S16 for 5 s -> panic and mute -> reset.
     hw.tog_sw17.pressed = true;
     Tick(500);

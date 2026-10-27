@@ -54,3 +54,5 @@ Korrekturen nach der Codex-Fehlersuche (2026-10-27, `docs/acid-seq/CODEX_FEHLERS
   angekommen und werden wiederholt.
 
 Der Golden-Hash `0x7528DC6F` bleibt unverändert.
+* **F11 (aus Phase 6):** `Engine::ParameterApplied` ersetzt nie eine neuere durch eine
+  ältere Revision (14 Bit, über den Überlauf).

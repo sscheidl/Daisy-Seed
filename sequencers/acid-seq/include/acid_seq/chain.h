@@ -4,6 +4,7 @@
 // (10 ms on/off fade) -> Stereo Delay (feed, tail, dry/wet in the host) -> soft limiter ->
 // output. Header-only, no hardware; the firmware (src/main.cpp) and the end-to-end golden
 // test run exactly this code. One Process() per 48-frame block after the sequencer tick.
+#include "acid303/critical.h"
 #include "acid303/params.h"
 #include "acid303/voice.h"
 #include "drive/host.h"
@@ -70,6 +71,8 @@ class Chain {
     void MidiNoteOff(uint8_t note) { voice_.NoteOffNote(note, acid303::Source::MidiIn); }
     void MidiAllOff() { voice_.AllNotesOff(acid303::Source::MidiIn); }
     void Mute() { voice_.Mute(); }
+    // Note-Offs, All-Off and Mute that did not fit the voice queue (Codex F01).
+    bool ApplyCritical(acid303::CriticalInputs& critical) { return critical.Apply(voice_, acid303::Source::MidiIn); }
     // The sequencer's tempo for synced delay times (Phase 6: tempo hand-over).
     void SetTempo(float bpm) { delay_.SetTempo(48000.f * 60.f / (bpm < 1.f ? 1.f : bpm)); }
 
@@ -81,10 +84,8 @@ class Chain {
         drive_mixer_.SetEnabled(drive_params.enabled);
         delay_.SetParameters(delay_params);
         delay_host_.SetEnabled(delay_params.enabled);
-        // Once the tail has ended the product is exactly dry: the dry/wet fades to 0 % (10 ms)
-        // instead of keeping the dry part at 1 - mix as the standalone delay-fx does.
-        const bool silent = !delay_params.enabled && delay_host_.GetState() == ::seed::fx::DelayHost::State::Off;
-        delay_host_.SetMix(silent ? 0.f : delay_params.mix);
+        // Once the tail has ended the host fades dry/wet to 0 %: exactly dry (Codex Q1).
+        delay_host_.SetMix(delay_params.mix);
         // drv_l/drv_r are zeroed only because x86 GCC 13 -O2 reports a false
         // -Wmaybe-uninitialized for them; DriveMixer::Process writes all n samples.
         float voice[kBlock], wet_l[kBlock], wet_r[kBlock], drv_l[kBlock] = {}, drv_r[kBlock] = {};

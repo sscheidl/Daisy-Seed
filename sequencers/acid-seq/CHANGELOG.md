@@ -23,3 +23,15 @@ Festlegungen, die der Auftrag offenließ:
   trocken.
 * Die Callback-Diagnose kommt aus `step_seq/diagnostics.h`. Die Registerkomponente
   `callback-diagnostics` ist der Mod-on-Daisy-Adapter und wird nicht verwendet.
+
+Korrekturen nach der Codex-Fehlersuche (2026-10-27, `docs/acid-seq/CODEX_FEHLERSUCHE.md`):
+
+* **F01 volle Stimmen-Queue:** Note-Off, All-Off und Mute gehen über den Ersatzweg aus
+  `acid303/critical.h` und nie verloren. Verworfene Note-Ons und CCs zählen in
+  `midi_queue_overflow`.
+* **F11 Revision:** Die gemeldete angewandte Revision läuft nicht mehr rückwärts, wenn
+  ein Stimmen- und ein Sequencer-Parameter im selben Block ankommen.
+* Mit den Korrekturen aus Phase 4: Der Nachhall wartet zusätzlich die Delay-Zeit ab
+  (im Test 4,6 s statt 4,2 s). Das exakte Trocken kommt jetzt aus dem Delay-Host selbst.
+
+Der Golden-Hash `0xBC3D9C4E` bleibt unverändert.
