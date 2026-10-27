@@ -35,6 +35,7 @@
 
 #include "resources.h"
 #include <cmath>
+#include "dsp_memory.h"
 
 namespace torus
 {
@@ -54,10 +55,7 @@ const int16_t* lookup_table_int16_table[] = {};
 const uint32_t* lookup_table_uint32_table[] = {};
 
 // Initialized explicitly after the Desktop Kit's SDRAM startup.
-#if defined(__arm__)
-__attribute__((section(".sdram_bss")))
-#endif
-float lut_sine[LUT_SINE_SIZE];
+float PM_DSP_STORAGE lut_sine[LUT_SINE_SIZE];
 
 const float lut_4_decades[] = {
     1.000000000e+00, 1.036632928e+00, 1.074607828e+00, 1.113973860e+00,

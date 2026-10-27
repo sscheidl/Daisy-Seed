@@ -27,6 +27,7 @@
 // Comb filter / KS string.
 
 #include "dsp/string.h"
+#include "dsp/optimization.h"
 
 #include <cmath>
 
@@ -131,12 +132,28 @@ void String::ProcessInternal(const float* in,
         1.0f - Interpolate(lut_svf_shift, damping_cutoff, 1.0f),
         size);
 
+#if TORUS_OPTIMIZE
+    const float noise_gain = enable_dispersion ? 1.0f / (0.2f + noise_filter) : 0.0f;
+#endif
+#if TORUS_OPTIMIZE
+    float src_phase_local = src_phase_;
+    float dispersion_noise_local = dispersion_noise_;
+    float curved_bridge_local = curved_bridge_;
+    float out_sample_local[2] = {out_sample_[0], out_sample_[1]};
+    float aux_sample_local[2] = {aux_sample_[0], aux_sample_[1]};
+#else
+    float& src_phase_local = src_phase_;
+    float& dispersion_noise_local = dispersion_noise_;
+    float& curved_bridge_local = curved_bridge_;
+    float* out_sample_local = out_sample_;
+    float* aux_sample_local = aux_sample_;
+#endif
     while(size--)
     {
-        src_phase_ += src_ratio;
-        if(src_phase_ > 1.0f)
+        src_phase_local += src_ratio;
+        if(src_phase_local > 1.0f)
         {
-            src_phase_ -= 1.0f;
+            src_phase_local -= 1.0f;
 
             float delay      = delay_modulation.Next();
             float comb_delay = delay * position_modulation.Next();
@@ -151,8 +168,12 @@ void String::ProcessInternal(const float* in,
             if(enable_dispersion)
             {
                 float noise = 2.0f * Random::GetFloat() - 1.0f;
+#if TORUS_OPTIMIZE
+                noise *= noise_gain;
+#else
                 noise *= 1.0f / (0.2f + noise_filter);
-                dispersion_noise_ += noise_filter * (noise - dispersion_noise_);
+#endif
+                dispersion_noise_local += noise_filter * (noise - dispersion_noise_local);
 
                 float dispersion = dispersion_modulation.Next();
                 float stretch_point
@@ -171,8 +192,8 @@ void String::ProcessInternal(const float* in,
                     = -0.618f * dispersion / (0.15f + fabs(dispersion));
 
                 float delay_fm = 1.0f;
-                delay_fm += dispersion_noise_ * noise_amount;
-                delay_fm -= curved_bridge_ * bridge_curving;
+                delay_fm += dispersion_noise_local * noise_amount;
+                delay_fm -= curved_bridge_local * bridge_curving;
                 delay *= delay_fm;
 
                 float ap_delay   = delay * stretch_point;
@@ -192,7 +213,7 @@ void String::ProcessInternal(const float* in,
 
                 float value    = fabs(s) - 0.025f;
                 float sign     = s > 0.0f ? 1.0f : -1.5f;
-                curved_bridge_ = (fabs(value) + value) * sign;
+                curved_bridge_local = (fabs(value) + value) * sign;
             }
             else
             {
@@ -206,16 +227,23 @@ void String::ProcessInternal(const float* in,
 #endif // MIC_W
             string_.Write(s);
 
-            out_sample_[1] = out_sample_[0];
-            aux_sample_[1] = aux_sample_[0];
+            out_sample_local[1] = out_sample_local[0];
+            aux_sample_local[1] = aux_sample_local[0];
 
-            out_sample_[0] = s;
-            aux_sample_[0] = string_.Read(comb_delay);
+            out_sample_local[0] = s;
+            aux_sample_local[0] = string_.Read(comb_delay);
         }
-        *out++ += Crossfade(out_sample_[1], out_sample_[0], src_phase_);
-        *aux++ += Crossfade(aux_sample_[1], aux_sample_[0], src_phase_);
+        *out++ += Crossfade(out_sample_local[1], out_sample_local[0], src_phase_local);
+        *aux++ += Crossfade(aux_sample_local[1], aux_sample_local[0], src_phase_local);
         in++;
     }
+#if TORUS_OPTIMIZE
+    src_phase_ = src_phase_local;
+    dispersion_noise_ = dispersion_noise_local;
+    curved_bridge_ = curved_bridge_local;
+    out_sample_[0] = out_sample_local[0]; out_sample_[1] = out_sample_local[1];
+    aux_sample_[0] = aux_sample_local[0]; aux_sample_[1] = aux_sample_local[1];
+#endif
 }
 
 void String::Process(const float* in, float* out, float* aux, size_t size)

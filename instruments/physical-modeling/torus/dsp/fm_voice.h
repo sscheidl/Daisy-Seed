@@ -29,6 +29,8 @@
 #ifndef TORUS_DSP_FM_VOICE_H_
 #define TORUS_DSP_FM_VOICE_H_
 
+#include "dsp/optimization.h"
+
 #include "stmlib/stmlib.h"
 
 #include <algorithm>
@@ -42,6 +44,11 @@
 
 namespace torus
 {
+struct FMDecay {
+    float amplitude, brightness;
+    static FMDecay Compute(float damping);
+};
+
 using namespace stmlib;
 
 class FMVoice
@@ -51,7 +58,12 @@ class FMVoice
     ~FMVoice() {}
 
     void Init();
+#if TORUS_OPTIMIZE
+    void Process(const float* in, float* out, float* aux, size_t size,
+                 const FMDecay* decay = nullptr);
+#else
     void Process(const float* in, float* out, float* aux, size_t size);
+#endif
 
     inline void set_frequency(float frequency)
     {
@@ -80,7 +92,11 @@ class FMVoice
 
     inline float SineFm(uint32_t phase, float fm) const
     {
+#if TORUS_OPTIMIZE
+        phase += PhaseWord((fm + 4.0f) * 536870912.0f) << 3;
+#else
         phase += (static_cast<uint32_t>(static_cast<int64_t>((fm + 4.0f) * 536870912.0f))) << 3;
+#endif
         uint32_t integral   = phase >> 20;
         float    fractional = static_cast<float>(phase << 12) / 4294967296.0f;
         float    a          = lut_sine[integral];

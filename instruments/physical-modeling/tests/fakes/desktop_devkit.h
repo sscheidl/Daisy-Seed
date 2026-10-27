@@ -14,6 +14,7 @@ struct System {
     inline static uint32_t ticks = 0;
     static uint32_t GetTick() { return ticks; }
     static uint32_t GetTickFreq() { return 1000000; }
+    static uint32_t GetSysClkFreq() { return 480000000; }
     static uint32_t GetNow() { return now; }
     static void Delay(uint32_t ms) { now += ms; }
     // libDaisy's System::ResetToBootloader(); the fake records the request.

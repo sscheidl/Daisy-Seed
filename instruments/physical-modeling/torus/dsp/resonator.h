@@ -32,6 +32,8 @@
 #include "stmlib/stmlib.h"
 
 #include <algorithm>
+#include <array>
+#include "dsp/optimization.h"
 
 #include "dsp/dsp.h"
 #include "stmlib/dsp/filter.h"
@@ -76,6 +78,11 @@ class Resonator
     float   damping_;
 
     int32_t resolution_;
+#if TORUS_OPTIMIZE
+    std::array<uint32_t, 5> filter_key_{};
+    int32_t cached_num_modes_ = 0;
+    bool filters_valid_ = false;
+#endif
 
     stmlib::Svf f_[kMaxModes];
 
