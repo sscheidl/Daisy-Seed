@@ -89,8 +89,13 @@ def main():
     assert manifest['generator_sha256']==sha(ROOT/'build_v4.py')
     assert manifest['geometry_helper_sha256']==sha(ROOT/'build_v4_coupons.py')
     assert validation['validator_sha256']==sha(ROOT/'validate_v4.py')
+    regression=json.loads((OUT/'access-regression.json').read_text(encoding='utf8'))
+    assert regression['passed'] and regression['parameters_sha256']==sha(ROOT/'v4-parameters.json')
+    assert regression['validator_sha256']==sha(ROOT/'validate_v4.py')
+    assert regression['regression_script_sha256']==sha(ROOT/'verify_access_regression.py')
     for name,meta in manifest['parts'].items():
         assert sha(OUT/meta['file'])==meta['sha256']==validation['parts'][name]['sha256']
+        assert regression['corrected_stl_sha256'][name]==meta['sha256']
     for name,meta in validation['svg'].items():
         assert sha(OUT/'sheets'/(name+'.svg'))==meta['sha256']
     margin=p['case']['print_bed_margin']['value']; gap=p['case']['print_plate_spacing']['value']
@@ -115,7 +120,7 @@ def main():
     files += sorted((OUT/'sheets').glob('*.svg'))
     assert len(files)==7
     files += [plates/name for name,_ in layouts]
-    files += [OUT/'V4.md',OUT/'manifest.json',OUT/'validation.json']
+    files += [OUT/'V4.md',OUT/'manifest.json',OUT/'validation.json',OUT/'access-regression.json']
     # Images are explanatory and contain no extra printable geometry.
     files += sorted((OUT/'images').glob('*.png'))
     report=dict(generated_at_utc=datetime.now(timezone.utc).isoformat(),passed=True,

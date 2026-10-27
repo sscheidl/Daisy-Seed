@@ -89,6 +89,10 @@ class Validation:
             ('Seed roof vent',(33,-74,18),(35,-74,18))]
         panel_y=-(3.5-self.q('rear_plate_thickness')/2)
         markers['rear-panel'] += [('J4 axis',(39.915,panel_y,8.14),(53,panel_y,8.14))]
+        markers['rear-panel'] += [('central fastener left',(80.5,-2.535,16),(85,-2.535,16)),
+            ('central fastener right',(124.5,-2.535,16),(120,-2.535,16))]
+        markers['carrier'] += [('joined CV pocket rear',(117.35,-15.8,8),(117.35,-23.6,8)),
+            ('joined CV pocket front',(117.35,-31.4,8),(117.35,-39,8))]
         for name in ['lower-acrylic','upper-acrylic','paper']:
             meta=self.manifest['parts'][name]; zz=meta['installed_z_offset']+self.meshes[name].extents[2]/2
             markers[name]+=[('S1 / web',(69,-85,zz),(73,-85,zz))]
@@ -128,6 +132,39 @@ class Validation:
                 delta_mm2=abs(area-mesh_area),thickness_delta_mm=abs(actual_thickness-thickness),
                 landmarks=holes,passed=abs(area-mesh_area)<.01 and abs(actual_thickness-thickness)<self.v('general','mesh_simplify_tolerance') and all(x['passed'] for x in holes))
         return result
+
+    def rear_fastener_checks(self):
+        q=self.q; v=self.v
+        for i,(x,z) in enumerate(q('rear_plate_mounts')):
+            plane=q('audio_planes_y')[0 if x<q('rear_plate_step_x') else 1]
+            face=plane-q('rear_plate_thickness'); head=v('screw','head_height')
+            start=q('outer')[1]-q('rear_driver_reach')
+            for label,y,d,length in [('head seated',face-head,v('screw','head_diameter'),head),
+                ('head insertion',start,v('screw','head_diameter'),face-start),
+                ('straight hex key',start,q('rear_driver_diameter'),face-start),
+                ('shaft seated',face,v('screw','thread_diameter'),q('rear_mount_screw_length'))]:
+                self.test('rear_fasteners',f'mount {i+1} {label}',
+                    self.cylinder(f'rear-mount-{i+1}-{label.replace(" ","-")}',x,y,z,d,length,'y'))
+            seat=plane+q('rear_mount_pad_length')-v('screw','nut_height')
+            for label,length in [('nut seated',v('screw','nut_height')),
+                ('nut insertion',v('screw','nut_height')+q('rear_nut_insertion_distance'))]:
+                # A real hexagonal envelope, independently constructed in the
+                # physical frame; a circular probe would not fit a hex pocket.
+                mesh=trimesh.creation.cylinder(radius=v('screw','nut_af')/math.sqrt(3),height=length,sections=6)
+                mesh.apply_transform(trimesh.transformations.rotation_matrix(math.pi/6,[0,0,1]))
+                mesh.apply_transform(trimesh.transformations.rotation_matrix(math.pi/2,[1,0,0]))
+                mesh.apply_translation((x,-seat-length/2,z))
+                self.test('rear_fasteners',f'mount {i+1} {label}',
+                    self.probe(f'rear-mount-{i+1}-{label.replace(" ","-")}',mesh))
+
+    def paired_jack_checks(self):
+        q=self.q; l=self.manifest['levels_pcb_relative']; e=self.v('general','csg_margin')
+        width,depth=q('jack_body_pocket')
+        for y in sorted({xy[1] for xy in self.v('full_board','jacks')}):
+            x1,x2=sorted(xy[0] for xy in self.v('full_board','jacks') if xy[1]==y)[-2:]
+            self.test('paired_jacks','shared pocket Y'+str(y),self.box('paired-jack-pocket-'+str(y),
+                x1-width/2+e,y+q('jack_body_offset_y')+e,l['deck_bottom']+e,
+                x2-x1+width-2*e,depth-2*e,q('skin')-2*e))
 
     def run(self):
         v=self.v; q=self.q; l=self.manifest['levels_pcb_relative']
@@ -222,6 +259,7 @@ class Validation:
         w=q('vent_slot_width')
         self.vent_area=dict(tray_intake_mm2=round(len(q('tray_vent_y'))*w*(hi-lo),3),
             seed_roof_exhaust_mm2=round(len(q('seed_roof_vent_x'))*w*(y1-y0),3))
+        self.rear_fastener_checks(); self.paired_jack_checks()
 
     def report(self):
         self.landmarks(); sheets=self.svg_checks()
