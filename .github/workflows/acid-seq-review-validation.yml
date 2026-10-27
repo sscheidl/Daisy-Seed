@@ -1,8 +1,8 @@
-name: Acid Seq review validation
+name: Acid Seq validation after the bug-hunt fixes
 # Isolated one-off review runner; no product changes and no release.
 on:
   push:
-    branches: [codex/acid-seq-review-validation-20261027]
+    branches: [claude/acid-seq-validation-main]
     paths: [.github/workflows/acid-seq-review-validation.yml]
 permissions:
   contents: read
@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: d3297fdc6f7c2faf0b781f7cb1b5b25364c24170
+          ref: d2a3e1f062f75b67a42e4d498f9f9293bdae5ace
       - name: Fetch the two pinned firmware source dependencies
         run: git submodule update --init libDaisy DaisySP
       - name: Linux compiler, ASan, UBSan and TSan checks
@@ -58,7 +58,7 @@ jobs:
           cat review-validation/results.tsv
           {
             echo '## Acid Seq review validation'
-            echo 'Audited source: d3297fdc6f7c2faf0b781f7cb1b5b25364c24170'
+            echo 'Audited source: d2a3e1f062f75b67a42e4d498f9f9293bdae5ace'
             echo
             echo '| Check | Exit |'
             echo '| --- | --- |'
