@@ -1,5 +1,8 @@
 # Desktop-Gehäuse / Paper on Daisy
 
+**Fortsetzung nach dem Testdruck:** [Übergabe und Ziele der nächsten Gehäuseversion](v4/POST_PRINT_HANDOVER.md)
+mit [Einstiegstext für einen neuen Chat](v4/START_NEXT_CHAT.md).
+
 **Aktueller Stand, 27.10.2026:** [V4 als vollständiger erster Gehäusedruck](v4/full/V4.md),
 auf ausdrücklichen Nutzerwunsch ohne vorgeschaltete Couponbestellung.
 **Vier Druckteile**, zwei 1-mm-Acrylplatten und Papier; Originalkappen direkt
