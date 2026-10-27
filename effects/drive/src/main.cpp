@@ -31,9 +31,12 @@ constexpr uint32_t kLedPeriodMs = 10;
 struct Command {
     uint16_t id = 0;
     int32_t value = 0;
+    uint16_t revision = 0;
+    bool from_sq = false; // SQ parameter: `revision` is applied (Codex F10)
 };
 struct Snapshot {
     ::seed::fx::drive::Parameters params;
+    uint16_t applied_revision = 0;
     bool overrun = false;
 };
 } // namespace fw
@@ -54,6 +57,7 @@ static float last_pot[8] = {};
 static bool pots_started = false, last_sw17 = false, overrun_seen = false;
 static uint16_t held = 0;
 static uint32_t control_ms = 0;
+static uint16_t applied_revision = 0;
 static float wet_l[fw::kBlockSize], wet_r[fw::kBlockSize];
 
 // ----- audio callback ---------------------------------------------------------------------
@@ -107,8 +111,11 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
     }
     ++control_ms;
     fw::Command c;
-    while(commands.Pop(c))
+    while(commands.Pop(c)) {
         ::seed::fx::drive::WriteParam(params, c.id, c.value);
+        if(c.from_sq)
+            applied_revision = c.revision;
+    }
     Controls();
     drive.SetParameters(params);
     mixer.SetEnabled(params.enabled);
@@ -124,6 +131,7 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
     }
     fw::Snapshot& s = snapshots.Back();
     s.params = params;
+    s.applied_revision = applied_revision;
     s.overrun = overrun_seen;
     snapshots.Publish();
     meter.End(DWT->CYCCNT);
@@ -142,7 +150,9 @@ static int32_t values[sq::kDriveComponent.count];
 static sq::Component components[] = {{"drive", sq::KindEffect, DRIVE_VERSION, &sq::kDriveComponent, values}};
 class Host : public sq::Host {
   public:
-    bool PushParam(uint8_t, uint16_t id, int32_t value, uint16_t) override { return commands.Push({id, value}); }
+    bool PushParam(uint8_t, uint16_t id, int32_t value, uint16_t revision) override {
+        return commands.Push({id, value, revision, true});
+    }
     bool PushPattern(const step_seq::Pattern&, uint16_t) override { return false; }
     bool PushStep(uint8_t, const step_seq::Step&, uint16_t) override { return false; }
     bool PushTransport(uint8_t) override { return false; }
@@ -198,6 +208,7 @@ static void ServiceMainLoop() {
                 device.ParamChanged(0, id);
         }
         last_params = s.params;
+        device.view.applied_revision = s.applied_revision;
     }
     device.counters[sq::CntCallbackOverruns] = meter.Overruns();
     device.counters[sq::CntCallbackPeak] = meter.Peak();

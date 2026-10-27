@@ -123,6 +123,41 @@ int main() {
     usb_midi.incoming.push_back(SysEx(std::vector<uint8_t>(buffer, buffer + w.End())));
     Tick(3);
     CHECK(params.cutoff == 2000.f);
+    // F10: the applied revision follows the accepted one once the callback took it.
+    CHECK(fw::device.AcceptedRevision() == 1 && fw::device.view.applied_revision == 1);
+    // F12: an SQ slide mode stays until SW18 moves; then the switch wins.
+    w.Begin(sq::SetParam, 3);
+    w.U7(0);
+    w.U14(11);
+    w.I32(2000);
+    usb_midi.incoming.push_back(SysEx(std::vector<uint8_t>(buffer, buffer + w.End())));
+    Tick(50);
+    CHECK(params.slide_mode == acid303::SlideMode::Always && fw::device.view.applied_revision == 2);
+    hw.tog_sw18.position = daisy::Switch3::POS_CENTER;
+    Tick(50);
+    CHECK(params.slide_mode == acid303::SlideMode::Legato);
+    hw.tog_sw18.position = daisy::Switch3::POS_UP;
+    Tick(50);
+    CHECK(params.slide_mode == acid303::SlideMode::Off);
+    // F01: a full command queue drops CCs but never a Note-Off, All-Off or Mute.
+    usb_midi.incoming.push_back(Note(true, 64));
+    Tick(3);
+    CHECK(voice.Gate() && voice.SoundingNote() == 64);
+    for(int i = 0; i < 80; ++i)
+        usb_midi.incoming.push_back(Cc(74, uint8_t(i)));
+    usb_midi.incoming.push_back(Note(false, 64));
+    Tick(3);
+    CHECK(!voice.Gate() && fw::device.counters[sq::CntMidiQueueOverflow] > 0);
+    usb_midi.incoming.push_back(Note(true, 65));
+    Tick(3);
+    for(int i = 0; i < 80; ++i)
+        usb_midi.incoming.push_back(Cc(74, uint8_t(i)));
+    daisy::MidiEvent all_off;
+    all_off.type = daisy::ChannelMode;
+    all_off.cm_type = daisy::AllNotesOff;
+    usb_midi.incoming.push_back(all_off);
+    Tick(3);
+    CHECK(!voice.Gate());
     // USB lost: MIDI notes end.
     usb_midi.incoming.push_back(Note(true, 62));
     Tick(3);

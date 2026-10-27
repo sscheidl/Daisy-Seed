@@ -103,6 +103,45 @@ class SqVectorTests(unittest.TestCase):
         self.assertEqual(cc, 127)
 
 
+class ProbeReplyTests(unittest.TestCase):
+    """sq_probe.py accepts only intact replies (F09): a damaged CRC counts as no reply."""
+
+    def link(self, replies):
+        import sys
+        sys.path.insert(0, str(ROOT / 'sequencers/step-seq/tools'))
+        probe = load('sq_probe', ROOT / 'sequencers/step-seq/tools/sq_probe.py')
+        probe.TIMEOUT = 0
+        link = object.__new__(probe.Link)
+        link.rid, link.lost, link.sent = 0, 0, []
+        link.send_raw = link.sent.append
+        link.frames = lambda seconds: iter(replies.pop(0) if replies else [])
+        return link
+
+    def test_good_reply_is_read(self):
+        get_state = codec.TYPES['GET_STATE']
+        link = self.link([[codec.encode(get_state | codec.RESPONSE, 1, [2])]])
+        self.assertEqual(link.request(get_state).u7(), 2)
+
+    def test_bad_crc_is_ignored_and_retried(self):
+        get_state = codec.TYPES['GET_STATE']
+        bad = codec.encode(get_state | codec.RESPONSE, 1, [2])
+        bad[-2] ^= 1
+        link = self.link([[bad], [bad], [bad], [bad]])
+        with self.assertRaises(SystemExit) as raised:
+            link.request(get_state)
+        self.assertIn('No reply', str(raised.exception))
+        self.assertEqual(len(link.sent), 4)
+
+    def test_decode_reply_rejects_damage(self):
+        good = codec.encode(codec.TYPES['GET_STATE'] | codec.RESPONSE, 5, [1, 2])
+        self.assertEqual(codec.decode_reply(good), (good[5], 5, [1, 2]))
+        for broken in (good[:-1], good[:-4] + good[-3:], [good[0]] + [0x99] + good[2:]):
+            self.assertIsNone(codec.decode_reply(broken))
+        wrong_version = list(good)
+        wrong_version[4] = 2
+        self.assertIsNone(codec.decode_reply(wrong_version))
+
+
 class ParameterContractTests(unittest.TestCase):
     def setUp(self):
         self.data = json.loads((CONTRACTS / 'parameters.json').read_text(encoding='utf-8'))

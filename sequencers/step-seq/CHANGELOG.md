@@ -35,3 +35,22 @@ Abweichungen und Ergänzungen gegenüber dem Auftrag:
   (`callback-diagnostics` hängt am MD-Kern, den Step Seq nicht enthält).
 * **Monitor:** zusätzlich Ereignis 7 (Step am Kit geändert) und Zähler 16
   (`stack_free_bytes`), beides hinten angehängt.
+
+Korrekturen nach der Codex-Fehlersuche (2026-10-27, `docs/acid-seq/CODEX_FEHLERSUCHE.md`):
+
+* **F03 MIDI-Legato:** `ServiceMidi` sendet erst die Ereignisse aus der Queue und gleicht
+  danach die Note-Offs aus der Tabelle ab, nur wenn die Queue leer ist. Ein Slide geht so
+  als neues Note-On vor dem alten Note-Off hinaus und wird nicht zum Retrigger. Ein
+  wegen voller Queue verlorenes Note-Off wird weiterhin nachgeholt.
+* **F04 Clock-Quelle:** Ein Wechsel der Clock-Quelle bei eingeschaltetem SW17 startet den
+  Transport neu wie SW17 aus und an: Noten enden, Intern startet sofort am Startpunkt,
+  eine externe Quelle wird scharfgeschaltet.
+* **F06 Monitor:** Parameteränderungen werden je Komponente und Parameter
+  zusammengefasst. Mehrere geänderte Parameter kommen alle mit ihrem neuesten Wert an.
+* **F08 Kalibrierung:** Die Prüfung von `scale` rechnet in 64 Bit. `INT32_MIN` wird ohne
+  Überlauf abgelehnt.
+* **F09 `sq_probe.py`:** Antworten werden vor der Auswertung auf Kopf, Länge, Version
+  und CRC geprüft (`sq_codec.decode_reply`). Beschädigte Antworten gelten als nicht
+  angekommen und werden wiederholt.
+
+Der Golden-Hash `0x7528DC6F` bleibt unverändert.
