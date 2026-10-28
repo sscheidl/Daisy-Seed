@@ -7,7 +7,7 @@ eingearbeitet) und die Fehlersuche über alle Phasen
 ([CODEX_FEHLERSUCHE.md](docs/acid-seq/CODEX_FEHLERSUCHE.md), Stand `d3297fd`, Verdikt
 damals NICHT BEREIT: 6 P1, 11 P2, 1 P3). Alle 18 Befunde F01–F18 sind mit
 Regressionstests behoben ([Arbeitsauftrag § 10](docs/acid-seq/ARBEITSAUFTRAG.md));
-Q1–Q3 entschieden (D16). Nach dem Merge auf `main` @ `d2a3e1f` GEMESSEN 27.10.2026:
+Q1–Q4 entschieden (D16). Nach dem Merge auf `main` @ `d2a3e1f` GEMESSEN 27.10.2026:
 ASan/UBSan und TSan für alle elf Ziele PASS, JUCE 9.0.4 Selbsttest PASS, Browser-e2e
 grün, Goldens unverändert. Eine erneute Codex-Prüfung der Korrekturen gibt es nicht;
 das Verdikt in CODEX_FEHLERSUCHE.md bezieht sich auf den Stand vor den Korrekturen.
