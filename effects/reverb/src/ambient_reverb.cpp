@@ -47,6 +47,9 @@ bool AmbientReverb::Prepare(float sampleRate, Memory &memory) {
     pre_[1].Bind(memory.preDelay[1]);
     up_.Prepare(sampleRate, fast.pitch[0], fast.pitch[1], 2.f);
     down_.Prepare(sampleRate, fast.pitch[2], fast.pitch[3], .5f);
+#if AMBIENT_PITCH_GATE
+    upRunning_ = downRunning_ = true; // Freshly prepared, as after Restart().
+#endif
     waveSmoothing_ = 1 - Pole(8.f, sampleRate);
     envelopeRelease_ = Pole(2.f, sampleRate);
     SetParameters(parameters_, true);
@@ -154,7 +157,22 @@ Stereo AmbientReverb::Process(Stereo in) {
     const float loopSend = (.35f + .35f * mode[5]) * (1 - maximumGain) * (1 - hold);
     Stereo pitchIn{.7f * x.left + loopSend * feedback_.left,
                    .7f * x.right + loopSend * feedback_.right};
+#if AMBIENT_PITCH_GATE
+    // Only Abyss hears the lower shifter, only Halo and Shimmer the upper one. A
+    // shifter whose mode weight is exactly 0 is skipped; when its weight rises
+    // again it restarts from silence while the mode crossfade brings it in.
+    const bool upAudible = mode[3] > 0 || mode[5] > 0, downAudible = mode[2] > 0;
+    if (upAudible && !upRunning_)
+        up_.Restart();
+    if (downAudible && !downRunning_)
+        down_.Restart();
+    upRunning_ = upAudible;
+    downRunning_ = downAudible;
+    const Stereo octaveUp = upAudible ? up_.Process(pitchIn) : Stereo{},
+                 octaveDown = downAudible ? down_.Process(pitchIn) : Stereo{};
+#else
     const Stereo octaveUp = up_.Process(pitchIn), octaveDown = down_.Process(pitchIn);
+#endif
     const float amount = .5f * texture;
     x.left += amount * (mode[2] * octaveDown.left + mode[3] * octaveUp.left);
     x.right += amount * (mode[2] * octaveDown.right + mode[3] * octaveUp.right);
