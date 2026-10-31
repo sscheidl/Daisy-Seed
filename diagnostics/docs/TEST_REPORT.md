@@ -1,5 +1,15 @@
 # Test report
 
+## CV-1-Loopback, 31.10.2026
+
+**GEMESSEN mit 0.3.1:** CV OUT 1 → CV IN 1, mehrere feste DAC-Codes und zwei
+langsame, vom Host gesteuerte Treppendreieckzyklen. Der Eingang folgt monoton;
+Code 2048 ergibt normalisiert etwa 0,50007. Endpunkte: Code 0 etwa +0,0056,
+Code 4095 etwa +0,9910. Keine unabhängige Volt-Kalibrierung. 1889 gültige Rahmen
+ohne CRC-/Inhaltsfehler, Verlust oder Wiederverbindung. Abschließend OFF bestätigt.
+H15 ist damit teilweise gemessen; CV 2 und Gate bleiben offen. Messwerte und
+Grenzen: [CV-Hardwareprotokoll](HARDWARE_CV_LOOPBACK_2026-10-31.md).
+
 ## Kartenleser-Hardwaretest, 31.10.2026
 
 **GEMESSEN mit 0.3.0:** CDC/MSC werden unter Windows erkannt, DDP und direkter
@@ -18,8 +28,8 @@ Beobachtungen und Grenzen: [Hardwareprotokoll](HARDWARE_CARD_READER_2026-10-31.m
 
 ## Version 0.3.0 CV and gate jacks
 
-Historical software validation for the CV/gate extension; **CV/gate hardware tests
-remain open**. The later card-reader hardware test above does not validate them.
+Historical software validation for the CV/gate extension. Later CV-1 loopback
+results are listed above; independent voltage and gate hardware tests remain open.
 Local results on 25 October 2026 (Windows 11):
 
 | Check | Command | Result |
@@ -43,7 +53,7 @@ Pending hardware tests (status **NICHT GEMESSEN**):
 | H12 | CV IN 1/2 with known voltages (e.g. −5, 0, +5 V if within the jack's range): normalized value, raw ADC, mapping CV IN 1/2 | **Not measured** |
 | H13 | GATE IN 1/2: state and edge counter with a gate/trigger source; polarity; short pulses | **Not measured** |
 | H14 | CV OUT 1/2 with a multimeter/oscilloscope: codes 0, 2048, 4095 in Fixed; Ramp and Saw shape and period; Off after closing the application | **Not measured** |
-| H15 | Loop test: patch CV OUT 1/2 → CV IN 1/2, compare codes with read values | **Not measured** |
+| H15 | Loop test: patch CV OUT 1/2 → CV IN 1/2, compare codes with read values | **Partially GEMESSEN, 31.10.2026:** CV OUT 1 → CV IN 1; CV 2 remains NICHT GEMESSEN |
 
 Do not connect CV OUT to equipment with an unknown input range before H14.
 

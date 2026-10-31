@@ -11,7 +11,8 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > firmware 0.1.0. The **0.3.1 card-reader basic hardware test passed on 31 October
 > 2026**: Windows FAT32 access, small-file writes and hashes after eject/remount,
 > and eject with the app running. Large-file, interruption, other-media and
-> sustained-load tests remain open. CV/gate hardware tests also remain open.
+> sustained-load tests remain open. A CV OUT 1 → CV IN 1 loopback also passed
+> the functional check that day; CV 2, gate and independent voltage tests remain open.
 > See the [test report](docs/TEST_REPORT.md) and [reader review](docs/SD_CARD_READER_REVIEW.md).
 
 ![Diagnostic GUI in simulation mode](docs/images/gui-simulation.png)
