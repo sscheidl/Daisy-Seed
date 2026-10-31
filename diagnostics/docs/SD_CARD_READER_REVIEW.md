@@ -1,6 +1,30 @@
 # SD card reader — independent review handover
 
-Prepared 22 October 2026. Implementation 0.2.0; **not hardware validated**.
+> **Korrekturstand 0.3.2, 31.10.2026:** Die Befunde des unabhängigen Claude-Reviews
+> sind in Software bearbeitet: Reset-Abbruch ohne HAL-Warteschleife, zusätzliche
+> DMA/Sync-/Adaptertests, Statusdiagnose und Host/GUI/JSON sowie Reset-Zustandslogik.
+> [Korrekturbericht](PR70_REVIEW_FIXES_2026-10-31.md),
+> [archivierter Review mit Originaltext und Logs](SD_CARD_READER_PR70_REVIEW_2026-10-31.md).
+> CardReader-Gegenprobe 0.3.2: **GEMESSEN**, normale Dateioperationen und eine
+> Kartenentnahme während Schreiben mit Wiederanlauf bestanden:
+> [Hardwareprotokoll](HARDWARE_CARD_READER_0.3.2_2026-10-31.md). Keine erneute
+> unabhängige Claude-Prüfung der Korrektur behauptet.
+
+> Update 0.3.1 (31 October 2026): the first physical Windows probe of 0.3.0
+> enumerated CDC/MSC but failed to expose a readable card (SHARED → ERROR).
+> The reader now uses single-buffer IDMA with a dedicated aligned SDRAM
+> buffer and cache maintenance; the old CPU-polled path below is historical.
+> Only the reader build permits `HAL_SD_WriteBlocks_DMA`; PIO/IT writers, generic
+> BSP writers, multi-buffer DMA, erase/lock and FatFs mutation remain forbidden.
+> Both variants retain separate symbol checks. `reader_dma.h` is exercised by
+> host tests for cache ordering, completion/programming waits, timeouts, removal,
+> abort diagnostics, alignment and tick wrap. The 0.3.1 basic hardware retest passed:
+> FAT32 file operations, hashes after eject/remount and eject with the app running.
+> Large-file, interruption, other-media and sustained-load cases remain open.
+> Actual observations: [hardware test](HARDWARE_CARD_READER_2026-10-31.md).
+
+The remainder is the historical handover prepared 22 October 2026 for
+implementation 0.2.0, which was **not hardware validated at that time**.
 The implementation branch is `codex/sd-card-reader`, based on English-language
 PR [#2](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics/pull/2).
 Keep that dependency until it merges, then retarget the reader PR to main after

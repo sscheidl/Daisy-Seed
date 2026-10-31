@@ -1,0 +1,89 @@
+Ich lege im Scratchpad eine separate Arbeitskopie des PR-Branches an, mit verlinkter libDaisy/Toolchain, damit Tests und Firmware-Build dort laufen und dein aktueller Branch unberührt bleibt.
+
+Tests und Firmware-Build sind durch; ich prüfe jetzt die Ergebnisse und danach das HAL-Verhalten (Abort/IDMA/Fehlerpfade).
+
+Ich prüfe gerade, ob die GUI nach der `session.py`-Änderung noch Busy-Wechsel mitbekommt; danach folgen die Nachweisdokumente.
+
+Neuer Commit auf dem PR-Branch entdeckt (2eeb21c, CV-Loopback-Nachweis, nur Doku). Ich überfliege ihn kurz, damit die Empfehlung den aktuellen PR-Stand abdeckt.
+
+Review ist inhaltlich fertig; ich räume jetzt die temporäre Arbeitskopie auf (erst die Verknüpfungen lösen, damit libDaisy/.tools unangetastet bleiben).
+
+# Review PR #70 (`codex/diagnostics-reader-hardware`)
+
+**Empfehlung: in dieser Form noch nicht mergen.** DMA-Puffer, Cache-Behandlung, Besitzlogik und Schreibschutz sind korrekt. Der Hardware-Grundtest ist echt und passt zum Quellstand. Es gibt aber einen schweren Befund (1): Die Behauptung „alle Wartepfade begrenzt“ stimmt nicht, sobald man die HAL mit einbezieht. Er sollte vor dem Merge behoben werden.
+
+Geprüft habe ich den Code auf `f10864d`. Der PR-Kopf ist inzwischen `2eeb21c`. Dieser Commit enthält nur Doku (CV-Loopback): Die Tabelle stimmt mit dem JSON überein, und der SHA-256 der Rohdatei (`b145dc…`) stimmt.
+
+## Lokal ausgeführt (GEMESSEN 31.10.2026, separater Worktree, inzwischen entfernt)
+
+| Befehl | Ergebnis |
+|---|---|
+| `make -C diagnostics/firmware test` | bestanden, DMA-Suite 4173 Prüfungen ohne Fehler |
+| `make … test-sanitize` (clang, ASan/UBSan) | bestanden |
+| `python -m pytest diagnostics/tests/python -v` | 222 bestanden |
+| `bash diagnostics/scripts/build-firmware.sh` | beide Varianten: Vektoren und Symbolprüfung PASS |
+
+Das Reader-Image hat 131844 Bytes und den SHA-256 **`bf23fc49…b7bf`**. Das ist exakt der geflashte Hash: Der Build ist reproduzierbar, und das getestete Image gehört zum Quellstand. Das geschützte Image hat `4978614641…8824`.
+
+## Befunde
+
+**1 — HOCH (aus HAL-Code abgeleitet, auf Hardware nicht nachgewiesen): Ein Abbruch beim Schreiben kann die Hauptschleife unbegrenzt blockieren**
+- **Wo:** [reader_dma.h:80](diagnostics/firmware/src/reader_dma.h:80) ruft `Fail()`, das über [main.cpp:272](diagnostics/firmware/src/main.cpp:272) `HAL_SD_Abort` aufruft. In `stm32h7xx_hal_sd.c` (ca. Zeilen 2904–2937) prüfen die Warteschleifen `HAL_GetTick() - tickstart >= SDMMC_DATATIMEOUT`. `SDMMC_DATATIMEOUT` ist 0xFFFFFFFF ([stm32h7xx_ll_sdmmc.h:295](libDaisy/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_ll_sdmmc.h:295)); als Millisekunden gelesen sind das etwa 49 Tage.
+- **Fehlerszenario:**
+  1. Windows schreibt, und die Karte wird gezogen oder verliert Kontakt.
+  2. Der Transfer bleibt `BUSY`, weil auch der Hardware-Timeout (DTIMER) auf 0xFFFFFFFF Takte steht.
+  3. Nach „Unavailable“ oder dem 1-s-Timeout ruft die Firmware `HAL_SD_Abort` auf.
+  4. CMD12 bekommt keine Antwort, die HAL meldet `CMD_RSP_TIMEOUT`.
+  5. Beim Schreiben wartet die HAL dann nur auf `DATAEND`. Der durch CMDSTOP abgebrochene Datenpfad setzt aber `DABORT`, nicht `DATAEND`.
+  6. Folge: Die Hauptschleife hängt. CDC und MSC sind tot, USB-Resets werden nicht mehr verarbeitet, nur ein Neustart der Stromversorgung hilft.
+- **Weitere Wege in denselben Hänger:**
+  - Antwortet CMD12 mit Fehlerbits, kehrt `HAL_SD_Abort` mit `HAL_ERROR` zurück und lässt den Zustand auf `BUSY` (IDMA bleibt aktiv). Ein späteres RETURN ruft über `Close()` ([main.cpp:301](diagnostics/firmware/src/main.cpp:301)) erneut `HAL_SD_Abort` auf und hängt dort.
+  - Kleines Wettlauffenster: Der SDMMC-Interrupt beendet den Transfer genau zwischen der Zustandsprüfung in `HAL_SD_Abort` und dem Abschalten der Interrupts.
+- **Warum neu:** In 0.3.0 war der Zustand nach dem Polling-Aufruf `HAL_SD_WriteBlocks` immer `READY`, `Abort` lief also nie mitten im Schreiben. Dieser Pfad entsteht erst mit diesem PR.
+- **Vorschlag:** Einen eigenen, zeitbegrenzten Abort in `ReaderBackend::Abort` bauen:
+  - SDMMC1-Interrupt maskieren (BASEPRI auf Priorität 2; Audio und USB laufen weiter),
+  - CMD12 mit CMDSTOP senden,
+  - höchstens etwa 100–500 ms auf `DABORT`, `DATAEND`, `DTIMEOUT` oder `BUSYD0END` warten,
+  - danach Flags löschen, FIFO zurücksetzen, `IDMACTRL = 0`, Zustand auf `READY` setzen.
+
+  Die HAL bleibt dabei unverändert (Version gepinnt). Danach sollte die Kartenentnahme während eines Schreibvorgangs an der Hardware geprüft werden; das macht der Mensch.
+
+**2 — MITTEL: Die DMA-Tests bilden die echte HAL nicht ab**
+- **Falsches Modell:** Der Fake-`Abort` ([test_reader_dma.cpp:40](diagnostics/tests/firmware/test_reader_dma.cpp:40)) ist sofort fertig und setzt `error = 0`. Die Erwartung in [:74](diagnostics/tests/firmware/test_reader_dma.cpp:74) lautet entsprechend „abort clears errors“. Die echte HAL macht dagegen ohne `BUSY` gar nichts. Mit `BUSY` überschreibt sie `ErrorCode` mit dem CMD12-Ergebnis, und sie kann auch `HAL_ERROR` liefern oder gar nicht zurückkehren.
+- **Fehlende Fälle:**
+  - `Sync()` wird nie getestet.
+  - Beim Schreiben ist nur der Timeout der Kartenprogrammierung abgedeckt, nicht Startfehler, DMA-Fehler, Kartenentnahme oder USB-Reset während der DMA.
+  - Nicht abgedeckt: `Abort` lässt den Zustand auf `BUSY`, und der nächste Start meldet `HAL_BUSY`.
+- **Zahl relativiert sich:** 4096 der 4173 Prüfungen sind Byte-Vergleiche über 512-Byte-Puffer.
+
+**3 — NIEDRIG: Fehler beim Statusabfragen werden als DMA-Fehler gemeldet**
+`HAL_SD_GetCardState` schreibt CMD13-Fehler zusätzlich in `ErrorCode` (hal_sd.c:2871). [reader_dma.h:63](diagnostics/firmware/src/reader_dma.h:63) meldet daraufhin `fault=3` (Dma). Das Verhalten ist sicher, nur die Diagnose ist falsch beschriftet.
+
+**4 — NIEDRIG: Die neuen Diagnosefelder kommen beim Host nicht an**
+`io`, `fault`, `he`, `lba` und `ms` werden in [protocol.py:409](diagnostics/windows/daisy_diag/protocol.py:409) nicht ausgewertet. GUI und Export zeigen nur ERROR. Die Aussagen `fault=0`/`he=0` und `io=SYNC` stehen im Bericht, aber nicht im JSON-Nachweis. In den lokalen Rohprotokollen habe ich sie stichprobenartig bestätigt.
+
+**5 — INFO, nicht neu: USB-Reset während eines Transfers ergibt ERROR statt INTERRUPTED**
+Die Ursache liegt in [card_reader.cpp:59](diagnostics/firmware/src/card_reader.cpp:59) und [:48](diagnostics/firmware/src/card_reader.cpp:48). RETURN ist in beiden Zuständen erlaubt.
+
+**6 — INFO: PR-Beschreibung veraltet**
+Commit `2eeb21c` (CV-Loopback) ist in der Beschreibung nicht erwähnt.
+
+## Bestätigt ohne Befund
+
+- **Puffer:** liegt laut `nm` bei `0xC0000000` im SDRAM, 512 Bytes, 32-Byte-ausgerichtet, mit eigenen Cache-Zeilen. SDMMC1-IDMA erreicht ihn (DTCM wäre nicht erreichbar).
+- **Cache:** Lesen macht vorher Clean und Invalidate, nachher Invalidate. Schreiben macht vorher Clean. Teilweise gelesene Daten werden nie herausgegeben.
+- **Schreiben:** wartet nach der DMA zusätzlich per CMD13, bis die Karte wieder im Zustand TRANSFER ist.
+- **Eigene Warteschleifen:** je 1 s, sicher gegen Überlauf des Tick-Zählers. Interrupts bleiben dabei frei.
+- **Kartenbesitz:**
+  - FatFs läuft nur in LOCAL, MSC nur in SHARED, beides in derselben Hauptschleife.
+  - SHARE und RETURN gehen nur, wenn die USB-Seite gerade keinen Befehl bearbeitet.
+  - Ein Generationszähler blockiert alte USB-Transfers nach einem Zustandswechsel.
+  - Reset oder Trennung führt zu INTERRUPTED, nie zu automatischem Wiederfreigeben.
+  - Ein Windows-Befehl, der nach RETURN eintrifft, bekommt NOT READY; nach SHARE meldet die Firmware UNIT ATTENTION.
+  - Einen Weg zu gleichzeitigem Zugriff von Windows und FatFs habe ich nicht gefunden.
+- **Schreibschutz:**
+  - Das geschützte Image enthält keine `HAL_SD_WriteBlocks*`- und keine `SDMMC_CmdWrite*`-Symbole.
+  - Der Reader enthält nur `HAL_SD_WriteBlocks_DMA` mit den zugehörigen CMD24/25. CMD25 ist nur bei mehr als einem Block erreichbar; aufgerufen wird mit 1.
+  - Grenze der Prüfung: Symbole allein beweisen nicht, wo und mit welcher Blockzahl die Funktion aufgerufen wird.
+- **`session.py`:** Die Logik stimmt. Ein SDTEST-Ergebnis bleibt bei Busy- oder STATUS-Meldungen erhalten und verfällt bei Zustands- oder Sektorwechsel und bei abgeschlossenem SHARE/RETURN. Die GUI liest den Busy-Zustand direkt ([main_window.py:713](diagnostics/windows/daisy_diag/gui/main_window.py:713)), daher schadet das weggefallene Ereignis nicht.
+- **Nachweise:** Bericht, JSON und Rohprotokolle stimmen überein (Hashes, 15523840 Sektoren, 7572 MiB, 477 Rahmen, zwei Auswerfvorgänge). Getestet sind nur kleine Dateien. Große Dateien, Dauerlast, Kartenentnahme und Unterbrechungen bleiben **NICHT GEMESSEN**, und Befund 1 betrifft genau diese offenen Fälle.

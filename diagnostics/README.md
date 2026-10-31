@@ -4,12 +4,20 @@ Hardware diagnostics for the **Electro-Smith Seed3 Desktop Development Kit**:
 C++ firmware and a Windows application (Python/PySide6), communicating over USB CDC
 through the carrier's **J7** connector. The GUI and documentation are in English.
 
-> **Validation:** ARM builds and automated software/simulation tests pass.
+> **Validation:** Version 0.3.2 fixes the independent review findings; local ARM,
+> host, sanitizer and Python/GUI tests pass. **CardReader 0.3.2 hardware measured:**
+> basic file I/O and one physical write-interruption/recovery test passed on 31 October.
+> [Hardware evidence](docs/HARDWARE_CARD_READER_0.3.2_2026-10-31.md),
+> [fixes and remaining checks](docs/PR70_REVIEW_FIXES_2026-10-31.md).
 > Hardware tests **H1–H10 passed on 17 October 2026**, with H3 shortened to about
 > three minutes. Some results are operator reports rather than recorded measurements.
 > H11 (a second Windows PC without Python) is still open. Those results apply to
-> firmware 0.1.0. The new 0.2.0 card-reader implementation has **software tests
-> only; Windows drive enumeration and physical card writes remain untested**.
+> firmware 0.1.0. The **0.3.1 card-reader basic hardware test passed on 31 October
+> 2026**: Windows FAT32 access, small-file writes and hashes after eject/remount,
+> and eject with the app running. Large-file, interruption, other-media and
+> sustained-load tests remain open. Both CV OUT → CV IN channels separately passed
+> the functional loopback check that day. Both gate inputs also passed held-level
+> and slow-pulse tests; short pulses and independent voltage tests remain open.
 > See the [test report](docs/TEST_REPORT.md) and [reader review](docs/SD_CARD_READER_REVIEW.md).
 
 ![Diagnostic GUI in simulation mode](docs/images/gui-simulation.png)

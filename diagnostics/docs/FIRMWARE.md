@@ -1,5 +1,48 @@
 # Diagnostic firmware — configuration, dependencies, architecture
 
+## Version 0.3.2
+
+Software correction following the independent PR #70 review. `reader_abort.h`
+replaces every diagnostic use of `HAL_SD_Abort`, including protected SD read
+recovery and reader Close. It masks only SDMMC1 IRQ, resets SDMMC1 through RCC
+(with barriers), clears the pending IRQ and sets the HAL handle to RESET.
+RCC reset quiesces both DPSM and IDMA without waiting for CMD12/card flags.
+The SD IRQ stays disabled until full initialization on an explicit later access.
+A failed transfer remains failed/quarantined; this is not a clean eject or card
+filesystem recovery. No new transfer is admitted by HAL while RESET.
+
+The pinned HAL is unmodified. Both image symbol checks now reject `HAL_SD_Abort`.
+Tests compile the actual abort function against observable CMSIS/RCC stubs,
+including a completion race and a retry before/after reinitialization. Write and
+Sync error tests are separate from these adapter checks. CMD13 errors are fault 7,
+not DMA errors. USB reset/removal preserves INTERRUPTED even if the I/O failure
+and the reset mailbox arrive in the opposite order. Host GUI and saved JSON retain
+all optional reader diagnostics.
+
+**CardReader hardware 0.3.2: GEMESSEN, 31 October 2026.** File operations,
+eject/remount, one physical removal during writing and explicit recovery passed.
+[Hardware record](HARDWARE_CARD_READER_0.3.2_2026-10-31.md). The protected image
+was not flashed. Existing CV/gate measurements still refer to 0.3.1. The portable 1 s DMA/programming budgets do not include SDK command
+response deadlines; the new abort itself has no wait loop or HAL/card command.
+See the [review fixes and validation](PR70_REVIEW_FIXES_2026-10-31.md).
+
+## Version 0.3.1
+
+The reader uses bounded single-buffer SDMMC IDMA rather than CPU-polled FIFO
+transfers. Its dedicated 512-byte bounce buffer is 32-byte aligned in SDRAM,
+reachable by SDMMC1, with clean/invalidate operations around transfers. USB and
+audio remain interruptible while the main loop waits for DMA and card programming.
+The protected default image's complete write blacklist is unchanged; the reader
+permits `HAL_SD_WriteBlocks_DMA` only, with PIO/IT, generic BSP writers, multi-buffer
+DMA, erase/lock and FatFs mutation still banned. Optional READER diagnostic fields
+preserve the failed operation/HAL error before abort. The former polling design
+below describes older reader builds.
+
+The first physical 0.3.0 test failed when exporting a readable FAT32 card to Windows;
+the 0.3.1 basic counter-test passed: FAT32 file operations, hashes after eject/remount
+and Windows eject while the app runs. Full hardware acceptance remains open. Evidence and limits:
+[Hardwareprotokoll 31.10.2026](HARDWARE_CARD_READER_2026-10-31.md).
+
 ## Version 0.3.0
 
 Adds the CV and gate jacks through the official `desktop_devkit::Hardware` API:
@@ -23,7 +66,7 @@ The Windows app carries the same version. Integration test image, not released.
 The default image remains strictly read-only. `CARD_READER=1` builds the separate
 `DaisyDiagnostic-CardReader` image with CDC + MSC on J7. It starts with an absent
 logical medium until explicit sharing. The SD diagnostic test itself still uses
-the protected driver. For ownership, transport details and current software-only
+the protected driver. For ownership, transport details and the historical software
 validation, see [SD_CARD_READER_REVIEW.md](SD_CARD_READER_REVIEW.md).
 
 The pinned libDaisy submodule remains unmodified. The reader adds a project-owned

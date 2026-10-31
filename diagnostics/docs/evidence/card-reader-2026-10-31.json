@@ -1,0 +1,119 @@
+{
+  "date": "2026-10-31",
+  "status": "GEMESSEN",
+  "scope": "Basic reader hardware test only; not full acceptance",
+  "source_commit": "b89186576837f62eb7e4d5687a465af9e3e31338",
+  "pull_request": "https://github.com/sscheidl/Daisy-Seed/pull/70",
+  "firmware": {
+    "version": "0.3.1",
+    "variant": "CardReader",
+    "bytes": 131844,
+    "sha256": "bf23fc4978cb693c801d3d917d4e7ba9ec59a0ffd7fef07cc967c5c06345b7bf",
+    "flash_address": "0x90040000",
+    "bootloader_modified": false
+  },
+  "exe_sha256": "abec5e476d933804ed903b0a55d381c0e56e11fffeaa8d0120a26736ae850842",
+  "setup": {
+    "os": "Windows 11 Pro 10.0.26300",
+    "usb": "J7",
+    "cdc_port": "COM15",
+    "drive": "G:",
+    "filesystem": "FAT32",
+    "volume_serial": "383EAD1A",
+    "raw_sectors": 15523840,
+    "sector_bytes": 512,
+    "volume_bytes": 7939817472,
+    "card_model": "not recorded"
+  },
+  "file_operations": {
+    "timestamp": "2026-10-31T21:15:47+0100",
+    "directory": "G:\\DaisyDiagnosticTest-20261031-d88d82f9",
+    "files": {
+      "payload-renamed.bin": {
+        "bytes": 1048576,
+        "sha256": "24e0738eb16c1d3ae125f4172b635203f7d2dc3ee00270e32582fd7fe953b3ba"
+      },
+      "edit.txt": {
+        "bytes": 92,
+        "sha256": "9f7068d955bf57425084536e8eb15f499d7c5e4e44ace652853f060486e96ebc"
+      }
+    },
+    "host_sd_test_blocked": true,
+    "firmware_sd_test_blocked": true,
+    "renamed_from": "payload.bin",
+    "deleted": "delete-only-this-test-file.tmp",
+    "write_read_edit_rename_delete": true,
+    "elapsed_seconds": 6.688,
+    "frames": 477,
+    "frame_errors": 0,
+    "content_errors": 0,
+    "lost_frames": 0,
+    "reconnects": 0,
+    "reader_state": "SHARED",
+    "control_rate_hz": 1000
+  },
+  "after_eject_remount": {
+    "timestamp": "2026-10-31T21:18:27+0100",
+    "directory": "G:\\DaisyDiagnosticTest-20261031-d88d82f9",
+    "after_windows_eject_and_reshare": true,
+    "files": {
+      "payload-renamed.bin": {
+        "bytes": 1048576,
+        "sha256": "24e0738eb16c1d3ae125f4172b635203f7d2dc3ee00270e32582fd7fe953b3ba",
+        "match": true
+      },
+      "edit.txt": {
+        "bytes": 92,
+        "sha256": "9f7068d955bf57425084536e8eb15f499d7c5e4e44ace652853f060486e96ebc",
+        "match": true
+      }
+    },
+    "rename_persisted": true,
+    "delete_persisted": true
+  },
+  "windows_eject_count": 2,
+  "windows_eject_while_exe_running": {
+    "exe_selftest_seconds": 15,
+    "exit_code": 0,
+    "independent_cdc_state": "EJECTED"
+  },
+  "exe_selftest_seconds_before_eject_test": 5,
+  "exe_selftest_exit_code": 0,
+  "app_close_reopen_while_shared": "SHARED",
+  "local_sd_test_after_return": {
+    "fresult": 0,
+    "filesystem": "FAT32",
+    "entries": 3
+  },
+  "final_reader_state": "SHARED",
+  "cleanup": "Directory retained: operator added a file. No user file removed.",
+  "not_measured": [
+    "files larger than 100 MiB",
+    "ten share/eject cycles",
+    "surprise disconnect or card removal",
+    "suspend/resume",
+    "other cards or filesystems",
+    "sustained load",
+    "physical control or interrupt timing",
+    "CV/gate voltages",
+    "audio"
+  ],
+  "initial_0_3_0_result": "SHARED changed to ERROR approximately one second after sharing; no test files written by test script",
+  "reader_status_samples": [
+    "READER state=SHARED sectors=15523840 busy=0 a=STATUS io=WRITE fault=0 he=0 lba=14490 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=16772 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=17214 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=17608 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=18002 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=18396 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=18783 ms=0"
+  ],
+  "ejected_reader_status_samples": [
+    "READER state=EJECTED sectors=15523840 busy=0 a=STATUS io=SYNC fault=0 he=0 lba=0 ms=0"
+  ],
+  "diagnostic_evidence_added_from_existing_raw_logs": {
+    "date": "2026-10-31",
+    "new_hardware_measurement": false,
+    "manifest_sha256": "6cb59a3a4812314692c738bde62547c2280eb374dd69e9330f448bf823d52d48"
+  }
+}

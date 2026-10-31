@@ -24,7 +24,7 @@ bool CardReader::Share(bool present) {
     return true;
 }
 bool CardReader::Failed() {
-    state_ = ReaderState::Error;
+    if(state_ != ReaderState::Interrupted) state_ = ReaderState::Error;
     return false;
 }
 bool CardReader::Return() {
@@ -45,7 +45,7 @@ bool CardReader::Eject() {
 }
 void CardReader::Interrupt() {
     // Never claim a clean eject after transport loss or a reset recovery.
-    if(state_ == ReaderState::Shared || state_ == ReaderState::Starting)
+    if(state_ == ReaderState::Shared || state_ == ReaderState::Starting || state_ == ReaderState::Error)
         state_ = ReaderState::Interrupted;
     prevent_ = false;
 }

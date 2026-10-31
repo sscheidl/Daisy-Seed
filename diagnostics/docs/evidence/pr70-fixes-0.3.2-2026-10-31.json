@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-31",
+  "version": "0.3.2",
+  "hardware_firmware_test": "GEMESSEN: CardReader 0.3.2 normal I/O, physical write interruption and recovery; protected image not flashed",
+  "artifacts": {
+    "readonly": {
+      "filename": "DaisyDiagnostic.bin",
+      "bytes": 124580,
+      "sha256": "4dc2e93940ccd8e3b7d1929f610a2a6656c6ca51535613d1936569750968e836"
+    },
+    "cardreader": {
+      "filename": "DaisyDiagnostic-CardReader.bin",
+      "bytes": 132332,
+      "sha256": "78c7f8536c5d798ec02675c18b3b2b0fc62e6257d53816915d10cf765e9c35c5"
+    },
+    "windows": {
+      "filename": "DaisyDiagnostic.exe",
+      "bytes": 48114069,
+      "sha256": "391a11a18d356773c1df44b2284c8c4d98b0bd9f65e71e8f00a3d1832dcc5127"
+    }
+  },
+  "local_validation": {
+    "python_gui": {
+      "passed": 239
+    },
+    "clang_normal_and_asan_ubsan": {
+      "core": 397,
+      "app": 659,
+      "card_reader": 4654,
+      "usb_adapter": 53,
+      "dma": 4262,
+      "abort_adapter": 42,
+      "reader_app": "passed"
+    },
+    "msvc_W4_WX": "same suites passed",
+    "arm_vectors_symbol_policies": "both passed; HAL_SD_Abort forbidden in both",
+    "packaged_simulation_selftest_exit": 0,
+    "packaged_actual_host_0_3_2_with_firmware_0_3_1_selftest_exit": 0
+  },
+  "measurement_limits": [
+    "previous 0.3.1 hardware logs do not validate 0.3.2 firmware",
+    "4262 DMA checks include 4096 byte comparisons; not independent scenarios",
+    "CMSIS/RCC stubs test production abort control flow, not STM32 silicon",
+    "Not all silicon abort interleavings were forced"
+  ],
+  "hardware_evidence": "card-reader-0.3.2-2026-10-31.json"
+}

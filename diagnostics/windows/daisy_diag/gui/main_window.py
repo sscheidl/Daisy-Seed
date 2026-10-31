@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import time
+import json
+from pathlib import Path
 from datetime import datetime
 
 from PySide6.QtCore import Qt, QTimer
@@ -10,7 +12,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QButtonGroup, QCheckBox, QComb
                                QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
                                QLabel, QMainWindow, QPlainTextEdit, QPushButton, QScrollArea,
                                QSlider, QSpinBox, QSplitter, QTableWidget, QTableWidgetItem,
-                               QVBoxLayout, QWidget, QMessageBox)
+                               QVBoxLayout, QWidget, QMessageBox, QFileDialog)
 
 from .. import __version__
 from .. import protocol as p
@@ -366,7 +368,25 @@ class MainWindow(QMainWindow):
         self.reader_return = QPushButton("Return card to diagnostics")
         self.reader_return.clicked.connect(self._return_reader)
         layout.addWidget(self.reader_return)
+        self.save_report = QPushButton("Save diagnostic report …")
+        self.save_report.clicked.connect(self._save_report)
+        layout.addWidget(self.save_report)
         return box
+
+    def _save_report(self) -> None:
+        if self.session is None:
+            return
+        name, _ = QFileDialog.getSaveFileName(self, "Save diagnostic report",
+                                              "DaisyDiagnostic.json", "JSON (*.json)")
+        if not name:
+            return
+        report = self.session.snapshot()
+        report["captured_at"] = datetime.now().astimezone().isoformat()
+        report["app_version"] = __version__
+        try:
+            Path(name).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        except OSError as exc:
+            QMessageBox.warning(self, "Report could not be saved", str(exc))
 
     def _build_inputs_group(self) -> QGroupBox:
         box = QGroupBox('Toggle switches and plug detection')
@@ -738,6 +758,8 @@ class MainWindow(QMainWindow):
             }[reader.state]
         if s.simulated:
             reader_text += " Simulation only: no Windows drive is created."
+        if reader and reader.diagnostic_text:
+            reader_text += "\n" + reader.diagnostic_text
         self.reader_status.setText(reader_text)
         self.rate_combo.setEnabled(enabled)
         if st is not None:

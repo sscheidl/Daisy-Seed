@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import time
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import Enum
 from typing import Callable, Iterable, Protocol
 
@@ -156,6 +156,18 @@ class DeviceSession:
         events = list(self._events)
         self._events.clear()
         return events
+
+    def snapshot(self) -> dict:
+        """JSON-serializable observed state; missing measurements stay null."""
+        return {
+            "simulated": self.simulated, "connected": self.connected, "port": self.port,
+            **{key: asdict(value) if value is not None else None for key, value in
+               (("device", self.device), ("reader", self.reader), ("board", self.board),
+                ("sd", self.sd), ("system", self.sys))},
+            "counters": dict(frames=self.frames_ok, frame_errors=self.frame_errors,
+                             content_errors=self.content_errors, lost_frames=self.lost_frames,
+                             reconnects=self.reconnects),
+        }
 
     def send(self, body: str) -> bool:
         """Sends a command while connected. Returns False if it could not be sent."""
@@ -425,10 +437,15 @@ class DeviceSession:
                 previous = self.reader
                 self.reader = p.parse_reader(msg)
                 completed = self.reader_pending and msg.get("a") == self._reader_action
+                changed_medium = (previous is None or previous.state != self.reader.state
+                                  or previous.sectors != self.reader.sectors)
+                changed_owner = completed and self._reader_action in ("SHARE", "RETURN")
                 if msg.get("a") == self._reader_action:
                     self._reader_deadline = None
                     self._reader_action = None
-                if previous != self.reader or completed:
+                # A Windows TUR/INQUIRY makes BOT busy even while LOCAL. That
+                # does not invalidate the completed read test or its GUI result.
+                if changed_medium or changed_owner:
                     self.sd = None
                     self._event("reader", self.reader)
             elif msg.type == "PONG":

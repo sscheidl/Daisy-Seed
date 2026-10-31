@@ -165,7 +165,7 @@ void App::Step(uint32_t now) {
             Send(out);
             last_sys_ms_ = now;
 #ifdef DIAG_CARD_READER
-            char reader_body[128];
+            char reader_body[192];
             ddp::Writer reader_out(reader_body, sizeof(reader_body));
             board_.ReaderCommand(kRequestReaderStatus, reader_out);
             Send(reader_out);

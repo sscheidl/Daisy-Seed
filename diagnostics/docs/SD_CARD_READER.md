@@ -2,10 +2,19 @@
 
 ## Status and firmware choice
 
-Version 0.2.0 implements an optional USB Mass Storage (MSC) card reader on the
-Desktop carrier's J7 port. It has **software tests only**. No new firmware was
-flashed, no physical card was changed, and Windows drive enumeration has not
-been verified on a Seed3. The older H1–H10 hardware results do not cover this feature.
+**0.3.2 update, 31 October 2026 (GEMESSEN):** the review fixes passed normal
+file I/O/eject tests and one physical card removal during writing, with CDC
+remaining alive and explicit recovery after reinsertion. R9 is therefore partial;
+not all removal timings or independent-reader checks were performed. Windows
+requested a scan after the interruption; CHKDSK /F cleared the dirty flag.
+[Detailed evidence and limits](HARDWARE_CARD_READER_0.3.2_2026-10-31.md).
+
+The optional USB Mass Storage (MSC) card reader uses the Desktop carrier's J7 port.
+The **0.3.1 basic hardware test passed on 31 October 2026**: FAT32 Windows access,
+small-file operations, matching hashes after eject/remount and eject with the app
+running. Full acceptance remains open; see the dated results below and the
+[hardware record](HARDWARE_CARD_READER_2026-10-31.md). The older H1–H10 results
+do not cover this feature.
 
 | Image | Behaviour |
 | --- | --- |
@@ -17,7 +26,7 @@ is described in [FLASHING.md](FLASHING.md). Neither image installs a bootloader.
 The reader starts **unexported on every power cycle**. It uses J7; no USB host
 adapter or USB host mode is involved.
 
-## Intended operation (hardware validation pending)
+## Operation (basic hardware test passed; full acceptance pending)
 
 1. Connect the board through J7 and insert a disposable test card.
 2. In the microSD panel, select **Share SD card with Windows**. The firmware
@@ -54,7 +63,16 @@ fake blocks/HAL.
 
 ![Card reader panel in simulation, not a mounted Windows drive](images/gui-card-reader.png)
 
-## Manual hardware acceptance procedure — all items OPEN
+## Manual hardware acceptance procedure
+
+Status on 31 October 2026, **GEMESSEN with 0.3.1**: R3 and R7 passed on the
+recorded FAT32 setup. R4 is partial (1 MiB only; hashes matched after remount).
+R5 is partial (scripted create/edit/rename/delete, persisted after remount;
+not every Explorer/recreate operation). R6 is partial (two Windows ejects,
+including one with the EXE running, with successful return/reshare; ten cycles
+not tested). R12 has only a short CDC observation during the small-file probe;
+no sustained-load or physical control-timing measurement. R1, R2 and R8–R11
+remain **NICHT GEMESSEN** in this session. These results do not validate CV/gate.
 
 Perform this only with explicit hardware-test authorization and a disposable
 card whose contents are backed up. Record board, bootloader, firmware and EXE

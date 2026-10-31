@@ -9,10 +9,12 @@
 #include "ff.h"
 #include "ff_gen_drv.h"
 #include "diag_app.h"
+#include "reader_abort.h"
 #include <atomic>
 #include <cstring>
 #ifdef DIAG_CARD_READER
 #include "reader_usb.h"
+#include "reader_dma.h"
 #endif
 
 extern "C" {
@@ -151,7 +153,7 @@ extern "C" DRESULT RoRead(BYTE, BYTE* buff, DWORD sector, UINT count) {
         return RES_ERROR;
     while(hsd1.State == HAL_SD_STATE_BUSY) {  // set back to READY by the SDMMC1 IRQ
         if(HAL_GetTick() - start > kSdOpTimeoutMs || !SdBudgetLeft()) {
-            HAL_SD_Abort(&hsd1);
+            diag::AbortReaderSd(hsd1);
             return RES_ERROR;
         }
     }
@@ -249,19 +251,39 @@ bool CardPresent() {
     __set_PRIMASK(saved);
     return present;
 }
-// MSC uses polling SD I/O in the MAIN LOOP, never in the USB interrupt. This
-// avoids IDMA/cache ownership entirely on the MSC path: aligned DTCM buffers are
-// accessed by the CPU, not SDMMC DMA. The original read-only FatFs DMA path above
-// is unchanged and is unreachable while MSC owns the card.
+// IDMA drains/fills the SDMMC FIFO while audio/USB interrupts run. PIO can overrun
+// that FIFO when preempted. This buffer is reachable by SDMMC1 IDMA (DTCM is not),
+// owns complete cache lines, and has no constructor touching uninitialized SDRAM.
+DSY_SDRAM_BSS alignas(32) uint8_t reader_dma_buffer[diag::ReaderDma::kBytes];
+class ReaderBackend final : public diag::ReaderDmaBackend {
+  public:
+    bool Available() override { return CardPresent() && !ReaderUsbInterrupted(); }
+    uint32_t Now() override { return HAL_GetTick(); }
+    bool StartRead(uint8_t* buffer, uint32_t lba) override {
+        return HAL_SD_ReadBlocks_DMA(&hsd1, buffer, lba, 1) == HAL_OK;
+    }
+    bool StartWrite(uint8_t* buffer, uint32_t lba) override {
+        return HAL_SD_WriteBlocks_DMA(&hsd1, buffer, lba, 1) == HAL_OK;
+    }
+    bool Busy() override { return hsd1.State == HAL_SD_STATE_BUSY; }
+    uint32_t Error() override { return hsd1.ErrorCode; }
+    bool CardReady() override { return HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER; }
+    void Clean(uint8_t* buffer) override { SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t*>(buffer), 512); }
+    void Invalidate(uint8_t* buffer) override { SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t*>(buffer), 512); }
+    void Abort() override { diag::AbortReaderSd(hsd1); }
+};
+ReaderBackend reader_backend;
+diag::ReaderDma reader_dma(reader_backend, reader_dma_buffer);
 class ReaderCard final : public diag::CardDevice {
   public:
     bool Open(uint32_t& sectors) override {
+        reader_dma.ResetStatus();
         if(hsd1.State != HAL_SD_STATE_RESET) HAL_SD_DeInit(&hsd1);
         SdmmcHandler::Config cfg; cfg.Defaults();
         cfg.speed = SdmmcHandler::Speed::STANDARD;
         sdmmc.Init(cfg); sdmmc_configured = true;
         if(BSP_SD_Init() != MSD_OK || ReaderUsbInterrupted()) return false;
-        NVIC_SetPriority(SDMMC1_IRQn, 2);  // audio=0, USB=1; MSC never waits in an ISR
+        NVIC_SetPriority(SDMMC1_IRQn, 2);  // audio=0, USB=1; main-loop DMA wait allows all IRQs
         HAL_SD_CardInfoTypeDef info{};
         if(HAL_SD_GetCardInfo(&hsd1, &info) != HAL_OK || info.LogBlockSize != 512)
             return false;
@@ -269,31 +291,18 @@ class ReaderCard final : public diag::CardDevice {
         return sectors != 0;
     }
     bool Read(uint32_t lba, uint8_t* block) override {
-        if(!Available() || HAL_SD_ReadBlocks(&hsd1, bounce_, lba, 1, kSdOpTimeoutMs) != HAL_OK)
-            return Abort();
-        if(!Sync()) return false;
-        std::memcpy(block, bounce_, 512);
-        return true;
+        return reader_dma.Read(lba, block);
     }
     bool Write(uint32_t lba, const uint8_t* block) override {
-        if(!Available()) return false;
-        std::memcpy(bounce_, block, 512);
-        if(HAL_SD_WriteBlocks(&hsd1, bounce_, lba, 1, kSdOpTimeoutMs) != HAL_OK)
-            return Abort();
-        return Sync();  // includes card programming; no write cache in firmware
+        return reader_dma.Write(lba, block);
     }
     bool Sync() override {
-        const uint32_t start = HAL_GetTick();
-        do {
-            if(!Available() || HAL_GetTick() - start >= kSdOpTimeoutMs) return Abort();
-            if(HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER) return true;
-        } while(true);
+        return reader_dma.Sync();
     }
-    void Close() override { HAL_SD_Abort(&hsd1); HAL_SD_DeInit(&hsd1); }
-  private:
-    bool Available() { return CardPresent() && !ReaderUsbInterrupted(); }
-    bool Abort() { HAL_SD_Abort(&hsd1); return false; }
-    alignas(4) uint8_t bounce_[512] = {};
+    void Close() override {
+        reader_backend.Abort();
+        if(hsd1.Instance == SDMMC1) HAL_SD_DeInit(&hsd1);
+    }
 };
 ReaderCard reader_card;
 diag::CardReader card_reader(reader_card);
@@ -349,6 +358,12 @@ class DevkitBoard final : public diag::Board {
             .Str(" sectors=").U32(card_reader.Sectors()).Str(" busy=").U32(!ReaderUsbIdle())
             .Str(" a=").Str(command & diag::kRequestReaderShare ? "SHARE" :
                             command & diag::kRequestReaderReturn ? "RETURN" : "STATUS");
+        if(ok) {
+            const auto& io = reader_dma.Status();
+            out.Str(" io=").Str(io.operation).Str(" fault=").U32(static_cast<uint8_t>(io.fault))
+                .Str(" he=").U32(io.hal_error).Str(" lba=").U32(io.lba)
+                .Str(" ms=").U32(io.elapsed_ms);
+        }
     }
 #endif
 };

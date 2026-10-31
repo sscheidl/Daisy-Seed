@@ -7,7 +7,7 @@
 
 namespace diag {
 
-constexpr const char* kFirmwareVersion = "0.3.0";
+constexpr const char* kFirmwareVersion = "0.3.2";
 constexpr const char* kAppName = "DaisyDiagnostic";
 constexpr const char* kLibDaisyCommit = "f715e48";
 constexpr size_t kNumButtons = 16;
