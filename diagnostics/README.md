@@ -12,8 +12,8 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > 2026**: Windows FAT32 access, small-file writes and hashes after eject/remount,
 > and eject with the app running. Large-file, interruption, other-media and
 > sustained-load tests remain open. Both CV OUT → CV IN channels separately passed
-> the functional loopback check that day. Gate 1 also passed held-level and slow-pulse
-> tests; Gate 2, short pulses and independent voltage tests remain open.
+> the functional loopback check that day. Both gate inputs also passed held-level
+> and slow-pulse tests; short pulses and independent voltage tests remain open.
 > See the [test report](docs/TEST_REPORT.md) and [reader review](docs/SD_CARD_READER_REVIEW.md).
 
 ![Diagnostic GUI in simulation mode](docs/images/gui-simulation.png)

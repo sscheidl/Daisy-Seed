@@ -36,6 +36,9 @@ Impulsprobe: `[0, 0]` → `[21, 0]`, also 21 beobachtete steigende Gate-1-Flanke
 
 ## Grenzen
 
+Der nachfolgende [Gate-2-Test](HARDWARE_GATE2_LOOPBACK_2026-10-31.md) ergänzt
+den zweiten Eingang. Dieser Teiltest deckt GATE IN 1 ab.
+
 **H13 teilweise GEMESSEN:** GATE IN 1 funktioniert für die geprüften langsamen
 Low-/High-Wechsel mit korrekter Polarität und Flankenzählung. GATE IN 2,
 kurze Pulse, Schaltschwelle/Hysterese, Störfestigkeit, elektrische Pulsform und

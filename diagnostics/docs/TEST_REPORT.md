@@ -1,13 +1,18 @@
 # Test report
 
-## Gate-1-Loopback, 31.10.2026
+## Gate-Loopback, 31.10.2026
 
 **GEMESSEN mit 0.3.1:** CV OUT 1 → GATE IN 1. Gehaltenes High über 2 s zählt
 einmal; 20 weitere langsame Impulse ergeben insgesamt exakt 21 steigende Flanken.
 Low/High-Zustand korrekt, keine zusätzliche Zählung beim Abfallen oder Halten.
 1014 Rahmen ohne Protokollfehler oder Verluste; abschließend OFF und beide
-Gates Low bestätigt. H13 teilweise gemessen; Gate 2 und kurze Pulse bleiben offen.
-Aufbau und Grenzen: [Gate-1-Protokoll](HARDWARE_GATE1_LOOPBACK_2026-10-31.md).
+Gates Low bestätigt. Anschließend **GEMESSEN für CV OUT 1 → GATE IN 2**:
+ebenfalls exakt 21 steigende Flanken, keine zusätzliche Zählung, 1013 Rahmen
+ohne Fehler oder Verlust; abschließend OFF und beide Gates Low.
+H13 teilweise gemessen für beide Eingänge; kurze Pulse und elektrische
+Schaltschwellen bleiben offen. Aufbau und Grenzen:
+[Gate-1-Protokoll](HARDWARE_GATE1_LOOPBACK_2026-10-31.md),
+[Gate-2-Protokoll](HARDWARE_GATE2_LOOPBACK_2026-10-31.md).
 
 ## CV-Loopback, 31.10.2026
 
@@ -19,7 +24,7 @@ ohne CRC-/Inhaltsfehler, Verlust oder Wiederverbindung. Abschließend OFF bestä
 Anschließend **GEMESSEN für CV OUT 2 → CV IN 2**: Code 2048 etwa 0,50053,
 Endpunkte etwa +0,0070 und +0,9902; ebenfalls 1889 Rahmen ohne Fehler und
 abschließend OFF bestätigt. H15 ist für beide einzeln gepatchten Kanäle gemessen;
-Gate 2, kurze Pulse und unabhängige Spannungsmessungen bleiben offen. Messwerte und Grenzen:
+Kurze Gate-Pulse und unabhängige Spannungsmessungen bleiben offen. Messwerte und Grenzen:
 [CV-1-Protokoll](HARDWARE_CV_LOOPBACK_2026-10-31.md) und
 [CV-2-Protokoll](HARDWARE_CV2_LOOPBACK_2026-10-31.md).
 
@@ -41,8 +46,8 @@ Beobachtungen und Grenzen: [Hardwareprotokoll](HARDWARE_CARD_READER_2026-10-31.m
 
 ## Version 0.3.0 CV and gate jacks
 
-Historical software validation for the CV/gate extension. Later CV and Gate-1
-loopback results are listed above; independent voltage, Gate-2 and short-pulse
+Historical software validation for the CV/gate extension. Later CV and gate
+loopback results are listed above; independent voltage and short-pulse
 hardware tests remain open.
 Local results on 25 October 2026 (Windows 11):
 
@@ -65,7 +70,7 @@ Pending hardware tests (status **NICHT GEMESSEN**):
 | # | Test | Status |
 | --- | --- | --- |
 | H12 | CV IN 1/2 with known voltages (e.g. −5, 0, +5 V if within the jack's range): normalized value, raw ADC, mapping CV IN 1/2 | **Not measured** |
-| H13 | GATE IN 1/2: state and edge counter with a gate/trigger source; polarity; short pulses | **Partially GEMESSEN, 31.10.2026:** Gate 1, held levels and slow pulses; Gate 2, short pulses and threshold remain NICHT GEMESSEN |
+| H13 | GATE IN 1/2: state and edge counter with a gate/trigger source; polarity; short pulses | **Partially GEMESSEN, 31.10.2026:** both gates, held levels and slow pulses; short pulses and threshold remain NICHT GEMESSEN |
 | H14 | CV OUT 1/2 with a multimeter/oscilloscope: codes 0, 2048, 4095 in Fixed; Ramp and Saw shape and period; Off after closing the application | **Not measured** |
 | H15 | Loop test: patch CV OUT 1/2 → CV IN 1/2, compare codes with read values | **GEMESSEN, 31.10.2026:** both channels separately, fixed codes and host-controlled stepped ramps; no independent voltage calibration |
 

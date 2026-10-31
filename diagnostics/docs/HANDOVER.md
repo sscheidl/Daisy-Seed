@@ -12,8 +12,10 @@
 > [CV-2-Protokoll](HARDWARE_CV2_LOOPBACK_2026-10-31.md).
 
 > **31.10.2026, GEMESSEN:** CV OUT 1 → GATE IN 1: gehaltenes High und 20
-> langsame Impulse korrekt als 21 Flanken gezählt. Gate 2, kurze Pulse und
-> Schaltschwelle offen: [Gate-1-Protokoll](HARDWARE_GATE1_LOOPBACK_2026-10-31.md).
+> langsame Impulse korrekt als 21 Flanken gezählt. Anschließend auch GATE IN 2
+> mit gleichem Ergebnis. Kurze Pulse und Schaltschwelle offen:
+> [Gate-1-Protokoll](HARDWARE_GATE1_LOOPBACK_2026-10-31.md),
+> [Gate-2-Protokoll](HARDWARE_GATE2_LOOPBACK_2026-10-31.md).
 
 > **0.2.0 reader extension:** the separate writable firmware, GUI/session changes,
 > software evidence, open hardware checks and independent-review targets are in
