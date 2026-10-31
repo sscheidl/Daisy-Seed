@@ -1,8 +1,15 @@
 # SD card reader — independent review handover
 
+> **Reviewstand 31.10.2026: vorerst nicht mergen.** Der unabhängige Claude-Review
+> von PR #70 benennt einen offenen hohen Befund im HAL-Abbruchpfad. Die äußeren
+> Transferfristen begrenzen `HAL_SD_Abort()` nicht ausreichend. Review, Originaltext
+> und vier unveränderte Testlogs stehen im
+> [aktuellen Reviewnachweis](SD_CARD_READER_PR70_REVIEW_2026-10-31.md).
+> Fehlerfall auf Hardware: **NICHT GEMESSEN**; noch keine Firmwarekorrektur.
+
 > Update 0.3.1 (31 October 2026): the first physical Windows probe of 0.3.0
 > enumerated CDC/MSC but failed to expose a readable card (SHARED → ERROR).
-> The reader now uses bounded single-buffer IDMA with a dedicated aligned SDRAM
+> The reader now uses single-buffer IDMA with a dedicated aligned SDRAM
 > buffer and cache maintenance; the old CPU-polled path below is historical.
 > Only the reader build permits `HAL_SD_WriteBlocks_DMA`; PIO/IT writers, generic
 > BSP writers, multi-buffer DMA, erase/lock and FatFs mutation remain forbidden.

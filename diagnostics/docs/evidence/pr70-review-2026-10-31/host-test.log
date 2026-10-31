@@ -1,0 +1,26 @@
+mkdir -p build/host
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Isrc -I../protocol -I../../common/bootloader ../tests/firmware/test_diag_core.cpp \
+	src/diag_app.cpp src/diag_core.cpp ../protocol/ddp.cpp -o build/host/test_diag_core
+./build/host/test_diag_core ../protocol/vectors.txt
+PASS: 397 checks, 0 failures
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Isrc -I../protocol -I../../common/bootloader ../tests/firmware/test_diag_app.cpp \
+	src/diag_app.cpp src/diag_core.cpp ../protocol/ddp.cpp -o build/host/test_diag_app
+./build/host/test_diag_app
+PASS: 659 checks, 0 failures
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Isrc -I../protocol -I../../common/bootloader ../tests/firmware/test_card_reader.cpp \
+	src/card_reader.cpp src/msc_bot.cpp -o build/host/test_card_reader
+./build/host/test_card_reader
+card reader: 4631 checks, 0 failures
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -DDIAG_CARD_READER=1 -Isrc -I../protocol -I../../common/bootloader \
+	../tests/firmware/test_reader_app.cpp src/diag_app.cpp src/diag_core.cpp ../protocol/ddp.cpp -o build/host/test_reader_app
+./build/host/test_reader_app
+reader application: passed
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -DDIAG_USB_HOST_TEST=1 -Isrc -I../tests/firmware \
+	../tests/firmware/test_reader_usb.cpp src/reader_usb.cpp src/card_reader.cpp src/msc_bot.cpp \
+	-o build/host/test_reader_usb
+./build/host/test_reader_usb
+composite USB adapter: 53 checks, 0 failures
+clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Isrc ../tests/firmware/test_reader_dma.cpp -o build/host/test_reader_dma
+./build/host/test_reader_dma
+reader DMA: 4173 checks, 0 failures
+EXIT test=0
