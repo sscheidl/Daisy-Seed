@@ -1,0 +1,402 @@
+{
+  "date": "2026-10-31",
+  "status": "GEMESSEN",
+  "patch": "CV OUT 2 -> CV IN 2 (operator confirmed)",
+  "port": "COM15",
+  "device": {
+    "protocol": 1,
+    "firmware": "0.3.1",
+    "app": "DaisyDiagnostic",
+    "device": "seed3-desktop",
+    "boot": "BOOT_SRAM",
+    "bootloader": "v6_1",
+    "libdaisy": "f715e48",
+    "capabilities": [
+      "btn",
+      "pot",
+      "potraw",
+      "sw17",
+      "sw18",
+      "sd",
+      "sdread",
+      "jack",
+      "led",
+      "boot",
+      "cvin",
+      "gate",
+      "cvout",
+      "sdmsc"
+    ],
+    "simulated": false
+  },
+  "phases": [
+    {
+      "name": "baseline_off",
+      "mode": "OFF",
+      "code2": 0,
+      "samples": 66,
+      "input1": {
+        "raw_mean": 32801.969696969696,
+        "raw_min": 32787,
+        "raw_max": 32816,
+        "raw_stdev": 6.254621798923303,
+        "normalized_mean": -0.0010333333333333334,
+        "normalized_min": -0.0015,
+        "normalized_max": -0.0006
+      },
+      "input2": {
+        "raw_mean": 32540.60606060606,
+        "raw_min": 32526,
+        "raw_max": 32551,
+        "raw_stdev": 6.600915427512716,
+        "normalized_mean": 0.006924242424242424,
+        "normalized_min": 0.0066,
+        "normalized_max": 0.0074
+      }
+    },
+    {
+      "name": "fixed_0_1",
+      "mode": "FIX",
+      "code2": 0,
+      "samples": 65,
+      "input1": {
+        "raw_mean": 32802.21538461538,
+        "raw_min": 32791,
+        "raw_max": 32814,
+        "raw_stdev": 5.133576673962864,
+        "normalized_mean": -0.0010446153846153845,
+        "normalized_min": -0.0014,
+        "normalized_max": -0.0007
+      },
+      "input2": {
+        "raw_mean": 32539.753846153846,
+        "raw_min": 32528,
+        "raw_max": 32551,
+        "raw_stdev": 5.535982351102285,
+        "normalized_mean": 0.00696,
+        "normalized_min": 0.0066,
+        "normalized_max": 0.0073
+      }
+    },
+    {
+      "name": "fixed_512_2",
+      "mode": "FIX",
+      "code2": 512,
+      "samples": 66,
+      "input1": {
+        "raw_mean": 32804.42424242424,
+        "raw_min": 32792,
+        "raw_max": 32815,
+        "raw_stdev": 5.271595141432039,
+        "normalized_mean": -0.0011166666666666666,
+        "normalized_min": -0.0014,
+        "normalized_max": -0.0007
+      },
+      "input2": {
+        "raw_mean": 28642.31818181818,
+        "raw_min": 28626,
+        "raw_max": 28669,
+        "raw_stdev": 7.280440985039238,
+        "normalized_mean": 0.1259060606060606,
+        "normalized_min": 0.1251,
+        "normalized_max": 0.1264
+      }
+    },
+    {
+      "name": "fixed_1024_3",
+      "mode": "FIX",
+      "code2": 1024,
+      "samples": 65,
+      "input1": {
+        "raw_mean": 32803.86153846154,
+        "raw_min": 32791,
+        "raw_max": 32816,
+        "raw_stdev": 5.9222576856022195,
+        "normalized_mean": -0.0010923076923076923,
+        "normalized_min": -0.0015,
+        "normalized_max": -0.0007
+      },
+      "input2": {
+        "raw_mean": 24550.615384615383,
+        "raw_min": 24540,
+        "raw_max": 24569,
+        "raw_stdev": 5.887907575811782,
+        "normalized_mean": 0.25076923076923074,
+        "normalized_min": 0.2502,
+        "normalized_max": 0.2511
+      }
+    },
+    {
+      "name": "fixed_1536_4",
+      "mode": "FIX",
+      "code2": 1536,
+      "samples": 66,
+      "input1": {
+        "raw_mean": 32803.5,
+        "raw_min": 32794,
+        "raw_max": 32814,
+        "raw_stdev": 4.62617716387031,
+        "normalized_mean": -0.0010787878787878787,
+        "normalized_min": -0.0014,
+        "normalized_max": -0.0008
+      },
+      "input2": {
+        "raw_mean": 20461.60606060606,
+        "raw_min": 20446,
+        "raw_max": 20476,
+        "raw_stdev": 6.473439411511374,
+        "normalized_mean": 0.3755590909090909,
+        "normalized_min": 0.3751,
+        "normalized_max": 0.376
+      }
+    },
+    {
+      "name": "fixed_2048_5",
+      "mode": "FIX",
+      "code2": 2048,
+      "samples": 65,
+      "input1": {
+        "raw_mean": 32803.338461538464,
+        "raw_min": 32790,
+        "raw_max": 32820,
+        "raw_stdev": 5.558851356383517,
+        "normalized_mean": -0.0010784615384615386,
+        "normalized_min": -0.0016,
+        "normalized_max": -0.0007
+      },
+      "input2": {
+        "raw_mean": 16366.538461538461,
+        "raw_min": 16351,
+        "raw_max": 16382,
+        "raw_stdev": 7.095127088528215,
+        "normalized_mean": 0.5005323076923077,
+        "normalized_min": 0.5001,
+        "normalized_max": 0.501
+      }
+    },
+    {
+      "name": "fixed_2560_6",
+      "mode": "FIX",
+      "code2": 2560,
+      "samples": 66,
+      "input1": {
+        "raw_mean": 32803.77272727273,
+        "raw_min": 32796,
+        "raw_max": 32814,
+        "raw_stdev": 4.403151263224096,
+        "normalized_mean": -0.0010984848484848484,
+        "normalized_min": -0.0014,
+        "normalized_max": -0.0009
+      },
+      "input2": {
+        "raw_mean": 12268.969696969696,
+        "raw_min": 12251,
+        "raw_max": 12289,
+        "raw_stdev": 7.350468335872041,
+        "normalized_mean": 0.6255666666666667,
+        "normalized_min": 0.625,
+        "normalized_max": 0.6261
+      }
+    },
+    {
+      "name": "fixed_3072_7",
+      "mode": "FIX",
+      "code2": 3072,
+      "samples": 66,
+      "input1": {
+        "raw_mean": 32802.84848484849,
+        "raw_min": 32791,
+        "raw_max": 32818,
+        "raw_stdev": 5.571144336621283,
+        "normalized_mean": -0.0010515151515151516,
+        "normalized_min": -0.0015,
+        "normalized_max": -0.0007
+      },
+      "input2": {
+        "raw_mean": 8167.909090909091,
+        "raw_min": 8157,
+        "raw_max": 8182,
+        "raw_stdev": 5.653444304747952,
+        "normalized_mean": 0.7507272727272727,
+        "normalized_min": 0.7503,
+        "normalized_max": 0.7511
+      }
+    },
+    {
+      "name": "fixed_3584_8",
+      "mode": "FIX",
+      "code2": 3584,
+      "samples": 65,
+      "input1": {
+        "raw_mean": 32802.36923076923,
+        "raw_min": 32790,
+        "raw_max": 32815,
+        "raw_stdev": 5.827175673631348,
+        "normalized_mean": -0.0010492307692307693,
+        "normalized_min": -0.0014,
+        "normalized_max": -0.0007
+      },
+      "input2": {
+        "raw_mean": 4076.5846153846155,
+        "raw_min": 4059,
+        "raw_max": 4097,
+        "raw_stdev": 7.306250869984408,
+        "normalized_mean": 0.8755984615384615,
+        "normalized_min": 0.875,
+        "normalized_max": 0.8761
+      }
+    },
+    {
+      "name": "fixed_4095_9",
+      "mode": "FIX",
+      "code2": 4095,
+      "samples": 66,
+      "input1": {
+        "raw_mean": 32794.030303030304,
+        "raw_min": 32781,
+        "raw_max": 32806,
+        "raw_stdev": 5.259823988787184,
+        "normalized_mean": -0.0007984848484848485,
+        "normalized_min": -0.0012,
+        "normalized_max": -0.0004
+      },
+      "input2": {
+        "raw_mean": 320.07575757575756,
+        "raw_min": 299,
+        "raw_max": 336,
+        "raw_stdev": 7.284917183158153,
+        "normalized_mean": 0.9902378787878787,
+        "normalized_min": 0.9897,
+        "normalized_max": 0.9909
+      }
+    },
+    {
+      "name": "fixed_2048_10",
+      "mode": "FIX",
+      "code2": 2048,
+      "samples": 66,
+      "input1": {
+        "raw_mean": 32804.09090909091,
+        "raw_min": 32791,
+        "raw_max": 32818,
+        "raw_stdev": 5.124886614347419,
+        "normalized_mean": -0.001096969696969697,
+        "normalized_min": -0.0015,
+        "normalized_max": -0.0007
+      },
+      "input2": {
+        "raw_mean": 16367.287878787878,
+        "raw_min": 16351,
+        "raw_max": 16384,
+        "raw_stdev": 6.568439581115302,
+        "normalized_mean": 0.5004969696969697,
+        "normalized_min": 0.5,
+        "normalized_max": 0.501
+      }
+    },
+    {
+      "name": "fixed_0_11",
+      "mode": "FIX",
+      "code2": 0,
+      "samples": 65,
+      "input1": {
+        "raw_mean": 32801.21538461538,
+        "raw_min": 32790,
+        "raw_max": 32812,
+        "raw_stdev": 4.881652644789334,
+        "normalized_mean": -0.00102,
+        "normalized_min": -0.0013,
+        "normalized_max": -0.0007
+      },
+      "input2": {
+        "raw_mean": 32539.96923076923,
+        "raw_min": 32527,
+        "raw_max": 32556,
+        "raw_stdev": 6.418648865176991,
+        "normalized_mean": 0.006950769230769231,
+        "normalized_min": 0.0065,
+        "normalized_max": 0.0074
+      }
+    },
+    {
+      "name": "return_off",
+      "mode": "OFF",
+      "code2": 0,
+      "samples": 66,
+      "input1": {
+        "raw_mean": 32802.90909090909,
+        "raw_min": 32784,
+        "raw_max": 32815,
+        "raw_stdev": 5.788513371526544,
+        "normalized_mean": -0.001065151515151515,
+        "normalized_min": -0.0014,
+        "normalized_max": -0.0005
+      },
+      "input2": {
+        "raw_mean": 32540.075757575756,
+        "raw_min": 32528,
+        "raw_max": 32556,
+        "raw_stdev": 6.6064949815488765,
+        "normalized_mean": 0.006963636363636364,
+        "normalized_min": 0.0066,
+        "normalized_max": 0.0073
+      }
+    }
+  ],
+  "errors": [],
+  "completed": true,
+  "off_confirmed": true,
+  "counters": {
+    "frames": 1889,
+    "frame_errors": 0,
+    "content_errors": 0,
+    "lost_frames": 0,
+    "reconnects": 0
+  },
+  "system": {
+    "uptime_s": 1693,
+    "control_rate_hz": 1001,
+    "tx_ok": 7419,
+    "tx_busy": 238,
+    "tx_drop": 0,
+    "rx_ok": 608,
+    "rx_bad": 0,
+    "rate_hz": 50
+  },
+  "reader_initial": {
+    "state": "SHARED",
+    "sectors": 15523840,
+    "busy": false
+  },
+  "reader_final": {
+    "state": "SHARED",
+    "sectors": 15523840,
+    "busy": false
+  },
+  "duration_seconds": 32.265,
+  "source_commit": "b89186576837f62eb7e4d5687a465af9e3e31338",
+  "firmware_sha256": "bf23fc4978cb693c801d3d917d4e7ba9ec59a0ffd7fef07cc967c5c06345b7bf",
+  "raw_evidence": {
+    "filename": "cv2-loopback-214203.json",
+    "sha256": "55c13d9957d60e32ff2b3bc66e08f6621352c9c44a94e6e8ee8e1f7b6768abb3",
+    "location": ".work/diagnostics-cv-test-2026-10-31/ (local only)"
+  },
+  "stepped_triangle": {
+    "cycles": 2,
+    "command_step_ms": 60,
+    "steps_per_direction": 32,
+    "channel1_code": 0,
+    "analysis_excludes_first_ms_after_command": 25,
+    "analyzed_samples": 197,
+    "command_echo_vs_normalized_input_correlation": 0.9999900788644498
+  },
+  "limits": [
+    "No independent voltage measurement or calibration",
+    "Only CV OUT 2 -> CV IN 2 patched in this run",
+    "No negative CV source",
+    "No Gate test",
+    "Native firmware RAMP/SAW modes not exercised; host-controlled FIX staircase only",
+    "No SDTEST during output test",
+    "OFF confirmed by firmware echo and returned ADC baseline; no independent output voltmeter"
+  ]
+}

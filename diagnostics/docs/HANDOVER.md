@@ -7,7 +7,9 @@
 
 > **31.10.2026, GEMESSEN:** CV OUT 1 → CV IN 1 folgt festen Codes und einer
 > langsamen Treppenrampe. Endpunktabweichungen protokolliert; keine unabhängige
-> Spannungskalibrierung. CV 2 und Gate offen: [CV-Protokoll](HARDWARE_CV_LOOPBACK_2026-10-31.md).
+> Spannungskalibrierung. Anschließend auch CV OUT 2 → CV IN 2 erfolgreich;
+> Gate offen: [CV-1-Protokoll](HARDWARE_CV_LOOPBACK_2026-10-31.md),
+> [CV-2-Protokoll](HARDWARE_CV2_LOOPBACK_2026-10-31.md).
 
 > **0.2.0 reader extension:** the separate writable firmware, GUI/session changes,
 > software evidence, open hardware checks and independent-review targets are in

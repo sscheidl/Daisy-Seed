@@ -62,9 +62,11 @@ Wiederverbindungen. Beide Ausgänge wurden abschließend auf OFF gesetzt;
 Firmware meldet OFF/0/0, CV IN 1 kehrt zur Ausgangsbasis zurück. Danach BYE
 und Schließen der seriellen Verbindung. Reader-Zustand weiterhin SHARED.
 
-**H15 teilweise GEMESSEN:** nur CV OUT 1 → CV IN 1. CV-2-Loopback, beide
+**H15 in diesem Teiltest teilweise GEMESSEN:** nur CV OUT 1 → CV IN 1.
+Der nachfolgende [CV-2-Teiltest](HARDWARE_CV2_LOOPBACK_2026-10-31.md) ergänzt
+den zweiten Kanal. In diesem Teiltest waren CV-2-Loopback, beide
 Gate-Eingänge, negative Eingangsspannungen und unabhängige absolute
-Spannungsmessungen (H12/H14) sind **NICHT GEMESSEN**. Automatisches OFF bei
+Spannungsmessungen (H12/H14) **NICHT GEMESSEN**. Automatisches OFF bei
 Sitzungs-Timeout und native RAMP/SAW-Modi wurden hier nicht hardwaregeprüft.
 
 [Maschinenlesbarer Nachweis](evidence/cv1-loopback-2026-10-31.json).
