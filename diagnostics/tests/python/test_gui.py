@@ -323,3 +323,51 @@ def test_reader_diagnostics_display_and_saved_report(sim, monkeypatch, tmp_path)
     assert report['reader']['fault'] == 7 and report['reader']['he'] == 32
     assert report['reader']['io'] == 'WRITE' and report['reader']['lba'] == 777
     assert report['reader']['ms'] == 1000 and report['captured_at']
+
+
+def test_control_tabs_show_sd_and_cv_without_long_scroll(sim):
+    window, step = sim
+    assert [window.control_tabs.tabText(i) for i in range(window.control_tabs.count())] == ['SD card', 'CV / Gate', 'Controls', 'USB']
+    assert window.reader_share.isVisible() and window.save_report.isVisible()
+    window.control_tabs.setCurrentIndex(1)
+    step()
+    assert window.cv_table.isVisible() and window.cv_apply.isVisible()
+    assert window.gate_labels[0].isVisible() and window.gate_labels[1].isVisible()
+    assert window.save_report.isVisible()
+
+
+def test_switching_control_tabs_preserves_reader_and_cv_output(sim):
+    window, step = sim
+    window.cable.device.inputs.sd_card = True
+    step()
+    window.reader_share.click()
+    step()
+    window.cv_code_spins[0].setValue(1234)
+    window.cv_mode_buttons['FIX'].click()
+    step()
+    for i in range(window.control_tabs.count()):
+        window.control_tabs.setCurrentIndex(i)
+        step()
+        assert window.session.reader.state == 'SHARED'
+        assert window.board.state.cvgate.cv_out_mode == 'FIX'
+        assert window.board.state.cvgate.cv_out == [1234, 0]
+        assert 'OUT 1 = 1234' in window.cv_out_status.text()
+        assert 'OUT 2 = 0' in window.cv_out_status.text()
+
+
+@pytest.mark.parametrize('width', [1280, 1560])
+def test_control_pages_fit_width_and_keep_buttons_inside_viewport(sim, width):
+    window, step = sim
+    window.resize(width, 850)
+    for i in range(window.control_tabs.count()):
+        window.control_tabs.setCurrentIndex(i)
+        step()
+        page = window.control_tabs.currentWidget()
+        assert page.widget().width() <= page.viewport().width()
+        from PySide6.QtWidgets import QPushButton
+        for button in page.widget().findChildren(QPushButton):
+            if not button.isVisible():
+                continue
+            left = button.mapTo(page.viewport(), QPoint(0, 0)).x()
+            assert left >= 0
+            assert left + button.width() <= page.viewport().width()

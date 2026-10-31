@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QButtonGroup, QCheckBox, QComb
                                QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
                                QLabel, QMainWindow, QPlainTextEdit, QPushButton, QScrollArea,
                                QSlider, QSpinBox, QSplitter, QTableWidget, QTableWidgetItem,
-                               QVBoxLayout, QWidget, QMessageBox, QFileDialog)
+                               QVBoxLayout, QWidget, QMessageBox, QFileDialog, QTabWidget, QSizePolicy)
 
 from .. import __version__
 from .. import protocol as p
@@ -58,6 +58,8 @@ STATE_TEXT = {
 def _value_label(text: str = "–") -> QLabel:
     label = QLabel(text)
     label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+    label.setWordWrap(True)
+    label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
     return label
 
 
@@ -118,29 +120,43 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.log)
         split.addWidget(left)
 
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setMinimumWidth(470)
-        panel = QWidget()
-        self.panel_layout = QVBoxLayout(panel)
-        self.panel_layout.setContentsMargins(6, 0, 12, 12)
-        self.panel_layout.setSpacing(4)
-        self.panel_layout.addWidget(self._build_connection_group())
+        controls = QWidget()
+        controls_layout = QVBoxLayout(controls)
+        controls_layout.setContentsMargins(0, 4, 10, 10)
+        controls_layout.setSpacing(8)
+        self.control_tabs = QTabWidget()
+        self.control_tabs.setMinimumWidth(480)
+        self.control_pages: dict[str, QScrollArea] = {}
         self.sim_group = self._build_sim_group()
-        self.panel_layout.addWidget(self.sim_group)
-        self.panel_layout.addWidget(self._build_led_group())
-        self.panel_layout.addWidget(self._build_sd_group())
-        self.panel_layout.addWidget(self._build_inputs_group())
-        self.panel_layout.addWidget(self._build_pot_group())
-        self.panel_layout.addWidget(self._build_counter_group())
-        self.panel_layout.addWidget(self._build_cvgate_group())
-        self.panel_layout.addWidget(self._build_extensions_group())
-        self.panel_layout.addStretch(1)
-        scroll.setWidget(panel)
-        split.addWidget(scroll)
+        pages = (
+            ("SD card", [self._build_sd_group()]),
+            ("CV / Gate", [self._build_cvgate_group()]),
+            ("Controls", [self._build_led_group(), self._build_inputs_group(),
+                          self._build_pot_group(), self._build_counter_group(), self.sim_group]),
+            ("USB", [self._build_connection_group(), self._build_extensions_group()]),
+        )
+        for title, groups in pages:
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            panel = QWidget()
+            panel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+            layout = QVBoxLayout(panel)
+            layout.setContentsMargins(6, 0, 6, 8)
+            layout.setSpacing(4)
+            for group in groups:
+                layout.addWidget(group)
+            layout.addStretch(1)
+            scroll.setWidget(panel)
+            self.control_pages[title] = scroll
+            self.control_tabs.addTab(scroll, title)
+        controls_layout.addWidget(self.control_tabs, 1)
+        self.save_report = QPushButton("Save diagnostic report …")
+        self.save_report.clicked.connect(self._save_report)
+        controls_layout.addWidget(self.save_report)
+        split.addWidget(controls)
         split.setStretchFactor(0, 1)
-        split.setSizes([1070, 490])
+        split.setSizes([1040, 520])
         outer.addWidget(split, 1)
         self.setCentralWidget(central)
 
@@ -212,6 +228,7 @@ class MainWindow(QMainWindow):
 
         form = QFormLayout()
         form.setLabelAlignment(Qt.AlignRight)
+        form.setRowWrapPolicy(QFormLayout.WrapLongRows)
         self.info = {}
         for key, label in (("port", "Port"), ("fw", "Firmware"), ("proto", 'Protocol'),
                            ("boot", 'Application / bootloader'), ("rate", 'State rate'),
@@ -311,7 +328,7 @@ class MainWindow(QMainWindow):
             cb = QCheckBox(f"D{i + 1}")
             cb.setObjectName("ledCheck")
             cb.clicked.connect(lambda checked, idx=i: self._set_led_bit(idx, checked))
-            grid.addWidget(cb, i // 8, i % 8)
+            grid.addWidget(cb, i // 4, i % 4)
             self.led_checks.append(cb)
         layout.addLayout(grid)
         sliders = QFormLayout()
@@ -355,7 +372,7 @@ class MainWindow(QMainWindow):
         self.sd_button = QPushButton('Start read test (read-only)')
         self.sd_button.clicked.connect(self._sd_test)
         layout.addWidget(self.sd_button)
-        note = QLabel('The test mounts the filesystem and reads the root directory without writing or formatting. Streaming pauses during the test. Reads have a 5 s budget plus initialization; the host allows up to 20 s.')
+        note = QLabel('Set CV OUT to Off before this blocking test. The test mounts the filesystem and reads the root directory without writing or formatting. Streaming pauses during the test. Reads have a 5 s budget plus initialization; the host allows up to 20 s.')
         note.setObjectName("hint")
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -368,9 +385,6 @@ class MainWindow(QMainWindow):
         self.reader_return = QPushButton("Return card to diagnostics")
         self.reader_return.clicked.connect(self._return_reader)
         layout.addWidget(self.reader_return)
-        self.save_report = QPushButton("Save diagnostic report …")
-        self.save_report.clicked.connect(self._save_report)
-        layout.addWidget(self.save_report)
         return box
 
     def _save_report(self) -> None:
@@ -448,6 +462,7 @@ class MainWindow(QMainWindow):
         self.gate_labels: list[QLabel] = []
         for i in range(p.NUM_GATES):
             label = QLabel(f"GATE {i + 1}: –")
+            label.setWordWrap(True)
             label.setObjectName("valueLabel")
             gates.addWidget(label)
             self.gate_labels.append(label)
@@ -456,6 +471,8 @@ class MainWindow(QMainWindow):
         out_label = QLabel('CV OUT test signal')
         out_label.setObjectName("sectionLabel")
         layout.addWidget(out_label)
+        self.cv_out_status = _value_label()
+        layout.addWidget(self.cv_out_status)
         row = QHBoxLayout()
         self.cv_mode_group = QButtonGroup(self)
         self.cv_mode_buttons: dict[str, QPushButton] = {}
@@ -488,10 +505,9 @@ class MainWindow(QMainWindow):
         self.cv_apply = QPushButton('Apply CV OUT settings')
         self.cv_apply.clicked.connect(lambda: self._send_cvout(self._current_cv_mode()))
         layout.addWidget(self.cv_apply)
-        note = QLabel('Values are normalized: CV IN −1…+1 (libDaisy bipolar CV), CV OUT as '
-                      'DAC code 0–4095. Volts are not shown until they have been measured on '
-                      'the hardware. Ramp is a triangle, saw a rising sawtooth; CV OUT 2 '
-                      'carries the inverse. CV OUT returns to Off when the session ends.')
+        note = QLabel('CV IN is normalized −1…+1; CV OUT uses DAC codes 0–4095. '
+                      'Voltages are not independently calibrated. Ramp is triangular; '
+                      'output 2 is inverse in Ramp/Saw. Switch outputs Off before SD read tests.')
         note.setObjectName("hint")
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -913,6 +929,9 @@ class MainWindow(QMainWindow):
 
     def _refresh_cvgate(self, st) -> None:
         cg = st.cvgate if st is not None else None
+        self.cv_out_status.setText(
+            f"Reported DAC codes: OUT 1 = {cg.cv_out[0]}, OUT 2 = {cg.cv_out[1]} "
+            f"({cg.cv_out_mode})" if cg is not None else "No CV OUT data")
         if cg is not None:
             for i, v in enumerate(cg.cv):
                 lo, hi = self.cv_min[i], self.cv_max[i]
@@ -929,8 +948,7 @@ class MainWindow(QMainWindow):
             self.cvgate_status.setText('The connected firmware reports no CV/gate data '
                                        '(firmware 0.3.0 or later required).')
         else:
-            self.cvgate_status.setText(
-                f"CV OUT: {cg.cv_out_mode}, codes {cg.cv_out[0]} / {cg.cv_out[1]}")
+            self.cvgate_status.setText("Live CV inputs and gate counters. Values are normalized, not volts.")
         for i in range(p.NUM_CV):
             lo, hi = self.cv_min[i], self.cv_max[i]
             cells = ("–", "–", "–", "–") if cg is None else (

@@ -8,6 +8,13 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > Windows SD card reader, both CV channels and both gate inputs. Results are
 > real-board measurements, separate from software/simulation tests.
 
+## Control panel review candidate
+
+App **0.3.3** reorganizes the control panel into SD card, CV / Gate, Controls and
+USB tabs, including live CV input/ADC values, gate states/edges and reported DAC
+codes. Firmware stays at 0.3.2. [Change and validation](docs/CONTROL_PANEL_0.3.3.md).
+The existing 0.3.2 downloads below remain the published binary baseline.
+
 ## Hardware validation
 
 **GEMESSEN — 31 October 2026.** These functional checks passed on the Seed3 Desktop:
@@ -25,7 +32,12 @@ SD hardware results use the CardReader image; the protected 0.3.2 image has soft
 validation only. CV/gate results remain pinned to 0.3.1. They are functional loopbacks,
 not independently calibrated voltage measurements. Endpoint deviations are recorded.
 
-**Open acceptance checks:** absolute/negative CV voltages, native RAMP/SAW and timeout
+A later brief **0.3.2 native CV probe** observed 2-s RAMP and SAW periods.
+RAMP passed its functional criterion; SAW failed the strict correlation criterion
+at two reset samples and requires timing/ADC-pipeline review. Outputs were returned
+to Off. [Raw evidence and limits](docs/HARDWARE_NATIVE_CV_2026-10-31.md).
+
+**Open acceptance checks:** absolute/negative CV voltages, SAW timing interpretation and timeout
 behavior during blocking SDTEST, gate thresholds/short pulses, large-file/sustained SD
 load, other media and additional interruption timings. The known CV OUT shutdown delay
 during blocking SDTEST remains open. No further hardware tests are scheduled for now.
