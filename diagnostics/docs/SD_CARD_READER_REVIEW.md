@@ -8,10 +8,13 @@
 > BSP writers, multi-buffer DMA, erase/lock and FatFs mutation remain forbidden.
 > Both variants retain separate symbol checks. `reader_dma.h` is exercised by
 > host tests for cache ordering, completion/programming waits, timeouts, removal,
-> abort diagnostics, alignment and tick wrap. Hardware retest of 0.3.1 is pending.
+> abort diagnostics, alignment and tick wrap. The 0.3.1 basic hardware retest passed:
+> FAT32 file operations, hashes after eject/remount and eject with the app running.
+> Large-file, interruption, other-media and sustained-load cases remain open.
 > Actual observations: [hardware test](HARDWARE_CARD_READER_2026-10-31.md).
 
-Prepared 22 October 2026. Implementation 0.2.0; **not hardware validated**.
+The remainder is the historical handover prepared 22 October 2026 for
+implementation 0.2.0, which was **not hardware validated at that time**.
 The implementation branch is `codex/sd-card-reader`, based on English-language
 PR [#2](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics/pull/2).
 Keep that dependency until it merges, then retarget the reader PR to main after

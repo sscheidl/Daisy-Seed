@@ -1,5 +1,10 @@
 # Technical handover — Daisy Seed3 Hardware Diagnostic Suite
 
+> **31.10.2026, GEMESSEN mit 0.3.1:** Kartenleser-Grundtest bestanden: FAT32-
+> Dateizugriffe unter Windows, Hashvergleich nach Auswerfen/erneutem Einbinden
+> und Auswerfen bei laufender EXE. Vollständige Hardware-Abnahme steht aus.
+> Aufbau, Binärhash und offene Fälle: [Hardwareprotokoll](HARDWARE_CARD_READER_2026-10-31.md).
+
 > **0.2.0 reader extension:** the separate writable firmware, GUI/session changes,
 > software evidence, open hardware checks and independent-review targets are in
 > [SD_CARD_READER_REVIEW.md](SD_CARD_READER_REVIEW.md). The H1–H10 results in this
@@ -55,8 +60,9 @@ Audio input/output processing (only input jack detection), DSP, MIDI DIN,
 USB-MIDI, and USB host are labeled **Not implemented** or **N/I**. CV input/output
 and gate input are implemented since 0.3.0 (normalized values and DAC codes; volts
 not measured, hardware tests H12–H15 pending). Audio outputs have no jack detection. USB-host capability and electrical
-requirements have not been verified. No SD writes/formatting and no automatic
-bootloader installation are implemented.
+requirements have not been verified. The protected image has no SD writes/formatting.
+The separate CardReader image permits Windows sector writes after explicit sharing;
+neither image automatically installs a bootloader.
 
 ## 3. Validation results
 

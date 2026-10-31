@@ -13,7 +13,8 @@ preserve the failed operation/HAL error before abort. The former polling design
 below describes older reader builds.
 
 The first physical 0.3.0 test failed when exporting a readable FAT32 card to Windows;
-the 0.3.1 hardware counter-test is still pending. Actual evidence and limits:
+the 0.3.1 basic counter-test passed: FAT32 file operations, hashes after eject/remount
+and Windows eject while the app runs. Full hardware acceptance remains open. Evidence and limits:
 [Hardwareprotokoll 31.10.2026](HARDWARE_CARD_READER_2026-10-31.md).
 
 ## Version 0.3.0
@@ -39,7 +40,7 @@ The Windows app carries the same version. Integration test image, not released.
 The default image remains strictly read-only. `CARD_READER=1` builds the separate
 `DaisyDiagnostic-CardReader` image with CDC + MSC on J7. It starts with an absent
 logical medium until explicit sharing. The SD diagnostic test itself still uses
-the protected driver. For ownership, transport details and current software-only
+the protected driver. For ownership, transport details and the historical software
 validation, see [SD_CARD_READER_REVIEW.md](SD_CARD_READER_REVIEW.md).
 
 The pinned libDaisy submodule remains unmodified. The reader adds a project-owned

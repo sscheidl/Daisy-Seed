@@ -8,8 +8,10 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > Hardware tests **H1–H10 passed on 17 October 2026**, with H3 shortened to about
 > three minutes. Some results are operator reports rather than recorded measurements.
 > H11 (a second Windows PC without Python) is still open. Those results apply to
-> firmware 0.1.0. The new 0.2.0 card-reader implementation has **software tests
-> only; Windows drive enumeration and physical card writes remain untested**.
+> firmware 0.1.0. The **0.3.1 card-reader basic hardware test passed on 31 October
+> 2026**: Windows FAT32 access, small-file writes and hashes after eject/remount,
+> and eject with the app running. Large-file, interruption, other-media and
+> sustained-load tests remain open. CV/gate hardware tests also remain open.
 > See the [test report](docs/TEST_REPORT.md) and [reader review](docs/SD_CARD_READER_REVIEW.md).
 
 ![Diagnostic GUI in simulation mode](docs/images/gui-simulation.png)

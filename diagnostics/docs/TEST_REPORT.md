@@ -7,13 +7,19 @@ FAT32-SD-Lesetest funktionieren. Die Windows-Freigabe wechselt jedoch nach etwa
 einer Sekunde von SHARED auf ERROR. Ein lesbares Windows-Laufwerk oder
 erfolgreicher Dateischreibtest wurde damit nicht nachgewiesen.
 
-Die Korrektur 0.3.1 mit Single-Buffer-IDMA und SDRAM-Puffer ist softwaregetestet;
-die Hardware-Gegenprobe ist noch NICHT GEMESSEN. Vollständiger Aufbau, Binärhash,
+**GEMESSEN mit 0.3.1:** Windows G: (FAT32) zugänglich; Schreiben, Lesen, Ergänzen,
+Umbenennen und Löschen eigener kleiner Testdateien erfolgreich. SHA-256 nach
+Auswerfen/Rückgabe/erneutem Einbinden unverändert. Auswerfen bei laufender EXE
+erfolgreich; CDC bleibt verbunden. Keine Protokollfehler in der Dateioperationsprobe.
+Die Korrektur mit Single-Buffer-IDMA und SDRAM-Puffer besteht damit den Grundtest;
+große Dateien, Unterbrechung, andere Medien und Langzeitbetrieb bleiben NICHT
+GEMESSEN. Vollständiger Aufbau, Binärhash,
 Beobachtungen und Grenzen: [Hardwareprotokoll](HARDWARE_CARD_READER_2026-10-31.md).
 
 ## Version 0.3.0 CV and gate jacks
 
-Software-only validation; **no hardware test has been performed** for this version.
+Historical software validation for the CV/gate extension; **CV/gate hardware tests
+remain open**. The later card-reader hardware test above does not validate them.
 Local results on 25 October 2026 (Windows 11):
 
 | Check | Command | Result |
@@ -43,7 +49,8 @@ Do not connect CV OUT to equipment with an unknown input range before H14.
 
 ## Version 0.2.0 SD card reader
 
-This extension has software-only validation. Both ARM variants build with separate
+Historical 0.2.0 validation (superseded for reader hardware status by the dated
+0.3.1 results above): this extension had software-only validation. Both ARM variants build with separate
 symbol policies. Host tests execute the actual portable ownership controller,
 MSC BOT/SCSI implementation, application command handling and composite USB adapter
 (with HAL stubs). Python tests exercise the DDP extension, session and GUI. The
