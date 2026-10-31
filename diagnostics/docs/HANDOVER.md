@@ -1,7 +1,9 @@
 # Technical handover — Daisy Seed3 Hardware Diagnostic Suite
 
-> **0.3.2, 31.10.2026:** Review-Befunde in Software korrigiert; neue Version nicht
-> geflasht oder hardwaregemessen. Datierten 0.3.1-Hardwarestand getrennt halten.
+> **0.3.2, 31.10.2026:** Review-Befunde korrigiert; CardReader geflasht und
+> Dateioperationen, Schreibunterbrechung durch Entnahme und Wiederanlauf GEMESSEN.
+> [Hardwareprotokoll](HARDWARE_CARD_READER_0.3.2_2026-10-31.md). CV/Gate bleiben
+> Messungen von 0.3.1; geschütztes Image 0.3.2 nur softwaregeprüft.
 > [Korrekturen und Validierung](PR70_REVIEW_FIXES_2026-10-31.md).
 
 > **31.10.2026, GEMESSEN mit 0.3.1:** Kartenleser-Grundtest bestanden: FAT32-

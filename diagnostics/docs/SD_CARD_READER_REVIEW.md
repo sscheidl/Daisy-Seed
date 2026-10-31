@@ -5,8 +5,10 @@
 > DMA/Sync-/Adaptertests, Statusdiagnose und Host/GUI/JSON sowie Reset-Zustandslogik.
 > [Korrekturbericht](PR70_REVIEW_FIXES_2026-10-31.md),
 > [archivierter Review mit Originaltext und Logs](SD_CARD_READER_PR70_REVIEW_2026-10-31.md).
-> Hardware-Gegenprobe 0.3.2: **NICHT GEMESSEN**. Keine erneute unabhängige
-> Claude-Prüfung der Korrektur behauptet.
+> CardReader-Gegenprobe 0.3.2: **GEMESSEN**, normale Dateioperationen und eine
+> Kartenentnahme während Schreiben mit Wiederanlauf bestanden:
+> [Hardwareprotokoll](HARDWARE_CARD_READER_0.3.2_2026-10-31.md). Keine erneute
+> unabhängige Claude-Prüfung der Korrektur behauptet.
 
 > Update 0.3.1 (31 October 2026): the first physical Windows probe of 0.3.0
 > enumerated CDC/MSC but failed to expose a readable card (SHARED → ERROR).

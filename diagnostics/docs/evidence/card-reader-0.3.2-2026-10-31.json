@@ -1,0 +1,213 @@
+{
+  "date": "2026-10-31",
+  "status": "GEMESSEN",
+  "source_commit": "e72db103b2127fb3b3782ed884b6e0c9c7092cad",
+  "variant": "CardReader 0.3.2",
+  "firmware_sha256": "78c7f8536c5d798ec02675c18b3b2b0fc62e6257d53816915d10cf765e9c35c5",
+  "flash_address": "0x90040000",
+  "dfu_exit": 0,
+  "bootloader_changed": false,
+  "cdc": "COM15",
+  "volume_serial": "383EAD1A",
+  "small_file_test": {
+    "directory": "G:\\DaisyDiagnosticTest-20261031-e8a4b572",
+    "files": {
+      "payload-renamed.bin": {
+        "bytes": 1048576,
+        "sha256": "7fba4cc2341d7cc2beafc5b05952244ef594d290723c00f4f9e6a13e25f84b70"
+      },
+      "edit.txt": {
+        "bytes": 92,
+        "sha256": "9f7068d955bf57425084536e8eb15f499d7c5e4e44ace652853f060486e96ebc"
+      }
+    },
+    "frames": 469,
+    "frame_errors": 0,
+    "content_errors": 0,
+    "lost_frames": 0,
+    "reconnects": 0,
+    "elapsed_seconds": 6.203
+  },
+  "after_eject_hashes": {
+    "payload-renamed.bin": {
+      "sha256": "7fba4cc2341d7cc2beafc5b05952244ef594d290723c00f4f9e6a13e25f84b70",
+      "bytes": 1048576,
+      "match": true
+    },
+    "edit.txt": {
+      "sha256": "9f7068d955bf57425084536e8eb15f499d7c5e4e44ace652853f060486e96ebc",
+      "bytes": 92,
+      "match": true
+    }
+  },
+  "physical_removal": {
+    "operator_confirmed_backed_up_test_card": true,
+    "writer": {
+      "started_at": 2.016,
+      "flushed_bytes": 2293760,
+      "exception": "PermissionError(13, 'Permission denied')",
+      "ended_at": 27.391
+    },
+    "reader_before_close": {
+      "state": "INTERRUPTED",
+      "sectors": 15523840,
+      "busy": false,
+      "io": "WRITE",
+      "fault": 3,
+      "he": 6,
+      "lba": 25627,
+      "ms": 0
+    },
+    "original_probe_completed": false,
+    "probe_limit": "Early-exit race after writer exception; raw result retained. Separate 15-second probe follows."
+  },
+  "independent_post_removal": {
+    "connected": true,
+    "reader": {
+      "state": "INTERRUPTED",
+      "sectors": 15523840,
+      "busy": false,
+      "io": "WRITE",
+      "fault": 3,
+      "he": 6,
+      "lba": 25627,
+      "ms": 0
+    },
+    "card_detected": false,
+    "frames": 918,
+    "frame_errors": 0,
+    "content_errors": 0,
+    "lost_frames": 0,
+    "reconnects": 0
+  },
+  "reinsert_quarantine": {
+    "reader": {
+      "state": "INTERRUPTED",
+      "sectors": 15523840,
+      "busy": false,
+      "io": "WRITE",
+      "fault": 3,
+      "he": 6,
+      "lba": 25627,
+      "ms": 0
+    },
+    "card_detected": true
+  },
+  "local_sd_after_return": [
+    {
+      "status": "MOUNTED",
+      "fresult": 0,
+      "fs_type": "FAT32",
+      "size_mb": 7572,
+      "entries": 4
+    }
+  ],
+  "baseline_hashes_after_interruption": {
+    "payload-renamed.bin": {
+      "sha256": "7fba4cc2341d7cc2beafc5b05952244ef594d290723c00f4f9e6a13e25f84b70",
+      "bytes": 1048576,
+      "match": true
+    },
+    "edit.txt": {
+      "sha256": "9f7068d955bf57425084536e8eb15f499d7c5e4e44ace652853f060486e96ebc",
+      "bytes": 92,
+      "match": true
+    }
+  },
+  "windows_check": {
+    "dirty_before": true,
+    "read_only_exit": 0,
+    "read_only_reported_no_problems": true,
+    "read_only_lock_warning": true,
+    "repair_exit": 0,
+    "repair_reported_no_problems": true,
+    "forced_dismount": false,
+    "formatted": false,
+    "dirty_after_repair": false,
+    "dirty_after_final_write_eject_remount": false
+  },
+  "recovery_write": {
+    "file": "G:\\DaisyDiagnosticTest-20261031-e8a4b572\\recovery-395038fe.bin",
+    "bytes": 65536,
+    "sha256": "62b533dbc96dc74a90671685e84fb5cf09a1841a938f7b29c180037e01c54348",
+    "immediate_hash_match": true,
+    "after_clean_eject_and_remount_hash_match": true
+  },
+  "final_reader": {
+    "state": "SHARED",
+    "sectors": 15523840,
+    "busy": true,
+    "io": "READ",
+    "fault": 0,
+    "he": 0,
+    "lba": 13438,
+    "ms": 0
+  },
+  "packaged_real_exe_selftest_exit": 0,
+  "limits": [
+    "One physical removal scenario; no silicon DPSM/IDMA trace",
+    "No independent card reader",
+    "No files over 100 MiB or sustained load",
+    "Protected image not flashed",
+    "CV/gate results remain those of 0.3.1"
+  ],
+  "raw_evidence_directory": ".work/diagnostics-0.3.2-hardware-2026-10-31/",
+  "raw_hashes": {
+    "after-eject.log": "d2ae7183d226b07cc54f371e9b32d9094f7c855ceb245fd2d0b11a174e3341d7",
+    "after-remount-hashes.json": "a6d39b41c9c7f1b68bf712194f690bc2cc179075d6d14e36e045e925e0dd7d91",
+    "chkdsk-read-only.log": "0c8830728d304334754da0974c5d62eaf7bd4d00b525bc12c1d016662ff0a411",
+    "chkdsk-repair.log": "61595e18e8083dfc0d371f38e82ea2fe540031de607fd63cbc69629cc1692160",
+    "clean-eject-after-recovery.log": "ca43bb7cb59040792104594794780ed7ea437ed3aa82a40edc9e563f99979803",
+    "dirty-after-chkdsk.log": "661544c7fadd13ec07ea82f6ceea063c6cc5d17ea9b947487ecd9d0203ff1b7c",
+    "dirty-after-clean-eject.log": "0d94dbd5faf47956f92e5fb1c2dee7b39a903dee87db01271fb15133a745d0c5",
+    "dirty-before-clean-eject.log": "0d94dbd5faf47956f92e5fb1c2dee7b39a903dee87db01271fb15133a745d0c5",
+    "dirty-final.log": "661544c7fadd13ec07ea82f6ceea063c6cc5d17ea9b947487ecd9d0203ff1b7c",
+    "eject-retry.log": "a81c7e9a786c3638c39e85ba724502586d9b7cb241645ef3ae40feb70978db44",
+    "file-roundtrip.log": "9626231407f99ab4d5fcdfb46aaa1496f41f70293fb8a1b907a93b8e1634ac30",
+    "file-test-manifest.json": "c4f08087dd24c03e4d494b5b9ba5a8146c840e964e7da97e2f5510e18c4110d3",
+    "final-clean-eject.log": "343aea71885f85eed03b3a2e655c6d5f8d09f8e520a3c32d3c1e076e48a6a907",
+    "final-eject-followup.log": "2e200756e8af8a9eaf18a6cdc808081ff56a9bf80542365da2bb40eeba777e1c",
+    "flash.log": "94ca448835e61311c9859c55e05311bb0c114c9912c258ff4b44bad5652d3b44",
+    "initial-status.log": "9e454b99c1245576fe325dbccb17eda780c9481a52e33bd7b528ee5645c5e095",
+    "interrupt-write-intent.json": "ce7275f0cc0eb039d15f8fb59b74f095cd2edb73d74309e3a18c347f9a3dcaa3",
+    "interrupt-write-result.json": "732f80e89361146fbaa34cb1c93c3e15b9b1696b65c06f4f8bea35c0bec7bd2f",
+    "local-sd-test.log": "e367216487c425a09838f67ea81576036a0bfda877a0908e19807a75aaf8ef1d",
+    "post-interruption-recovery-hashes.json": "a6d39b41c9c7f1b68bf712194f690bc2cc179075d6d14e36e045e925e0dd7d91",
+    "post-removal-15s.log": "2d40c11e1aee91177ced30dcc4771282baa67ee43754ec5334106b9158e32b1f",
+    "read-test-224118.json": "e20a575869aa3ee9cbbbdff51bf1fbde08b688cb2346d973920c6837075cad08",
+    "read-test-224337.json": "e5ad05dbee6d16ef19a086aab2a47b9abab6f9a27d62bd439ce5aa3157ce288b",
+    "read-test-224837.json": "9e0d120036170ad983961dbf8932f13869c3b9a1c1f9fc73d930343bab640ce2",
+    "read-test-after-eject.log": "d48247544f5077dd72862e8435e10ef7eb01866195f55af3418425f8299ae68c",
+    "read-test-recovery.log": "5a65d883df8c1c2341bc169a637ebbf294c226771a0cd6714333b452e8747fce",
+    "recovery-write-verification.json": "fdc5a754fc1fe3f8c795e550c58f1cae5b60738d15489be939410e81e13e1dbc",
+    "reinsert-quarantine.log": "f3c1a61a1ac1c4346c8a9b9f57ac9a60f03d14c34ec2313e235c10798e30989f",
+    "return-224334.json": "dc5de75a5376d1509613e71d727cf608cbc692e88738c1d12877569c5ce91e6c",
+    "return-224833.json": "2e142975a6f0eaf24318262646131fa498a278d731e90ca67fd1d905f98e7591",
+    "return-225015.json": "a7da1619a86102b1036c8e579928c62c076cc1b096ff540ad2195d83c8f06dd7",
+    "return-225331.json": "cd3bf1ce47694f48d0e226407b8fb0436b0402699b673bbc05f80931e132e4b2",
+    "return-after-eject.log": "c7140b09bf04409134b15ffa40dcd1ea3d5c71a9596cff5be1f65531fbc22043",
+    "return-clean-cycle.log": "e4d9b98522878e134ddc5f6f379008eb737e9ab4eb2c32d95ec240baa7ad37c2",
+    "return-final.log": "0e20c35e08a4382f08fd85d8a7a106c56d2a8422f9ef41553bf0c0f0208f64f4",
+    "return-recovery.log": "7f565356b32c45b9af2f8008300b68ba0ba8bda25b2512d19351f3a24d9dc9f5",
+    "share-224212.json": "e7fce797b4b44ec90a4e011ab6b4d335b18baf08986f773598cfa306ac9d6fb0",
+    "share-224340.json": "3d154450bec6daac4a50055168511f40b053fac66590757c1a279a65f34c2b67",
+    "share-224840.json": "7a8a35a28d9fc64df71fcf3dc9da76e1bdbf556ffb678333fc1e2eb951b7b65f",
+    "share-225018.json": "13d7da4c57552f1e12f23b0886c128caf7fcb1897345991a5aa31a2ac0f258b4",
+    "share-225334.json": "45202da6d8f64fa22873b4dd833635156131854b7e5542dc7bce7dc98f4d55ef",
+    "share-after-eject.log": "cd58d01aa16c8a41405aca682eea29bd9d16c243594a19d8e4a8c872d3bea33d",
+    "share-clean-cycle.log": "73bb4d4ea010c282f7c24f74278c8c2e8c5b23f66d709c49a85c0aea57fd5b9f",
+    "share-final.log": "c79ee95da74e3e68327e02d32931aa12e3ff59ea5a5be371d1409cb467d19e39",
+    "share-recovery.log": "79b1572f368be37a893f2e308e54045b6694c2838993a6b842bd5dfd8df56cfb",
+    "share.log": "7cc04ada7d6260c1e6753e22922d6a27cd359f438fdf09947bc94c16075b3fb4",
+    "status-224114.json": "339f2b981ef0621ae67270c92659f2f21581738cbd8a99128efa14be99172871",
+    "status-224330.json": "078ffc59b16d2dcc1f8b40c1793f5fe36406ee501b6d0136fccba78562169938",
+    "status-224551.json": "d9c22efbd6bbff442e0cb734a7319949953d13e418b059944f6be1f2810813ae",
+    "status-224830.json": "6fb47863cde137614f2a0bd22f6a212655c5f87a59a5e9b9fafa49046b34fcf1",
+    "status-225011.json": "d77d1610a59e883fe50f3b2c02af8cafd2eb286830005469a3d580ec20d3cd6d",
+    "status-225141.json": "aa53d6530802fa4005350a126cc523475a94d65958f6758716bfd31d75522d8f",
+    "status-225212.json": "2c0c4985a28207b75a6c0485cf7781cfe4cdd7c696cbed5829c2a5b462479899",
+    "status-225254.json": "d5388fc654ba5659afd5c8b595e6ede9df6db0c7e9694825bf775f175e9c529f",
+    "status-225321.json": "7a67c0a306c034aec86fd41eb44f2c8f8b969f095d9d67231311c4794ea90602",
+    "status-after-chkdsk.log": "34095b2255fa203abf8b44a67b3cf6dcff599d7279fbbc3341e90f0a6f08a50e"
+  }
+}

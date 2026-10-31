@@ -52,15 +52,22 @@ Lokale vollständige Logs und EXE-Bildschirmaufnahmen liegen im Arbeitsbaum unte
 `.work/review-fixes-*`; Binärkandidaten separat unter
 `.work/diagnostics-reader-test-2026-10-31/candidate-0.3.2/` im Hauptarbeitsverzeichnis.
 
-## Hardware — NICHT GEMESSEN für Firmware 0.3.2
+## Hardware — GEMESSEN für CardReader 0.3.2
 
-Auf dem Board bleibt das zuvor getestete 0.3.1-Image. Es wurde nicht geflasht.
-Das neue RCC-Abbruchverhalten muss noch mit menschlich begleiteter Kartenentnahme
-während eines Schreibvorgangs und anschließendem Wiederanlauf geprüft werden.
-Host-Stubs beweisen nicht die Registerwirkung auf dem STM32 oder die Wiederanmeldung
-der realen Karte. Auch große Dateien, Dauerlast, weitere Medien, native CV-Modi,
+Nach expliziter Freigabe wurde e72db10 mit dem oben angegebenen Readerhash
+auf die Anwendung geflasht, Bootloader unverändert. Grundtest, Hashvergleich
+nach Auswerfen, eine vom Menschen ausgeführte Kartenentnahme während Schreiben,
+CDC-Liveness, Quarantäne und expliziter Wiederanlauf bestanden. Die Testkarte
+war dafür ausdrücklich als gesichert bestätigt. Windows-Dirty-Bit nach CHKDSK /F
+gelöscht und nach erneutem Schreib-/Auswerfzyklus weiterhin sauber.
+
+[Hardwareprotokoll und Testskript-Grenze](HARDWARE_CARD_READER_0.3.2_2026-10-31.md).
+Nicht alle Abbruchzustände wurden auf Silizium gezielt erzwungen. Geschütztes
+Image nicht geflasht; große Dateien, Dauerlast, weitere Medien, native CV-Modi,
 kurze Gate-Pulse und absolute Spannungsprüfungen bleiben separat offen.
 
 Die frühere bekannte CV-OUT-Abschaltverzögerung während blockierendem SDTEST
 ist nicht Gegenstand der sechs hier bearbeiteten Reviewpunkte und bleibt offen.
-Merge-Freigabe des Benutzers ersetzt keine Hardware-Abnahme oder Release-Freigabe.
+Merge-Freigabe des Benutzers ersetzt keine vollständige Hardware-Abnahme oder
+Release-Freigabe. Die ältere unabhängige Claude-Prüfung gilt nicht als erneute
+Prüfung dieser späteren Korrektur.

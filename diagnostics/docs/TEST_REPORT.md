@@ -6,8 +6,13 @@
 MSVC /W4 /WX bestanden; beide ARM-Varianten samt Vektor-/Symbolprüfung bestanden.
 DMA-Suite: 4262 einzelne Prüfungen (einschließlich 4096 Bytevergleichen),
 Produktions-Abbruchadapter: 42 Prüfungen; keine Zählung unabhängiger Fehlerszenarien.
-**Hardware 0.3.2: NICHT GEMESSEN.** Die folgenden Hardwareprotokolle gelten für
-0.3.1. Abbruchkorrektur, Prüfgrenzen und Binärhashes:
+**CardReader 0.3.2: GEMESSEN.** Flash, kleine Dateizugriffe, Auswerfen/Remount,
+physische Kartenentnahme beim Schreiben ohne Firmware-Hänger, Quarantäne nach
+Wiedereinsetzen und expliziter Wiederanlauf bestanden. Windows-Dirty-Markierung
+nach CHKDSK /F gelöscht; erneuter Schreib-/Auswerfzyklus bleibt sauber.
+[Neues Hardwareprotokoll](HARDWARE_CARD_READER_0.3.2_2026-10-31.md).
+Die folgenden CV-/Gate- und älteren Reader-Protokolle gelten weiterhin für 0.3.1.
+Abbruchkorrektur, Prüfgrenzen und Binärhashes:
 [Korrekturbericht](PR70_REVIEW_FIXES_2026-10-31.md).
 
 ## Gate-Loopback, 31.10.2026

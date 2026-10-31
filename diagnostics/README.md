@@ -5,7 +5,9 @@ C++ firmware and a Windows application (Python/PySide6), communicating over USB 
 through the carrier's **J7** connector. The GUI and documentation are in English.
 
 > **Validation:** Version 0.3.2 fixes the independent review findings; local ARM,
-> host, sanitizer and Python/GUI tests pass. **Hardware 0.3.2 is not measured**;
+> host, sanitizer and Python/GUI tests pass. **CardReader 0.3.2 hardware measured:**
+> basic file I/O and one physical write-interruption/recovery test passed on 31 October.
+> [Hardware evidence](docs/HARDWARE_CARD_READER_0.3.2_2026-10-31.md),
 > [fixes and remaining checks](docs/PR70_REVIEW_FIXES_2026-10-31.md).
 > Hardware tests **H1–H10 passed on 17 October 2026**, with H3 shortened to about
 > three minutes. Some results are operator reports rather than recorded measurements.

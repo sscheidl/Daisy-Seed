@@ -1,7 +1,7 @@
 {
   "date": "2026-10-31",
   "version": "0.3.2",
-  "hardware_firmware_test": "NICHT GEMESSEN; board remains on 0.3.1",
+  "hardware_firmware_test": "GEMESSEN: CardReader 0.3.2 normal I/O, physical write interruption and recovery; protected image not flashed",
   "artifacts": {
     "readonly": {
       "filename": "DaisyDiagnostic.bin",
@@ -38,10 +38,10 @@
     "packaged_actual_host_0_3_2_with_firmware_0_3_1_selftest_exit": 0
   },
   "measurement_limits": [
-    "new controller-reset abort not tested on hardware",
-    "no surprise card removal/write fault test",
     "previous 0.3.1 hardware logs do not validate 0.3.2 firmware",
     "4262 DMA checks include 4096 byte comparisons; not independent scenarios",
-    "CMSIS/RCC stubs test production abort control flow, not STM32 silicon"
-  ]
+    "CMSIS/RCC stubs test production abort control flow, not STM32 silicon",
+    "Not all silicon abort interleavings were forced"
+  ],
+  "hardware_evidence": "card-reader-0.3.2-2026-10-31.json"
 }

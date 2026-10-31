@@ -2,6 +2,13 @@
 
 ## Status and firmware choice
 
+**0.3.2 update, 31 October 2026 (GEMESSEN):** the review fixes passed normal
+file I/O/eject tests and one physical card removal during writing, with CDC
+remaining alive and explicit recovery after reinsertion. R9 is therefore partial;
+not all removal timings or independent-reader checks were performed. Windows
+requested a scan after the interruption; CHKDSK /F cleared the dirty flag.
+[Detailed evidence and limits](HARDWARE_CARD_READER_0.3.2_2026-10-31.md).
+
 The optional USB Mass Storage (MSC) card reader uses the Desktop carrier's J7 port.
 The **0.3.1 basic hardware test passed on 31 October 2026**: FAT32 Windows access,
 small-file operations, matching hashes after eject/remount and eject with the app

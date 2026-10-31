@@ -19,8 +19,10 @@ not DMA errors. USB reset/removal preserves INTERRUPTED even if the I/O failure
 and the reset mailbox arrive in the opposite order. Host GUI and saved JSON retain
 all optional reader diagnostics.
 
-**Hardware 0.3.2: NICHT GEMESSEN.** Existing dated reader/CV/gate measurements
-refer to 0.3.1. The portable 1 s DMA/programming budgets do not include SDK command
+**CardReader hardware 0.3.2: GEMESSEN, 31 October 2026.** File operations,
+eject/remount, one physical removal during writing and explicit recovery passed.
+[Hardware record](HARDWARE_CARD_READER_0.3.2_2026-10-31.md). The protected image
+was not flashed. Existing CV/gate measurements still refer to 0.3.1. The portable 1 s DMA/programming budgets do not include SDK command
 response deadlines; the new abort itself has no wait loop or HAL/card command.
 See the [review fixes and validation](PR70_REVIEW_FIXES_2026-10-31.md).
 
