@@ -1,5 +1,21 @@
 # Diagnostic firmware — configuration, dependencies, architecture
 
+## Version 0.3.1
+
+The reader uses bounded single-buffer SDMMC IDMA rather than CPU-polled FIFO
+transfers. Its dedicated 512-byte bounce buffer is 32-byte aligned in SDRAM,
+reachable by SDMMC1, with clean/invalidate operations around transfers. USB and
+audio remain interruptible while the main loop waits for DMA and card programming.
+The protected default image's complete write blacklist is unchanged; the reader
+permits `HAL_SD_WriteBlocks_DMA` only, with PIO/IT, generic BSP writers, multi-buffer
+DMA, erase/lock and FatFs mutation still banned. Optional READER diagnostic fields
+preserve the failed operation/HAL error before abort. The former polling design
+below describes older reader builds.
+
+The first physical 0.3.0 test failed when exporting a readable FAT32 card to Windows;
+the 0.3.1 hardware counter-test is still pending. Actual evidence and limits:
+[Hardwareprotokoll 31.10.2026](HARDWARE_CARD_READER_2026-10-31.md).
+
 ## Version 0.3.0
 
 Adds the CV and gate jacks through the official `desktop_devkit::Hardware` API:
