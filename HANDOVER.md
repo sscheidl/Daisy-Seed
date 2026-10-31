@@ -1,5 +1,13 @@
 # Übergabe — lokal weiterarbeiten
 
+**Diagnose 31.10.2026:** PR #70 gemergt, Suite 0.3.2. SD-Kartenleser mit
+Dateioperationen, physischer Schreibunterbrechung und Wiederanlauf GEMESSEN;
+beide CV-Kanäle und beide Gate-Eingänge funktional mit 0.3.1 GEMESSEN.
+[Status, Grenzen und aktuelle EXE/BIN-Downloads](diagnostics/README.md#hardware-validation).
+Die weitere Hardware-Testreihe wurde auf Benutzerwunsch beendet; offene
+Präzisions-/Langzeitfälle bleiben dokumentiert. Control-Panel-Anpassung ist
+als nächster Arbeitspunkt in Klärung.
+
 **Stand Acid Seq 28.10.2026:** Phasen 0–6 (PR #54–#60) und die Nachprüfung (PR #61)
 sind in `main`. Codex hat zwei Prüfungen gemacht: das Review des Arbeitsauftrags
 ([CODEX_REVIEW.md](docs/acid-seq/CODEX_REVIEW.md), R01–R16, vor der Umsetzung

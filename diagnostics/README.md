@@ -4,21 +4,37 @@ Hardware diagnostics for the **Electro-Smith Seed3 Desktop Development Kit**:
 C++ firmware and a Windows application (Python/PySide6), communicating over USB CDC
 through the carrier's **J7** connector. The GUI and documentation are in English.
 
-> **Validation:** Version 0.3.2 fixes the independent review findings; local ARM,
-> host, sanitizer and Python/GUI tests pass. **CardReader 0.3.2 hardware measured:**
-> basic file I/O and one physical write-interruption/recovery test passed on 31 October.
-> [Hardware evidence](docs/HARDWARE_CARD_READER_0.3.2_2026-10-31.md),
-> [fixes and remaining checks](docs/PR70_REVIEW_FIXES_2026-10-31.md).
-> Hardware tests **H1–H10 passed on 17 October 2026**, with H3 shortened to about
-> three minutes. Some results are operator reports rather than recorded measurements.
-> H11 (a second Windows PC without Python) is still open. Those results apply to
-> firmware 0.1.0. The **0.3.1 card-reader basic hardware test passed on 31 October
-> 2026**: Windows FAT32 access, small-file writes and hashes after eject/remount,
-> and eject with the app running. Large-file, interruption, other-media and
-> sustained-load tests remain open. Both CV OUT → CV IN channels separately passed
-> the functional loopback check that day. Both gate inputs also passed held-level
-> and slow-pulse tests; short pulses and independent voltage tests remain open.
-> See the [test report](docs/TEST_REPORT.md) and [reader review](docs/SD_CARD_READER_REVIEW.md).
+> **Implemented and hardware-tested in the scope below:** SD diagnostics,
+> Windows SD card reader, both CV channels and both gate inputs. Results are
+> real-board measurements, separate from software/simulation tests.
+
+## Hardware validation
+
+**GEMESSEN — 31 October 2026.** These functional checks passed on the Seed3 Desktop:
+
+| Feature | Implemented | Observed hardware result | Firmware / evidence |
+| --- | --- | --- | --- |
+| SD filesystem diagnostics | Card detection and read-only FAT32 mount/root-directory test | FR_OK before and after card-reader handover | CardReader 0.3.2; [report](docs/HARDWARE_CARD_READER_0.3.2_2026-10-31.md) |
+| Windows SD card reader | Read/write USB MSC on J7 alongside CDC; explicit ownership and eject | Create/read/edit/rename/delete, hashes after eject/remount; one physical card removal during writing stayed responsive, quarantined and recovered after explicit acknowledgement | 0.3.2; [report](docs/HARDWARE_CARD_READER_0.3.2_2026-10-31.md) |
+| CV OUT 1 → CV IN 1 | DAC output and normalized/raw ADC input | Fixed codes and slow stepped ramps followed monotonically and repeatably | 0.3.1; [report](docs/HARDWARE_CV_LOOPBACK_2026-10-31.md) |
+| CV OUT 2 → CV IN 2 | Same for channel 2 | Fixed codes and slow stepped ramps followed monotonically and repeatably | 0.3.1; [report](docs/HARDWARE_CV2_LOOPBACK_2026-10-31.md) |
+| GATE IN 1 | State and rising-edge counter | Held High counted once; 20 more slow pulses gave exactly 21 edges | 0.3.1; [report](docs/HARDWARE_GATE1_LOOPBACK_2026-10-31.md) |
+| GATE IN 2 | State and rising-edge counter | Same result; other channel stayed unchanged | 0.3.1; [report](docs/HARDWARE_GATE2_LOOPBACK_2026-10-31.md) |
+
+SD hardware results use the CardReader image; the protected 0.3.2 image has software
+validation only. CV/gate results remain pinned to 0.3.1. They are functional loopbacks,
+not independently calibrated voltage measurements. Endpoint deviations are recorded.
+
+**Open acceptance checks:** absolute/negative CV voltages, native RAMP/SAW and timeout
+behavior during blocking SDTEST, gate thresholds/short pulses, large-file/sustained SD
+load, other media and additional interruption timings. The known CV OUT shutdown delay
+during blocking SDTEST remains open. No further hardware tests are scheduled for now.
+
+Software validation for 0.3.2: **239 Python/GUI tests**, C++ host/MSVC and ASan/UBSan,
+both ARM images and linked-symbol policies, packaged EXE startup — all passed.
+See [review fixes](docs/PR70_REVIEW_FIXES_2026-10-31.md) and the
+[test report](docs/TEST_REPORT.md). Earlier H1–H10 tests passed on 17 October with
+0.1.0 (H3 shortened to about three minutes; some operator reports); H11 remains open.
 
 ![Diagnostic GUI in simulation mode](docs/images/gui-simulation.png)
 
@@ -44,6 +60,19 @@ DAC codes; volts are not displayed until they have been measured (H12–H15). Di
 or electrical feedback from the LEDs.
 
 ## Binary downloads
+
+**Validated 0.3.2 build:** [successful GitHub Actions run](https://github.com/sscheidl/Daisy-Seed/actions/runs/41245983087),
+source `b4df35163e9ba7517410cac34437348c7841292f`:
+
+- [Windows EXE](https://github.com/sscheidl/Daisy-Seed/actions/runs/41245983087/artifacts/13058439316)
+- [CardReader firmware](https://github.com/sscheidl/Daisy-Seed/actions/runs/41245983087/artifacts/13059542324)
+- [Protected read-only firmware](https://github.com/sscheidl/Daisy-Seed/actions/runs/41245983087/artifacts/13059378117)
+
+All three ZIPs include checksums and source information. Both CI firmware hashes
+match the local builds; the CardReader hash matches the flashed hardware-test image.
+These build artifacts are retained for 14 days, until **14 November 2026**;
+they are not permanent Release assets. Documentation-only follow-ups do not change
+the validated binary source.
 
 The [Hardware diagnostics workflow](https://github.com/sscheidl/Daisy-Seed/actions/workflows/diagnostics.yml)
 builds firmware (`DaisyDiagnostic.bin`, `.elf`) and Windows (`DaisyDiagnostic.exe`).
