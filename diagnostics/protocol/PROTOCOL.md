@@ -236,6 +236,12 @@ shows **Incompatible protocol** and sends no control commands.
 
 ## Optional card reader extension (firmware/application 0.2.0)
 
+Since 0.3.1, reader status may also carry diagnostic fields: `io` (NONE/READ/WRITE/
+SYNC), `fault` (0=none, 1=unavailable, 2=start failed, 3=DMA error, 4=DMA timeout,
+5=programming timeout, 6=alignment), `he` (HAL error bits captured before abort),
+`lba` and `ms` (failed operation elapsed milliseconds). Hosts may ignore them;
+the existing ownership fields and action acknowledgement are unchanged.
+
 The writable firmware advertises `sdmsc` in HELLO capabilities. The protected
 build does not. The DDP v1 framing, CRC and existing fields remain unchanged.
 Older hosts ignore the additional message; newer hosts disable reader controls

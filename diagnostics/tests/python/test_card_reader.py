@@ -45,6 +45,18 @@ def test_status_requires_a_recognized_action():
             p.parse_reader(p.parse_message("READER state=LOCAL sectors=0 busy=0" + suffix))
 
 
+def test_local_bot_busy_and_status_ack_preserve_completed_read_result():
+    clock, _, s = setup()
+    s.sd = p.SdInfo("MOUNTED", 0, "FAT32", 7572, 2)
+    result = s.sd
+    s.drain_events()
+    s._handle("READER state=LOCAL sectors=0 busy=1 a=STATUS", clock())
+    assert s.sd is result and not any(k == "reader" for k, _ in s.drain_events())
+    assert s.request_reader("STATUS")
+    s._handle("READER state=LOCAL sectors=0 busy=0 a=STATUS", clock())
+    assert not s.reader_pending and s.sd is result
+
+
 def test_exclusive_handoff_eject_and_return():
     clock, cable, s = setup()
     assert s.reader_supported and s.reader.state == "LOCAL"

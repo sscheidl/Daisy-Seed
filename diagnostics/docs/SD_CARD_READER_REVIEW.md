@@ -1,5 +1,16 @@
 # SD card reader — independent review handover
 
+> Update 0.3.1 (31 October 2026): the first physical Windows probe of 0.3.0
+> enumerated CDC/MSC but failed to expose a readable card (SHARED → ERROR).
+> The reader now uses bounded single-buffer IDMA with a dedicated aligned SDRAM
+> buffer and cache maintenance; the old CPU-polled path below is historical.
+> Only the reader build permits `HAL_SD_WriteBlocks_DMA`; PIO/IT writers, generic
+> BSP writers, multi-buffer DMA, erase/lock and FatFs mutation remain forbidden.
+> Both variants retain separate symbol checks. `reader_dma.h` is exercised by
+> host tests for cache ordering, completion/programming waits, timeouts, removal,
+> abort diagnostics, alignment and tick wrap. Hardware retest of 0.3.1 is pending.
+> Actual observations: [hardware test](HARDWARE_CARD_READER_2026-10-31.md).
+
 Prepared 22 October 2026. Implementation 0.2.0; **not hardware validated**.
 The implementation branch is `codex/sd-card-reader`, based on English-language
 PR [#2](https://github.com/sscheidl/Daisy-Seed3-Desktop-Diagnostics/pull/2).

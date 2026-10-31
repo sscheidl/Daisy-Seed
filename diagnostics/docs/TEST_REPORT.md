@@ -1,5 +1,16 @@
 # Test report
 
+## Kartenleser-Hardwaretest, 31.10.2026
+
+**GEMESSEN mit 0.3.0:** CDC/MSC werden unter Windows erkannt, DDP und direkter
+FAT32-SD-Lesetest funktionieren. Die Windows-Freigabe wechselt jedoch nach etwa
+einer Sekunde von SHARED auf ERROR. Ein lesbares Windows-Laufwerk oder
+erfolgreicher Dateischreibtest wurde damit nicht nachgewiesen.
+
+Die Korrektur 0.3.1 mit Single-Buffer-IDMA und SDRAM-Puffer ist softwaregetestet;
+die Hardware-Gegenprobe ist noch NICHT GEMESSEN. Vollständiger Aufbau, Binärhash,
+Beobachtungen und Grenzen: [Hardwareprotokoll](HARDWARE_CARD_READER_2026-10-31.md).
+
 ## Version 0.3.0 CV and gate jacks
 
 Software-only validation; **no hardware test has been performed** for this version.

@@ -425,10 +425,15 @@ class DeviceSession:
                 previous = self.reader
                 self.reader = p.parse_reader(msg)
                 completed = self.reader_pending and msg.get("a") == self._reader_action
+                changed_medium = (previous is None or previous.state != self.reader.state
+                                  or previous.sectors != self.reader.sectors)
+                changed_owner = completed and self._reader_action in ("SHARE", "RETURN")
                 if msg.get("a") == self._reader_action:
                     self._reader_deadline = None
                     self._reader_action = None
-                if previous != self.reader or completed:
+                # A Windows TUR/INQUIRY makes BOT busy even while LOCAL. That
+                # does not invalidate the completed read test or its GUI result.
+                if changed_medium or changed_owner:
                     self.sd = None
                     self._event("reader", self.reader)
             elif msg.type == "PONG":

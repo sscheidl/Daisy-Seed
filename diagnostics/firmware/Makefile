@@ -55,10 +55,10 @@ FORBIDDEN_SYMBOLS = \
 # Guards against a vacuous check (empty or wrong symbol list).
 REQUIRED_SYMBOLS = RoRead RoWrite f_mount f_readdir SDMMC_CmdReadSingleBlock
 ifeq ($(CARD_READER),1)
-# Writable variant deliberately permits only CPU-polled block writes. FatFs
-# mutation, formatting, erase/lock, DMA writers and the generic disk driver stay banned.
-FORBIDDEN_SYMBOLS := $(filter-out SDMMC_CmdWriteSingleBlock SDMMC_CmdWriteMultiBlock HAL_SD_WriteBlocks,$(FORBIDDEN_SYMBOLS))
-REQUIRED_SYMBOLS += HAL_SD_WriteBlocks SDMMC_CmdWriteSingleBlock
+# Only the reader permits single-buffer IDMA writes. PIO/IT writers, generic BSP/
+# disk writers, FatFs mutation, formatting, erase/lock and multi-buffer DMA stay banned.
+FORBIDDEN_SYMBOLS := $(filter-out SDMMC_CmdWriteSingleBlock SDMMC_CmdWriteMultiBlock HAL_SD_WriteBlocks_DMA,$(FORBIDDEN_SYMBOLS))
+REQUIRED_SYMBOLS += HAL_SD_WriteBlocks_DMA SDMMC_CmdWriteSingleBlock
 endif
 .PHONY: check
 check: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin
@@ -98,6 +98,8 @@ test:
 		../tests/firmware/test_reader_usb.cpp src/reader_usb.cpp src/card_reader.cpp src/msc_bot.cpp \
 		-o build/host/test_reader_usb
 	./build/host/test_reader_usb
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc ../tests/firmware/test_reader_dma.cpp -o build/host/test_reader_dma
+	./build/host/test_reader_dma
 
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
