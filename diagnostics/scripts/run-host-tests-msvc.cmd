@@ -13,12 +13,14 @@ cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\firmware\src" "%DIAG%\tests\firmwa
 cl /nologo /std:c++17 /W4 /WX /EHsc /DDIAG_CARD_READER=1 /I"%DIAG%\protocol" /I"%DIAG%\firmware\src" /I"%DIAG%\..\common\bootloader" "%DIAG%\tests\firmware\test_reader_app.cpp" "%DIAG%\firmware\src\diag_app.cpp" "%DIAG%\firmware\src\diag_core.cpp" "%DIAG%\protocol\ddp.cpp" /Fe:test_reader_app.exe || (popd & exit /b 1)
 cl /nologo /std:c++17 /W4 /WX /EHsc /DDIAG_USB_HOST_TEST=1 /I"%DIAG%\tests\firmware" /I"%DIAG%\firmware\src" "%DIAG%\tests\firmware\test_reader_usb.cpp" "%DIAG%\firmware\src\reader_usb.cpp" "%DIAG%\firmware\src\card_reader.cpp" "%DIAG%\firmware\src\msc_bot.cpp" /Fe:test_reader_usb.exe || (popd & exit /b 1)
 cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\firmware\src" "%DIAG%\tests\firmware\test_reader_dma.cpp" /Fe:test_reader_dma.exe || (popd & exit /b 1)
+cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\tests\firmware\sd_abort_stubs" /I"%DIAG%\firmware\src" "%DIAG%\tests\firmware\test_reader_abort.cpp" /Fe:test_reader_abort.exe || (popd & exit /b 1)
 "%CD%\test_diag_core.exe" "%DIAG%\protocol\vectors.txt" || (popd & exit /b 1)
 "%CD%\test_diag_app.exe" || (popd & exit /b 1)
 "%CD%\test_card_reader.exe" || (popd & exit /b 1)
 "%CD%\test_reader_app.exe" || (popd & exit /b 1)
 "%CD%\test_reader_usb.exe" || (popd & exit /b 1)
-"%CD%\test_reader_dma.exe"
+"%CD%\test_reader_dma.exe" || (popd & exit /b 1)
+"%CD%\test_reader_abort.exe"
 set RC=%ERRORLEVEL%
 popd
 exit /b %RC%

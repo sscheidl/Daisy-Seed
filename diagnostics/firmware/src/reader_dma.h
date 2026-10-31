@@ -19,7 +19,7 @@ class ReaderDmaBackend {
     virtual void Abort() = 0;
     virtual ~ReaderDmaBackend() = default;
 };
-enum class ReaderIoFault : uint8_t { None, Unavailable, Start, Dma, DmaTimeout, ProgramTimeout, Alignment };
+enum class ReaderIoFault : uint8_t { None, Unavailable, Start, Dma, DmaTimeout, ProgramTimeout, Alignment, CardStatus };
 struct ReaderIoStatus {
     ReaderIoFault fault = ReaderIoFault::None;
     uint32_t hal_error = 0, lba = 0, elapsed_ms = 0;
@@ -60,8 +60,10 @@ class ReaderDma {
         const uint32_t start = b_.Now();
         while(true) {
             if(!b_.Available()) return Fail(ReaderIoFault::Unavailable);
-            if(b_.Error()) return Fail(ReaderIoFault::Dma);
-            if(b_.CardReady()) return true;
+            if(b_.Error()) return Fail(ReaderIoFault::CardStatus);
+            const bool ready = b_.CardReady(); // CMD13 may set ErrorCode itself
+            if(b_.Error()) return Fail(ReaderIoFault::CardStatus);
+            if(ready) return true;
             if(b_.Now() - start >= kTimeoutMs) return Fail(ReaderIoFault::ProgramTimeout);
         }
     }
@@ -75,7 +77,7 @@ class ReaderDma {
     }
     bool Fail(ReaderIoFault fault) {
         status_.fault = fault;
-        status_.hal_error = b_.Error(); // capture BEFORE HAL_SD_Abort clears the error
+        status_.hal_error = b_.Error(); // preserve the operation error before recovery
         status_.elapsed_ms = b_.Now() - started_;
         b_.Abort();
         return false;

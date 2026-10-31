@@ -11,13 +11,15 @@ class Card : public diag::CardDevice {
     std::array<uint8_t, 4096> bytes{};
     bool open_ok = true, read_ok = true, write_ok = true, sync_ok = true;
     unsigned reads = 0, writes = 0, syncs = 0, closes = 0;
+    diag::CardReader* interrupt_on_write = nullptr;
     bool Open(uint32_t& sectors) override { sectors = 8; return open_ok; }
     bool Read(uint32_t lba, uint8_t* data) override {
         ++reads; if(!read_ok) return false;
         std::memcpy(data, bytes.data() + lba * 512, 512); return true;
     }
     bool Write(uint32_t lba, const uint8_t* data) override {
-        ++writes; if(!write_ok) return false;
+        ++writes; if(interrupt_on_write) interrupt_on_write->Interrupt();
+        if(!write_ok) return false;
         std::memcpy(bytes.data() + lba * 512, data, 512); return true;
     }
     bool Sync() override { ++syncs; return sync_ok; }
@@ -216,8 +218,20 @@ void Discovery() {
     CHECK(r.card.reads == 0);
     auto zero = Cbw(0x2a); r.Send(zero); r.Status(0); CHECK(r.card.writes == 0);
 }
+void InterruptedFailure() {
+    Rig r; CHECK(r.Share()); uint8_t block[512]{};
+    r.card.write_ok=false; r.card.interrupt_on_write=&r.reader;
+    CHECK(!r.reader.Write(0,block));
+    CHECK(r.reader.State()==diag::ReaderState::Interrupted);
+    CHECK(r.reader.Return()); CHECK(r.reader.Local());
+    r.card.interrupt_on_write=nullptr; CHECK(r.Share());
+    CHECK(!r.reader.Write(0,block)); CHECK(r.reader.State()==diag::ReaderState::Error);
+    r.reader.Interrupt(); // USB mailbox may report reset after the block call fails
+    CHECK(r.reader.State()==diag::ReaderState::Interrupted);
+    CHECK(r.reader.Return()); CHECK(r.reader.Local());
+}
 int main() {
-    Ownership(); RoundTrip(); ErrorsAndRecovery(); Discovery(); ThirteenCases();
+    InterruptedFailure(); Ownership(); RoundTrip(); ErrorsAndRecovery(); Discovery(); ThirteenCases();
     std::printf("card reader: %d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
 }

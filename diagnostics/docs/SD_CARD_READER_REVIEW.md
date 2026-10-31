@@ -1,11 +1,12 @@
 # SD card reader — independent review handover
 
-> **Reviewstand 31.10.2026: vorerst nicht mergen.** Der unabhängige Claude-Review
-> von PR #70 benennt einen offenen hohen Befund im HAL-Abbruchpfad. Die äußeren
-> Transferfristen begrenzen `HAL_SD_Abort()` nicht ausreichend. Review, Originaltext
-> und vier unveränderte Testlogs stehen im
-> [aktuellen Reviewnachweis](SD_CARD_READER_PR70_REVIEW_2026-10-31.md).
-> Fehlerfall auf Hardware: **NICHT GEMESSEN**; noch keine Firmwarekorrektur.
+> **Korrekturstand 0.3.2, 31.10.2026:** Die Befunde des unabhängigen Claude-Reviews
+> sind in Software bearbeitet: Reset-Abbruch ohne HAL-Warteschleife, zusätzliche
+> DMA/Sync-/Adaptertests, Statusdiagnose und Host/GUI/JSON sowie Reset-Zustandslogik.
+> [Korrekturbericht](PR70_REVIEW_FIXES_2026-10-31.md),
+> [archivierter Review mit Originaltext und Logs](SD_CARD_READER_PR70_REVIEW_2026-10-31.md).
+> Hardware-Gegenprobe 0.3.2: **NICHT GEMESSEN**. Keine erneute unabhängige
+> Claude-Prüfung der Korrektur behauptet.
 
 > Update 0.3.1 (31 October 2026): the first physical Windows probe of 0.3.0
 > enumerated CDC/MSC but failed to expose a readable card (SHARED → ERROR).

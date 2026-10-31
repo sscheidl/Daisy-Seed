@@ -398,6 +398,20 @@ class ReaderInfo:
     state: str
     sectors: int
     busy: bool
+    io: str | None = None
+    fault: int | None = None
+    he: int | None = None
+    lba: int | None = None
+    ms: int | None = None
+
+    @property
+    def diagnostic_text(self) -> str:
+        if self.io is None:
+            return ""
+        faults = ("OK", "unavailable", "start failed", "DMA error", "DMA timeout",
+                  "programming timeout", "buffer alignment", "card status error")
+        return (f"Last I/O: {self.io}; {faults[self.fault]}; HAL 0x{self.he:08X}; "
+                f"sector {self.lba}; elapsed {self.ms} ms.")
 
 
 def parse_reader(msg: Message) -> ReaderInfo:
@@ -406,7 +420,15 @@ def parse_reader(msg: Message) -> ReaderInfo:
         raise ProtocolError(f"READER: invalid state {state!r}")
     if msg.get("a") not in ("STATUS", "SHARE", "RETURN"):
         raise ProtocolError("READER: invalid or missing action")
-    return ReaderInfo(state, msg.int("sectors"), bool(msg.int("busy", 0, 1)))
+    keys = ("io", "fault", "he", "lba", "ms")
+    present = [key in msg.fields for key in keys]
+    diagnostics = {}
+    if any(present):
+        if not all(present) or msg.get("io") not in ("NONE", "READ", "WRITE", "SYNC"):
+            raise ProtocolError("READER: invalid or incomplete I/O diagnostics")
+        diagnostics = dict(io=msg.get("io"), fault=msg.int("fault", 0, 7),
+                           he=msg.int("he"), lba=msg.int("lba"), ms=msg.int("ms"))
+    return ReaderInfo(state, msg.int("sectors"), bool(msg.int("busy", 0, 1)), **diagnostics)
 
 
 FRESULT_TEXT = {

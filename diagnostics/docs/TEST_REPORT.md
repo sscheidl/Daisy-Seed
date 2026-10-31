@@ -1,5 +1,15 @@
 # Test report
 
+## Review-Korrekturen 0.3.2, 31.10.2026 — Software
+
+239 Python-/GUI-Tests bestanden; C++-Suites unter Clang normal/ASan/UBSan und
+MSVC /W4 /WX bestanden; beide ARM-Varianten samt Vektor-/Symbolprüfung bestanden.
+DMA-Suite: 4262 einzelne Prüfungen (einschließlich 4096 Bytevergleichen),
+Produktions-Abbruchadapter: 42 Prüfungen; keine Zählung unabhängiger Fehlerszenarien.
+**Hardware 0.3.2: NICHT GEMESSEN.** Die folgenden Hardwareprotokolle gelten für
+0.3.1. Abbruchkorrektur, Prüfgrenzen und Binärhashes:
+[Korrekturbericht](PR70_REVIEW_FIXES_2026-10-31.md).
+
 ## Gate-Loopback, 31.10.2026
 
 **GEMESSEN mit 0.3.1:** CV OUT 1 → GATE IN 1. Gehaltenes High über 2 s zählt

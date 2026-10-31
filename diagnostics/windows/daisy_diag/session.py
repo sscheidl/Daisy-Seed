@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import time
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import Enum
 from typing import Callable, Iterable, Protocol
 
@@ -156,6 +156,18 @@ class DeviceSession:
         events = list(self._events)
         self._events.clear()
         return events
+
+    def snapshot(self) -> dict:
+        """JSON-serializable observed state; missing measurements stay null."""
+        return {
+            "simulated": self.simulated, "connected": self.connected, "port": self.port,
+            **{key: asdict(value) if value is not None else None for key, value in
+               (("device", self.device), ("reader", self.reader), ("board", self.board),
+                ("sd", self.sd), ("system", self.sys))},
+            "counters": dict(frames=self.frames_ok, frame_errors=self.frame_errors,
+                             content_errors=self.content_errors, lost_frames=self.lost_frames,
+                             reconnects=self.reconnects),
+        }
 
     def send(self, body: str) -> bool:
         """Sends a command while connected. Returns False if it could not be sent."""

@@ -1,6 +1,10 @@
 # PR #70: unabhängiger Review und übernommene Testlogs
 
-**Stand 31.10.2026: vorerst nicht mergen. Befund 1 ist offen.**
+**Nachtrag 31.10.2026:** Die nachfolgenden Abschnitte archivieren den damaligen
+Reviewstand. Die späteren Korrekturen 0.3.2, Softwareprüfungen und noch offenen
+Hardwaretests stehen im [Korrekturbericht](PR70_REVIEW_FIXES_2026-10-31.md).
+Der Originalreview und seine Logs bleiben unverändert; der neue Fix wurde nicht
+von diesem älteren Claude-Review geprüft.
 
 Der Benutzer hat den unabhängigen Claude-Code-Review zu
 [PR #70](https://github.com/sscheidl/Daisy-Seed/pull/70) und vier zugehörige Logs

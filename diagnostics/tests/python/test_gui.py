@@ -55,7 +55,7 @@ def test_starts_in_simulation_and_is_marked(sim):
     assert window.sim_banner.isVisible() and "SIMULATION" in window.sim_banner.text()
     assert "SIMULATION" in window.windowTitle()
     assert window.status_pill.text() == "Connected (Simulation)"
-    assert window.info["fw"].text() == "DaisyDiagnostic 0.3.1-sim"
+    assert window.info["fw"].text() == "DaisyDiagnostic 0.3.2-sim"
     assert window.info["proto"].text().startswith("DDP v1")
     assert window.board.simulated and window.board.interactive
 
@@ -306,3 +306,20 @@ def test_cv_out_controls(sim):
     window.cv_mode_buttons["OFF"].click()
     step(0.05)
     assert window.board.state.cvgate.cv_out == [0, 0]
+
+
+def test_reader_diagnostics_display_and_saved_report(sim, monkeypatch, tmp_path):
+    import json
+    window, _ = sim
+    window.session._handle('READER state=ERROR sectors=123 busy=0 a=STATUS io=WRITE fault=7 he=32 lba=777 ms=1000', window.session._clock())
+    window._refresh_panels()
+    assert 'card status error' in window.reader_status.text()
+    assert 'WRITE' in window.reader_status.text() and '777' in window.reader_status.text()
+    destination = tmp_path / 'diagnostics.json'
+    monkeypatch.setattr(mw.QFileDialog, 'getSaveFileName', lambda *args: (str(destination),'JSON (*.json)'))
+    window.save_report.click()
+    report = json.loads(destination.read_text(encoding='utf-8'))
+    assert report['simulated'] is True
+    assert report['reader']['fault'] == 7 and report['reader']['he'] == 32
+    assert report['reader']['io'] == 'WRITE' and report['reader']['lba'] == 777
+    assert report['reader']['ms'] == 1000 and report['captured_at']

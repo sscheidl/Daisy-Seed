@@ -238,9 +238,11 @@ shows **Incompatible protocol** and sends no control commands.
 
 Since 0.3.1, reader status may also carry diagnostic fields: `io` (NONE/READ/WRITE/
 SYNC), `fault` (0=none, 1=unavailable, 2=start failed, 3=DMA error, 4=DMA timeout,
-5=programming timeout, 6=alignment), `he` (HAL error bits captured before abort),
+5=programming timeout, 6=alignment, 7=card status error since 0.3.2), `he` (HAL error bits captured before abort),
 `lba` and `ms` (failed operation elapsed milliseconds). Hosts may ignore them;
-the existing ownership fields and action acknowledgement are unchanged.
+the existing ownership fields and action acknowledgement are unchanged. The 0.3.2
+host retains all five fields, displays them and includes them in saved JSON reports.
+The diagnostic group is complete or absent for compatibility with older firmware.
 
 The writable firmware advertises `sdmsc` in HELLO capabilities. The protected
 build does not. The DDP v1 framing, CRC and existing fields remain unchanged.
@@ -273,7 +275,8 @@ No implicit return occurs on BYE, missing PING, application close or serial-port
 reconnect. On HELLO the host queries STATUS; it never automatically repeats SHARE.
 Requested reader commands tolerate 20 s; expiration means unknown ownership,
 not successful eject. While SHARED, the host tolerates a five-second receive gap
-because a polled block write plus programming wait can take two seconds. Other
+because a DMA wait plus card-programming wait can take two seconds; SDK command
+response deadlines are separate from these main-loop budgets. Other
 normal receive gaps retain the 1.5 s timeout.
 
 SHARED exposes a removable read/write LUN. A successful SCSI START STOP UNIT

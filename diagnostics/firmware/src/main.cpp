@@ -9,6 +9,7 @@
 #include "ff.h"
 #include "ff_gen_drv.h"
 #include "diag_app.h"
+#include "reader_abort.h"
 #include <atomic>
 #include <cstring>
 #ifdef DIAG_CARD_READER
@@ -152,7 +153,7 @@ extern "C" DRESULT RoRead(BYTE, BYTE* buff, DWORD sector, UINT count) {
         return RES_ERROR;
     while(hsd1.State == HAL_SD_STATE_BUSY) {  // set back to READY by the SDMMC1 IRQ
         if(HAL_GetTick() - start > kSdOpTimeoutMs || !SdBudgetLeft()) {
-            HAL_SD_Abort(&hsd1);
+            diag::AbortReaderSd(hsd1);
             return RES_ERROR;
         }
     }
@@ -269,7 +270,7 @@ class ReaderBackend final : public diag::ReaderDmaBackend {
     bool CardReady() override { return HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER; }
     void Clean(uint8_t* buffer) override { SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t*>(buffer), 512); }
     void Invalidate(uint8_t* buffer) override { SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t*>(buffer), 512); }
-    void Abort() override { HAL_SD_Abort(&hsd1); }
+    void Abort() override { diag::AbortReaderSd(hsd1); }
 };
 ReaderBackend reader_backend;
 diag::ReaderDma reader_dma(reader_backend, reader_dma_buffer);
@@ -298,7 +299,10 @@ class ReaderCard final : public diag::CardDevice {
     bool Sync() override {
         return reader_dma.Sync();
     }
-    void Close() override { HAL_SD_Abort(&hsd1); HAL_SD_DeInit(&hsd1); }
+    void Close() override {
+        reader_backend.Abort();
+        if(hsd1.Instance == SDMMC1) HAL_SD_DeInit(&hsd1);
+    }
 };
 ReaderCard reader_card;
 diag::CardReader card_reader(reader_card);

@@ -60,6 +60,7 @@ FORBIDDEN_SYMBOLS = \
 	f_utime f_expand f_setlabel f_fdisk f_putc f_puts f_printf f_forward
 # Guards against a vacuous check (empty or wrong symbol list).
 REQUIRED_SYMBOLS = RoRead RoWrite f_mount f_readdir SDMMC_CmdReadSingleBlock
+FORBIDDEN_SYMBOLS += HAL_SD_Abort
 ifeq ($(CARD_READER),1)
 # Only the reader permits single-buffer IDMA writes. PIO/IT writers, generic BSP/
 # disk writers, FatFs mutation, formatting, erase/lock and multi-buffer DMA stay banned.
@@ -106,6 +107,8 @@ test:
 	./build/host/test_reader_usb
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc ../tests/firmware/test_reader_dma.cpp -o build/host/test_reader_dma
 	./build/host/test_reader_dma
+	$(HOST_CXX) $(HOST_FLAGS) -I../tests/firmware/sd_abort_stubs -Isrc ../tests/firmware/test_reader_abort.cpp -o build/host/test_reader_abort
+	./build/host/test_reader_abort
 
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"

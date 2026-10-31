@@ -98,5 +98,22 @@
     "CV/gate voltages",
     "audio"
   ],
-  "initial_0_3_0_result": "SHARED changed to ERROR approximately one second after sharing; no test files written by test script"
+  "initial_0_3_0_result": "SHARED changed to ERROR approximately one second after sharing; no test files written by test script",
+  "reader_status_samples": [
+    "READER state=SHARED sectors=15523840 busy=0 a=STATUS io=WRITE fault=0 he=0 lba=14490 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=16772 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=17214 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=17608 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=18002 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=18396 ms=0",
+    "READER state=SHARED sectors=15523840 busy=1 a=STATUS io=WRITE fault=0 he=0 lba=18783 ms=0"
+  ],
+  "ejected_reader_status_samples": [
+    "READER state=EJECTED sectors=15523840 busy=0 a=STATUS io=SYNC fault=0 he=0 lba=0 ms=0"
+  ],
+  "diagnostic_evidence_added_from_existing_raw_logs": {
+    "date": "2026-10-31",
+    "new_hardware_measurement": false,
+    "manifest_sha256": "6cb59a3a4812314692c738bde62547c2280eb374dd69e9330f448bf823d52d48"
+  }
 }

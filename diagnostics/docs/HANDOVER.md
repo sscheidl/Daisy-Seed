@@ -1,5 +1,9 @@
 # Technical handover — Daisy Seed3 Hardware Diagnostic Suite
 
+> **0.3.2, 31.10.2026:** Review-Befunde in Software korrigiert; neue Version nicht
+> geflasht oder hardwaregemessen. Datierten 0.3.1-Hardwarestand getrennt halten.
+> [Korrekturen und Validierung](PR70_REVIEW_FIXES_2026-10-31.md).
+
 > **31.10.2026, GEMESSEN mit 0.3.1:** Kartenleser-Grundtest bestanden: FAT32-
 > Dateizugriffe unter Windows, Hashvergleich nach Auswerfen/erneutem Einbinden
 > und Auswerfen bei laufender EXE. Vollständige Hardware-Abnahme steht aus.

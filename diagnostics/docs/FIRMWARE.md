@@ -1,5 +1,29 @@
 # Diagnostic firmware — configuration, dependencies, architecture
 
+## Version 0.3.2
+
+Software correction following the independent PR #70 review. `reader_abort.h`
+replaces every diagnostic use of `HAL_SD_Abort`, including protected SD read
+recovery and reader Close. It masks only SDMMC1 IRQ, resets SDMMC1 through RCC
+(with barriers), clears the pending IRQ and sets the HAL handle to RESET.
+RCC reset quiesces both DPSM and IDMA without waiting for CMD12/card flags.
+The SD IRQ stays disabled until full initialization on an explicit later access.
+A failed transfer remains failed/quarantined; this is not a clean eject or card
+filesystem recovery. No new transfer is admitted by HAL while RESET.
+
+The pinned HAL is unmodified. Both image symbol checks now reject `HAL_SD_Abort`.
+Tests compile the actual abort function against observable CMSIS/RCC stubs,
+including a completion race and a retry before/after reinitialization. Write and
+Sync error tests are separate from these adapter checks. CMD13 errors are fault 7,
+not DMA errors. USB reset/removal preserves INTERRUPTED even if the I/O failure
+and the reset mailbox arrive in the opposite order. Host GUI and saved JSON retain
+all optional reader diagnostics.
+
+**Hardware 0.3.2: NICHT GEMESSEN.** Existing dated reader/CV/gate measurements
+refer to 0.3.1. The portable 1 s DMA/programming budgets do not include SDK command
+response deadlines; the new abort itself has no wait loop or HAL/card command.
+See the [review fixes and validation](PR70_REVIEW_FIXES_2026-10-31.md).
+
 ## Version 0.3.1
 
 The reader uses bounded single-buffer SDMMC IDMA rather than CPU-polled FIFO

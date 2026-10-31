@@ -213,3 +213,28 @@ def test_bootloader_waits_for_the_card():
     advance(clock, s)
     assert cable.device.bootloader_entries == 0 and cable.plugged
     assert any("ERR c=BOOT e=BUSY" in str(v) for k, v in s.drain_events() if k == "log")
+
+
+@pytest.mark.parametrize("fault", range(8))
+def test_reader_diagnostics_survive_session_and_json(fault):
+    import json
+    clock, _, session = setup()
+    session._handle(f"READER state=ERROR sectors=123 busy=0 a=STATUS io=WRITE fault={fault} he=32 lba=777 ms=1000", clock())
+    report = json.loads(json.dumps(session.snapshot()))
+    assert report['reader'] == dict(state='ERROR', sectors=123, busy=False,
+                                    io='WRITE', fault=fault, he=32, lba=777, ms=1000)
+    assert 'WRITE' in session.reader.diagnostic_text
+    assert '00000020' in session.reader.diagnostic_text
+    if fault == 7:
+        assert 'card status error' in session.reader.diagnostic_text
+
+
+@pytest.mark.parametrize("fields", [
+    'io=WRITE', 'io=OTHER fault=0 he=0 lba=0 ms=0',
+    'io=READ fault=8 he=0 lba=0 ms=0', 'io=SYNC fault=-1 he=0 lba=0 ms=0',
+    'io=READ fault=0 he=-1 lba=0 ms=0', 'io=READ fault=0 he=4294967296 lba=0 ms=0',
+    'io=READ fault=0 he=0 lba=-1 ms=0', 'io=READ fault=0 he=0 lba=0 ms=oops',
+])
+def test_reject_malformed_reader_diagnostics(fields):
+    with pytest.raises(p.ProtocolError):
+        p.parse_reader(p.parse_message('READER state=ERROR sectors=123 busy=0 a=STATUS '+fields))
