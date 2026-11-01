@@ -32,6 +32,7 @@ documentation only; `src/` and `Makefile` are identical).
 | `make -C diagnostics/firmware test` + both images | 0 | images byte-identical to `main` (`0564de97…f577`, `0be6f55c…4ea2`) after the reader move |
 | `python -m pytest diagnostics/tests/python` | 0 | 309 passed (281 before + 28 Nebulae profile) |
 | PyInstaller onefile (Linux smoke build) `--sim --selftest 3`, `--sim-nebulae --selftest 4` | 0 / 0 | packaging works; the Windows EXE is built by `Actions -> Hardware diagnostics` |
+| CI `Hardware diagnostics` run [41300219354](https://github.com/sscheidl/Daisy-Seed/actions/runs/41300219354) on `2170ad1` (manual, once) | success | Windows: 309 Python/GUI tests, EXE built and started with `--sim --selftest 5`; EXE SHA256 `72851f2b…50ed`; Linux: Diagnostics host + ASan/UBSan tests, both images, symbol policies |
 | `make all-projects` / `make test-projects` / `make test-release` | 0 / 0 / 0 | full repo regression incl. Toy Piano/Physical Modeling golden hashes |
 | `python3 -m unittest tests/test_components.py`, `make components` | 0 | suite selection updated for the new dependencies |
 | `git diff --check` | 0 | clean |

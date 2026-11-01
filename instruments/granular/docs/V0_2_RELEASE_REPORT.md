@@ -8,7 +8,7 @@ hardware acceptance are the human's decision.
 | --- | --- |
 | Branch | `claude/new-session-fqack4` (PR against `main`, not merged) |
 | Firmware | `instruments/granular/build/NebulaeOnDaisy-v0.2.0.bin`, 183,652 B, SHA256 `3734dde5ee3d6ab462706f3c711c9ff107539959a7dfbb71d9a7663a4e5e2f19`, reproduced bit-identically by a second clean build |
-| Control panel | Diagnostics app 0.5.0 (`diagnostics/windows`), Windows EXE from `Actions -> Hardware diagnostics` (see PR for the run and its SHA256) |
+| Control panel | Diagnostics app 0.5.0: `DaisyDiagnostic.exe`, 48,154,886 B, SHA256 `72851f2be103276ed1b27bf05fa6ccda85c7daeec4f8e723fc8b14aa69ea50ed`, source `2170ad1`, from the manual run [Hardware diagnostics #16](https://github.com/sscheidl/Daisy-Seed/actions/runs/41300219354) (Windows: 309 tests, EXE build, `--sim --selftest`; firmware job: Diagnostics host/ASan tests, both images and symbol policies, all success). Artifact `DaisyDiagnostic-windows-2170ad1…` kept 14 days; hash re-checked after download, `rtmidi` bundled |
 | Evidence | [VALIDATION.md](VALIDATION.md), [architecture](V0_2_ARCHITECTURE.md), [protocol](CONTROL_PROTOCOL.md) |
 
 ## Gates
