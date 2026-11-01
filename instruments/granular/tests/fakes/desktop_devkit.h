@@ -46,17 +46,21 @@ struct Hardware {
         void SetAudioBlockSize(unsigned) {}
         unsigned AudioBlockSize() const {return 256;}
         template<class T> void StartAudio(T) {}
+        bool audio_stopped=false;
+        void StopAudio() {audio_stopped=true;}
     } seed;
     struct Pot {float value=0;float Value() const {return value;}};
     struct Switch {bool state=true;bool Pressed() const {return state;}} sd_detect;
     struct Switch3 {unsigned value=0;unsigned Read() const {return value;}} tog_sw18;
+    Switch tog_sw17{false};
     struct Gate {bool pulse=false;bool Trig() {bool p=pulse;pulse=false;return p;}} gate_in[2];
     std::array<Pot,8> pot;
     std::array<DigitalControl,16> button;
     std::array<bool,16> pressed{};
     void Init() {for(auto& b:button) b.Init(true);}
     void UpdateAllControls() {for(unsigned i=0;i<16;++i) button[i].Debounce(!pressed[i]);}
-    void SetLed(unsigned,float) {}
+    std::array<float,16> led{};
+    void SetLed(unsigned i,float v) {led[i]=v;}
     void UpdateLeds() {}
     template<class T> void StartLowPriorityCallback(T,unsigned) {}
 };

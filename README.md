@@ -15,7 +15,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings, six models and global reverb; user-confirmed hardware/MIDI behavior and measured CPU headroom; model-switch spikes accepted as a known limitation ([results](instruments/physical-modeling/docs/HARDWARE_PLAYING_2026-10-22.md)) |
 | [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build without Mod on Daisy code, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [Composed Physical Modeling FX](docs/MODULAR_COMPONENTS.md) | `instruments/physical-modeling/` (`COMPOSED=1`) | Separate v0.2.0 pilot builds with Torus or Ambient Reverb adapters and Mod on Daisy; explicit component manifests; hardware validation pending |
-| [Nebulae on Daisy v0.1.1](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD PCM16 samples, Live recording, three UI modes and J7 USB MIDI; local software validation, hardware pending |
+| [Nebulae on Daisy v0.2.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD sample banks (FAT32/exFAT), Live recording, three UI modes, J7 USB MIDI and Windows SD management via the control panel; software pass, hardware pending |
 | [Looper v0.4.0](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import (48 or 44.1 kHz) on microSD, MIDI CC control over USB; host tests and ARM build pass; hardware test pending |
 | [Looper + Mod on Daisy](instruments/looper/docs/MODULATION.md) | `instruments/looper/` (`MOD=1`) | Separate build `make PROJECT=looper-mod`: Mod on Daisy matrix on Speed, Start, Size, Slice, Skip, Inertia, Frippertronics decay and Mix; regular image byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [Ambient Reverb v0.3.1](effects/reverb/) | `effects/reverb/` | Original stereo reverb with Desktop controls and variable-rate wet Stretch; host tests and ARM build pass; hardware test pending |
@@ -25,6 +25,7 @@ share the pinned libraries, toolchain, and board build configuration.
 | [Drive v0.1.0](effects/drive/) | `effects/drive/` | Soft/Hard/Tape/Fold saturation shared with Tape FX (`common/dsp/saturation.h`, Tape FX images byte-identical after the move), tone, auto level within 1 dB, wet-only FX contract; standalone `drive-fx` firmware; host/sanitizer/ARM checks pass, hardware untested |
 | [Stereo Delay v0.1.0](effects/stereo-delay/) | `effects/stereo-delay/` | Ping-pong and stereo L/R delay, free or synced up to 12 s (dotted whole at 30 BPM, 4.6 MB in SDRAM), feedback 95 % bounded, damping, host tail handling; standalone `delay-fx` firmware with MIDI clock; host/sanitizer/ARM checks pass, hardware untested |
 | [Acid Seq v0.1.0](sequencers/acid-seq/) | `sequencers/acid-seq/` | Product firmware `acid-seq` composed of the four components above: sequencer → voice → Drive → Delay → soft limiter, voice shared with MIDI channel 2, delay synced to the sequencer, all components over SQ; end-to-end golden; host/sanitizer/ARM checks pass, hardware untested, no release ([work order](docs/acid-seq/ARBEITSAUFTRAG.md)) |
+| [Hardware diagnostics v0.3.2](diagnostics/) | `diagnostics/` | Implemented SD diagnostics, Windows SD reader and CV/gate tests. **GEMESSEN 31 October 2026:** SD reader 0.3.2 normal I/O and write-interruption recovery; both CV and gate channels 0.3.1 functional loopbacks. [Scope, remaining checks and binary downloads](diagnostics/README.md#hardware-validation) |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
 | [Mod on Daisy](modules/mod-on-daisy/) | `modules/mod-on-daisy/`, editor in `editors/mod-on-daisy/` | Reusable 8×8 modulation matrix (header-only module, no instrument firmware). Phase 2 software done: core, host tests (ASan/UBSan/TSan, fuzzing), bench firmware `make PROJECT=mod-bench`, `tools/mod_probe.py`; hardware measurements pending ([validation](modules/mod-on-daisy/docs/VALIDATION.md)). Spec: [decisions](modules/mod-on-daisy/docs/DECISIONS.md), [architecture](modules/mod-on-daisy/docs/ARCHITECTURE.md), [MIDI protocol](modules/mod-on-daisy/docs/PROTOCOL.md), [storage](modules/mod-on-daisy/docs/STORAGE.md) |
 | [Mod on Daisy Editor](editors/mod-on-daisy/) | `editors/mod-on-daisy/` (`src/` JUCE, `web/` browser) | Matrix/source panel as JUCE standalone, browser and VST3 device editor. Simulators are opt-in. Core/protocol tests cover lost/corrupted frames; VST3 passes PC audio through and stores the modulation patch, not the complete instrument/FX state |
@@ -69,7 +70,9 @@ The same project layout is used in local checkouts and cloud workspaces.
 The Nebulae implementation was built and validated in the local Windows checkout.
 
 Hardware diagnostics (firmware, Windows GUI, protocol, tests) live in
-[diagnostics/](diagnostics/README.md).
+[diagnostics/](diagnostics/README.md). SD card reader and both CV/gate channels
+are implemented with recorded basic hardware tests; exact versions and limits
+are listed in the [validation table](diagnostics/README.md#hardware-validation).
 
 ## Build and test
 
@@ -100,7 +103,7 @@ projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
 The reverb image is `effects/reverb/build/AmbientReverb-v0.3.1.bin`.
 Nebulae builds with `make PROJECT=granular` to
-`instruments/granular/build/NebulaeOnDaisy-v0.1.1.bin`; its controls and hardware
+`instruments/granular/build/NebulaeOnDaisy-v0.2.0.bin`; its controls and hardware
 test are in the [project README](instruments/granular/README.md).
 
 Each implemented project is currently a separate firmware image. Switching

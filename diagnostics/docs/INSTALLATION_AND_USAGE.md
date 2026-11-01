@@ -92,15 +92,30 @@ Use `--help` for the English command-line reference.
 * **microSD:** No card / Card detected / Filesystem readable / Error.
 * **Audio inputs:** plug indicators. **Audio outputs have no jack detection.**
 * **CV / Gate:** CV IN 1/2 show the normalized value (−1…+1), GATE 1/2 a filled dot
-  when high and the rising-edge count, CV OUT 1/2 the mode and DAC code.
+  when high and the rising-edge count, CV OUT 1/2 the mode and DAC code. The jack
+  rings give Eurorack-style feedback: CV IN rings run red (−1) over amber (0) to
+  green (+1), CV OUT rings use the same scale over DAC code 0…4095 (no ring when
+  Off), GATE rings light green while high and flash briefly on every counted
+  rising edge. The scale is the normalized value, not volts.
 * Gray **N/I** labels mark unimplemented functions; tooltips explain them.
 
-### LED diagnostics
+### Control panel
 
-Modes: **All off**, **All on**, **Individual**, **Chase**, and **Buttons → LEDs**.
-Toggle D1–D16 using checkboxes or the board drawing. Adjust brightness from 0–100%
-and the chase step interval. The LEDs have no electrical feedback: inspect the
-physical board to verify light output and brightness.
+The right-hand panel is split into categories: **USB** (connection, versions,
+transport statistics, firmware update mode), **Buttons** (S1–S16 and LEDs D1–D16),
+**Pots** (VR1–VR8, toggles, plug and card detection), **CV / Gate** (with a rolling
+10 s trace), **Audio** (peak meters, test tone, input snapshot; firmware 0.4.0),
+**SD card** and **Log** (plus **Simulation** in simulation mode). Tab tooltips list the
+contents; **Save diagnostic report …** is reachable from every tab.
+
+### Buttons and LEDs
+
+By default each LED D1–D16 lights while its button S1–S16 is held (firmware mode
+**Buttons → LEDs**), on the real kit and in the simulation. The tab shows the press
+counts and offers the test patterns **All off**, **All on** and **Chase** (with step
+interval) plus brightness 0–100 %; **Buttons → LEDs** restores the default. The
+LEDs have no electrical feedback: inspect the physical board to verify light output
+and brightness.
 
 ### microSD
 
@@ -108,15 +123,17 @@ physical board to verify light output and brightness.
 in the root directory, and unmounts it. No writing or formatting occurs. Results
 show filesystem type, size, entry count, or a FatFs error. Streaming pauses during
 the test. Reads have a five-second budget plus initialization; the host allows
-up to 20 seconds for the result.
+up to 20 seconds for the result. If a CV OUT test signal is active, the app asks
+and switches it Off first, because the firmware holds the last DAC code while it
+blocks in the test.
 
-### Other panels
+### Pots, CV / Gate, Log
 
-Toggle/plug status, knob percentage and raw ADC table with resettable min/max,
-press counts, the **CV / Gate** panel, planned **Not implemented** features, and the
-event log.
+**Pots** shows knob percentage and raw ADC with min/max over every
+received frame (resettable; the reset also clears the CV min/max), the toggle
+positions, plug detection and card detection. **Log** holds the event log.
 
-The **CV / Gate** panel lists CV IN 1/2 (normalized, raw ADC, min/max), the gate
+The **CV / Gate** tab lists CV IN 1/2 (normalized, raw ADC, min/max), the gate
 states with edge counters, and the CV OUT test signal: **Off**, **Fixed** (two DAC
 codes 0–4095), **Ramp** (triangle) or **Saw** (rising sawtooth) with a period of
 50–10000 ms; CV OUT 2 carries the inverse in Ramp/Saw. CV OUT switches back to Off
@@ -129,8 +146,9 @@ Select **Simulation** or start with `--sim`. A yellow banner marks simulated dat
 Click buttons, drag knobs or turn the mouse wheel, select toggle positions, and
 toggle microSD/audio input plugs. Click a GATE jack to toggle it and turn the
 mouse wheel over a CV IN jack to change its value; **Patch cables CV OUT → CV IN**
-feeds the outputs back (simulation assumption: code 0–4095 = CV IN 0–+1). Controls simulate USB unplug/replug, frozen
-firmware, corrupt frames, demo animation, and cards with/without a filesystem.
+feeds the outputs back (simulation assumption: code 0–4095 = CV IN 0–+1). The
+**Simulation** tab simulates USB unplug/replug, frozen firmware, corrupt frames,
+Windows eject / bus reset, and cards with/without a filesystem.
 The model uses the same wire protocol; it is not a replacement for real hardware.
 
 ## 6. Troubleshooting

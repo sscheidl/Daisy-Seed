@@ -121,6 +121,18 @@ void RFFT::Forward(float* d) {
     d[1] = re_[FFT_N/2];        // Nyquist real
     for (int k = 1; k < FFT_N/2; ++k) { d[2*k] = re_[k]; d[2*k+1] = im_[k]; }
 }
+void RFFT::ForwardPair(float* a, float* b) {
+    for (int i = 0; i < FFT_N; ++i) { re_[i] = a[i]; im_[i] = b[i]; }
+    Cfft(re_, im_, false);
+    // Z = A + jB with A, B real: A[k] = (Z[k] + conj Z[N-k])/2, B[k] = (Z[k] - conj Z[N-k])/2j.
+    a[0] = re_[0];           b[0] = im_[0];             // DC
+    a[1] = re_[FFT_N/2];     b[1] = im_[FFT_N/2];       // Nyquist
+    for (int k = 1; k < FFT_N/2; ++k) {
+        const float zr = re_[k], zi = im_[k], wr = re_[FFT_N-k], wi = im_[FFT_N-k];
+        a[2*k] = 0.5f*(zr + wr); a[2*k+1] = 0.5f*(zi - wi);
+        b[2*k] = 0.5f*(zi + wi); b[2*k+1] = 0.5f*(wr - zr);
+    }
+}
 void RFFT::Inverse(float* d) {
     re_[0] = d[0]; im_[0] = 0.0f;
     re_[FFT_N/2] = d[1]; im_[FFT_N/2] = 0.0f;
@@ -158,7 +170,8 @@ void Mincer::Process(const double* frame_pos, const PcmView& buf, unsigned chann
                 bwin_[i] = buf.Read(pos - double(HOP)*pitch, channel)*win_[i];
                 pos += pitch;
             }
-            fft_.Forward(bwin_); fft_.Forward(fwin_);
+            if (packed_) fft_.ForwardPair(bwin_, fwin_);
+            else { fft_.Forward(bwin_); fft_.Forward(fwin_); }
             bwin_[FFT_N] = bwin_[1]; bwin_[FFT_N+1] = 0.0f;
             fwin_[FFT_N] = fwin_[1]; fwin_[FFT_N+1] = 0.0f;
             for (int i = 0; i < FFT_N+2; i += 2) {           // phase diff vs prev

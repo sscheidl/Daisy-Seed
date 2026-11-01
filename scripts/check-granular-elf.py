@@ -52,9 +52,17 @@ assert regions['DTCM'][1]-used['DTCM'] >= 16*1024
 assert symbols['__neb_heap_end'][0]-symbols['__neb_heap_start'][0] == 65536
 assert 0x30008000 <= symbols['__neb_heap_start'][0] < symbols['__neb_heap_end'][0] <= 0x30048000
 assert '_sbrk' in symbols
-sector = symbols['sector_buffer']
-assert sector[0] % 32 == 0 and sector[1] == 512
-assert 0x24000000+len(image) <= sector[0] < sector[0]+512 <= 0x24078000
+# SDMMC1 IDMA buffers: the read-only bounce buffer (performance) and the card reader's
+# block buffer (SD management). Both 512 B, cache-line aligned, AXI SRAM after the image.
+for fragment in ('sector_buffer', 'reader_dma_buffer'):
+    matches = [(n, v, size) for n, (v, size) in symbols.items() if fragment in n]
+    assert len(matches) == 1, f'{fragment}: {matches}'
+    _, address, size = matches[0]
+    assert address % 32 == 0 and size == 512
+    assert 0x24000000+len(image) <= address < address+512 <= 0x24078000
+# Boot intent: fixed backup SRAM words above libDaisy's boot_info (V0_2_ARCHITECTURE.md).
+if '_ebackup_sram' in symbols:
+    assert symbols['_ebackup_sram'][0] <= 0x38800F00
 for fragment in ('live_banks', 'engine_storage'):
     matches = [(n, v, size) for n, (v, size) in symbols.items() if fragment in n]
     assert len(matches) == 1

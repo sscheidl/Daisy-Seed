@@ -91,7 +91,9 @@ Host                                    Seed3
 | `RATE` | `hz=10..100` | `ACK c=RATE hz=<n>` |
 | `LED` | `m=OFF\|ON\|MASK\|CHASE\|FOLLOW`, optional `mask=<hex4>`, `br=0..100`, `ms=20..2000` | `ACK c=LED m=... mask=... br=... ms=...` |
 | `CVOUT` | `m=OFF\|FIX\|RAMP\|SAW`, optional `c1=0..4095`, `c2=0..4095`, `ms=50..10000` | `ACK c=CVOUT m=... c1=... c2=... ms=...`; `ERR c=CVOUT e=SESSION` without HELLO (firmware 0.3.0) |
-| `SDTEST` | — | `SD ...` (read-only test) |
+| `SDTEST` | — | `SD ...` (read-only test); firmware 0.4.0 switches CV OUT and the test tone off before it blocks |
+| `TONE` | `m=OFF\|SINE`, optional `f=20..20000`, `a=0..5000`, `ch=L\|R\|LR` | `ACK c=TONE m=... f=... a=... ch=...`; `ERR c=TONE e=SESSION` without HELLO (firmware 0.4.0, capability `audio`) |
+| `SCOPE` | optional `n=256..2048`, `t=0\|1` | `ACK c=SCOPE n=... t=... k=<chunks>` then `k` `SC` frames; `ERR c=SCOPE e=SESSION`, `e=BUSY` while a capture runs, `e=UNSUPPORTED` without audio (firmware 0.4.0) |
 | `BOOT` | — | `ACK c=BOOT`, then the firmware restarts into the Daisy bootloader (no timeout); `ERR c=BOOT e=SESSION` without HELLO, `e=BUSY` while Windows owns the card |
 | `BYE` | — | `ACK c=BYE`, streaming off |
 
@@ -109,6 +111,7 @@ with a valid CRC.
 | `MASK` | Individual LEDs: bit 0 = D1 … bit 15 = D16 (`mask=8001` selects D1 and D16) |
 | `CHASE` | D1 → D16, one step every `ms` (default 120 ms) |
 | `FOLLOW` | LED follows its button's held state; default after startup |
+| `POTDIM` | All 16 LEDs on, brightness follows VR1 (0..100 %); ST `br` reports the effective value (firmware 0.4.0) |
 
 `br` sets PWM brightness in percent (default 100). LEDs have **no electrical
 feedback**: ST field `l` is the commanded state, not proof of actual light output.
@@ -132,7 +135,8 @@ HELLO proto=1 fw=0.3.0 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM bl=v
 ```
 
 `cvin`, `gate` and `cvout` (firmware 0.3.0) announce the CV/gate fields in `ST` and
-the `CVOUT` command.
+the `CVOUT` command. `audio` (firmware 0.4.0) announces `TONE`, `SCOPE`/`SC`, the
+`AU` frames and the LED mode `POTDIM`; `fw=0.4.0` HELLOs end in `…,cvout,audio`.
 
 `bl` is the bootloader version recognized by libDaisy: `v6_1` means v6.1 or newer;
 other values are `v6_0`, `LT_v6_0`, and `NONE`.
@@ -229,12 +233,75 @@ button presses during the pause. Each test reinitializes the card, supporting sw
 
 See the host-to-firmware command table above.
 
+## Audio extension (firmware 0.4.0, capability `audio`)
+
+Firmware with `audio` in `caps` carries a test tone generator, peak meters and an
+input snapshot. All values are digital (fraction of full scale or int16 samples);
+the analog levels of the codec, jacks and headphone amplifier are not measured.
+
+### TONE — test tone on AUDIO OUT
+
+`TONE m=SINE f=1000 a=1000 ch=LR` starts a sine of `f` Hz with amplitude `a` in
+1/10000 of full scale (`a=1000` ≈ −20 dBFS, default; the firmware caps `a` at
+**5000** ≈ −6 dBFS) on the left, right or both outputs. Absent optional fields
+keep their previous value; `m=OFF` silences the outputs. The tone needs a session
+and ends with it (BYE, 3 s timeout). Independently of the main loop, the audio
+callback mutes the tone when the main loop has not refreshed it for 1 s, so a
+blocked main loop (SD test, card-reader initialisation) or a crashed firmware
+cannot leave a tone on; the firmware also switches it off explicitly before SDTEST.
+
+### AU — peak levels, 10 Hz
+
+```text
+AU il=10000 ir=0 ol=5000 or=1 tone=SINE,1000,1000,LR
+```
+
+| Field | Meaning |
+| --- | --- |
+| `il`, `ir` | Peak |sample| of AUDIO IN left/right since the previous AU frame, `0..10000` = `0.0..1.0` FS |
+| `ol`, `or` | Same for the samples written to AUDIO OUT (the tone, before the codec) |
+| `tone` | Active tone: mode, frequency, amplitude, channels |
+
+Sent every 100 ms while a session is active (and with every `GET`). Hosts convert
+to dBFS as `20·log10(value/10000)`; `0` is digital silence.
+
+### SCOPE / SC — input snapshot
+
+`SCOPE n=1024 t=1` arms a capture of `n` stereo input frames (256..2048, i.e.
+5–43 ms at 48 kHz). With `t=1` the capture starts at the next rising zero crossing
+of the left input, or after 200 ms without one; `t=0` starts immediately. The
+firmware answers `ACK c=SCOPE n=1024 t=1 k=26` and, once the callback has filled
+the buffer, sends `k` chunks:
+
+```text
+SC i=0 k=26 n=1024 d=00F0FF1000F1FF0F…
+```
+
+`d` holds 40 stereo frames per chunk (the last one fewer), each frame as left
+then right int16 in two's-complement hex (`FFCE` = −50). Chunks are sent in order,
+a few per main-loop step, interleaved with the normal stream; the host reassembles
+`k` chunks with equal `n`. A second `SCOPE` while one capture is pending is
+answered with `ERR c=SCOPE e=BUSY`; builds without audio answer `e=UNSUPPORTED`.
+A capture that is still open when the session ends is dropped.
+
+Frequency and level derived from a snapshot (zero crossings, peak) are host-side
+measurements of the digital input; with a cable from AUDIO OUT to AUDIO IN and the
+tone running they form the audio loopback check.
+
 ## Versioning
 
 `proto=1` identifies this specification. A host receiving another major version
 shows **Incompatible protocol** and sends no control commands.
 
 ## Optional card reader extension (firmware/application 0.2.0)
+
+Since 0.3.1, reader status may also carry diagnostic fields: `io` (NONE/READ/WRITE/
+SYNC), `fault` (0=none, 1=unavailable, 2=start failed, 3=DMA error, 4=DMA timeout,
+5=programming timeout, 6=alignment, 7=card status error since 0.3.2), `he` (HAL error bits captured before abort),
+`lba` and `ms` (failed operation elapsed milliseconds). Hosts may ignore them;
+the existing ownership fields and action acknowledgement are unchanged. The 0.3.2
+host retains all five fields, displays them and includes them in saved JSON reports.
+The diagnostic group is complete or absent for compatibility with older firmware.
 
 The writable firmware advertises `sdmsc` in HELLO capabilities. The protected
 build does not. The DDP v1 framing, CRC and existing fields remain unchanged.
@@ -267,7 +334,8 @@ No implicit return occurs on BYE, missing PING, application close or serial-port
 reconnect. On HELLO the host queries STATUS; it never automatically repeats SHARE.
 Requested reader commands tolerate 20 s; expiration means unknown ownership,
 not successful eject. While SHARED, the host tolerates a five-second receive gap
-because a polled block write plus programming wait can take two seconds. Other
+because a DMA wait plus card-programming wait can take two seconds; SDK command
+response deadlines are separate from these main-loop budgets. Other
 normal receive gaps retain the 1.5 s timeout.
 
 SHARED exposes a removable read/write LUN. A successful SCSI START STOP UNIT

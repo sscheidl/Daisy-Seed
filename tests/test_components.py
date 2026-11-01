@@ -127,11 +127,16 @@ class ComponentTests(unittest.TestCase):
             self.assertTrue(suites[key], key)
 
     def test_sd_driver_consumers(self):
-        # The shared SD driver is not linked by any firmware yet: only its own suite runs.
+        # Nebulae 0.2 links the shared read-only driver and the card reader; the
+        # Diagnostics card-reader image links only the reader. Nothing else runs.
         suites = selection.select_suites(['common/sd/ro_sd.c'])
-        self.assertTrue(suites['sd'])
-        for key in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape', 'bootloader', 'diagnostics'):
+        self.assertTrue(suites['sd'] and suites['granular'] and suites['submodules'])
+        for key in ('toy', 'physical', 'looper', 'reverb', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
+        reader = selection.select_suites(['common/sd/reader/msc_bot.cpp'])
+        self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'])
+        self.assertFalse(reader['toy'])
+        self.assertTrue(selection.select_suites(['diagnostics/protocol/ddp.cpp'])['granular'])
         self.assertTrue(selection.select_suites(['Makefile'])['sd'])
 
     def test_acid_seq_components(self):

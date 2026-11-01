@@ -77,6 +77,42 @@ def test_pressed_button_is_visibly_different(app):
     assert pixel(board, released, other) == pixel(board, pressed, other)
 
 
+def ring_pixel(board, image, key: str) -> QColor:
+    centre = board_mod.CV_JACKS[key][0]
+    return pixel(board, image, centre + QPointF(0, -board_mod.JACK_RING_R))
+
+
+def test_cv_jack_rings_run_red_to_green_and_gate_rings_flash(app):
+    board = board_mod.BoardWidget()
+    now = [100.0]
+    board.clock = lambda: now[0]
+    cg = p.CvGateState(cv=[-1.0, 1.0], gates=[True, False], gate_counts=[0, 0],
+                       cv_out_mode="FIX", cv_out=[0, 4095])
+    board.state = p.BoardState(cvgate=cg)
+    image = render(board)
+    red, green = ring_pixel(board, image, "cv_in_1"), ring_pixel(board, image, "cv_in_2")
+    assert red.red() > 150 and red.green() < 110, red.name()
+    assert green.green() > 130 and green.red() < 110, green.name()
+    assert ring_pixel(board, image, "cv_out_1").red() > 150
+    assert ring_pixel(board, image, "cv_out_2").green() > 130
+    gate_high = ring_pixel(board, image, "gate_in_1")
+    assert gate_high.green() > 130 and gate_high.red() < 110  # high -> green ring
+    assert ring_pixel(board, image, "gate_in_2").green() < 110  # low, no edge -> plain
+    # A counted rising edge flashes the ring even though the level is low again.
+    board.state = p.BoardState(cvgate=p.CvGateState(gates=[False, False], gate_counts=[0, 1]))
+    assert board.gate_flashing(1) and board.flash_pending()
+    flashed = ring_pixel(board, render(board), "gate_in_2")
+    assert flashed.green() > 130 and flashed.red() < 110
+    now[0] += board_mod.GATE_FLASH_S + 0.01
+    assert not board.gate_flashing(1)
+    assert ring_pixel(board, render(board), "gate_in_2").green() < 110
+    # CV OUT Off shows no ring; the colour scale never leaves the warm range.
+    board.state = p.BoardState(cvgate=p.CvGateState(cv_out_mode="OFF"))
+    assert ring_pixel(board, render(board), "cv_out_1").green() < 110
+    for value in (-1.0, -0.5, 0.0, 0.5, 1.0):
+        assert not is_cyan_or_violet(board_mod.cv_ring_color(value))
+
+
 def test_status_dot_colour_follows_connection(app):
     clock = FakeClock()
     window = mw.MainWindow(simulation=True, clock=clock)

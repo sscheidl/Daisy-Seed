@@ -38,7 +38,8 @@ static int Expired(uint32_t start) {
 }
 
 static DRESULT Fail(void) {
-    HAL_SD_Abort(&hsd1);
+    if(config.abort) config.abort();
+    else HAL_SD_Abort(&hsd1);
     status |= STA_NOINIT;
     return RES_ERROR;
 }

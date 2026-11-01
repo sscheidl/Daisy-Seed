@@ -2,21 +2,26 @@
 rem Builds and runs the firmware host tests with MSVC (Visual Studio Build Tools).
 setlocal
 set "DIAG=%~dp0.."
+set "READER=%DIAG%\..\common\sd\reader"
 for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS=%%i"
 if not defined VS (echo Visual Studio C++ Build Tools not found & exit /b 2)
 call "%VS%\VC\Auxiliary\Build\vcvars64.bat" >nul || exit /b 2
 if not exist "%DIAG%\firmware\build\host-msvc" mkdir "%DIAG%\firmware\build\host-msvc"
 pushd "%DIAG%\firmware\build\host-msvc"
-cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\protocol" /I"%DIAG%\firmware\src" /I"%DIAG%\..\common\bootloader" "%DIAG%\tests\firmware\test_diag_core.cpp" "%DIAG%\firmware\src\diag_app.cpp" "%DIAG%\firmware\src\diag_core.cpp" "%DIAG%\protocol\ddp.cpp" /Fe:test_diag_core.exe || (popd & exit /b 1)
-cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\protocol" /I"%DIAG%\firmware\src" /I"%DIAG%\..\common\bootloader" "%DIAG%\tests\firmware\test_diag_app.cpp" "%DIAG%\firmware\src\diag_app.cpp" "%DIAG%\firmware\src\diag_core.cpp" "%DIAG%\protocol\ddp.cpp" /Fe:test_diag_app.exe || (popd & exit /b 1)
-cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\firmware\src" "%DIAG%\tests\firmware\test_card_reader.cpp" "%DIAG%\firmware\src\card_reader.cpp" "%DIAG%\firmware\src\msc_bot.cpp" /Fe:test_card_reader.exe || (popd & exit /b 1)
-cl /nologo /std:c++17 /W4 /WX /EHsc /DDIAG_CARD_READER=1 /I"%DIAG%\protocol" /I"%DIAG%\firmware\src" /I"%DIAG%\..\common\bootloader" "%DIAG%\tests\firmware\test_reader_app.cpp" "%DIAG%\firmware\src\diag_app.cpp" "%DIAG%\firmware\src\diag_core.cpp" "%DIAG%\protocol\ddp.cpp" /Fe:test_reader_app.exe || (popd & exit /b 1)
-cl /nologo /std:c++17 /W4 /WX /EHsc /DDIAG_USB_HOST_TEST=1 /I"%DIAG%\tests\firmware" /I"%DIAG%\firmware\src" "%DIAG%\tests\firmware\test_reader_usb.cpp" "%DIAG%\firmware\src\reader_usb.cpp" "%DIAG%\firmware\src\card_reader.cpp" "%DIAG%\firmware\src\msc_bot.cpp" /Fe:test_reader_usb.exe || (popd & exit /b 1)
+cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\protocol" /I"%DIAG%\firmware\src" /I"%READER%" /I"%DIAG%\..\common\bootloader" "%DIAG%\tests\firmware\test_diag_core.cpp" "%DIAG%\firmware\src\diag_app.cpp" "%DIAG%\firmware\src\diag_core.cpp" "%DIAG%\protocol\ddp.cpp" /Fe:test_diag_core.exe || (popd & exit /b 1)
+cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\protocol" /I"%DIAG%\firmware\src" /I"%READER%" /I"%DIAG%\..\common\bootloader" "%DIAG%\tests\firmware\test_diag_app.cpp" "%DIAG%\firmware\src\diag_app.cpp" "%DIAG%\firmware\src\diag_core.cpp" "%DIAG%\protocol\ddp.cpp" /Fe:test_diag_app.exe || (popd & exit /b 1)
+cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\firmware\src" /I"%READER%" "%DIAG%\tests\firmware\test_card_reader.cpp" "%READER%\card_reader.cpp" "%READER%\msc_bot.cpp" /Fe:test_card_reader.exe || (popd & exit /b 1)
+cl /nologo /std:c++17 /W4 /WX /EHsc /DDIAG_CARD_READER=1 /I"%DIAG%\protocol" /I"%DIAG%\firmware\src" /I"%READER%" /I"%DIAG%\..\common\bootloader" "%DIAG%\tests\firmware\test_reader_app.cpp" "%DIAG%\firmware\src\diag_app.cpp" "%DIAG%\firmware\src\diag_core.cpp" "%DIAG%\protocol\ddp.cpp" /Fe:test_reader_app.exe || (popd & exit /b 1)
+cl /nologo /std:c++17 /W4 /WX /EHsc /DDIAG_USB_HOST_TEST=1 /I"%DIAG%\tests\firmware" /I"%DIAG%\firmware\src" /I"%READER%" "%DIAG%\tests\firmware\test_reader_usb.cpp" "%READER%\reader_usb.cpp" "%READER%\card_reader.cpp" "%READER%\msc_bot.cpp" /Fe:test_reader_usb.exe || (popd & exit /b 1)
+cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\firmware\src" /I"%READER%" "%DIAG%\tests\firmware\test_reader_dma.cpp" /Fe:test_reader_dma.exe || (popd & exit /b 1)
+cl /nologo /std:c++17 /W4 /WX /EHsc /I"%DIAG%\tests\firmware\sd_abort_stubs" /I"%DIAG%\firmware\src" /I"%READER%" "%DIAG%\tests\firmware\test_reader_abort.cpp" /Fe:test_reader_abort.exe || (popd & exit /b 1)
 "%CD%\test_diag_core.exe" "%DIAG%\protocol\vectors.txt" || (popd & exit /b 1)
 "%CD%\test_diag_app.exe" || (popd & exit /b 1)
 "%CD%\test_card_reader.exe" || (popd & exit /b 1)
 "%CD%\test_reader_app.exe" || (popd & exit /b 1)
-"%CD%\test_reader_usb.exe"
+"%CD%\test_reader_usb.exe" || (popd & exit /b 1)
+"%CD%\test_reader_dma.exe" || (popd & exit /b 1)
+"%CD%\test_reader_abort.exe"
 set RC=%ERRORLEVEL%
 popd
 exit /b %RC%

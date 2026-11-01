@@ -1,0 +1,155 @@
+{
+  "date": "2026-10-31",
+  "status": "GEMESSEN",
+  "patch": "CV OUT 1 -> GATE IN 2 (operator acknowledged)",
+  "port": "COM15",
+  "device": {
+    "protocol": 1,
+    "firmware": "0.3.1",
+    "app": "DaisyDiagnostic",
+    "device": "seed3-desktop",
+    "boot": "BOOT_SRAM",
+    "bootloader": "v6_1",
+    "libdaisy": "f715e48",
+    "capabilities": [
+      "btn",
+      "pot",
+      "potraw",
+      "sw17",
+      "sw18",
+      "sd",
+      "sdread",
+      "jack",
+      "led",
+      "boot",
+      "cvin",
+      "gate",
+      "cvout",
+      "sdmsc"
+    ],
+    "simulated": false
+  },
+  "completed": true,
+  "errors": [],
+  "off_confirmed": true,
+  "final_gate_states": [
+    false,
+    false
+  ],
+  "baseline_counts": [
+    21,
+    0
+  ],
+  "final_counts": [
+    21,
+    21
+  ],
+  "expected_rising_edges": 21,
+  "observed_count_delta": [
+    0,
+    21
+  ],
+  "counters": {
+    "frames": 1013,
+    "frame_errors": 0,
+    "content_errors": 0,
+    "lost_frames": 0,
+    "reconnects": 0
+  },
+  "system": {
+    "uptime_s": 2129,
+    "control_rate_hz": 1000,
+    "tx_ok": 9382,
+    "tx_busy": 336,
+    "tx_drop": 0,
+    "rx_ok": 771,
+    "rx_bad": 0,
+    "rate_hz": 50
+  },
+  "reader_initial": {
+    "state": "SHARED",
+    "sectors": 15523840,
+    "busy": false
+  },
+  "reader_final": {
+    "state": "SHARED",
+    "sectors": 15523840,
+    "busy": false
+  },
+  "duration_seconds": 17.594,
+  "source_commit": "b89186576837f62eb7e4d5687a465af9e3e31338",
+  "firmware_sha256": "bf23fc4978cb693c801d3d917d4e7ba9ec59a0ffd7fef07cc967c5c06345b7bf",
+  "raw_evidence": {
+    "filename": "gate2-loopback-214920.json",
+    "sha256": "a043bc2a90ffce07c26ff4f512d042a212992ed58009fb289bc472ce4daf8cf5",
+    "location": ".work/diagnostics-cv-test-2026-10-31/ (local only)"
+  },
+  "test": {
+    "low_dac_code1": 0,
+    "high_dac_code1": 4095,
+    "channel2_code": 0,
+    "baseline_off_seconds": 1,
+    "held_high_seconds": 2,
+    "held_low_seconds": 1,
+    "pulse_count": 20,
+    "requested_high_seconds": 0.25,
+    "requested_low_seconds": 0.25,
+    "settling_excluded_seconds": 0.05,
+    "observation_phases": 44,
+    "all_observed_gate2_states_match_expected": true,
+    "gate1_always_low_in_observation_phases": true,
+    "gate1_count_unchanged": 21,
+    "all_observation_phase_counts_stable": true,
+    "pulse_high_counts": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "pulse_low_counts": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ]
+  },
+  "limits": [
+    "Only GATE IN 2 patched in this run; Gate 1 result recorded separately",
+    "No oscilloscope or independent voltage/threshold measurement",
+    "Only slow host-commanded pulses; short pulses and precise timing not tested",
+    "No counter wrap observed",
+    "No SDTEST or flash command used"
+  ]
+}

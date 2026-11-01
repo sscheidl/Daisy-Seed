@@ -6,6 +6,7 @@ Geometry follows the official Electro-Smith board photo / pinout graphic
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
@@ -44,6 +45,24 @@ CV_JACKS = {
     "gate_in_2": (QPointF(718, 175), "GATE 2"),
 }
 MIDI_JACKS = {"midi_out": (115.0, "OUT"), "midi_thru": (255.0, "THRU"), "midi_in": (395.0, "INPUT")}
+GATE_FLASH_S = 0.15  # jack ring flash after each counted rising edge (like Eurorack LED rings)
+JACK_RING_R = 17.0
+
+
+def cv_ring_color(value: float) -> QColor:
+    """Jack-ring colour for a normalized CV value: red at -1, amber at 0, green at +1.
+
+    The scale is the firmware's normalized range, not volts (the analog scaling is
+    unmeasured), so the ring shows direction and magnitude, not a calibrated voltage.
+    """
+    t = max(-1.0, min(1.0, value))
+    if t < 0:
+        a, b, f = theme.ERROR, theme.WARN, t + 1.0
+    else:
+        a, b, f = theme.WARN, theme.OK, t
+    return QColor(round(a.red() + (b.red() - a.red()) * f),
+                  round(a.green() + (b.green() - a.green()) * f),
+                  round(a.blue() + (b.blue() - a.blue()) * f))
 PHONES_RECT = QRectF(1000, 545, 45, 125)
 RV1_CENTER = QPointF(1130, 530)
 
@@ -105,15 +124,16 @@ class BoardWidget(QWidget):
     jackToggled = Signal(str)  # "left" / "right"
     gateToggled = Signal(int)
     cvChanged = Signal(int, float)
-    ledClicked = Signal(int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setMinimumSize(640, 380)
         self.setMouseTracking(True)
-        self.state: p.BoardState | None = None
+        self.clock = time.monotonic  # injectable for deterministic tests
+        self._state: p.BoardState | None = None
+        self._gate_counts_seen: list[int] | None = None
+        self._gate_flash_until = [0.0] * p.NUM_GATES
         self.interactive = False  # simulation: inputs can be operated with the mouse
-        self.led_selectable = False  # LED mode MASK: LEDs can be toggled
         self.simulated = False
         self.connected = False
         self.sd_display = SdDisplay('No data', theme.MUTED)
@@ -123,6 +143,33 @@ class BoardWidget(QWidget):
         self._held_button: int | None = None
         self._transform_scale = 1.0
         self._offset = QPointF()
+
+    # ---- live state ---------------------------------------------------------------------
+    @property
+    def state(self) -> p.BoardState | None:
+        return self._state
+
+    @state.setter
+    def state(self, st: p.BoardState | None) -> None:
+        # Every counted rising edge starts a short ring flash, so triggers shorter than
+        # the stream interval remain visible even though the level is already low again.
+        cg = st.cvgate if st is not None else None
+        if cg is None:
+            self._gate_counts_seen = None
+        else:
+            now = self.clock()
+            if self._gate_counts_seen is not None:
+                for i, count in enumerate(cg.gate_counts):
+                    if count != self._gate_counts_seen[i]:
+                        self._gate_flash_until[i] = now + GATE_FLASH_S
+            self._gate_counts_seen = list(cg.gate_counts)
+        self._state = st
+
+    def gate_flashing(self, index: int) -> bool:
+        return self.clock() < self._gate_flash_until[index]
+
+    def flash_pending(self) -> bool:
+        return any(self.gate_flashing(i) for i in range(p.NUM_GATES))
 
     # ---- coordinate mapping -----------------------------------------------------------
     def _update_transform(self) -> None:
@@ -184,9 +231,6 @@ class BoardWidget(QWidget):
         if hit is None or event.button() != Qt.LeftButton:
             return
         kind, index = hit
-        if kind == "led" and self.led_selectable:
-            self.ledClicked.emit(index)
-            return
         if not self.interactive:
             return
         if kind == "button":
@@ -214,10 +258,9 @@ class BoardWidget(QWidget):
             self._drag_to(self.to_board(event.position()))
             return
         hit = self.hit_test(self.to_board(event.position()))
-        clickable = hit is not None and (
-            (self.interactive and hit[0] in ("button", "pot", "sw17", "sw18", "sd", "in_l", "in_r",
-                                             "gate_in_1", "gate_in_2", "cv_in_1", "cv_in_2"))
-            or (self.led_selectable and hit[0] == "led"))
+        clickable = hit is not None and self.interactive and hit[0] in (
+            "button", "pot", "sw17", "sw18", "sd", "in_l", "in_r",
+            "gate_in_1", "gate_in_2", "cv_in_1", "cv_in_2")
         self.setCursor(Qt.PointingHandCursor if clickable else Qt.ArrowCursor)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -270,9 +313,9 @@ class BoardWidget(QWidget):
                     f"Press count: {st.press_counts[i]} (modulo 256){suffix}")
         if kind == "led":
             state = 'no data' if st is None else ('ON' if st.leds[i] else 'OFF')
-            hint = '\nClick to toggle this LED (Individual mode)' if self.led_selectable else ""
             return (f"LED D{i + 1}: commanded state {state}\n"
-                    f"No electrical feedback – inspect the physical board.{hint}{suffix}")
+                    f"Lights while button S{i + 1} is pressed (Buttons → LEDs mode).\n"
+                    f"No electrical feedback – inspect the physical board.{suffix}")
         if kind == "pot":
             if st is None:
                 return f"Potentiometer VR{i + 1}"
@@ -296,16 +339,19 @@ class BoardWidget(QWidget):
                 value = "–" if cg is None else f"{cg.cv[n - 1]:+.4f} (raw {cg.cv_raw[n - 1]})"
                 hint = "\nMouse wheel changes the simulated value" if self.interactive else ""
                 return (f"CV IN {n}: {value}\nNormalized −1…+1 (libDaisy bipolar CV); "
-                        f"volts not measured{hint}{suffix}")
+                        f"volts not measured\nRing colour: red −1 · amber 0 · green +1"
+                        f"{hint}{suffix}")
             if kind.startswith("gate_in"):
                 value = "–" if cg is None else (
                     f"{'HIGH' if cg.gates[n - 1] else 'LOW'}, rising edges: {cg.gate_counts[n - 1]}")
                 hint = "\nClick toggles the simulated gate" if self.interactive else ""
                 return (f"GATE IN {n}: {value}\nSampled at 1 kHz; pulses shorter than 1 ms "
-                        f"can be missed{hint}{suffix}")
+                        f"can be missed\nRing: green while high, flashes on every counted edge"
+                        f"{hint}{suffix}")
             value = "–" if cg is None else f"{cg.cv_out_mode}, DAC code {cg.cv_out[n - 1]} of 4095"
             return (f"CV OUT {n}: {value}\nCommanded code only; there is no measurement "
-                    f"feedback{suffix}")
+                    f"feedback\nRing colour: red code 0 · amber 2048 · green 4095 (Off: none)"
+                    f"{suffix}")
         if kind in ("in_l", "in_r"):
             side = 'left' if kind == "in_l" else 'right'
             plugged = None if st is None else (st.jack_left if kind == "in_l" else st.jack_right)
@@ -436,10 +482,24 @@ class BoardWidget(QWidget):
             else:
                 self._ni_badge(painter, QPointF(x, 145))
 
-    def _mini_jack(self, painter: QPainter, center: QPointF, label: str) -> None:
+    def _mini_jack(self, painter: QPainter, center: QPointF, label: str,
+                   ring: QColor | None = None, flash: bool = False) -> None:
         painter.setPen(QPen(QColor("#050505"), 1))
         painter.setBrush(theme.PLASTIC)
         painter.drawRect(QRectF(center.x() - 21, center.y() - 21, 42, 42))
+        if ring is not None:
+            if flash:
+                halo = QRadialGradient(center, 30)
+                glow = QColor(ring)
+                glow.setAlphaF(0.6)
+                halo.setColorAt(0.45, glow)
+                halo.setColorAt(1, QColor(ring.red(), ring.green(), ring.blue(), 0))
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(halo)
+                painter.drawEllipse(center, 30, 30)
+            painter.setPen(QPen(ring, 3.0))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawEllipse(center, JACK_RING_R, JACK_RING_R)
         painter.setPen(QPen(QColor("#4c4f53"), 1))
         painter.setBrush(self._metal(QRectF(center.x() - 13, center.y() - 13, 26, 26)))
         painter.drawEllipse(center, 13, 13)
@@ -452,8 +512,19 @@ class BoardWidget(QWidget):
         painter.setPen(QPen(theme.SILK, 1.5))
         painter.setBrush(Qt.NoBrush)
         painter.drawRect(QRectF(430, 30, 325, 190))
-        for center, label in CV_JACKS.values():
-            self._mini_jack(painter, center, label)
+        cg = st.cvgate if st is not None else None
+        for key, (center, label) in CV_JACKS.items():
+            n = int(key[-1]) - 1
+            ring, flash = None, False
+            if cg is not None and key.startswith("cv_in"):
+                ring = cv_ring_color(cg.cv[n])
+            elif cg is not None and key.startswith("cv_out") and cg.cv_out_mode != "OFF":
+                ring = cv_ring_color(2.0 * cg.cv_out[n] / p.DAC_MAX - 1.0)
+            elif cg is not None:  # gate: green while high, flash on every counted edge
+                flash = self.gate_flashing(n)
+                if cg.gates[n] or flash:
+                    ring = theme.OK
+            self._mini_jack(painter, center, label, ring, flash)
         painter.setPen(Qt.NoPen)
         painter.setBrush(theme.SILK)
         c = QPointF(570, 85)
@@ -463,7 +534,6 @@ class BoardWidget(QWidget):
         painter.setBrush(theme.PCB)
         painter.drawEllipse(c, 6, 6)
         self._text(painter, QRectF(500, 140, 140, 16), "CV / Gate", 8.5, theme.SILK_MUTED)
-        cg = st.cvgate if st is not None else None
         for key, (center, _label) in CV_JACKS.items():
             n = int(key[-1]) - 1
             rect = QRectF(center.x() - 34, center.y() + 23, 68, 13)

@@ -8,15 +8,17 @@ OPT = -O2
 APP_TYPE = BOOT_SRAM
 CPP_STANDARD = -std=gnu++17
 PROTOCOL_DIR = ../protocol
+# Card reader components, shared with Nebulae's SD management mode.
+READER_DIR = ../../common/sd/reader
 CPP_SOURCES = src/main.cpp src/diag_app.cpp src/diag_core.cpp $(PROTOCOL_DIR)/ddp.cpp
 ifeq ($(CARD_READER),1)
 TARGET = DaisyDiagnostic-CardReader
 override BUILD_DIR = build/reader
-CPP_SOURCES += src/card_reader.cpp src/msc_bot.cpp src/reader_usb.cpp
-C_SOURCES += src/reader_ctlreq.c
+CPP_SOURCES += $(READER_DIR)/card_reader.cpp $(READER_DIR)/msc_bot.cpp $(READER_DIR)/reader_usb.cpp
+C_SOURCES += $(READER_DIR)/reader_ctlreq.c
 C_DEFS += -DDIAG_CARD_READER=1
 endif
-C_INCLUDES += -Isrc -I$(PROTOCOL_DIR)
+C_INCLUDES += -Isrc -I$(PROTOCOL_DIR) -I$(READER_DIR)
 # Shared software entry into the Daisy bootloader: DDP BOOT and the S9+S16 key gesture.
 C_INCLUDES += -I../../common/bootloader
 C_INCLUDES += -I$(LIBDAISY_DIR)/Middlewares/Patched/ST/STM32_USB_Device_Library/Class/CDC/Inc
@@ -28,6 +30,11 @@ SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core
 # The firmware never installs a bootloader; `make program-boot` is not used here.
 BOOT_BIN = $(SYSTEM_FILES_DIR)/dsy_bootloader_v6_4-extdfu-2000ms.bin
 
+BUILD_DIR ?= build
+# Portable host tests must not require a checked-out ARM SDK. quick.yml deliberately
+# does not fetch large submodules for diagnostics-only changes.
+HOST_ONLY := $(if $(MAKECMDGOALS),$(if $(filter-out test test-sanitize,$(MAKECMDGOALS)),,1),)
+ifneq ($(HOST_ONLY),1)
 include $(SYSTEM_FILES_DIR)/Makefile
 ifeq ($(CARD_READER),1)
 $(BUILD_DIR): | build
@@ -38,6 +45,7 @@ endif
 $(BUILD_DIR)/$(TARGET).elf: $(LIBDAISY_DIR)/build/libdaisy.a
 $(LIBDAISY_DIR)/build/libdaisy.a:
 	$(MAKE) -C $(LIBDAISY_DIR)
+endif
 
 PYTHON ?= python3
 # The microSD test must not be able to change a card. Nothing that can issue an SD
@@ -54,11 +62,12 @@ FORBIDDEN_SYMBOLS = \
 	f_utime f_expand f_setlabel f_fdisk f_putc f_puts f_printf f_forward
 # Guards against a vacuous check (empty or wrong symbol list).
 REQUIRED_SYMBOLS = RoRead RoWrite f_mount f_readdir SDMMC_CmdReadSingleBlock
+FORBIDDEN_SYMBOLS += HAL_SD_Abort
 ifeq ($(CARD_READER),1)
-# Writable variant deliberately permits only CPU-polled block writes. FatFs
-# mutation, formatting, erase/lock, DMA writers and the generic disk driver stay banned.
-FORBIDDEN_SYMBOLS := $(filter-out SDMMC_CmdWriteSingleBlock SDMMC_CmdWriteMultiBlock HAL_SD_WriteBlocks,$(FORBIDDEN_SYMBOLS))
-REQUIRED_SYMBOLS += HAL_SD_WriteBlocks SDMMC_CmdWriteSingleBlock
+# Only the reader permits single-buffer IDMA writes. PIO/IT writers, generic BSP/
+# disk writers, FatFs mutation, formatting, erase/lock and multi-buffer DMA stay banned.
+FORBIDDEN_SYMBOLS := $(filter-out SDMMC_CmdWriteSingleBlock SDMMC_CmdWriteMultiBlock HAL_SD_WriteBlocks_DMA,$(FORBIDDEN_SYMBOLS))
+REQUIRED_SYMBOLS += HAL_SD_WriteBlocks_DMA SDMMC_CmdWriteSingleBlock
 endif
 .PHONY: check
 check: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin
@@ -88,16 +97,20 @@ test:
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(PROTOCOL_DIR) -I../../common/bootloader ../tests/firmware/test_diag_app.cpp \
 		$(HOST_SOURCES) -o build/host/test_diag_app
 	./build/host/test_diag_app
-	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(PROTOCOL_DIR) -I../../common/bootloader ../tests/firmware/test_card_reader.cpp \
-		src/card_reader.cpp src/msc_bot.cpp -o build/host/test_card_reader
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(READER_DIR) -I$(PROTOCOL_DIR) -I../../common/bootloader ../tests/firmware/test_card_reader.cpp \
+		$(READER_DIR)/card_reader.cpp $(READER_DIR)/msc_bot.cpp -o build/host/test_card_reader
 	./build/host/test_card_reader
 	$(HOST_CXX) $(HOST_FLAGS) -DDIAG_CARD_READER=1 -Isrc -I$(PROTOCOL_DIR) -I../../common/bootloader \
 		../tests/firmware/test_reader_app.cpp $(HOST_SOURCES) -o build/host/test_reader_app
 	./build/host/test_reader_app
-	$(HOST_CXX) $(HOST_FLAGS) -DDIAG_USB_HOST_TEST=1 -Isrc -I../tests/firmware \
-		../tests/firmware/test_reader_usb.cpp src/reader_usb.cpp src/card_reader.cpp src/msc_bot.cpp \
+	$(HOST_CXX) $(HOST_FLAGS) -DDIAG_USB_HOST_TEST=1 -Isrc -I$(READER_DIR) -I../tests/firmware \
+		../tests/firmware/test_reader_usb.cpp $(READER_DIR)/reader_usb.cpp $(READER_DIR)/card_reader.cpp $(READER_DIR)/msc_bot.cpp \
 		-o build/host/test_reader_usb
 	./build/host/test_reader_usb
+	$(HOST_CXX) $(HOST_FLAGS) -I$(READER_DIR) ../tests/firmware/test_reader_dma.cpp -o build/host/test_reader_dma
+	./build/host/test_reader_dma
+	$(HOST_CXX) $(HOST_FLAGS) -I../tests/firmware/sd_abort_stubs -I$(READER_DIR) ../tests/firmware/test_reader_abort.cpp -o build/host/test_reader_abort
+	./build/host/test_reader_abort
 
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"

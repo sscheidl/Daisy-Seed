@@ -31,6 +31,11 @@ class RFFT {
 public:
     void Init();
     void Forward(float* d);   // in-place, length N -> Csound packing
+    // Two real forward transforms with ONE complex FFT (a in the real, b in the
+    // imaginary part, then split by conjugate symmetry). Same result as Forward(a);
+    // Forward(b) up to float rounding; used by Mincer to cut the hop's FFT work
+    // from three to two complex FFTs per channel without moving any hop (F3).
+    void ForwardPair(float* a, float* b);
     void Inverse(float* d);   // in-place, Csound packing -> length N
 private:
     float cs_[FFT_N], sn_[FFT_N];
@@ -46,7 +51,10 @@ public:
     void  Reset();
     void  Process(const double* frame_pos, const PcmView& buf, unsigned channel,
                   float pitch, float amp, float* out, int n);
+    // Host A/B tests only: false selects the v0.1 path with two separate forwards.
+    void  SetPackedForward(bool packed) { packed_ = packed; }
 private:
+    bool  packed_ = true;
     float sr_, win_[FFT_N];
     float fwin_[FFT_N+2], bwin_[FFT_N+2], prev_[FFT_N+2];
     float outframe_[DECIM*FFT_N];

@@ -1,8 +1,88 @@
 # Test report
 
+## Native CV quick probe and control-panel candidate, 31.10.2026
+
+RAMP/SAW CV-1 loopback on firmware 0.3.2: RAMP functional criterion passed;
+SAW raw trace has a failed correlation assertion and unresolved timing at the
+reset. 878 frames without transport errors; OFF confirmed. [Evidence](HARDWARE_NATIVE_CV_2026-10-31.md).
+App 0.3.4 (01.11.2026) replaces the 0.3.3 candidate: control panel in six
+categories, buttons drive LEDs by default, and the host findings of the independent
+milestone review fixed; firmware unchanged, simulator-only validation.
+[Change and validation](CONTROL_PANEL_0.3.4.md).
+
+## Firmware/App 0.4.0 audio extension, 01.11.2026 — software only
+
+Test tone, peak meters, input snapshot, LED mode POTDIM, outputs silenced before
+blocking SD access (review F3b) and no CMD13 after a reset abort (review F1).
+Host tests (C++ MSVC/clang, Python/GUI against the simulator) and both ARM images
+built; **no hardware test, NICHT GEMESSEN**: codec levels, jack wiring, headphone
+path, tone safety on the real kit and the 0.4.0 image itself await a flash and
+acceptance by the human. The unbounded SD initialisation wait (review F2) remains open.
+
+## Review-Korrekturen 0.3.2, 31.10.2026 — Software
+
+239 Python-/GUI-Tests bestanden; C++-Suites unter Clang normal/ASan/UBSan und
+MSVC /W4 /WX bestanden; beide ARM-Varianten samt Vektor-/Symbolprüfung bestanden.
+DMA-Suite: 4262 einzelne Prüfungen (einschließlich 4096 Bytevergleichen),
+Produktions-Abbruchadapter: 42 Prüfungen; keine Zählung unabhängiger Fehlerszenarien.
+**CardReader 0.3.2: GEMESSEN.** Flash, kleine Dateizugriffe, Auswerfen/Remount,
+physische Kartenentnahme beim Schreiben ohne Firmware-Hänger, Quarantäne nach
+Wiedereinsetzen und expliziter Wiederanlauf bestanden. Windows-Dirty-Markierung
+nach CHKDSK /F gelöscht; erneuter Schreib-/Auswerfzyklus bleibt sauber.
+[Neues Hardwareprotokoll](HARDWARE_CARD_READER_0.3.2_2026-10-31.md).
+Die folgenden CV-/Gate- und älteren Reader-Protokolle gelten weiterhin für 0.3.1.
+Abbruchkorrektur, Prüfgrenzen und Binärhashes:
+[Korrekturbericht](PR70_REVIEW_FIXES_2026-10-31.md).
+
+## Gate-Loopback, 31.10.2026
+
+**GEMESSEN mit 0.3.1:** CV OUT 1 → GATE IN 1. Gehaltenes High über 2 s zählt
+einmal; 20 weitere langsame Impulse ergeben insgesamt exakt 21 steigende Flanken.
+Low/High-Zustand korrekt, keine zusätzliche Zählung beim Abfallen oder Halten.
+1014 Rahmen ohne Protokollfehler oder Verluste; abschließend OFF und beide
+Gates Low bestätigt. Anschließend **GEMESSEN für CV OUT 1 → GATE IN 2**:
+ebenfalls exakt 21 steigende Flanken, keine zusätzliche Zählung, 1013 Rahmen
+ohne Fehler oder Verlust; abschließend OFF und beide Gates Low.
+H13 teilweise gemessen für beide Eingänge; kurze Pulse und elektrische
+Schaltschwellen bleiben offen. Aufbau und Grenzen:
+[Gate-1-Protokoll](HARDWARE_GATE1_LOOPBACK_2026-10-31.md),
+[Gate-2-Protokoll](HARDWARE_GATE2_LOOPBACK_2026-10-31.md).
+
+## CV-Loopback, 31.10.2026
+
+**GEMESSEN mit 0.3.1:** CV OUT 1 → CV IN 1, mehrere feste DAC-Codes und zwei
+langsame, vom Host gesteuerte Treppendreieckzyklen. Der Eingang folgt monoton;
+Code 2048 ergibt normalisiert etwa 0,50007. Endpunkte: Code 0 etwa +0,0056,
+Code 4095 etwa +0,9910. Keine unabhängige Volt-Kalibrierung. 1889 gültige Rahmen
+ohne CRC-/Inhaltsfehler, Verlust oder Wiederverbindung. Abschließend OFF bestätigt.
+Anschließend **GEMESSEN für CV OUT 2 → CV IN 2**: Code 2048 etwa 0,50053,
+Endpunkte etwa +0,0070 und +0,9902; ebenfalls 1889 Rahmen ohne Fehler und
+abschließend OFF bestätigt. H15 ist für beide einzeln gepatchten Kanäle gemessen;
+Kurze Gate-Pulse und unabhängige Spannungsmessungen bleiben offen. Messwerte und Grenzen:
+[CV-1-Protokoll](HARDWARE_CV_LOOPBACK_2026-10-31.md) und
+[CV-2-Protokoll](HARDWARE_CV2_LOOPBACK_2026-10-31.md).
+
+## Kartenleser-Hardwaretest, 31.10.2026
+
+**GEMESSEN mit 0.3.0:** CDC/MSC werden unter Windows erkannt, DDP und direkter
+FAT32-SD-Lesetest funktionieren. Die Windows-Freigabe wechselt jedoch nach etwa
+einer Sekunde von SHARED auf ERROR. Ein lesbares Windows-Laufwerk oder
+erfolgreicher Dateischreibtest wurde damit nicht nachgewiesen.
+
+**GEMESSEN mit 0.3.1:** Windows G: (FAT32) zugänglich; Schreiben, Lesen, Ergänzen,
+Umbenennen und Löschen eigener kleiner Testdateien erfolgreich. SHA-256 nach
+Auswerfen/Rückgabe/erneutem Einbinden unverändert. Auswerfen bei laufender EXE
+erfolgreich; CDC bleibt verbunden. Keine Protokollfehler in der Dateioperationsprobe.
+Die Korrektur mit Single-Buffer-IDMA und SDRAM-Puffer besteht damit den Grundtest;
+große Dateien, Unterbrechung, andere Medien und Langzeitbetrieb bleiben NICHT
+GEMESSEN. Vollständiger Aufbau, Binärhash,
+Beobachtungen und Grenzen: [Hardwareprotokoll](HARDWARE_CARD_READER_2026-10-31.md).
+
 ## Version 0.3.0 CV and gate jacks
 
-Software-only validation; **no hardware test has been performed** for this version.
+Historical software validation for the CV/gate extension. Later CV and gate
+loopback results are listed above; independent voltage and short-pulse
+hardware tests remain open.
 Local results on 25 October 2026 (Windows 11):
 
 | Check | Command | Result |
@@ -24,15 +104,16 @@ Pending hardware tests (status **NICHT GEMESSEN**):
 | # | Test | Status |
 | --- | --- | --- |
 | H12 | CV IN 1/2 with known voltages (e.g. −5, 0, +5 V if within the jack's range): normalized value, raw ADC, mapping CV IN 1/2 | **Not measured** |
-| H13 | GATE IN 1/2: state and edge counter with a gate/trigger source; polarity; short pulses | **Not measured** |
+| H13 | GATE IN 1/2: state and edge counter with a gate/trigger source; polarity; short pulses | **Partially GEMESSEN, 31.10.2026:** both gates, held levels and slow pulses; short pulses and threshold remain NICHT GEMESSEN |
 | H14 | CV OUT 1/2 with a multimeter/oscilloscope: codes 0, 2048, 4095 in Fixed; Ramp and Saw shape and period; Off after closing the application | **Not measured** |
-| H15 | Loop test: patch CV OUT 1/2 → CV IN 1/2, compare codes with read values | **Not measured** |
+| H15 | Loop test: patch CV OUT 1/2 → CV IN 1/2, compare codes with read values | **GEMESSEN, 31.10.2026:** both channels separately, fixed codes and host-controlled stepped ramps; no independent voltage calibration |
 
 Do not connect CV OUT to equipment with an unknown input range before H14.
 
 ## Version 0.2.0 SD card reader
 
-This extension has software-only validation. Both ARM variants build with separate
+Historical 0.2.0 validation (superseded for reader hardware status by the dated
+0.3.1 results above): this extension had software-only validation. Both ARM variants build with separate
 symbol policies. Host tests execute the actual portable ownership controller,
 MSC BOT/SCSI implementation, application command handling and composite USB adapter
 (with HAL stubs). Python tests exercise the DDP extension, session and GUI. The

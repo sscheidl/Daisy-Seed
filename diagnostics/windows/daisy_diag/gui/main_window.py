@@ -1,41 +1,64 @@
-"""Main window: board view, status/control panel, simulation controls and event log."""
+"""Main window: board view on the left, categorised control panel on the right."""
 from __future__ import annotations
 
+import math
 import time
+import json
+from pathlib import Path
 from datetime import datetime
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QAbstractItemView, QButtonGroup, QCheckBox, QComboBox,
-                               QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
-                               QLabel, QMainWindow, QPlainTextEdit, QPushButton, QScrollArea,
-                               QSlider, QSpinBox, QSplitter, QTableWidget, QTableWidgetItem,
-                               QVBoxLayout, QWidget, QMessageBox)
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QButtonGroup, QCheckBox,
+                               QComboBox, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout,
+                               QHeaderView, QLabel, QMainWindow, QPlainTextEdit, QPushButton,
+                               QScrollArea, QSlider, QSpinBox, QSplitter, QTableWidget,
+                               QTableWidgetItem, QVBoxLayout, QWidget, QMessageBox, QFileDialog,
+                               QTabWidget, QSizePolicy)
 
 from .. import __version__
 from .. import protocol as p
 from ..session import ConnState, DeviceSession, SerialLink, list_serial_ports
-from ..simulator import SimulatedCable, demo_pattern
+from ..simulator import SimulatedCable
+from ..nebulae import NebulaeWorkflow, Phase, RtMidiLink, list_midi_ports
+from ..nebulae_sim import SimulatedNebulae
 from . import theme
 from .board import BoardWidget, SdDisplay
+from .scope import CvTraceWidget, LevelBar, ScopeWidget
 
+# Firmware LED modes offered by the GUI. FOLLOW is the firmware default: every LED
+# D1–D16 lights while its button S1–S16 is held. The others are test patterns;
+# POTDIM (firmware 0.4.0) lights all LEDs with VR1 as brightness control.
 LED_MODE_BUTTONS = (
+    ("FOLLOW", 'Buttons → LEDs'),
     ("OFF", 'All off'),
     ("ON", 'All on'),
-    ("MASK", 'Individual'),
     ("CHASE", 'Chase'),
-    ("FOLLOW", 'Buttons → LEDs'),
-)
-
-EXTENSIONS = (
-    ("Audio Input/Output", 'Audio inputs J1/J2, outputs J3/J4, headphones J5. The firmware outputs silence; only input jack detection is implemented.'),
-    ("Audio-Engine / DSP", 'No signal processing in this diagnostic firmware.'),
-    ("MIDI DIN", 'OUT/THRU/INPUT (USART1, D13/D14). Not implemented.'),
-    ("USB-MIDI", 'Not implemented. J7 carries the diagnostic protocol over USB CDC.'),
-    ("USB-Host", 'Not implemented. USB host capability and electrical requirements (VBUS supply and port role) have not been verified on hardware.'),
+    ("POTDIM", 'VR1 dims'),
 )
 
 CV_OUT_BUTTONS = (("OFF", "Off"), ("FIX", "Fixed"), ("RAMP", "Ramp"), ("SAW", "Saw"))
+TONE_LEVELS_DBFS = (-6, -12, -20, -30, -40)  # amplitude presets; -6 dBFS is the firmware cap
+SCOPE_FRAME_CHOICES = (256, 512, 1024, 2048)
+
+# Control-panel categories, in tab order, with short labels so all tabs fit in the
+# 580 px panel without scroll buttons. The simulation tab is appended in simulation mode.
+TABS = ("USB", "Buttons", "Pots", "CV / Gate", "Audio", "SD card", "Nebulae", "Log")
+TAB_TOOLTIPS = {
+    "USB": "USB connection, firmware and protocol versions, transport statistics",
+    "Buttons": "Buttons S1–S16 (press counts) and LEDs D1–D16 (test patterns, brightness)",
+    "Pots": "Potentiometers VR1–VR8, toggle switches, plug and card detection",
+    "CV / Gate": "CV inputs with rolling trace, gate inputs and the CV OUT test signal",
+    "Audio": "Audio peak meters, test tone generator and input snapshot (firmware 0.4.0)",
+    "SD card": "microSD read test and Windows card-reader ownership",
+    "Nebulae": "Nebulae on Daisy 0.2: share the sample card with Windows and return to performance",
+    "Log": "Event log",
+}
+
+
+def _amplitude_for_dbfs(db: int) -> int:
+    return min(p.TONE_MAX_AMPLITUDE, int(round(10 ** (db / 20.0) * 10000)))
+SIM_TAB = "Simulation"
 
 STATE_COLORS = {
     ConnState.CONNECTED: theme.OK,
@@ -56,21 +79,57 @@ STATE_TEXT = {
 def _value_label(text: str = "–") -> QLabel:
     label = QLabel(text)
     label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+    label.setWordWrap(True)
+    label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
     return label
 
 
+def _hint(text: str) -> QLabel:
+    label = QLabel(text)
+    label.setObjectName("hint")
+    label.setWordWrap(True)
+    return label
+
+
+def _value_table(row_names: list[str]) -> QTableWidget:
+    """Read-only table with Value / Raw ADC / Min / Max columns sized to its contents."""
+    table = QTableWidget(len(row_names), 5)
+    table.setHorizontalHeaderLabels(["", 'Value', 'Raw ADC', "Min", "Max"])
+    table.verticalHeader().setVisible(False)
+    table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    table.setSelectionMode(QAbstractItemView.NoSelection)
+    table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+    for i, name in enumerate(row_names):
+        table.setItem(i, 0, QTableWidgetItem(name))
+        for c in range(1, 5):
+            item = QTableWidgetItem("–")
+            item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            table.setItem(i, c, item)
+    # Height follows the font metrics instead of a fixed pixel count, so larger system
+    # fonts never clip the last row behind an inner scroll bar.
+    table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+    table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+    table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    return table
+
+
 class MainWindow(QMainWindow):
-    def __init__(self, simulation: bool = False, port: str | None = None, clock=time.monotonic):
+    def __init__(self, simulation: bool = False, port: str | None = None, clock=time.monotonic,
+                 sim_device: str = "diagnostics"):
         super().__init__()
         self._clock = clock
         self.cable: SimulatedCable | None = None
         self.session: DeviceSession | None = None
+        self.sim_device = sim_device  # "diagnostics" or "nebulae" (simulation only)
+        self.neb_sim: SimulatedNebulae | None = None
+        self.nebulae: NebulaeWorkflow | None = None
         self.paused = False
-        self.led_mask = 0
         self.sd_result: p.SdInfo | None = None
         self._last_sd_card: bool | None = None
-        self._demo_start = 0.0
         self._port_override = port
+        self.cv_min: list[float | None] = [None] * p.NUM_CV
+        self.cv_max: list[float | None] = [None] * p.NUM_CV
         self.resize(1560, 940)
 
         self._build_ui()
@@ -103,42 +162,46 @@ class MainWindow(QMainWindow):
         left = QWidget()
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(12, 12, 6, 12)
-        left_layout.setSpacing(6)
         self.board = BoardWidget()
+        self.board.clock = self._clock
         left_layout.addWidget(self.board, 1)
+        split.addWidget(left)
+
+        controls = QWidget()
+        controls_layout = QVBoxLayout(controls)
+        controls_layout.setContentsMargins(0, 4, 10, 10)
+        controls_layout.setSpacing(8)
+        self.control_tabs = QTabWidget()
+        self.control_tabs.setMinimumWidth(580)  # nine tabs incl. Nebulae and Simulation
+        self.control_pages: dict[str, QScrollArea] = {}
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setMaximumBlockCount(1000)
-        self.log.setFixedHeight(130)
-        log_label = QLabel('Event log')
-        log_label.setObjectName("sectionLabel")
-        left_layout.addWidget(log_label)
-        left_layout.addWidget(self.log)
-        split.addWidget(left)
-
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setMinimumWidth(470)
-        panel = QWidget()
-        self.panel_layout = QVBoxLayout(panel)
-        self.panel_layout.setContentsMargins(6, 0, 12, 12)
-        self.panel_layout.setSpacing(4)
-        self.panel_layout.addWidget(self._build_connection_group())
+        self.log.setMinimumHeight(200)
+        pages = {
+            "USB": [self._build_connection_group()],
+            "Buttons": [self._build_counter_group(), self._build_led_group()],
+            "Pots": [self._build_pot_group(), self._build_inputs_group()],
+            "CV / Gate": [self._build_cvgate_group()],
+            "Audio": [self._build_audio_group()],
+            "SD card": [self._build_sd_group()],
+            "Nebulae": [self._build_nebulae_group()],
+            "Log": [self._build_log_group()],
+        }
+        for title in TABS:
+            index = self.control_tabs.addTab(
+                self._make_page(title, pages[title], grow_last=title == "Log"), title)
+            self.control_tabs.setTabToolTip(index, TAB_TOOLTIPS[title])
+        self.control_tabs.tabBar().setExpanding(False)
         self.sim_group = self._build_sim_group()
-        self.panel_layout.addWidget(self.sim_group)
-        self.panel_layout.addWidget(self._build_led_group())
-        self.panel_layout.addWidget(self._build_sd_group())
-        self.panel_layout.addWidget(self._build_inputs_group())
-        self.panel_layout.addWidget(self._build_pot_group())
-        self.panel_layout.addWidget(self._build_counter_group())
-        self.panel_layout.addWidget(self._build_cvgate_group())
-        self.panel_layout.addWidget(self._build_extensions_group())
-        self.panel_layout.addStretch(1)
-        scroll.setWidget(panel)
-        split.addWidget(scroll)
+        self.sim_page = self._make_page(SIM_TAB, [self.sim_group])
+        controls_layout.addWidget(self.control_tabs, 1)
+        self.save_report = QPushButton("Save diagnostic report …")
+        self.save_report.clicked.connect(self._save_report)
+        controls_layout.addWidget(self.save_report)
+        split.addWidget(controls)
         split.setStretchFactor(0, 1)
-        split.setSizes([1070, 490])
+        split.setSizes([960, 600])
         outer.addWidget(split, 1)
         self.setCentralWidget(central)
 
@@ -151,7 +214,23 @@ class MainWindow(QMainWindow):
         self.board.gateToggled.connect(self._sim_toggle_gate)
         self.board.cvChanged.connect(
             lambda i, v: self._sim_device() and self._sim_device().set_cv(i, v))
-        self.board.ledClicked.connect(self._toggle_led)
+
+    def _make_page(self, title: str, groups: list[QWidget], grow_last: bool = False) -> QScrollArea:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        panel = QWidget()
+        panel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(6, 0, 6, 8)
+        layout.setSpacing(4)
+        for k, group in enumerate(groups):
+            layout.addWidget(group, 1 if grow_last and k == len(groups) - 1 else 0)
+        if not grow_last:
+            layout.addStretch(1)
+        scroll.setWidget(panel)
+        self.control_pages[title] = scroll
+        return scroll
 
     def _build_header(self) -> QWidget:
         header = QWidget()
@@ -193,11 +272,9 @@ class MainWindow(QMainWindow):
         return header
 
     def _build_connection_group(self) -> QGroupBox:
-        box = QGroupBox('USB diagnostics')
+        box = QGroupBox('USB connection')
         layout = QVBoxLayout(box)
-        self.status_detail = QLabel("")
-        self.status_detail.setObjectName("hint")
-        self.status_detail.setWordWrap(True)
+        self.status_detail = _hint("")
         layout.addWidget(self.status_detail)
 
         port_row = QHBoxLayout()
@@ -210,6 +287,7 @@ class MainWindow(QMainWindow):
 
         form = QFormLayout()
         form.setLabelAlignment(Qt.AlignRight)
+        form.setRowWrapPolicy(QFormLayout.WrapLongRows)
         self.info = {}
         for key, label in (("port", "Port"), ("fw", "Firmware"), ("proto", 'Protocol'),
                            ("boot", 'Application / bootloader'), ("rate", 'State rate'),
@@ -239,12 +317,11 @@ class MainWindow(QMainWindow):
         return box
 
     def _build_sim_group(self) -> QGroupBox:
-        box = QGroupBox("Simulation")
+        box = QGroupBox("Simulated kit")
         layout = QVBoxLayout(box)
-        hint = QLabel('Click the board to press buttons, drag knobs or turn them with the mouse wheel, select toggle positions, and toggle the microSD card or audio input plugs.')
-        hint.setObjectName("hint")
-        hint.setWordWrap(True)
-        layout.addWidget(hint)
+        layout.addWidget(_hint('Click the board to press buttons, drag knobs or turn them with the '
+                               'mouse wheel, select toggle positions, and toggle the microSD card '
+                               'or audio input plugs. Nothing here reaches real hardware.'))
         grid = QGridLayout()
         self.sim_plug = QPushButton('Unplug USB cable')
         self.sim_plug.clicked.connect(self._sim_toggle_cable)
@@ -253,13 +330,9 @@ class MainWindow(QMainWindow):
         self.sim_freeze.toggled.connect(self._sim_set_freeze)
         self.sim_noise = QPushButton('Send corrupt frame')
         self.sim_noise.clicked.connect(self._sim_corrupt)
-        self.sim_demo = QPushButton('Demo animation')
-        self.sim_demo.setCheckable(True)
-        self.sim_demo.toggled.connect(self._sim_demo_toggled)
         grid.addWidget(self.sim_plug, 0, 0)
         grid.addWidget(self.sim_freeze, 0, 1)
         grid.addWidget(self.sim_noise, 1, 0)
-        grid.addWidget(self.sim_demo, 1, 1)
         layout.addLayout(grid)
         self.sim_sd_card = QCheckBox('microSD card inserted')
         self.sim_sd_card.toggled.connect(self._sim_set_sd)
@@ -277,7 +350,15 @@ class MainWindow(QMainWindow):
                                      'CV IN 0.0–+1.0. The real scaling is not measured.')
         self.sim_cv_patch.toggled.connect(
             lambda on: self._sim_device() and setattr(self._sim_device(), "cv_patched", on))
-        for w in (self.sim_sd_card, self.sim_sd_fs, self.sim_jl, self.sim_jr, self.sim_cv_patch):
+        self.sim_audio_patch = QCheckBox('Patch cables AUDIO OUT → AUDIO IN (test tone loopback)')
+        self.sim_audio_patch.toggled.connect(
+            lambda on: self._sim_device() and setattr(self._sim_device(), "audio_patched", on))
+        self.sim_audio_noise = QCheckBox('Noise on the audio inputs (−10 dBFS)')
+        self.sim_audio_noise.toggled.connect(
+            lambda on: self._sim_device() and setattr(self._sim_device(), "input_noise",
+                                                      0.316 if on else 0.0))
+        for w in (self.sim_sd_card, self.sim_sd_fs, self.sim_jl, self.sim_jr, self.sim_cv_patch,
+                  self.sim_audio_patch, self.sim_audio_noise):
             layout.addWidget(w)
         self.sim_reader_eject = QPushButton("Simulate Windows eject")
         self.sim_reader_eject.clicked.connect(
@@ -290,28 +371,25 @@ class MainWindow(QMainWindow):
         return box
 
     def _build_led_group(self) -> QGroupBox:
-        box = QGroupBox('LED diagnostics')
+        box = QGroupBox('LEDs D1–D16')
         layout = QVBoxLayout(box)
-        row = QGridLayout()
+        layout.addWidget(_hint('Default: each LED lights while its button is held '
+                               '(firmware mode Buttons → LEDs). The test patterns below '
+                               'override that until Buttons → LEDs is selected again. '
+                               '"VR1 dims" lights all LEDs and takes the brightness from VR1 '
+                               '(hands-on pot and PWM check, firmware 0.4.0).'))
+        row = QHBoxLayout()
         self.led_buttons: dict[str, QPushButton] = {}
         self.led_group = QButtonGroup(self)
-        for k, (mode, text) in enumerate(LED_MODE_BUTTONS):
+        for mode, text in LED_MODE_BUTTONS:
             b = QPushButton(text)
             b.setCheckable(True)
+            b.setObjectName("segment")
             b.clicked.connect(lambda _c=False, m=mode: self._send_led(m))
             self.led_group.addButton(b)
             self.led_buttons[mode] = b
-            row.addWidget(b, k // 3, k % 3)
+            row.addWidget(b)
         layout.addLayout(row)
-        grid = QGridLayout()
-        self.led_checks: list[QCheckBox] = []
-        for i in range(p.NUM_LEDS):
-            cb = QCheckBox(f"D{i + 1}")
-            cb.setObjectName("ledCheck")
-            cb.clicked.connect(lambda checked, idx=i: self._set_led_bit(idx, checked))
-            grid.addWidget(cb, i // 8, i % 8)
-            self.led_checks.append(cb)
-        layout.addLayout(grid)
         sliders = QFormLayout()
         self.br_slider = QSlider(Qt.Horizontal)
         self.br_slider.setRange(0, 100)
@@ -334,10 +412,8 @@ class MainWindow(QMainWindow):
         ch_row.addWidget(self.chase_label)
         sliders.addRow('Chase step:', ch_row)
         layout.addLayout(sliders)
-        note = QLabel('The display shows the <b>commanded state</b> set by the firmware. LEDs have no electrical feedback; inspect the physical board to confirm that they light up. Click an LED on the board to toggle it.')
-        note.setObjectName("hint")
-        note.setWordWrap(True)
-        layout.addWidget(note)
+        layout.addWidget(_hint('The board view shows the <b>commanded</b> LED state. LEDs have no '
+                               'electrical feedback; confirm on the physical board.'))
         return box
 
     def _build_sd_group(self) -> QGroupBox:
@@ -346,17 +422,16 @@ class MainWindow(QMainWindow):
         self.sd_status = QLabel('No data')
         self.sd_status.setStyleSheet("font-size: 12pt; font-weight: 700;")
         layout.addWidget(self.sd_status)
-        self.sd_detail = QLabel("")
-        self.sd_detail.setObjectName("hint")
-        self.sd_detail.setWordWrap(True)
+        self.sd_detail = _hint("")
         layout.addWidget(self.sd_detail)
         self.sd_button = QPushButton('Start read test (read-only)')
         self.sd_button.clicked.connect(self._sd_test)
         layout.addWidget(self.sd_button)
-        note = QLabel('The test mounts the filesystem and reads the root directory without writing or formatting. Streaming pauses during the test. Reads have a 5 s budget plus initialization; the host allows up to 20 s.')
-        note.setObjectName("hint")
-        note.setWordWrap(True)
-        layout.addWidget(note)
+        layout.addWidget(_hint('The test mounts the filesystem and reads the root directory '
+                               'without writing or formatting. The firmware blocks during the '
+                               'test (5 s read budget plus initialization; the host allows up to '
+                               '20 s), so streaming pauses and an active CV OUT signal is switched '
+                               'Off first.'))
         self.reader_status = QLabel("Card reader: checking firmware capability …")
         self.reader_status.setWordWrap(True)
         layout.addWidget(self.reader_status)
@@ -367,6 +442,244 @@ class MainWindow(QMainWindow):
         self.reader_return.clicked.connect(self._return_reader)
         layout.addWidget(self.reader_return)
         return box
+
+    def _build_nebulae_group(self) -> QGroupBox:
+        box = QGroupBox("Nebulae on Daisy – sample card")
+        layout = QVBoxLayout(box)
+        self.neb_phase = QLabel("No Nebulae found")
+        self.neb_phase.setWordWrap(True)
+        self.neb_phase.setStyleSheet("font-size: 12pt; font-weight: 700;")
+        layout.addWidget(self.neb_phase)
+        form = QFormLayout()
+        form.setRowWrapPolicy(QFormLayout.WrapLongRows)
+        self.neb_info = {}
+        for key, label in (("fw", "Firmware"), ("link", "Connection"), ("sd", "SD card"),
+                           ("bank", "Bank / sample"), ("cpu", "Audio deadline")):
+            self.neb_info[key] = _value_label()
+            self.neb_info[key].setWordWrap(True)
+            form.addRow(label + ":", self.neb_info[key])
+        layout.addLayout(form)
+        self.neb_message = QLabel("")
+        self.neb_message.setWordWrap(True)
+        layout.addWidget(self.neb_message)
+        self.neb_error = QLabel("")
+        self.neb_error.setWordWrap(True)
+        self.neb_error.setStyleSheet(f"color: {theme.ERROR.name()}; font-weight: 600;")
+        layout.addWidget(self.neb_error)
+        self.neb_warning = QLabel("")
+        self.neb_warning.setWordWrap(True)
+        self.neb_warning.setStyleSheet(f"color: {theme.ERROR.name()}; font-weight: 700;")
+        layout.addWidget(self.neb_warning)
+        self.neb_share = QPushButton("Share SD card with Windows")
+        self.neb_share.setToolTip("Stops audio, restarts Nebulae into SD management and opens the "
+                                  "card as a Windows drive (USB mass storage).")
+        self.neb_share.clicked.connect(self._neb_share)
+        layout.addWidget(self.neb_share)
+        confirm_row = QHBoxLayout()
+        self.neb_confirm = QPushButton("Discard Live loop and share")
+        self.neb_confirm.clicked.connect(self._neb_confirm)
+        self.neb_cancel = QPushButton("Cancel")
+        self.neb_cancel.clicked.connect(self._neb_cancel)
+        confirm_row.addWidget(self.neb_confirm, 1)
+        confirm_row.addWidget(self.neb_cancel)
+        layout.addLayout(confirm_row)
+        self.neb_eject_help = QPushButton("How to eject safely in Windows …")
+        self.neb_eject_help.clicked.connect(self._neb_eject_help)
+        layout.addWidget(self.neb_eject_help)
+        self.neb_return = QPushButton("Return to Nebulae")
+        self.neb_return.setToolTip("Only after Windows ejected the card: the firmware returns it, "
+                                   "restarts into performance and rescans the banks.")
+        self.neb_return.clicked.connect(self._neb_return)
+        layout.addWidget(self.neb_return)
+        self.neb_ack = QPushButton("Acknowledge interrupted access …")
+        self.neb_ack.clicked.connect(self._neb_acknowledge)
+        layout.addWidget(self.neb_ack)
+        layout.addWidget(_hint("Performance mode uses USB-MIDI (no COM port); SD management uses "
+                               "USB CDC + mass storage. The card is never returned by closing this "
+                               "window or unplugging: only a Windows eject or an explicit "
+                               "acknowledgement. Power-cycling the kit always starts in performance."))
+        return box
+
+    def _refresh_nebulae(self) -> None:
+        wf = self.nebulae
+        if wf is None:
+            return
+        st = wf.status if wf.phase in (Phase.PERFORMANCE, Phase.CONFIRM, Phase.REQUESTING) else None
+        mgmt = wf.management_connected
+        dev = self.session.device if mgmt else None
+        neb = self.session.neb if mgmt else None
+        self.neb_phase.setText(wf.phase.value + (" – SIMULATION" if self.neb_sim else ""))
+        self.neb_info["fw"].setText(st.firmware if st else dev.firmware if dev else "–")
+        self.neb_info["link"].setText(
+            f"USB-MIDI {wf.port}" if st else f"USB CDC {self.session.port} + mass storage" if mgmt else "–")
+        reader = wf.reader_state
+        if st:
+            self.neb_info["sd"].setText("card inserted" if st.card else "no card")
+            playing = (f", playing bank {st.playing_bank} slot {st.playing_slot}"
+                       if st.playing_slot else "")
+            self.neb_info["bank"].setText(f"bank {st.bank} of {st.banks}{playing}"
+                                          + (f"; last load: {st.load_error_text}" if st.load_error else ""))
+            self.neb_info["cpu"].setText(
+                f"peak {st.peak_load} % of the block, {st.overruns} overruns (firmware counters, "
+                "not a bench measurement)" + (" – OVERRUN LED latched" if st.overrun else ""))
+        elif mgmt:
+            self.neb_info["sd"].setText(f"card reader: {reader or 'unknown'}")
+            self.neb_info["bank"].setText(
+                f"restores bank {neb.bank} slot {neb.slot}" if neb and neb.bank else "–")
+            self.neb_info["cpu"].setText("audio stopped (SD management)")
+        else:
+            for key in ("sd", "bank", "cpu"):
+                self.neb_info[key].setText("–")
+        self.neb_message.setText(wf.message)
+        self.neb_error.setText(wf.error)
+        live = bool(st and st.live)
+        self.neb_warning.setText(
+            "A Live loop exists only in RAM. Sharing restarts Nebulae and LOSES it; the SD samples "
+            "are reloaded from the card." if live or wf.needs_confirmation else "")
+        self.neb_share.setEnabled(bool((wf.can_share and not wf.needs_confirmation)
+                                       or wf.can_share_in_management))
+        self.neb_confirm.setVisible(wf.needs_confirmation)
+        self.neb_cancel.setVisible(wf.needs_confirmation)
+        self.neb_eject_help.setEnabled(reader == "SHARED")
+        self.neb_return.setEnabled(wf.can_return)
+        self.neb_ack.setEnabled(wf.can_acknowledge)
+
+    def _neb_share(self) -> None:
+        if self.nebulae and self.nebulae.request_share():
+            self._log("Nebulae: SD card sharing requested")
+
+    def _neb_confirm(self) -> None:
+        if self.nebulae and self.nebulae.request_share(confirm=True):
+            self._log("Nebulae: sharing confirmed; the volatile Live loop will be lost")
+
+    def _neb_cancel(self) -> None:
+        if self.nebulae:
+            self.nebulae.cancel_confirmation()
+
+    def _neb_eject_help(self) -> None:
+        QMessageBox.information(self, "Eject the card in Windows",
+            "1. Close every file and program that uses the Nebulae drive.\n"
+            "2. Use \u201eSafely Remove Hardware\u201c in the taskbar, or right-click the drive in "
+            "Explorer and choose \u201eEject\u201c.\n"
+            "3. Wait until this panel shows \u201eWindows ejected the card\u201c. Only the "
+            "firmware's EJECTED state counts; this button does not eject anything.")
+
+    def _neb_return(self) -> None:
+        if self.nebulae and self.nebulae.return_to_performance():
+            self._log("Nebulae: return to performance requested")
+
+    def _neb_acknowledge(self) -> None:
+        if self.nebulae is None or not self.nebulae.can_acknowledge:
+            return
+        answer = QMessageBox.warning(self, "Interrupted SD access",
+            "Windows may have lost pending changes. Close all files using this card. "
+            "Acknowledging does not recover data and is not a clean eject. Continue?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if answer == QMessageBox.Yes and self.nebulae.acknowledge_interruption():
+            self._log("Nebulae: interrupted access acknowledged")
+
+    def _build_audio_group(self) -> QGroupBox:
+        box = QGroupBox('Audio (firmware 0.4.0)')
+        layout = QVBoxLayout(box)
+        self.audio_status = _hint("")
+        layout.addWidget(self.audio_status)
+        self.level_bars = {key: LevelBar(label) for key, label in
+                           (("il", "IN L"), ("ir", "IN R"), ("ol", "OUT L"), ("or", "OUT R"))}
+        for bar in self.level_bars.values():
+            layout.addWidget(bar)
+        layout.addWidget(_hint('Peak levels per 100 ms in dBFS (digital full scale), not volts. '
+                               'OUT is the commanded test tone, IN what the codec receives.'))
+
+        tone_label = QLabel('Test tone')
+        tone_label.setObjectName("sectionLabel")
+        layout.addWidget(tone_label)
+        self.tone_status = _value_label()
+        layout.addWidget(self.tone_status)
+        row = QHBoxLayout()
+        self.tone_group = QButtonGroup(self)
+        self.tone_buttons: dict[str, QPushButton] = {}
+        for mode, text in (("OFF", "Off"), ("SINE", "Sine")):
+            b = QPushButton(text)
+            b.setCheckable(True)
+            b.setObjectName("segment")
+            b.clicked.connect(lambda _c=False, m=mode: self._send_tone(m))
+            self.tone_group.addButton(b)
+            self.tone_buttons[mode] = b
+            row.addWidget(b)
+        layout.addLayout(row)
+        form = QFormLayout()
+        self.tone_freq = QSpinBox()
+        self.tone_freq.setRange(p.TONE_MIN_HZ, p.TONE_MAX_HZ)
+        self.tone_freq.setValue(1000)
+        self.tone_freq.setSuffix(" Hz")
+        form.addRow("Frequency:", self.tone_freq)
+        self.tone_level = QComboBox()
+        for db in TONE_LEVELS_DBFS:
+            self.tone_level.addItem(f"{db} dBFS", _amplitude_for_dbfs(db))
+        self.tone_level.setCurrentIndex(TONE_LEVELS_DBFS.index(-20))
+        form.addRow("Level:", self.tone_level)
+        self.tone_channels = QComboBox()
+        for ch, text in (("LR", "Left + right"), ("L", "Left only"), ("R", "Right only")):
+            self.tone_channels.addItem(text, ch)
+        form.addRow("Channels:", self.tone_channels)
+        layout.addLayout(form)
+        self.tone_apply = QPushButton('Apply tone settings')
+        self.tone_apply.clicked.connect(lambda: self._send_tone(self._current_tone_mode()))
+        layout.addWidget(self.tone_apply)
+        layout.addWidget(_hint('Sine on AUDIO OUT, capped at −6 dBFS by the firmware. It stops '
+                               'with the session (BYE, timeout, closed app), before a blocking '
+                               'SD test, and whenever the firmware main loop stalls (1 s '
+                               'watchdog in the audio callback). Check the input range of '
+                               'connected equipment first.'))
+
+        scope_label = QLabel('Input snapshot (oscilloscope)')
+        scope_label.setObjectName("sectionLabel")
+        layout.addWidget(scope_label)
+        self.scope_widget = ScopeWidget()
+        layout.addWidget(self.scope_widget)
+        self.scope_summary = _value_label("No snapshot yet.")
+        layout.addWidget(self.scope_summary)
+        scope_row = QHBoxLayout()
+        self.scope_frames = QComboBox()
+        for n in SCOPE_FRAME_CHOICES:
+            self.scope_frames.addItem(f"{n} frames ({1000.0 * n / p.AUDIO_SAMPLE_RATE:.1f} ms)", n)
+        self.scope_frames.setCurrentIndex(SCOPE_FRAME_CHOICES.index(1024))
+        scope_row.addWidget(self.scope_frames, 1)
+        self.scope_trigger = QCheckBox("Trigger on rising edge")
+        self.scope_trigger.setChecked(True)
+        scope_row.addWidget(self.scope_trigger)
+        layout.addLayout(scope_row)
+        self.scope_button = QPushButton('Capture snapshot')
+        self.scope_button.clicked.connect(self._capture_scope)
+        layout.addWidget(self.scope_button)
+        layout.addWidget(_hint('One window of 5–43 ms from the audio inputs, transferred as '
+                               'frames; frequency from rising zero crossings, peak in dBFS. '
+                               'With a cable from AUDIO OUT to AUDIO IN and the tone on, this '
+                               'is the audio loopback check.'))
+        return box
+
+    def _build_log_group(self) -> QGroupBox:
+        box = QGroupBox('Event log')
+        layout = QVBoxLayout(box)
+        layout.addWidget(self.log, 1)
+        return box
+
+    def _save_report(self) -> None:
+        if self.session is None:
+            return
+        name, _ = QFileDialog.getSaveFileName(self, "Save diagnostic report",
+                                              "DaisyDiagnostic.json", "JSON (*.json)")
+        if not name:
+            return
+        report = self.session.snapshot()
+        if self.nebulae is not None:
+            report["nebulae_workflow"] = self.nebulae.snapshot()
+        report["captured_at"] = datetime.now().astimezone().isoformat()
+        report["app_version"] = __version__
+        try:
+            Path(name).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        except OSError as exc:
+            QMessageBox.warning(self, "Report could not be saved", str(exc))
 
     def _build_inputs_group(self) -> QGroupBox:
         box = QGroupBox('Toggle switches and plug detection')
@@ -382,22 +695,9 @@ class MainWindow(QMainWindow):
     def _build_pot_group(self) -> QGroupBox:
         box = QGroupBox('Potentiometers VR1–VR8')
         layout = QVBoxLayout(box)
-        self.pot_table = QTableWidget(p.NUM_POTS, 5)
-        self.pot_table.setHorizontalHeaderLabels(["", 'Value', 'Raw ADC', "Min", "Max"])
-        self.pot_table.verticalHeader().setVisible(False)
-        self.pot_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.pot_table.setSelectionMode(QAbstractItemView.NoSelection)
-        self.pot_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        for i in range(p.NUM_POTS):
-            self.pot_table.setItem(i, 0, QTableWidgetItem(f"VR{i + 1}"))
-            for c in range(1, 5):
-                item = QTableWidgetItem("–")
-                item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                self.pot_table.setItem(i, c, item)
-            self.pot_table.setRowHeight(i, 22)
-        self.pot_table.setFixedHeight(22 * p.NUM_POTS + 30)
+        self.pot_table = _value_table([f"VR{i + 1}" for i in range(p.NUM_POTS)])
         layout.addWidget(self.pot_table)
-        reset = QPushButton('Reset min/max')
+        reset = QPushButton('Reset min/max (pots and CV)')
         reset.clicked.connect(self._reset_minmax)
         layout.addWidget(reset)
         return box
@@ -405,37 +705,32 @@ class MainWindow(QMainWindow):
     def _build_cvgate_group(self) -> QGroupBox:
         box = QGroupBox('CV / Gate')
         layout = QVBoxLayout(box)
-        self.cvgate_status = QLabel("")
-        self.cvgate_status.setObjectName("hint")
-        self.cvgate_status.setWordWrap(True)
+        self.cvgate_status = _hint("")
         layout.addWidget(self.cvgate_status)
-        self.cv_table = QTableWidget(p.NUM_CV, 5)
-        self.cv_table.setHorizontalHeaderLabels(["", 'Value', 'Raw ADC', "Min", "Max"])
-        self.cv_table.verticalHeader().setVisible(False)
-        self.cv_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.cv_table.setSelectionMode(QAbstractItemView.NoSelection)
-        self.cv_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        for i in range(p.NUM_CV):
-            self.cv_table.setItem(i, 0, QTableWidgetItem(f"CV IN {i + 1}"))
-            for c in range(1, 5):
-                item = QTableWidgetItem("–")
-                item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                self.cv_table.setItem(i, c, item)
-            self.cv_table.setRowHeight(i, 22)
-        self.cv_table.setFixedHeight(22 * p.NUM_CV + 30)
+        self.cv_table = _value_table([f"CV IN {i + 1}" for i in range(p.NUM_CV)])
         layout.addWidget(self.cv_table)
         gates = QHBoxLayout()
         self.gate_labels: list[QLabel] = []
         for i in range(p.NUM_GATES):
             label = QLabel(f"GATE {i + 1}: –")
+            label.setWordWrap(True)
             label.setObjectName("valueLabel")
             gates.addWidget(label)
             self.gate_labels.append(label)
         layout.addLayout(gates)
+        self.cv_trace = CvTraceWidget()
+        layout.addWidget(self.cv_trace)
+        layout.addWidget(_hint('Rolling trace of the last 10 s of received frames (50–100 Hz, '
+                               'ADC scan 6–13 ms): CV IN 1/2 solid, CV OUT 1 echo dashed, gates '
+                               'as bands. Min/Max cover every received frame since the last '
+                               'reset (Pots → Reset min/max). Gate edges count rising edges '
+                               'modulo 256.'))
 
         out_label = QLabel('CV OUT test signal')
         out_label.setObjectName("sectionLabel")
         layout.addWidget(out_label)
+        self.cv_out_status = _value_label()
+        layout.addWidget(self.cv_out_status)
         row = QHBoxLayout()
         self.cv_mode_group = QButtonGroup(self)
         self.cv_mode_buttons: dict[str, QPushButton] = {}
@@ -468,38 +763,25 @@ class MainWindow(QMainWindow):
         self.cv_apply = QPushButton('Apply CV OUT settings')
         self.cv_apply.clicked.connect(lambda: self._send_cvout(self._current_cv_mode()))
         layout.addWidget(self.cv_apply)
-        note = QLabel('Values are normalized: CV IN −1…+1 (libDaisy bipolar CV), CV OUT as '
-                      'DAC code 0–4095. Volts are not shown until they have been measured on '
-                      'the hardware. Ramp is a triangle, saw a rising sawtooth; CV OUT 2 '
-                      'carries the inverse. CV OUT returns to Off when the session ends.')
-        note.setObjectName("hint")
-        note.setWordWrap(True)
-        layout.addWidget(note)
+        layout.addWidget(_hint('CV IN is normalized −1…+1; CV OUT uses DAC codes 0–4095. '
+                               'Volts are not displayed because the analog scaling has not been '
+                               'measured. Ramp is triangular; output 2 is inverse in Ramp/Saw.'))
         return box
 
     def _build_counter_group(self) -> QGroupBox:
-        box = QGroupBox('Buttons S1–S16 (press counts)')
-        grid = QGridLayout(box)
+        box = QGroupBox('Buttons S1–S16')
+        layout = QVBoxLayout(box)
+        layout.addWidget(_hint('Press counts since power-up (modulo 256); a held button is '
+                               'highlighted and lights its LED on the board.'))
+        grid = QGridLayout()
         self.counter_labels: list[QLabel] = []
         for i in range(p.NUM_BUTTONS):
             label = QLabel(f"S{i + 1}: –")
             label.setAlignment(Qt.AlignCenter)
             label.setMinimumWidth(42)
-            grid.addWidget(label, i // 8, i % 8)
+            grid.addWidget(label, i // 4, i % 4)
             self.counter_labels.append(label)
-        return box
-
-    def _build_extensions_group(self) -> QGroupBox:
-        box = QGroupBox('Planned features')
-        grid = QGridLayout(box)
-        for row, (name, tip) in enumerate(EXTENSIONS):
-            label = QLabel(name)
-            label.setToolTip(tip)
-            badge = QLabel('Not implemented')
-            badge.setObjectName("niBadge")
-            badge.setToolTip(tip)
-            grid.addWidget(label, row, 0)
-            grid.addWidget(badge, row, 1, Qt.AlignRight)
+        layout.addLayout(grid)
         return box
 
     # ---- session handling ----------------------------------------------------------------
@@ -510,21 +792,39 @@ class MainWindow(QMainWindow):
         self.connect_button.setText('Disconnect')
         self.sd_result = None
         self._reset_minmax()
-        if simulation:
+        self.neb_sim = None
+        if simulation and self.sim_device == "nebulae":
+            self.neb_sim = SimulatedNebulae(self._clock)
+            neb = self.neb_sim
+            self.cable = neb.cable
+            self.session = DeviceSession(neb.cdc_ports, lambda port: neb.cable.open(port, self._clock),
+                                         self._clock, simulated=True)
+            self.nebulae = NebulaeWorkflow(self.session, neb.midi_ports, neb.open_midi, self._clock)
+            self._sync_sim_controls()
+        elif simulation:
             self.cable = SimulatedCable()
             cable = self.cable
             self.session = DeviceSession(cable.ports, lambda port: cable.open(port, self._clock),
                                          self._clock, simulated=True)
+            self.nebulae = NebulaeWorkflow(self.session, lambda: [], RtMidiLink, self._clock)
             self._sync_sim_controls()
         else:
             self.cable = None
-            self.sim_demo.setChecked(False)
             self.session = DeviceSession(list_serial_ports, SerialLink, self._clock,
                                          port_override=self._port_override)
+            # Performance mode has no COM port: Nebulae is found on USB-MIDI (python-rtmidi).
+            self.nebulae = NebulaeWorkflow(self.session, list_midi_ports, RtMidiLink, self._clock)
         self.mode_sim.setChecked(simulation)
         self.mode_hw.setChecked(not simulation)
         self.sim_banner.setVisible(simulation)
-        self.sim_group.setVisible(simulation)
+        sim_index = self.control_tabs.indexOf(self.sim_page)
+        if simulation and sim_index < 0:
+            sim_index = self.control_tabs.addTab(self.sim_page, SIM_TAB)
+            self.control_tabs.setTabToolTip(sim_index, "Simulated kit: cable, card, plugs, faults")
+        elif not simulation and sim_index >= 0:
+            self.control_tabs.removeTab(sim_index)
+        if self.neb_sim is not None:
+            self.control_tabs.setCurrentIndex(TABS.index("Nebulae"))
         self.port_combo.setEnabled(not simulation)
         self.board.interactive = simulation
         self.board.simulated = simulation
@@ -566,8 +866,11 @@ class MainWindow(QMainWindow):
         for port in ports:
             mark = " ★" if port.is_daisy_candidate else ""
             self.port_combo.addItem(f"{port.device} – {port.description}{mark}", port.device)
-        index = self.port_combo.findData(current)
-        self.port_combo.setCurrentIndex(max(0, index))
+        if current is not None and self.port_combo.findData(current) < 0:
+            # Keep the user's fixed choice visible until the port returns, instead of
+            # silently showing "Automatic" while the session still waits for it.
+            self.port_combo.addItem(f"{current} – not present", current)
+        self.port_combo.setCurrentIndex(max(0, self.port_combo.findData(current)))
         self.port_combo.blockSignals(False)
 
     def _port_selected(self, _index: int) -> None:
@@ -578,14 +881,18 @@ class MainWindow(QMainWindow):
     def _tick(self) -> None:
         if self.session is None:
             return
-        if self.cable is not None and self.sim_demo.isChecked():
-            demo_pattern(self.cable.device, self._clock() - self._demo_start)
         if not self.paused:
             self.session.poll()
+            if self.nebulae is not None:
+                self.nebulae.poll()
+                for kind, payload in self.nebulae.drain_events():
+                    if kind == "log":
+                        self._log(str(payload))
         board_changed = False
         for kind, payload in self.session.drain_events():
             if kind == "board":
                 board_changed = True
+                self._track_extremes(payload)
             elif kind == "state":
                 self._update_status()
             elif kind == "connected":
@@ -600,11 +907,18 @@ class MainWindow(QMainWindow):
                 self.sd_result = None
             elif kind == "sd":
                 self.sd_result = payload
-                self._log(f"microSD test: {self._sd_text()[0]}")
+                if payload is not None:
+                    self._log(f"microSD test: {self._sd_text()[0]}")
             elif kind == "reader":
                 self.sd_result = None
                 if payload is not None:
                     self._log(f"Card reader: {payload.state}")
+            elif kind == "audio":
+                self._apply_audio(payload)
+            elif kind == "scope":
+                self.scope_widget.set_capture(payload)
+                self.scope_summary.setText(self.scope_widget.summary())
+                self._log(f"Audio snapshot: {self.scope_widget.summary()}")
             elif kind == "bootloader":
                 # ACK c=BOOT confirms the accepted request, not the DFU entry itself.
                 self._log("Request accepted: the kit restarts into the Daisy bootloader. Once it "
@@ -614,19 +928,40 @@ class MainWindow(QMainWindow):
         if board_changed:
             self._apply_board()
 
+    def _track_extremes(self, st: p.BoardState) -> None:
+        """Min/Max over every received frame, not only the one visible at refresh time."""
+        for i, v in enumerate(st.pots):
+            lo, hi = self.board.pot_min[i], self.board.pot_max[i]
+            self.board.pot_min[i] = v if lo is None else min(lo, v)
+            self.board.pot_max[i] = v if hi is None else max(hi, v)
+        if st.cvgate is not None:
+            for i, v in enumerate(st.cvgate.cv):
+                lo, hi = self.cv_min[i], self.cv_max[i]
+                self.cv_min[i] = v if lo is None else min(lo, v)
+                self.cv_max[i] = v if hi is None else max(hi, v)
+            self.cv_trace.push(st.time_ms, st.cvgate.cv, st.cvgate.gates, st.cvgate.cv_out)
+
+    def _apply_audio(self, levels: p.AudioLevels) -> None:
+        for key, value in zip(("il", "ir", "ol", "or"), (*levels.inputs, *levels.outputs)):
+            self.level_bars[key].set_level(value)
+        amplitude = levels.tone_amplitude / 10000.0
+        db = "−∞" if amplitude <= 0 else f"{20 * math.log10(amplitude):+.1f}"
+        self.tone_status.setText(
+            "Firmware tone: off" if levels.tone_mode == "OFF" else
+            f"Firmware tone: {levels.tone_mode} {levels.tone_freq_hz} Hz, {db} dBFS, "
+            f"{levels.tone_channels}")
+        button = self.tone_buttons.get(levels.tone_mode)
+        if button is not None and not button.isChecked():
+            button.setChecked(True)
+
     def _apply_board(self) -> None:
         st = self.session.board if self.session else None
         if st is not None:
-            for i, v in enumerate(st.pots):
-                lo, hi = self.board.pot_min[i], self.board.pot_max[i]
-                self.board.pot_min[i] = v if lo is None else min(lo, v)
-                self.board.pot_max[i] = v if hi is None else max(hi, v)
             if self._last_sd_card and not st.sd_card:
                 self.sd_result = None  # card removed: an old test result is no longer valid
             self._last_sd_card = st.sd_card
         self.board.state = st
         self.board.connected = self.session is not None and self.session.connected
-        self.board.led_selectable = self.board.connected
         text, color = self._sd_text()
         self.board.sd_display = SdDisplay(text, color)
         self.board.update()
@@ -695,18 +1030,26 @@ class MainWindow(QMainWindow):
             f"TX {sysinfo.tx_ok} (busy {sysinfo.tx_busy}, dropped {sysinfo.tx_drop}) / "
             f"RX {sysinfo.rx_ok} (errors {sysinfo.rx_bad})" if sysinfo else "–")
         self.info["reconnects"].setText(str(s.reconnects))
+        # The combo shows the firmware's actual stream rate, not the last request.
+        reported_rate = getattr(sysinfo, "rate_hz", None)
+        if reported_rate is not None and not self.rate_combo.view().isVisible():
+            index = self.rate_combo.findData(reported_rate)
+            if index >= 0 and index != self.rate_combo.currentIndex():
+                self.rate_combo.blockSignals(True)
+                self.rate_combo.setCurrentIndex(index)
+                self.rate_combo.blockSignals(False)
 
         st = s.board if s.connected else None
         enabled = st is not None
+        caps = dev.capabilities if dev else []
+        led_ok = enabled and "led" in caps  # Nebulae SD management has no LED test
         for b in self.led_buttons.values():
-            b.setEnabled(enabled)
-        for cb in self.led_checks:
-            cb.setEnabled(enabled)
-        self.br_slider.setEnabled(enabled)
-        self.chase_slider.setEnabled(enabled)
+            b.setEnabled(led_ok)
+        self.br_slider.setEnabled(led_ok)
+        self.chase_slider.setEnabled(led_ok)
         reader = s.reader if s.reader_supported else None
         local = not s.reader_supported or (reader is not None and reader.state == "LOCAL")
-        self.sd_button.setEnabled(enabled and st.sd_card and not s.sd_test_pending
+        self.sd_button.setEnabled(enabled and st.sd_card and "sdread" in caps and not s.sd_test_pending
                                   and not s.reader_pending and local)
         self.boot_button.setEnabled(bool(enabled and s.bootloader_supported and local
                                          and not s.sd_test_pending and not s.reader_pending))
@@ -716,8 +1059,10 @@ class MainWindow(QMainWindow):
         self.reader_return.setEnabled(bool(enabled and reader and not reader.busy and
                                            reader.state in ("EJECTED", "INTERRUPTED", "ERROR")
                                            and not s.reader_pending))
+        nebulae_dev = bool(dev and dev.app == "NebulaeOnDaisy")
         self.reader_return.setText("Acknowledge interrupted access" if reader and
                                   reader.state in ("INTERRUPTED", "ERROR") else
+                                  "Return card (stay in SD management)" if nebulae_dev else
                                   "Return card to diagnostics")
         if not s.connected:
             reader_text = "Card reader: disconnected; card ownership is unknown."
@@ -738,21 +1083,21 @@ class MainWindow(QMainWindow):
             }[reader.state]
         if s.simulated:
             reader_text += " Simulation only: no Windows drive is created."
+        if reader and reader.diagnostic_text and reader.io != "NONE":
+            reader_text += "\n" + reader.diagnostic_text
         self.reader_status.setText(reader_text)
+        self._refresh_nebulae()
         self.rate_combo.setEnabled(enabled)
         if st is not None:
             btn = self.led_buttons.get(st.led_mode)
             if btn is not None and not btn.isChecked():
                 btn.setChecked(True)
+            elif btn is None:  # MASK was set by another host: no button represents it
+                self._uncheck_all(self.led_group, self.led_buttons.values())
             if not self.br_slider.isSliderDown():
                 self.br_slider.setValue(st.led_brightness)
         else:
-            self.led_group.setExclusive(False)
-            for b in self.led_buttons.values():
-                b.setChecked(False)
-            self.led_group.setExclusive(True)
-        for i, cb in enumerate(self.led_checks):
-            cb.setChecked(bool(self.led_mask >> i & 1))
+            self._uncheck_all(self.led_group, self.led_buttons.values())
 
         text, color = self._sd_text()
         self.sd_status.setText(text)
@@ -800,35 +1145,53 @@ class MainWindow(QMainWindow):
                 label.setStyleSheet(f"color: {theme.TEXT.name()}; font-weight: 700;"
                                     f"background: #3a3d41;" if st.buttons[i] else "")
 
+        audio = s.audio_supported and st is not None
+        for w in (*self.tone_buttons.values(), self.tone_freq, self.tone_level,
+                  self.tone_channels, self.tone_apply, self.scope_frames, self.scope_trigger):
+            w.setEnabled(audio)
+        self.scope_button.setEnabled(audio and not s.scope_pending)
+        if not s.connected:
+            self.audio_status.setText("")
+            for bar in self.level_bars.values():
+                bar.set_level(0.0, active=False)
+            self._uncheck_all(self.tone_group, self.tone_buttons.values())
+            self.tone_status.setText("–")
+        elif not s.audio_supported:
+            self.audio_status.setText('The connected firmware has no audio extension '
+                                      '(firmware 0.4.0 or later required).')
+            for bar in self.level_bars.values():
+                bar.set_level(0.0, active=False)
+        else:
+            self.audio_status.setText("Live peak meters, test tone and input snapshot.")
+
         if self.cable is not None:
             self.sim_plug.setText('Plug in USB cable' if not self.cable.plugged
                                   else 'Unplug USB cable')
             self._sync_sim_controls()
         if not s.connected and self.board.state is not None:
             self._apply_board()
+        elif self.board.flash_pending():
+            self.board.update()  # let a gate-ring flash decay even without new frames
+
+    @staticmethod
+    def _uncheck_all(group: QButtonGroup, buttons) -> None:
+        group.setExclusive(False)
+        for b in buttons:
+            b.setChecked(False)
+        group.setExclusive(True)
 
     # ---- LED commands -------------------------------------------------------------------
     def _current_led_mode(self) -> str:
         st = self.session.board if self.session else None
-        return st.led_mode if st else "FOLLOW"
+        return st.led_mode if st and st.led_mode in self.led_buttons else "FOLLOW"
 
     def _send_led(self, mode: str) -> None:
         if self.session is None:
             return
-        ok = self.session.set_led(mode, mask=self.led_mask, brightness=self.br_slider.value(),
+        ok = self.session.set_led(mode, brightness=self.br_slider.value(),
                                   step_ms=self.chase_slider.value())
         if ok:
             self._log(f"LED mode requested: {mode}")
-
-    def _set_led_bit(self, index: int, on: bool) -> None:
-        if on:
-            self.led_mask |= 1 << index
-        else:
-            self.led_mask &= ~(1 << index)
-        self._send_led("MASK")
-
-    def _toggle_led(self, index: int) -> None:
-        self._set_led_bit(index, not bool(self.led_mask >> index & 1))
 
     def _enter_bootloader(self) -> None:
         s = self.session
@@ -843,7 +1206,22 @@ class MainWindow(QMainWindow):
             self._log("Firmware update mode requested")
 
     def _sd_test(self) -> None:
-        if self.session and self.session.request_sd_test():
+        s = self.session
+        if s is None:
+            return
+        if self._current_cv_mode() != "OFF":
+            # The firmware holds the last DAC code while it blocks in the SD test and
+            # cannot switch CV OUT off meanwhile; ask, then send OFF ahead of SDTEST so
+            # both are executed in wire order before the test starts.
+            answer = QMessageBox.question(self, "CV OUT is active",
+                "The SD read test blocks the firmware, which would freeze the CV OUT test "
+                "signal at its current level for the duration of the test. Switch CV OUT "
+                "Off and start the read test?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if answer != QMessageBox.Yes:
+                return
+            self._send_cvout("OFF")
+        if s.request_sd_test():
             self._log('microSD read test requested')
 
     def _share_reader(self) -> None:
@@ -870,9 +1248,32 @@ class MainWindow(QMainWindow):
     def _reset_minmax(self) -> None:
         self.board.pot_min = [None] * p.NUM_POTS
         self.board.pot_max = [None] * p.NUM_POTS
-        self.cv_min: list[float | None] = [None] * p.NUM_CV
-        self.cv_max: list[float | None] = [None] * p.NUM_CV
+        self.cv_min = [None] * p.NUM_CV
+        self.cv_max = [None] * p.NUM_CV
+        if hasattr(self, "cv_trace"):
+            self.cv_trace.clear()
         self.board.update()
+
+    # ---- audio --------------------------------------------------------------------------
+    def _current_tone_mode(self) -> str:
+        a = self.session.audio if self.session else None
+        return a.tone_mode if a is not None else "OFF"
+
+    def _send_tone(self, mode: str) -> None:
+        s = self.session
+        if s is None:
+            return
+        if s.request_tone(mode, self.tone_freq.value(), self.tone_level.currentData(),
+                          self.tone_channels.currentData()):
+            self._log(f"Test tone requested: {mode} {self.tone_freq.value()} Hz "
+                      f"{self.tone_level.currentText()} {self.tone_channels.currentData()}")
+
+    def _capture_scope(self) -> None:
+        s = self.session
+        if s is None:
+            return
+        if s.request_scope(self.scope_frames.currentData(), self.scope_trigger.isChecked()):
+            self._log(f"Audio snapshot requested: {self.scope_frames.currentText()}")
 
     # ---- CV / gate ----------------------------------------------------------------------
     def _current_cv_mode(self) -> str:
@@ -891,11 +1292,9 @@ class MainWindow(QMainWindow):
 
     def _refresh_cvgate(self, st) -> None:
         cg = st.cvgate if st is not None else None
-        if cg is not None:
-            for i, v in enumerate(cg.cv):
-                lo, hi = self.cv_min[i], self.cv_max[i]
-                self.cv_min[i] = v if lo is None else min(lo, v)
-                self.cv_max[i] = v if hi is None else max(hi, v)
+        self.cv_out_status.setText(
+            f"Reported DAC codes: OUT 1 = {cg.cv_out[0]}, OUT 2 = {cg.cv_out[1]} "
+            f"({cg.cv_out_mode})" if cg is not None else "No CV OUT data")
         enabled = cg is not None
         for b in self.cv_mode_buttons.values():
             b.setEnabled(enabled)
@@ -907,8 +1306,8 @@ class MainWindow(QMainWindow):
             self.cvgate_status.setText('The connected firmware reports no CV/gate data '
                                        '(firmware 0.3.0 or later required).')
         else:
-            self.cvgate_status.setText(
-                f"CV OUT: {cg.cv_out_mode}, codes {cg.cv_out[0]} / {cg.cv_out[1]}")
+            self.cvgate_status.setText("Live CV inputs and gate counters. Values are normalized, not volts.")
+        self.cv_trace.update()
         for i in range(p.NUM_CV):
             lo, hi = self.cv_min[i], self.cv_max[i]
             cells = ("–", "–", "–", "–") if cg is None else (
@@ -922,7 +1321,7 @@ class MainWindow(QMainWindow):
                 label.setStyleSheet("")
             else:
                 label.setText(f"GATE {i + 1}: {'HIGH' if cg.gates[i] else 'LOW'} · "
-                              f"edges {cg.gate_counts[i]}")
+                              f"rising edges {cg.gate_counts[i]}")
                 label.setStyleSheet(f"color: {theme.TEXT.name()}; font-weight: 700;"
                                     if cg.gates[i] else f"color: {theme.MUTED.name()};")
         if cg is not None:
@@ -930,10 +1329,7 @@ class MainWindow(QMainWindow):
             if button is not None and not button.isChecked():
                 button.setChecked(True)
         else:
-            self.cv_mode_group.setExclusive(False)
-            for b in self.cv_mode_buttons.values():
-                b.setChecked(False)
-            self.cv_mode_group.setExclusive(True)
+            self._uncheck_all(self.cv_mode_group, self.cv_mode_buttons.values())
 
     # ---- simulation controls -------------------------------------------------------------
     def _sim_toggle_gate(self, index: int) -> None:
@@ -993,12 +1389,6 @@ class MainWindow(QMainWindow):
         if self.cable is not None:
             self.cable.device.corrupt_next_frame = True
             self._log('Simulation: the next frame will have an invalid CRC')
-
-    def _sim_demo_toggled(self, on: bool) -> None:
-        self._demo_start = self._clock()
-        if not on and self.cable is not None:
-            for i in range(p.NUM_BUTTONS):
-                self.cable.device.set_button(i, False)
 
     def _sync_sim_controls(self) -> None:
         dev = self._sim_device()

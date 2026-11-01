@@ -1,5 +1,28 @@
 # Übergabe — lokal weiterarbeiten
 
+**Diagnose 31.10.2026:** PR #70 gemergt, Suite 0.3.2. SD-Kartenleser mit
+Dateioperationen, physischer Schreibunterbrechung und Wiederanlauf GEMESSEN;
+beide CV-Kanäle und beide Gate-Eingänge funktional mit 0.3.1 GEMESSEN.
+[Status, Grenzen und aktuelle EXE/BIN-Downloads](diagnostics/README.md#hardware-validation).
+Die weitere Hardware-Testreihe wurde auf Benutzerwunsch beendet; offene
+Präzisions-/Langzeitfälle bleiben dokumentiert. Control-Panel-Anpassung ist
+als nächster Arbeitspunkt in Klärung.
+
+**Stand Acid Seq 28.10.2026:** Phasen 0–6 (PR #54–#60) und die Nachprüfung (PR #61)
+sind in `main`. Codex hat zwei Prüfungen gemacht: das Review des Arbeitsauftrags
+([CODEX_REVIEW.md](docs/acid-seq/CODEX_REVIEW.md), R01–R16, vor der Umsetzung
+eingearbeitet) und die Fehlersuche über alle Phasen
+([CODEX_FEHLERSUCHE.md](docs/acid-seq/CODEX_FEHLERSUCHE.md), Stand `d3297fd`, Verdikt
+damals NICHT BEREIT: 6 P1, 11 P2, 1 P3). Alle 18 Befunde F01–F18 sind mit
+Regressionstests behoben ([Arbeitsauftrag § 10](docs/acid-seq/ARBEITSAUFTRAG.md));
+Q1–Q4 entschieden (D16). Nach dem Merge auf `main` @ `d2a3e1f` GEMESSEN 27.10.2026:
+ASan/UBSan und TSan für alle elf Ziele PASS, JUCE 9.0.4 Selbsttest PASS, Browser-e2e
+grün, Goldens unverändert. Eine erneute Codex-Prüfung der Korrekturen gibt es nicht;
+das Verdikt in CODEX_FEHLERSUCHE.md bezieht sich auf den Stand vor den Korrekturen.
+Offen: Hardwaretests ([Laufzettel](sequencers/acid-seq/docs/HARDWARE_TEST.md), alle
+NICHT GEMESSEN) und der Release-Entwurf `acid-seq-v0.1.0-test1` (Draft, nicht
+veröffentlicht). Beides entscheidet der Benutzer.
+
 **Integration 25./26.10.2026:** Branch `integration/shimmer-bootloader` führt PR #40
 (Bootloader-Einstieg), #38 (modulare FX) und #41 (Toy Piano + Ambient mit Shimmer)
 zusammen. Testimages: `toy-piano-ambient 0.1.2` und `reverb-fx 0.3.1`; Komponente

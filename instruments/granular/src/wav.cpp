@@ -58,7 +58,7 @@ bool Loader::Request(unsigned slot) {
 void Loader::Fail(FileError e,bool destructive) {
     error=e; file_->Close();
     if(destructive) {
-        active=0; bridge_->published={}; bridge_->slot=0;
+        active=0; bridge_->published={}; bridge_->slot=0; bridge_->bank=0;
         bridge_->generation.fetch_add(1,std::memory_order_release);
         bridge_->gate.store(false,std::memory_order_release);
     }
@@ -85,7 +85,8 @@ void Loader::Service() {
         for(uint32_t i=0;i<n;i+=2) pcm_[(read_+i)/2]=static_cast<int16_t>(U16(bounce_+i));
         read_+=n;
         if(read_==parser_.info.bytes) {
-            file_->Close(); active=target; bridge_->published=parser_.info; bridge_->slot=active;
+            const unsigned bank=file_->Bank();
+            file_->Close(); active=target; bridge_->published=parser_.info; bridge_->slot=active; bridge_->bank=bank;
             bridge_->generation.fetch_add(1,std::memory_order_release);
             bridge_->gate.store(false,std::memory_order_release); state=State::Publish;
         } break;
@@ -112,5 +113,28 @@ uint16_t SlotLeds(unsigned mode,uint16_t keys,unsigned active,unsigned target,
         if(on) mask |= bit;
     }
     return mask;
+}
+LedFrame PanelLeds(const LedState& s) {
+    LedFrame f;
+    auto pulse=[&](unsigned code) {return s.ms%2000<code*240 && s.ms%240<100;};
+    if(s.mode==2) {f.on=s.keys;return f;}
+    if(s.mode==0) {
+        f.on=SlotLeds(0,s.keys,s.active,s.target,s.loading,s.error,s.ms,s.status);
+        if(s.overrun) f.on|=kOverrunLed;
+        return f;
+    }
+    if(!s.bank_view) {
+        f.on=SlotLeds(1,s.keys,s.active,s.target,s.loading,s.error,s.ms,s.status);
+        return f;
+    }
+    // Bank view: active bank bright, other existing banks dimmed, missing banks off;
+    // the bank whose list is being read flashes at 5 Hz, an unreadable one pulses 4.
+    const uint16_t bit=s.bank>=1 && s.bank<=16 ? uint16_t(1u<<(s.bank-1)) : 0;
+    f.dim=s.bank_mask & uint16_t(~bit);
+    if(s.scanning_bank==s.bank && bit) {if(s.ms%200<100) f.on|=bit;}
+    else if(s.bank_failed && bit) {if(pulse(4)) f.on|=bit;}
+    else f.on|=bit;
+    f.dim&=uint16_t(~f.on);
+    return f;
 }
 }

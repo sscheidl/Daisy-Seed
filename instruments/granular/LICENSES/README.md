@@ -13,8 +13,13 @@
   label does not remove the underlying Csound LGPL obligations.
 
 New adapter/control/loader/scheduler/tests use [Project MIT](Project-MIT.txt).
-The combined DSP is not represented as MIT-only. Pinned libDaisy, DaisySP, STM32
-middleware and FatFS retain their licenses in their submodules. No manual PDFs,
+The combined DSP is not represented as MIT-only. Pinned libDaisy, DaisySP and STM32
+middleware retain their licenses in their submodules. Since v0.2.0 the image links
+FatFs R0.16 from `common/sd/fatfs` (ChaN, 1-clause BSD style, notice in the sources and
+`common/sd/fatfs/LICENSE.txt`; binaries need no notice) and the project-MIT card
+reader from `common/sd/reader` and DDP framing from `diagnostics/protocol`. The
+`src/reference_dsp.cpp` packed forward FFT (v0.2.0) is a project modification of the
+LGPL-covered vocoder and stays under the same LGPL terms. No manual PDFs,
 factory samples, Terrarium driver, alternate instruments or Pedal BINs are shipped.
 
 Corresponding application source, linker additions and build instructions are

@@ -37,7 +37,8 @@ void TxQueue::Discard(Stats& stats) {
 
 App::App(Board& board, UsbSink& usb, const char* bootloader_name, uint32_t now_ms)
     : board_(board), usb_(usb), start_ms_(now_ms), last_state_ms_(now_ms),
-      last_sys_ms_(now_ms), last_led_ms_(now_ms - kLedMinIntervalMs), last_stat_ms_(now_ms) {
+      last_sys_ms_(now_ms), last_led_ms_(now_ms - kLedMinIntervalMs), last_stat_ms_(now_ms),
+      last_audio_ms_(now_ms) {
     session_.Init(bootloader_name);
     last_ticks_ = board_.ControlTicks();
 }
@@ -49,12 +50,54 @@ void App::Send(const ddp::Writer& body) {
         ++stats_.tx_drop;
 }
 
+void App::SilenceOutputs(uint32_t now) {
+    // Called before the main loop blocks (SD test, reader init): CV OUT and the test
+    // tone would otherwise hold their last state for the whole blocked time.
+    session_.settings.cv_mode = CvOutMode::Off;
+    board_.ApplyCvOut(0, 0);
+    last_cv_[0] = last_cv_[1] = 0;
+    cv_applied_ = true;
+    session_.settings.tone.mode = ToneMode::Off;
+    board_.ApplyTone(session_.settings.tone, now);
+    last_tone_ = session_.settings.tone;
+    tone_applied_ = true;
+    last_tone_ms_ = now;
+}
+
+static bool SameTone(const ToneSettings& a, const ToneSettings& b) {
+    return a.mode == b.mode && a.freq_hz == b.freq_hz && a.amplitude == b.amplitude
+           && a.channels == b.channels;
+}
+
+void App::PumpScope() {
+    uint16_t frames = 0;
+    const int16_t* samples = board_.ScopeData(frames);
+    if(samples == nullptr || frames == 0)
+        return;  // still capturing
+    const uint16_t chunks = ScopeChunks(frames);
+    // A few chunks per step keep ST/SYS frames flowing between them.
+    for(int sent = 0; sent < 3 && scope_next_chunk_ < chunks; ++sent) {
+        if(tx_.Room() < ddp::kMaxFrame)
+            return;
+        char body[ddp::kMaxBody + 1];
+        ddp::Writer out(body, sizeof(body));
+        WriteScopeChunk(samples, frames, scope_next_chunk_, chunks, out);
+        Send(out);
+        ++scope_next_chunk_;
+    }
+    if(scope_next_chunk_ >= chunks)
+        scope_active_ = false;
+}
+
 void App::Step(uint32_t now) {
     uint32_t requests = kRequestNone;
     if(keepalive_after_block_) {
-        // The previous step blocked in the SD test; keep-alives queued meanwhile are
-        // processed only now, so the blocked time must not count as host silence.
-        session_.KeepAlive(now);
+        // The previous step blocked (SD test, reader init). Keep-alives the host sent
+        // meanwhile are still queued in the RX ring; only then does the blocked time
+        // not count as host silence. A host that fell silent before the block is not
+        // revived artificially.
+        if(rx_.Size() > 0)
+            session_.KeepAlive(now);
         keepalive_after_block_ = false;
     }
 
@@ -69,6 +112,8 @@ void App::Step(uint32_t now) {
         if(r & (kRequestReaderShare | kRequestReaderReturn | kRequestReaderStatus)) {
             // Execute in wire order, not after coalescing command bits. This also
             // prevents a queued SDTEST from running after a SHARE in the same RX batch.
+            if(r & kRequestReaderShare)
+                SilenceOutputs(now);  // card initialisation blocks the main loop
             board_.ReaderCommand(r, reply);
             keepalive_after_block_ = true;
         }
@@ -79,6 +124,22 @@ void App::Step(uint32_t now) {
                 boot_since_ = now;
             } else {
                 reply.Str("ERR c=BOOT e=BUSY"); // the card is shared with a computer
+            }
+        }
+        if(r & kRequestScope) {
+            const Settings& s = session_.settings;
+            if(!board_.AudioSupported())
+                reply.Str("ERR c=SCOPE e=UNSUPPORTED");
+            else if(scope_active_)
+                reply.Str("ERR c=SCOPE e=BUSY");
+            else if(!board_.StartScope(s.scope_frames, s.scope_trigger))
+                reply.Str("ERR c=SCOPE e=BUSY");
+            else {
+                scope_active_ = true;
+                scope_next_chunk_ = 0;
+                reply.Str("ACK c=SCOPE n=").U32(s.scope_frames)
+                    .Str(" t=").U32(s.scope_trigger ? 1u : 0u)
+                    .Str(" k=").U32(ScopeChunks(s.scope_frames));
             }
         }
         if(r & kRequestNewSession) {
@@ -103,21 +164,25 @@ void App::Step(uint32_t now) {
 
     // LEDs: commanded state only, there is no optical feedback.
     const uint16_t leds = ComputeLeds(session_.settings, now, inputs.buttons);
+    const uint8_t brightness = LedBrightness(session_.settings, inputs);
     if(requests & kRequestLeds)
         leds_dirty_ = true;
-    if((leds_dirty_ || leds != last_leds_ || session_.settings.led_brightness != last_brightness_)
+    if((leds_dirty_ || leds != last_leds_ || brightness != last_brightness_)
        && now - last_led_ms_ >= kLedMinIntervalMs) {
-        board_.ApplyLeds(leds, session_.settings.led_brightness);
+        board_.ApplyLeds(leds, brightness);
         last_leds_ = leds;
-        last_brightness_ = session_.settings.led_brightness;
+        last_brightness_ = brightness;
         last_led_ms_ = now;
         leds_dirty_ = false;
     }
 
-    // CV OUT: test signals only while a host session is active, so no voltage is
-    // left on patched equipment after BYE, a timeout or a closed application.
-    if(!session_.HostActive(now))
+    // CV OUT and the test tone: only while a host session is active, so no voltage
+    // or signal is left on patched equipment after BYE, a timeout or a closed app.
+    const bool host_active = session_.HostActive(now);
+    if(!host_active) {
         session_.settings.cv_mode = CvOutMode::Off;
+        session_.settings.tone.mode = ToneMode::Off;
+    }
     uint16_t cv[kNumCv];
     ComputeCvOut(session_.settings, now, cv);
     if(!cv_applied_ || cv[0] != last_cv_[0] || cv[1] != last_cv_[1]) {
@@ -125,6 +190,15 @@ void App::Step(uint32_t now) {
         last_cv_[0] = cv[0];
         last_cv_[1] = cv[1];
         cv_applied_ = true;
+    }
+    // The callback keeps the tone only until keep_until; refreshing it from here
+    // ties the tone to a running main loop as well as to the host session.
+    if(!tone_applied_ || !SameTone(session_.settings.tone, last_tone_)
+       || now - last_tone_ms_ >= kToneRefreshMs) {
+        board_.ApplyTone(session_.settings.tone, now + kToneKeepAliveMs);
+        last_tone_ = session_.settings.tone;
+        tone_applied_ = true;
+        last_tone_ms_ = now;
     }
 
     if(now - last_stat_ms_ >= 1000) {
@@ -138,14 +212,18 @@ void App::Step(uint32_t now) {
     if(requests & kRequestSdTest) {
         char body[96];
         ddp::Writer out(body, sizeof(body));
-        if(board_.SdTestAllowed()) WriteSd(board_.RunSdTest(inputs.sd_card), out);
-        else out.Str("ERR c=SDTEST e=BUSY");
+        if(board_.SdTestAllowed()) {
+            SilenceOutputs(now);  // the test blocks: no frozen CV level or tone meanwhile
+            WriteSd(board_.RunSdTest(inputs.sd_card), out);
+        } else {
+            out.Str("ERR c=SDTEST e=BUSY");
+        }
         Send(out);
         keepalive_after_block_ = true;
     }
 
     // Replies (including the ACK for BYE) stay queued after the stream stops.
-    if(session_.HostActive(now)) {
+    if(host_active) {
         const uint32_t period = 1000u / session_.settings.rate_hz;
         const bool periodic = now - last_state_ms_ >= period;
         const bool changed = DigitalChanged(inputs, last_sent_)
@@ -153,7 +231,9 @@ void App::Step(uint32_t now) {
         if(periodic || changed || (requests & kRequestState)) {
             char body[ddp::kMaxBody + 1];
             ddp::Writer out(body, sizeof(body));
-            WriteState(inputs, session_.settings, last_leds_, seq_++, now, out, last_cv_);
+            Settings view = session_.settings;
+            view.led_brightness = brightness;  // report the effective (PotDim) brightness
+            WriteState(inputs, view, last_leds_, seq_++, now, out, last_cv_);
             Send(out);
             last_sent_ = inputs;
             last_state_ms_ = now;
@@ -165,12 +245,24 @@ void App::Step(uint32_t now) {
             Send(out);
             last_sys_ms_ = now;
 #ifdef DIAG_CARD_READER
-            char reader_body[128];
+            char reader_body[192];
             ddp::Writer reader_out(reader_body, sizeof(reader_body));
             board_.ReaderCommand(kRequestReaderStatus, reader_out);
             Send(reader_out);
 #endif
         }
+        if(board_.AudioSupported()
+           && (now - last_audio_ms_ >= kAudioFrameMs || (requests & kRequestState))) {
+            char body[128];
+            ddp::Writer out(body, sizeof(body));
+            WriteAudio(board_.ReadAudioLevels(), session_.settings.tone, out);
+            Send(out);
+            last_audio_ms_ = now;
+        }
+        if(scope_active_)
+            PumpScope();
+    } else if(scope_active_) {
+        scope_active_ = false;  // session ended: drop the capture, nobody listens
     }
     tx_.Pump(usb_, stats_);
     if(boot_pending_ && (tx_.Pending() == 0 || now - boot_since_ >= kBootFlushMs)) {

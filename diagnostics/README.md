@@ -4,13 +4,66 @@ Hardware diagnostics for the **Electro-Smith Seed3 Desktop Development Kit**:
 C++ firmware and a Windows application (Python/PySide6), communicating over USB CDC
 through the carrier's **J7** connector. The GUI and documentation are in English.
 
-> **Validation:** ARM builds and automated software/simulation tests pass.
-> Hardware tests **H1–H10 passed on 17 October 2026**, with H3 shortened to about
-> three minutes. Some results are operator reports rather than recorded measurements.
-> H11 (a second Windows PC without Python) is still open. Those results apply to
-> firmware 0.1.0. The new 0.2.0 card-reader implementation has **software tests
-> only; Windows drive enumeration and physical card writes remain untested**.
-> See the [test report](docs/TEST_REPORT.md) and [reader review](docs/SD_CARD_READER_REVIEW.md).
+> **Implemented and hardware-tested in the scope below:** SD diagnostics,
+> Windows SD card reader, both CV channels and both gate inputs. Results are
+> real-board measurements, separate from software/simulation tests.
+
+## App 0.5.0: Nebulae on Daisy profile
+
+App **0.5.0** adds the **Nebulae** tab: share the sample card of Nebulae on Daisy 0.2.0
+with Windows, eject, return to performance, with Live-loop warning and interruption
+acknowledgement ([profile](docs/NEBULAE_PROFILE.md)). The card-reader sources moved
+unchanged to `common/sd/reader/`; both diagnostic images rebuild byte-identical.
+Simulation-tested only (`--sim-nebulae`), **NICHT GEMESSEN** on hardware.
+
+## Firmware 0.4.0 and app 0.4.0 (audio, not yet flashed)
+
+Firmware **0.4.0** adds the audio extension: a capped test tone on AUDIO OUT, peak
+meters for inputs and outputs, an input snapshot (oscilloscope) and the LED mode
+POTDIM (VR1 dims all LEDs), plus two review fixes (outputs silenced before blocking
+SD access, no CMD13 after a reset abort). App **0.4.0** adds the **Audio** tab
+(meters, tone generator, snapshot with frequency/peak measurement) and a rolling
+CV/gate trace. [Firmware notes](docs/FIRMWARE.md), [protocol](protocol/PROTOCOL.md),
+[control panel](docs/CONTROL_PANEL_0.3.4.md). **The 0.4.0 image is built but not
+flashed: all audio behaviour is simulator-tested only, NICHT GEMESSEN.**
+
+App 0.3.4/0.3.5 reorganised the control panel into categories (USB, Buttons, Pots,
+CV / Gate, SD card, Log; plus Simulation), made **Buttons → LEDs** the default and
+fixed the host findings of the independent milestone review.
+The existing 0.3.2 downloads below remain the published binary baseline.
+
+## Hardware validation
+
+**GEMESSEN — 31 October 2026.** These functional checks passed on the Seed3 Desktop:
+
+| Feature | Implemented | Observed hardware result | Firmware / evidence |
+| --- | --- | --- | --- |
+| SD filesystem diagnostics | Card detection and read-only FAT32 mount/root-directory test | FR_OK before and after card-reader handover | CardReader 0.3.2; [report](docs/HARDWARE_CARD_READER_0.3.2_2026-10-31.md) |
+| Windows SD card reader | Read/write USB MSC on J7 alongside CDC; explicit ownership and eject | Create/read/edit/rename/delete, hashes after eject/remount; one physical card removal during writing stayed responsive, quarantined and recovered after explicit acknowledgement | 0.3.2; [report](docs/HARDWARE_CARD_READER_0.3.2_2026-10-31.md) |
+| CV OUT 1 → CV IN 1 | DAC output and normalized/raw ADC input | Fixed codes and slow stepped ramps followed monotonically and repeatably | 0.3.1; [report](docs/HARDWARE_CV_LOOPBACK_2026-10-31.md) |
+| CV OUT 2 → CV IN 2 | Same for channel 2 | Fixed codes and slow stepped ramps followed monotonically and repeatably | 0.3.1; [report](docs/HARDWARE_CV2_LOOPBACK_2026-10-31.md) |
+| GATE IN 1 | State and rising-edge counter | Held High counted once; 20 more slow pulses gave exactly 21 edges | 0.3.1; [report](docs/HARDWARE_GATE1_LOOPBACK_2026-10-31.md) |
+| GATE IN 2 | State and rising-edge counter | Same result; other channel stayed unchanged | 0.3.1; [report](docs/HARDWARE_GATE2_LOOPBACK_2026-10-31.md) |
+
+SD hardware results use the CardReader image; the protected 0.3.2 image has software
+validation only. CV/gate results remain pinned to 0.3.1. They are functional loopbacks,
+not independently calibrated voltage measurements. Endpoint deviations are recorded.
+
+A later brief **0.3.2 native CV probe** observed 2-s RAMP and SAW periods.
+RAMP passed its functional criterion; SAW failed the strict correlation criterion
+at two reset samples and requires timing/ADC-pipeline review. Outputs were returned
+to Off. [Raw evidence and limits](docs/HARDWARE_NATIVE_CV_2026-10-31.md).
+
+**Open acceptance checks:** absolute/negative CV voltages, SAW timing interpretation and timeout
+behavior during blocking SDTEST, gate thresholds/short pulses, large-file/sustained SD
+load, other media and additional interruption timings. The known CV OUT shutdown delay
+during blocking SDTEST remains open. No further hardware tests are scheduled for now.
+
+Software validation for 0.3.2: **239 Python/GUI tests**, C++ host/MSVC and ASan/UBSan,
+both ARM images and linked-symbol policies, packaged EXE startup — all passed.
+See [review fixes](docs/PR70_REVIEW_FIXES_2026-10-31.md) and the
+[test report](docs/TEST_REPORT.md). Earlier H1–H10 tests passed on 17 October with
+0.1.0 (H3 shortened to about three minutes; some operator reports); H11 remains open.
 
 ![Diagnostic GUI in simulation mode](docs/images/gui-simulation.png)
 
@@ -19,12 +72,13 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 | Area | Firmware | Windows GUI |
 | --- | --- | --- |
 | 16 buttons S1–S16 | libDaisy debounce, held state, press counts | Two rows of eight, highlighting and counts |
-| 16 LEDs D1–D16 | Off / on / individual / chase / follow buttons, brightness | Commanded state and controls |
+| 16 LEDs D1–D16 | Buttons → LEDs (default), all off / on, chase, POTDIM (VR1 dims), brightness | Commanded state and controls |
 | 8 knobs VR1–VR8 | Normalized value and raw ADC value | Knobs, percentage, min/max |
 | SW17 / SW18 | Two-position / three-position switches; SW18 debounce | Position display |
 | microSD | Card detection; optional **read-only** filesystem test | No card / detected / readable / error |
 | Optional SD card reader | Separate writable CDC + MSC firmware variant; exclusive card ownership | Explicit share, Windows eject, return or interruption acknowledgement |
-| Audio inputs L/R | Input jack detection only; outputs have no detection | Input connector indicators |
+| Audio inputs L/R | Input jack detection; peak meters, input snapshot (firmware 0.4.0) | Connector indicators, Audio tab |
+| Audio outputs L/R | Test tone 20–20000 Hz, ≤ −6 dBFS, left/right/both (firmware 0.4.0); no jack detection | Audio tab (tone, OUT meters) |
 | CV IN 1/2, GATE IN 1/2 | Normalized CV and raw ADC; gate state and edge counters (1 kHz) | Values at the jacks, CV / Gate panel with min/max |
 | CV OUT 1/2 | Test signals Off / Fixed / Ramp / Saw as DAC codes; off when the session ends | Mode, codes and period |
 | USB | DDP v1: handshake, 10–100 Hz state stream, CRC, keepalive | Discovery, timeouts, reconnection |
@@ -36,6 +90,19 @@ DAC codes; volts are not displayed until they have been measured (H12–H15). Di
 or electrical feedback from the LEDs.
 
 ## Binary downloads
+
+**Validated 0.3.2 build:** [successful GitHub Actions run](https://github.com/sscheidl/Daisy-Seed/actions/runs/41245983087),
+source `b4df35163e9ba7517410cac34437348c7841292f`:
+
+- [Windows EXE](https://github.com/sscheidl/Daisy-Seed/actions/runs/41245983087/artifacts/13058439316)
+- [CardReader firmware](https://github.com/sscheidl/Daisy-Seed/actions/runs/41245983087/artifacts/13059542324)
+- [Protected read-only firmware](https://github.com/sscheidl/Daisy-Seed/actions/runs/41245983087/artifacts/13059378117)
+
+All three ZIPs include checksums and source information. Both CI firmware hashes
+match the local builds; the CardReader hash matches the flashed hardware-test image.
+These build artifacts are retained for 14 days, until **14 November 2026**;
+they are not permanent Release assets. Documentation-only follow-ups do not change
+the validated binary source.
 
 The [Hardware diagnostics workflow](https://github.com/sscheidl/Daisy-Seed/actions/workflows/diagnostics.yml)
 builds firmware (`DaisyDiagnostic.bin`, `.elf`) and Windows (`DaisyDiagnostic.exe`).

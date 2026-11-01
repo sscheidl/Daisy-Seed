@@ -9,10 +9,13 @@
 #include "ff.h"
 #include "ff_gen_drv.h"
 #include "diag_app.h"
+#include "reader_abort.h"
 #include <atomic>
+#include <cmath>
 #include <cstring>
 #ifdef DIAG_CARD_READER
 #include "reader_usb.h"
+#include "reader_dma.h"
 #endif
 
 extern "C" {
@@ -43,7 +46,45 @@ diag::Sw18 MapSwitch3(int pos) {
     }
 }
 
-void AudioCallback(AudioHandle::InputBuffer, AudioHandle::OutputBuffer out, size_t size) {
+// ---- Audio: test tone, peak meters and snapshot capture (firmware 0.4.0) ----------
+// The main loop writes the tone settings; the callback reads them once per block.
+// `tone_until_ms` is refreshed by the main loop while a host session is active: a
+// blocked or dead main loop (or a vanished host) therefore mutes the tone by itself.
+std::atomic<uint16_t> tone_amplitude{0};  // 1/10000 FS, 0 = off
+std::atomic<uint16_t> tone_freq_hz{1000};
+std::atomic<uint8_t> tone_channels{2};    // 0 = L, 1 = R, 2 = both
+std::atomic<uint32_t> tone_until_ms{0};
+float tone_phase = 0.f;
+// Peak |sample| per channel since the main loop last read them (1/10000 FS).
+std::atomic<uint16_t> peak_in[diag::kNumAudio];
+std::atomic<uint16_t> peak_out[diag::kNumAudio];
+// Snapshot: interleaved L/R int16 of the inputs. States: 0 idle, 1 armed (waiting for
+// the trigger), 2 capturing, 3 ready. The buffer is CPU-only (no DMA), so DTCM is fine.
+enum ScopeState : uint8_t { kScopeIdle = 0, kScopeArmed, kScopeCapturing, kScopeReady };
+std::atomic<uint8_t> scope_state{kScopeIdle};
+std::atomic<uint16_t> scope_frames{0};
+std::atomic<bool> scope_trigger{true};
+uint32_t scope_armed_ms = 0;
+uint16_t scope_fill = 0;
+float scope_prev_sample = 0.f;
+int16_t scope_buffer[diag::kScopeMaxFrames * diag::kNumAudio];
+
+inline uint16_t PeakUnits(float peak) {
+    const float units = peak * 10000.f + 0.5f;
+    return units >= 10000.f ? 10000u : static_cast<uint16_t>(units);
+}
+
+inline void RaisePeak(std::atomic<uint16_t>& slot, uint16_t value) {
+    if(value > slot.load(std::memory_order_relaxed))  // single writer: the callback
+        slot.store(value, std::memory_order_relaxed);
+}
+
+inline int16_t ToInt16(float sample) {
+    const float scaled = sample * 32767.f;
+    return scaled >= 32767.f ? 32767 : scaled <= -32768.f ? -32768 : static_cast<int16_t>(scaled);
+}
+
+void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     hw.UpdateAllControls();
     for(size_t i = 0; i < diag::kNumButtons; ++i)
         buttons.Update(i, hw.button[i].RisingEdge(), hw.button[i].FallingEdge());
@@ -65,11 +106,76 @@ void AudioCallback(AudioHandle::InputBuffer, AudioHandle::OutputBuffer out, size
         callback_inputs.gate_count[i] = gates.Count(i);
     control_ticks.fetch_add(1, std::memory_order_relaxed);
 
-    // Audio is not part of this diagnostic: outputs stay silent.
+    // Test tone (TONE command). Silent unless the main loop keeps refreshing the deadline.
+    const uint32_t now_ms = System::GetNow();
+    const bool tone_alive = static_cast<int32_t>(tone_until_ms.load(std::memory_order_relaxed) - now_ms) > 0;
+    const float amplitude = tone_alive ? tone_amplitude.load(std::memory_order_relaxed) / 10000.f : 0.f;
+    const uint8_t channels = tone_channels.load(std::memory_order_relaxed);
+    const float phase_step = 2.f * 3.14159265f * tone_freq_hz.load(std::memory_order_relaxed)
+                             / hw.seed.AudioSampleRate();
+    float peak_l = 0.f, peak_r = 0.f, peak_ol = 0.f, peak_or = 0.f;
     for(size_t i = 0; i < size; ++i) {
-        out[0][i] = 0.f;
-        out[1][i] = 0.f;
+        float sample = 0.f;
+        if(amplitude > 0.f) {
+            sample = amplitude * sinf(tone_phase);
+            tone_phase += phase_step;
+            if(tone_phase >= 2.f * 3.14159265f)
+                tone_phase -= 2.f * 3.14159265f;
+        }
+        out[0][i] = channels != 1 ? sample : 0.f;
+        out[1][i] = channels != 0 ? sample : 0.f;
+        const float l = fabsf(in[0][i]), r = fabsf(in[1][i]);
+        if(l > peak_l) peak_l = l;
+        if(r > peak_r) peak_r = r;
+        if(fabsf(out[0][i]) > peak_ol) peak_ol = fabsf(out[0][i]);
+        if(fabsf(out[1][i]) > peak_or) peak_or = fabsf(out[1][i]);
     }
+    if(amplitude <= 0.f)
+        tone_phase = 0.f;  // next tone starts at a zero crossing
+    RaisePeak(peak_in[0], PeakUnits(peak_l));
+    RaisePeak(peak_in[1], PeakUnits(peak_r));
+    RaisePeak(peak_out[0], PeakUnits(peak_ol));
+    RaisePeak(peak_out[1], PeakUnits(peak_or));
+
+    // Snapshot capture of the inputs (SCOPE command).
+    uint8_t state = scope_state.load(std::memory_order_acquire);
+    if(state == kScopeArmed) {
+        size_t start = 0;
+        bool found = !scope_trigger.load(std::memory_order_relaxed)
+                     || now_ms - scope_armed_ms >= diag::kScopeTriggerTimeoutMs;
+        if(!found) {
+            float prev = scope_prev_sample;
+            for(size_t i = 0; i < size; ++i) {  // rising zero crossing on the left input
+                if(prev < 0.f && in[0][i] >= 0.f) {
+                    start = i;
+                    found = true;
+                    break;
+                }
+                prev = in[0][i];
+            }
+        }
+        if(found) {
+            scope_fill = 0;
+            state = kScopeCapturing;
+            scope_state.store(state, std::memory_order_relaxed);
+            const uint16_t frames = scope_frames.load(std::memory_order_relaxed);
+            for(size_t i = start; i < size && scope_fill < frames; ++i, ++scope_fill) {
+                scope_buffer[scope_fill * 2] = ToInt16(in[0][i]);
+                scope_buffer[scope_fill * 2 + 1] = ToInt16(in[1][i]);
+            }
+            if(scope_fill >= frames)
+                scope_state.store(kScopeReady, std::memory_order_release);
+        }
+    } else if(state == kScopeCapturing) {
+        const uint16_t frames = scope_frames.load(std::memory_order_relaxed);
+        for(size_t i = 0; i < size && scope_fill < frames; ++i, ++scope_fill) {
+            scope_buffer[scope_fill * 2] = ToInt16(in[0][i]);
+            scope_buffer[scope_fill * 2 + 1] = ToInt16(in[1][i]);
+        }
+        if(scope_fill >= frames)
+            scope_state.store(kScopeReady, std::memory_order_release);
+    }
+    scope_prev_sample = size ? in[0][size - 1] : scope_prev_sample;
 }
 
 // ---- USB CDC transmit -------------------------------------------------------------
@@ -127,6 +233,11 @@ bool SdWaitTransferState(uint32_t start) {
 }
 
 extern "C" DSTATUS RoStatus(BYTE) {
+    // After a reset abort (AbortReaderSd) the controller is unpowered; a CMD13 would
+    // then only run into the HAL's software timeout. FatFs asks for the status again
+    // while closing the directory, so answer from the handle state instead.
+    if(hsd1.State != HAL_SD_STATE_READY)
+        return STA_NOINIT | STA_PROTECT;
     return static_cast<DSTATUS>(
         (BSP_SD_GetCardState() == SD_TRANSFER_OK ? 0 : STA_NOINIT) | STA_PROTECT);
 }
@@ -151,7 +262,7 @@ extern "C" DRESULT RoRead(BYTE, BYTE* buff, DWORD sector, UINT count) {
         return RES_ERROR;
     while(hsd1.State == HAL_SD_STATE_BUSY) {  // set back to READY by the SDMMC1 IRQ
         if(HAL_GetTick() - start > kSdOpTimeoutMs || !SdBudgetLeft()) {
-            HAL_SD_Abort(&hsd1);
+            diag::AbortReaderSd(hsd1);
             return RES_ERROR;
         }
     }
@@ -249,19 +360,39 @@ bool CardPresent() {
     __set_PRIMASK(saved);
     return present;
 }
-// MSC uses polling SD I/O in the MAIN LOOP, never in the USB interrupt. This
-// avoids IDMA/cache ownership entirely on the MSC path: aligned DTCM buffers are
-// accessed by the CPU, not SDMMC DMA. The original read-only FatFs DMA path above
-// is unchanged and is unreachable while MSC owns the card.
+// IDMA drains/fills the SDMMC FIFO while audio/USB interrupts run. PIO can overrun
+// that FIFO when preempted. This buffer is reachable by SDMMC1 IDMA (DTCM is not),
+// owns complete cache lines, and has no constructor touching uninitialized SDRAM.
+DSY_SDRAM_BSS alignas(32) uint8_t reader_dma_buffer[diag::ReaderDma::kBytes];
+class ReaderBackend final : public diag::ReaderDmaBackend {
+  public:
+    bool Available() override { return CardPresent() && !ReaderUsbInterrupted(); }
+    uint32_t Now() override { return HAL_GetTick(); }
+    bool StartRead(uint8_t* buffer, uint32_t lba) override {
+        return HAL_SD_ReadBlocks_DMA(&hsd1, buffer, lba, 1) == HAL_OK;
+    }
+    bool StartWrite(uint8_t* buffer, uint32_t lba) override {
+        return HAL_SD_WriteBlocks_DMA(&hsd1, buffer, lba, 1) == HAL_OK;
+    }
+    bool Busy() override { return hsd1.State == HAL_SD_STATE_BUSY; }
+    uint32_t Error() override { return hsd1.ErrorCode; }
+    bool CardReady() override { return HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER; }
+    void Clean(uint8_t* buffer) override { SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t*>(buffer), 512); }
+    void Invalidate(uint8_t* buffer) override { SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t*>(buffer), 512); }
+    void Abort() override { diag::AbortReaderSd(hsd1); }
+};
+ReaderBackend reader_backend;
+diag::ReaderDma reader_dma(reader_backend, reader_dma_buffer);
 class ReaderCard final : public diag::CardDevice {
   public:
     bool Open(uint32_t& sectors) override {
+        reader_dma.ResetStatus();
         if(hsd1.State != HAL_SD_STATE_RESET) HAL_SD_DeInit(&hsd1);
         SdmmcHandler::Config cfg; cfg.Defaults();
         cfg.speed = SdmmcHandler::Speed::STANDARD;
         sdmmc.Init(cfg); sdmmc_configured = true;
         if(BSP_SD_Init() != MSD_OK || ReaderUsbInterrupted()) return false;
-        NVIC_SetPriority(SDMMC1_IRQn, 2);  // audio=0, USB=1; MSC never waits in an ISR
+        NVIC_SetPriority(SDMMC1_IRQn, 2);  // audio=0, USB=1; main-loop DMA wait allows all IRQs
         HAL_SD_CardInfoTypeDef info{};
         if(HAL_SD_GetCardInfo(&hsd1, &info) != HAL_OK || info.LogBlockSize != 512)
             return false;
@@ -269,31 +400,18 @@ class ReaderCard final : public diag::CardDevice {
         return sectors != 0;
     }
     bool Read(uint32_t lba, uint8_t* block) override {
-        if(!Available() || HAL_SD_ReadBlocks(&hsd1, bounce_, lba, 1, kSdOpTimeoutMs) != HAL_OK)
-            return Abort();
-        if(!Sync()) return false;
-        std::memcpy(block, bounce_, 512);
-        return true;
+        return reader_dma.Read(lba, block);
     }
     bool Write(uint32_t lba, const uint8_t* block) override {
-        if(!Available()) return false;
-        std::memcpy(bounce_, block, 512);
-        if(HAL_SD_WriteBlocks(&hsd1, bounce_, lba, 1, kSdOpTimeoutMs) != HAL_OK)
-            return Abort();
-        return Sync();  // includes card programming; no write cache in firmware
+        return reader_dma.Write(lba, block);
     }
     bool Sync() override {
-        const uint32_t start = HAL_GetTick();
-        do {
-            if(!Available() || HAL_GetTick() - start >= kSdOpTimeoutMs) return Abort();
-            if(HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER) return true;
-        } while(true);
+        return reader_dma.Sync();
     }
-    void Close() override { HAL_SD_Abort(&hsd1); HAL_SD_DeInit(&hsd1); }
-  private:
-    bool Available() { return CardPresent() && !ReaderUsbInterrupted(); }
-    bool Abort() { HAL_SD_Abort(&hsd1); return false; }
-    alignas(4) uint8_t bounce_[512] = {};
+    void Close() override {
+        reader_backend.Abort();
+        if(hsd1.Instance == SDMMC1) HAL_SD_DeInit(&hsd1);
+    }
 };
 ReaderCard reader_card;
 diag::CardReader card_reader(reader_card);
@@ -336,6 +454,41 @@ class DevkitBoard final : public diag::Board {
     diag::SdResult RunSdTest(bool card_present) override { return ::RunSdTest(card_present); }
     // DDP BOOT, after the ACK: no SD access is running (the test blocks the main loop).
     void EnterBootloader() override { bootloader::Enter(hw); }
+
+    bool AudioSupported() override { return true; }
+    void ApplyTone(const diag::ToneSettings& tone, uint32_t keep_until_ms) override {
+        tone_freq_hz.store(tone.freq_hz, std::memory_order_relaxed);
+        tone_channels.store(static_cast<uint8_t>(tone.channels), std::memory_order_relaxed);
+        tone_amplitude.store(tone.mode == diag::ToneMode::Sine ? tone.amplitude : 0,
+                             std::memory_order_relaxed);
+        tone_until_ms.store(keep_until_ms, std::memory_order_release);
+    }
+    diag::AudioLevels ReadAudioLevels() override {
+        diag::AudioLevels levels;
+        for(size_t i = 0; i < diag::kNumAudio; ++i) {
+            levels.in[i] = peak_in[i].exchange(0, std::memory_order_relaxed);
+            levels.out[i] = peak_out[i].exchange(0, std::memory_order_relaxed);
+        }
+        return levels;
+    }
+    bool StartScope(uint16_t frames, bool trigger) override {
+        const uint8_t state = scope_state.load(std::memory_order_acquire);
+        if(state == kScopeArmed || state == kScopeCapturing)
+            return false;
+        scope_frames.store(frames, std::memory_order_relaxed);
+        scope_trigger.store(trigger, std::memory_order_relaxed);
+        scope_armed_ms = System::GetNow();
+        scope_state.store(kScopeArmed, std::memory_order_release);
+        return true;
+    }
+    const int16_t* ScopeData(uint16_t& frames) override {
+        if(scope_state.load(std::memory_order_acquire) != kScopeReady) {
+            frames = 0;
+            return nullptr;
+        }
+        frames = scope_frames.load(std::memory_order_relaxed);
+        return scope_buffer;  // stays valid until the next StartScope
+    }
 #ifdef DIAG_CARD_READER
     bool SdTestAllowed() override { return card_reader.Local(); }
     void ReaderCommand(uint32_t command, ddp::Writer& out) override {
@@ -349,6 +502,12 @@ class DevkitBoard final : public diag::Board {
             .Str(" sectors=").U32(card_reader.Sectors()).Str(" busy=").U32(!ReaderUsbIdle())
             .Str(" a=").Str(command & diag::kRequestReaderShare ? "SHARE" :
                             command & diag::kRequestReaderReturn ? "RETURN" : "STATUS");
+        if(ok) {
+            const auto& io = reader_dma.Status();
+            out.Str(" io=").Str(io.operation).Str(" fault=").U32(static_cast<uint8_t>(io.fault))
+                .Str(" he=").U32(io.hal_error).Str(" lba=").U32(io.lba)
+                .Str(" ms=").U32(io.elapsed_ms);
+        }
     }
 #endif
 };

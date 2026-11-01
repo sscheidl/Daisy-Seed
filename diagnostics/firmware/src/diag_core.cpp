@@ -9,8 +9,24 @@ struct ModeName {
 };
 constexpr ModeName kModeNames[] = {
     {LedMode::Off, "OFF"},       {LedMode::On, "ON"},         {LedMode::Mask, "MASK"},
-    {LedMode::Chase, "CHASE"},   {LedMode::Follow, "FOLLOW"},
+    {LedMode::Chase, "CHASE"},   {LedMode::Follow, "FOLLOW"}, {LedMode::PotDim, "POTDIM"},
 };
+
+struct ToneModeName_ {
+    ToneMode mode;
+    const char* name;
+};
+constexpr ToneModeName_ kToneModeNames[] = {{ToneMode::Off, "OFF"}, {ToneMode::Sine, "SINE"}};
+
+struct ToneChannelsName_ {
+    ToneChannels channels;
+    const char* name;
+};
+constexpr ToneChannelsName_ kToneChannelNames[] = {
+    {ToneChannels::Left, "L"}, {ToneChannels::Right, "R"}, {ToneChannels::Both, "LR"},
+};
+
+constexpr char kHexDigits[] = "0123456789ABCDEF";
 
 struct CvModeName {
     CvOutMode mode;
@@ -50,6 +66,40 @@ bool ParseLedMode(const char* name, LedMode& mode) {
     for(const auto& entry : kModeNames) {
         if(std::strcmp(entry.name, name) == 0) {
             mode = entry.mode;
+            return true;
+        }
+    }
+    return false;
+}
+
+const char* ToneModeName(ToneMode mode) {
+    for(const auto& entry : kToneModeNames)
+        if(entry.mode == mode)
+            return entry.name;
+    return "OFF";
+}
+
+bool ParseToneMode(const char* name, ToneMode& mode) {
+    for(const auto& entry : kToneModeNames) {
+        if(std::strcmp(entry.name, name) == 0) {
+            mode = entry.mode;
+            return true;
+        }
+    }
+    return false;
+}
+
+const char* ToneChannelsName(ToneChannels channels) {
+    for(const auto& entry : kToneChannelNames)
+        if(entry.channels == channels)
+            return entry.name;
+    return "LR";
+}
+
+bool ParseToneChannels(const char* name, ToneChannels& channels) {
+    for(const auto& entry : kToneChannelNames) {
+        if(std::strcmp(entry.name, name) == 0) {
+            channels = entry.channels;
             return true;
         }
     }
@@ -142,8 +192,16 @@ uint16_t ComputeLeds(const Settings& settings, uint32_t now_ms, uint16_t buttons
             return static_cast<uint16_t>(1u << ((now_ms / step) % kNumLeds));
         }
         case LedMode::Follow: return buttons;
+        case LedMode::PotDim: return 0xffff;  // brightness comes from VR1, see LedBrightness
     }
     return 0;
+}
+
+uint8_t LedBrightness(const Settings& settings, const Inputs& in) {
+    if(settings.led_mode != LedMode::PotDim)
+        return settings.led_brightness;
+    const uint32_t percent = (static_cast<uint32_t>(in.pot_norm[0]) + 50u) / 100u;
+    return static_cast<uint8_t>(percent > 100u ? 100u : percent);
 }
 
 bool DigitalChanged(const Inputs& a, const Inputs& b) {
@@ -189,7 +247,7 @@ void Session::WriteHello(ddp::Writer& out) const {
         .Str(" app=").Str(kAppName)
         .Str(" dev=seed3-desktop boot=BOOT_SRAM bl=").Str(bootloader_)
         .Str(" libdaisy=").Str(kLibDaisyCommit)
-        .Str(" caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout");
+        .Str(" caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout,audio");
 #ifdef DIAG_CARD_READER
     out.Str(",sdmsc");
 #endif
@@ -318,6 +376,79 @@ uint32_t Session::Handle(const char* body, uint32_t now_ms, ddp::Writer& reply) 
             .Str(" ms=").U32(settings.cv_period_ms);
         return kRequestCvOut;
     }
+    if(std::strcmp(type, "TONE") == 0) {
+        // Only in a session: the tone stops whenever the session ends.
+        if(!streaming_) {
+            WriteError(reply, type, "SESSION");
+            return kRequestNone;
+        }
+        ToneSettings next = settings.tone;
+        char text[12];
+        if(!ddp::FindField(body, "m", text, sizeof(text)) || !ParseToneMode(text, next.mode)) {
+            WriteError(reply, type, "ARG");
+            return kRequestNone;
+        }
+        ddp::Lookup found = ddp::LookupField(body, "f", text, sizeof(text));
+        if(found != ddp::Lookup::Missing) {
+            if(found == ddp::Lookup::TooLong || !ddp::ParseU32(text, value) || value < kToneMinHz
+               || value > kToneMaxHz) {
+                WriteError(reply, type, "ARG");
+                return kRequestNone;
+            }
+            next.freq_hz = static_cast<uint16_t>(value);
+        }
+        found = ddp::LookupField(body, "a", text, sizeof(text));
+        if(found != ddp::Lookup::Missing) {
+            if(found == ddp::Lookup::TooLong || !ddp::ParseU32(text, value)
+               || value > kToneMaxAmplitude) {
+                WriteError(reply, type, "ARG");
+                return kRequestNone;
+            }
+            next.amplitude = static_cast<uint16_t>(value);
+        }
+        found = ddp::LookupField(body, "ch", text, sizeof(text));
+        if(found != ddp::Lookup::Missing) {
+            if(found == ddp::Lookup::TooLong || !ParseToneChannels(text, next.channels)) {
+                WriteError(reply, type, "ARG");
+                return kRequestNone;
+            }
+        }
+        settings.tone = next;
+        reply.Str("ACK c=TONE m=").Str(ToneModeName(next.mode))
+            .Str(" f=").U32(next.freq_hz)
+            .Str(" a=").U32(next.amplitude)
+            .Str(" ch=").Str(ToneChannelsName(next.channels));
+        return kRequestTone;
+    }
+    if(std::strcmp(type, "SCOPE") == 0) {
+        if(!streaming_) {
+            WriteError(reply, type, "SESSION");
+            return kRequestNone;
+        }
+        char text[12];
+        uint16_t frames = kScopeDefaultFrames;
+        bool trigger = true;
+        ddp::Lookup found = ddp::LookupField(body, "n", text, sizeof(text));
+        if(found != ddp::Lookup::Missing) {
+            if(found == ddp::Lookup::TooLong || !ddp::ParseU32(text, value)
+               || value < kScopeMinFrames || value > kScopeMaxFrames) {
+                WriteError(reply, type, "ARG");
+                return kRequestNone;
+            }
+            frames = static_cast<uint16_t>(value);
+        }
+        found = ddp::LookupField(body, "t", text, sizeof(text));
+        if(found != ddp::Lookup::Missing) {
+            if(found == ddp::Lookup::TooLong || !ddp::ParseU32(text, value) || value > 1) {
+                WriteError(reply, type, "ARG");
+                return kRequestNone;
+            }
+            trigger = value == 1;
+        }
+        settings.scope_frames = frames;
+        settings.scope_trigger = trigger;
+        return kRequestScope;  // the App answers: it knows whether the board has audio
+    }
     if(std::strcmp(type, "SDTEST") == 0)
         return kRequestSdTest;
     if(std::strcmp(type, "READER") == 0) {
@@ -406,6 +537,31 @@ void WriteSys(const Stats& stats, bool host, uint8_t rate_hz, ddp::Writer& out) 
         .Str(" rxbad=").U32(stats.rx_bad)
         .Str(" host=").Char(host ? '1' : '0')
         .Str(" rate=").U32(rate_hz);
+}
+
+void WriteAudio(const AudioLevels& levels, const ToneSettings& tone, ddp::Writer& out) {
+    out.Str("AU il=").U32(levels.in[0]).Str(" ir=").U32(levels.in[1])
+        .Str(" ol=").U32(levels.out[0]).Str(" or=").U32(levels.out[1])
+        .Str(" tone=").Str(ToneModeName(tone.mode))
+        .Char(',').U32(tone.freq_hz)
+        .Char(',').U32(tone.amplitude)
+        .Char(',').Str(ToneChannelsName(tone.channels));
+}
+
+void WriteScopeChunk(const int16_t* samples, uint16_t frames, uint16_t index,
+                     uint16_t chunks, ddp::Writer& out) {
+    out.Str("SC i=").U32(index).Str(" k=").U32(chunks).Str(" n=").U32(frames).Str(" d=");
+    const uint32_t first = static_cast<uint32_t>(index) * kScopeChunkFrames;
+    uint32_t last = first + kScopeChunkFrames;
+    if(last > frames)
+        last = frames;
+    for(uint32_t f = first; f < last; ++f) {
+        for(size_t ch = 0; ch < kNumAudio; ++ch) {
+            const uint16_t v = static_cast<uint16_t>(samples[f * kNumAudio + ch]);
+            out.Char(kHexDigits[(v >> 12) & 0xF]).Char(kHexDigits[(v >> 8) & 0xF])
+                .Char(kHexDigits[(v >> 4) & 0xF]).Char(kHexDigits[v & 0xF]);
+        }
+    }
 }
 
 void WriteSd(const SdResult& result, ddp::Writer& out) {

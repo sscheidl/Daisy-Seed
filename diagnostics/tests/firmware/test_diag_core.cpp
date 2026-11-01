@@ -276,9 +276,9 @@ void TestSession() {
     CHECK_STR(Handle(s, "HELLO proto=2", 20), "ERR c=HELLO e=PROTO");
     CHECK(!s.HostActive(20));
     CHECK_STR(Handle(s, "HELLO proto=1", 100, &req),
-              "HELLO proto=1 fw=0.3.0 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM "
+              "HELLO proto=1 fw=0.4.0 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM "
               "bl=v6_1 libdaisy=f715e48 "
-              "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout");
+              "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout,audio");
     CHECK(req == (diag::kRequestState | diag::kRequestNewSession));
     CHECK(s.HostActive(100));
     CHECK(s.HostActive(100 + diag::kHostTimeoutMs - 1));
@@ -614,6 +614,96 @@ void TestCvOutCommand() {
     CHECK_STR(Handle(s, "CVOUT m=OFF", 60), "ACK c=CVOUT m=OFF c1=1000 c2=4095 ms=10000");
 }
 
+void TestAudioExtension() {
+    diag::Session s;
+    s.Init("v6_1");
+    uint32_t req = 0;
+    CHECK_STR(Handle(s, "TONE m=SINE", 1), "ERR c=TONE e=SESSION");
+    CHECK_STR(Handle(s, "SCOPE", 1), "ERR c=SCOPE e=SESSION");
+    Handle(s, "HELLO proto=1", 10);
+    CHECK_STR(Handle(s, "TONE m=SINE", 20, &req), "ACK c=TONE m=SINE f=1000 a=1000 ch=LR");
+    CHECK(req == diag::kRequestTone);
+    CHECK_STR(Handle(s, "TONE m=SINE f=440 a=5000 ch=L", 21), "ACK c=TONE m=SINE f=440 a=5000 ch=L");
+    CHECK_STR(Handle(s, "TONE m=SINE a=5001", 22), "ERR c=TONE e=ARG");  // above the -6 dBFS cap
+    CHECK_STR(Handle(s, "TONE m=SINE f=19", 22), "ERR c=TONE e=ARG");
+    CHECK_STR(Handle(s, "TONE m=SINE f=20001", 22), "ERR c=TONE e=ARG");
+    CHECK_STR(Handle(s, "TONE m=SINE ch=X", 22), "ERR c=TONE e=ARG");
+    CHECK_STR(Handle(s, "TONE m=SINE f=+440", 22), "ERR c=TONE e=ARG");
+    CHECK_STR(Handle(s, "TONE m=LOUD", 22), "ERR c=TONE e=ARG");
+    CHECK_STR(Handle(s, "TONE", 22), "ERR c=TONE e=ARG");
+    CHECK(s.settings.tone.freq_hz == 440 && s.settings.tone.amplitude == 5000
+          && s.settings.tone.channels == diag::ToneChannels::Left);  // rejected commands change nothing
+    CHECK_STR(Handle(s, "TONE m=OFF", 23), "ACK c=TONE m=OFF f=440 a=5000 ch=L");
+    CHECK(s.settings.tone.mode == diag::ToneMode::Off);
+
+    // SCOPE is validated here and answered by the App (it knows the board).
+    CHECK_STR(Handle(s, "SCOPE", 30, &req), "");
+    CHECK(req == diag::kRequestScope && s.settings.scope_frames == 1024 && s.settings.scope_trigger);
+    CHECK_STR(Handle(s, "SCOPE n=256 t=0", 31, &req), "");
+    CHECK(req == diag::kRequestScope && s.settings.scope_frames == 256 && !s.settings.scope_trigger);
+    CHECK_STR(Handle(s, "SCOPE n=255", 32, &req), "ERR c=SCOPE e=ARG");
+    CHECK(req == diag::kRequestNone);
+    CHECK_STR(Handle(s, "SCOPE n=2049", 32), "ERR c=SCOPE e=ARG");
+    CHECK_STR(Handle(s, "SCOPE t=2", 32), "ERR c=SCOPE e=ARG");
+    CHECK(s.settings.scope_frames == 256);
+
+    // AU frame layout.
+    diag::AudioLevels levels;
+    levels.in[0] = 10000;
+    levels.out[0] = 5000;
+    levels.out[1] = 1;
+    diag::ToneSettings tone;
+    tone.mode = diag::ToneMode::Sine;
+    char buf[128];
+    ddp::Writer w(buf, sizeof(buf));
+    diag::WriteAudio(levels, tone, w);
+    CHECK_STR(w.CStr(), "AU il=10000 ir=0 ol=5000 or=1 tone=SINE,1000,1000,LR");
+
+    // SC chunking: 100 frames -> 40 + 40 + 20; int16 as two's-complement hex.
+    int16_t samples[200];
+    for(int i = 0; i < 100; ++i) {
+        samples[2 * i] = static_cast<int16_t>(i - 50);
+        samples[2 * i + 1] = static_cast<int16_t>(-32768 + i);
+    }
+    CHECK(diag::ScopeChunks(100) == 3 && diag::ScopeChunks(256) == 7 && diag::ScopeChunks(2048) == 52);
+    char big[ddp::kMaxBody + 1];
+    ddp::Writer c0(big, sizeof(big));
+    diag::WriteScopeChunk(samples, 100, 0, 3, c0);
+    CHECK(c0.Ok());
+    const std::string body0 = c0.CStr();
+    CHECK(body0.rfind("SC i=0 k=3 n=100 d=", 0) == 0);
+    CHECK(body0.size() == std::strlen("SC i=0 k=3 n=100 d=") + 40u * 8u);
+    CHECK(body0.substr(19, 8) == "FFCE8000");  // frame 0: L = -50, R = -32768
+    ddp::Writer c2(big, sizeof(big));
+    diag::WriteScopeChunk(samples, 100, 2, 3, c2);
+    const std::string body2 = c2.CStr();
+    CHECK(body2.size() == std::strlen("SC i=2 k=3 n=100 d=") + 20u * 8u);
+    CHECK(body2.substr(body2.size() - 8) == "00318063");  // frame 99: L = 49, R = -32669
+    ddp::Writer cmax(big, sizeof(big));
+    diag::WriteScopeChunk(samples, 2048, 0, 52, cmax);  // a full chunk fits one body
+    CHECK(cmax.Ok() && cmax.Length() == std::strlen("SC i=0 k=52 n=2048 d=") + 320u
+          && cmax.Length() <= ddp::kMaxBody);
+
+    // POTDIM: all LEDs on, brightness from VR1.
+    diag::Settings ps;
+    ps.led_mode = diag::LedMode::PotDim;
+    diag::Inputs in;
+    in.pot_norm[0] = 7350;
+    CHECK(diag::ComputeLeds(ps, 0, 0x0003) == 0xffff);
+    CHECK(diag::LedBrightness(ps, in) == 74);
+    in.pot_norm[0] = 10000;
+    CHECK(diag::LedBrightness(ps, in) == 100);
+    in.pot_norm[0] = 0;
+    CHECK(diag::LedBrightness(ps, in) == 0);
+    ps.led_mode = diag::LedMode::Follow;
+    ps.led_brightness = 42;
+    CHECK(diag::LedBrightness(ps, in) == 42);
+    diag::LedMode mode;
+    CHECK(diag::ParseLedMode("POTDIM", mode) && mode == diag::LedMode::PotDim);
+    CHECK_STR(diag::LedModeName(diag::LedMode::PotDim), "POTDIM");
+    CHECK_STR(Handle(s, "LED m=POTDIM", 40), "ACK c=LED m=POTDIM mask=0000 br=100 ms=120");
+}
+
 int main(int argc, char** argv) {
     if(argc < 2) {
         std::printf("usage: %s <vectors.txt>\n", argv[0]);
@@ -632,6 +722,7 @@ int main(int argc, char** argv) {
     TestGates();
     TestCvOut();
     TestCvOutCommand();
+    TestAudioExtension();
     std::printf("%s: %d checks, %d failures\n", failures ? "FAIL" : "PASS", checks, failures);
     return failures ? 1 : 0;
 }

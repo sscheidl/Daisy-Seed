@@ -25,7 +25,9 @@ The script also builds `firmware/build/reader/DaisyDiagnostic-CardReader.bin` an
 Individual builds/checks: `make -C firmware CARD_READER=0` (protected default) or
 `make -C firmware CARD_READER=1`; append `check` to verify the selected image.
 Both builds continue to reject FatFs mutation, formatting, erase and lock APIs.
-Only the reader build permits the polled HAL/SDMMC block-write path.
+Since 0.3.1, only the reader build permits single-buffer HAL/SDMMC IDMA writes.
+PIO/IT writes, generic BSP/disk writers and multi-buffer DMA remain forbidden.
+The protected default still rejects every SD write path.
 
 ```bash
 python -m pip install -r windows/requirements.txt
@@ -34,6 +36,10 @@ make -C firmware test test-sanitize
 # Windows/MSVC alternative:
 # scripts\run-host-tests-msvc.cmd
 ```
+
+Portable host tests do not include the libDaisy/ARM Makefile and require no
+submodules. This keeps the diagnostics-only quick CI job small. ARM builds and
+image checks still require the pinned submodule and toolchain.
 
 Build the Windows EXE with `windows\build_exe.cmd`; output is
 `windows/dist/DaisyDiagnostic.exe`. Startup without hardware:

@@ -1,5 +1,81 @@
 # Diagnostic firmware — configuration, dependencies, architecture
 
+## Version 0.4.0
+
+Audio extension and two review fixes; both image variants, DDP stays `proto=1`
+with the new capability `audio` ([PROTOCOL.md](../protocol/PROTOCOL.md)).
+
+* **Test tone** (`TONE`): sine 20–20000 Hz on AUDIO OUT left/right/both, amplitude
+  capped at 0.5 FS (≈ −6 dBFS), default 0.1 FS. Generated in the audio callback with
+  a phase accumulator (`sinf`, no allocation, no blocking). The tone needs a host
+  session and ends with it; additionally the callback mutes it when the main loop
+  has not refreshed its deadline for 1 s (`App::kToneKeepAliveMs`), so a blocked
+  main loop or a dead host cannot leave a tone on.
+* **Peak meters** (`AU`, 10 Hz): per-channel peak |sample| of the inputs and of the
+  written outputs since the previous frame, collected in the callback with
+  single-writer atomics and reset by the main loop.
+* **Input snapshot** (`SCOPE`/`SC`): 256–2048 stereo input frames captured by the
+  callback into a DTCM buffer (no DMA), optionally starting at a rising zero
+  crossing of the left input (200 ms timeout), then sent as 40-frame hex chunks,
+  at most three per main-loop step and only when the TX queue has room, so ST/SYS
+  keep flowing. One capture at a time; dropped when the session ends.
+* **LED mode `POTDIM`**: all LEDs on, brightness from VR1; `ST br` reports the
+  effective value.
+* **Review fixes:** CV OUT and the tone are switched off *before* a blocking SD test
+  or card-reader initialisation (`App::SilenceOutputs`), and the post-block
+  keep-alive is granted only when host bytes actually arrived during the block
+  (review F3b). `RoStatus` answers from the HAL handle state when the controller is
+  not READY, so FatFs' status query after a reset abort no longer sends CMD13 to
+  the unpowered SDMMC (review F1).
+
+Not changed: the unbounded `HAL_SD_Init` wait (review F2) and the host-side
+PONG liveness gap (review H1) remain open. Audio levels are digital full-scale
+values; codec, jack and headphone-amplifier levels are **NICHT GEMESSEN** until a
+hardware run with the 0.4.0 image.
+
+## Version 0.3.2
+
+Software correction following the independent PR #70 review. `reader_abort.h`
+replaces every diagnostic use of `HAL_SD_Abort`, including protected SD read
+recovery and reader Close. It masks only SDMMC1 IRQ, resets SDMMC1 through RCC
+(with barriers), clears the pending IRQ and sets the HAL handle to RESET.
+RCC reset quiesces both DPSM and IDMA without waiting for CMD12/card flags.
+The SD IRQ stays disabled until full initialization on an explicit later access.
+A failed transfer remains failed/quarantined; this is not a clean eject or card
+filesystem recovery. No new transfer is admitted by HAL while RESET.
+
+The pinned HAL is unmodified. Both image symbol checks now reject `HAL_SD_Abort`.
+Tests compile the actual abort function against observable CMSIS/RCC stubs,
+including a completion race and a retry before/after reinitialization. Write and
+Sync error tests are separate from these adapter checks. CMD13 errors are fault 7,
+not DMA errors. USB reset/removal preserves INTERRUPTED even if the I/O failure
+and the reset mailbox arrive in the opposite order. Host GUI and saved JSON retain
+all optional reader diagnostics.
+
+**CardReader hardware 0.3.2: GEMESSEN, 31 October 2026.** File operations,
+eject/remount, one physical removal during writing and explicit recovery passed.
+[Hardware record](HARDWARE_CARD_READER_0.3.2_2026-10-31.md). The protected image
+was not flashed. Existing CV/gate measurements still refer to 0.3.1. The portable 1 s DMA/programming budgets do not include SDK command
+response deadlines; the new abort itself has no wait loop or HAL/card command.
+See the [review fixes and validation](PR70_REVIEW_FIXES_2026-10-31.md).
+
+## Version 0.3.1
+
+The reader uses bounded single-buffer SDMMC IDMA rather than CPU-polled FIFO
+transfers. Its dedicated 512-byte bounce buffer is 32-byte aligned in SDRAM,
+reachable by SDMMC1, with clean/invalidate operations around transfers. USB and
+audio remain interruptible while the main loop waits for DMA and card programming.
+The protected default image's complete write blacklist is unchanged; the reader
+permits `HAL_SD_WriteBlocks_DMA` only, with PIO/IT, generic BSP writers, multi-buffer
+DMA, erase/lock and FatFs mutation still banned. Optional READER diagnostic fields
+preserve the failed operation/HAL error before abort. The former polling design
+below describes older reader builds.
+
+The first physical 0.3.0 test failed when exporting a readable FAT32 card to Windows;
+the 0.3.1 basic counter-test passed: FAT32 file operations, hashes after eject/remount
+and Windows eject while the app runs. Full hardware acceptance remains open. Evidence and limits:
+[Hardwareprotokoll 31.10.2026](HARDWARE_CARD_READER_2026-10-31.md).
+
 ## Version 0.3.0
 
 Adds the CV and gate jacks through the official `desktop_devkit::Hardware` API:
@@ -23,7 +99,7 @@ The Windows app carries the same version. Integration test image, not released.
 The default image remains strictly read-only. `CARD_READER=1` builds the separate
 `DaisyDiagnostic-CardReader` image with CDC + MSC on J7. It starts with an absent
 logical medium until explicit sharing. The SD diagnostic test itself still uses
-the protected driver. For ownership, transport details and current software-only
+the protected driver. For ownership, transport details and the historical software
 validation, see [SD_CARD_READER_REVIEW.md](SD_CARD_READER_REVIEW.md).
 
 The pinned libDaisy submodule remains unmodified. The reader adds a project-owned
@@ -151,3 +227,9 @@ protocol/ddp.*            Frames, CRC, parsing, bounded writing
   CV/DAC voltage ranges are not measured; values are normalized or DAC codes.
 
 See [TEST_REPORT.md](TEST_REPORT.md) for hardware-test scope and open measurements.
+
+> Since 2026-11-01 the card-reader sources (`card_reader`, `msc_bot`, `reader_usb`,
+> `reader_dma.h`, `reader_abort.h`, `reader_ctlreq.c`) live in
+> [`common/sd/reader/`](../../common/sd/reader/), shared with Nebulae on Daisy 0.2.0.
+> They were moved unchanged; both Diagnostics images rebuild byte-identical
+> (SHA256 `0564de97…f577` protected, `0be6f55c…4ea2` CardReader).
