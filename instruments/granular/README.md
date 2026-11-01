@@ -1,4 +1,9 @@
-# Nebulae on Daisy v0.1.0
+# Nebulae on Daisy v0.2.0
+
+**v0.2.0: SOFTWARE PASS / HARDWARE PENDING** ([release report](docs/V0_2_RELEASE_REPORT.md)).
+New: sample banks with free file names, SW17 bank selection, FAT32 and exFAT cards,
+and a Windows SD management mode in the same image ([architecture](docs/V0_2_ARCHITECTURE.md),
+[control protocol](docs/CONTROL_PROTOCOL.md)). Nothing of v0.2.0 has run on a board yet.
 
 Project `granular`, for the **Seed3 Desktop Development Kit**, using the official
 `daisy::desktop_devkit::Hardware`. Stereo granular processing and a phase-locked
@@ -18,12 +23,12 @@ From the repository root:
 make PROJECT=granular -j4
 make PROJECT=granular test
 make PROJECT=granular test-sanitize
-python3 scripts/check-firmware.py instruments/granular/build/NebulaeOnDaisy-v0.1.1.bin
-python3 scripts/check-granular-elf.py instruments/granular/build/NebulaeOnDaisy-v0.1.1.elf
+python3 scripts/check-firmware.py instruments/granular/build/NebulaeOnDaisy-v0.2.0.bin
+python3 scripts/check-granular-elf.py instruments/granular/build/NebulaeOnDaisy-v0.2.0.elf
 ```
 
-Outputs: `build/NebulaeOnDaisy-v0.1.1.bin`, `.elf`, `.map`, `SHA256SUMS`.
-Identity: `NEBULAE-FW-VERSION=0.1.0`. C++17, Cortex-M7 hard float,
+Outputs: `build/NebulaeOnDaisy-v0.2.0.bin`, `.elf`, `.map`, `SHA256SUMS`.
+Identity: `NEBULAE-FW-VERSION=0.2.0`. C++17, Cortex-M7 hard float,
 `BOOT_SRAM`, 48 kHz, **256 samples/block**. The pinned AudioHandle clamps larger
 blocks to 256; firmware checks the actual size. FFT hop is 512 samples.
 Buffer duration is 5.33 ms; vocoder windows span 42.67 ms. These are sample-count
@@ -64,13 +69,14 @@ loop, wet endpoints are silent and center monitors the input.
 ## Three modes
 
 The **three-position switch SW18** selects modes (`tog_sw18`). The two-position
-SW17 is reserved. SW18 is the switch called "switch 1" in the product specification,
+**SW17** switches SAMPLE mode between slot and bank selection (below); it has no
+function in NEBULAE and KEYBOARD. SW18 is the switch called "switch 1" in the product specification,
 regardless of PCB component numbering.
 
 | Official position | Mode | S1/D1 through S16/D16 |
 | --- | --- | --- |
 | `POS_UP` / 1 | NEBULAE | S1 RECORD, S2 FILE, S3 SOURCE, S4 RESET, S5 FREEZE; S6-S16 reserved |
-| `POS_CENTER` / 0 | SAMPLE | Direct slots 01-16 |
+| `POS_CENTER` / 0 | SAMPLE | SW17 slot position: slots 1-16 of the selected bank; bank position: banks 1-16 |
 | `POS_DOWN` / 2 | KEYBOARD | Exact Toy Piano physical note layout |
 
 Switch state must be stable 20 ms. Buttons use unchanged libDaisy DigitalControl
@@ -126,10 +132,30 @@ are volatile.
 
 ## SD and errors
 
-FAT32 microSD on the Desktop board: `0:/NEBULAE/SAMPLES/01.wav` ... `16.wav`.
-FAT case-insensitivity applies. Startup/insertion attempts the first existing
-slot. With no card, select Live and record normally. Free file names and
-subfolder banks are planned, not implemented: [sample banks](docs/SAMPLE_BANKS.md).
+FAT32 or exFAT microSD on the Desktop board, read through the shared read-only
+driver ([common/sd](../../common/sd/README.md): FatFs R0.16 with patches 1 and 2, long
+file names; no FatFs write function exists in the image). Samples live in
+`0:/NEBULAE/SAMPLES/` with **free file names** ([sample banks](docs/SAMPLE_BANKS.md)):
+
+* WAVs directly in `SAMPLES/` form bank 1; each subfolder with at least one WAV is the
+  next bank. At most **16 banks x 16 samples**; more are ignored, not reported.
+* Natural, case-insensitive order (`2 Kick.wav` before `10 Pad.wav`), the PC's sorted
+  folder view is the slot order. Names starting with `.` (including macOS `._*`),
+  hidden and system entries and non-`.wav` files are skipped; deeper folders too.
+* Old cards with `01.wav` ... `16.wav` keep their slots (gaps move later files up).
+* Names with characters outside code page 850 open through the 8.3 alias on FAT32;
+  on exFAT such a file shows error 1.
+* **SAMPLE + SW17 bank position**: S1-S16 select a bank. Choosing a bank loads
+  nothing; the playing sample continues. The selected bank lights fully, other
+  existing banks dimmed, missing banks off; a bank being read flashes at 5 Hz, an
+  unreadable bank folder pulses code 4. Switch SW17 back and press a slot to load.
+* FILE in NEBULAE steps through the occupied slots of the selected bank; a sample
+  from another bank starts the order at that bank's first (or, backward, last) slot.
+* Startup and insertion select bank 1 (or the bank restored after SD management) and
+  load its first occupied slot. Removal clears the tables; Live stays usable. The
+  selected bank is not stored on the card or in flash.
+
+Directory work runs in main, one entry per iteration, never while a file loads.
 
 Only RIFF/WAVE PCM16, mono/stereo, 44100/48000 Hz is accepted. Other encodings,
 containers, rates, depths, channels and WAVE_FORMAT_EXTENSIBLE are rejected.
@@ -147,7 +173,8 @@ usable. The latest request during loading is retained for a subsequent load.
 
 Main processes one RIFF chunk or at most 4096 payload bytes per iteration. SDMMC
 IDMA uses an isolated aligned AXI-SRAM sector with cache maintenance, 20 ms sector
-timeouts and USB service between successful sectors. Card initialization and FAT
+timeouts, the card reader's RCC-reset abort and USB service between successful sectors.
+A failed read unmounts; the card is remounted after 2 s. Card initialization and FAT
 chain traversal can exceed a single payload service. Audio/controls use interrupts.
 
 SAMPLE: active loaded slot steady; loading target flashes at 5 Hz. Error pulses
@@ -162,23 +189,48 @@ repeat per two seconds; an old valid slot remains steady:
 | 5 | No card |
 
 NEBULAE: RECORD shows capture/finalization, SOURCE Live, FREEZE frozen; RESET
-pulses at reset/wrap. FILE displays loading/errors. During SOURCE hold, RECORD
+pulses at reset/wrap. **D16 lights (latched until restart) after an audio deadline
+overrun** (DWT counter in the callback, LED written by main); the count and peak load
+are readable over USB-MIDI STATUS. FILE displays loading/errors. During SOURCE hold, RECORD
 shows circular, FREEZE trigger mode, FILE 1/2/3 pulses for file order. LEDs update
 outside audio, only on changes, at most 100/s. An inherited PCA9685 DMA-start
 failure can hang main/LED service; the audio interrupt continues independently.
 
 ## Firmware update mode
 
-Hold **S9 + S16**, and no other key, for 5 s, or send the bootloader SysEx from the
-Mod on Daisy editor (**Firmware-Update …**): all LEDs light up and the kit restarts into
-the Daisy bootloader ([details](../../common/bootloader/README.md),
-[FLASHING.md](../../docs/FLASHING.md)). In KEYBOARD mode these keys are C5 and C6, so
-a held octave of exactly these two notes for 5 s enters update mode as well; in
-SAMPLE mode they load slots 9 and 16 first.
+In **NEBULAE mode** hold **S9 + S16**, and no other key, for 5 s, or send the bootloader
+SysEx from the Mod on Daisy editor (**Firmware-Update …**) in any mode: all LEDs light
+up and the kit restarts into the Daisy bootloader ([details](../../common/bootloader/README.md),
+[FLASHING.md](../../docs/FLASHING.md)). Deviation from the repo-wide "same gesture in
+every mode" rule (review finding F7): in KEYBOARD these keys are C5 and C6 and in SAMPLE
+slots 9 and 16, so a held musical octave must not restart the kit and lose the volatile
+Live loop. The SysEx path is unchanged.
+
+## SD card management from Windows
+
+The same image has a second boot personality for copying, renaming and deleting
+samples from Windows with the card left in the kit. The Windows control panel
+(`diagnostics/windows`, tab **Nebulae**, app 0.5.0) drives it:
+
+1. **Share SD card with Windows**: the panel sends the SHARE SysEx. With a Live loop in
+   RAM the firmware asks for confirmation first (the loop is lost by the restart);
+   while recording or loading it answers BUSY. Accepted: audio fades out, held notes
+   are released (Note Off + CC 123), the card is unmounted and powered down, and the
+   kit restarts in SD management (USB CDC + mass storage, no audio, no MIDI).
+2. The panel shares the card; Windows shows a removable drive. Edit the samples.
+3. **Eject in Windows** ("Safely Remove Hardware"). Only the firmware's EJECTED state,
+   reached by Windows' eject command after a completed sync, counts as clean.
+4. **Return to Nebulae**: the card returns, the kit restarts into performance,
+   remounts, rescans the banks and reloads the previous bank/slot if it still exists.
+
+USB reset, unplugging or card removal while shared quarantine the card (INTERRUPTED)
+until it is acknowledged in the panel; nothing is reshared automatically, repaired or
+formatted. Without a PC, S4 held alone for 2 s returns from LOCAL or EJECTED. A power
+cycle always starts in performance. LEDs and protocol: [CONTROL_PROTOCOL.md](docs/CONTROL_PROTOCOL.md).
 
 ## USB MIDI on carrier J7
 
-Class-compliant external USB MIDI, Omni input, one shared stereo voice with last
+Class-compliant external USB MIDI in the performance personality, Omni input, one shared stereo voice with last
 note priority. Note On/Off, velocity-zero Note On, +/-2-semitone bend on the current
 note's channel, CC20-27 for pots in table order. C4/60 leaves base PITCH unchanged.
 CC120/123 release that channel; CC121 resets its bend; MIDI Reset clears MIDI

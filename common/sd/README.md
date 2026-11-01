@@ -5,9 +5,12 @@ the vendored **FatFs R0.16** with patch-1 and patch-2 ([version](fatfs/VERSION.m
 built read-only with **exFAT** and long file names. Design and decisions:
 [PLAN.md](PLAN.md).
 
-**Status:** step 1 of the plan. Host tests, sanitizers and a Cortex-M7 compile with
-the symbol policy pass locally. No firmware uses the driver yet, so its behaviour on
-the board is **NICHT GEMESSEN**.
+**Status:** steps 1, 3, 4 and 5 of the plan. Nebulae on Daisy 0.2.0 links the driver
+(performance personality) and the card reader in [`reader/`](reader/) (SD management
+personality). Host tests, sanitizers, a Cortex-M7 compile and the ELF symbol policy pass.
+The driver's behaviour on the board is **NICHT GEMESSEN**; the card reader in
+`reader/` is unchanged from the hardware-tested Diagnostics 0.3.2 (GEMESSEN 2026-10-31,
+Diagnostics image rebuilt byte-identical after the move).
 
 ## Files
 
@@ -19,6 +22,7 @@ the board is **NICHT GEMESSEN**.
 | `sd.mk` | Build fragment for firmware projects |
 | `Makefile`, `tests/` | Host tests, image generator, ARM compile check |
 | `../../scripts/check-sd-symbols.py` | Symbol policy for objects and images |
+| `reader/` | USB mass-storage card reader (exclusive ownership, BOT/SCSI, IDMA blocks, RCC-reset abort, CDC+MSC composite); moved unchanged from `diagnostics/firmware/src`, USB identity strings are `READER_USB_*` macros |
 
 ## Use in a firmware project
 
@@ -37,6 +41,7 @@ RoSdConfig c{};
 c.bounce = bounce; c.bounce_bytes = sizeof bounce;
 c.transfer_timeout_ms = 20; c.budget_ms = 0;          // per transfer / overall (0 = none)
 c.card_present = CardPresent; c.service = ServiceUsb; // both optional
+c.abort = MyAbort;                                   // optional; NULL = HAL_SD_Abort
 ro_sd_init(&c);                                      // after SdmmcHandler::Init
 if(ro_sd_mount(&fs) == FR_OK) { /* f_opendir, f_readdir, f_open(FA_READ), f_read ... */ }
 ```
@@ -49,6 +54,8 @@ if(ro_sd_mount(&fs) == FR_OK) { /* f_opendir, f_readdir, f_open(FA_READ), f_read
   card swap or an error. Errors, timeouts and removal set `STA_NOINIT`.
 * Paths use volume `0:`, e.g. `0:/NEBULAE/SAMPLES`. exFAT has no 8.3 short names:
   open files by their long names (`FILINFO::fname`).
+* `ffconf.h` aliases `_VOLUMES`/`_MAX_LFN` only so libDaisy's always-included
+  `sys/fatfs.h`/`util/FileTable.h` declarations compile; their code is never linked.
 * After the firmware build, `make sd-check` applies the symbol policy to the ELF.
   Images that must write blocks (the Diagnostics card reader) pass the allowed names
   in `SD_CHECK_ALLOW`.

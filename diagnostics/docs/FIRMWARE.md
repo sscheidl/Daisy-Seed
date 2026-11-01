@@ -227,3 +227,9 @@ protocol/ddp.*            Frames, CRC, parsing, bounded writing
   CV/DAC voltage ranges are not measured; values are normalized or DAC codes.
 
 See [TEST_REPORT.md](TEST_REPORT.md) for hardware-test scope and open measurements.
+
+> Since 2026-11-01 the card-reader sources (`card_reader`, `msc_bot`, `reader_usb`,
+> `reader_dma.h`, `reader_abort.h`, `reader_ctlreq.c`) live in
+> [`common/sd/reader/`](../../common/sd/reader/), shared with Nebulae on Daisy 0.2.0.
+> They were moved unchanged; both Diagnostics images rebuild byte-identical
+> (SHA256 `0564de97…f577` protected, `0be6f55c…4ea2` CardReader).

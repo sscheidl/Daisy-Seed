@@ -1,9 +1,16 @@
-# Sample banks and free file names - PLANNED
+# Sample banks and free file names
 
-**Status: specification only. Nothing here is implemented.** The current firmware
-(v0.1.0) still loads the fixed names `0:/NEBULAE/SAMPLES/01.wav` ... `16.wav`; see
-the [README](../README.md#sd-and-errors). This document records the agreed design
-for a later version. Hardware behaviour is **NICHT GEMESSEN**.
+**Status: implemented in v0.2.0** (`src/banks.{h,cpp}`, `src/sd_files.cpp`,
+`tests/test_banks.cpp`, `tests/test_callback.cpp`). Software-tested only; hardware
+behaviour is **NICHT GEMESSEN**. Differences from the plan below:
+
+* SW17: `Pressed()` is the bank position (`kSw17BankWhenPressed` in `src/control.h`);
+  which lever direction that is remains a hardware-test item.
+* Names outside code page 850: FAT32 opens the 8.3 alias; exFAT has none (error 1).
+* After SD management the previous bank/slot is restored by number if it still exists
+  (renamed folders can shift numbers); a missing bank falls back to bank 1.
+* A missing `SAMPLES/` folder is a card without banks (slot press: error 1).
+* Dimmed LEDs use 15 % PCA9685 brightness (`kDimLevel`).
 
 ## Goal
 
@@ -157,4 +164,5 @@ Hardware (human, add to [HARDWARE_TEST_PLAN](HARDWARE_TEST_PLAN.md) when impleme
 * Showing file names; the device has no display. The PC's sorted folder view is
   the reference for the slot order.
 * Formats beyond PCM16 44.1/48 kHz mono/stereo.
-* Windows Explorer access to the card (deferred, see the plan's decision S6).
+* Windows Explorer access while performing: SD management is a separate restart into
+  another personality ([architecture](V0_2_ARCHITECTURE.md)).

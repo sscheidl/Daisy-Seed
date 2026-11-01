@@ -1,3 +1,70 @@
+# Local validation - v0.2.0
+
+**RESULT: SOFTWARE PASS / HARDWARE PENDING.** Run 2026-11-01 (Linux x86_64 container,
+g++ 13/clang, xPack GCC 13.2.1-1.1, libDaisy `f715e48`, DaisySP `2c72eaf`). Nothing was
+flashed or listened to; every hardware item is NICHT GEMESSEN
+([plan](HARDWARE_TEST_PLAN.md)).
+
+Firmware source: commit `fbc0c47` on `claude/new-session-fqack4` (later commits change
+documentation only; `src/` and `Makefile` are identical).
+
+## Artifact
+
+| File | Value |
+| --- | --- |
+| `build/NebulaeOnDaisy-v0.2.0.bin` | 183,652 B, SHA256 `3734dde5ee3d6ab462706f3c711c9ff107539959a7dfbb71d9a7663a4e5e2f19` |
+| Reproducibility | identical SHA256 from a second clean build in a separate worktree |
+| `.elf`, `.map`, `SHA256SUMS` | in `build/` (not tracked) |
+| Marker | `NEBULAE-FW-VERSION=0.2.0` |
+
+## Commands and exit codes
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `make PROJECT=granular -j8` | 0 | BOOT_SRAM image; linker warnings (`_close` etc. not implemented, RWX segment) are identical in the v0.1.1 baseline |
+| `make PROJECT=granular test` | 0 | `test_nebulae` 22,253,411 assertions (incl. SW17, panel LEDs, FILE per bank, F6, F3 A/B), `test_banks` 2,471, `test_control_sysex` 200,334, `test_admin` 57, `test_callback` 1,268,907 per image (FAT32 and exFAT), `test_queue`, `test_bridge`, e2e Windows/return on FAT32 and exFAT (4 files hash-verified each) |
+| `make PROJECT=granular test-sanitize` | 0 | same suite with ASan/UBSan/float-cast-overflow, 22 PASS lines |
+| `make PROJECT=granular test-thread` | 0 | TSan: queue, bridge, control SysEx mailbox (156,710 complete requests in the final run; the count varies by scheduling) |
+| `python3 scripts/check-firmware.py build/NebulaeOnDaisy-v0.2.0.bin` | 0 | `PASS: v0.2.0, 183652 bytes, stack=0x20020000, reset=0x24002a81, BOOT_SRAM vectors` |
+| `python3 scripts/check-granular-elf.py build/NebulaeOnDaisy-v0.2.0.elf --host-test` | 0 | hard-float, BIN = ELF, both IDMA buffers in AXI SRAM, 16 KiB stack floor, 8 MiB reserve, file capacity 41,695,328 B, WAV boundary tests at that capacity |
+| `make -C instruments/granular sd-check` | 0 | 36 banned symbols absent (all FatFs writes, libDaisy FatFs/`SD_Driver`, erase/lock, PIO/IT writes), 6 required present; MSC single-block IDMA write allowed |
+| `make -C common/sd test test-sanitize arm-check` | 0 | 148,869 checks incl. the new abort hook; injected write detected |
+| `make -C diagnostics/firmware test` + both images | 0 | images byte-identical to `main` (`0564de97…f577`, `0be6f55c…4ea2`) after the reader move |
+| `python -m pytest diagnostics/tests/python` | 0 | 309 passed (281 before + 28 Nebulae profile) |
+| PyInstaller onefile (Linux smoke build) `--sim --selftest 3`, `--sim-nebulae --selftest 4` | 0 / 0 | packaging works; the Windows EXE is built by `Actions -> Hardware diagnostics` |
+| `make all-projects` / `make test-projects` / `make test-release` | 0 / 0 / 0 | full repo regression incl. Toy Piano/Physical Modeling golden hashes |
+| `python3 -m unittest tests/test_components.py`, `make components` | 0 | suite selection updated for the new dependencies |
+| `git diff --check` | 0 | clean |
+
+## What the host tests cover
+
+* Ownership: SHARE only explicit; PERFORM/BOOT only from LOCAL; BYE/timeout/disconnect
+  never return; INTERRUPTED/ERROR quarantined until RETURN; S4 gesture only from
+  LOCAL/EJECTED; boot intent one-shot, every single-bit corruption and 200,000 random
+  records rejected.
+* Simulated round trip: writable FatFs R0.16 ("Windows") mounts the card only through
+  SCSI over the production MscBot + CardReader, creates a bank, writes WAVs with
+  partial/multi-sector writes, renames and deletes, ejects (PREVENT/ALLOW, SYNCHRONIZE
+  CACHE, START STOP UNIT); then the production read-only stack rescans the banks and
+  every PCM hash matches. Not a substitute for the hardware test.
+* Production `main.cpp` on the real FatFs/ro_sd stack: startup scan and load, invalid
+  WAV, bank view without load, LED dimming, KEYBOARD/SAMPLE S9+S16 without reset,
+  NEBULAE gesture, MIDI regressions, STATUS/SHARE (busy, confirm, accepted),
+  PREPARE_SHARE (ACK first, Note Off + CC123, audio stopped, SD released, intent,
+  `DAISY_SKIP_TIMEOUT`, faded output), intent dispatch, card swap; the audio callback
+  never reads the SD card.
+* F3: packed forward FFT equals two separate forwards within 2e-5 relative; Mincer A/B
+  on a stereo source: max |diff| 1.5e-4, error/signal -88.0 dB, identical hop timing.
+* F6: 0.5 ms floor, 6x smoothed clock cap, fast/slow/saturated clocks.
+
+## Open (hardware)
+
+USB enumeration of both personalities on Windows, boot-intent survival through the
+external bootloader (R1), SW17 lever direction, exFAT cards, transfer speed, CPU peak
+and overruns, codec behaviour across the restart, listening comparison with v0.1.1.
+
+---
+
 # Local validation - v0.1.0
 
 **RESULT: SOFTWARE PASS / HARDWARE PENDING.**

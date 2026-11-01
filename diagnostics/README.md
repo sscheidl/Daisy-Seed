@@ -8,6 +8,14 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > Windows SD card reader, both CV channels and both gate inputs. Results are
 > real-board measurements, separate from software/simulation tests.
 
+## App 0.5.0: Nebulae on Daisy profile
+
+App **0.5.0** adds the **Nebulae** tab: share the sample card of Nebulae on Daisy 0.2.0
+with Windows, eject, return to performance, with Live-loop warning and interruption
+acknowledgement ([profile](docs/NEBULAE_PROFILE.md)). The card-reader sources moved
+unchanged to `common/sd/reader/`; both diagnostic images rebuild byte-identical.
+Simulation-tested only (`--sim-nebulae`), **NICHT GEMESSEN** on hardware.
+
 ## Firmware 0.4.0 and app 0.4.0 (audio, not yet flashed)
 
 Firmware **0.4.0** adds the audio extension: a capped test tone on AUDIO OUT, peak
