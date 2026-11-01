@@ -27,6 +27,11 @@ typedef struct {
     /* Called after every successful transfer, e.g. USB MIDI service. It must not call
      * FatFs or this driver. NULL = none. */
     void (*service)(void);
+    /* Stops a failed or timed-out transfer. NULL = HAL_SD_Abort(). Firmware that must
+     * not wait for an unresponsive card passes the RCC-reset abort from
+     * reader/reader_abort.h (hardware-tested in the Diagnostics card reader 0.3.2);
+     * the next ro_sd_mount() re-initializes the interface either way. */
+    void (*abort)(void);
 } RoSdConfig;
 
 /* Validates and copies the configuration. Returns 0, or -1 for an invalid one.

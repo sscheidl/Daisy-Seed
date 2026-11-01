@@ -1,5 +1,18 @@
 # Actual ARM memory budget
 
+## v0.2.0 (ELF of SHA256 `3734dde5…2f19`, `check-granular-elf.py`, 2026-11-01)
+
+| Region | v0.1.1 | v0.2.0 | Note |
+| --- | --- | --- | --- |
+| AXI SRAM (image + `.neb_sd`) | 163,648 B | 184,704 B of 491,520 | BIN 183,652 B; two 512 B IDMA buffers (`sector_buffer`, `reader_dma_buffer`) after the image |
+| DTCM | 77,132 B | 97,900 B of 131,072 | bank tables (3 x 16 names), FatFs R0.16 objects; 33,172 B left, linker keeps a 16 KiB stack floor |
+| D2 (heap) | 65,536 B | 65,536 B | unchanged |
+| SDRAM file capacity | 41,695,360 B | 41,695,328 B | `__neb_file_start` 0xc103c7a0; 236 s stereo / 472 s mono at 44.1 kHz |
+| Backup SRAM | 12 B | 12 B (+ 16 B intent at 0x38800F00, not a linker section) | `_ebackup_sram <= 0x38800F00` asserted |
+
+Stack usage per function: `-fstack-usage` (`build/*.su`). CPU load remains NICHT GEMESSEN.
+
+
 Validated 2026-10-20 using xPack ARM GCC 13.2.1-1.1, official BOOT_SRAM linker
 script plus `src/memory.ld`, `arm-none-eabi-size`, MAP and
 `python scripts/check-granular-elf.py build/NebulaeOnDaisy-v0.1.0.elf` (adjust

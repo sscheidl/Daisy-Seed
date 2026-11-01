@@ -96,3 +96,9 @@ commit/hash, Windows version, card model/capacity/filesystem and each result.
 Record failures as failures, including timeout or forced-disconnect corruption.
 This firmware cannot recover writes still cached only by Windows or guarantee
 filesystem integrity after interrupted power/card removal.
+
+> Since 2026-11-01 the card-reader sources (`card_reader`, `msc_bot`, `reader_usb`,
+> `reader_dma.h`, `reader_abort.h`, `reader_ctlreq.c`) live in
+> [`common/sd/reader/`](../../common/sd/reader/), shared with Nebulae on Daisy 0.2.0.
+> They were moved unchanged; both Diagnostics images rebuild byte-identical
+> (SHA256 `0564de97…f577` protected, `0be6f55c…4ea2` CardReader).

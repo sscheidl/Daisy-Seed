@@ -121,6 +121,7 @@ class DeviceSession:
         self.sys: p.SysInfo | None = None
         self.sd: p.SdInfo | None = None
         self.reader: p.ReaderInfo | None = None
+        self.neb: p.NebInfo | None = None  # Nebulae on Daisy, SD management personality
         self._reader_deadline: float | None = None
         self._reader_action: str | None = None
         # Audio extension (firmware 0.4.0): peak levels at 10 Hz and the last snapshot.
@@ -167,6 +168,7 @@ class DeviceSession:
         """JSON-serializable observed state; missing measurements stay null."""
         return {
             "simulated": self.simulated, "connected": self.connected,
+            "nebulae": asdict(self.neb) if self.neb is not None else None,
             "port": self.port if self.connected else None,
             **{key: asdict(value) if value is not None else None for key, value in
                (("device", self.device), ("reader", self.reader), ("board", self.board),
@@ -430,6 +432,7 @@ class DeviceSession:
         self._reader_deadline = None
         self._reader_action = None
         self.reader = None
+        self.neb = None
         self._state_times.clear()
         self.state_rate_hz = 0.0
         self._next_scan = self._clock() + SCAN_INTERVAL_S
@@ -509,6 +512,13 @@ class DeviceSession:
                 if changed_medium or changed_owner:
                     self.sd = None
                     self._event("reader", self.reader)
+            elif msg.type == "NEB":
+                if not (self.device and "nebmgmt" in self.device.capabilities):
+                    raise p.ProtocolError("NEB without advertised nebmgmt capability")
+                self.neb = p.parse_neb(msg)
+                if self.neb.action == "PERFORM":
+                    self._event("log", "Nebulae accepted the return to performance")
+                self._event("neb", self.neb)
             elif msg.type == "PONG":
                 sent = self._ping_sent.pop(msg.int("n"), None)
                 if sent is not None:

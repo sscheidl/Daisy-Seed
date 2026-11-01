@@ -187,6 +187,22 @@ static void DiskLayer(const std::vector<uint8_t>& image) {
         CHECK(disk_read(0, raw.data(), 0, 1) == RES_NOTRDY);
         card::mode = card::Ok;
     }
+    // An application abort hook replaces HAL_SD_Abort (Nebulae: RCC-reset abort).
+    {
+        static unsigned hook_calls = 0;
+        RoSdConfig c{};
+        c.bounce = bounce; c.bounce_bytes = 1024; c.transfer_timeout_ms = 20;
+        c.card_present = Present;
+        c.service = Service;
+        c.abort = [] { ++hook_calls; };
+        CHECK(ro_sd_init(&c) == 0 && ro_sd_mount(&fs) == FR_OK);
+        card::mode = card::NeverComplete; const unsigned aborts = card::aborts, hooks = hook_calls;
+        CHECK(disk_read(0, raw.data(), 0, 1) == RES_ERROR);
+        CHECK(hook_calls == hooks + 1 && card::aborts == aborts && (ro_sd_status() & STA_NOINIT));
+        card::mode = card::Ok;
+        CHECK(ro_sd_mount(&fs) == FR_OK && disk_read(0, raw.data(), 0, 1) == RES_OK);
+        Configure(1024);
+    }
     CHECK(ro_sd_mount(&fs) == FR_OK);
     FIL f; UINT got;
     CHECK(f_open(&f, "0:/NEBULAE/SAMPLES/Drones/10 Air.wav", FA_READ) == FR_OK);

@@ -11,6 +11,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description='Hardware diagnostics for the Daisy Seed3 Desktop Dev Kit')
     parser.add_argument("--sim", action="store_true",
                         help='start in simulation mode (no hardware)')
+    parser.add_argument("--sim-nebulae", action="store_true",
+                        help='simulate Nebulae on Daisy 0.2 (USB-MIDI performance and SD management)')
     parser.add_argument("--port", help='use a fixed COM port, e.g. COM5')
     parser.add_argument("--selftest", type=float, metavar='SECONDS',
                         help='exit after N seconds; exit code 0 if device data was received (for automated startup tests)')
@@ -30,12 +32,14 @@ def main(argv: list[str] | None = None) -> int:
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setApplicationName("DaisyDiagnostic")
     theme.apply(app)
-    window = MainWindow(simulation=args.sim, port=args.port)
+    window = MainWindow(simulation=args.sim or args.sim_nebulae, port=args.port,
+                        sim_device="nebulae" if args.sim_nebulae else "diagnostics")
     window.show()
     result = {"code": 0}
     if args.selftest is not None:
         def finish() -> None:
-            ok = window.session is not None and window.session.board is not None
+            ok = window.session is not None and (window.session.board is not None or (
+                window.nebulae is not None and window.nebulae.status is not None))
             if args.screenshot:
                 window.grab().save(args.screenshot)
             print(f"selftest: {'PASS' if ok else 'FAIL'} state={window.session.state.name}"

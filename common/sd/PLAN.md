@@ -1,7 +1,9 @@
 # Shared read-only SD driver - PLANNED
 
-**Status:** decisions recorded on 2026-10-23. Step 1 (shared driver, host tests,
-symbol check) is implemented, see [README](README.md); steps 2-5 are open. Hardware
+**Status:** decisions recorded on 2026-10-23. Steps 1, 3, 4 and 5 are implemented
+(Nebulae on Daisy 0.2.0, 2026-11-01); step 2 (Diagnostics read test on this driver) is
+still open. S6 was revised by the v0.2.0 order: Windows access for Nebulae is a second
+boot personality of the same image ([architecture](../../instruments/granular/docs/V0_2_ARCHITECTURE.md)). Hardware
 behaviour of the shared driver is **NICHT GEMESSEN**.
 
 One microSD read path for every firmware in this repository, instead of separate
