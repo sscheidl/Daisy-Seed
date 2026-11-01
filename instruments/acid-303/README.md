@@ -1,66 +1,66 @@
 # Acid 303
 
-Monophone Stimme nach dem Vorbild TB-303 für das Seed3 Desktop Dev Kit: Säge oder
-Rechteck (DaisySP PolyBLEP), DaisySP-`LadderFilter` (LP24, intern 4-fach überabgetastet)
-mit Selbstoszillation (D4), Filterhüllkurve mit Env Mod und Decay, Accent und Slide.
-Header-only-Kern für das Produkt [Acid Seq](../../sequencers/acid-seq/) und eigene
-Firmware `acid-303` zum Testen und Spielen.
+Monophonic voice modeled on the TB-303 for the Seed3 Desktop Dev Kit: saw or
+square (DaisySP PolyBLEP), DaisySP `LadderFilter` (LP24, internally 4× oversampled)
+with self-oscillation (D4), filter envelope with Env Mod and Decay, accent and slide.
+Header-only core for the product [Acid Seq](../../sequencers/acid-seq/) and its own
+firmware `acid-303` for testing and playing.
 
-| Stand | |
+| Status | |
 | --- | --- |
-| Version | Kern und Firmware 0.1.0 (`src/version.h`) |
-| Software | Host-, Sanitizer- und ARM-Prüfungen bestanden (siehe CHANGELOG) |
-| Hardware | NICHT GEMESSEN, [Hardwaretest](docs/HARDWARE_TEST.md) |
+| Version | Core and firmware 0.1.0 (`src/version.h`) |
+| Software | Host, sanitizer and ARM checks passed (see CHANGELOG) |
+| Hardware | NOT MEASURED, [hardware test](docs/HARDWARE_TEST.md) |
 
-Der LadderFilter ist ein Moog-artiges Modell. Er nähert den 303-Klang an, bildet aber
-kein Diode-Ladder nach. Ein Diode-Ladder bleibt eine spätere, eigens versionierte
-Klangänderung mit neuem Golden-Hash.
+The LadderFilter is a Moog-style model. It approximates the 303 sound but does not
+model a diode ladder. A diode ladder remains a later, separately versioned
+sound change with a new golden hash.
 
-## Bedienung (Firmware `acid-303`)
+## Controls (firmware `acid-303`)
 
-| Element | Funktion |
+| Element | Function |
 | --- | --- |
-| S1–S16 | chromatisch ab C2 (MIDI 36–51) |
-| VR1 / VR2 | Cutoff 40 Hz – 12 kHz (logarithmisch) / Resonanz (100 % schwingt selbst) |
-| VR3 / VR4 | Env Mod / Decay 30 ms – 3 s (logarithmisch) |
-| VR5 / VR6 | Accent-Stärke / Tuning ±12 Halbtöne (gerastet) |
-| VR7 / VR8 | Lautstärke / Wellenform (links Säge, rechts Rechteck) |
-| SW17 | Accent für die Tasten |
-| SW18 | oben Slide aus, Mitte Slide bei gehaltener Taste (Legato), unten Slide immer. Gilt beim Einschalten und wenn der Schalter bewegt wird; ein Wert vom Panel oder per CC bleibt bis dahin |
-| S9 + S16 (5 s) | Bootloader. Vorher wird die Stimme stummgeschaltet |
+| S1–S16 | chromatic from C2 (MIDI 36–51) |
+| VR1 / VR2 | Cutoff 40 Hz – 12 kHz (logarithmic) / resonance (100 % self-oscillates) |
+| VR3 / VR4 | Env Mod / Decay 30 ms – 3 s (logarithmic) |
+| VR5 / VR6 | Accent amount / tuning ±12 semitones (stepped) |
+| VR7 / VR8 | Volume / waveform (left saw, right square) |
+| SW17 | Accent for the keys |
+| SW18 | up slide off, middle slide on held key (legato), down slide always. Applies at power-on and when the switch is moved; a value from the panel or via CC stays until then |
+| S9 + S16 (5 s) | Bootloader. The voice is muted first |
 
-Potis wirken erst, wenn sie sich bewegen. Bis dahin gilt der zuletzt per MIDI-CC oder
-Panel gesetzte Wert. Ausgang: mono auf beide Kanäle und den Kopfhörer. LEDs zeigen
-gehaltene Tasten und die klingende Note.
+Pots only take effect once they move. Until then the value last set via MIDI CC or
+panel applies. Output: mono on both channels and the headphones. LEDs show
+held keys and the sounding note.
 
-MIDI über USB (J7) und DIN, in dieser Firmware omni: Noten (Anschlag über 100 = Accent),
-CCs nach [MIDI.md](docs/MIDI.md), CC 120/123 beenden alle Noten. SQ-Parameter nur über USB.
+MIDI over USB (J7) and DIN, omni in this firmware: notes (velocity above 100 = accent),
+CCs per [MIDI.md](docs/MIDI.md), CC 120/123 end all notes. SQ parameters over USB only.
 
-## Bauen und testen
+## Build and test
 
 ```bash
 make PROJECT=acid-303 -j4                 # build/Acid303-v0.1.0.bin
-make PROJECT=acid-303 test                # Stimme und Firmware auf Fakes
+make PROJECT=acid-303 test                # voice and firmware on fakes
 make PROJECT=acid-303 test-sanitize
-make -C instruments/acid-303 bench        # relative Host-Kosten, keine Seed3-Messung
-make -C instruments/acid-303 fixture      # 303-Fixture neu schreiben (nur absichtlich)
+make -C instruments/acid-303 bench        # relative host cost, not a Seed3 measurement
+make -C instruments/acid-303 fixture      # rewrite the 303 fixture (only on purpose)
 python3 scripts/check-firmware.py instruments/acid-303/build/Acid303-v0.1.0.bin
 python3 scripts/check-elf-placement.py instruments/acid-303/build/Acid303-v0.1.0.elf
 ```
 
-## Kern
+## Core
 
-`include/acid303/voice.h` enthält die Stimme, `params.h` die Parameter nach dem
-[Vertrag](../../sequencers/step-seq/docs/PARAMETERS.md) und den CC-Plan.
+`include/acid303/voice.h` contains the voice, `params.h` the parameters per the
+[contract](../../sequencers/step-seq/docs/PARAMETERS.md) and the CC plan.
 
-* **Noten:** gemeinsamer Stapel für Sequencer und MIDI. Die zuletzt gespielte Note klingt,
-  ein Note-Off wirkt nur auf die Note seiner Quelle und Kennung, Panic nur auf eine
-  Quelle (R16). Endet die klingende Note, übernimmt die jüngste noch gehaltene legato.
-* **Hüllkurven:** Amplitude 3 ms Attack, langsames Abfallen beim Halten, 8 ms Release.
-  Filter auf 10 % in der Decay-Zeit. Accent: bis +6 dB, bis 2 Oktaven mehr Hüllkurve,
-  Decay höchstens 200 ms.
-* **Slide:** konstante Zeit (Standard 60 ms), ohne neue Hüllkurve.
-* **Glättung:** Parameter 20 ms, Filterkoeffizienten alle 8 Samples. Am Ausgang liegt ein
-  DC-Blocker (~4 Hz).
-* **Determinismus:** keine libm-Aufrufe im Audiopfad (eigenes `Exp2`), damit die
-  Golden-Hashes auf jedem Host gleich sind.
+* **Notes:** shared stack for sequencer and MIDI. The most recently played note sounds;
+  a note-off only affects the note of its source and ID, panic only one
+  source (R16). When the sounding note ends, the most recent note still held takes over legato.
+* **Envelopes:** amplitude 3 ms attack, slow decay while held, 8 ms release.
+  Filter to 10 % within the decay time. Accent: up to +6 dB, up to 2 octaves more envelope,
+  decay at most 200 ms.
+* **Slide:** constant time (default 60 ms), without a new envelope.
+* **Smoothing:** parameters 20 ms, filter coefficients every 8 samples. The output has a
+  DC blocker (~4 Hz).
+* **Determinism:** no libm calls in the audio path (our own `Exp2`), so that the
+  golden hashes are the same on every host.

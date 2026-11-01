@@ -1,84 +1,84 @@
-# ModBench — Messfirmware für Mod on Daisy
+# ModBench — measurement firmware for Mod on Daisy
 
-Diese Firmware ist **kein Instrument**. Sie misst die Matrix auf dem Seed3 Desktop Kit
-(TEST_PLAN_PHASE2 § 3) und ist zugleich der erste Hardwaretest des MIDI-Protokolls.
-Eine Sinus-Stimmenbank mit 8 Zielen läuft durch die Matrix:
+This firmware is **not an instrument**. It measures the matrix on the Seed3 Desktop Kit
+(TEST_PLAN_PHASE2 § 3) and is at the same time the first hardware test of the MIDI protocol.
+A sine voice bank with 8 targets runs through the matrix:
 
-| Spalte | Ziel | Weg |
+| Column | Target | Path |
 | --- | --- | --- |
-| 0 | Pitch (`+-1 st`) | Stimme |
-| 1 | Level | Stimme |
-| 2 | Harmonic | Stimme |
-| 3 | Tone | Stimme |
-| 4 | Pan (`+-50%`) | Stimme |
+| 0 | Pitch (`+-1 st`) | voice |
+| 1 | Level | voice |
+| 2 | Harmonic | voice |
+| 3 | Tone | voice |
+| 4 | Pan (`+-50%`) | voice |
 | 5 | Master | global |
 | 6 | Width | global |
 | 7 | Drive | global |
 
-## Bauen und flashen
+## Build and flash
 
 ```bash
-make PROJECT=mod-bench -j4                          # build/ModBench-v0.1.1.bin (Block 48)
+make PROJECT=mod-bench -j4                          # build/ModBench-v0.1.1.bin (block 48)
 make -C modules/mod-on-daisy/bench BLOCK=256 -j4     # build/b256-max8/
-make -C modules/mod-on-daisy/bench MAX_ACTIVE=64 -j4 # build/b48-max64/ (Szenario S6)
-make PROJECT=mod-bench program-dfu                   # wie bei den Instrumenten (docs/FLASHING.md)
+make -C modules/mod-on-daisy/bench MAX_ACTIVE=64 -j4 # build/b48-max64/ (scenario S6)
+make PROJECT=mod-bench program-dfu                   # as for the instruments (docs/FLASHING.md)
 ```
 
-## Bedienung am Gerät
+## Operation on the device
 
-* **Tasten S1–S9** wählen die Szenarien S0–S8. Die LED der jeweiligen Taste leuchtet.
-  Nach dem Einschalten ist S1 aktiv.
-* Audio auf J3/J4 (J5 Kopfhörer). Ohne Noten spielen 4 bzw. 32 Stimmen einen festen
-  Akkord.
-* **USB-MIDI** (J7, „Daisy Seed External“):
-  * Note On weist Stimmen nacheinander eine Note zu; Poly AT auf diese Note moduliert
-    die Stimme.
-  * CC1 und Channel AT sind Quellen.
-  * CC3 ist der nummerierte Teststrom zur Verlusterkennung.
-* **CV 1/2** und **Gate 1/2** sind die Quellen bzw. Sync-Eingänge der Matrix.
+* **Keys S1–S9** select scenarios S0–S8. The LED of the respective key lights up.
+  After power-on S1 is active.
+* Audio on J3/J4 (J5 headphones). Without notes, 4 or 32 voices play a fixed
+  chord.
+* **USB MIDI** (J7, "Daisy Seed External"):
+  * Note On assigns a note to voices one after another; Poly AT on that note modulates
+    the voice.
+  * CC1 and Channel AT are sources.
+  * CC3 is the numbered test stream for loss detection.
+* **CV 1/2** and **Gate 1/2** are the matrix's sources and sync inputs respectively.
 
-## Messablauf unter Windows
+## Measurement procedure on Windows
 
 ```bash
 pip install mido python-rtmidi
 python modules/mod-on-daisy/tools/mod_probe.py identify
 python modules/mod-on-daisy/tools/mod_probe.py lengths          # H2/H3
 python modules/mod-on-daisy/tools/mod_probe.py bench --seconds 60 --csv s48.csv   # S0..S8
-python modules/mod-on-daisy/tools/mod_probe.py monitor --seconds 20             # H5/H6, CV-Rohwerte
-python modules/mod-on-daisy/tools/mod_probe.py cc-stats         # falls SysEx-Antworten nicht ankommen
+python modules/mod-on-daisy/tools/mod_probe.py monitor --seconds 20             # H5/H6, raw CV values
+python modules/mod-on-daisy/tools/mod_probe.py cc-stats         # if SysEx replies do not arrive
 ```
 
-* Studio One sollte den Port währenddessen nicht geöffnet haben (H4).
-* Die Ergebnisse gehören in [docs/VALIDATION.md](../docs/VALIDATION.md).
-* Für S6 die Variante `MAX_ACTIVE=64` flashen, für die Messung bei Block 256 die
-  Variante `BLOCK=256`.
+* Studio One should not have the port open during this (H4).
+* The results belong in [docs/VALIDATION.md](../docs/VALIDATION.md).
+* For S6 flash the `MAX_ACTIVE=64` variant, for the measurement at block 256 the
+  `BLOCK=256` variant.
 
-## Messgrößen
+## Measured quantities
 
-| Größe | Bedeutung |
+| Quantity | Meaning |
 | --- | --- |
-| Matrix-Zyklen | DWT-Zyklen für `ReadHardware` + `Tick` + alle `Apply`/`ApplyVoice` eines Blocks (480 Zyklen = 1 µs bei 480 MHz) |
-| Callback-Last | `daisy::CpuLoadMeter`, Mittel und Spitze, in 0,01 % |
-| Überläufe | Callbacks, die länger als das Blockbudget dauern |
-| MIDI verloren | Lücken im CC3-Teststrom |
-| Main max | Höchstdauer eines `HandleMidi`-Durchlaufs bzw. eines `Service()` in Zyklen; Unterbrechungen durch den Audio-IRQ sind enthalten |
+| Matrix cycles | DWT cycles for `ReadHardware` + `Tick` + all `Apply`/`ApplyVoice` of one block (480 cycles = 1 µs at 480 MHz) |
+| Callback load | `daisy::CpuLoadMeter`, mean and peak, in 0.01 % |
+| Overruns | Callbacks that take longer than the block budget |
+| MIDI lost | Gaps in the CC3 test stream |
+| Main max | Maximum duration of one `HandleMidi` pass or one `Service()` in cycles; interruptions by the audio IRQ are included |
 
-## CC-Rückfallebene
+## CC fallback
 
-Falls das SysEx-Senden der gepinnten libDaisy auf dem Rechner nicht ankommt (H3):
+If SysEx sent by the pinned libDaisy does not arrive at the computer (H3):
 
-* **Anfrage**: CC119 = 1 auf Kanal 16.
-* **Antwort**: 20 CCs CC100–119 auf Kanal 16. Mehrbyte-Werte stehen je 7 Bit, das
-  niederwertigste zuerst.
+* **Request**: CC119 = 1 on channel 16.
+* **Reply**: 20 CCs CC100–119 on channel 16. Multi-byte values are split into 7 bits each,
+  least significant first.
 
-| CC | Inhalt |
+| CC | Content |
 | --- | --- |
 | 100 | Format 1 |
-| 101–103 | Matrix-Zyklen max |
-| 104–106 | Matrix-Zyklen Mittel |
-| 107–109 | Callback-Last max (0,01 %) |
-| 110–112 | Überläufe |
-| 113 | Szenario |
-| 114–116 | Callback-Last Mittel (0,01 %) |
-| 117 | MIDI verloren (max. 127) |
-| 119 | 64 = Ende |
+| 101–103 | Matrix cycles max |
+| 104–106 | Matrix cycles mean |
+| 107–109 | Callback load max (0.01 %) |
+| 110–112 | Overruns |
+| 113 | Scenario |
+| 114–116 | Callback load mean (0.01 %) |
+| 117 | MIDI lost (max. 127) |
+| 119 | 64 = end |

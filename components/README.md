@@ -1,57 +1,56 @@
-# Komponenten und Produktversionen
+# Components and product versions
 
-Für neue Module und wesentliche Erweiterungen gilt die
-[verbindliche modulare Entwicklungsrichtlinie](../docs/MODULAR_DEVELOPMENT_POLICY.md):
-eigene Modulversionen und Verträge, getrennte Tests, austauschbare FX und
-reproduzierbare Produktzusammenstellungen.
+New modules and substantial extensions follow the
+[mandatory modular development policy](../docs/MODULAR_DEVELOPMENT_POLICY.md):
+their own module versions and contracts, separate tests, replaceable FX and
+reproducible product compositions.
 
-`registry.json` ordnet allen implementierten Instrumenten, den beiden Reverb-
-Komponenten, der Tape-FX-Komponente (`tape-fx`), Mod on Daisy, dem gemeinsamen Bootloader-Einstieg (`bootloader-entry`,
-in jedem Firmwareprodukt) und den drei Control Panels stabile IDs zu. Die
-Versionen werden aus den eigenen Headern bzw. CMake gelesen. Im Register steht
-keine zweite Kopie dieser Versionsnummern. Der Browser zeigt seine eigene
-Version aus `editors/mod-on-daisy/web/version.js` an.
+`registry.json` assigns stable IDs to all implemented instruments, the two reverb
+components, the Tape FX component (`tape-fx`), Mod on Daisy, the shared bootloader entry (`bootloader-entry`,
+in every firmware product) and the three control panels. The
+versions are read from their own headers or CMake. The registry contains
+no second copy of these version numbers. The browser shows its own
+version from `editors/mod-on-daisy/web/version.js`.
 
 ```bash
-make components                         # Register und Versionsquellen prüfen
-make test-components                    # Zuordnung, Identität und Abhängigkeiten testen
-python3 scripts/component_manifest.py   # alle Komponentenversionen anzeigen
+make components                         # check the registry and version sources
+make test-components                    # test mapping, identity and dependencies
+python3 scripts/component_manifest.py   # show all component versions
 python3 scripts/component_manifest.py --project physical-modeling-fx-ambient
-make PROJECT=physical-modeling-fx-ambient manifest # gebautes BIN prüfen, COMPONENTS.json ablegen
+make PROJECT=physical-modeling-fx-ambient manifest # check the built BIN, write COMPONENTS.json
 ```
 
-Ein Manifest nennt Produkt-ID/-Version, Komponentenversionen mit ihren
-Versionsquellen und Abhängigkeiten, passende Control Panels, Git-Revision,
-Status des Arbeitsbaums sowie BIN-Größe und SHA-256. Panels stehen getrennt von
-den eingebetteten Komponenten: Der VST3-Editor ist kein Audio-DSP im Daisy-BIN.
-Der manuelle Firmware-Workflow legt das Manifest neben BIN/ELF und Prüfsumme ab.
+A manifest lists the product ID/version, component versions with their
+version sources and dependencies, matching control panels, Git revision,
+working tree status as well as BIN size and SHA-256. Panels are listed separately from
+the embedded components: the VST3 editor is not audio DSP in the Daisy BIN.
+The manual firmware workflow stores the manifest next to the BIN/ELF and checksum.
 
-Neue Komponenten und Produktvarianten verwenden dreiteilige SemVer. Bestehende
-Werte wie Toy Piano `0.3` und Ambient Reverb `0.2` bleiben für akzeptierte Images
-erhalten. Eine Änderung der Klangsemantik verlangt eine begründete Versionierung
-und einen neuen Golden-Nachweis; ein Registereintrag allein ändert keinen Klang.
+New components and product variants use three-part SemVer. Existing
+values such as Toy Piano `0.3` and Ambient Reverb `0.2` are kept for accepted images.
+A change in sound semantics requires a justified version bump
+and a new golden proof; a registry entry alone does not change any sound.
 
-Die neuen zusammengesetzten Produkte verwenden **eine** Produktversion aus
-`composed_version.h` für Dateiname, Firmwaremarker und IDENTIFY. Die historischen
-Mod4-Dateinamen bleiben erhalten; `legacy_device_version` weist dort auf die
-bekannte abweichende IDENTIFY-Kennung hin. Das Manifest ist ein Build-Artefakt,
-keine neue SysEx-Nachricht. Die Zusammensetzung wird noch nicht live im Panel
-angezeigt.
+The new composed products use **one** product version from
+`composed_version.h` for the file name, firmware marker and IDENTIFY. The historical
+Mod4 file names are kept; `legacy_device_version` points out the
+known deviating IDENTIFY string there. The manifest is a build artifact,
+not a new SysEx message. The composition is not yet shown live in the panel.
 
-**Acid Seq** (Arbeitsauftrag 3.1, R12): Die Komponenten `step-seq` (Art
-`sequencer`), `acid-303`, `saturation` (Art `dsp`, Version im Makro
-`SEED_SATURATION_VERSION` von `common/dsp/saturation.h`), `drive` und
-`stereo-delay` sowie `fast-math` (Art `dsp`, `common/dsp/fastmath.h`) stehen im Register, sobald ihre
-Versionsquelle existiert. Ihre
-Firmwareprodukte (`step-seq`, `acid-303`, `drive-fx`, `delay-fx`, `acid-seq`) kommen
-erst mit dem ersten validierten Build dazu, weil die Produktliste genau
-`BUILDABLE_PROJECTS` entsprechen muss. Gültige Arten: `instrument`, `effect`,
+**Acid Seq** (work order 3.1, R12): The components `step-seq` (kind
+`sequencer`), `acid-303`, `saturation` (kind `dsp`, version in the macro
+`SEED_SATURATION_VERSION` of `common/dsp/saturation.h`), `drive` and
+`stereo-delay` as well as `fast-math` (kind `dsp`, `common/dsp/fastmath.h`) are in the registry as soon as their
+version source exists. Their
+firmware products (`step-seq`, `acid-303`, `drive-fx`, `delay-fx`, `acid-seq`) are only
+added with the first validated build, because the product list must match
+`BUILDABLE_PROJECTS` exactly. Valid kinds: `instrument`, `effect`,
 `control`, `panel`, `contract`, `sequencer`, `dsp`.
 
-**Streichwurst** (01.11.2026): Komponenten `streichwurst-instrument` (Art `instrument`)
-und `streichwurst-fx` (Art `effect`, hängt vom FX-Vertrag ab) mit eigenen
-Versionsheadern; das Produkt `streichwurst` (Version `src/version.h`) bettet zusätzlich
-Mod on Daisy, das SQ-Gerät und die Queues aus `step-seq` sowie den Bootloader-Einstieg
-ein. Die drei Panels hängen vom Streichwurst-Parametervertrag ab.
+**Streichwurst** (2026-11-01): components `streichwurst-instrument` (kind `instrument`)
+and `streichwurst-fx` (kind `effect`, depends on the FX contract) with their own
+version headers; the product `streichwurst` (version `src/version.h`) additionally embeds
+Mod on Daisy, the SQ device and the queues from `step-seq` as well as the bootloader entry.
+The three panels depend on the Streichwurst parameter contract.
 
-Audiovertrag und genaue Grenzen: [MODULAR_COMPONENTS.md](../docs/MODULAR_COMPONENTS.md).
+Audio contract and exact limits: [MODULAR_COMPONENTS.md](../docs/MODULAR_COMPONENTS.md).
