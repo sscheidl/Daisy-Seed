@@ -61,7 +61,7 @@ python3 modules/mod-on-daisy/tools/mod_probe.py selftest
 python3 modules/mod-on-daisy/tools/mod_probe.py --sim modules/mod-on-daisy/build/host/mod_sim --instrument looper targets
 ```
 
-Integration into an instrument: [docs/ARCHITECTURE.md § 6](docs/ARCHITECTURE.md#6-instrumentenschnittstelle).
+Integration into an instrument: [docs/ARCHITECTURE.md § 6](docs/ARCHITECTURE.md#6-instrument-interface).
 
 ## Guiding principle
 

@@ -69,7 +69,7 @@ over one port: sound parameters via SQ 1.1, the modulation matrix via Mod on Dai
   pure Mod on Daisy devices behave as before.
 * **Pages:** Strings, Solo, Keyboard, FX and Global, built from the device's descriptors
   and the parameter contract's pages; status line with product, instrument and
-  FX version as well as applied/accepted revision. "Kit control page" and "RAM preset"
+  FX version as well as applied/accepted revision. "Pot page on the kit" and "RAM preset"
   are read-only. Pot movements on the kit appear in the app via the monitor.
 * **Matrix:** The "Matrix" button (top) shows the familiar grid view with the eight
   Streichwurst targets; "Sound parameters" goes back.
@@ -123,7 +123,7 @@ replies as soon as it has accepted the request; the reply is not yet proof of
 DFU entry. Then all 16 LEDs light up and the bootloader waits without a time limit
 (the Looper finishes running card work first). Then load the
 firmware with the [Daisy Web Programmer](https://flash.daisy.audio/) or `make program-dfu`
-([docs/FLASHING.md](../../docs/FLASHING.md)). If there is no reply after 2 s, the
+([docs/FLASHING.md](../../docs/FLASHING.md)). If there is no answer after 2 s, the
 firmware does not know the command yet: then hold S9 and S16 for five seconds or use RESET and
 BOOT. With a simulator the button is disabled.
 
@@ -137,7 +137,7 @@ since then they no longer appear in the normal device list.
 
 * **Grid**:
   * Rows are the 8 sources, columns are the instrument's targets. Under each
-    column name it says what depth 100 means; "Strike" means the target only takes effect
+    column name it says what depth 100 means; "note-on" means the target only takes effect
     from the next note.
   * Hatched cells are not available; the tooltip gives the reason.
   * A yellow dot in the cell means: not yet confirmed by the device.
@@ -186,7 +186,7 @@ since then they no longer appear in the normal device list.
     is. Red ends: the modulation hits 0 or 1. The target value is the value
     before smoothing in the instrument and only the **global part**: Poly AT on a
     "per voice" column acts additionally per voice and is not included. Columns with
-    "Strike" take the value at note start; sounding notes no longer
+    "note-on" take the value at note start; sounding notes no longer
     change. If an instrument reports no base value, only the offset is shown there.
   * **Aftertouch** (top left): one shared display for the most recently received kind,
     with the addition "Channel" or "Poly · Note". A message with value 0 also counts.
@@ -196,7 +196,7 @@ since then they no longer appear in the normal device list.
     separate" and both rows apply.
   * **Connection state** in the status at the top: green = everything arrives; yellow "no
     live data" = no monitor data for 1.5 s, replies may still work; red
-    "no response" = nothing from the device for 5 s, changes stay unconfirmed. As soon as
+    "no answer" = nothing from the device for 5 s, changes stay unconfirmed. As soon as
     the device responds again, the editor reloads its state. Usually another
     application is holding the input (see below).
 * **Files**:
@@ -275,7 +275,7 @@ make -C editors/mod-on-daisy test-sanitize    # the same with ASan/UBSan
   with 400 random changes at 5 % lost and corrupted frames. Since the
   correction order of 2026-10-24 also: compatibility check (old Reverb file,
   same schema, file without information, different instrument, origin of files saved
-  offline, LFO FM), connection state (no live data, no response, recovery),
+  offline, LFO FM), connection state (no live data, no answer, recovery),
   setting to zero, clearing and loading as per order § 7, extended monitor (range, clock,
   aftertouch cases), target range 0.1/0.5/0.9 ± 0.5 and LFO FM.
 * **Self-test** (`--selftest`): It operates the real window with keyboard, dragging,
