@@ -10,6 +10,7 @@
 // Every command ends with "OK".
 #include "../src/core/SqSimulator.h"
 #include "../src/core/StreichwurstSim.h"
+#include "ambient_sim.h"
 #include <cstdio>
 #include <iostream>
 #include <sstream>
@@ -19,6 +20,7 @@
 // After a frame: the Streichwurst main loop serves Mod on Daisy at once (one reply per
 // millisecond), so its replies follow without a "T" command. Acid Seq is unchanged.
 static void Settle(editor::SqSimulator&, uint32_t&) {}
+static void Settle(AmbientControlSim& sim, uint32_t& now) { sim.Advance(++now); }
 static void Settle(editor::StreichwurstSim& sim, uint32_t& now) {
     for(int i = 0; i < 3; ++i)
         sim.Advance(++now);
@@ -72,6 +74,10 @@ static int Run(Sim& sim) {
 
 int main(int argc, char** argv) {
     const std::string product = argc > 1 ? argv[1] : "acid-seq";
+    if(product == "ambient-reverb" || product == "toy-piano-amb") {
+        static AmbientControlSim sim(product == "toy-piano-amb");
+        return Run(sim);
+    }
     if(product == "streichwurst" || product == "streichwurst-fx") {
         static editor::StreichwurstSim sim(product == "streichwurst-fx");
         return Run(sim);

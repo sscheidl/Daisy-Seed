@@ -17,6 +17,8 @@ test: $(HEADERS) tests/test_core.cpp tests/test_sq.cpp tests/test_streichwurst.c
 	./build/host/test_sq
 	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/test_streichwurst.cpp -o build/host/test_streichwurst
 	./build/host/test_streichwurst
+	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/test_ambient.cpp -o build/host/test_ambient
+	./build/host/test_ambient
 	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/sq_sim.cpp -o build/host/sq_sim
 	node web/tests/sq_protocol.test.cjs
 	node web/tests/sq_client.test.cjs build/host/sq_sim

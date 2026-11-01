@@ -696,6 +696,26 @@
      }
     ]
    },
+   "ambient-reverb": {
+    "schema": 1,
+    "parameters": [
+     {
+      "id": 1,
+      "key": "reverb_lfo_rate",
+      "label": "Reverb LFO rate",
+      "type": "float",
+      "unit": "hz",
+      "flags": [
+       "log"
+      ],
+      "min": 0.03,
+      "max": 1.5,
+      "default": 0.18,
+      "cc": null,
+      "control": "App; standalone VR7 takes over on movement"
+     }
+    ]
+   },
    "streichwurst-instrument": {
     "schema": 1,
     "parameters": [

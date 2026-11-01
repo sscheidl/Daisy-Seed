@@ -1,6 +1,7 @@
 #pragma once
 // SPDX-License-Identifier: MIT
 #include "primitives.hpp"
+#include "control_mapping.h"
 namespace ambient {
 #if defined(AMBIENT_PITCH_GATE) || defined(AMBIENT_WET_MAX_HZ)
 #error "Ambient 0.4 uses one shared pitch/32 kHz policy; remove obsolete experiment defines"
@@ -11,6 +12,7 @@ struct Parameters {
     Mode mode = Mode::Cloud;
     Shape shape = Shape::Sine;
     float decaySeconds = 14, toneHz = 5500, lowCutHz = 65, preDelayMs = 25;
+    // Depth accepts Cloud's combined depth/X headroom; texture accepts 0..1.25.
     float modRateHz = .18f, modDepthMs = .8f, width = 1, mix = .45f, diffusion = .85f;
     float texture = .4f, riseSeconds = 1, outputGain = .8f;
     // Applied by the firmware wet-path adapter; the standalone engine ignores these.

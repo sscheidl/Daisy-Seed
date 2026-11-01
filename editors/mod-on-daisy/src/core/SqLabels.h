@@ -79,6 +79,7 @@ inline constexpr SqLabel kSqLabels[] = {
     {"stereo-delay", "feedback", "Feedback", nullptr, 0, ""},
     {"stereo-delay", "mix", "Dry/Wet", nullptr, 0, ""},
     {"stereo-delay", "damping", "Damping", nullptr, 0, ""},
+    {"ambient-reverb", "reverb_lfo_rate", "Reverb LFO rate", nullptr, 0, ""},
     {"streichwurst-instrument", "registration", "Registration", nullptr, 0, "strings"},
     {"streichwurst-instrument", "octave", "Octaves", kSqEnumStreichwurstInstrument2, 3, "strings"},
     {"streichwurst-instrument", "crescendo", "Crescendo", nullptr, 0, "strings"},

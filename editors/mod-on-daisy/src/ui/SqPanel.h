@@ -154,9 +154,11 @@ class SqPanel : public juce::Component {
         cal_hint_.setText(cv ? U("Run diagnostic H14 before the first connection to a synth. The enable lasts until the next restart.")
                              : U("This device has no CV outputs."),
                           juce::dontSendNotification);
-        const Tab* tabs = sw ? kStreichwurstTabs : kAcidTabs;
-        if(sw != showing_streichwurst_) {
+        const bool ambient = s_.HasComponent("ambient-reverb");
+        const Tab* tabs = ambient ? kAmbientTabs : (sw ? kStreichwurstTabs : kAcidTabs);
+        if(sw != showing_streichwurst_ || ambient != showing_ambient_) {
             showing_streichwurst_ = sw;
+            showing_ambient_ = ambient;
             tab_ = 0;
             rebuild_ = true;
         }
@@ -303,7 +305,11 @@ class SqPanel : public juce::Component {
                                                  {"Keyboard", "streichwurst-instrument", "keyboard"},
                                                  {"FX", "streichwurst-fx", ""},
                                                  {"Global", "streichwurst", ""}};
-    const Tab& Current() const { return (showing_streichwurst_ ? kStreichwurstTabs : kAcidTabs)[tab_]; }
+    static constexpr Tab kAmbientTabs[5] = {{"Ambient FX", "ambient-reverb", ""},
+        {"", "", ""}, {"", "", ""}, {"", "", ""}, {"", "", ""}};
+    const Tab& Current() const {
+        return (showing_ambient_ ? kAmbientTabs : (showing_streichwurst_ ? kStreichwurstTabs : kAcidTabs))[tab_];
+    }
     static constexpr const char* kCalDefaults[6] = {"2048", "-409.6", "2048", "410", "0", "4095"};
     static bool MidiKey(const std::string& k) {
         return k == "seq_channel" || k == "voice_channel" || k == "usb_out" || k == "din_out" || k == "velocity" ||
@@ -427,7 +433,7 @@ class SqPanel : public juce::Component {
     // The device state as product patch; Streichwurst adds the matrix of the MD session.
     AcidPatch CurrentPatch() const {
         AcidPatch p = PatchFromSession(s_);
-        if(Streichwurst() && matrix_text)
+        if(s_.Identity().HasModMatrix() && matrix_text)
             p.matrix = matrix_text();
         return p;
     }
@@ -478,7 +484,7 @@ class SqPanel : public juce::Component {
     std::optional<AcidPatch> pending_;
     std::unique_ptr<juce::FileChooser> chooser_;
     int selected_ = 0, tab_ = 0;
-    bool rebuild_ = true, showing_streichwurst_ = false;
+    bool rebuild_ = true, showing_streichwurst_ = false, showing_ambient_ = false;
 };
 
 } // namespace editor::ui
