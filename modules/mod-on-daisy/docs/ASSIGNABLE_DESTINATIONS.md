@@ -5,6 +5,17 @@ Owner decision (01.11.2026): the matrix gets **freely assignable destinations pe
 like the mod slots of many synthesizers, for all instruments. This replaces decision D4
 ("8 columns, instrument-specific", [DECISIONS.md](DECISIONS.md)) once implemented.
 
+**Owner decisions on the open points (01.11.2026):**
+
+1. **Pilot: Streichwurst** (newest code, catalog from the parameter contract), then
+   **Toy Piano** in any case, as the test and reference instrument of the matrix.
+2. **VR1–VR8 always come first** in every catalog and are the default slots, including
+   pots that hardly modulate. Further destinations follow after them.
+3. **Curated catalogs:** not every parameter becomes a destination. The extra destinations
+   are chosen per firmware, case by case (§ 5).
+4. **No migration of old patches:** no stored or shared patches depend on today's column
+   meaning, so `legacy_slots` and the mapping of old files are dropped (§ 3.3).
+
 ## 1. Why
 
 Users read the eight columns as the eight pots VR1–VR8. Today every firmware fixes its
@@ -52,9 +63,13 @@ struct InstrumentInfo {
     const DestinationInfo* destinations;       // catalog, ids = index, <= kMaxDestinations (48)
     uint8_t destination_count;
     uint8_t default_slots[8];                  // VR1..VR8 of the main page (0xFF = empty)
-    uint8_t legacy_slots[8];                   // meaning of columns in patch formats 1/2
 };
 ```
+
+* Catalog order: the destinations of VR1–VR8 (main page) first, then the curated extras.
+* An instrument without a catalog (`destinations == nullptr`) keeps today's fixed columns
+  from `targets[8]`, unchanged. The other firmwares therefore build and sound as before
+  until they adopt the catalog in their own PR.
 
 * `Patch` format 3 adds `uint8_t slot[8]` (destination id per column, 0xFF = empty).
 * `Program` compiles each connection to its **destination id**; the engine keeps
@@ -86,11 +101,10 @@ struct InstrumentInfo {
 
 ### 3.3 Compatibility
 
-* Patch formats 1/2 (stored or uploaded by an old editor) load with `legacy_slots`, the
-  column meaning of today: **an old patch sounds exactly as before.**
+* No migration (owner decision 4): a patch of format 1/2 sent to an instrument with a
+  catalog loads with the default slots; the editor's existing schema check warns as today.
 * `.modpatch` files get version 2 with `"slots": ["registration", "animate", …]` by
-  destination **key**, so files survive catalog reordering. Version 1 files keep their
-  `columns` names; the editor maps them through `legacy_slots` and reports the result.
+  destination **key**, so files survive catalog reordering.
 * Storage slots (STORAGE.md) need the format-3 layout; flash writes remain unapproved (D8).
 
 ## 4. Editor (JUCE app, VST3, browser)
@@ -102,18 +116,53 @@ struct InstrumentInfo {
 * Old firmware without the capability: fixed columns as today, picker disabled.
 * Simulators (`SimInstruments.h`, `StreichwurstSim.h`, `mod_sim`) get the same catalogs.
 
-## 5. Firmware catalogs and default slots (proposal)
+## 5. Firmware catalogs and default slots
 
 `*` = destination that needs a new modulation hook in the DSP or FX component.
 
-| Firmware | Default slots VR1–VR8 | Further catalog entries |
+### 5.1 Streichwurst (pilot) — proposal for owner confirmation
+
+| # | Destination | Control | Span (depth 100) | Note |
+| --- | --- | --- | --- | --- |
+| 1 | Registration | VR1 | ±100 % | column today |
+| 2 | Crescendo* | VR2 | ±100 % | swell time; whether running notes follow is to be checked in the DSP |
+| 3 | Release* | VR3 | ±100 % | as Crescendo |
+| 4 | Balance | VR4 | ±100 % | column today |
+| 5 | Animate | VR5 | ±100 % | column today |
+| 6 | Phaser | VR6 | ±100 % | column today |
+| 7 | Reverb | VR7 | ±100 % | column today |
+| 8 | Master* | VR8 | ±100 % | default slot by decision 2 |
+| 9 | Pitch | — | ±1 st | column today (vibrato) |
+| 10 | Solo Tone | Solo VR1 | ±100 % | column today |
+| 11 | Tremolo depth | Solo VR4 | ±100 % | column today |
+| 12 | Tremolo rate* | Solo VR5 | ±100 % | log |
+| 13 | Animate rate* | FX VR2 | ±100 % | log |
+| 14 | Phaser rate* | FX VR4 | ±100 % | log |
+| 15 | Reverb decay* | FX VR6 | ±100 % | |
+
+Not in the catalog: enums and switches (Octaves, sustain mode, Layer/Split, ensemble
+mode/on), keyboard settings (split key, bend range, transpose, tune, velocities), solo
+envelope times and sustain, MIDI channel, pot page, preset.
+
+### 5.2 Toy Piano (reference instrument) — proposal for owner confirmation
+
+All three builds share `src/modulation.h`; each gets its own catalog.
+
+| Build | VR1–VR8 (default slots) | Extras |
 | --- | --- | --- |
-| Toy Piano v0.3 | Attack, Decay, then Pitch, Level, Harmonic, empty × 3 (VR3–VR8 have no function) | — |
+| Toy Piano v0.3 | Attack, Decay; VR3–VR8 have no function → slots 3–5 Pitch, Level, Harmonic, 6–8 empty | Pitch, Level, Harmonic |
 | Toy Piano Ambient | Pitch, Decay, Hall Decay, Filter*, Mod Depth*, Mix, X, Stretch* | Level, Harmonic, Attack |
 | Toy Piano Tape | Drive*, Tone*, Age*, Mix*, Wow*, Flutter*, Hiss*, Dropouts* | Pitch, Level, Harmonic, Attack, Decay |
+
+Ambient and Tape hooks are added in their FX components first; Stretch changes the wet
+clock, whose limits stay in `effects/reverb/src/`.
+
+### 5.3 Later firmwares (first draft, decided when they are adopted)
+
+| Firmware | Default slots VR1–VR8 | Further catalog entries |
+| --- | --- | --- |
 | Physical Modeling | Pitch, Structure, Brightness, Damping, Position, Excitation, Reverb Decay*, Dry/Wet | Level |
 | Looper | Speed, Inertia, Slope*, Start, Size, Slice, Skip, Fripp Decay | Mix |
-| Streichwurst | Registration, Crescendo*, Release*, Balance, Animate, Phaser, Reverb, Master* | all other continuous register parameters (Solo Tone, Tremolo depth/rate, Pitch, rates, Reverb decay, Solo attack/release/sustain, …) |
 
 Notes:
 
@@ -123,13 +172,13 @@ Notes:
 * Envelope times and other values read only at the strike are `latched` destinations.
 * Physical Modeling replaced Reverb Decay by Level in 2026-10 because it had little
   audible effect; as a catalog entry both can coexist, the default follows the pot.
-* Streichwurst's parameter register can generate its catalog from
-  `contracts/parameters.json` (continuous parameters only; enums and switches excluded).
+* Streichwurst's catalog entries refer to its parameter register
+  (`contracts/parameters.json`), so name, range and pot come from one source.
 
 ## 6. Rules
 
 * Empty matrix: bit-identical sound for every firmware (golden hashes unchanged).
-* Old patches: identical modulation through `legacy_slots` (tested per firmware).
+* Firmwares without a catalog are untouched by the module change (fixed columns).
 * No allocation or locks in the audio path; slot changes are compiled in the main loop and
   handed over like patches today (mailbox).
 * Each firmware adoption is its own PR with version bump, host tests and a hardware test.
@@ -139,14 +188,10 @@ Notes:
 1. Module 0.2.0: data model, engine, patch format 3, protocol, `mod_probe.py`, host tests,
    bench measurement of CPU/RAM.
 2. Editors: picker in JUCE/VST3 and browser, `.modpatch` v2, simulators, self-test, e2e.
-3. Pilot firmware (see § 8), hardware test.
-4. Remaining firmwares one by one; FX hooks in their components first.
+3. Streichwurst (pilot), hardware test.
+4. Toy Piano (all three builds), hardware test.
+5. Remaining firmwares one by one; FX hooks in their components first.
 
 ## 8. Open decisions (owner)
 
-1. **Pilot firmware:** Streichwurst (register makes the catalog generic, newest code) or
-   Toy Piano (development environment of the matrix, worst mismatch today).
-2. **Default for pots that hardly modulate** (Master, envelope times): keep the slot (order
-   stays VR1–VR8) or leave it empty.
-3. **Catalog size:** every parameter of a firmware, or a curated list.
-4. **Old patches:** silent mapping via `legacy_slots` (proposal) or ask the user.
+* Confirm or change the catalogs in § 5.1 (Streichwurst) and § 5.2 (Toy Piano).
