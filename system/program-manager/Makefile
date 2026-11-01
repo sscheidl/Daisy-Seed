@@ -32,9 +32,14 @@ PROTOCOL_DIR = $(DAISY_ROOT)/diagnostics/protocol
 BOOTLOADER_DIR = $(DAISY_ROOT)/common/bootloader
 PM_SOURCES = src/pm_image.cpp src/pm_catalog.cpp src/pm_loader.cpp src/pm_manager.cpp src/pm_protocol.cpp
 DIAG_SOURCES = $(DIAG_DIR)/diag_app.cpp $(DIAG_DIR)/diag_core.cpp $(PROTOCOL_DIR)/ddp.cpp
-CPP_SOURCES = src/main.cpp $(PM_SOURCES) $(DIAG_SOURCES)
+# libDaisy's Makefile keys objects by basename: every source needs a unique file name
+# (hence pm_main.cpp, not main.cpp).
+CPP_SOURCES = src/pm_main.cpp $(PM_SOURCES) $(DIAG_SOURCES)
 C_SOURCES += src/pm_sha256.c
-C_INCLUDES += -Isrc -I$(DIAG_DIR) -I$(PROTOCOL_DIR) -I$(BOOTLOADER_DIR)
+C_INCLUDES += -Isrc -I$(DIAG_DIR) -I$(PROTOCOL_DIR) -I$(BOOTLOADER_DIR) -I$(DAISY_ROOT)/common/sd/reader
+# Source revision in PMINFO/HELLO (build=): short commit, "-dirty" with local changes.
+PM_BUILD_REV := $(shell git rev-parse --short HEAD 2>/dev/null || echo nogit)$(shell git diff --quiet -- . 2>/dev/null || echo -dirty)
+C_DEFS += -DPM_BUILD_REV=\"$(PM_BUILD_REV)\"
 LIBDAISY_DIR = $(DAISY_ROOT)/libDaisy
 C_INCLUDES += -I$(LIBDAISY_DIR)/Middlewares/Patched/ST/STM32_USB_Device_Library/Class/CDC/Inc
 SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core

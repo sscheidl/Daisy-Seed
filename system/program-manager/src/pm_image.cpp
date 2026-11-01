@@ -37,6 +37,14 @@ bool CopyField(const uint8_t* field, size_t size, char* out, bool (*ok)(char)) {
 
 bool IsIdOrVersionChar(char c) { return IsProductIdChar(c) || IsVersionChar(c); }
 
+// Copies at most `size` bytes of a string into a zeroed fixed field (no terminator needed).
+void PutField(uint8_t* field, size_t size, const char* text) {
+    size_t n = 0;
+    while(n < size && text[n] != 0)
+        ++n;
+    std::memcpy(field, text, n);
+}
+
 } // namespace
 
 bool IsProductIdChar(char c) {
@@ -127,10 +135,10 @@ void BuildHeader(const ImageHeader& header, uint8_t out[kHeaderSize]) {
     Store16(out + 8, header.header_version);
     Store16(out + 10, static_cast<uint16_t>(kHeaderSize));
     Store32(out + 12, header.flags);
-    std::strncpy(reinterpret_cast<char*>(out + 16), header.hardware, kHardwareField);
-    std::strncpy(reinterpret_cast<char*>(out + 32), header.profile, kProfileField);
-    std::strncpy(reinterpret_cast<char*>(out + 56), header.product, kProductField);
-    std::strncpy(reinterpret_cast<char*>(out + 88), header.version, kVersionField);
+    PutField(out + 16, kHardwareField, header.hardware);
+    PutField(out + 32, kProfileField, header.profile);
+    PutField(out + 56, kProductField, header.product);
+    PutField(out + 88, kVersionField, header.version);
     Store32(out + 104, header.load_address);
     Store32(out + 108, header.payload_offset);
     Store32(out + 112, header.payload_length);

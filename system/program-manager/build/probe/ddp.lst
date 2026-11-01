@@ -1,0 +1,2750 @@
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.arch armv7e-m
+   3              		.fpu fpv5-d16
+   4              		.eabi_attribute 28, 1
+   5              		.eabi_attribute 20, 1
+   6              		.eabi_attribute 21, 1
+   7              		.eabi_attribute 23, 3
+   8              		.eabi_attribute 24, 1
+   9              		.eabi_attribute 25, 1
+  10              		.eabi_attribute 26, 1
+  11              		.eabi_attribute 30, 2
+  12              		.eabi_attribute 34, 1
+  13              		.eabi_attribute 18, 4
+  14              		.file	"ddp.cpp"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.file 1 "../../diagnostics/protocol/ddp.cpp"
+  19              		.section	.text._ZN3ddp5Crc16EPKcj,"ax",%progbits
+  20              		.align	1
+  21              		.p2align 2,,3
+  22              		.global	_ZN3ddp5Crc16EPKcj
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	_ZN3ddp5Crc16EPKcj:
+  28              	.LVL0:
+  29              	.LFB1305:
+   1:../../diagnostics/protocol/ddp.cpp **** #include "ddp.h"
+   2:../../diagnostics/protocol/ddp.cpp **** 
+   3:../../diagnostics/protocol/ddp.cpp **** namespace ddp {
+   4:../../diagnostics/protocol/ddp.cpp **** namespace {
+   5:../../diagnostics/protocol/ddp.cpp **** constexpr char kHexDigits[] = "0123456789ABCDEF";
+   6:../../diagnostics/protocol/ddp.cpp **** 
+   7:../../diagnostics/protocol/ddp.cpp **** int HexValue(char c) {
+   8:../../diagnostics/protocol/ddp.cpp ****     if(c >= '0' && c <= '9')
+   9:../../diagnostics/protocol/ddp.cpp ****         return c - '0';
+  10:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'A' && c <= 'F')
+  11:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
+  12:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'a' && c <= 'f')
+  13:../../diagnostics/protocol/ddp.cpp ****         return c - 'a' + 10;
+  14:../../diagnostics/protocol/ddp.cpp ****     return -1;
+  15:../../diagnostics/protocol/ddp.cpp **** }
+  16:../../diagnostics/protocol/ddp.cpp **** } // namespace
+  17:../../diagnostics/protocol/ddp.cpp **** 
+  18:../../diagnostics/protocol/ddp.cpp **** uint16_t Crc16(const char* data, size_t len) {
+  30              		.loc 1 18 46 view -0
+  31              		.cfi_startproc
+  32              		@ args = 0, pretend = 0, frame = 0
+  33              		@ frame_needed = 0, uses_anonymous_args = 0
+  19:../../diagnostics/protocol/ddp.cpp ****     uint16_t crc = 0xffff;
+  34              		.loc 1 19 5 view .LVU1
+  20:../../diagnostics/protocol/ddp.cpp ****     for(size_t i = 0; i < len; ++i) {
+  35              		.loc 1 20 5 view .LVU2
+  36              	.LBB11:
+  37              		.loc 1 20 25 discriminator 1 view .LVU3
+  38 0000 D9B1     		cbz	r1, .L7
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 2
+
+
+  39 0002 00F1FF3C 		add	ip, r0, #-1
+  40              	.LBE11:
+  19:../../diagnostics/protocol/ddp.cpp ****     uint16_t crc = 0xffff;
+  41              		.loc 1 19 14 is_stmt 0 view .LVU4
+  42 0006 4FF6FF70 		movw	r0, #65535
+  43              	.LVL1:
+  18:../../diagnostics/protocol/ddp.cpp ****     uint16_t crc = 0xffff;
+  44              		.loc 1 18 46 view .LVU5
+  45 000a 00B5     		push	{lr}
+  46              		.cfi_def_cfa_offset 4
+  47              		.cfi_offset 14, -4
+  48 000c 0CEB010E 		add	lr, ip, r1
+  49              	.LVL2:
+  50              	.L6:
+  51              	.LBB14:
+  52              	.LBB12:
+  21:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+  53              		.loc 1 21 9 is_stmt 1 view .LVU6
+  54              		.loc 1 21 65 is_stmt 0 view .LVU7
+  55 0010 1CF8013F 		ldrb	r3, [ip, #1]!	@ zero_extendqisi2
+  56              	.LVL3:
+  57              		.loc 1 21 13 view .LVU8
+  58 0014 0822     		movs	r2, #8
+  59 0016 80EA0320 		eor	r0, r0, r3, lsl #8
+  60              	.LVL4:
+  22:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
+  61              		.loc 1 22 9 is_stmt 1 view .LVU9
+  62              	.LBB13:
+  63              		.loc 1 22 30 discriminator 1 view .LVU10
+  64              	.L5:
+  23:../../diagnostics/protocol/ddp.cpp ****             crc = (crc & 0x8000) ? static_cast<uint16_t>((crc << 1) ^ 0x1021)
+  65              		.loc 1 23 13 view .LVU11
+  66              		.loc 1 23 24 is_stmt 0 view .LVU12
+  67 001a 01B2     		sxth	r1, r0
+  68              		.loc 1 23 69 discriminator 1 view .LVU13
+  69 001c 41F22103 		movw	r3, #4129
+  70              		.loc 1 23 34 discriminator 2 view .LVU14
+  71 0020 4000     		lsls	r0, r0, #1
+  72              	.LVL5:
+  73              		.loc 1 23 34 view .LVU15
+  74 0022 0029     		cmp	r1, #0
+  75              		.loc 1 23 69 discriminator 1 view .LVU16
+  76 0024 83EA4103 		eor	r3, r3, r1, lsl #1
+  77              		.loc 1 23 34 discriminator 2 view .LVU17
+  78 0028 80B2     		uxth	r0, r0
+  79              		.loc 1 23 34 discriminator 1 view .LVU18
+  80 002a B8BF     		it	lt
+  81 002c 98B2     		uxthlt	r0, r3
+  82              	.LVL6:
+  22:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
+  83              		.loc 1 22 9 is_stmt 1 discriminator 2 view .LVU19
+  22:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
+  84              		.loc 1 22 30 discriminator 1 view .LVU20
+  85 002e 013A     		subs	r2, r2, #1
+  86 0030 F3D1     		bne	.L5
+  87              	.LBE13:
+  88              	.LBE12:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 3
+
+
+  20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+  89              		.loc 1 20 5 discriminator 2 view .LVU21
+  90              	.LVL7:
+  20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+  91              		.loc 1 20 25 discriminator 1 view .LVU22
+  92 0032 E645     		cmp	lr, ip
+  93 0034 ECD1     		bne	.L6
+  94              	.LBE14:
+  24:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+  25:../../diagnostics/protocol/ddp.cpp ****     }
+  26:../../diagnostics/protocol/ddp.cpp ****     return crc;
+  95              		.loc 1 26 5 view .LVU23
+  27:../../diagnostics/protocol/ddp.cpp **** }
+  96              		.loc 1 27 1 is_stmt 0 view .LVU24
+  97 0036 5DF804FB 		ldr	pc, [sp], #4
+  98              	.LVL8:
+  99              	.L7:
+ 100              		.cfi_def_cfa_offset 0
+ 101              		.cfi_restore 14
+  19:../../diagnostics/protocol/ddp.cpp ****     for(size_t i = 0; i < len; ++i) {
+ 102              		.loc 1 19 14 view .LVU25
+ 103 003a 4FF6FF70 		movw	r0, #65535
+ 104              	.LVL9:
+  26:../../diagnostics/protocol/ddp.cpp **** }
+ 105              		.loc 1 26 5 is_stmt 1 view .LVU26
+ 106              		.loc 1 27 1 is_stmt 0 view .LVU27
+ 107 003e 7047     		bx	lr
+ 108              		.cfi_endproc
+ 109              	.LFE1305:
+ 111              		.section	.text._ZN3ddp10BuildFrameEPKcjPcj,"ax",%progbits
+ 112              		.align	1
+ 113              		.p2align 2,,3
+ 114              		.global	_ZN3ddp10BuildFrameEPKcjPcj
+ 115              		.syntax unified
+ 116              		.thumb
+ 117              		.thumb_func
+ 119              	_ZN3ddp10BuildFrameEPKcjPcj:
+ 120              	.LVL10:
+ 121              	.LFB1306:
+  28:../../diagnostics/protocol/ddp.cpp **** 
+  29:../../diagnostics/protocol/ddp.cpp **** size_t BuildFrame(const char* body, size_t body_len, char* out, size_t cap) {
+ 122              		.loc 1 29 77 is_stmt 1 view -0
+ 123              		.cfi_startproc
+ 124              		@ args = 0, pretend = 0, frame = 0
+ 125              		@ frame_needed = 0, uses_anonymous_args = 0
+  30:../../diagnostics/protocol/ddp.cpp ****     if(body_len == 0 || body_len > kMaxBody || cap < body_len + 7)
+ 126              		.loc 1 30 5 view .LVU29
+ 127              		.loc 1 30 22 is_stmt 0 view .LVU30
+ 128 0000 01F1FF3C 		add	ip, r1, #-1
+ 129              		.loc 1 30 5 view .LVU31
+ 130 0004 BCF5C87F 		cmp	ip, #400
+ 131 0008 25D2     		bcs	.L38
+  29:../../diagnostics/protocol/ddp.cpp ****     if(body_len == 0 || body_len > kMaxBody || cap < body_len + 7)
+ 132              		.loc 1 29 77 view .LVU32
+ 133 000a 70B5     		push	{r4, r5, r6, lr}
+ 134              		.cfi_def_cfa_offset 16
+ 135              		.cfi_offset 4, -16
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 4
+
+
+ 136              		.cfi_offset 5, -12
+ 137              		.cfi_offset 6, -8
+ 138              		.cfi_offset 14, -4
+ 139              		.loc 1 30 63 discriminator 1 view .LVU33
+ 140 000c CC1D     		adds	r4, r1, #7
+ 141              		.loc 1 30 45 discriminator 1 view .LVU34
+ 142 000e 9C42     		cmp	r4, r3
+ 143 0010 1FD8     		bhi	.L18
+  31:../../diagnostics/protocol/ddp.cpp ****         return 0;
+  32:../../diagnostics/protocol/ddp.cpp ****     size_t n = 0;
+ 144              		.loc 1 32 5 is_stmt 1 view .LVU35
+ 145              	.LVL11:
+  33:../../diagnostics/protocol/ddp.cpp ****     out[n++] = '$';
+ 146              		.loc 1 33 5 view .LVU36
+ 147              		.loc 1 33 5 is_stmt 0 view .LVU37
+ 148 0012 0138     		subs	r0, r0, #1
+ 149              	.LVL12:
+ 150              		.loc 1 33 14 view .LVU38
+ 151 0014 2423     		movs	r3, #36
+ 152              	.LVL13:
+ 153              		.loc 1 33 14 view .LVU39
+ 154 0016 9646     		mov	lr, r2
+ 155              		.loc 1 33 10 view .LVU40
+ 156 0018 0124     		movs	r4, #1
+ 157              		.loc 1 33 14 view .LVU41
+ 158 001a 8446     		mov	ip, r0
+ 159 001c 1370     		strb	r3, [r2]
+  34:../../diagnostics/protocol/ddp.cpp ****     for(size_t i = 0; i < body_len; ++i) {
+ 160              		.loc 1 34 5 is_stmt 1 view .LVU42
+ 161              	.LVL14:
+ 162              	.LBB24:
+ 163              		.loc 1 34 25 discriminator 1 view .LVU43
+  35:../../diagnostics/protocol/ddp.cpp ****         if(!IsBodyChar(body[i]))
+ 164              		.loc 1 35 9 view .LVU44
+ 165 001e 0546     		mov	r5, r0
+ 166              		.loc 1 35 23 is_stmt 0 view .LVU45
+ 167 0020 1CF8013F 		ldrb	r3, [ip, #1]!	@ zero_extendqisi2
+ 168              	.LVL15:
+ 169              	.LBB25:
+ 170              	.LBI25:
+ 171              		.file 2 "../../diagnostics/protocol/ddp.h"
+   1:../../diagnostics/protocol/ddp.h **** // Daisy Diagnostic Protocol (DDP) v1 - framing and field helpers.
+   2:../../diagnostics/protocol/ddp.h **** // Portable C++17 without libDaisy, heap or exceptions; shared by firmware and host tests.
+   3:../../diagnostics/protocol/ddp.h **** // Specification: PROTOCOL.md
+   4:../../diagnostics/protocol/ddp.h **** #pragma once
+   5:../../diagnostics/protocol/ddp.h **** #include <cstddef>
+   6:../../diagnostics/protocol/ddp.h **** #include <cstdint>
+   7:../../diagnostics/protocol/ddp.h **** 
+   8:../../diagnostics/protocol/ddp.h **** namespace ddp {
+   9:../../diagnostics/protocol/ddp.h **** 
+  10:../../diagnostics/protocol/ddp.h **** constexpr int kProtocolVersion = 1;
+  11:../../diagnostics/protocol/ddp.h **** constexpr size_t kMaxBody = 400;
+  12:../../diagnostics/protocol/ddp.h **** // '$' + body + '*' + 4 CRC digits + '\n'
+  13:../../diagnostics/protocol/ddp.h **** constexpr size_t kMaxFrame = kMaxBody + 7;
+  14:../../diagnostics/protocol/ddp.h **** 
+  15:../../diagnostics/protocol/ddp.h **** // CRC-16/CCITT-FALSE: poly 0x1021, init 0xFFFF, no reflection, no final XOR.
+  16:../../diagnostics/protocol/ddp.h **** uint16_t Crc16(const char* data, size_t len);
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 5
+
+
+  17:../../diagnostics/protocol/ddp.h **** 
+  18:../../diagnostics/protocol/ddp.h **** // True for bytes allowed inside a body.
+  19:../../diagnostics/protocol/ddp.h **** inline bool IsBodyChar(char c) {
+ 172              		.loc 2 19 13 is_stmt 1 view .LVU46
+ 173              	.LBB26:
+  20:../../diagnostics/protocol/ddp.h ****     return c >= 0x20 && c <= 0x7e && c != '$' && c != '*';
+ 174              		.loc 2 20 5 view .LVU47
+ 175              		.loc 2 20 47 is_stmt 0 discriminator 1 view .LVU48
+ 176 0024 2A2B     		cmp	r3, #42
+ 177 0026 18BF     		it	ne
+ 178 0028 242B     		cmpne	r3, #36
+ 179              		.loc 2 20 22 view .LVU49
+ 180 002a A3F12006 		sub	r6, r3, #32
+ 181              		.loc 2 20 47 discriminator 1 view .LVU50
+ 182 002e 10D0     		beq	.L18
+ 183              	.LVL16:
+ 184              	.L40:
+ 185              		.loc 2 20 47 discriminator 1 view .LVU51
+ 186              	.LBE26:
+ 187              	.LBE25:
+  36:../../diagnostics/protocol/ddp.cpp ****             return 0;
+  37:../../diagnostics/protocol/ddp.cpp ****         out[n++] = body[i];
+ 188              		.loc 1 37 9 is_stmt 1 view .LVU52
+ 189              	.LBB30:
+ 190              	.LBB27:
+ 191              		.loc 2 20 47 is_stmt 0 discriminator 1 view .LVU53
+ 192 0030 5E2E     		cmp	r6, #94
+ 193              	.LBE27:
+ 194              	.LBE30:
+ 195              		.loc 1 37 14 view .LVU54
+ 196 0032 04F10106 		add	r6, r4, #1
+ 197              	.LVL17:
+ 198              	.LBB31:
+ 199              	.LBB28:
+ 200              		.loc 2 20 47 discriminator 1 view .LVU55
+ 201 0036 0CD8     		bhi	.L18
+ 202              	.LBE28:
+ 203              	.LBE31:
+  34:../../diagnostics/protocol/ddp.cpp ****         if(!IsBodyChar(body[i]))
+ 204              		.loc 1 34 25 discriminator 1 view .LVU56
+ 205 0038 A142     		cmp	r1, r4
+ 206              		.loc 1 37 18 view .LVU57
+ 207 003a 0EF8013F 		strb	r3, [lr, #1]!
+  34:../../diagnostics/protocol/ddp.cpp ****         if(!IsBodyChar(body[i]))
+ 208              		.loc 1 34 5 is_stmt 1 discriminator 2 view .LVU58
+ 209              	.LVL18:
+  34:../../diagnostics/protocol/ddp.cpp ****         if(!IsBodyChar(body[i]))
+ 210              		.loc 1 34 25 discriminator 1 view .LVU59
+ 211 003e 0CD0     		beq	.L39
+  35:../../diagnostics/protocol/ddp.cpp ****             return 0;
+ 212              		.loc 1 35 23 is_stmt 0 view .LVU60
+ 213 0040 1CF8013F 		ldrb	r3, [ip, #1]!	@ zero_extendqisi2
+ 214 0044 3446     		mov	r4, r6
+ 215              	.LVL19:
+  35:../../diagnostics/protocol/ddp.cpp ****             return 0;
+ 216              		.loc 1 35 9 is_stmt 1 view .LVU61
+ 217              	.LBB32:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 6
+
+
+  19:../../diagnostics/protocol/ddp.h ****     return c >= 0x20 && c <= 0x7e && c != '$' && c != '*';
+ 218              		.loc 2 19 13 view .LVU62
+ 219              	.LBB29:
+ 220              		.loc 2 20 5 view .LVU63
+ 221              		.loc 2 20 47 is_stmt 0 discriminator 1 view .LVU64
+ 222 0046 2A2B     		cmp	r3, #42
+ 223 0048 18BF     		it	ne
+ 224 004a 242B     		cmpne	r3, #36
+ 225              		.loc 2 20 22 view .LVU65
+ 226 004c A3F12006 		sub	r6, r3, #32
+ 227              	.LVL20:
+ 228              		.loc 2 20 47 discriminator 1 view .LVU66
+ 229 0050 EED1     		bne	.L40
+ 230              	.LVL21:
+ 231              	.L18:
+ 232              		.loc 2 20 47 discriminator 1 view .LVU67
+ 233              	.LBE29:
+ 234              	.LBE32:
+ 235              	.LBE24:
+  31:../../diagnostics/protocol/ddp.cpp ****     size_t n = 0;
+ 236              		.loc 1 31 16 view .LVU68
+ 237 0052 0020     		movs	r0, #0
+  38:../../diagnostics/protocol/ddp.cpp ****     }
+  39:../../diagnostics/protocol/ddp.cpp ****     const uint16_t crc = Crc16(body, body_len);
+  40:../../diagnostics/protocol/ddp.cpp ****     out[n++] = '*';
+  41:../../diagnostics/protocol/ddp.cpp ****     for(int shift = 12; shift >= 0; shift -= 4)
+  42:../../diagnostics/protocol/ddp.cpp ****         out[n++] = kHexDigits[(crc >> shift) & 0xf];
+  43:../../diagnostics/protocol/ddp.cpp ****     out[n++] = '\n';
+  44:../../diagnostics/protocol/ddp.cpp ****     return n;
+  45:../../diagnostics/protocol/ddp.cpp **** }
+ 238              		.loc 1 45 1 view .LVU69
+ 239 0054 70BD     		pop	{r4, r5, r6, pc}
+ 240              	.LVL22:
+ 241              	.L38:
+ 242              		.cfi_def_cfa_offset 0
+ 243              		.cfi_restore 4
+ 244              		.cfi_restore 5
+ 245              		.cfi_restore 6
+ 246              		.cfi_restore 14
+  31:../../diagnostics/protocol/ddp.cpp ****     size_t n = 0;
+ 247              		.loc 1 31 16 view .LVU70
+ 248 0056 0020     		movs	r0, #0
+ 249              	.LVL23:
+ 250              		.loc 1 45 1 view .LVU71
+ 251 0058 7047     		bx	lr
+ 252              	.LVL24:
+ 253              	.L39:
+ 254              		.cfi_def_cfa_offset 16
+ 255              		.cfi_offset 4, -16
+ 256              		.cfi_offset 5, -12
+ 257              		.cfi_offset 6, -8
+ 258              		.cfi_offset 14, -4
+ 259              		.loc 1 45 1 view .LVU72
+ 260 005a 2044     		add	r0, r0, r4
+ 261              	.LBB33:
+ 262              	.LBB34:
+  19:../../diagnostics/protocol/ddp.cpp ****     for(size_t i = 0; i < len; ++i) {
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 7
+
+
+ 263              		.loc 1 19 14 view .LVU73
+ 264 005c 4FF6FF73 		movw	r3, #65535
+ 265              	.LVL25:
+ 266              	.L23:
+ 267              	.LBB35:
+ 268              	.LBB36:
+  21:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
+ 269              		.loc 1 21 9 is_stmt 1 view .LVU74
+  21:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
+ 270              		.loc 1 21 65 is_stmt 0 view .LVU75
+ 271 0060 15F8011F 		ldrb	r1, [r5, #1]!	@ zero_extendqisi2
+ 272              	.LVL26:
+  21:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
+ 273              		.loc 1 21 13 view .LVU76
+ 274 0064 4FF0080C 		mov	ip, #8
+ 275 0068 83EA0123 		eor	r3, r3, r1, lsl #8
+ 276              	.LVL27:
+  22:../../diagnostics/protocol/ddp.cpp ****             crc = (crc & 0x8000) ? static_cast<uint16_t>((crc << 1) ^ 0x1021)
+ 277              		.loc 1 22 9 is_stmt 1 view .LVU77
+ 278              	.LBB37:
+  22:../../diagnostics/protocol/ddp.cpp ****             crc = (crc & 0x8000) ? static_cast<uint16_t>((crc << 1) ^ 0x1021)
+ 279              		.loc 1 22 30 discriminator 1 view .LVU78
+ 280              	.L22:
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 281              		.loc 1 23 13 view .LVU79
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 282              		.loc 1 23 24 is_stmt 0 view .LVU80
+ 283 006c 0FFA83FE 		sxth	lr, r3
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 284              		.loc 1 23 69 discriminator 1 view .LVU81
+ 285 0070 41F22101 		movw	r1, #4129
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 286              		.loc 1 23 34 discriminator 2 view .LVU82
+ 287 0074 5B00     		lsls	r3, r3, #1
+ 288              	.LVL28:
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 289              		.loc 1 23 34 view .LVU83
+ 290 0076 BEF1000F 		cmp	lr, #0
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 291              		.loc 1 23 69 discriminator 1 view .LVU84
+ 292 007a 81EA4E01 		eor	r1, r1, lr, lsl #1
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 293              		.loc 1 23 34 discriminator 2 view .LVU85
+ 294 007e 9BB2     		uxth	r3, r3
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 295              		.loc 1 23 34 discriminator 1 view .LVU86
+ 296 0080 B8BF     		it	lt
+ 297 0082 8BB2     		uxthlt	r3, r1
+ 298              	.LVL29:
+  22:../../diagnostics/protocol/ddp.cpp ****             crc = (crc & 0x8000) ? static_cast<uint16_t>((crc << 1) ^ 0x1021)
+ 299              		.loc 1 22 9 is_stmt 1 discriminator 2 view .LVU87
+  22:../../diagnostics/protocol/ddp.cpp ****             crc = (crc & 0x8000) ? static_cast<uint16_t>((crc << 1) ^ 0x1021)
+ 300              		.loc 1 22 30 discriminator 1 view .LVU88
+ 301 0084 BCF1010C 		subs	ip, ip, #1
+ 302 0088 F0D1     		bne	.L22
+ 303              	.LBE37:
+ 304              	.LBE36:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 8
+
+
+  20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+ 305              		.loc 1 20 5 discriminator 2 view .LVU89
+ 306              	.LVL30:
+  20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+ 307              		.loc 1 20 25 discriminator 1 view .LVU90
+ 308 008a A842     		cmp	r0, r5
+ 309 008c E8D1     		bne	.L23
+ 310              	.LBE35:
+  26:../../diagnostics/protocol/ddp.cpp **** }
+ 311              		.loc 1 26 5 view .LVU91
+ 312              	.LVL31:
+  26:../../diagnostics/protocol/ddp.cpp **** }
+ 313              		.loc 1 26 5 is_stmt 0 view .LVU92
+ 314              	.LBE34:
+ 315              	.LBE33:
+  40:../../diagnostics/protocol/ddp.cpp ****     for(int shift = 12; shift >= 0; shift -= 4)
+ 316              		.loc 1 40 5 is_stmt 1 view .LVU93
+  40:../../diagnostics/protocol/ddp.cpp ****     for(int shift = 12; shift >= 0; shift -= 4)
+ 317              		.loc 1 40 14 is_stmt 0 view .LVU94
+ 318 008e 2A21     		movs	r1, #42
+ 319 0090 094D     		ldr	r5, .L41
+ 320 0092 9155     		strb	r1, [r2, r6]
+  41:../../diagnostics/protocol/ddp.cpp ****         out[n++] = kHexDigits[(crc >> shift) & 0xf];
+ 321              		.loc 1 41 5 is_stmt 1 view .LVU95
+ 322              	.LVL32:
+ 323              	.LBB38:
+  41:../../diagnostics/protocol/ddp.cpp ****         out[n++] = kHexDigits[(crc >> shift) & 0xf];
+ 324              		.loc 1 41 31 discriminator 1 view .LVU96
+ 325 0094 1644     		add	r6, r6, r2
+  41:../../diagnostics/protocol/ddp.cpp ****         out[n++] = kHexDigits[(crc >> shift) & 0xf];
+ 326              		.loc 1 41 13 is_stmt 0 view .LVU97
+ 327 0096 0C21     		movs	r1, #12
+ 328              	.LVL33:
+ 329              	.L24:
+  42:../../diagnostics/protocol/ddp.cpp ****     out[n++] = '\n';
+ 330              		.loc 1 42 9 is_stmt 1 view .LVU98
+  42:../../diagnostics/protocol/ddp.cpp ****     out[n++] = '\n';
+ 331              		.loc 1 42 36 is_stmt 0 view .LVU99
+ 332 0098 43FA01F0 		asr	r0, r3, r1
+  41:../../diagnostics/protocol/ddp.cpp ****         out[n++] = kHexDigits[(crc >> shift) & 0xf];
+ 333              		.loc 1 41 43 discriminator 3 view .LVU100
+ 334 009c 0439     		subs	r1, r1, #4
+ 335              	.LVL34:
+  42:../../diagnostics/protocol/ddp.cpp ****     out[n++] = '\n';
+ 336              		.loc 1 42 46 view .LVU101
+ 337 009e 00F00F00 		and	r0, r0, #15
+  42:../../diagnostics/protocol/ddp.cpp ****     out[n++] = '\n';
+ 338              		.loc 1 42 18 view .LVU102
+ 339 00a2 285C     		ldrb	r0, [r5, r0]	@ zero_extendqisi2
+ 340 00a4 06F8010F 		strb	r0, [r6, #1]!
+  41:../../diagnostics/protocol/ddp.cpp ****         out[n++] = kHexDigits[(crc >> shift) & 0xf];
+ 341              		.loc 1 41 5 is_stmt 1 discriminator 3 view .LVU103
+ 342              	.LVL35:
+  41:../../diagnostics/protocol/ddp.cpp ****         out[n++] = kHexDigits[(crc >> shift) & 0xf];
+ 343              		.loc 1 41 31 discriminator 1 view .LVU104
+ 344 00a8 081D     		adds	r0, r1, #4
+ 345 00aa F5D1     		bne	.L24
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 9
+
+
+ 346              	.LBE38:
+  43:../../diagnostics/protocol/ddp.cpp ****     return n;
+ 347              		.loc 1 43 5 view .LVU105
+  43:../../diagnostics/protocol/ddp.cpp ****     return n;
+ 348              		.loc 1 43 14 is_stmt 0 view .LVU106
+ 349 00ac 2244     		add	r2, r2, r4
+ 350              	.LVL36:
+  43:../../diagnostics/protocol/ddp.cpp ****     return n;
+ 351              		.loc 1 43 14 view .LVU107
+ 352 00ae 0A23     		movs	r3, #10
+ 353              	.LVL37:
+  43:../../diagnostics/protocol/ddp.cpp ****     return n;
+ 354              		.loc 1 43 10 view .LVU108
+ 355 00b0 E01D     		adds	r0, r4, #7
+ 356              	.LVL38:
+  43:../../diagnostics/protocol/ddp.cpp ****     return n;
+ 357              		.loc 1 43 14 view .LVU109
+ 358 00b2 9371     		strb	r3, [r2, #6]
+  44:../../diagnostics/protocol/ddp.cpp **** }
+ 359              		.loc 1 44 5 is_stmt 1 view .LVU110
+ 360              		.loc 1 45 1 is_stmt 0 view .LVU111
+ 361 00b4 70BD     		pop	{r4, r5, r6, pc}
+ 362              	.LVL39:
+ 363              	.L42:
+ 364              		.loc 1 45 1 view .LVU112
+ 365 00b6 00BF     		.align	2
+ 366              	.L41:
+ 367 00b8 00000000 		.word	_ZN3ddp12_GLOBAL__N_1L10kHexDigitsE
+ 368              		.cfi_endproc
+ 369              	.LFE1306:
+ 371              		.section	.text._ZN3ddp11FrameParser6FinishEv,"ax",%progbits
+ 372              		.align	1
+ 373              		.p2align 2,,3
+ 374              		.global	_ZN3ddp11FrameParser6FinishEv
+ 375              		.syntax unified
+ 376              		.thumb
+ 377              		.thumb_func
+ 379              	_ZN3ddp11FrameParser6FinishEv:
+ 380              	.LVL40:
+ 381              	.LFB1308:
+  46:../../diagnostics/protocol/ddp.cpp **** 
+  47:../../diagnostics/protocol/ddp.cpp **** bool FrameParser::Feed(char c) {
+  48:../../diagnostics/protocol/ddp.cpp ****     if(c == '$') {
+  49:../../diagnostics/protocol/ddp.cpp ****         // A start marker always begins a new frame; a pending one was incomplete.
+  50:../../diagnostics/protocol/ddp.cpp ****         if(state_ != State::Idle)
+  51:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+  52:../../diagnostics/protocol/ddp.cpp ****         state_ = State::Body;
+  53:../../diagnostics/protocol/ddp.cpp ****         body_len_ = 0;
+  54:../../diagnostics/protocol/ddp.cpp ****         return false;
+  55:../../diagnostics/protocol/ddp.cpp ****     }
+  56:../../diagnostics/protocol/ddp.cpp ****     switch(state_) {
+  57:../../diagnostics/protocol/ddp.cpp ****         case State::Idle: return false;
+  58:../../diagnostics/protocol/ddp.cpp ****         case State::Body:
+  59:../../diagnostics/protocol/ddp.cpp ****             if(c == '*') {
+  60:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Crc;
+  61:../../diagnostics/protocol/ddp.cpp ****                 crc_len_ = 0;
+  62:../../diagnostics/protocol/ddp.cpp ****             } else if(!IsBodyChar(c)) {
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 10
+
+
+  63:../../diagnostics/protocol/ddp.cpp ****                 ++bad_format;
+  64:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Idle;
+  65:../../diagnostics/protocol/ddp.cpp ****             } else if(body_len_ >= kMaxBody) {
+  66:../../diagnostics/protocol/ddp.cpp ****                 ++overflow;
+  67:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Idle;
+  68:../../diagnostics/protocol/ddp.cpp ****             } else {
+  69:../../diagnostics/protocol/ddp.cpp ****                 body_[body_len_++] = c;
+  70:../../diagnostics/protocol/ddp.cpp ****             }
+  71:../../diagnostics/protocol/ddp.cpp ****             return false;
+  72:../../diagnostics/protocol/ddp.cpp ****         case State::Crc:
+  73:../../diagnostics/protocol/ddp.cpp ****             if(crc_len_ < 4) {
+  74:../../diagnostics/protocol/ddp.cpp ****                 if(HexValue(c) < 0) {
+  75:../../diagnostics/protocol/ddp.cpp ****                     ++bad_format;
+  76:../../diagnostics/protocol/ddp.cpp ****                     state_ = State::Idle;
+  77:../../diagnostics/protocol/ddp.cpp ****                 } else {
+  78:../../diagnostics/protocol/ddp.cpp ****                     crc_[crc_len_++] = c;
+  79:../../diagnostics/protocol/ddp.cpp ****                 }
+  80:../../diagnostics/protocol/ddp.cpp ****                 return false;
+  81:../../diagnostics/protocol/ddp.cpp ****             }
+  82:../../diagnostics/protocol/ddp.cpp ****             if(c == '\r') {
+  83:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Cr;
+  84:../../diagnostics/protocol/ddp.cpp ****                 return false;
+  85:../../diagnostics/protocol/ddp.cpp ****             }
+  86:../../diagnostics/protocol/ddp.cpp ****             if(c == '\n')
+  87:../../diagnostics/protocol/ddp.cpp ****                 return Finish();
+  88:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+  89:../../diagnostics/protocol/ddp.cpp ****             state_ = State::Idle;
+  90:../../diagnostics/protocol/ddp.cpp ****             return false;
+  91:../../diagnostics/protocol/ddp.cpp ****         case State::Cr:
+  92:../../diagnostics/protocol/ddp.cpp ****             if(c == '\n')
+  93:../../diagnostics/protocol/ddp.cpp ****                 return Finish();
+  94:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+  95:../../diagnostics/protocol/ddp.cpp ****             state_ = State::Idle;
+  96:../../diagnostics/protocol/ddp.cpp ****             return false;
+  97:../../diagnostics/protocol/ddp.cpp ****     }
+  98:../../diagnostics/protocol/ddp.cpp ****     return false;
+  99:../../diagnostics/protocol/ddp.cpp **** }
+ 100:../../diagnostics/protocol/ddp.cpp **** 
+ 101:../../diagnostics/protocol/ddp.cpp **** bool FrameParser::Finish() {
+ 382              		.loc 1 101 28 is_stmt 1 view -0
+ 383              		.cfi_startproc
+ 384              		@ args = 0, pretend = 0, frame = 0
+ 385              		@ frame_needed = 0, uses_anonymous_args = 0
+ 102:../../diagnostics/protocol/ddp.cpp ****     state_ = State::Idle;
+ 386              		.loc 1 102 5 view .LVU114
+ 101:../../diagnostics/protocol/ddp.cpp ****     state_ = State::Idle;
+ 387              		.loc 1 101 28 is_stmt 0 view .LVU115
+ 388 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+ 389              		.cfi_def_cfa_offset 20
+ 390              		.cfi_offset 4, -20
+ 391              		.cfi_offset 5, -16
+ 392              		.cfi_offset 6, -12
+ 393              		.cfi_offset 7, -8
+ 394              		.cfi_offset 14, -4
+ 395              		.loc 1 102 12 view .LVU116
+ 396 0002 0023     		movs	r3, #0
+ 101:../../diagnostics/protocol/ddp.cpp ****     state_ = State::Idle;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 11
+
+
+ 397              		.loc 1 101 28 view .LVU117
+ 398 0004 0446     		mov	r4, r0
+ 103:../../diagnostics/protocol/ddp.cpp ****     uint16_t received = 0;
+ 399              		.loc 1 103 14 view .LVU118
+ 400 0006 1846     		mov	r0, r3
+ 401              	.LVL41:
+ 402              		.loc 1 103 14 view .LVU119
+ 403 0008 04F2A711 		addw	r1, r4, #423
+ 404 000c 04F2AB17 		addw	r7, r4, #427
+ 102:../../diagnostics/protocol/ddp.cpp ****     state_ = State::Idle;
+ 405              		.loc 1 102 12 view .LVU120
+ 406 0010 2374     		strb	r3, [r4, #16]
+ 407              		.loc 1 103 5 is_stmt 1 view .LVU121
+ 408              	.LVL42:
+ 104:../../diagnostics/protocol/ddp.cpp ****     for(char d : crc_) {
+ 409              		.loc 1 104 5 view .LVU122
+ 410              	.LBB50:
+ 411              		.loc 1 104 18 discriminator 1 view .LVU123
+ 412              	.L49:
+ 413              	.LBB51:
+ 414              	.LBB52:
+ 415              	.LBB53:
+  10:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
+ 416              		.loc 1 10 5 view .LVU124
+ 417              	.LBB54:
+ 418              	.LBB55:
+  13:../../diagnostics/protocol/ddp.cpp ****     return -1;
+ 419              		.loc 1 13 9 view .LVU125
+ 420              	.LBE55:
+ 421              	.LBE54:
+ 422              	.LBE53:
+ 423              	.LBE52:
+ 424              		.loc 1 104 14 is_stmt 0 discriminator 3 view .LVU126
+ 425 0012 11F8013F 		ldrb	r3, [r1, #1]!	@ zero_extendqisi2
+ 426              	.LVL43:
+ 105:../../diagnostics/protocol/ddp.cpp ****         const int v = HexValue(d);
+ 427              		.loc 1 105 9 is_stmt 1 view .LVU127
+ 428              	.LBB66:
+ 429              	.LBI52:
+   7:../../diagnostics/protocol/ddp.cpp ****     if(c >= '0' && c <= '9')
+ 430              		.loc 1 7 5 view .LVU128
+ 431              	.LBB62:
+   8:../../diagnostics/protocol/ddp.cpp ****         return c - '0';
+ 432              		.loc 1 8 5 view .LVU129
+ 433              	.LBB59:
+ 434              	.LBI54:
+   7:../../diagnostics/protocol/ddp.cpp ****     if(c >= '0' && c <= '9')
+ 435              		.loc 1 7 5 view .LVU130
+ 436              	.LBB56:
+  12:../../diagnostics/protocol/ddp.cpp ****         return c - 'a' + 10;
+ 437              		.loc 1 12 5 view .LVU131
+ 438              	.LBE56:
+ 439              	.LBE59:
+   8:../../diagnostics/protocol/ddp.cpp ****         return c - '0';
+ 440              		.loc 1 8 17 is_stmt 0 view .LVU132
+ 441 0016 A3F1300C 		sub	ip, r3, #48
+  10:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 12
+
+
+ 442              		.loc 1 10 5 view .LVU133
+ 443 001a A3F14105 		sub	r5, r3, #65
+ 444              	.LBB60:
+ 445              	.LBB57:
+  12:../../diagnostics/protocol/ddp.cpp ****         return c - 'a' + 10;
+ 446              		.loc 1 12 5 view .LVU134
+ 447 001e A3F16106 		sub	r6, r3, #97
+  13:../../diagnostics/protocol/ddp.cpp ****     return -1;
+ 448              		.loc 1 13 26 view .LVU135
+ 449 0022 A3F15702 		sub	r2, r3, #87
+ 450              	.LVL44:
+  13:../../diagnostics/protocol/ddp.cpp ****     return -1;
+ 451              		.loc 1 13 26 view .LVU136
+ 452              	.LBE57:
+ 453              	.LBE60:
+ 454              	.LBE62:
+ 455              	.LBE66:
+ 106:../../diagnostics/protocol/ddp.cpp ****         if(v < 0) {
+ 456              		.loc 1 106 9 is_stmt 1 view .LVU137
+ 457              	.LBB67:
+ 458              	.LBB63:
+   8:../../diagnostics/protocol/ddp.cpp ****         return c - '0';
+ 459              		.loc 1 8 5 is_stmt 0 view .LVU138
+ 460 0026 5FFA8CFE 		uxtb	lr, ip
+ 461 002a BEF1090F 		cmp	lr, #9
+ 462 002e 2ED9     		bls	.L64
+  10:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
+ 463              		.loc 1 10 5 view .LVU139
+ 464 0030 052D     		cmp	r5, #5
+ 465 0032 2ED9     		bls	.L65
+ 466              	.LBB61:
+ 467              	.LBB58:
+  12:../../diagnostics/protocol/ddp.cpp ****         return c - 'a' + 10;
+ 468              		.loc 1 12 5 view .LVU140
+ 469 0034 052E     		cmp	r6, #5
+ 470 0036 35D8     		bhi	.L50
+ 471              	.LVL45:
+ 472              	.L45:
+  12:../../diagnostics/protocol/ddp.cpp ****         return c - 'a' + 10;
+ 473              		.loc 1 12 5 view .LVU141
+ 474              	.LBE58:
+ 475              	.LBE61:
+ 476              	.LBE63:
+ 477              	.LBE67:
+ 107:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+ 108:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 109:../../diagnostics/protocol/ddp.cpp ****         }
+ 110:../../diagnostics/protocol/ddp.cpp ****         received = static_cast<uint16_t>((received << 4) | v);
+ 478              		.loc 1 110 9 is_stmt 1 view .LVU142
+ 479              		.loc 1 110 58 is_stmt 0 view .LVU143
+ 480 0038 42EA0012 		orr	r2, r2, r0, lsl #4
+ 481              	.LBE51:
+ 104:../../diagnostics/protocol/ddp.cpp ****         const int v = HexValue(d);
+ 482              		.loc 1 104 18 discriminator 1 view .LVU144
+ 483 003c B942     		cmp	r1, r7
+ 484              	.LBB70:
+ 485              		.loc 1 110 18 view .LVU145
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 13
+
+
+ 486 003e 90B2     		uxth	r0, r2
+ 487              	.LVL46:
+ 488              		.loc 1 110 18 view .LVU146
+ 489              	.LBE70:
+ 104:../../diagnostics/protocol/ddp.cpp ****         const int v = HexValue(d);
+ 490              		.loc 1 104 5 is_stmt 1 discriminator 2 view .LVU147
+ 104:../../diagnostics/protocol/ddp.cpp ****         const int v = HexValue(d);
+ 491              		.loc 1 104 18 discriminator 1 view .LVU148
+ 492 0040 E7D1     		bne	.L49
+ 493              	.LBE50:
+ 111:../../diagnostics/protocol/ddp.cpp ****     }
+ 112:../../diagnostics/protocol/ddp.cpp ****     if(body_len_ == 0) {
+ 494              		.loc 1 112 5 view .LVU149
+ 495              		.loc 1 112 8 is_stmt 0 view .LVU150
+ 496 0042 D4F8A461 		ldr	r6, [r4, #420]
+ 497              		.loc 1 112 5 view .LVU151
+ 498 0046 6EB3     		cbz	r6, .L50
+ 113:../../diagnostics/protocol/ddp.cpp ****         ++bad_format;
+ 114:../../diagnostics/protocol/ddp.cpp ****         return false;
+ 115:../../diagnostics/protocol/ddp.cpp ****     }
+ 116:../../diagnostics/protocol/ddp.cpp ****     if(received != Crc16(body_, body_len_)) {
+ 499              		.loc 1 116 5 is_stmt 1 view .LVU152
+ 500              	.LVL47:
+ 501              	.LBB74:
+ 502              	.LBI74:
+  18:../../diagnostics/protocol/ddp.cpp ****     uint16_t crc = 0xffff;
+ 503              		.loc 1 18 10 view .LVU153
+ 504              	.LBB75:
+  19:../../diagnostics/protocol/ddp.cpp ****     for(size_t i = 0; i < len; ++i) {
+ 505              		.loc 1 19 5 view .LVU154
+  20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+ 506              		.loc 1 20 5 view .LVU155
+ 507              	.LBB76:
+  20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+ 508              		.loc 1 20 25 discriminator 1 view .LVU156
+ 509 0048 2644     		add	r6, r6, r4
+ 510              	.LVL48:
+  20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+ 511              		.loc 1 20 25 is_stmt 0 discriminator 1 view .LVU157
+ 512 004a 04F1100E 		add	lr, r4, #16
+ 513              	.LBE76:
+  19:../../diagnostics/protocol/ddp.cpp ****     for(size_t i = 0; i < len; ++i) {
+ 514              		.loc 1 19 14 view .LVU158
+ 515 004e 4FF6FF73 		movw	r3, #65535
+ 516              	.LVL49:
+  19:../../diagnostics/protocol/ddp.cpp ****     for(size_t i = 0; i < len; ++i) {
+ 517              		.loc 1 19 14 view .LVU159
+ 518 0052 06F11005 		add	r5, r6, #16
+ 519              	.LVL50:
+ 520              	.L54:
+ 521              	.LBB79:
+ 522              	.LBB77:
+  21:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
+ 523              		.loc 1 21 9 is_stmt 1 view .LVU160
+  21:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
+ 524              		.loc 1 21 65 is_stmt 0 view .LVU161
+ 525 0056 1EF8012F 		ldrb	r2, [lr, #1]!	@ zero_extendqisi2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 14
+
+
+  21:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
+ 526              		.loc 1 21 13 view .LVU162
+ 527 005a 0821     		movs	r1, #8
+ 528 005c 83EA0223 		eor	r3, r3, r2, lsl #8
+ 529              	.LVL51:
+  22:../../diagnostics/protocol/ddp.cpp ****             crc = (crc & 0x8000) ? static_cast<uint16_t>((crc << 1) ^ 0x1021)
+ 530              		.loc 1 22 9 is_stmt 1 view .LVU163
+ 531              	.LBB78:
+  22:../../diagnostics/protocol/ddp.cpp ****             crc = (crc & 0x8000) ? static_cast<uint16_t>((crc << 1) ^ 0x1021)
+ 532              		.loc 1 22 30 discriminator 1 view .LVU164
+ 533              	.L53:
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 534              		.loc 1 23 13 view .LVU165
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 535              		.loc 1 23 24 is_stmt 0 view .LVU166
+ 536 0060 0FFA83FC 		sxth	ip, r3
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 537              		.loc 1 23 69 discriminator 1 view .LVU167
+ 538 0064 41F22102 		movw	r2, #4129
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 539              		.loc 1 23 34 discriminator 2 view .LVU168
+ 540 0068 5B00     		lsls	r3, r3, #1
+ 541              	.LVL52:
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 542              		.loc 1 23 34 view .LVU169
+ 543 006a BCF1000F 		cmp	ip, #0
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 544              		.loc 1 23 69 discriminator 1 view .LVU170
+ 545 006e 82EA4C02 		eor	r2, r2, ip, lsl #1
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 546              		.loc 1 23 34 discriminator 2 view .LVU171
+ 547 0072 9BB2     		uxth	r3, r3
+  23:../../diagnostics/protocol/ddp.cpp ****                                  : static_cast<uint16_t>(crc << 1);
+ 548              		.loc 1 23 34 discriminator 1 view .LVU172
+ 549 0074 B8BF     		it	lt
+ 550 0076 93B2     		uxthlt	r3, r2
+ 551              	.LVL53:
+  22:../../diagnostics/protocol/ddp.cpp ****             crc = (crc & 0x8000) ? static_cast<uint16_t>((crc << 1) ^ 0x1021)
+ 552              		.loc 1 22 9 is_stmt 1 discriminator 2 view .LVU173
+  22:../../diagnostics/protocol/ddp.cpp ****             crc = (crc & 0x8000) ? static_cast<uint16_t>((crc << 1) ^ 0x1021)
+ 553              		.loc 1 22 30 discriminator 1 view .LVU174
+ 554 0078 0139     		subs	r1, r1, #1
+ 555 007a F1D1     		bne	.L53
+ 556              	.LBE78:
+ 557              	.LBE77:
+  20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+ 558              		.loc 1 20 5 discriminator 2 view .LVU175
+  20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
+ 559              		.loc 1 20 25 discriminator 1 view .LVU176
+ 560 007c 7545     		cmp	r5, lr
+ 561 007e EAD1     		bne	.L54
+ 562              	.LBE79:
+  26:../../diagnostics/protocol/ddp.cpp **** }
+ 563              		.loc 1 26 5 view .LVU177
+ 564              	.LVL54:
+  26:../../diagnostics/protocol/ddp.cpp **** }
+ 565              		.loc 1 26 5 is_stmt 0 view .LVU178
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 15
+
+
+ 566              	.LBE75:
+ 567              	.LBE74:
+ 568              		.loc 1 116 5 discriminator 1 view .LVU179
+ 569 0080 9842     		cmp	r0, r3
+ 570 0082 09D0     		beq	.L55
+ 117:../../diagnostics/protocol/ddp.cpp ****         ++bad_crc;
+ 571              		.loc 1 117 9 is_stmt 1 view .LVU180
+ 572 0084 6368     		ldr	r3, [r4, #4]
+ 573 0086 0133     		adds	r3, r3, #1
+ 574 0088 6360     		str	r3, [r4, #4]
+ 118:../../diagnostics/protocol/ddp.cpp ****         return false;
+ 575              		.loc 1 118 9 view .LVU181
+ 576              	.LVL55:
+ 577              	.L48:
+ 578              	.LBB80:
+ 579              	.LBB71:
+ 108:../../diagnostics/protocol/ddp.cpp ****         }
+ 580              		.loc 1 108 20 is_stmt 0 view .LVU182
+ 581 008a 0020     		movs	r0, #0
+ 582              	.LVL56:
+ 108:../../diagnostics/protocol/ddp.cpp ****         }
+ 583              		.loc 1 108 20 view .LVU183
+ 584              	.LBE71:
+ 585              	.LBE80:
+ 119:../../diagnostics/protocol/ddp.cpp ****     }
+ 120:../../diagnostics/protocol/ddp.cpp ****     body_[body_len_] = 0;
+ 121:../../diagnostics/protocol/ddp.cpp ****     ++ok;
+ 122:../../diagnostics/protocol/ddp.cpp ****     return true;
+ 123:../../diagnostics/protocol/ddp.cpp **** }
+ 586              		.loc 1 123 1 view .LVU184
+ 587 008c F0BD     		pop	{r4, r5, r6, r7, pc}
+ 588              	.LVL57:
+ 589              	.L64:
+ 590              	.LBB81:
+ 591              	.LBB72:
+ 592              	.LBB68:
+ 593              	.LBB64:
+   9:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'A' && c <= 'F')
+ 594              		.loc 1 9 9 is_stmt 1 view .LVU185
+   9:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'A' && c <= 'F')
+ 595              		.loc 1 9 20 is_stmt 0 view .LVU186
+ 596 008e 6246     		mov	r2, ip
+ 597              	.LVL58:
+   9:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'A' && c <= 'F')
+ 598              		.loc 1 9 20 view .LVU187
+ 599              	.LBE64:
+ 600              	.LBE68:
+ 106:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+ 601              		.loc 1 106 9 is_stmt 1 view .LVU188
+ 602 0090 D2E7     		b	.L45
+ 603              	.LVL59:
+ 604              	.L65:
+ 605              	.LBB69:
+ 606              	.LBB65:
+  11:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'a' && c <= 'f')
+ 607              		.loc 1 11 9 view .LVU189
+  11:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'a' && c <= 'f')
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 16
+
+
+ 608              		.loc 1 11 26 is_stmt 0 view .LVU190
+ 609 0092 A3F13702 		sub	r2, r3, #55
+ 610              	.LVL60:
+  11:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'a' && c <= 'f')
+ 611              		.loc 1 11 26 view .LVU191
+ 612              	.LBE65:
+ 613              	.LBE69:
+ 106:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+ 614              		.loc 1 106 9 is_stmt 1 view .LVU192
+ 615 0096 CFE7     		b	.L45
+ 616              	.LVL61:
+ 617              	.L55:
+ 106:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+ 618              		.loc 1 106 9 is_stmt 0 view .LVU193
+ 619              	.LBE72:
+ 620              	.LBE81:
+ 120:../../diagnostics/protocol/ddp.cpp ****     ++ok;
+ 621              		.loc 1 120 5 is_stmt 1 view .LVU194
+ 120:../../diagnostics/protocol/ddp.cpp ****     ++ok;
+ 622              		.loc 1 120 22 is_stmt 0 view .LVU195
+ 623 0098 7174     		strb	r1, [r6, #17]
+ 121:../../diagnostics/protocol/ddp.cpp ****     return true;
+ 624              		.loc 1 121 5 is_stmt 1 view .LVU196
+ 122:../../diagnostics/protocol/ddp.cpp **** }
+ 625              		.loc 1 122 12 is_stmt 0 view .LVU197
+ 626 009a 0120     		movs	r0, #1
+ 627              	.LVL62:
+ 121:../../diagnostics/protocol/ddp.cpp ****     return true;
+ 628              		.loc 1 121 5 view .LVU198
+ 629 009c 2368     		ldr	r3, [r4]
+ 630 009e 0344     		add	r3, r3, r0
+ 631 00a0 2360     		str	r3, [r4]
+ 122:../../diagnostics/protocol/ddp.cpp **** }
+ 632              		.loc 1 122 5 is_stmt 1 view .LVU199
+ 633              		.loc 1 123 1 is_stmt 0 view .LVU200
+ 634 00a2 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 635              	.LVL63:
+ 636              	.L50:
+ 637              	.LBB82:
+ 638              	.LBB73:
+ 106:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+ 639              		.loc 1 106 9 is_stmt 1 view .LVU201
+ 107:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 640              		.loc 1 107 13 view .LVU202
+ 641 00a4 A368     		ldr	r3, [r4, #8]
+ 642              	.LVL64:
+ 107:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 643              		.loc 1 107 13 is_stmt 0 view .LVU203
+ 644 00a6 0133     		adds	r3, r3, #1
+ 645 00a8 A360     		str	r3, [r4, #8]
+ 108:../../diagnostics/protocol/ddp.cpp ****         }
+ 646              		.loc 1 108 13 is_stmt 1 view .LVU204
+ 108:../../diagnostics/protocol/ddp.cpp ****         }
+ 647              		.loc 1 108 20 is_stmt 0 view .LVU205
+ 648 00aa EEE7     		b	.L48
+ 649              	.LBE73:
+ 650              	.LBE82:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 17
+
+
+ 651              		.cfi_endproc
+ 652              	.LFE1308:
+ 654              		.section	.text._ZN3ddp11FrameParser4FeedEc,"ax",%progbits
+ 655              		.align	1
+ 656              		.p2align 2,,3
+ 657              		.global	_ZN3ddp11FrameParser4FeedEc
+ 658              		.syntax unified
+ 659              		.thumb
+ 660              		.thumb_func
+ 662              	_ZN3ddp11FrameParser4FeedEc:
+ 663              	.LVL65:
+ 664              	.LFB1307:
+  47:../../diagnostics/protocol/ddp.cpp ****     if(c == '$') {
+ 665              		.loc 1 47 32 is_stmt 1 view -0
+ 666              		.cfi_startproc
+ 667              		@ args = 0, pretend = 0, frame = 0
+ 668              		@ frame_needed = 0, uses_anonymous_args = 0
+ 669              		@ link register save eliminated.
+  48:../../diagnostics/protocol/ddp.cpp ****         // A start marker always begins a new frame; a pending one was incomplete.
+ 670              		.loc 1 48 5 view .LVU207
+ 671 0000 2429     		cmp	r1, #36
+  50:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+ 672              		.loc 1 50 12 is_stmt 0 view .LVU208
+ 673 0002 037C     		ldrb	r3, [r0, #16]	@ zero_extendqisi2
+  48:../../diagnostics/protocol/ddp.cpp ****         // A start marker always begins a new frame; a pending one was incomplete.
+ 674              		.loc 1 48 5 view .LVU209
+ 675 0004 26D0     		beq	.L89
+  56:../../diagnostics/protocol/ddp.cpp ****         case State::Idle: return false;
+ 676              		.loc 1 56 5 is_stmt 1 view .LVU210
+ 677 0006 022B     		cmp	r3, #2
+ 678 0008 15D0     		beq	.L70
+ 679 000a 032B     		cmp	r3, #3
+ 680 000c 19D0     		beq	.L78
+ 681 000e 012B     		cmp	r3, #1
+ 682 0010 0FD1     		bne	.L80
+  58:../../diagnostics/protocol/ddp.cpp ****             if(c == '*') {
+ 683              		.loc 1 58 9 view .LVU211
+  59:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Crc;
+ 684              		.loc 1 59 13 view .LVU212
+ 685 0012 2A29     		cmp	r1, #42
+ 686 0014 29D0     		beq	.L90
+  62:../../diagnostics/protocol/ddp.cpp ****                 ++bad_format;
+ 687              		.loc 1 62 20 view .LVU213
+ 688              	.LVL66:
+ 689              	.LBB89:
+ 690              	.LBI89:
+  19:../../diagnostics/protocol/ddp.h ****     return c >= 0x20 && c <= 0x7e && c != '$' && c != '*';
+ 691              		.loc 2 19 13 view .LVU214
+ 692              	.LBB90:
+ 693              		.loc 2 20 5 view .LVU215
+ 694              		.loc 2 20 47 is_stmt 0 view .LVU216
+ 695 0016 A1F12003 		sub	r3, r1, #32
+ 696 001a 5E2B     		cmp	r3, #94
+ 697 001c 13D8     		bhi	.L73
+ 698              	.LVL67:
+ 699              		.loc 2 20 47 view .LVU217
+ 700              	.LBE90:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 18
+
+
+ 701              	.LBE89:
+  65:../../diagnostics/protocol/ddp.cpp ****                 ++overflow;
+ 702              		.loc 1 65 20 is_stmt 1 view .LVU218
+  65:../../diagnostics/protocol/ddp.cpp ****                 ++overflow;
+ 703              		.loc 1 65 23 is_stmt 0 view .LVU219
+ 704 001e D0F8A431 		ldr	r3, [r0, #420]
+  65:../../diagnostics/protocol/ddp.cpp ****                 ++overflow;
+ 705              		.loc 1 65 20 view .LVU220
+ 706 0022 B3F5C87F 		cmp	r3, #400
+ 707 0026 38D3     		bcc	.L91
+  66:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Idle;
+ 708              		.loc 1 66 17 is_stmt 1 view .LVU221
+ 709 0028 C368     		ldr	r3, [r0, #12]
+  67:../../diagnostics/protocol/ddp.cpp ****             } else {
+ 710              		.loc 1 67 24 is_stmt 0 view .LVU222
+ 711 002a 0022     		movs	r2, #0
+  66:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Idle;
+ 712              		.loc 1 66 17 view .LVU223
+ 713 002c 0133     		adds	r3, r3, #1
+  67:../../diagnostics/protocol/ddp.cpp ****             } else {
+ 714              		.loc 1 67 24 view .LVU224
+ 715 002e 0274     		strb	r2, [r0, #16]
+  66:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Idle;
+ 716              		.loc 1 66 17 view .LVU225
+ 717 0030 C360     		str	r3, [r0, #12]
+  67:../../diagnostics/protocol/ddp.cpp ****             } else {
+ 718              		.loc 1 67 17 is_stmt 1 view .LVU226
+ 719              	.L80:
+  99:../../diagnostics/protocol/ddp.cpp **** 
+ 720              		.loc 1 99 1 is_stmt 0 view .LVU227
+ 721 0032 0020     		movs	r0, #0
+ 722              	.LVL68:
+  99:../../diagnostics/protocol/ddp.cpp **** 
+ 723              		.loc 1 99 1 view .LVU228
+ 724 0034 7047     		bx	lr
+ 725              	.LVL69:
+ 726              	.L70:
+  72:../../diagnostics/protocol/ddp.cpp ****             if(crc_len_ < 4) {
+ 727              		.loc 1 72 9 is_stmt 1 view .LVU229
+  73:../../diagnostics/protocol/ddp.cpp ****                 if(HexValue(c) < 0) {
+ 728              		.loc 1 73 13 view .LVU230
+  73:../../diagnostics/protocol/ddp.cpp ****                 if(HexValue(c) < 0) {
+ 729              		.loc 1 73 16 is_stmt 0 view .LVU231
+ 730 0036 D0F8AC31 		ldr	r3, [r0, #428]
+  73:../../diagnostics/protocol/ddp.cpp ****                 if(HexValue(c) < 0) {
+ 731              		.loc 1 73 13 view .LVU232
+ 732 003a 032B     		cmp	r3, #3
+ 733 003c 1BD9     		bls	.L92
+  82:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Cr;
+ 734              		.loc 1 82 13 is_stmt 1 view .LVU233
+ 735 003e 0D29     		cmp	r1, #13
+ 736 0040 31D0     		beq	.L93
+ 737              	.L78:
+  86:../../diagnostics/protocol/ddp.cpp ****                 return Finish();
+ 738              		.loc 1 86 13 view .LVU234
+ 739 0042 0A29     		cmp	r1, #10
+ 740 0044 27D0     		beq	.L94
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 19
+
+
+ 741              	.L73:
+  63:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Idle;
+ 742              		.loc 1 63 17 view .LVU235
+ 743 0046 8368     		ldr	r3, [r0, #8]
+  64:../../diagnostics/protocol/ddp.cpp ****             } else if(body_len_ >= kMaxBody) {
+ 744              		.loc 1 64 24 is_stmt 0 view .LVU236
+ 745 0048 0022     		movs	r2, #0
+  63:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Idle;
+ 746              		.loc 1 63 17 view .LVU237
+ 747 004a 0133     		adds	r3, r3, #1
+  64:../../diagnostics/protocol/ddp.cpp ****             } else if(body_len_ >= kMaxBody) {
+ 748              		.loc 1 64 24 view .LVU238
+ 749 004c 0274     		strb	r2, [r0, #16]
+  63:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Idle;
+ 750              		.loc 1 63 17 view .LVU239
+ 751 004e 8360     		str	r3, [r0, #8]
+  64:../../diagnostics/protocol/ddp.cpp ****             } else if(body_len_ >= kMaxBody) {
+ 752              		.loc 1 64 17 is_stmt 1 view .LVU240
+  99:../../diagnostics/protocol/ddp.cpp **** 
+ 753              		.loc 1 99 1 is_stmt 0 view .LVU241
+ 754 0050 0020     		movs	r0, #0
+ 755              	.LVL70:
+  99:../../diagnostics/protocol/ddp.cpp **** 
+ 756              		.loc 1 99 1 view .LVU242
+ 757 0052 7047     		bx	lr
+ 758              	.LVL71:
+ 759              	.L89:
+  50:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+ 760              		.loc 1 50 9 is_stmt 1 view .LVU243
+ 761 0054 13B1     		cbz	r3, .L68
+  51:../../diagnostics/protocol/ddp.cpp ****         state_ = State::Body;
+ 762              		.loc 1 51 13 view .LVU244
+ 763 0056 8368     		ldr	r3, [r0, #8]
+ 764 0058 0133     		adds	r3, r3, #1
+ 765 005a 8360     		str	r3, [r0, #8]
+ 766              	.L68:
+  52:../../diagnostics/protocol/ddp.cpp ****         body_len_ = 0;
+ 767              		.loc 1 52 9 view .LVU245
+  52:../../diagnostics/protocol/ddp.cpp ****         body_len_ = 0;
+ 768              		.loc 1 52 16 is_stmt 0 view .LVU246
+ 769 005c 0122     		movs	r2, #1
+  53:../../diagnostics/protocol/ddp.cpp ****         return false;
+ 770              		.loc 1 53 19 view .LVU247
+ 771 005e 0023     		movs	r3, #0
+  52:../../diagnostics/protocol/ddp.cpp ****         body_len_ = 0;
+ 772              		.loc 1 52 16 view .LVU248
+ 773 0060 0274     		strb	r2, [r0, #16]
+  53:../../diagnostics/protocol/ddp.cpp ****         return false;
+ 774              		.loc 1 53 9 is_stmt 1 view .LVU249
+  53:../../diagnostics/protocol/ddp.cpp ****         return false;
+ 775              		.loc 1 53 19 is_stmt 0 view .LVU250
+ 776 0062 C0F8A431 		str	r3, [r0, #420]
+  54:../../diagnostics/protocol/ddp.cpp ****     }
+ 777              		.loc 1 54 9 is_stmt 1 view .LVU251
+  99:../../diagnostics/protocol/ddp.cpp **** 
+ 778              		.loc 1 99 1 is_stmt 0 view .LVU252
+ 779 0066 0020     		movs	r0, #0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 20
+
+
+ 780              	.LVL72:
+  99:../../diagnostics/protocol/ddp.cpp **** 
+ 781              		.loc 1 99 1 view .LVU253
+ 782 0068 7047     		bx	lr
+ 783              	.LVL73:
+ 784              	.L90:
+  60:../../diagnostics/protocol/ddp.cpp ****                 crc_len_ = 0;
+ 785              		.loc 1 60 17 is_stmt 1 view .LVU254
+  60:../../diagnostics/protocol/ddp.cpp ****                 crc_len_ = 0;
+ 786              		.loc 1 60 24 is_stmt 0 view .LVU255
+ 787 006a 0222     		movs	r2, #2
+  61:../../diagnostics/protocol/ddp.cpp ****             } else if(!IsBodyChar(c)) {
+ 788              		.loc 1 61 26 view .LVU256
+ 789 006c 0023     		movs	r3, #0
+  60:../../diagnostics/protocol/ddp.cpp ****                 crc_len_ = 0;
+ 790              		.loc 1 60 24 view .LVU257
+ 791 006e 0274     		strb	r2, [r0, #16]
+  61:../../diagnostics/protocol/ddp.cpp ****             } else if(!IsBodyChar(c)) {
+ 792              		.loc 1 61 17 is_stmt 1 view .LVU258
+  61:../../diagnostics/protocol/ddp.cpp ****             } else if(!IsBodyChar(c)) {
+ 793              		.loc 1 61 26 is_stmt 0 view .LVU259
+ 794 0070 C0F8AC31 		str	r3, [r0, #428]
+ 795 0074 DDE7     		b	.L80
+ 796              	.L92:
+  74:../../diagnostics/protocol/ddp.cpp ****                     ++bad_format;
+ 797              		.loc 1 74 17 is_stmt 1 view .LVU260
+ 798              	.LVL74:
+ 799              	.LBB91:
+ 800              	.LBI91:
+   7:../../diagnostics/protocol/ddp.cpp ****     if(c >= '0' && c <= '9')
+ 801              		.loc 1 7 5 view .LVU261
+ 802              	.LBB92:
+   8:../../diagnostics/protocol/ddp.cpp ****         return c - '0';
+ 803              		.loc 1 8 5 view .LVU262
+ 804 0076 A1F13002 		sub	r2, r1, #48
+ 805 007a 092A     		cmp	r2, #9
+ 806 007c 04D9     		bls	.L77
+  10:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
+ 807              		.loc 1 10 5 view .LVU263
+ 808 007e 21F02002 		bic	r2, r1, #32
+ 809 0082 413A     		subs	r2, r2, #65
+ 810 0084 052A     		cmp	r2, #5
+ 811 0086 DED8     		bhi	.L73
+ 812              	.L77:
+ 813              	.LVL75:
+  10:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
+ 814              		.loc 1 10 5 is_stmt 0 view .LVU264
+ 815              	.LBE92:
+ 816              	.LBE91:
+  78:../../diagnostics/protocol/ddp.cpp ****                 }
+ 817              		.loc 1 78 21 is_stmt 1 view .LVU265
+  78:../../diagnostics/protocol/ddp.cpp ****                 }
+ 818              		.loc 1 78 34 is_stmt 0 view .LVU266
+ 819 0088 5A1C     		adds	r2, r3, #1
+  78:../../diagnostics/protocol/ddp.cpp ****                 }
+ 820              		.loc 1 78 38 view .LVU267
+ 821 008a 0344     		add	r3, r3, r0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 21
+
+
+  78:../../diagnostics/protocol/ddp.cpp ****                 }
+ 822              		.loc 1 78 34 view .LVU268
+ 823 008c C0F8AC21 		str	r2, [r0, #428]
+  78:../../diagnostics/protocol/ddp.cpp ****                 }
+ 824              		.loc 1 78 38 view .LVU269
+ 825 0090 83F8A811 		strb	r1, [r3, #424]
+ 826 0094 CDE7     		b	.L80
+ 827              	.L94:
+  87:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+ 828              		.loc 1 87 17 is_stmt 1 view .LVU270
+  87:../../diagnostics/protocol/ddp.cpp ****             ++bad_format;
+ 829              		.loc 1 87 30 is_stmt 0 view .LVU271
+ 830 0096 FFF7FEBF 		b	_ZN3ddp11FrameParser6FinishEv
+ 831              	.LVL76:
+ 832              	.L91:
+  69:../../diagnostics/protocol/ddp.cpp ****             }
+ 833              		.loc 1 69 17 is_stmt 1 view .LVU272
+  69:../../diagnostics/protocol/ddp.cpp ****             }
+ 834              		.loc 1 69 32 is_stmt 0 view .LVU273
+ 835 009a 5A1C     		adds	r2, r3, #1
+  69:../../diagnostics/protocol/ddp.cpp ****             }
+ 836              		.loc 1 69 36 view .LVU274
+ 837 009c 0344     		add	r3, r3, r0
+  69:../../diagnostics/protocol/ddp.cpp ****             }
+ 838              		.loc 1 69 32 view .LVU275
+ 839 009e C0F8A421 		str	r2, [r0, #420]
+  69:../../diagnostics/protocol/ddp.cpp ****             }
+ 840              		.loc 1 69 36 view .LVU276
+ 841 00a2 5974     		strb	r1, [r3, #17]
+ 842 00a4 C5E7     		b	.L80
+ 843              	.L93:
+  83:../../diagnostics/protocol/ddp.cpp ****                 return false;
+ 844              		.loc 1 83 17 is_stmt 1 view .LVU277
+  83:../../diagnostics/protocol/ddp.cpp ****                 return false;
+ 845              		.loc 1 83 24 is_stmt 0 view .LVU278
+ 846 00a6 0323     		movs	r3, #3
+ 847 00a8 0374     		strb	r3, [r0, #16]
+  84:../../diagnostics/protocol/ddp.cpp ****             }
+ 848              		.loc 1 84 17 is_stmt 1 view .LVU279
+  84:../../diagnostics/protocol/ddp.cpp ****             }
+ 849              		.loc 1 84 24 is_stmt 0 view .LVU280
+ 850 00aa C2E7     		b	.L80
+ 851              		.cfi_endproc
+ 852              	.LFE1307:
+ 854              		.section	.text._ZN3ddp6Writer4CharEc,"ax",%progbits
+ 855              		.align	1
+ 856              		.p2align 2,,3
+ 857              		.global	_ZN3ddp6Writer4CharEc
+ 858              		.syntax unified
+ 859              		.thumb
+ 860              		.thumb_func
+ 862              	_ZN3ddp6Writer4CharEc:
+ 863              	.LVL77:
+ 864              	.LFB1309:
+ 124:../../diagnostics/protocol/ddp.cpp **** 
+ 125:../../diagnostics/protocol/ddp.cpp **** Writer& Writer::Char(char c) {
+ 865              		.loc 1 125 30 is_stmt 1 view -0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 22
+
+
+ 866              		.cfi_startproc
+ 867              		@ args = 0, pretend = 0, frame = 0
+ 868              		@ frame_needed = 0, uses_anonymous_args = 0
+ 869              		@ link register save eliminated.
+ 126:../../diagnostics/protocol/ddp.cpp ****     if(len_ + 1 < cap_) {
+ 870              		.loc 1 126 5 view .LVU282
+ 871              		.loc 1 126 8 is_stmt 0 view .LVU283
+ 872 0000 8368     		ldr	r3, [r0, #8]
+ 125:../../diagnostics/protocol/ddp.cpp ****     if(len_ + 1 < cap_) {
+ 873              		.loc 1 125 30 view .LVU284
+ 874 0002 10B4     		push	{r4}
+ 875              		.cfi_def_cfa_offset 4
+ 876              		.cfi_offset 4, -4
+ 877              		.loc 1 126 13 view .LVU285
+ 878 0004 5A1C     		adds	r2, r3, #1
+ 879              		.loc 1 126 5 view .LVU286
+ 880 0006 4468     		ldr	r4, [r0, #4]
+ 881 0008 A242     		cmp	r2, r4
+ 882 000a 0BD2     		bcs	.L96
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 883              		.loc 1 127 9 is_stmt 1 view .LVU287
+ 884              		.loc 1 127 18 is_stmt 0 view .LVU288
+ 885 000c 8260     		str	r2, [r0, #8]
+ 128:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 886              		.loc 1 128 20 view .LVU289
+ 887 000e 4FF0000C 		mov	ip, #0
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 888              		.loc 1 127 22 view .LVU290
+ 889 0012 0268     		ldr	r2, [r0]
+ 890 0014 D154     		strb	r1, [r2, r3]
+ 891              		.loc 1 128 9 is_stmt 1 view .LVU291
+ 892              		.loc 1 128 20 is_stmt 0 view .LVU292
+ 893 0016 0268     		ldr	r2, [r0]
+ 894 0018 8368     		ldr	r3, [r0, #8]
+ 895 001a 02F803C0 		strb	ip, [r2, r3]
+ 129:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 130:../../diagnostics/protocol/ddp.cpp ****         ok_ = false;
+ 131:../../diagnostics/protocol/ddp.cpp ****     }
+ 132:../../diagnostics/protocol/ddp.cpp ****     return *this;
+ 896              		.loc 1 132 5 is_stmt 1 view .LVU293
+ 133:../../diagnostics/protocol/ddp.cpp **** }
+ 897              		.loc 1 133 1 is_stmt 0 view .LVU294
+ 898 001e 5DF8044B 		ldr	r4, [sp], #4
+ 899              		.cfi_remember_state
+ 900              		.cfi_restore 4
+ 901              		.cfi_def_cfa_offset 0
+ 902 0022 7047     		bx	lr
+ 903              	.L96:
+ 904              		.cfi_restore_state
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 905              		.loc 1 130 9 is_stmt 1 view .LVU295
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 906              		.loc 1 130 13 is_stmt 0 view .LVU296
+ 907 0024 0023     		movs	r3, #0
+ 908              		.loc 1 133 1 view .LVU297
+ 909 0026 5DF8044B 		ldr	r4, [sp], #4
+ 910              		.cfi_restore 4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 23
+
+
+ 911              		.cfi_def_cfa_offset 0
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 912              		.loc 1 130 13 view .LVU298
+ 913 002a 0373     		strb	r3, [r0, #12]
+ 132:../../diagnostics/protocol/ddp.cpp **** }
+ 914              		.loc 1 132 5 is_stmt 1 view .LVU299
+ 915              		.loc 1 133 1 is_stmt 0 view .LVU300
+ 916 002c 7047     		bx	lr
+ 917              		.cfi_endproc
+ 918              	.LFE1309:
+ 920              		.section	.text._ZN3ddp6Writer3StrEPKc,"ax",%progbits
+ 921              		.align	1
+ 922              		.p2align 2,,3
+ 923              		.global	_ZN3ddp6Writer3StrEPKc
+ 924              		.syntax unified
+ 925              		.thumb
+ 926              		.thumb_func
+ 928              	_ZN3ddp6Writer3StrEPKc:
+ 929              	.LVL78:
+ 930              	.LFB1310:
+ 134:../../diagnostics/protocol/ddp.cpp **** 
+ 135:../../diagnostics/protocol/ddp.cpp **** Writer& Writer::Str(const char* s) {
+ 931              		.loc 1 135 36 is_stmt 1 view -0
+ 932              		.cfi_startproc
+ 933              		@ args = 0, pretend = 0, frame = 0
+ 934              		@ frame_needed = 0, uses_anonymous_args = 0
+ 136:../../diagnostics/protocol/ddp.cpp ****     while(*s)
+ 935              		.loc 1 136 5 view .LVU302
+ 936              		.loc 1 136 11 view .LVU303
+ 937 0000 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
+ 938 0002 CBB1     		cbz	r3, .L109
+ 135:../../diagnostics/protocol/ddp.cpp ****     while(*s)
+ 939              		.loc 1 135 36 is_stmt 0 view .LVU304
+ 940 0004 30B5     		push	{r4, r5, lr}
+ 941              		.cfi_def_cfa_offset 12
+ 942              		.cfi_offset 4, -12
+ 943              		.cfi_offset 5, -8
+ 944              		.cfi_offset 14, -4
+ 945 0006 09E0     		b	.L103
+ 946              	.LVL79:
+ 947              	.L112:
+ 948              	.LBB95:
+ 949              	.LBB96:
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 950              		.loc 1 127 18 view .LVU305
+ 951 0008 8460     		str	r4, [r0, #8]
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 952              		.loc 1 127 22 view .LVU306
+ 953 000a 0468     		ldr	r4, [r0]
+ 954 000c A354     		strb	r3, [r4, r2]
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 955              		.loc 1 128 9 is_stmt 1 view .LVU307
+ 956              	.LVL80:
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 957              		.loc 1 128 9 is_stmt 0 view .LVU308
+ 958              	.LBE96:
+ 959              	.LBE95:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 24
+
+
+ 960              		.loc 1 136 11 is_stmt 1 view .LVU309
+ 961              	.LBB99:
+ 962              	.LBB97:
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 963              		.loc 1 128 20 is_stmt 0 view .LVU310
+ 964 000e 8368     		ldr	r3, [r0, #8]
+ 965 0010 0268     		ldr	r2, [r0]
+ 966 0012 02F803E0 		strb	lr, [r2, r3]
+ 967              	.LBE97:
+ 968              	.LBE99:
+ 969              		.loc 1 136 11 view .LVU311
+ 970 0016 11F8013F 		ldrb	r3, [r1, #1]!	@ zero_extendqisi2
+ 971              	.LVL81:
+ 972              		.loc 1 136 11 view .LVU312
+ 973 001a 63B1     		cbz	r3, .L111
+ 974              	.LVL82:
+ 975              	.L103:
+ 137:../../diagnostics/protocol/ddp.cpp ****         Char(*s++);
+ 976              		.loc 1 137 9 is_stmt 1 view .LVU313
+ 977              	.LBB100:
+ 978              	.LBI95:
+ 125:../../diagnostics/protocol/ddp.cpp ****     if(len_ + 1 < cap_) {
+ 979              		.loc 1 125 9 view .LVU314
+ 980              	.LBB98:
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 981              		.loc 1 126 5 view .LVU315
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 982              		.loc 1 127 9 view .LVU316
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 983              		.loc 1 130 9 view .LVU317
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 984              		.loc 1 126 8 is_stmt 0 view .LVU318
+ 985 001c 8268     		ldr	r2, [r0, #8]
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 986              		.loc 1 128 20 view .LVU319
+ 987 001e 4FF0000E 		mov	lr, #0
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 988              		.loc 1 126 5 view .LVU320
+ 989 0022 4568     		ldr	r5, [r0, #4]
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 990              		.loc 1 126 13 view .LVU321
+ 991 0024 541C     		adds	r4, r2, #1
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 992              		.loc 1 126 5 view .LVU322
+ 993 0026 AC42     		cmp	r4, r5
+ 994 0028 EED3     		bcc	.L112
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 995              		.loc 1 130 13 view .LVU323
+ 996 002a 80F80CE0 		strb	lr, [r0, #12]
+ 997              	.LVL83:
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 998              		.loc 1 130 13 view .LVU324
+ 999              	.LBE98:
+ 1000              	.LBE100:
+ 136:../../diagnostics/protocol/ddp.cpp ****         Char(*s++);
+ 1001              		.loc 1 136 11 is_stmt 1 view .LVU325
+ 1002 002e 11F8013F 		ldrb	r3, [r1, #1]!	@ zero_extendqisi2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 25
+
+
+ 1003              	.LVL84:
+ 136:../../diagnostics/protocol/ddp.cpp ****         Char(*s++);
+ 1004              		.loc 1 136 11 is_stmt 0 view .LVU326
+ 1005 0032 002B     		cmp	r3, #0
+ 1006 0034 F2D1     		bne	.L103
+ 1007              	.LVL85:
+ 1008              	.L111:
+ 138:../../diagnostics/protocol/ddp.cpp ****     return *this;
+ 1009              		.loc 1 138 5 is_stmt 1 view .LVU327
+ 139:../../diagnostics/protocol/ddp.cpp **** }
+ 1010              		.loc 1 139 1 is_stmt 0 view .LVU328
+ 1011 0036 30BD     		pop	{r4, r5, pc}
+ 1012              	.LVL86:
+ 1013              	.L109:
+ 1014              		.cfi_def_cfa_offset 0
+ 1015              		.cfi_restore 4
+ 1016              		.cfi_restore 5
+ 1017              		.cfi_restore 14
+ 138:../../diagnostics/protocol/ddp.cpp ****     return *this;
+ 1018              		.loc 1 138 5 is_stmt 1 view .LVU329
+ 1019              		.loc 1 139 1 is_stmt 0 view .LVU330
+ 1020 0038 7047     		bx	lr
+ 1021              		.cfi_endproc
+ 1022              	.LFE1310:
+ 1024 003a 00BF     		.section	.text._ZN3ddp6Writer3U32Em,"ax",%progbits
+ 1025              		.align	1
+ 1026              		.p2align 2,,3
+ 1027              		.global	_ZN3ddp6Writer3U32Em
+ 1028              		.syntax unified
+ 1029              		.thumb
+ 1030              		.thumb_func
+ 1032              	_ZN3ddp6Writer3U32Em:
+ 1033              	.LVL87:
+ 1034              	.LFB1311:
+ 140:../../diagnostics/protocol/ddp.cpp **** 
+ 141:../../diagnostics/protocol/ddp.cpp **** Writer& Writer::U32(uint32_t v) {
+ 1035              		.loc 1 141 33 is_stmt 1 view -0
+ 1036              		.cfi_startproc
+ 1037              		@ args = 0, pretend = 0, frame = 16
+ 1038              		@ frame_needed = 0, uses_anonymous_args = 0
+ 142:../../diagnostics/protocol/ddp.cpp ****     char tmp[10];
+ 1039              		.loc 1 142 5 view .LVU332
+ 143:../../diagnostics/protocol/ddp.cpp ****     int n = 0;
+ 1040              		.loc 1 143 5 view .LVU333
+ 141:../../diagnostics/protocol/ddp.cpp ****     char tmp[10];
+ 1041              		.loc 1 141 33 is_stmt 0 view .LVU334
+ 1042 0000 70B5     		push	{r4, r5, r6, lr}
+ 1043              		.cfi_def_cfa_offset 16
+ 1044              		.cfi_offset 4, -16
+ 1045              		.cfi_offset 5, -12
+ 1046              		.cfi_offset 6, -8
+ 1047              		.cfi_offset 14, -4
+ 1048 0002 84B0     		sub	sp, sp, #16
+ 1049              		.cfi_def_cfa_offset 32
+ 1050              		.loc 1 143 9 view .LVU335
+ 1051 0004 4FF0000C 		mov	ip, #0
+ 1052 0008 0DF1040E 		add	lr, sp, #4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 26
+
+
+ 141:../../diagnostics/protocol/ddp.cpp ****     char tmp[10];
+ 1053              		.loc 1 141 33 view .LVU336
+ 1054 000c 7446     		mov	r4, lr
+ 1055              	.LVL88:
+ 1056              	.L114:
+ 144:../../diagnostics/protocol/ddp.cpp ****     do {
+ 1057              		.loc 1 144 5 is_stmt 1 view .LVU337
+ 145:../../diagnostics/protocol/ddp.cpp ****         tmp[n++] = static_cast<char>('0' + v % 10);
+ 1058              		.loc 1 145 9 view .LVU338
+ 1059              		.loc 1 145 46 is_stmt 0 view .LVU339
+ 1060 000e 174B     		ldr	r3, .L123
+ 1061 0010 0D46     		mov	r5, r1
+ 1062              		.loc 1 145 14 view .LVU340
+ 1063 0012 0CF1010C 		add	ip, ip, #1
+ 1064              	.LVL89:
+ 1065              		.loc 1 145 46 view .LVU341
+ 1066 0016 A3FB0123 		umull	r2, r3, r3, r1
+ 146:../../diagnostics/protocol/ddp.cpp ****         v /= 10;
+ 147:../../diagnostics/protocol/ddp.cpp ****     } while(v);
+ 1067              		.loc 1 147 13 discriminator 1 view .LVU342
+ 1068 001a 092D     		cmp	r5, #9
+ 145:../../diagnostics/protocol/ddp.cpp ****         tmp[n++] = static_cast<char>('0' + v % 10);
+ 1069              		.loc 1 145 46 view .LVU343
+ 1070 001c 4FEAD303 		lsr	r3, r3, #3
+ 1071 0020 03EB8302 		add	r2, r3, r3, lsl #2
+ 1072 0024 A1EB4202 		sub	r2, r1, r2, lsl #1
+ 146:../../diagnostics/protocol/ddp.cpp ****         v /= 10;
+ 1073              		.loc 1 146 11 view .LVU344
+ 1074 0028 1946     		mov	r1, r3
+ 1075              	.LVL90:
+ 145:../../diagnostics/protocol/ddp.cpp ****         tmp[n++] = static_cast<char>('0' + v % 10);
+ 1076              		.loc 1 145 42 view .LVU345
+ 1077 002a 02F13003 		add	r3, r2, #48
+ 145:../../diagnostics/protocol/ddp.cpp ****         tmp[n++] = static_cast<char>('0' + v % 10);
+ 1078              		.loc 1 145 18 view .LVU346
+ 1079 002e 04F8013B 		strb	r3, [r4], #1
+ 146:../../diagnostics/protocol/ddp.cpp ****         v /= 10;
+ 1080              		.loc 1 146 9 is_stmt 1 view .LVU347
+ 1081              	.LVL91:
+ 1082              		.loc 1 147 13 discriminator 1 view .LVU348
+ 1083 0032 ECD8     		bhi	.L114
+ 148:../../diagnostics/protocol/ddp.cpp ****     while(n)
+ 1084              		.loc 1 148 11 view .LVU349
+ 1085 0034 0EEB0C03 		add	r3, lr, ip
+ 1086 0038 08E0     		b	.L117
+ 1087              	.LVL92:
+ 1088              	.L122:
+ 1089              	.LBB103:
+ 1090              	.LBB104:
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 1091              		.loc 1 127 9 is_stmt 0 view .LVU350
+ 1092 003a 0468     		ldr	r4, [r0]
+ 1093              	.LBE104:
+ 1094              	.LBE103:
+ 1095              		.loc 1 148 11 view .LVU351
+ 1096 003c 7345     		cmp	r3, lr
+ 1097              	.LBB109:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 27
+
+
+ 1098              	.LBB105:
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 1099              		.loc 1 127 18 view .LVU352
+ 1100 003e 8160     		str	r1, [r0, #8]
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 1101              		.loc 1 127 22 view .LVU353
+ 1102 0040 A654     		strb	r6, [r4, r2]
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 1103              		.loc 1 128 9 is_stmt 1 view .LVU354
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 1104              		.loc 1 128 20 is_stmt 0 view .LVU355
+ 1105 0042 0168     		ldr	r1, [r0]
+ 1106 0044 8268     		ldr	r2, [r0, #8]
+ 1107 0046 01F802C0 		strb	ip, [r1, r2]
+ 1108              	.LVL93:
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 1109              		.loc 1 128 20 view .LVU356
+ 1110              	.LBE105:
+ 1111              	.LBE109:
+ 1112              		.loc 1 148 11 is_stmt 1 view .LVU357
+ 1113 004a 0CD0     		beq	.L121
+ 1114              	.LVL94:
+ 1115              	.L117:
+ 149:../../diagnostics/protocol/ddp.cpp ****         Char(tmp[--n]);
+ 1116              		.loc 1 149 9 view .LVU358
+ 1117              	.LBB110:
+ 1118              	.LBB106:
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 1119              		.loc 1 127 9 view .LVU359
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 1120              		.loc 1 130 9 view .LVU360
+ 1121              	.LBE106:
+ 1122              	.LBE110:
+ 1123              		.loc 1 149 13 is_stmt 0 view .LVU361
+ 1124 004c 13F8016D 		ldrb	r6, [r3, #-1]!	@ zero_extendqisi2
+ 1125              	.LVL95:
+ 1126              	.LBB111:
+ 1127              	.LBI103:
+ 125:../../diagnostics/protocol/ddp.cpp ****     if(len_ + 1 < cap_) {
+ 1128              		.loc 1 125 9 is_stmt 1 view .LVU362
+ 1129              	.LBB107:
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 1130              		.loc 1 126 5 view .LVU363
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 1131              		.loc 1 128 20 is_stmt 0 view .LVU364
+ 1132 0050 4FF0000C 		mov	ip, #0
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 1133              		.loc 1 126 5 view .LVU365
+ 1134 0054 D0E90142 		ldrd	r4, r2, [r0, #4]
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 1135              		.loc 1 126 13 view .LVU366
+ 1136 0058 511C     		adds	r1, r2, #1
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 1137              		.loc 1 126 5 view .LVU367
+ 1138 005a A142     		cmp	r1, r4
+ 1139 005c EDD3     		bcc	.L122
+ 1140              	.LBE107:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 28
+
+
+ 1141              	.LBE111:
+ 148:../../diagnostics/protocol/ddp.cpp ****         Char(tmp[--n]);
+ 1142              		.loc 1 148 11 view .LVU368
+ 1143 005e 7345     		cmp	r3, lr
+ 1144              	.LBB112:
+ 1145              	.LBB108:
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 1146              		.loc 1 130 13 view .LVU369
+ 1147 0060 80F80CC0 		strb	ip, [r0, #12]
+ 1148              	.LVL96:
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 1149              		.loc 1 130 13 view .LVU370
+ 1150              	.LBE108:
+ 1151              	.LBE112:
+ 148:../../diagnostics/protocol/ddp.cpp ****         Char(tmp[--n]);
+ 1152              		.loc 1 148 11 is_stmt 1 view .LVU371
+ 1153 0064 F2D1     		bne	.L117
+ 1154              	.L121:
+ 150:../../diagnostics/protocol/ddp.cpp ****     return *this;
+ 1155              		.loc 1 150 5 view .LVU372
+ 151:../../diagnostics/protocol/ddp.cpp **** }
+ 1156              		.loc 1 151 1 is_stmt 0 view .LVU373
+ 1157 0066 04B0     		add	sp, sp, #16
+ 1158              		.cfi_def_cfa_offset 16
+ 1159              		@ sp needed
+ 1160 0068 70BD     		pop	{r4, r5, r6, pc}
+ 1161              	.LVL97:
+ 1162              	.L124:
+ 1163              		.loc 1 151 1 view .LVU374
+ 1164 006a 00BF     		.align	2
+ 1165              	.L123:
+ 1166 006c CDCCCCCC 		.word	-858993459
+ 1167              		.cfi_endproc
+ 1168              	.LFE1311:
+ 1170              		.section	.text._ZN3ddp6Writer3HexEmi,"ax",%progbits
+ 1171              		.align	1
+ 1172              		.p2align 2,,3
+ 1173              		.global	_ZN3ddp6Writer3HexEmi
+ 1174              		.syntax unified
+ 1175              		.thumb
+ 1176              		.thumb_func
+ 1178              	_ZN3ddp6Writer3HexEmi:
+ 1179              	.LVL98:
+ 1180              	.LFB1312:
+ 152:../../diagnostics/protocol/ddp.cpp **** 
+ 153:../../diagnostics/protocol/ddp.cpp **** Writer& Writer::Hex(uint32_t v, int digits) {
+ 1181              		.loc 1 153 45 is_stmt 1 view -0
+ 1182              		.cfi_startproc
+ 1183              		@ args = 0, pretend = 0, frame = 0
+ 1184              		@ frame_needed = 0, uses_anonymous_args = 0
+ 154:../../diagnostics/protocol/ddp.cpp ****     for(int shift = (digits - 1) * 4; shift >= 0; shift -= 4)
+ 1185              		.loc 1 154 5 view .LVU376
+ 1186              	.LBB116:
+ 1187              		.loc 1 154 29 is_stmt 0 view .LVU377
+ 1188 0000 013A     		subs	r2, r2, #1
+ 1189              	.LVL99:
+ 1190              		.loc 1 154 45 is_stmt 1 discriminator 1 view .LVU378
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 29
+
+
+ 1191 0002 9200     		lsls	r2, r2, #2
+ 1192              	.LVL100:
+ 1193              		.loc 1 154 45 is_stmt 0 discriminator 1 view .LVU379
+ 1194 0004 1CD4     		bmi	.L132
+ 1195              	.LBE116:
+ 153:../../diagnostics/protocol/ddp.cpp ****     for(int shift = (digits - 1) * 4; shift >= 0; shift -= 4)
+ 1196              		.loc 1 153 45 view .LVU380
+ 1197 0006 F0B5     		push	{r4, r5, r6, r7, lr}
+ 1198              		.cfi_def_cfa_offset 20
+ 1199              		.cfi_offset 4, -20
+ 1200              		.cfi_offset 5, -16
+ 1201              		.cfi_offset 6, -12
+ 1202              		.cfi_offset 7, -8
+ 1203              		.cfi_offset 14, -4
+ 1204 0008 0E4E     		ldr	r6, .L137
+ 1205 000a 08E0     		b	.L129
+ 1206              	.LVL101:
+ 1207              	.L136:
+ 1208              	.LBB133:
+ 1209              	.LBB117:
+ 1210              	.LBB118:
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 1211              		.loc 1 127 18 view .LVU381
+ 1212 000c 8560     		str	r5, [r0, #8]
+ 1213              	.LBE118:
+ 1214              	.LBE117:
+ 1215              		.loc 1 154 45 discriminator 1 view .LVU382
+ 1216 000e 043A     		subs	r2, r2, #4
+ 1217              	.LVL102:
+ 1218              	.LBB126:
+ 1219              	.LBB119:
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 1220              		.loc 1 127 22 view .LVU383
+ 1221 0010 0568     		ldr	r5, [r0]
+ 1222 0012 2B55     		strb	r3, [r5, r4]
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 1223              		.loc 1 128 9 is_stmt 1 view .LVU384
+ 132:../../diagnostics/protocol/ddp.cpp **** }
+ 1224              		.loc 1 132 5 view .LVU385
+ 1225              	.LVL103:
+ 132:../../diagnostics/protocol/ddp.cpp **** }
+ 1226              		.loc 1 132 5 is_stmt 0 view .LVU386
+ 1227              	.LBE119:
+ 1228              	.LBE126:
+ 1229              		.loc 1 154 5 is_stmt 1 discriminator 3 view .LVU387
+ 1230              		.loc 1 154 45 discriminator 1 view .LVU388
+ 1231              	.LBB127:
+ 1232              	.LBB120:
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 1233              		.loc 1 128 20 is_stmt 0 view .LVU389
+ 1234 0014 0468     		ldr	r4, [r0]
+ 1235 0016 8368     		ldr	r3, [r0, #8]
+ 1236 0018 04F803E0 		strb	lr, [r4, r3]
+ 1237              	.LBE120:
+ 1238              	.LBE127:
+ 1239              		.loc 1 154 45 discriminator 1 view .LVU390
+ 1240 001c 0FD4     		bmi	.L135
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 30
+
+
+ 1241              	.L129:
+ 1242              	.LVL104:
+ 155:../../diagnostics/protocol/ddp.cpp ****         Char(kHexDigits[(v >> shift) & 0xf]);
+ 1243              		.loc 1 155 9 is_stmt 1 view .LVU391
+ 1244              	.LBB128:
+ 1245              	.LBB121:
+ 127:../../diagnostics/protocol/ddp.cpp ****         buf_[len_] = 0;
+ 1246              		.loc 1 127 9 view .LVU392
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 1247              		.loc 1 130 9 view .LVU393
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 1248              		.loc 1 126 8 is_stmt 0 view .LVU394
+ 1249 001e 8468     		ldr	r4, [r0, #8]
+ 1250              	.LBE121:
+ 1251              	.LBE128:
+ 1252              		.loc 1 155 28 view .LVU395
+ 1253 0020 21FA02F3 		lsr	r3, r1, r2
+ 1254              	.LBB129:
+ 1255              	.LBB122:
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 1256              		.loc 1 126 5 view .LVU396
+ 1257 0024 4768     		ldr	r7, [r0, #4]
+ 128:../../diagnostics/protocol/ddp.cpp ****     } else {
+ 1258              		.loc 1 128 20 view .LVU397
+ 1259 0026 4FF0000E 		mov	lr, #0
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 1260              		.loc 1 126 13 view .LVU398
+ 1261 002a 651C     		adds	r5, r4, #1
+ 1262              	.LBE122:
+ 1263              	.LBE129:
+ 1264              		.loc 1 155 38 view .LVU399
+ 1265 002c 03F00F03 		and	r3, r3, #15
+ 1266              	.LBB130:
+ 1267              	.LBB123:
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 1268              		.loc 1 126 5 view .LVU400
+ 1269 0030 BD42     		cmp	r5, r7
+ 1270              	.LBE123:
+ 1271              	.LBE130:
+ 1272              		.loc 1 155 43 view .LVU401
+ 1273 0032 F35C     		ldrb	r3, [r6, r3]	@ zero_extendqisi2
+ 1274              	.LVL105:
+ 1275              	.LBB131:
+ 1276              	.LBI117:
+ 125:../../diagnostics/protocol/ddp.cpp ****     if(len_ + 1 < cap_) {
+ 1277              		.loc 1 125 9 is_stmt 1 view .LVU402
+ 1278              	.LBB124:
+ 126:../../diagnostics/protocol/ddp.cpp ****         buf_[len_++] = c;
+ 1279              		.loc 1 126 5 view .LVU403
+ 1280 0034 EAD3     		bcc	.L136
+ 1281              	.LBE124:
+ 1282              	.LBE131:
+ 154:../../diagnostics/protocol/ddp.cpp ****         Char(kHexDigits[(v >> shift) & 0xf]);
+ 1283              		.loc 1 154 45 is_stmt 0 discriminator 1 view .LVU404
+ 1284 0036 043A     		subs	r2, r2, #4
+ 1285              	.LVL106:
+ 1286              	.LBB132:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 31
+
+
+ 1287              	.LBB125:
+ 130:../../diagnostics/protocol/ddp.cpp ****     }
+ 1288              		.loc 1 130 13 view .LVU405
+ 1289 0038 80F80CE0 		strb	lr, [r0, #12]
+ 132:../../diagnostics/protocol/ddp.cpp **** }
+ 1290              		.loc 1 132 5 is_stmt 1 view .LVU406
+ 1291              	.LVL107:
+ 132:../../diagnostics/protocol/ddp.cpp **** }
+ 1292              		.loc 1 132 5 is_stmt 0 view .LVU407
+ 1293              	.LBE125:
+ 1294              	.LBE132:
+ 154:../../diagnostics/protocol/ddp.cpp ****         Char(kHexDigits[(v >> shift) & 0xf]);
+ 1295              		.loc 1 154 5 is_stmt 1 discriminator 3 view .LVU408
+ 154:../../diagnostics/protocol/ddp.cpp ****         Char(kHexDigits[(v >> shift) & 0xf]);
+ 1296              		.loc 1 154 45 discriminator 1 view .LVU409
+ 1297 003c EFD5     		bpl	.L129
+ 1298              	.L135:
+ 1299              	.LBE133:
+ 156:../../diagnostics/protocol/ddp.cpp ****     return *this;
+ 1300              		.loc 1 156 5 view .LVU410
+ 157:../../diagnostics/protocol/ddp.cpp **** }
+ 1301              		.loc 1 157 1 is_stmt 0 view .LVU411
+ 1302 003e F0BD     		pop	{r4, r5, r6, r7, pc}
+ 1303              	.LVL108:
+ 1304              	.L132:
+ 1305              		.cfi_def_cfa_offset 0
+ 1306              		.cfi_restore 4
+ 1307              		.cfi_restore 5
+ 1308              		.cfi_restore 6
+ 1309              		.cfi_restore 7
+ 1310              		.cfi_restore 14
+ 156:../../diagnostics/protocol/ddp.cpp ****     return *this;
+ 1311              		.loc 1 156 5 is_stmt 1 view .LVU412
+ 1312              		.loc 1 157 1 is_stmt 0 view .LVU413
+ 1313 0040 7047     		bx	lr
+ 1314              	.L138:
+ 1315 0042 00BF     		.align	2
+ 1316              	.L137:
+ 1317 0044 00000000 		.word	_ZN3ddp12_GLOBAL__N_1L10kHexDigitsE
+ 1318              		.cfi_endproc
+ 1319              	.LFE1312:
+ 1321              		.section	.text._ZN3ddp11MessageTypeEPKcPcj,"ax",%progbits
+ 1322              		.align	1
+ 1323              		.p2align 2,,3
+ 1324              		.global	_ZN3ddp11MessageTypeEPKcPcj
+ 1325              		.syntax unified
+ 1326              		.thumb
+ 1327              		.thumb_func
+ 1329              	_ZN3ddp11MessageTypeEPKcPcj:
+ 1330              	.LVL109:
+ 1331              	.LFB1313:
+ 158:../../diagnostics/protocol/ddp.cpp **** 
+ 159:../../diagnostics/protocol/ddp.cpp **** void MessageType(const char* body, char* out, size_t cap) {
+ 1332              		.loc 1 159 59 is_stmt 1 view -0
+ 1333              		.cfi_startproc
+ 1334              		@ args = 0, pretend = 0, frame = 0
+ 1335              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 32
+
+
+ 160:../../diagnostics/protocol/ddp.cpp ****     size_t n = 0;
+ 1336              		.loc 1 160 5 view .LVU415
+ 161:../../diagnostics/protocol/ddp.cpp ****     while(body[n] && body[n] != ' ' && n + 1 < cap) {
+ 1337              		.loc 1 161 5 view .LVU416
+ 1338              		.loc 1 161 37 view .LVU417
+ 1339              		.loc 1 161 17 is_stmt 0 view .LVU418
+ 1340 0000 0378     		ldrb	r3, [r0]	@ zero_extendqisi2
+ 1341              		.loc 1 161 37 view .LVU419
+ 1342 0002 13F0DF0F 		tst	r3, #223
+ 1343 0006 18D0     		beq	.L148
+ 1344              		.loc 1 161 37 discriminator 1 view .LVU420
+ 1345 0008 012A     		cmp	r2, #1
+ 1346 000a 16D9     		bls	.L148
+ 1347 000c 013A     		subs	r2, r2, #1
+ 1348              	.LVL110:
+ 1349              		.loc 1 161 37 discriminator 1 view .LVU421
+ 1350 000e 01F1FF3C 		add	ip, r1, #-1
+ 159:../../diagnostics/protocol/ddp.cpp ****     size_t n = 0;
+ 1351              		.loc 1 159 59 view .LVU422
+ 1352 0012 10B5     		push	{r4, lr}
+ 1353              		.cfi_def_cfa_offset 8
+ 1354              		.cfi_offset 4, -8
+ 1355              		.cfi_offset 14, -4
+ 1356 0014 0244     		add	r2, r2, r0
+ 1357              	.LVL111:
+ 159:../../diagnostics/protocol/ddp.cpp ****     size_t n = 0;
+ 1358              		.loc 1 159 59 view .LVU423
+ 1359 0016 C0F10104 		rsb	r4, r0, #1
+ 1360 001a 01E0     		b	.L142
+ 1361              	.LVL112:
+ 1362              	.L141:
+ 1363              		.loc 1 161 37 discriminator 1 view .LVU424
+ 1364 001c 9042     		cmp	r0, r2
+ 1365 001e 08D0     		beq	.L151
+ 1366              	.LVL113:
+ 1367              	.L142:
+ 1368              		.loc 1 161 37 discriminator 1 view .LVU425
+ 1369 0020 04EB000E 		add	lr, r4, r0
+ 1370              	.LVL114:
+ 162:../../diagnostics/protocol/ddp.cpp ****         out[n] = body[n];
+ 1371              		.loc 1 162 9 is_stmt 1 view .LVU426
+ 163:../../diagnostics/protocol/ddp.cpp ****         ++n;
+ 1372              		.loc 1 163 9 view .LVU427
+ 161:../../diagnostics/protocol/ddp.cpp ****         out[n] = body[n];
+ 1373              		.loc 1 161 37 view .LVU428
+ 162:../../diagnostics/protocol/ddp.cpp ****         out[n] = body[n];
+ 1374              		.loc 1 162 16 is_stmt 0 view .LVU429
+ 1375 0024 0CF8013F 		strb	r3, [ip, #1]!
+ 161:../../diagnostics/protocol/ddp.cpp ****         out[n] = body[n];
+ 1376              		.loc 1 161 17 view .LVU430
+ 1377 0028 10F8013F 		ldrb	r3, [r0, #1]!	@ zero_extendqisi2
+ 161:../../diagnostics/protocol/ddp.cpp ****         out[n] = body[n];
+ 1378              		.loc 1 161 37 view .LVU431
+ 1379 002c 13F0DF0F 		tst	r3, #223
+ 1380 0030 F4D1     		bne	.L141
+ 1381              	.L151:
+ 164:../../diagnostics/protocol/ddp.cpp ****     }
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 33
+
+
+ 165:../../diagnostics/protocol/ddp.cpp ****     out[n] = 0;
+ 1382              		.loc 1 165 10 view .LVU432
+ 1383 0032 7144     		add	r1, r1, lr
+ 1384              	.LVL115:
+ 1385              		.loc 1 165 5 is_stmt 1 view .LVU433
+ 1386              		.loc 1 165 12 is_stmt 0 view .LVU434
+ 1387 0034 0023     		movs	r3, #0
+ 1388 0036 0B70     		strb	r3, [r1]
+ 166:../../diagnostics/protocol/ddp.cpp **** }
+ 1389              		.loc 1 166 1 view .LVU435
+ 1390 0038 10BD     		pop	{r4, pc}
+ 1391              	.LVL116:
+ 1392              	.L148:
+ 1393              		.cfi_def_cfa_offset 0
+ 1394              		.cfi_restore 4
+ 1395              		.cfi_restore 14
+ 165:../../diagnostics/protocol/ddp.cpp **** }
+ 1396              		.loc 1 165 5 is_stmt 1 view .LVU436
+ 165:../../diagnostics/protocol/ddp.cpp **** }
+ 1397              		.loc 1 165 12 is_stmt 0 view .LVU437
+ 1398 003a 0023     		movs	r3, #0
+ 1399 003c 0B70     		strb	r3, [r1]
+ 1400 003e 7047     		bx	lr
+ 1401              		.cfi_endproc
+ 1402              	.LFE1313:
+ 1404              		.section	.text._ZN3ddp11LookupFieldEPKcS1_Pcj,"ax",%progbits
+ 1405              		.align	1
+ 1406              		.p2align 2,,3
+ 1407              		.global	_ZN3ddp11LookupFieldEPKcS1_Pcj
+ 1408              		.syntax unified
+ 1409              		.thumb
+ 1410              		.thumb_func
+ 1412              	_ZN3ddp11LookupFieldEPKcS1_Pcj:
+ 1413              	.LVL117:
+ 1414              	.LFB1314:
+ 167:../../diagnostics/protocol/ddp.cpp **** 
+ 168:../../diagnostics/protocol/ddp.cpp **** Lookup LookupField(const char* body, const char* key, char* out, size_t cap) {
+ 1415              		.loc 1 168 78 is_stmt 1 view -0
+ 1416              		.cfi_startproc
+ 1417              		@ args = 0, pretend = 0, frame = 0
+ 1418              		@ frame_needed = 0, uses_anonymous_args = 0
+ 169:../../diagnostics/protocol/ddp.cpp ****     const char* p = body;
+ 1419              		.loc 1 169 5 view .LVU439
+ 168:../../diagnostics/protocol/ddp.cpp ****     const char* p = body;
+ 1420              		.loc 1 168 78 is_stmt 0 view .LVU440
+ 1421 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+ 1422              		.cfi_def_cfa_offset 20
+ 1423              		.cfi_offset 4, -20
+ 1424              		.cfi_offset 5, -16
+ 1425              		.cfi_offset 6, -12
+ 1426              		.cfi_offset 7, -8
+ 1427              		.cfi_offset 14, -4
+ 168:../../diagnostics/protocol/ddp.cpp ****     const char* p = body;
+ 1428              		.loc 1 168 78 view .LVU441
+ 1429 0002 8446     		mov	ip, r0
+ 1430              	.LVL118:
+ 170:../../diagnostics/protocol/ddp.cpp ****     while(*p && *p != ' ')
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 34
+
+
+ 1431              		.loc 1 170 5 is_stmt 1 view .LVU442
+ 1432              		.loc 1 170 14 view .LVU443
+ 1433              		.loc 1 170 11 is_stmt 0 view .LVU444
+ 1434 0004 0078     		ldrb	r0, [r0]	@ zero_extendqisi2
+ 1435              	.LVL119:
+ 168:../../diagnostics/protocol/ddp.cpp ****     const char* p = body;
+ 1436              		.loc 1 168 78 view .LVU445
+ 1437 0006 0D46     		mov	r5, r1
+ 1438 0008 1646     		mov	r6, r2
+ 1439              		.loc 1 170 14 view .LVU446
+ 1440 000a 10F0DF0F 		tst	r0, #223
+ 168:../../diagnostics/protocol/ddp.cpp ****     const char* p = body;
+ 1441              		.loc 1 168 78 view .LVU447
+ 1442 000e 1F46     		mov	r7, r3
+ 1443              		.loc 1 170 14 view .LVU448
+ 1444 0010 04D0     		beq	.L153
+ 1445              	.LVL120:
+ 1446              	.L154:
+ 171:../../diagnostics/protocol/ddp.cpp ****         ++p;  // skip message type
+ 1447              		.loc 1 171 9 is_stmt 1 view .LVU449
+ 170:../../diagnostics/protocol/ddp.cpp ****     while(*p && *p != ' ')
+ 1448              		.loc 1 170 14 view .LVU450
+ 170:../../diagnostics/protocol/ddp.cpp ****     while(*p && *p != ' ')
+ 1449              		.loc 1 170 11 is_stmt 0 view .LVU451
+ 1450 0012 1CF8010F 		ldrb	r0, [ip, #1]!	@ zero_extendqisi2
+ 1451              	.LVL121:
+ 170:../../diagnostics/protocol/ddp.cpp ****     while(*p && *p != ' ')
+ 1452              		.loc 1 170 14 view .LVU452
+ 1453 0016 10F0DF0F 		tst	r0, #223
+ 1454 001a FAD1     		bne	.L154
+ 1455              	.L153:
+ 172:../../diagnostics/protocol/ddp.cpp ****     while(*p) {
+ 1456              		.loc 1 172 11 is_stmt 1 view .LVU453
+ 1457 001c D0B1     		cbz	r0, .L172
+ 1458              	.LBB134:
+ 173:../../diagnostics/protocol/ddp.cpp ****         while(*p == ' ')
+ 174:../../diagnostics/protocol/ddp.cpp ****             ++p;
+ 175:../../diagnostics/protocol/ddp.cpp ****         const char* k = key;
+ 176:../../diagnostics/protocol/ddp.cpp ****         const char* t = p;
+ 177:../../diagnostics/protocol/ddp.cpp ****         while(*k && *t == *k) {
+ 1459              		.loc 1 177 15 is_stmt 0 view .LVU454
+ 1460 001e 2C78     		ldrb	r4, [r5]	@ zero_extendqisi2
+ 1461              	.LVL122:
+ 1462              	.L157:
+ 174:../../diagnostics/protocol/ddp.cpp ****         const char* k = key;
+ 1463              		.loc 1 174 13 is_stmt 1 view .LVU455
+ 173:../../diagnostics/protocol/ddp.cpp ****         while(*p == ' ')
+ 1464              		.loc 1 173 18 view .LVU456
+ 173:../../diagnostics/protocol/ddp.cpp ****         while(*p == ' ')
+ 1465              		.loc 1 173 15 is_stmt 0 view .LVU457
+ 1466 0020 1CF8010F 		ldrb	r0, [ip, #1]!	@ zero_extendqisi2
+ 1467              	.LVL123:
+ 173:../../diagnostics/protocol/ddp.cpp ****         while(*p == ' ')
+ 1468              		.loc 1 173 18 view .LVU458
+ 1469 0024 2028     		cmp	r0, #32
+ 1470 0026 FBD0     		beq	.L157
+ 1471              	.LVL124:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 35
+
+
+ 1472              		.loc 1 177 18 is_stmt 1 view .LVU459
+ 1473 0028 CCB3     		cbz	r4, .L171
+ 1474 002a E646     		mov	lr, ip
+ 1475 002c 2B46     		mov	r3, r5
+ 1476              		.loc 1 177 15 is_stmt 0 view .LVU460
+ 1477 002e 2246     		mov	r2, r4
+ 1478 0030 02E0     		b	.L159
+ 1479              	.LVL125:
+ 1480              	.L161:
+ 1481              		.loc 1 177 15 view .LVU461
+ 1482 0032 13F8012F 		ldrb	r2, [r3, #1]!	@ zero_extendqisi2
+ 1483              		.loc 1 177 18 view .LVU462
+ 1484 0036 72B1     		cbz	r2, .L160
+ 1485              	.LVL126:
+ 1486              	.L159:
+ 178:../../diagnostics/protocol/ddp.cpp ****             ++k;
+ 1487              		.loc 1 178 13 is_stmt 1 view .LVU463
+ 179:../../diagnostics/protocol/ddp.cpp ****             ++t;
+ 1488              		.loc 1 179 13 view .LVU464
+ 177:../../diagnostics/protocol/ddp.cpp ****             ++k;
+ 1489              		.loc 1 177 21 is_stmt 0 discriminator 1 view .LVU465
+ 1490 0038 1EF8011B 		ldrb	r1, [lr], #1	@ zero_extendqisi2
+ 1491              	.LVL127:
+ 177:../../diagnostics/protocol/ddp.cpp ****             ++k;
+ 1492              		.loc 1 177 18 is_stmt 1 view .LVU466
+ 177:../../diagnostics/protocol/ddp.cpp ****             ++k;
+ 1493              		.loc 1 177 18 is_stmt 0 discriminator 1 view .LVU467
+ 1494 003c 9142     		cmp	r1, r2
+ 1495 003e F8D0     		beq	.L161
+ 1496              	.LVL128:
+ 1497              	.L162:
+ 180:../../diagnostics/protocol/ddp.cpp ****         }
+ 181:../../diagnostics/protocol/ddp.cpp ****         if(*k == 0 && *t == '=') {
+ 182:../../diagnostics/protocol/ddp.cpp ****             ++t;
+ 183:../../diagnostics/protocol/ddp.cpp ****             size_t n = 0;
+ 184:../../diagnostics/protocol/ddp.cpp ****             while(t[n] && t[n] != ' ') {
+ 185:../../diagnostics/protocol/ddp.cpp ****                 if(n + 1 >= cap) {
+ 186:../../diagnostics/protocol/ddp.cpp ****                     if(cap)
+ 187:../../diagnostics/protocol/ddp.cpp ****                         out[0] = 0;
+ 188:../../diagnostics/protocol/ddp.cpp ****                     return Lookup::TooLong;
+ 189:../../diagnostics/protocol/ddp.cpp ****                 }
+ 190:../../diagnostics/protocol/ddp.cpp ****                 out[n] = t[n];
+ 191:../../diagnostics/protocol/ddp.cpp ****                 ++n;
+ 192:../../diagnostics/protocol/ddp.cpp ****             }
+ 193:../../diagnostics/protocol/ddp.cpp ****             out[n] = 0;
+ 194:../../diagnostics/protocol/ddp.cpp ****             return Lookup::Found;
+ 195:../../diagnostics/protocol/ddp.cpp ****         }
+ 196:../../diagnostics/protocol/ddp.cpp ****         while(*p && *p != ' ')
+ 1498              		.loc 1 196 18 is_stmt 1 view .LVU468
+ 1499 0040 10F0DF00 		ands	r0, r0, #223
+ 1500 0044 06D0     		beq	.L172
+ 1501              	.L164:
+ 197:../../diagnostics/protocol/ddp.cpp ****             ++p;
+ 1502              		.loc 1 197 13 view .LVU469
+ 1503              	.LVL129:
+ 196:../../diagnostics/protocol/ddp.cpp ****             ++p;
+ 1504              		.loc 1 196 18 view .LVU470
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 36
+
+
+ 196:../../diagnostics/protocol/ddp.cpp ****             ++p;
+ 1505              		.loc 1 196 15 is_stmt 0 view .LVU471
+ 1506 0046 1CF8010F 		ldrb	r0, [ip, #1]!	@ zero_extendqisi2
+ 1507              	.LVL130:
+ 196:../../diagnostics/protocol/ddp.cpp ****             ++p;
+ 1508              		.loc 1 196 18 view .LVU472
+ 1509 004a 10F0DF0F 		tst	r0, #223
+ 1510 004e FAD1     		bne	.L164
+ 196:../../diagnostics/protocol/ddp.cpp ****             ++p;
+ 1511              		.loc 1 196 18 view .LVU473
+ 1512              	.LBE134:
+ 172:../../diagnostics/protocol/ddp.cpp ****         while(*p == ' ')
+ 1513              		.loc 1 172 11 is_stmt 1 view .LVU474
+ 1514 0050 0028     		cmp	r0, #0
+ 1515 0052 E5D1     		bne	.L157
+ 1516              	.LVL131:
+ 1517              	.L172:
+ 198:../../diagnostics/protocol/ddp.cpp ****     }
+ 199:../../diagnostics/protocol/ddp.cpp ****     return Lookup::Missing;
+ 200:../../diagnostics/protocol/ddp.cpp **** }
+ 1518              		.loc 1 200 1 is_stmt 0 view .LVU475
+ 1519 0054 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 1520              	.LVL132:
+ 1521              	.L160:
+ 1522              	.LBB141:
+ 181:../../diagnostics/protocol/ddp.cpp ****             ++t;
+ 1523              		.loc 1 181 9 is_stmt 1 view .LVU476
+ 1524              	.LBB135:
+ 181:../../diagnostics/protocol/ddp.cpp ****             ++t;
+ 1525              		.loc 1 181 23 is_stmt 0 discriminator 1 view .LVU477
+ 1526 0056 9EF80010 		ldrb	r1, [lr]	@ zero_extendqisi2
+ 1527              	.LVL133:
+ 1528              	.L158:
+ 181:../../diagnostics/protocol/ddp.cpp ****             ++t;
+ 1529              		.loc 1 181 20 discriminator 1 view .LVU478
+ 1530 005a 3D29     		cmp	r1, #61
+ 1531 005c F0D1     		bne	.L162
+ 1532              	.LVL134:
+ 1533              	.LBB136:
+ 184:../../diagnostics/protocol/ddp.cpp ****                 if(n + 1 >= cap) {
+ 1534              		.loc 1 184 24 is_stmt 1 view .LVU479
+ 184:../../diagnostics/protocol/ddp.cpp ****                 if(n + 1 >= cap) {
+ 1535              		.loc 1 184 22 is_stmt 0 view .LVU480
+ 1536 005e 9EF80110 		ldrb	r1, [lr, #1]	@ zero_extendqisi2
+ 184:../../diagnostics/protocol/ddp.cpp ****                 if(n + 1 >= cap) {
+ 1537              		.loc 1 184 24 view .LVU481
+ 1538 0062 11F0DF0F 		tst	r1, #223
+ 1539 0066 16D0     		beq	.L165
+ 185:../../diagnostics/protocol/ddp.cpp ****                     if(cap)
+ 1540              		.loc 1 185 17 is_stmt 1 view .LVU482
+ 1541 0068 012F     		cmp	r7, #1
+ 1542 006a 1BD9     		bls	.L192
+ 1543 006c 7B1C     		adds	r3, r7, #1
+ 1544 006e 701E     		subs	r0, r6, #1
+ 1545 0070 0EEB0302 		add	r2, lr, r3
+ 1546 0074 0EF10203 		add	r3, lr, #2
+ 1547 0078 01E0     		b	.L169
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 37
+
+
+ 1548              	.LVL135:
+ 1549              	.L170:
+ 185:../../diagnostics/protocol/ddp.cpp ****                     if(cap)
+ 1550              		.loc 1 185 17 is_stmt 0 view .LVU483
+ 1551 007a 9342     		cmp	r3, r2
+ 1552 007c 15D0     		beq	.L167
+ 1553              	.LVL136:
+ 1554              	.L169:
+ 185:../../diagnostics/protocol/ddp.cpp ****                     if(cap)
+ 1555              		.loc 1 185 17 is_stmt 1 view .LVU484
+ 190:../../diagnostics/protocol/ddp.cpp ****                 ++n;
+ 1556              		.loc 1 190 17 view .LVU485
+ 190:../../diagnostics/protocol/ddp.cpp ****                 ++n;
+ 1557              		.loc 1 190 24 is_stmt 0 view .LVU486
+ 1558 007e 00F8011F 		strb	r1, [r0, #1]!
+ 191:../../diagnostics/protocol/ddp.cpp ****             }
+ 1559              		.loc 1 191 17 is_stmt 1 view .LVU487
+ 1560              	.LVL137:
+ 184:../../diagnostics/protocol/ddp.cpp ****                 if(n + 1 >= cap) {
+ 1561              		.loc 1 184 24 view .LVU488
+ 1562 0082 1C46     		mov	r4, r3
+ 184:../../diagnostics/protocol/ddp.cpp ****                 if(n + 1 >= cap) {
+ 1563              		.loc 1 184 22 is_stmt 0 view .LVU489
+ 1564 0084 1978     		ldrb	r1, [r3]	@ zero_extendqisi2
+ 1565 0086 0133     		adds	r3, r3, #1
+ 184:../../diagnostics/protocol/ddp.cpp ****                 if(n + 1 >= cap) {
+ 1566              		.loc 1 184 24 view .LVU490
+ 1567 0088 11F0DF0F 		tst	r1, #223
+ 1568 008c F5D1     		bne	.L170
+ 193:../../diagnostics/protocol/ddp.cpp ****             return Lookup::Found;
+ 1569              		.loc 1 193 18 view .LVU491
+ 1570 008e A4EB0E03 		sub	r3, r4, lr
+ 1571 0092 013B     		subs	r3, r3, #1
+ 1572 0094 1E44     		add	r6, r6, r3
+ 1573              	.LVL138:
+ 1574              	.L165:
+ 193:../../diagnostics/protocol/ddp.cpp ****             return Lookup::Found;
+ 1575              		.loc 1 193 13 is_stmt 1 view .LVU492
+ 193:../../diagnostics/protocol/ddp.cpp ****             return Lookup::Found;
+ 1576              		.loc 1 193 20 is_stmt 0 view .LVU493
+ 1577 0096 0023     		movs	r3, #0
+ 194:../../diagnostics/protocol/ddp.cpp ****         }
+ 1578              		.loc 1 194 28 view .LVU494
+ 1579 0098 0120     		movs	r0, #1
+ 193:../../diagnostics/protocol/ddp.cpp ****             return Lookup::Found;
+ 1580              		.loc 1 193 20 view .LVU495
+ 1581 009a 3370     		strb	r3, [r6]
+ 194:../../diagnostics/protocol/ddp.cpp ****         }
+ 1582              		.loc 1 194 13 is_stmt 1 view .LVU496
+ 1583              	.LBE136:
+ 1584              	.LBE135:
+ 1585              	.LBE141:
+ 1586              		.loc 1 200 1 is_stmt 0 view .LVU497
+ 1587 009c F0BD     		pop	{r4, r5, r6, r7, pc}
+ 1588              	.LVL139:
+ 1589              	.L171:
+ 1590              	.LBB142:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 38
+
+
+ 177:../../diagnostics/protocol/ddp.cpp ****             ++k;
+ 1591              		.loc 1 177 18 view .LVU498
+ 1592 009e 0146     		mov	r1, r0
+ 176:../../diagnostics/protocol/ddp.cpp ****         while(*k && *t == *k) {
+ 1593              		.loc 1 176 21 view .LVU499
+ 1594 00a0 E646     		mov	lr, ip
+ 1595 00a2 DAE7     		b	.L158
+ 1596              	.LVL140:
+ 1597              	.L192:
+ 1598              	.LBB139:
+ 1599              	.LBB137:
+ 186:../../diagnostics/protocol/ddp.cpp ****                         out[0] = 0;
+ 1600              		.loc 1 186 21 is_stmt 1 view .LVU500
+ 1601 00a4 0FB9     		cbnz	r7, .L167
+ 1602              	.LVL141:
+ 1603              	.L168:
+ 188:../../diagnostics/protocol/ddp.cpp ****                 }
+ 1604              		.loc 1 188 36 is_stmt 0 view .LVU501
+ 1605 00a6 0220     		movs	r0, #2
+ 1606              	.LVL142:
+ 188:../../diagnostics/protocol/ddp.cpp ****                 }
+ 1607              		.loc 1 188 36 view .LVU502
+ 1608              	.LBE137:
+ 1609              	.LBE139:
+ 1610              	.LBE142:
+ 1611              		.loc 1 200 1 view .LVU503
+ 1612 00a8 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 1613              	.LVL143:
+ 1614              	.L167:
+ 1615              	.LBB143:
+ 1616              	.LBB140:
+ 1617              	.LBB138:
+ 187:../../diagnostics/protocol/ddp.cpp ****                     return Lookup::TooLong;
+ 1618              		.loc 1 187 25 is_stmt 1 view .LVU504
+ 187:../../diagnostics/protocol/ddp.cpp ****                     return Lookup::TooLong;
+ 1619              		.loc 1 187 32 is_stmt 0 view .LVU505
+ 1620 00aa 0023     		movs	r3, #0
+ 1621 00ac 3370     		strb	r3, [r6]
+ 1622 00ae FAE7     		b	.L168
+ 1623              	.LBE138:
+ 1624              	.LBE140:
+ 1625              	.LBE143:
+ 1626              		.cfi_endproc
+ 1627              	.LFE1314:
+ 1629              		.section	.text._ZN3ddp8ParseU32EPKcRm,"ax",%progbits
+ 1630              		.align	1
+ 1631              		.p2align 2,,3
+ 1632              		.global	_ZN3ddp8ParseU32EPKcRm
+ 1633              		.syntax unified
+ 1634              		.thumb
+ 1635              		.thumb_func
+ 1637              	_ZN3ddp8ParseU32EPKcRm:
+ 1638              	.LVL144:
+ 1639              	.LFB1315:
+ 201:../../diagnostics/protocol/ddp.cpp **** 
+ 202:../../diagnostics/protocol/ddp.cpp **** bool ParseU32(const char* s, uint32_t& out) {
+ 1640              		.loc 1 202 45 is_stmt 1 view -0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 39
+
+
+ 1641              		.cfi_startproc
+ 1642              		@ args = 0, pretend = 0, frame = 0
+ 1643              		@ frame_needed = 0, uses_anonymous_args = 0
+ 203:../../diagnostics/protocol/ddp.cpp ****     if(!*s)
+ 1644              		.loc 1 203 5 view .LVU507
+ 1645              		.loc 1 203 9 is_stmt 0 view .LVU508
+ 1646 0000 0278     		ldrb	r2, [r0]	@ zero_extendqisi2
+ 1647              		.loc 1 203 5 view .LVU509
+ 1648 0002 EAB1     		cbz	r2, .L196
+ 202:../../diagnostics/protocol/ddp.cpp ****     if(!*s)
+ 1649              		.loc 1 202 45 view .LVU510
+ 1650 0004 70B5     		push	{r4, r5, r6, lr}
+ 1651              		.cfi_def_cfa_offset 16
+ 1652              		.cfi_offset 4, -16
+ 1653              		.cfi_offset 5, -12
+ 1654              		.cfi_offset 6, -8
+ 1655              		.cfi_offset 14, -4
+ 204:../../diagnostics/protocol/ddp.cpp ****         return false;
+ 205:../../diagnostics/protocol/ddp.cpp ****     uint64_t v = 0;
+ 1656              		.loc 1 205 14 view .LVU511
+ 1657 0006 0025     		movs	r5, #0
+ 1658 0008 2C46     		mov	r4, r5
+ 1659 000a 0BE0     		b	.L195
+ 1660              	.LVL145:
+ 1661              	.L205:
+ 206:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 207:../../diagnostics/protocol/ddp.cpp ****         if(*s < '0' || *s > '9')
+ 208:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 209:../../diagnostics/protocol/ddp.cpp ****         v = v * 10 + static_cast<uint64_t>(*s - '0');
+ 1662              		.loc 1 209 15 view .LVU512
+ 1663 000c 5B19     		adds	r3, r3, r5
+ 1664 000e 44EB0C04 		adc	r4, r4, ip
+ 1665              	.LVL146:
+ 1666              		.loc 1 209 15 view .LVU513
+ 1667 0012 DB18     		adds	r3, r3, r3
+ 1668 0014 6441     		adcs	r4, r4, r4
+ 1669              		.loc 1 209 11 view .LVU514
+ 1670 0016 D518     		adds	r5, r2, r3
+ 1671              		.loc 1 209 11 view .LVU515
+ 1672 0018 44EBE274 		adc	r4, r4, r2, asr #31
+ 1673              	.LVL147:
+ 210:../../diagnostics/protocol/ddp.cpp ****         if(v > 0xffffffffull)
+ 1674              		.loc 1 210 9 is_stmt 1 view .LVU516
+ 206:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 1675              		.loc 1 206 5 view .LVU517
+ 206:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 1676              		.loc 1 206 11 discriminator 1 view .LVU518
+ 1677              		.loc 1 210 9 is_stmt 0 view .LVU519
+ 1678 001c ACB9     		cbnz	r4, .L198
+ 206:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 1679              		.loc 1 206 11 discriminator 1 view .LVU520
+ 1680 001e 10F8012F 		ldrb	r2, [r0, #1]!	@ zero_extendqisi2
+ 1681              	.LVL148:
+ 206:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 1682              		.loc 1 206 11 discriminator 1 view .LVU521
+ 1683 0022 7AB1     		cbz	r2, .L204
+ 1684              	.LVL149:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 40
+
+
+ 1685              	.L195:
+ 207:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 1686              		.loc 1 207 9 is_stmt 1 view .LVU522
+ 209:../../diagnostics/protocol/ddp.cpp ****         if(v > 0xffffffffull)
+ 1687              		.loc 1 209 9 view .LVU523
+ 207:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 1688              		.loc 1 207 21 is_stmt 0 view .LVU524
+ 1689 0024 303A     		subs	r2, r2, #48
+ 209:../../diagnostics/protocol/ddp.cpp ****         if(v > 0xffffffffull)
+ 1690              		.loc 1 209 15 view .LVU525
+ 1691 0026 4FEA840C 		lsl	ip, r4, #2
+ 1692 002a AB00     		lsls	r3, r5, #2
+ 1693              		.loc 1 210 9 view .LVU526
+ 1694 002c 0026     		movs	r6, #0
+ 207:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 1695              		.loc 1 207 9 view .LVU527
+ 1696 002e 5FFA82FE 		uxtb	lr, r2
+ 209:../../diagnostics/protocol/ddp.cpp ****         if(v > 0xffffffffull)
+ 1697              		.loc 1 209 15 view .LVU528
+ 1698 0032 4CEA957C 		orr	ip, ip, r5, lsr #30
+ 207:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 1699              		.loc 1 207 9 view .LVU529
+ 1700 0036 BEF1090F 		cmp	lr, #9
+ 1701 003a E7D9     		bls	.L205
+ 204:../../diagnostics/protocol/ddp.cpp ****     uint64_t v = 0;
+ 1702              		.loc 1 204 16 view .LVU530
+ 1703 003c 0020     		movs	r0, #0
+ 1704              	.LVL150:
+ 211:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 212:../../diagnostics/protocol/ddp.cpp ****     }
+ 213:../../diagnostics/protocol/ddp.cpp ****     out = static_cast<uint32_t>(v);
+ 214:../../diagnostics/protocol/ddp.cpp ****     return true;
+ 215:../../diagnostics/protocol/ddp.cpp **** }
+ 1705              		.loc 1 215 1 view .LVU531
+ 1706 003e 70BD     		pop	{r4, r5, r6, pc}
+ 1707              	.LVL151:
+ 1708              	.L196:
+ 1709              		.cfi_def_cfa_offset 0
+ 1710              		.cfi_restore 4
+ 1711              		.cfi_restore 5
+ 1712              		.cfi_restore 6
+ 1713              		.cfi_restore 14
+ 204:../../diagnostics/protocol/ddp.cpp ****     uint64_t v = 0;
+ 1714              		.loc 1 204 16 view .LVU532
+ 1715 0040 1046     		mov	r0, r2
+ 1716              	.LVL152:
+ 1717              		.loc 1 215 1 view .LVU533
+ 1718 0042 7047     		bx	lr
+ 1719              	.LVL153:
+ 1720              	.L204:
+ 1721              		.cfi_def_cfa_offset 16
+ 1722              		.cfi_offset 4, -16
+ 1723              		.cfi_offset 5, -12
+ 1724              		.cfi_offset 6, -8
+ 1725              		.cfi_offset 14, -4
+ 213:../../diagnostics/protocol/ddp.cpp ****     return true;
+ 1726              		.loc 1 213 5 is_stmt 1 view .LVU534
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 41
+
+
+ 214:../../diagnostics/protocol/ddp.cpp **** }
+ 1727              		.loc 1 214 12 is_stmt 0 view .LVU535
+ 1728 0044 0120     		movs	r0, #1
+ 1729              	.LVL154:
+ 213:../../diagnostics/protocol/ddp.cpp ****     return true;
+ 1730              		.loc 1 213 9 view .LVU536
+ 1731 0046 0D60     		str	r5, [r1]
+ 214:../../diagnostics/protocol/ddp.cpp **** }
+ 1732              		.loc 1 214 5 is_stmt 1 view .LVU537
+ 1733              		.loc 1 215 1 is_stmt 0 view .LVU538
+ 1734 0048 70BD     		pop	{r4, r5, r6, pc}
+ 1735              	.LVL155:
+ 1736              	.L198:
+ 204:../../diagnostics/protocol/ddp.cpp ****     uint64_t v = 0;
+ 1737              		.loc 1 204 16 view .LVU539
+ 1738 004a 3046     		mov	r0, r6
+ 1739              	.LVL156:
+ 1740              		.loc 1 215 1 view .LVU540
+ 1741 004c 70BD     		pop	{r4, r5, r6, pc}
+ 1742              		.loc 1 215 1 view .LVU541
+ 1743              		.cfi_endproc
+ 1744              	.LFE1315:
+ 1746 004e 00BF     		.section	.text._ZN3ddp8ParseHexEPKcRm,"ax",%progbits
+ 1747              		.align	1
+ 1748              		.p2align 2,,3
+ 1749              		.global	_ZN3ddp8ParseHexEPKcRm
+ 1750              		.syntax unified
+ 1751              		.thumb
+ 1752              		.thumb_func
+ 1754              	_ZN3ddp8ParseHexEPKcRm:
+ 1755              	.LVL157:
+ 1756              	.LFB1316:
+ 216:../../diagnostics/protocol/ddp.cpp **** 
+ 217:../../diagnostics/protocol/ddp.cpp **** bool ParseHex(const char* s, uint32_t& out) {
+ 1757              		.loc 1 217 45 is_stmt 1 view -0
+ 1758              		.cfi_startproc
+ 1759              		@ args = 0, pretend = 0, frame = 0
+ 1760              		@ frame_needed = 0, uses_anonymous_args = 0
+ 218:../../diagnostics/protocol/ddp.cpp ****     if(!*s)
+ 1761              		.loc 1 218 5 view .LVU543
+ 1762              		.loc 1 218 9 is_stmt 0 view .LVU544
+ 1763 0000 0378     		ldrb	r3, [r0]	@ zero_extendqisi2
+ 1764              		.loc 1 218 5 view .LVU545
+ 1765 0002 23B3     		cbz	r3, .L212
+ 217:../../diagnostics/protocol/ddp.cpp ****     if(!*s)
+ 1766              		.loc 1 217 45 view .LVU546
+ 1767 0004 F0B5     		push	{r4, r5, r6, r7, lr}
+ 1768              		.cfi_def_cfa_offset 20
+ 1769              		.cfi_offset 4, -20
+ 1770              		.cfi_offset 5, -16
+ 1771              		.cfi_offset 6, -12
+ 1772              		.cfi_offset 7, -8
+ 1773              		.cfi_offset 14, -4
+ 219:../../diagnostics/protocol/ddp.cpp ****         return false;
+ 220:../../diagnostics/protocol/ddp.cpp ****     uint64_t v = 0;
+ 1774              		.loc 1 220 14 view .LVU547
+ 1775 0006 0024     		movs	r4, #0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 42
+
+
+ 1776 0008 2246     		mov	r2, r4
+ 1777 000a 0FE0     		b	.L211
+ 1778              	.LVL158:
+ 1779              	.L208:
+ 1780              	.LBB150:
+ 1781              	.LBB151:
+ 1782              	.LBB152:
+ 1783              	.LBB153:
+  10:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
+ 1784              		.loc 1 10 5 view .LVU548
+ 1785 000c 052E     		cmp	r6, #5
+ 1786 000e 1BD9     		bls	.L220
+ 1787              	.LBB154:
+ 1788              	.LBB155:
+  12:../../diagnostics/protocol/ddp.cpp ****         return c - 'a' + 10;
+ 1789              		.loc 1 12 5 view .LVU549
+ 1790 0010 052F     		cmp	r7, #5
+ 1791 0012 23D8     		bhi	.L213
+ 1792              	.LVL159:
+ 1793              	.L209:
+  12:../../diagnostics/protocol/ddp.cpp ****         return c - 'a' + 10;
+ 1794              		.loc 1 12 5 view .LVU550
+ 1795              	.LBE155:
+ 1796              	.LBE154:
+ 1797              	.LBE153:
+ 1798              	.LBE152:
+ 221:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 222:../../diagnostics/protocol/ddp.cpp ****         const int d = HexValue(*s);
+ 223:../../diagnostics/protocol/ddp.cpp ****         if(d < 0)
+ 224:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 225:../../diagnostics/protocol/ddp.cpp ****         v = (v << 4) | static_cast<uint64_t>(d);
+ 1799              		.loc 1 225 9 is_stmt 1 view .LVU551
+ 1800              	.LBE151:
+ 221:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 1801              		.loc 1 221 5 view .LVU552
+ 1802              	.LBB166:
+ 1803              		.loc 1 225 16 is_stmt 0 view .LVU553
+ 1804 0014 1201     		lsls	r2, r2, #4
+ 1805              	.LVL160:
+ 226:../../diagnostics/protocol/ddp.cpp ****         if(v > 0xffffffffull)
+ 1806              		.loc 1 226 9 view .LVU554
+ 1807 0016 0023     		movs	r3, #0
+ 225:../../diagnostics/protocol/ddp.cpp ****         if(v > 0xffffffffull)
+ 1808              		.loc 1 225 16 view .LVU555
+ 1809 0018 42EA1472 		orr	r2, r2, r4, lsr #28
+ 225:../../diagnostics/protocol/ddp.cpp ****         if(v > 0xffffffffull)
+ 1810              		.loc 1 225 11 view .LVU556
+ 1811 001c 4CEA0414 		orr	r4, ip, r4, lsl #4
+ 1812              	.LVL161:
+ 1813              		.loc 1 226 9 is_stmt 1 view .LVU557
+ 1814 0020 52EAEC72 		orrs	r2, r2, ip, asr #31
+ 1815              	.LVL162:
+ 1816              		.loc 1 226 9 is_stmt 0 view .LVU558
+ 1817              	.LBE166:
+ 221:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 1818              		.loc 1 221 11 is_stmt 1 discriminator 1 view .LVU559
+ 1819              	.LBB167:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 43
+
+
+ 1820              		.loc 1 226 9 is_stmt 0 view .LVU560
+ 1821 0024 18D1     		bne	.L214
+ 1822              		.loc 1 226 9 view .LVU561
+ 1823              	.LBE167:
+ 221:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 1824              		.loc 1 221 11 discriminator 1 view .LVU562
+ 1825 0026 10F8013F 		ldrb	r3, [r0, #1]!	@ zero_extendqisi2
+ 1826              	.LVL163:
+ 221:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
+ 1827              		.loc 1 221 11 discriminator 1 view .LVU563
+ 1828 002a 93B1     		cbz	r3, .L221
+ 1829              	.LVL164:
+ 1830              	.L211:
+ 1831              	.LBB168:
+ 222:../../diagnostics/protocol/ddp.cpp ****         if(d < 0)
+ 1832              		.loc 1 222 9 is_stmt 1 view .LVU564
+ 1833              	.LBB163:
+ 1834              	.LBI152:
+   7:../../diagnostics/protocol/ddp.cpp ****     if(c >= '0' && c <= '9')
+ 1835              		.loc 1 7 5 view .LVU565
+ 1836              	.LBB160:
+   8:../../diagnostics/protocol/ddp.cpp ****         return c - '0';
+ 1837              		.loc 1 8 5 view .LVU566
+  10:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
+ 1838              		.loc 1 10 5 view .LVU567
+ 1839              	.LBB158:
+ 1840              	.LBI154:
+   7:../../diagnostics/protocol/ddp.cpp ****     if(c >= '0' && c <= '9')
+ 1841              		.loc 1 7 5 view .LVU568
+ 1842              	.LBB156:
+  12:../../diagnostics/protocol/ddp.cpp ****         return c - 'a' + 10;
+ 1843              		.loc 1 12 5 view .LVU569
+  13:../../diagnostics/protocol/ddp.cpp ****     return -1;
+ 1844              		.loc 1 13 9 view .LVU570
+ 1845              	.LBE156:
+ 1846              	.LBE158:
+   8:../../diagnostics/protocol/ddp.cpp ****         return c - '0';
+ 1847              		.loc 1 8 17 is_stmt 0 view .LVU571
+ 1848 002c A3F1300E 		sub	lr, r3, #48
+  10:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
+ 1849              		.loc 1 10 5 view .LVU572
+ 1850 0030 A3F14106 		sub	r6, r3, #65
+ 1851              	.LBB159:
+ 1852              	.LBB157:
+  12:../../diagnostics/protocol/ddp.cpp ****         return c - 'a' + 10;
+ 1853              		.loc 1 12 5 view .LVU573
+ 1854 0034 A3F16107 		sub	r7, r3, #97
+  13:../../diagnostics/protocol/ddp.cpp ****     return -1;
+ 1855              		.loc 1 13 26 view .LVU574
+ 1856 0038 A3F1570C 		sub	ip, r3, #87
+ 1857              	.LVL165:
+  13:../../diagnostics/protocol/ddp.cpp ****     return -1;
+ 1858              		.loc 1 13 26 view .LVU575
+ 1859              	.LBE157:
+ 1860              	.LBE159:
+ 1861              	.LBE160:
+ 1862              	.LBE163:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 44
+
+
+ 223:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 1863              		.loc 1 223 9 is_stmt 1 view .LVU576
+ 1864              	.LBB164:
+ 1865              	.LBB161:
+   8:../../diagnostics/protocol/ddp.cpp ****         return c - '0';
+ 1866              		.loc 1 8 5 is_stmt 0 view .LVU577
+ 1867 003c 5FFA8EF5 		uxtb	r5, lr
+ 1868 0040 092D     		cmp	r5, #9
+ 1869 0042 E3D8     		bhi	.L208
+   9:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'A' && c <= 'F')
+ 1870              		.loc 1 9 9 is_stmt 1 view .LVU578
+   9:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'A' && c <= 'F')
+ 1871              		.loc 1 9 20 is_stmt 0 view .LVU579
+ 1872 0044 F446     		mov	ip, lr
+ 1873              	.LVL166:
+   9:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'A' && c <= 'F')
+ 1874              		.loc 1 9 20 view .LVU580
+ 1875              	.LBE161:
+ 1876              	.LBE164:
+ 223:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 1877              		.loc 1 223 9 is_stmt 1 view .LVU581
+ 1878 0046 E5E7     		b	.L209
+ 1879              	.L220:
+ 1880              	.LBB165:
+ 1881              	.LBB162:
+  11:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'a' && c <= 'f')
+ 1882              		.loc 1 11 9 view .LVU582
+  11:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'a' && c <= 'f')
+ 1883              		.loc 1 11 26 is_stmt 0 view .LVU583
+ 1884 0048 A3F1370C 		sub	ip, r3, #55
+ 1885              	.LVL167:
+  11:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'a' && c <= 'f')
+ 1886              		.loc 1 11 26 view .LVU584
+ 1887              	.LBE162:
+ 1888              	.LBE165:
+ 223:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 1889              		.loc 1 223 9 is_stmt 1 view .LVU585
+ 1890 004c E2E7     		b	.L209
+ 1891              	.LVL168:
+ 1892              	.L212:
+ 1893              		.cfi_def_cfa_offset 0
+ 1894              		.cfi_restore 4
+ 1895              		.cfi_restore 5
+ 1896              		.cfi_restore 6
+ 1897              		.cfi_restore 7
+ 1898              		.cfi_restore 14
+ 223:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 1899              		.loc 1 223 9 is_stmt 0 view .LVU586
+ 1900              	.LBE168:
+ 1901              	.LBE150:
+ 219:../../diagnostics/protocol/ddp.cpp ****     uint64_t v = 0;
+ 1902              		.loc 1 219 16 view .LVU587
+ 1903 004e 1846     		mov	r0, r3
+ 1904              	.LVL169:
+ 227:../../diagnostics/protocol/ddp.cpp ****             return false;
+ 228:../../diagnostics/protocol/ddp.cpp ****     }
+ 229:../../diagnostics/protocol/ddp.cpp ****     out = static_cast<uint32_t>(v);
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 45
+
+
+ 230:../../diagnostics/protocol/ddp.cpp ****     return true;
+ 231:../../diagnostics/protocol/ddp.cpp **** }
+ 1905              		.loc 1 231 1 view .LVU588
+ 1906 0050 7047     		bx	lr
+ 1907              	.LVL170:
+ 1908              	.L221:
+ 1909              		.cfi_def_cfa_offset 20
+ 1910              		.cfi_offset 4, -20
+ 1911              		.cfi_offset 5, -16
+ 1912              		.cfi_offset 6, -12
+ 1913              		.cfi_offset 7, -8
+ 1914              		.cfi_offset 14, -4
+ 229:../../diagnostics/protocol/ddp.cpp ****     return true;
+ 1915              		.loc 1 229 5 is_stmt 1 view .LVU589
+ 230:../../diagnostics/protocol/ddp.cpp **** }
+ 1916              		.loc 1 230 12 is_stmt 0 view .LVU590
+ 1917 0052 0120     		movs	r0, #1
+ 1918              	.LVL171:
+ 229:../../diagnostics/protocol/ddp.cpp ****     return true;
+ 1919              		.loc 1 229 9 view .LVU591
+ 1920 0054 0C60     		str	r4, [r1]
+ 230:../../diagnostics/protocol/ddp.cpp **** }
+ 1921              		.loc 1 230 5 is_stmt 1 view .LVU592
+ 1922              		.loc 1 231 1 is_stmt 0 view .LVU593
+ 1923 0056 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 1924              	.LVL172:
+ 1925              	.L214:
+ 219:../../diagnostics/protocol/ddp.cpp ****     uint64_t v = 0;
+ 1926              		.loc 1 219 16 view .LVU594
+ 1927 0058 1846     		mov	r0, r3
+ 1928              	.LVL173:
+ 1929              		.loc 1 231 1 view .LVU595
+ 1930 005a F0BD     		pop	{r4, r5, r6, r7, pc}
+ 1931              	.LVL174:
+ 1932              	.L213:
+ 219:../../diagnostics/protocol/ddp.cpp ****     uint64_t v = 0;
+ 1933              		.loc 1 219 16 view .LVU596
+ 1934 005c 0020     		movs	r0, #0
+ 1935              	.LVL175:
+ 1936              		.loc 1 231 1 view .LVU597
+ 1937 005e F0BD     		pop	{r4, r5, r6, r7, pc}
+ 1938              		.loc 1 231 1 view .LVU598
+ 1939              		.cfi_endproc
+ 1940              	.LFE1316:
+ 1942              		.section	.rodata._ZN3ddp12_GLOBAL__N_1L10kHexDigitsE,"a"
+ 1943              		.align	2
+ 1946              	_ZN3ddp12_GLOBAL__N_1L10kHexDigitsE:
+ 1947 0000 30313233 		.ascii	"0123456789ABCDEF\000"
+ 1947      34353637 
+ 1947      38394142 
+ 1947      43444546 
+ 1947      00
+ 1948              		.text
+ 1949              	.Letext0:
+ 1950              		.file 3 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1951              		.file 4 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1952              		.file 5 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 46
+
+
+ 1953              		.file 6 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1954              		.file 7 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1955              		.file 8 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1956              		.file 9 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1957              		.file 10 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1958              		.file 11 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1959              		.file 12 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1960              		.file 13 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1961              		.file 14 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1962              		.file 15 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1963              		.file 16 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc54SIws.s 			page 47
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ddp.cpp
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:20     .text._ZN3ddp5Crc16EPKcj:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:27     .text._ZN3ddp5Crc16EPKcj:00000000 _ZN3ddp5Crc16EPKcj
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:112    .text._ZN3ddp10BuildFrameEPKcjPcj:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:119    .text._ZN3ddp10BuildFrameEPKcjPcj:00000000 _ZN3ddp10BuildFrameEPKcjPcj
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:367    .text._ZN3ddp10BuildFrameEPKcjPcj:000000b8 $d
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1946   .rodata._ZN3ddp12_GLOBAL__N_1L10kHexDigitsE:00000000 _ZN3ddp12_GLOBAL__N_1L10kHexDigitsE
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:372    .text._ZN3ddp11FrameParser6FinishEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:379    .text._ZN3ddp11FrameParser6FinishEv:00000000 _ZN3ddp11FrameParser6FinishEv
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:655    .text._ZN3ddp11FrameParser4FeedEc:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:662    .text._ZN3ddp11FrameParser4FeedEc:00000000 _ZN3ddp11FrameParser4FeedEc
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:855    .text._ZN3ddp6Writer4CharEc:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:862    .text._ZN3ddp6Writer4CharEc:00000000 _ZN3ddp6Writer4CharEc
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:921    .text._ZN3ddp6Writer3StrEPKc:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:928    .text._ZN3ddp6Writer3StrEPKc:00000000 _ZN3ddp6Writer3StrEPKc
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1025   .text._ZN3ddp6Writer3U32Em:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1032   .text._ZN3ddp6Writer3U32Em:00000000 _ZN3ddp6Writer3U32Em
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1166   .text._ZN3ddp6Writer3U32Em:0000006c $d
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1171   .text._ZN3ddp6Writer3HexEmi:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1178   .text._ZN3ddp6Writer3HexEmi:00000000 _ZN3ddp6Writer3HexEmi
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1317   .text._ZN3ddp6Writer3HexEmi:00000044 $d
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1322   .text._ZN3ddp11MessageTypeEPKcPcj:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1329   .text._ZN3ddp11MessageTypeEPKcPcj:00000000 _ZN3ddp11MessageTypeEPKcPcj
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1405   .text._ZN3ddp11LookupFieldEPKcS1_Pcj:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1412   .text._ZN3ddp11LookupFieldEPKcS1_Pcj:00000000 _ZN3ddp11LookupFieldEPKcS1_Pcj
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1630   .text._ZN3ddp8ParseU32EPKcRm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1637   .text._ZN3ddp8ParseU32EPKcRm:00000000 _ZN3ddp8ParseU32EPKcRm
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1747   .text._ZN3ddp8ParseHexEPKcRm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1754   .text._ZN3ddp8ParseHexEPKcRm:00000000 _ZN3ddp8ParseHexEPKcRm
+C:\Users\ssche\AppData\Local\Temp\cc54SIws.s:1943   .rodata._ZN3ddp12_GLOBAL__N_1L10kHexDigitsE:00000000 $d
+
+NO UNDEFINED SYMBOLS

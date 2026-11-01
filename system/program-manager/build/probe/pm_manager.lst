@@ -1,0 +1,4378 @@
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.arch armv7e-m
+   3              		.fpu fpv5-d16
+   4              		.eabi_attribute 28, 1
+   5              		.eabi_attribute 20, 1
+   6              		.eabi_attribute 21, 1
+   7              		.eabi_attribute 23, 3
+   8              		.eabi_attribute 24, 1
+   9              		.eabi_attribute 25, 1
+  10              		.eabi_attribute 26, 1
+  11              		.eabi_attribute 30, 2
+  12              		.eabi_attribute 34, 1
+  13              		.eabi_attribute 18, 4
+  14              		.file	"pm_manager.cpp"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.file 1 "src/pm_manager.cpp"
+  19              		.section	.text._ZN2pm7Manager11ScanCatalogEm.part.0,"ax",%progbits
+  20              		.align	1
+  21              		.p2align 2,,3
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	_ZN2pm7Manager11ScanCatalogEm.part.0:
+  27              	.LVL0:
+  28              	.LFB1493:
+   1:src/pm_manager.cpp **** #include "pm_manager.h"
+   2:src/pm_manager.cpp **** #include <cstring>
+   3:src/pm_manager.cpp **** 
+   4:src/pm_manager.cpp **** namespace pm {
+   5:src/pm_manager.cpp **** namespace {
+   6:src/pm_manager.cpp **** 
+   7:src/pm_manager.cpp **** int PopCount(uint16_t v) {
+   8:src/pm_manager.cpp ****     int n = 0;
+   9:src/pm_manager.cpp ****     while(v) {
+  10:src/pm_manager.cpp ****         n += v & 1u;
+  11:src/pm_manager.cpp ****         v >>= 1;
+  12:src/pm_manager.cpp ****     }
+  13:src/pm_manager.cpp ****     return n;
+  14:src/pm_manager.cpp **** }
+  15:src/pm_manager.cpp **** 
+  16:src/pm_manager.cpp **** uint8_t SingleKeySlot(uint16_t mask) {  // 1..16 for exactly one bit, else 0
+  17:src/pm_manager.cpp ****     if(mask == 0 || (mask & (mask - 1)) != 0)
+  18:src/pm_manager.cpp ****         return 0;
+  19:src/pm_manager.cpp ****     uint8_t slot = 1;
+  20:src/pm_manager.cpp ****     while(!(mask & 1u)) {
+  21:src/pm_manager.cpp ****         mask >>= 1;
+  22:src/pm_manager.cpp ****         ++slot;
+  23:src/pm_manager.cpp ****     }
+  24:src/pm_manager.cpp ****     return slot;
+  25:src/pm_manager.cpp **** }
+  26:src/pm_manager.cpp **** 
+  27:src/pm_manager.cpp **** } // namespace
+  28:src/pm_manager.cpp **** 
+  29:src/pm_manager.cpp **** const char* ModeName(Mode mode) {
+  30:src/pm_manager.cpp ****     switch(mode) {
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 2
+
+
+  31:src/pm_manager.cpp ****         case Mode::Select: return "SELECT";
+  32:src/pm_manager.cpp ****         case Mode::Diagnostics: return "DIAG";
+  33:src/pm_manager.cpp ****         case Mode::Loading: return "LOADING";
+  34:src/pm_manager.cpp ****         case Mode::Service: return "SERVICE";
+  35:src/pm_manager.cpp ****     }
+  36:src/pm_manager.cpp ****     return "?";
+  37:src/pm_manager.cpp **** }
+  38:src/pm_manager.cpp **** 
+  39:src/pm_manager.cpp **** const char* CatalogStateName(CatalogState state) {
+  40:src/pm_manager.cpp ****     switch(state) {
+  41:src/pm_manager.cpp ****         case CatalogState::NoCard: return "NOCARD";
+  42:src/pm_manager.cpp ****         case CatalogState::Scanning: return "SCANNING";
+  43:src/pm_manager.cpp ****         case CatalogState::Ok: return "OK";
+  44:src/pm_manager.cpp ****         case CatalogState::Missing: return "MISSING";
+  45:src/pm_manager.cpp ****         case CatalogState::Invalid: return "INVALID";
+  46:src/pm_manager.cpp ****         case CatalogState::MountFailed: return "MOUNT";
+  47:src/pm_manager.cpp ****         case CatalogState::ReadError: return "READ";
+  48:src/pm_manager.cpp ****         case CatalogState::Unsupported: return "UNSUPPORTED";
+  49:src/pm_manager.cpp ****     }
+  50:src/pm_manager.cpp ****     return "?";
+  51:src/pm_manager.cpp **** }
+  52:src/pm_manager.cpp **** 
+  53:src/pm_manager.cpp **** const char* StartResultName(StartResult result) {
+  54:src/pm_manager.cpp ****     switch(result) {
+  55:src/pm_manager.cpp ****         case StartResult::Accepted: return "ACCEPTED";
+  56:src/pm_manager.cpp ****         case StartResult::Duplicate: return "DUPLICATE";
+  57:src/pm_manager.cpp ****         case StartResult::WrongMode: return "MODE";
+  58:src/pm_manager.cpp ****         case StartResult::Busy: return "BUSY";
+  59:src/pm_manager.cpp ****         case StartResult::NoCatalog: return "NOCATALOG";
+  60:src/pm_manager.cpp ****         case StartResult::Generation: return "GENERATION";
+  61:src/pm_manager.cpp ****         case StartResult::NoEntry: return "NOENTRY";
+  62:src/pm_manager.cpp ****         case StartResult::Hash: return "HASH";
+  63:src/pm_manager.cpp ****         case StartResult::Unsupported: return "UNSUPPORTED";
+  64:src/pm_manager.cpp ****     }
+  65:src/pm_manager.cpp ****     return "?";
+  66:src/pm_manager.cpp **** }
+  67:src/pm_manager.cpp **** 
+  68:src/pm_manager.cpp **** Manager::Manager(Storage& storage, LoadTarget& target, BootCommit& commit, bool sd_supported)
+  69:src/pm_manager.cpp ****     : storage_(storage), loader_(storage, target, commit), sd_supported_(sd_supported) {
+  70:src/pm_manager.cpp ****     catalog_state_ = sd_supported ? CatalogState::NoCard : CatalogState::Unsupported;
+  71:src/pm_manager.cpp ****     catalog_text_[0] = 0;
+  72:src/pm_manager.cpp **** }
+  73:src/pm_manager.cpp **** 
+  74:src/pm_manager.cpp **** void Manager::ClearCatalog(CatalogState state) {
+  75:src/pm_manager.cpp ****     catalog_ = Catalog();
+  76:src/pm_manager.cpp ****     catalog_state_ = state;
+  77:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+  78:src/pm_manager.cpp ****     catalog_detail_ = 0;
+  79:src/pm_manager.cpp ****     root_bin_ = false;
+  80:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+  81:src/pm_manager.cpp **** }
+  82:src/pm_manager.cpp **** 
+  83:src/pm_manager.cpp **** void Manager::ScanCatalog(uint32_t now_ms) {
+  29              		.loc 1 83 6 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 4904
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 3
+
+
+  84:src/pm_manager.cpp ****     (void)now_ms;
+  85:src/pm_manager.cpp ****     scan_due_ = false;
+  86:src/pm_manager.cpp ****     rescan_pending_ = false;
+  87:src/pm_manager.cpp ****     if(!sd_supported_) {
+  88:src/pm_manager.cpp ****         ClearCatalog(CatalogState::Unsupported);
+  89:src/pm_manager.cpp ****         return;
+  90:src/pm_manager.cpp ****     }
+  91:src/pm_manager.cpp ****     storage_.Unmount();
+  92:src/pm_manager.cpp ****     if(!card_present_) {
+  93:src/pm_manager.cpp ****         ClearCatalog(CatalogState::NoCard);
+  94:src/pm_manager.cpp ****         return;
+  95:src/pm_manager.cpp ****     }
+  96:src/pm_manager.cpp ****     uint32_t len = 0;
+  33              		.loc 1 96 5 view .LVU1
+  83:src/pm_manager.cpp ****     (void)now_ms;
+  34              		.loc 1 83 6 is_stmt 0 view .LVU2
+  35 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+  36              		.cfi_def_cfa_offset 20
+  37              		.cfi_offset 4, -20
+  38              		.cfi_offset 5, -16
+  39              		.cfi_offset 6, -12
+  40              		.cfi_offset 7, -8
+  41              		.cfi_offset 14, -4
+  42 0002 ADF5995D 		sub	sp, sp, #4896
+  43              		.cfi_def_cfa_offset 4916
+  44              		.loc 1 96 14 view .LVU3
+  45 0006 0023     		movs	r3, #0
+  97:src/pm_manager.cpp ****     int detail = 0;
+  98:src/pm_manager.cpp ****     const Storage::CatalogResult r = storage_.ReadCatalog(catalog_text_, kCatalogMaxBytes, len, det
+  46              		.loc 1 98 59 view .LVU4
+  47 0008 41F27D66 		movw	r6, #5757
+  83:src/pm_manager.cpp ****     (void)now_ms;
+  48              		.loc 1 83 6 view .LVU5
+  49 000c 0446     		mov	r4, r0
+  50 000e 85B0     		sub	sp, sp, #20
+  51              		.cfi_def_cfa_offset 4936
+  52              		.loc 1 98 59 view .LVU6
+  53 0010 0644     		add	r6, r6, r0
+  54              		.loc 1 98 38 view .LVU7
+  55 0012 0068     		ldr	r0, [r0]
+  56              	.LVL1:
+  96:src/pm_manager.cpp ****     int detail = 0;
+  57              		.loc 1 96 14 view .LVU8
+  58 0014 0293     		str	r3, [sp, #8]
+  97:src/pm_manager.cpp ****     int detail = 0;
+  59              		.loc 1 97 5 is_stmt 1 view .LVU9
+  96:src/pm_manager.cpp ****     int detail = 0;
+  60              		.loc 1 96 14 is_stmt 0 view .LVU10
+  61 0016 02AA     		add	r2, sp, #8
+  97:src/pm_manager.cpp ****     int detail = 0;
+  62              		.loc 1 97 9 view .LVU11
+  63 0018 03AA     		add	r2, sp, #12
+  64              		.loc 1 98 58 view .LVU12
+  65 001a 3146     		mov	r1, r6
+  97:src/pm_manager.cpp ****     int detail = 0;
+  66              		.loc 1 97 9 view .LVU13
+  67 001c 1360     		str	r3, [r2]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 4
+
+
+  68              		.loc 1 98 5 is_stmt 1 view .LVU14
+  69              		.loc 1 98 58 is_stmt 0 view .LVU15
+  70 001e 0368     		ldr	r3, [r0]
+  71 0020 0092     		str	r2, [sp]
+  72 0022 4FF48042 		mov	r2, #16384
+  73 0026 1D69     		ldr	r5, [r3, #16]
+  74 0028 02AB     		add	r3, sp, #8
+  75 002a A847     		blx	r5
+  76              	.LVL2:
+  77 002c 0546     		mov	r5, r0
+  78              	.LVL3:
+  99:src/pm_manager.cpp ****     Catalog parsed;
+  79              		.loc 1 99 5 is_stmt 1 view .LVU16
+  80              		.loc 1 99 13 is_stmt 0 view .LVU17
+  81 002e 4FF49952 		mov	r2, #4896
+  82 0032 4E49     		ldr	r1, .L21
+  83 0034 04A8     		add	r0, sp, #16
+  84              	.LVL4:
+  85              		.loc 1 99 13 view .LVU18
+  86 0036 FFF7FEFF 		bl	memcpy
+  87              	.LVL5:
+ 100:src/pm_manager.cpp ****     CatalogError err = CatalogError::None;
+  88              		.loc 1 100 5 is_stmt 1 view .LVU19
+ 101:src/pm_manager.cpp ****     CatalogState state = CatalogState::Ok;
+  89              		.loc 1 101 5 view .LVU20
+ 102:src/pm_manager.cpp ****     switch(r) {
+  90              		.loc 1 102 5 view .LVU21
+  91 003a 052D     		cmp	r5, #5
+  92 003c 00F28680 		bhi	.L2
+  93 0040 DFE805F0 		tbb	[pc, r5]
+  94              	.L4:
+  95 0044 61       		.byte	(.L9-.L4)/2
+  96 0045 46       		.byte	(.L8-.L4)/2
+  97 0046 03       		.byte	(.L7-.L4)/2
+  98 0047 20       		.byte	(.L18-.L4)/2
+  99 0048 44       		.byte	(.L5-.L4)/2
+ 100 0049 1F       		.byte	(.L14-.L4)/2
+ 101              		.p2align 1
+ 102              	.L7:
+ 103              	.LVL6:
+ 103:src/pm_manager.cpp ****         case Storage::CatalogResult::Ok:
+ 104:src/pm_manager.cpp ****             err = ParseCatalog(catalog_text_, len, parsed);
+ 105:src/pm_manager.cpp ****             if(err != CatalogError::None)
+ 106:src/pm_manager.cpp ****                 state = CatalogState::Invalid;
+ 107:src/pm_manager.cpp ****             break;
+ 108:src/pm_manager.cpp ****         case Storage::CatalogResult::NoCard: state = CatalogState::NoCard; break;
+ 109:src/pm_manager.cpp ****         case Storage::CatalogResult::MountFailed: state = CatalogState::MountFailed; break;
+ 110:src/pm_manager.cpp ****         case Storage::CatalogResult::Missing: state = CatalogState::Missing; break;
+ 111:src/pm_manager.cpp ****         case Storage::CatalogResult::TooLarge:
+ 112:src/pm_manager.cpp ****             state = CatalogState::Invalid;
+ 113:src/pm_manager.cpp ****             err = CatalogError::TooLarge;
+ 114:src/pm_manager.cpp ****             break;
+ 115:src/pm_manager.cpp ****         case Storage::CatalogResult::ReadError: state = CatalogState::ReadError; break;
+ 116:src/pm_manager.cpp ****     }
+ 117:src/pm_manager.cpp ****     ClearCatalog(state);
+ 104              		.loc 1 117 5 view .LVU22
+ 105              	.LBB42:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 5
+
+
+ 106              	.LBI42:
+  74:src/pm_manager.cpp ****     catalog_ = Catalog();
+ 107              		.loc 1 74 6 view .LVU23
+ 108              	.LBB43:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 109              		.loc 1 75 5 view .LVU24
+ 110              	.LBB44:
+ 111              	.LBI44:
+ 112              		.file 2 "src/pm_catalog.h"
+   1:src/pm_catalog.h **** // /DAISY/catalog.json: strict, allocation-free parser for the program catalog.
+   2:src/pm_catalog.h **** // Format documented in docs/PACKAGE.md. Limits (docs/CONTRACT.md, section 6):
+   3:src/pm_catalog.h **** // file <= 16 KiB, <= 15 programs, slots 1..15 unique, ids unique, display names
+   4:src/pm_catalog.h **** // <= 64 UTF-8 bytes, relative paths <= 160 bytes below PROGRAMS/.
+   5:src/pm_catalog.h **** #pragma once
+   6:src/pm_catalog.h **** #include <cstddef>
+   7:src/pm_catalog.h **** #include <cstdint>
+   8:src/pm_catalog.h **** 
+   9:src/pm_catalog.h **** namespace pm {
+  10:src/pm_catalog.h **** 
+  11:src/pm_catalog.h **** constexpr size_t kCatalogMaxBytes = 16 * 1024;
+  12:src/pm_catalog.h **** constexpr uint8_t kCatalogMaxPrograms = 15;  // slot 16 is the resident diagnostics
+  13:src/pm_catalog.h **** constexpr uint32_t kCatalogFormat = 1;
+  14:src/pm_catalog.h **** constexpr size_t kIdMax = 32, kNameMax = 64, kCategoryMax = 16, kVersionMax = 16, kPathMax = 160;
+  15:src/pm_catalog.h **** 
+  16:src/pm_catalog.h **** struct CatalogEntry {
+  17:src/pm_catalog.h ****     uint8_t slot = 0;                  // 1..15
+  18:src/pm_catalog.h ****     char id[kIdMax + 1] = {};          // [a-z0-9-]
+  19:src/pm_catalog.h ****     char name[kNameMax + 1] = {};      // UTF-8, no control characters
+  20:src/pm_catalog.h ****     char category[kCategoryMax + 1] = {};  // instrument | effect | sequencer | other
+  21:src/pm_catalog.h ****     char version[kVersionMax + 1] = {};
+  22:src/pm_catalog.h ****     char path[kPathMax + 1] = {};      // "PROGRAMS/<dir>/<file>.dsy", relative to /DAISY
+  23:src/pm_catalog.h ****     uint8_t payload_sha256[32] = {};
+  24:src/pm_catalog.h **** };
+  25:src/pm_catalog.h **** 
+  26:src/pm_catalog.h **** struct Catalog {
+ 113              		.loc 2 26 8 view .LVU25
+ 114              		.loc 2 26 8 is_stmt 0 view .LVU26
+ 115              	.LBE44:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 116              		.loc 1 75 14 discriminator 1 view .LVU27
+ 117 004a 04F54970 		add	r0, r4, #804
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 118              		.loc 1 79 15 view .LVU28
+ 119 004e 04F58054 		add	r4, r4, #4096
+ 120              	.LVL7:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 121              		.loc 1 75 14 discriminator 1 view .LVU29
+ 122 0052 41F21F32 		movw	r2, #4895
+ 123 0056 0021     		movs	r1, #0
+ 124 0058 FFF7FEFF 		bl	memset
+ 125              	.LVL8:
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 126              		.loc 1 76 5 is_stmt 1 view .LVU30
+  77:src/pm_manager.cpp ****     catalog_detail_ = 0;
+ 127              		.loc 1 77 5 view .LVU31
+  78:src/pm_manager.cpp ****     root_bin_ = false;
+ 128              		.loc 1 78 5 view .LVU32
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 6
+
+
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 129              		.loc 1 79 5 view .LVU33
+  80:src/pm_manager.cpp **** }
+ 130              		.loc 1 80 5 is_stmt 0 view .LVU34
+ 131 005c D4F84C36 		ldr	r3, [r4, #1612]
+ 132              	.LBE43:
+ 133              	.LBE42:
+ 118:src/pm_manager.cpp ****     catalog_error_ = err;
+ 119:src/pm_manager.cpp ****     catalog_detail_ = detail;
+ 134              		.loc 1 119 21 view .LVU35
+ 135 0060 03AA     		add	r2, sp, #12
+ 136              	.LBB68:
+ 137              	.LBB49:
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 138              		.loc 1 79 15 view .LVU36
+ 139 0062 0020     		movs	r0, #0
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 140              		.loc 1 76 20 view .LVU37
+ 141 0064 0521     		movs	r1, #5
+  80:src/pm_manager.cpp **** }
+ 142              		.loc 1 80 5 view .LVU38
+ 143 0066 0133     		adds	r3, r3, #1
+ 144              	.LBE49:
+ 145              	.LBE68:
+ 146              		.loc 1 119 21 view .LVU39
+ 147 0068 1268     		ldr	r2, [r2]
+ 148              	.LBB69:
+ 149              	.LBB50:
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 150              		.loc 1 79 15 view .LVU40
+ 151 006a 84F85006 		strb	r0, [r4, #1616]
+  80:src/pm_manager.cpp **** }
+ 152              		.loc 1 80 5 is_stmt 1 view .LVU41
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 153              		.loc 1 76 20 is_stmt 0 view .LVU42
+ 154 006e A4F84416 		strh	r1, [r4, #1604]	@ movhi
+ 155              	.LBE50:
+ 156              	.LBE69:
+ 157              		.loc 1 119 21 view .LVU43
+ 158 0072 C4F84826 		str	r2, [r4, #1608]
+ 159              	.LBB70:
+ 160              	.LBB51:
+  80:src/pm_manager.cpp **** }
+ 161              		.loc 1 80 5 view .LVU44
+ 162 0076 C4F84C36 		str	r3, [r4, #1612]
+ 163              	.LVL9:
+  80:src/pm_manager.cpp **** }
+ 164              		.loc 1 80 5 view .LVU45
+ 165              	.LBE51:
+ 166              	.LBE70:
+ 118:src/pm_manager.cpp ****     catalog_detail_ = detail;
+ 167              		.loc 1 118 5 is_stmt 1 view .LVU46
+ 168              		.loc 1 119 5 view .LVU47
+ 120:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 169              		.loc 1 120 5 view .LVU48
+ 121:src/pm_manager.cpp ****         catalog_ = parsed;
+ 122:src/pm_manager.cpp ****     if(state != CatalogState::NoCard && state != CatalogState::MountFailed)
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 7
+
+
+ 170              		.loc 1 122 5 view .LVU49
+ 123:src/pm_manager.cpp ****         root_bin_ = storage_.RootHasBinFile();
+ 124:src/pm_manager.cpp **** }
+ 171              		.loc 1 124 1 is_stmt 0 view .LVU50
+ 172 007a 0DF5995D 		add	sp, sp, #4896
+ 173 007e 05B0     		add	sp, sp, #20
+ 174              		.cfi_remember_state
+ 175              		.cfi_def_cfa_offset 20
+ 176              		@ sp needed
+ 177 0080 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 178              	.LVL10:
+ 179              	.L14:
+ 180              		.cfi_restore_state
+ 115:src/pm_manager.cpp ****     }
+ 181              		.loc 1 115 55 view .LVU51
+ 182 0082 0625     		movs	r5, #6
+ 183              	.LVL11:
+ 184              	.L18:
+ 100:src/pm_manager.cpp ****     CatalogState state = CatalogState::Ok;
+ 185              		.loc 1 100 18 view .LVU52
+ 186 0084 0027     		movs	r7, #0
+ 187              	.LVL12:
+ 188              	.L3:
+ 117:src/pm_manager.cpp ****     catalog_error_ = err;
+ 189              		.loc 1 117 5 is_stmt 1 view .LVU53
+ 190              	.LBB71:
+  74:src/pm_manager.cpp ****     catalog_ = Catalog();
+ 191              		.loc 1 74 6 view .LVU54
+ 192              	.LBB52:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 193              		.loc 1 75 5 view .LVU55
+ 194              	.LBB45:
+ 195              		.loc 2 26 8 view .LVU56
+ 196              		.loc 2 26 8 is_stmt 0 view .LVU57
+ 197              	.LBE45:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 198              		.loc 1 75 14 discriminator 1 view .LVU58
+ 199 0086 41F21F32 		movw	r2, #4895
+ 200 008a 0021     		movs	r1, #0
+ 201 008c 04F54970 		add	r0, r4, #804
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 202              		.loc 1 76 20 view .LVU59
+ 203 0090 04F58056 		add	r6, r4, #4096
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 204              		.loc 1 75 14 discriminator 1 view .LVU60
+ 205 0094 FFF7FEFF 		bl	memset
+ 206              	.LVL13:
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 207              		.loc 1 76 5 is_stmt 1 view .LVU61
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 208              		.loc 1 79 15 is_stmt 0 view .LVU62
+ 209 0098 0023     		movs	r3, #0
+ 210              	.LBE52:
+ 211              	.LBE71:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 212              		.loc 1 119 21 view .LVU63
+ 213 009a 03AA     		add	r2, sp, #12
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 8
+
+
+ 214              	.LBB72:
+ 215              	.LBB53:
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 216              		.loc 1 76 20 view .LVU64
+ 217 009c 86F84456 		strb	r5, [r6, #1604]
+  77:src/pm_manager.cpp ****     catalog_detail_ = 0;
+ 218              		.loc 1 77 5 is_stmt 1 view .LVU65
+  78:src/pm_manager.cpp ****     root_bin_ = false;
+ 219              		.loc 1 78 5 view .LVU66
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 220              		.loc 1 79 5 view .LVU67
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 221              		.loc 1 79 15 is_stmt 0 view .LVU68
+ 222 00a0 86F85036 		strb	r3, [r6, #1616]
+  80:src/pm_manager.cpp **** }
+ 223              		.loc 1 80 5 is_stmt 1 view .LVU69
+ 224 00a4 D6F84C36 		ldr	r3, [r6, #1612]
+ 225              	.LBE53:
+ 226              	.LBE72:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 227              		.loc 1 119 21 is_stmt 0 view .LVU70
+ 228 00a8 1268     		ldr	r2, [r2]
+ 229              	.LBB73:
+ 230              	.LBB54:
+  80:src/pm_manager.cpp **** }
+ 231              		.loc 1 80 5 view .LVU71
+ 232 00aa 0133     		adds	r3, r3, #1
+ 233              	.LBE54:
+ 234              	.LBE73:
+ 118:src/pm_manager.cpp ****     catalog_detail_ = detail;
+ 235              		.loc 1 118 20 view .LVU72
+ 236 00ac 86F84576 		strb	r7, [r6, #1605]
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 237              		.loc 1 119 21 view .LVU73
+ 238 00b0 C6F84826 		str	r2, [r6, #1608]
+ 239              	.LBB74:
+ 240              	.LBB55:
+  80:src/pm_manager.cpp **** }
+ 241              		.loc 1 80 5 view .LVU74
+ 242 00b4 C6F84C36 		str	r3, [r6, #1612]
+ 243              	.LVL14:
+  80:src/pm_manager.cpp **** }
+ 244              		.loc 1 80 5 view .LVU75
+ 245              	.LBE55:
+ 246              	.LBE74:
+ 118:src/pm_manager.cpp ****     catalog_detail_ = detail;
+ 247              		.loc 1 118 5 is_stmt 1 view .LVU76
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 248              		.loc 1 119 5 view .LVU77
+ 120:src/pm_manager.cpp ****         catalog_ = parsed;
+ 249              		.loc 1 120 5 view .LVU78
+ 122:src/pm_manager.cpp ****         root_bin_ = storage_.RootHasBinFile();
+ 250              		.loc 1 122 5 view .LVU79
+ 251              	.L13:
+ 123:src/pm_manager.cpp **** }
+ 252              		.loc 1 123 9 view .LVU80
+ 123:src/pm_manager.cpp **** }
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 9
+
+
+ 253              		.loc 1 123 21 is_stmt 0 view .LVU81
+ 254 00b8 2068     		ldr	r0, [r4]
+ 123:src/pm_manager.cpp **** }
+ 255              		.loc 1 123 44 view .LVU82
+ 256 00ba 0368     		ldr	r3, [r0]
+ 257 00bc 5B69     		ldr	r3, [r3, #20]
+ 258 00be 9847     		blx	r3
+ 259              	.LVL15:
+ 123:src/pm_manager.cpp **** }
+ 260              		.loc 1 123 19 discriminator 1 view .LVU83
+ 261 00c0 86F85006 		strb	r0, [r6, #1616]
+ 262              		.loc 1 124 1 view .LVU84
+ 263 00c4 0DF5995D 		add	sp, sp, #4896
+ 264 00c8 05B0     		add	sp, sp, #20
+ 265              		.cfi_remember_state
+ 266              		.cfi_def_cfa_offset 20
+ 267              		@ sp needed
+ 268 00ca F0BD     		pop	{r4, r5, r6, r7, pc}
+ 269              	.LVL16:
+ 270              	.L5:
+ 271              		.cfi_restore_state
+ 113:src/pm_manager.cpp ****             break;
+ 272              		.loc 1 113 17 view .LVU85
+ 273 00cc 0127     		movs	r7, #1
+ 274 00ce DAE7     		b	.L3
+ 275              	.L8:
+ 276              	.LVL17:
+ 117:src/pm_manager.cpp ****     catalog_error_ = err;
+ 277              		.loc 1 117 5 is_stmt 1 view .LVU86
+ 278              	.LBB75:
+  74:src/pm_manager.cpp ****     catalog_ = Catalog();
+ 279              		.loc 1 74 6 view .LVU87
+ 280              	.LBB56:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 281              		.loc 1 75 5 view .LVU88
+ 282              	.LBB46:
+ 283              		.loc 2 26 8 view .LVU89
+ 284              		.loc 2 26 8 is_stmt 0 view .LVU90
+ 285              	.LBE46:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 286              		.loc 1 75 14 discriminator 1 view .LVU91
+ 287 00d0 04F54970 		add	r0, r4, #804
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 288              		.loc 1 79 15 view .LVU92
+ 289 00d4 04F58054 		add	r4, r4, #4096
+ 290              	.LVL18:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 291              		.loc 1 75 14 discriminator 1 view .LVU93
+ 292 00d8 41F21F32 		movw	r2, #4895
+ 293 00dc 0021     		movs	r1, #0
+ 294 00de FFF7FEFF 		bl	memset
+ 295              	.LVL19:
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 296              		.loc 1 76 5 is_stmt 1 view .LVU94
+  77:src/pm_manager.cpp ****     catalog_detail_ = 0;
+ 297              		.loc 1 77 5 view .LVU95
+  78:src/pm_manager.cpp ****     root_bin_ = false;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 10
+
+
+ 298              		.loc 1 78 5 view .LVU96
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 299              		.loc 1 79 5 view .LVU97
+  80:src/pm_manager.cpp **** }
+ 300              		.loc 1 80 5 is_stmt 0 view .LVU98
+ 301 00e2 D4F84C26 		ldr	r2, [r4, #1612]
+ 302              	.LBE56:
+ 303              	.LBE75:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 304              		.loc 1 119 21 view .LVU99
+ 305 00e6 03AB     		add	r3, sp, #12
+ 306              	.LBB76:
+ 307              	.LBB57:
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 308              		.loc 1 79 15 view .LVU100
+ 309 00e8 0021     		movs	r1, #0
+  80:src/pm_manager.cpp **** }
+ 310              		.loc 1 80 5 view .LVU101
+ 311 00ea 0132     		adds	r2, r2, #1
+ 312              	.LBE57:
+ 313              	.LBE76:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 314              		.loc 1 119 21 view .LVU102
+ 315 00ec 1B68     		ldr	r3, [r3]
+ 316              	.LBB77:
+ 317              	.LBB58:
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 318              		.loc 1 79 15 view .LVU103
+ 319 00ee 84F85016 		strb	r1, [r4, #1616]
+  80:src/pm_manager.cpp **** }
+ 320              		.loc 1 80 5 is_stmt 1 view .LVU104
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 321              		.loc 1 76 20 is_stmt 0 view .LVU105
+ 322 00f2 A4F84416 		strh	r1, [r4, #1604]	@ movhi
+ 323              	.LBE58:
+ 324              	.LBE77:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 325              		.loc 1 119 21 view .LVU106
+ 326 00f6 C4F84836 		str	r3, [r4, #1608]
+ 327              	.LBB78:
+ 328              	.LBB59:
+  80:src/pm_manager.cpp **** }
+ 329              		.loc 1 80 5 view .LVU107
+ 330 00fa C4F84C26 		str	r2, [r4, #1612]
+ 331              	.LVL20:
+  80:src/pm_manager.cpp **** }
+ 332              		.loc 1 80 5 view .LVU108
+ 333              	.LBE59:
+ 334              	.LBE78:
+ 118:src/pm_manager.cpp ****     catalog_detail_ = detail;
+ 335              		.loc 1 118 5 is_stmt 1 view .LVU109
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 336              		.loc 1 119 5 view .LVU110
+ 120:src/pm_manager.cpp ****         catalog_ = parsed;
+ 337              		.loc 1 120 5 view .LVU111
+ 122:src/pm_manager.cpp ****         root_bin_ = storage_.RootHasBinFile();
+ 338              		.loc 1 122 5 view .LVU112
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 11
+
+
+ 339              		.loc 1 124 1 is_stmt 0 view .LVU113
+ 340 00fe 0DF5995D 		add	sp, sp, #4896
+ 341 0102 05B0     		add	sp, sp, #20
+ 342              		.cfi_remember_state
+ 343              		.cfi_def_cfa_offset 20
+ 344              		@ sp needed
+ 345 0104 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 346              	.LVL21:
+ 347              	.L9:
+ 348              		.cfi_restore_state
+ 103:src/pm_manager.cpp ****             err = ParseCatalog(catalog_text_, len, parsed);
+ 349              		.loc 1 103 9 is_stmt 1 view .LVU114
+ 104:src/pm_manager.cpp ****             if(err != CatalogError::None)
+ 350              		.loc 1 104 13 view .LVU115
+ 104:src/pm_manager.cpp ****             if(err != CatalogError::None)
+ 351              		.loc 1 104 31 is_stmt 0 view .LVU116
+ 352 0106 02AB     		add	r3, sp, #8
+ 353 0108 3046     		mov	r0, r6
+ 354 010a 1968     		ldr	r1, [r3]
+ 355 010c 04AA     		add	r2, sp, #16
+ 356 010e 0023     		movs	r3, #0
+ 357 0110 FFF7FEFF 		bl	_ZN2pm12ParseCatalogEPKcjRNS_7CatalogEPNS_16CatalogParseInfoE
+ 358              	.LVL22:
+ 105:src/pm_manager.cpp ****                 state = CatalogState::Invalid;
+ 359              		.loc 1 105 13 is_stmt 1 view .LVU117
+ 360 0114 0746     		mov	r7, r0
+ 361 0116 08B1     		cbz	r0, .L20
+ 362              	.LVL23:
+ 106:src/pm_manager.cpp ****             break;
+ 363              		.loc 1 106 23 is_stmt 0 view .LVU118
+ 364 0118 0425     		movs	r5, #4
+ 365 011a B4E7     		b	.L3
+ 366              	.LVL24:
+ 367              	.L20:
+ 117:src/pm_manager.cpp ****     catalog_error_ = err;
+ 368              		.loc 1 117 5 is_stmt 1 view .LVU119
+ 369              	.LBB79:
+  74:src/pm_manager.cpp ****     catalog_ = Catalog();
+ 370              		.loc 1 74 6 view .LVU120
+ 371              	.LBB60:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 372              		.loc 1 75 5 view .LVU121
+ 373              	.LBB47:
+ 374              		.loc 2 26 8 view .LVU122
+ 375              		.loc 2 26 8 is_stmt 0 view .LVU123
+ 376              	.LBE47:
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 377              		.loc 1 76 5 is_stmt 1 view .LVU124
+  77:src/pm_manager.cpp ****     catalog_detail_ = 0;
+ 378              		.loc 1 77 5 view .LVU125
+  78:src/pm_manager.cpp ****     root_bin_ = false;
+ 379              		.loc 1 78 5 view .LVU126
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 380              		.loc 1 79 5 view .LVU127
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 381              		.loc 1 79 15 is_stmt 0 view .LVU128
+ 382 011c 04F58056 		add	r6, r4, #4096
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 12
+
+
+ 383              	.LBE60:
+ 384              	.LBE79:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 385              		.loc 1 119 21 view .LVU129
+ 386 0120 03AB     		add	r3, sp, #12
+ 387              	.LBB80:
+ 388              	.LBB61:
+  80:src/pm_manager.cpp **** }
+ 389              		.loc 1 80 5 view .LVU130
+ 390 0122 D6F84C26 		ldr	r2, [r6, #1612]
+ 391              	.LBE61:
+ 392              	.LBE80:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 393              		.loc 1 119 21 view .LVU131
+ 394 0126 1B68     		ldr	r3, [r3]
+ 395              	.LBB81:
+ 396              	.LBB62:
+  80:src/pm_manager.cpp **** }
+ 397              		.loc 1 80 5 view .LVU132
+ 398 0128 0132     		adds	r2, r2, #1
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 399              		.loc 1 79 15 view .LVU133
+ 400 012a 86F85006 		strb	r0, [r6, #1616]
+  80:src/pm_manager.cpp **** }
+ 401              		.loc 1 80 5 is_stmt 1 view .LVU134
+ 402 012e C6F84C26 		str	r2, [r6, #1612]
+ 403              	.LVL25:
+  80:src/pm_manager.cpp **** }
+ 404              		.loc 1 80 5 is_stmt 0 view .LVU135
+ 405              	.LBE62:
+ 406              	.LBE81:
+ 118:src/pm_manager.cpp ****     catalog_detail_ = detail;
+ 407              		.loc 1 118 5 is_stmt 1 view .LVU136
+ 408              	.LBB82:
+ 409              	.LBB63:
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 410              		.loc 1 76 20 is_stmt 0 view .LVU137
+ 411 0132 0222     		movs	r2, #2
+ 412 0134 A6F84426 		strh	r2, [r6, #1604]	@ movhi
+ 413              	.LBE63:
+ 414              	.LBE82:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 415              		.loc 1 119 5 is_stmt 1 view .LVU138
+ 120:src/pm_manager.cpp ****         catalog_ = parsed;
+ 416              		.loc 1 120 5 view .LVU139
+ 417              	.L11:
+ 121:src/pm_manager.cpp ****     if(state != CatalogState::NoCard && state != CatalogState::MountFailed)
+ 418              		.loc 1 121 18 is_stmt 0 view .LVU140
+ 419 0138 41F21F32 		movw	r2, #4895
+ 420 013c 04A9     		add	r1, sp, #16
+ 421 013e 04F54970 		add	r0, r4, #804
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 422              		.loc 1 119 21 view .LVU141
+ 423 0142 C6F84836 		str	r3, [r6, #1608]
+ 424              	.LVL26:
+ 121:src/pm_manager.cpp ****     if(state != CatalogState::NoCard && state != CatalogState::MountFailed)
+ 425              		.loc 1 121 9 is_stmt 1 view .LVU142
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 13
+
+
+ 121:src/pm_manager.cpp ****     if(state != CatalogState::NoCard && state != CatalogState::MountFailed)
+ 426              		.loc 1 121 18 is_stmt 0 view .LVU143
+ 427 0146 FFF7FEFF 		bl	memcpy
+ 428              	.LVL27:
+ 122:src/pm_manager.cpp ****         root_bin_ = storage_.RootHasBinFile();
+ 429              		.loc 1 122 5 is_stmt 1 view .LVU144
+ 430 014a B5E7     		b	.L13
+ 431              	.LVL28:
+ 432              	.L2:
+ 117:src/pm_manager.cpp ****     catalog_error_ = err;
+ 433              		.loc 1 117 5 view .LVU145
+ 434              	.LBB83:
+  74:src/pm_manager.cpp ****     catalog_ = Catalog();
+ 435              		.loc 1 74 6 view .LVU146
+ 436              	.LBB64:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 437              		.loc 1 75 5 view .LVU147
+ 438              	.LBB48:
+ 439              		.loc 2 26 8 view .LVU148
+ 440              		.loc 2 26 8 is_stmt 0 view .LVU149
+ 441              	.LBE48:
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 442              		.loc 1 76 5 is_stmt 1 view .LVU150
+  77:src/pm_manager.cpp ****     catalog_detail_ = 0;
+ 443              		.loc 1 77 5 view .LVU151
+  78:src/pm_manager.cpp ****     root_bin_ = false;
+ 444              		.loc 1 78 5 view .LVU152
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 445              		.loc 1 79 5 view .LVU153
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 446              		.loc 1 79 15 is_stmt 0 view .LVU154
+ 447 014c 04F58056 		add	r6, r4, #4096
+ 448 0150 0022     		movs	r2, #0
+ 449              	.LBE64:
+ 450              	.LBE83:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 451              		.loc 1 119 21 view .LVU155
+ 452 0152 03AB     		add	r3, sp, #12
+ 453              	.LBB84:
+ 454              	.LBB65:
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 455              		.loc 1 79 15 view .LVU156
+ 456 0154 86F85026 		strb	r2, [r6, #1616]
+  80:src/pm_manager.cpp **** }
+ 457              		.loc 1 80 5 is_stmt 1 view .LVU157
+ 458 0158 D6F84C26 		ldr	r2, [r6, #1612]
+ 459              	.LBE65:
+ 460              	.LBE84:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 461              		.loc 1 119 21 is_stmt 0 view .LVU158
+ 462 015c 1B68     		ldr	r3, [r3]
+ 463              	.LBB85:
+ 464              	.LBB66:
+  80:src/pm_manager.cpp **** }
+ 465              		.loc 1 80 5 view .LVU159
+ 466 015e 0132     		adds	r2, r2, #1
+ 467 0160 C6F84C26 		str	r2, [r6, #1612]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 14
+
+
+ 468              	.LVL29:
+  80:src/pm_manager.cpp **** }
+ 469              		.loc 1 80 5 view .LVU160
+ 470              	.LBE66:
+ 471              	.LBE85:
+ 118:src/pm_manager.cpp ****     catalog_detail_ = detail;
+ 472              		.loc 1 118 5 is_stmt 1 view .LVU161
+ 473              	.LBB86:
+ 474              	.LBB67:
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 475              		.loc 1 76 20 is_stmt 0 view .LVU162
+ 476 0164 0222     		movs	r2, #2
+ 477 0166 A6F84426 		strh	r2, [r6, #1604]	@ movhi
+ 478              	.LBE67:
+ 479              	.LBE86:
+ 119:src/pm_manager.cpp ****     if(state == CatalogState::Ok)
+ 480              		.loc 1 119 5 is_stmt 1 view .LVU163
+ 120:src/pm_manager.cpp ****         catalog_ = parsed;
+ 481              		.loc 1 120 5 view .LVU164
+ 482 016a E5E7     		b	.L11
+ 483              	.L22:
+ 484              		.align	2
+ 485              	.L21:
+ 486 016c 00000000 		.word	.LC0
+ 487              		.cfi_endproc
+ 488              	.LFE1493:
+ 490              		.section	.rodata._ZN2pm8ModeNameENS_4ModeE.str1.4,"aMS",%progbits,1
+ 491              		.align	2
+ 492              	.LC1:
+ 493 0000 3F00     		.ascii	"?\000"
+ 494              		.section	.text._ZN2pm8ModeNameENS_4ModeE,"ax",%progbits
+ 495              		.align	1
+ 496              		.p2align 2,,3
+ 497              		.global	_ZN2pm8ModeNameENS_4ModeE
+ 498              		.syntax unified
+ 499              		.thumb
+ 500              		.thumb_func
+ 502              	_ZN2pm8ModeNameENS_4ModeE:
+ 503              	.LVL30:
+ 504              	.LFB1315:
+  29:src/pm_manager.cpp ****     switch(mode) {
+ 505              		.loc 1 29 33 view -0
+ 506              		.cfi_startproc
+ 507              		@ args = 0, pretend = 0, frame = 0
+ 508              		@ frame_needed = 0, uses_anonymous_args = 0
+ 509              		@ link register save eliminated.
+  30:src/pm_manager.cpp ****         case Mode::Select: return "SELECT";
+ 510              		.loc 1 30 5 view .LVU166
+ 511 0000 0328     		cmp	r0, #3
+ 512 0002 03D8     		bhi	.L25
+ 513 0004 024B     		ldr	r3, .L26
+ 514 0006 53F82000 		ldr	r0, [r3, r0, lsl #2]
+ 515              	.LVL31:
+  30:src/pm_manager.cpp ****         case Mode::Select: return "SELECT";
+ 516              		.loc 1 30 5 is_stmt 0 view .LVU167
+ 517 000a 7047     		bx	lr
+ 518              	.LVL32:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 15
+
+
+ 519              	.L25:
+  29:src/pm_manager.cpp ****     switch(mode) {
+ 520              		.loc 1 29 33 view .LVU168
+ 521 000c 0148     		ldr	r0, .L26+4
+ 522              	.LVL33:
+  37:src/pm_manager.cpp **** 
+ 523              		.loc 1 37 1 view .LVU169
+ 524 000e 7047     		bx	lr
+ 525              	.L27:
+ 526              		.align	2
+ 527              	.L26:
+ 528 0010 00000000 		.word	CSWTCH.20
+ 529 0014 00000000 		.word	.LC1
+ 530              		.cfi_endproc
+ 531              	.LFE1315:
+ 533              		.section	.text._ZN2pm16CatalogStateNameENS_12CatalogStateE,"ax",%progbits
+ 534              		.align	1
+ 535              		.p2align 2,,3
+ 536              		.global	_ZN2pm16CatalogStateNameENS_12CatalogStateE
+ 537              		.syntax unified
+ 538              		.thumb
+ 539              		.thumb_func
+ 541              	_ZN2pm16CatalogStateNameENS_12CatalogStateE:
+ 542              	.LVL34:
+ 543              	.LFB1316:
+  39:src/pm_manager.cpp ****     switch(state) {
+ 544              		.loc 1 39 50 is_stmt 1 view -0
+ 545              		.cfi_startproc
+ 546              		@ args = 0, pretend = 0, frame = 0
+ 547              		@ frame_needed = 0, uses_anonymous_args = 0
+ 548              		@ link register save eliminated.
+  40:src/pm_manager.cpp ****         case CatalogState::NoCard: return "NOCARD";
+ 549              		.loc 1 40 5 view .LVU171
+ 550 0000 0728     		cmp	r0, #7
+ 551 0002 03D8     		bhi	.L30
+ 552 0004 024B     		ldr	r3, .L31
+ 553 0006 53F82000 		ldr	r0, [r3, r0, lsl #2]
+ 554              	.LVL35:
+  40:src/pm_manager.cpp ****         case CatalogState::NoCard: return "NOCARD";
+ 555              		.loc 1 40 5 is_stmt 0 view .LVU172
+ 556 000a 7047     		bx	lr
+ 557              	.LVL36:
+ 558              	.L30:
+  39:src/pm_manager.cpp ****     switch(state) {
+ 559              		.loc 1 39 50 view .LVU173
+ 560 000c 0148     		ldr	r0, .L31+4
+ 561              	.LVL37:
+  51:src/pm_manager.cpp **** 
+ 562              		.loc 1 51 1 view .LVU174
+ 563 000e 7047     		bx	lr
+ 564              	.L32:
+ 565              		.align	2
+ 566              	.L31:
+ 567 0010 00000000 		.word	CSWTCH.22
+ 568 0014 00000000 		.word	.LC1
+ 569              		.cfi_endproc
+ 570              	.LFE1316:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 16
+
+
+ 572              		.section	.text._ZN2pm15StartResultNameENS_11StartResultE,"ax",%progbits
+ 573              		.align	1
+ 574              		.p2align 2,,3
+ 575              		.global	_ZN2pm15StartResultNameENS_11StartResultE
+ 576              		.syntax unified
+ 577              		.thumb
+ 578              		.thumb_func
+ 580              	_ZN2pm15StartResultNameENS_11StartResultE:
+ 581              	.LVL38:
+ 582              	.LFB1317:
+  53:src/pm_manager.cpp ****     switch(result) {
+ 583              		.loc 1 53 49 is_stmt 1 view -0
+ 584              		.cfi_startproc
+ 585              		@ args = 0, pretend = 0, frame = 0
+ 586              		@ frame_needed = 0, uses_anonymous_args = 0
+ 587              		@ link register save eliminated.
+  54:src/pm_manager.cpp ****         case StartResult::Accepted: return "ACCEPTED";
+ 588              		.loc 1 54 5 view .LVU176
+ 589 0000 0828     		cmp	r0, #8
+ 590 0002 03D8     		bhi	.L35
+ 591 0004 024B     		ldr	r3, .L36
+ 592 0006 53F82000 		ldr	r0, [r3, r0, lsl #2]
+ 593              	.LVL39:
+  54:src/pm_manager.cpp ****         case StartResult::Accepted: return "ACCEPTED";
+ 594              		.loc 1 54 5 is_stmt 0 view .LVU177
+ 595 000a 7047     		bx	lr
+ 596              	.LVL40:
+ 597              	.L35:
+  53:src/pm_manager.cpp ****     switch(result) {
+ 598              		.loc 1 53 49 view .LVU178
+ 599 000c 0148     		ldr	r0, .L36+4
+ 600              	.LVL41:
+  66:src/pm_manager.cpp **** 
+ 601              		.loc 1 66 1 view .LVU179
+ 602 000e 7047     		bx	lr
+ 603              	.L37:
+ 604              		.align	2
+ 605              	.L36:
+ 606 0010 00000000 		.word	CSWTCH.24
+ 607 0014 00000000 		.word	.LC1
+ 608              		.cfi_endproc
+ 609              	.LFE1317:
+ 611              		.section	.text._ZN2pm7ManagerC2ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb,"ax",%progbits
+ 612              		.align	1
+ 613              		.p2align 2,,3
+ 614              		.global	_ZN2pm7ManagerC2ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb
+ 615              		.syntax unified
+ 616              		.thumb
+ 617              		.thumb_func
+ 619              	_ZN2pm7ManagerC2ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb:
+ 620              	.LVL42:
+ 621              	.LFB1325:
+  68:src/pm_manager.cpp ****     : storage_(storage), loader_(storage, target, commit), sd_supported_(sd_supported) {
+ 622              		.loc 1 68 1 is_stmt 1 view -0
+ 623              		.cfi_startproc
+ 624              		@ args = 4, pretend = 0, frame = 0
+ 625              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 17
+
+
+  68:src/pm_manager.cpp ****     : storage_(storage), loader_(storage, target, commit), sd_supported_(sd_supported) {
+ 626              		.loc 1 68 1 is_stmt 0 view .LVU181
+ 627 0000 70B5     		push	{r4, r5, r6, lr}
+ 628              		.cfi_def_cfa_offset 16
+ 629              		.cfi_offset 4, -16
+ 630              		.cfi_offset 5, -12
+ 631              		.cfi_offset 6, -8
+ 632              		.cfi_offset 14, -4
+ 633              	.LBB87:
+  69:src/pm_manager.cpp ****     catalog_state_ = sd_supported ? CatalogState::NoCard : CatalogState::Unsupported;
+ 634              		.loc 1 69 86 discriminator 1 view .LVU182
+ 635 0002 0024     		movs	r4, #0
+ 636              	.LBE87:
+  68:src/pm_manager.cpp ****     : storage_(storage), loader_(storage, target, commit), sd_supported_(sd_supported) {
+ 637              		.loc 1 68 1 view .LVU183
+ 638 0004 0546     		mov	r5, r0
+ 639 0006 9DF81060 		ldrb	r6, [sp, #16]	@ zero_extendqisi2
+ 640              	.LBB92:
+  69:src/pm_manager.cpp ****     catalog_state_ = sd_supported ? CatalogState::NoCard : CatalogState::Unsupported;
+ 641              		.loc 1 69 7 view .LVU184
+ 642 000a 40F8081B 		str	r1, [r0], #8
+ 643              	.LVL43:
+  69:src/pm_manager.cpp ****     catalog_state_ = sd_supported ? CatalogState::NoCard : CatalogState::Unsupported;
+ 644              		.loc 1 69 26 view .LVU185
+ 645 000e FFF7FEFF 		bl	_ZN2pm6LoaderC1ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
+ 646              	.LVL44:
+ 647              	.LBB88:
+ 648              	.LBB89:
+ 649              		.loc 2 26 8 view .LVU186
+ 650 0012 41F21A32 		movw	r2, #4890
+ 651 0016 2146     		mov	r1, r4
+ 652 0018 05F22930 		addw	r0, r5, #809
+ 653              	.LBE89:
+ 654              	.LBE88:
+  69:src/pm_manager.cpp ****     catalog_state_ = sd_supported ? CatalogState::NoCard : CatalogState::Unsupported;
+ 655              		.loc 1 69 60 discriminator 1 view .LVU187
+ 656 001c 85F82063 		strb	r6, [r5, #800]
+  69:src/pm_manager.cpp ****     catalog_state_ = sd_supported ? CatalogState::NoCard : CatalogState::Unsupported;
+ 657              		.loc 1 69 86 discriminator 1 view .LVU188
+ 658 0020 85F82143 		strb	r4, [r5, #801]
+ 659              	.LVL45:
+ 660              	.LBB91:
+ 661              	.LBI88:
+ 662              		.loc 2 26 8 is_stmt 1 view .LVU189
+ 663              	.LBB90:
+ 664 0024 C5F82443 		str	r4, [r5, #804]
+ 665 0028 85F82843 		strb	r4, [r5, #808]
+ 666 002c FFF7FEFF 		bl	memset
+ 667              	.LVL46:
+ 668              		.loc 2 26 8 is_stmt 0 view .LVU190
+ 669              	.LBE90:
+ 670              	.LBE91:
+  70:src/pm_manager.cpp ****     catalog_text_[0] = 0;
+ 671              		.loc 1 70 35 discriminator 1 view .LVU191
+ 672 0030 A642     		cmp	r6, r4
+  69:src/pm_manager.cpp ****     catalog_state_ = sd_supported ? CatalogState::NoCard : CatalogState::Unsupported;
+ 673              		.loc 1 69 86 discriminator 2 view .LVU192
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 18
+
+
+ 674 0032 05F58053 		add	r3, r5, #4096
+ 675 0036 4FF00101 		mov	r1, #1
+  70:src/pm_manager.cpp ****     catalog_text_[0] = 0;
+ 676              		.loc 1 70 35 discriminator 1 view .LVU193
+ 677 003a 0CBF     		ite	eq
+ 678 003c 0722     		moveq	r2, #7
+ 679 003e 2246     		movne	r2, r4
+ 680              	.LBE92:
+  72:src/pm_manager.cpp **** 
+ 681              		.loc 1 72 1 view .LVU194
+ 682 0040 2846     		mov	r0, r5
+ 683              	.LBB93:
+  69:src/pm_manager.cpp ****     catalog_state_ = sd_supported ? CatalogState::NoCard : CatalogState::Unsupported;
+ 684              		.loc 1 69 86 discriminator 2 view .LVU195
+ 685 0042 83F84546 		strb	r4, [r3, #1605]
+ 686 0046 C3F84846 		str	r4, [r3, #1608]
+ 687 004a C3F84C46 		str	r4, [r3, #1612]
+ 688 004e A3F85046 		strh	r4, [r3, #1616]	@ movhi
+ 689 0052 83F85246 		strb	r4, [r3, #1618]
+ 690 0056 C3F85446 		str	r4, [r3, #1620]
+ 691 005a C3F85846 		str	r4, [r3, #1624]
+ 692 005e 83F85C16 		strb	r1, [r3, #1628]
+ 693 0062 A3F85E46 		strh	r4, [r3, #1630]	@ movhi
+ 694 0066 C3F86046 		str	r4, [r3, #1632]
+ 695 006a A3F86446 		strh	r4, [r3, #1636]	@ movhi
+ 696 006e C3F86846 		str	r4, [r3, #1640]
+ 697 0072 83F86C46 		strb	r4, [r3, #1644]
+ 698 0076 C3F87046 		str	r4, [r3, #1648]
+ 699 007a 83F87446 		strb	r4, [r3, #1652]
+ 700 007e C3F87846 		str	r4, [r3, #1656]
+ 701 0082 83F87C46 		strb	r4, [r3, #1660]
+  70:src/pm_manager.cpp ****     catalog_text_[0] = 0;
+ 702              		.loc 1 70 5 is_stmt 1 view .LVU196
+  70:src/pm_manager.cpp ****     catalog_text_[0] = 0;
+ 703              		.loc 1 70 20 is_stmt 0 discriminator 4 view .LVU197
+ 704 0086 83F84426 		strb	r2, [r3, #1604]
+  71:src/pm_manager.cpp **** }
+ 705              		.loc 1 71 5 is_stmt 1 view .LVU198
+  71:src/pm_manager.cpp **** }
+ 706              		.loc 1 71 22 is_stmt 0 view .LVU199
+ 707 008a 83F87D46 		strb	r4, [r3, #1661]
+ 708              	.LBE93:
+  72:src/pm_manager.cpp **** 
+ 709              		.loc 1 72 1 view .LVU200
+ 710 008e 70BD     		pop	{r4, r5, r6, pc}
+  72:src/pm_manager.cpp **** 
+ 711              		.loc 1 72 1 view .LVU201
+ 712              		.cfi_endproc
+ 713              	.LFE1325:
+ 715              		.global	_ZN2pm7ManagerC1ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb
+ 716              		.thumb_set _ZN2pm7ManagerC1ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb,_ZN2pm7ManagerC2ERNS_
+ 717              		.section	.text._ZN2pm7Manager12ClearCatalogENS_12CatalogStateE,"ax",%progbits
+ 718              		.align	1
+ 719              		.p2align 2,,3
+ 720              		.global	_ZN2pm7Manager12ClearCatalogENS_12CatalogStateE
+ 721              		.syntax unified
+ 722              		.thumb
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 19
+
+
+ 723              		.thumb_func
+ 725              	_ZN2pm7Manager12ClearCatalogENS_12CatalogStateE:
+ 726              	.LVL47:
+ 727              	.LFB1327:
+  74:src/pm_manager.cpp ****     catalog_ = Catalog();
+ 728              		.loc 1 74 48 is_stmt 1 view -0
+ 729              		.cfi_startproc
+ 730              		@ args = 0, pretend = 0, frame = 0
+ 731              		@ frame_needed = 0, uses_anonymous_args = 0
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 732              		.loc 1 75 5 view .LVU203
+ 733              	.LBB94:
+ 734              	.LBI94:
+ 735              		.loc 2 26 8 view .LVU204
+ 736              		.loc 2 26 8 is_stmt 0 view .LVU205
+ 737              	.LBE94:
+  74:src/pm_manager.cpp ****     catalog_ = Catalog();
+ 738              		.loc 1 74 48 view .LVU206
+ 739 0000 38B5     		push	{r3, r4, r5, lr}
+ 740              		.cfi_def_cfa_offset 16
+ 741              		.cfi_offset 3, -16
+ 742              		.cfi_offset 4, -12
+ 743              		.cfi_offset 5, -8
+ 744              		.cfi_offset 14, -4
+  74:src/pm_manager.cpp ****     catalog_ = Catalog();
+ 745              		.loc 1 74 48 view .LVU207
+ 746 0002 0446     		mov	r4, r0
+ 747 0004 0D46     		mov	r5, r1
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 748              		.loc 1 75 14 discriminator 1 view .LVU208
+ 749 0006 41F21F32 		movw	r2, #4895
+ 750 000a 0021     		movs	r1, #0
+ 751              	.LVL48:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 752              		.loc 1 75 14 discriminator 1 view .LVU209
+ 753 000c 00F54970 		add	r0, r0, #804
+ 754              	.LVL49:
+  75:src/pm_manager.cpp ****     catalog_state_ = state;
+ 755              		.loc 1 75 14 discriminator 1 view .LVU210
+ 756 0010 FFF7FEFF 		bl	memset
+ 757              	.LVL50:
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 758              		.loc 1 76 5 is_stmt 1 view .LVU211
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 759              		.loc 1 76 20 is_stmt 0 view .LVU212
+ 760 0014 04F58050 		add	r0, r4, #4096
+  77:src/pm_manager.cpp ****     catalog_detail_ = 0;
+ 761              		.loc 1 77 20 view .LVU213
+ 762 0018 0022     		movs	r2, #0
+  80:src/pm_manager.cpp **** }
+ 763              		.loc 1 80 5 view .LVU214
+ 764 001a D0F84C36 		ldr	r3, [r0, #1612]
+  76:src/pm_manager.cpp ****     catalog_error_ = CatalogError::None;
+ 765              		.loc 1 76 20 view .LVU215
+ 766 001e 80F84456 		strb	r5, [r0, #1604]
+  77:src/pm_manager.cpp ****     catalog_detail_ = 0;
+ 767              		.loc 1 77 5 is_stmt 1 view .LVU216
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 20
+
+
+  80:src/pm_manager.cpp **** }
+ 768              		.loc 1 80 5 is_stmt 0 view .LVU217
+ 769 0022 0133     		adds	r3, r3, #1
+  77:src/pm_manager.cpp ****     catalog_detail_ = 0;
+ 770              		.loc 1 77 20 view .LVU218
+ 771 0024 80F84526 		strb	r2, [r0, #1605]
+  78:src/pm_manager.cpp ****     root_bin_ = false;
+ 772              		.loc 1 78 5 is_stmt 1 view .LVU219
+  78:src/pm_manager.cpp ****     root_bin_ = false;
+ 773              		.loc 1 78 21 is_stmt 0 view .LVU220
+ 774 0028 C0F84826 		str	r2, [r0, #1608]
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 775              		.loc 1 79 5 is_stmt 1 view .LVU221
+  79:src/pm_manager.cpp ****     ++generation_;  // stale host orders must not match any more
+ 776              		.loc 1 79 15 is_stmt 0 view .LVU222
+ 777 002c 80F85026 		strb	r2, [r0, #1616]
+  80:src/pm_manager.cpp **** }
+ 778              		.loc 1 80 5 is_stmt 1 view .LVU223
+ 779 0030 C0F84C36 		str	r3, [r0, #1612]
+  81:src/pm_manager.cpp **** 
+ 780              		.loc 1 81 1 is_stmt 0 view .LVU224
+ 781 0034 38BD     		pop	{r3, r4, r5, pc}
+  81:src/pm_manager.cpp **** 
+ 782              		.loc 1 81 1 view .LVU225
+ 783              		.cfi_endproc
+ 784              	.LFE1327:
+ 786 0036 00BF     		.section	.text._ZN2pm7Manager11ScanCatalogEm,"ax",%progbits
+ 787              		.align	1
+ 788              		.p2align 2,,3
+ 789              		.global	_ZN2pm7Manager11ScanCatalogEm
+ 790              		.syntax unified
+ 791              		.thumb
+ 792              		.thumb_func
+ 794              	_ZN2pm7Manager11ScanCatalogEm:
+ 795              	.LVL51:
+ 796              	.LFB1328:
+  83:src/pm_manager.cpp ****     (void)now_ms;
+ 797              		.loc 1 83 44 is_stmt 1 view -0
+ 798              		.cfi_startproc
+ 799              		@ args = 0, pretend = 0, frame = 0
+ 800              		@ frame_needed = 0, uses_anonymous_args = 0
+  84:src/pm_manager.cpp ****     scan_due_ = false;
+ 801              		.loc 1 84 5 view .LVU227
+  85:src/pm_manager.cpp ****     rescan_pending_ = false;
+ 802              		.loc 1 85 5 view .LVU228
+  86:src/pm_manager.cpp ****     if(!sd_supported_) {
+ 803              		.loc 1 86 5 view .LVU229
+  83:src/pm_manager.cpp ****     (void)now_ms;
+ 804              		.loc 1 83 44 is_stmt 0 view .LVU230
+ 805 0000 38B5     		push	{r3, r4, r5, lr}
+ 806              		.cfi_def_cfa_offset 16
+ 807              		.cfi_offset 3, -16
+ 808              		.cfi_offset 4, -12
+ 809              		.cfi_offset 5, -8
+ 810              		.cfi_offset 14, -4
+  86:src/pm_manager.cpp ****     if(!sd_supported_) {
+ 811              		.loc 1 86 21 view .LVU231
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 21
+
+
+ 812 0002 0023     		movs	r3, #0
+ 813 0004 00F58055 		add	r5, r0, #4096
+ 814 0008 A5F85836 		strh	r3, [r5, #1624]	@ movhi
+  87:src/pm_manager.cpp ****         ClearCatalog(CatalogState::Unsupported);
+ 815              		.loc 1 87 5 is_stmt 1 view .LVU232
+ 816 000c 90F82033 		ldrb	r3, [r0, #800]	@ zero_extendqisi2
+ 817 0010 63B1     		cbz	r3, .L48
+  91:src/pm_manager.cpp ****     if(!card_present_) {
+ 818              		.loc 1 91 5 view .LVU233
+ 819 0012 0446     		mov	r4, r0
+ 820 0014 0068     		ldr	r0, [r0]
+ 821              	.LVL52:
+  91:src/pm_manager.cpp ****     if(!card_present_) {
+ 822              		.loc 1 91 21 is_stmt 0 view .LVU234
+ 823 0016 0368     		ldr	r3, [r0]
+ 824 0018 9B69     		ldr	r3, [r3, #24]
+ 825 001a 9847     		blx	r3
+ 826              	.LVL53:
+  92:src/pm_manager.cpp ****         ClearCatalog(CatalogState::NoCard);
+ 827              		.loc 1 92 5 is_stmt 1 view .LVU235
+ 828 001c 95F85116 		ldrb	r1, [r5, #1617]	@ zero_extendqisi2
+  93:src/pm_manager.cpp ****         return;
+ 829              		.loc 1 93 21 is_stmt 0 view .LVU236
+ 830 0020 2046     		mov	r0, r4
+  92:src/pm_manager.cpp ****         ClearCatalog(CatalogState::NoCard);
+ 831              		.loc 1 92 5 view .LVU237
+ 832 0022 41B1     		cbz	r1, .L49
+ 833              		.loc 1 124 1 view .LVU238
+ 834 0024 BDE83840 		pop	{r3, r4, r5, lr}
+ 835              		.cfi_remember_state
+ 836              		.cfi_restore 14
+ 837              		.cfi_restore 5
+ 838              		.cfi_restore 4
+ 839              		.cfi_restore 3
+ 840              		.cfi_def_cfa_offset 0
+ 841              	.LVL54:
+ 842              		.loc 1 124 1 view .LVU239
+ 843 0028 FFF7FEBF 		b	_ZN2pm7Manager11ScanCatalogEm.part.0
+ 844              	.LVL55:
+ 845              	.L48:
+ 846              		.cfi_restore_state
+  88:src/pm_manager.cpp ****         return;
+ 847              		.loc 1 88 9 is_stmt 1 view .LVU240
+  88:src/pm_manager.cpp ****         return;
+ 848              		.loc 1 88 21 is_stmt 0 view .LVU241
+ 849 002c 0721     		movs	r1, #7
+ 850              	.LVL56:
+ 851              		.loc 1 124 1 view .LVU242
+ 852 002e BDE83840 		pop	{r3, r4, r5, lr}
+ 853              		.cfi_remember_state
+ 854              		.cfi_restore 14
+ 855              		.cfi_restore 5
+ 856              		.cfi_restore 4
+ 857              		.cfi_restore 3
+ 858              		.cfi_def_cfa_offset 0
+  88:src/pm_manager.cpp ****         return;
+ 859              		.loc 1 88 21 view .LVU243
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 22
+
+
+ 860 0032 FFF7FEBF 		b	_ZN2pm7Manager12ClearCatalogENS_12CatalogStateE
+ 861              	.LVL57:
+ 862              	.L49:
+ 863              		.cfi_restore_state
+  93:src/pm_manager.cpp ****         return;
+ 864              		.loc 1 93 9 is_stmt 1 view .LVU244
+ 865              		.loc 1 124 1 is_stmt 0 view .LVU245
+ 866 0036 BDE83840 		pop	{r3, r4, r5, lr}
+ 867              		.cfi_restore 14
+ 868              		.cfi_restore 5
+ 869              		.cfi_restore 4
+ 870              		.cfi_restore 3
+ 871              		.cfi_def_cfa_offset 0
+  93:src/pm_manager.cpp ****         return;
+ 872              		.loc 1 93 21 view .LVU246
+ 873 003a FFF7FEBF 		b	_ZN2pm7Manager12ClearCatalogENS_12CatalogStateE
+ 874              	.LVL58:
+  93:src/pm_manager.cpp ****         return;
+ 875              		.loc 1 93 21 view .LVU247
+ 876              		.cfi_endproc
+ 877              	.LFE1328:
+ 879 003e 00BF     		.section	.text._ZN2pm7Manager13RequestRescanEv,"ax",%progbits
+ 880              		.align	1
+ 881              		.p2align 2,,3
+ 882              		.global	_ZN2pm7Manager13RequestRescanEv
+ 883              		.syntax unified
+ 884              		.thumb
+ 885              		.thumb_func
+ 887              	_ZN2pm7Manager13RequestRescanEv:
+ 888              	.LVL59:
+ 889              	.LFB1329:
+ 125:src/pm_manager.cpp **** 
+ 126:src/pm_manager.cpp **** void Manager::RequestRescan() { rescan_pending_ = true; }
+ 890              		.loc 1 126 31 is_stmt 1 view -0
+ 891              		.cfi_startproc
+ 892              		@ args = 0, pretend = 0, frame = 0
+ 893              		@ frame_needed = 0, uses_anonymous_args = 0
+ 894              		@ link register save eliminated.
+ 895              		.loc 1 126 33 view .LVU249
+ 896              		.loc 1 126 49 is_stmt 0 view .LVU250
+ 897 0000 0123     		movs	r3, #1
+ 898 0002 00F58050 		add	r0, r0, #4096
+ 899              	.LVL60:
+ 900              		.loc 1 126 49 view .LVU251
+ 901 0006 80F85836 		strb	r3, [r0, #1624]
+ 902              		.loc 1 126 57 view .LVU252
+ 903 000a 7047     		bx	lr
+ 904              		.cfi_endproc
+ 905              	.LFE1329:
+ 907              		.section	.text._ZN2pm7Manager14RequestServiceEv,"ax",%progbits
+ 908              		.align	1
+ 909              		.p2align 2,,3
+ 910              		.global	_ZN2pm7Manager14RequestServiceEv
+ 911              		.syntax unified
+ 912              		.thumb
+ 913              		.thumb_func
+ 915              	_ZN2pm7Manager14RequestServiceEv:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 23
+
+
+ 916              	.LVL61:
+ 917              	.LFB1330:
+ 127:src/pm_manager.cpp **** 
+ 128:src/pm_manager.cpp **** bool Manager::RequestService() {
+ 918              		.loc 1 128 32 is_stmt 1 view -0
+ 919              		.cfi_startproc
+ 920              		@ args = 0, pretend = 0, frame = 0
+ 921              		@ frame_needed = 0, uses_anonymous_args = 0
+ 922              		@ link register save eliminated.
+ 129:src/pm_manager.cpp ****     if(mode_ == Mode::Loading)
+ 923              		.loc 1 129 5 view .LVU254
+ 924 0000 90F82123 		ldrb	r2, [r0, #801]	@ zero_extendqisi2
+ 128:src/pm_manager.cpp ****     if(mode_ == Mode::Loading)
+ 925              		.loc 1 128 32 is_stmt 0 view .LVU255
+ 926 0004 0346     		mov	r3, r0
+ 927              		.loc 1 129 5 view .LVU256
+ 928 0006 022A     		cmp	r2, #2
+ 929 0008 04D0     		beq	.L53
+ 130:src/pm_manager.cpp ****         return false;
+ 131:src/pm_manager.cpp ****     mode_ = Mode::Service;
+ 930              		.loc 1 131 5 is_stmt 1 view .LVU257
+ 931              		.loc 1 131 11 is_stmt 0 view .LVU258
+ 932 000a 0322     		movs	r2, #3
+ 132:src/pm_manager.cpp ****     return true;
+ 933              		.loc 1 132 12 view .LVU259
+ 934 000c 0120     		movs	r0, #1
+ 935              	.LVL62:
+ 131:src/pm_manager.cpp ****     return true;
+ 936              		.loc 1 131 11 view .LVU260
+ 937 000e 83F82123 		strb	r2, [r3, #801]
+ 938              		.loc 1 132 5 is_stmt 1 view .LVU261
+ 939              		.loc 1 132 12 is_stmt 0 view .LVU262
+ 940 0012 7047     		bx	lr
+ 941              	.LVL63:
+ 942              	.L53:
+ 130:src/pm_manager.cpp ****         return false;
+ 943              		.loc 1 130 16 view .LVU263
+ 944 0014 0020     		movs	r0, #0
+ 945              	.LVL64:
+ 133:src/pm_manager.cpp **** }
+ 946              		.loc 1 133 1 view .LVU264
+ 947 0016 7047     		bx	lr
+ 948              		.cfi_endproc
+ 949              	.LFE1330:
+ 951              		.section	.text._ZN2pm7Manager7SetModeENS_4ModeEm,"ax",%progbits
+ 952              		.align	1
+ 953              		.p2align 2,,3
+ 954              		.global	_ZN2pm7Manager7SetModeENS_4ModeEm
+ 955              		.syntax unified
+ 956              		.thumb
+ 957              		.thumb_func
+ 959              	_ZN2pm7Manager7SetModeENS_4ModeEm:
+ 960              	.LVL65:
+ 961              	.LFB1331:
+ 134:src/pm_manager.cpp **** 
+ 135:src/pm_manager.cpp **** bool Manager::SetMode(Mode mode, uint32_t now_ms) {
+ 962              		.loc 1 135 51 is_stmt 1 view -0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 24
+
+
+ 963              		.cfi_startproc
+ 964              		@ args = 0, pretend = 0, frame = 0
+ 965              		@ frame_needed = 0, uses_anonymous_args = 0
+ 966              		@ link register save eliminated.
+ 136:src/pm_manager.cpp ****     if(mode_ == Mode::Loading || mode_ == Mode::Service)
+ 967              		.loc 1 136 5 view .LVU266
+ 137:src/pm_manager.cpp ****         return false;
+ 138:src/pm_manager.cpp ****     if(mode != Mode::Select && mode != Mode::Diagnostics)
+ 968              		.loc 1 138 5 view .LVU267
+ 136:src/pm_manager.cpp ****     if(mode_ == Mode::Loading || mode_ == Mode::Service)
+ 969              		.loc 1 136 31 is_stmt 0 view .LVU268
+ 970 0000 90F82133 		ldrb	r3, [r0, #801]	@ zero_extendqisi2
+ 136:src/pm_manager.cpp ****     if(mode_ == Mode::Loading || mode_ == Mode::Service)
+ 971              		.loc 1 136 5 view .LVU269
+ 972 0004 023B     		subs	r3, r3, #2
+ 973              		.loc 1 138 5 view .LVU270
+ 974 0006 012B     		cmp	r3, #1
+ 975 0008 15D9     		bls	.L56
+ 976 000a 0129     		cmp	r1, #1
+ 977 000c 94BF     		ite	ls
+ 978 000e 0023     		movls	r3, #0
+ 979 0010 0123     		movhi	r3, #1
+ 980 0012 83B9     		cbnz	r3, .L56
+ 139:src/pm_manager.cpp ****         return false;
+ 140:src/pm_manager.cpp ****     EnterMode(mode, now_ms);
+ 981              		.loc 1 140 5 is_stmt 1 view .LVU271
+ 982              	.LVL66:
+ 983              	.LBB95:
+ 984              	.LBI95:
+ 141:src/pm_manager.cpp ****     return true;
+ 142:src/pm_manager.cpp **** }
+ 143:src/pm_manager.cpp **** 
+ 144:src/pm_manager.cpp **** void Manager::EnterMode(Mode mode, uint32_t now_ms) {
+ 985              		.loc 1 144 6 view .LVU272
+ 986              	.LBB96:
+ 145:src/pm_manager.cpp ****     (void)now_ms;
+ 987              		.loc 1 145 5 view .LVU273
+ 146:src/pm_manager.cpp ****     mode_ = mode;
+ 988              		.loc 1 146 5 view .LVU274
+ 147:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 989              		.loc 1 147 19 is_stmt 0 view .LVU275
+ 990 0014 00F58052 		add	r2, r0, #4096
+ 991              	.LVL67:
+ 146:src/pm_manager.cpp ****     mode_ = mode;
+ 992              		.loc 1 146 11 view .LVU276
+ 993 0018 80F82113 		strb	r1, [r0, #801]
+ 994              		.loc 1 147 5 is_stmt 1 view .LVU277
+ 995              	.LBE96:
+ 996              	.LBE95:
+ 141:src/pm_manager.cpp **** }
+ 997              		.loc 1 141 12 is_stmt 0 view .LVU278
+ 998 001c 0120     		movs	r0, #1
+ 999              	.LVL68:
+ 1000              	.LBB98:
+ 1001              	.LBB97:
+ 1002              		.loc 1 147 32 view .LVU279
+ 1003 001e B2F85A16 		ldrh	r1, [r2, #1626]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 25
+
+
+ 1004              	.LVL69:
+ 148:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1005              		.loc 1 148 17 view .LVU280
+ 1006 0022 A2F85E36 		strh	r3, [r2, #1630]	@ movhi
+ 149:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1007              		.loc 1 149 18 view .LVU281
+ 1008 0026 A2F86436 		strh	r3, [r2, #1636]	@ movhi
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1009              		.loc 1 147 32 view .LVU282
+ 1010 002a 0B1E     		subs	r3, r1, #0
+ 1011 002c 18BF     		it	ne
+ 1012 002e 0123     		movne	r3, #1
+ 1013 0030 82F85C36 		strb	r3, [r2, #1628]
+ 148:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1014              		.loc 1 148 5 is_stmt 1 view .LVU283
+ 1015              		.loc 1 149 5 view .LVU284
+ 150:src/pm_manager.cpp ****     return_holding_ = false;
+ 1016              		.loc 1 150 5 view .LVU285
+ 1017              	.LVL70:
+ 1018              		.loc 1 150 5 is_stmt 0 view .LVU286
+ 1019              	.LBE97:
+ 1020              	.LBE98:
+ 141:src/pm_manager.cpp **** }
+ 1021              		.loc 1 141 5 is_stmt 1 view .LVU287
+ 141:src/pm_manager.cpp **** }
+ 1022              		.loc 1 141 12 is_stmt 0 view .LVU288
+ 1023 0034 7047     		bx	lr
+ 1024              	.LVL71:
+ 1025              	.L56:
+ 137:src/pm_manager.cpp ****     if(mode != Mode::Select && mode != Mode::Diagnostics)
+ 1026              		.loc 1 137 16 view .LVU289
+ 1027 0036 0020     		movs	r0, #0
+ 1028              	.LVL72:
+ 142:src/pm_manager.cpp **** 
+ 1029              		.loc 1 142 1 view .LVU290
+ 1030 0038 7047     		bx	lr
+ 1031              		.cfi_endproc
+ 1032              	.LFE1331:
+ 1034 003a 00BF     		.section	.text._ZN2pm7Manager9EnterModeENS_4ModeEm,"ax",%progbits
+ 1035              		.align	1
+ 1036              		.p2align 2,,3
+ 1037              		.global	_ZN2pm7Manager9EnterModeENS_4ModeEm
+ 1038              		.syntax unified
+ 1039              		.thumb
+ 1040              		.thumb_func
+ 1042              	_ZN2pm7Manager9EnterModeENS_4ModeEm:
+ 1043              	.LVL73:
+ 1044              	.LFB1332:
+ 144:src/pm_manager.cpp ****     (void)now_ms;
+ 1045              		.loc 1 144 53 is_stmt 1 view -0
+ 1046              		.cfi_startproc
+ 1047              		@ args = 0, pretend = 0, frame = 0
+ 1048              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1049              		@ link register save eliminated.
+ 145:src/pm_manager.cpp ****     mode_ = mode;
+ 1050              		.loc 1 145 5 view .LVU292
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 26
+
+
+ 1051              		.loc 1 146 5 view .LVU293
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1052              		.loc 1 147 19 is_stmt 0 view .LVU294
+ 1053 0000 00F58053 		add	r3, r0, #4096
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1054              		.loc 1 148 17 view .LVU295
+ 1055 0004 4FF0000C 		mov	ip, #0
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 1056              		.loc 1 146 11 view .LVU296
+ 1057 0008 80F82113 		strb	r1, [r0, #801]
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1058              		.loc 1 147 5 is_stmt 1 view .LVU297
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1059              		.loc 1 147 32 is_stmt 0 view .LVU298
+ 1060 000c B3F85A26 		ldrh	r2, [r3, #1626]
+ 1061              	.LVL74:
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1062              		.loc 1 148 17 view .LVU299
+ 1063 0010 A3F85EC6 		strh	ip, [r3, #1630]	@ movhi
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1064              		.loc 1 147 32 view .LVU300
+ 1065 0014 B2EB0C02 		subs	r2, r2, ip
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 1066              		.loc 1 149 18 view .LVU301
+ 1067 0018 A3F864C6 		strh	ip, [r3, #1636]	@ movhi
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1068              		.loc 1 147 32 view .LVU302
+ 1069 001c 18BF     		it	ne
+ 1070 001e 0122     		movne	r2, #1
+ 1071 0020 83F85C26 		strb	r2, [r3, #1628]
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1072              		.loc 1 148 5 is_stmt 1 view .LVU303
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 1073              		.loc 1 149 5 view .LVU304
+ 1074              		.loc 1 150 5 view .LVU305
+ 151:src/pm_manager.cpp **** }
+ 1075              		.loc 1 151 1 is_stmt 0 view .LVU306
+ 1076 0024 7047     		bx	lr
+ 1077              		.cfi_endproc
+ 1078              	.LFE1332:
+ 1080 0026 00BF     		.section	.text._ZN2pm7Manager9ShowErrorENS_7UiErrorEm,"ax",%progbits
+ 1081              		.align	1
+ 1082              		.p2align 2,,3
+ 1083              		.global	_ZN2pm7Manager9ShowErrorENS_7UiErrorEm
+ 1084              		.syntax unified
+ 1085              		.thumb
+ 1086              		.thumb_func
+ 1088              	_ZN2pm7Manager9ShowErrorENS_7UiErrorEm:
+ 1089              	.LVL75:
+ 1090              	.LFB1333:
+ 152:src/pm_manager.cpp **** 
+ 153:src/pm_manager.cpp **** void Manager::ShowError(UiError error, uint32_t now_ms) {
+ 1091              		.loc 1 153 57 is_stmt 1 view -0
+ 1092              		.cfi_startproc
+ 1093              		@ args = 0, pretend = 0, frame = 0
+ 1094              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1095              		@ link register save eliminated.
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 27
+
+
+ 154:src/pm_manager.cpp ****     ui_error_ = error;
+ 1096              		.loc 1 154 5 view .LVU308
+ 1097              		.loc 1 154 15 is_stmt 0 view .LVU309
+ 1098 0000 00F58050 		add	r0, r0, #4096
+ 1099              	.LVL76:
+ 155:src/pm_manager.cpp ****     error_until_ms_ = now_ms + kErrorFlashMs;
+ 1100              		.loc 1 155 30 view .LVU310
+ 1101 0004 02F2DC52 		addw	r2, r2, #1500
+ 1102              	.LVL77:
+ 154:src/pm_manager.cpp ****     ui_error_ = error;
+ 1103              		.loc 1 154 15 view .LVU311
+ 1104 0008 80F86C16 		strb	r1, [r0, #1644]
+ 1105              		.loc 1 155 5 is_stmt 1 view .LVU312
+ 1106              		.loc 1 155 21 is_stmt 0 view .LVU313
+ 1107 000c C0F87026 		str	r2, [r0, #1648]
+ 156:src/pm_manager.cpp **** }
+ 1108              		.loc 1 156 1 view .LVU314
+ 1109 0010 7047     		bx	lr
+ 1110              		.cfi_endproc
+ 1111              	.LFE1333:
+ 1113 0012 00BF     		.section	.text._ZN2pm7Manager9StartSlotEhmm,"ax",%progbits
+ 1114              		.align	1
+ 1115              		.p2align 2,,3
+ 1116              		.global	_ZN2pm7Manager9StartSlotEhmm
+ 1117              		.syntax unified
+ 1118              		.thumb
+ 1119              		.thumb_func
+ 1121              	_ZN2pm7Manager9StartSlotEhmm:
+ 1122              	.LVL78:
+ 1123              	.LFB1334:
+ 157:src/pm_manager.cpp **** 
+ 158:src/pm_manager.cpp **** void Manager::StartSlot(uint8_t slot, uint32_t request_id, uint32_t now_ms) {
+ 1124              		.loc 1 158 77 is_stmt 1 view -0
+ 1125              		.cfi_startproc
+ 1126              		@ args = 0, pretend = 0, frame = 0
+ 1127              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1128              		.loc 1 158 77 is_stmt 0 view .LVU316
+ 1129 0000 2DE9F047 		push	{r4, r5, r6, r7, r8, r9, r10, lr}
+ 1130              		.cfi_def_cfa_offset 32
+ 1131              		.cfi_offset 4, -32
+ 1132              		.cfi_offset 5, -28
+ 1133              		.cfi_offset 6, -24
+ 1134              		.cfi_offset 7, -20
+ 1135              		.cfi_offset 8, -16
+ 1136              		.cfi_offset 9, -12
+ 1137              		.cfi_offset 10, -8
+ 1138              		.cfi_offset 14, -4
+ 159:src/pm_manager.cpp ****     const CatalogEntry* entry = catalog_state_ == CatalogState::Ok ? catalog_.FindSlot(slot) : null
+ 1139              		.loc 1 159 33 view .LVU317
+ 1140 0004 00F58059 		add	r9, r0, #4096
+ 158:src/pm_manager.cpp ****     const CatalogEntry* entry = catalog_state_ == CatalogState::Ok ? catalog_.FindSlot(slot) : null
+ 1141              		.loc 1 158 77 view .LVU318
+ 1142 0008 0D46     		mov	r5, r1
+ 1143              		.loc 1 159 5 is_stmt 1 view .LVU319
+ 158:src/pm_manager.cpp ****     const CatalogEntry* entry = catalog_state_ == CatalogState::Ok ? catalog_.FindSlot(slot) : null
+ 1144              		.loc 1 158 77 is_stmt 0 view .LVU320
+ 1145 000a 1C46     		mov	r4, r3
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 28
+
+
+ 1146              		.loc 1 159 33 view .LVU321
+ 1147 000c 99F84476 		ldrb	r7, [r9, #1604]	@ zero_extendqisi2
+ 1148              		.loc 1 159 68 view .LVU322
+ 1149 0010 022F     		cmp	r7, #2
+ 1150 0012 0BD0     		beq	.L60
+ 1151              	.LVL79:
+ 160:src/pm_manager.cpp ****     last_slot_ = slot;
+ 1152              		.loc 1 160 5 is_stmt 1 view .LVU323
+ 1153              		.loc 1 160 16 is_stmt 0 view .LVU324
+ 1154 0014 89F87416 		strb	r1, [r9, #1652]
+ 161:src/pm_manager.cpp ****     if(entry == nullptr) {
+ 1155              		.loc 1 161 5 is_stmt 1 view .LVU325
+ 162:src/pm_manager.cpp ****         ShowError(catalog_state_ == CatalogState::NoCard ? UiError::NoCard
+ 1156              		.loc 1 162 9 view .LVU326
+ 1157              		.loc 1 162 18 is_stmt 0 view .LVU327
+ 1158 0018 D7BB     		cbnz	r7, .L61
+ 1159              	.LVL80:
+ 1160              	.L62:
+ 1161              		.loc 1 162 18 discriminator 1 view .LVU328
+ 1162 001a 0223     		movs	r3, #2
+ 1163              	.L70:
+ 1164              	.LBB99:
+ 1165              	.LBB100:
+ 155:src/pm_manager.cpp **** }
+ 1166              		.loc 1 155 30 view .LVU329
+ 1167 001c 04F2DC54 		addw	r4, r4, #1500
+ 1168              	.LVL81:
+ 154:src/pm_manager.cpp ****     error_until_ms_ = now_ms + kErrorFlashMs;
+ 1169              		.loc 1 154 15 view .LVU330
+ 1170 0020 89F86C36 		strb	r3, [r9, #1644]
+ 155:src/pm_manager.cpp **** }
+ 1171              		.loc 1 155 5 is_stmt 1 view .LVU331
+ 155:src/pm_manager.cpp **** }
+ 1172              		.loc 1 155 21 is_stmt 0 view .LVU332
+ 1173 0024 C9F87046 		str	r4, [r9, #1648]
+ 1174              	.LBE100:
+ 1175              	.LBE99:
+ 163:src/pm_manager.cpp ****                   : catalog_state_ == CatalogState::Ok   ? UiError::EmptySlot
+ 164:src/pm_manager.cpp ****                                                           : UiError::Catalog,
+ 165:src/pm_manager.cpp ****                   now_ms);
+ 166:src/pm_manager.cpp ****         return;
+ 167:src/pm_manager.cpp ****     }
+ 168:src/pm_manager.cpp ****     loader_.Reset();
+ 169:src/pm_manager.cpp ****     if(!loader_.Start(*entry, now_ms, request_id)) {
+ 170:src/pm_manager.cpp ****         ShowError(UiError::Load, now_ms);
+ 171:src/pm_manager.cpp ****         return;
+ 1176              		.loc 1 171 9 is_stmt 1 view .LVU333
+ 172:src/pm_manager.cpp ****     }
+ 173:src/pm_manager.cpp ****     ui_error_ = UiError::None;
+ 174:src/pm_manager.cpp ****     EnterMode(Mode::Loading, now_ms);
+ 175:src/pm_manager.cpp **** }
+ 1177              		.loc 1 175 1 is_stmt 0 view .LVU334
+ 1178 0028 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 1179              	.LVL82:
+ 1180              	.L60:
+ 1181              		.loc 1 175 1 view .LVU335
+ 1182 002c 8046     		mov	r8, r0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 29
+
+
+ 159:src/pm_manager.cpp ****     last_slot_ = slot;
+ 1183              		.loc 1 159 87 discriminator 1 view .LVU336
+ 1184 002e 00F54970 		add	r0, r0, #804
+ 1185              	.LVL83:
+ 159:src/pm_manager.cpp ****     last_slot_ = slot;
+ 1186              		.loc 1 159 87 discriminator 1 view .LVU337
+ 1187 0032 1646     		mov	r6, r2
+ 1188 0034 FFF7FEFF 		bl	_ZNK2pm7Catalog8FindSlotEh
+ 1189              	.LVL84:
+ 160:src/pm_manager.cpp ****     if(entry == nullptr) {
+ 1190              		.loc 1 160 5 is_stmt 1 view .LVU338
+ 160:src/pm_manager.cpp ****     if(entry == nullptr) {
+ 1191              		.loc 1 160 16 is_stmt 0 view .LVU339
+ 1192 0038 89F87456 		strb	r5, [r9, #1652]
+ 161:src/pm_manager.cpp ****         ShowError(catalog_state_ == CatalogState::NoCard ? UiError::NoCard
+ 1193              		.loc 1 161 5 is_stmt 1 view .LVU340
+ 1194 003c 0546     		mov	r5, r0
+ 1195              	.LVL85:
+ 161:src/pm_manager.cpp ****         ShowError(catalog_state_ == CatalogState::NoCard ? UiError::NoCard
+ 1196              		.loc 1 161 5 is_stmt 0 view .LVU341
+ 1197 003e F8B1     		cbz	r0, .L71
+ 168:src/pm_manager.cpp ****     if(!loader_.Start(*entry, now_ms, request_id)) {
+ 1198              		.loc 1 168 5 is_stmt 1 view .LVU342
+ 168:src/pm_manager.cpp ****     if(!loader_.Start(*entry, now_ms, request_id)) {
+ 1199              		.loc 1 168 18 is_stmt 0 view .LVU343
+ 1200 0040 08F1080A 		add	r10, r8, #8
+ 1201 0044 5046     		mov	r0, r10
+ 1202              	.LVL86:
+ 168:src/pm_manager.cpp ****     if(!loader_.Start(*entry, now_ms, request_id)) {
+ 1203              		.loc 1 168 18 view .LVU344
+ 1204 0046 FFF7FEFF 		bl	_ZN2pm6Loader5ResetEv
+ 1205              	.LVL87:
+ 169:src/pm_manager.cpp ****         ShowError(UiError::Load, now_ms);
+ 1206              		.loc 1 169 5 is_stmt 1 view .LVU345
+ 169:src/pm_manager.cpp ****         ShowError(UiError::Load, now_ms);
+ 1207              		.loc 1 169 22 is_stmt 0 view .LVU346
+ 1208 004a 3346     		mov	r3, r6
+ 1209 004c 2246     		mov	r2, r4
+ 1210 004e 2946     		mov	r1, r5
+ 1211 0050 5046     		mov	r0, r10
+ 1212 0052 FFF7FEFF 		bl	_ZN2pm6Loader5StartERKNS_12CatalogEntryEmm
+ 1213              	.LVL88:
+ 169:src/pm_manager.cpp ****         ShowError(UiError::Load, now_ms);
+ 1214              		.loc 1 169 5 discriminator 1 view .LVU347
+ 1215 0056 88B1     		cbz	r0, .L72
+ 173:src/pm_manager.cpp ****     EnterMode(Mode::Loading, now_ms);
+ 1216              		.loc 1 173 5 is_stmt 1 view .LVU348
+ 173:src/pm_manager.cpp ****     EnterMode(Mode::Loading, now_ms);
+ 1217              		.loc 1 173 15 is_stmt 0 view .LVU349
+ 1218 0058 0023     		movs	r3, #0
+ 1219              	.LBB102:
+ 1220              	.LBB103:
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1221              		.loc 1 147 32 view .LVU350
+ 1222 005a B9F85A26 		ldrh	r2, [r9, #1626]
+ 1223 005e D21A     		subs	r2, r2, r3
+ 1224              	.LBE103:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 30
+
+
+ 1225              	.LBE102:
+ 173:src/pm_manager.cpp ****     EnterMode(Mode::Loading, now_ms);
+ 1226              		.loc 1 173 15 view .LVU351
+ 1227 0060 89F86C36 		strb	r3, [r9, #1644]
+ 174:src/pm_manager.cpp **** }
+ 1228              		.loc 1 174 5 is_stmt 1 view .LVU352
+ 1229              	.LVL89:
+ 1230              	.LBB105:
+ 1231              	.LBI102:
+ 144:src/pm_manager.cpp ****     (void)now_ms;
+ 1232              		.loc 1 144 6 view .LVU353
+ 1233              	.LBB104:
+ 145:src/pm_manager.cpp ****     mode_ = mode;
+ 1234              		.loc 1 145 5 view .LVU354
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 1235              		.loc 1 146 5 view .LVU355
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 1236              		.loc 1 146 11 is_stmt 0 view .LVU356
+ 1237 0064 88F82173 		strb	r7, [r8, #801]
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1238              		.loc 1 147 5 is_stmt 1 view .LVU357
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1239              		.loc 1 147 32 is_stmt 0 view .LVU358
+ 1240 0068 18BF     		it	ne
+ 1241 006a 0122     		movne	r2, #1
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1242              		.loc 1 148 17 view .LVU359
+ 1243 006c A9F85E36 		strh	r3, [r9, #1630]	@ movhi
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 1244              		.loc 1 149 18 view .LVU360
+ 1245 0070 A9F86436 		strh	r3, [r9, #1636]	@ movhi
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1246              		.loc 1 147 32 view .LVU361
+ 1247 0074 89F85C26 		strb	r2, [r9, #1628]
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1248              		.loc 1 148 5 is_stmt 1 view .LVU362
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 1249              		.loc 1 149 5 view .LVU363
+ 150:src/pm_manager.cpp **** }
+ 1250              		.loc 1 150 5 view .LVU364
+ 1251              	.LVL90:
+ 150:src/pm_manager.cpp **** }
+ 1252              		.loc 1 150 5 is_stmt 0 view .LVU365
+ 1253              	.LBE104:
+ 1254              	.LBE105:
+ 1255              		.loc 1 175 1 view .LVU366
+ 1256 0078 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 1257              	.LVL91:
+ 1258              	.L72:
+ 170:src/pm_manager.cpp ****         return;
+ 1259              		.loc 1 170 9 is_stmt 1 view .LVU367
+ 1260              	.LBB106:
+ 1261              	.LBI99:
+ 153:src/pm_manager.cpp ****     ui_error_ = error;
+ 1262              		.loc 1 153 6 view .LVU368
+ 1263              	.LBB101:
+ 154:src/pm_manager.cpp ****     error_until_ms_ = now_ms + kErrorFlashMs;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 31
+
+
+ 1264              		.loc 1 154 5 view .LVU369
+ 154:src/pm_manager.cpp ****     error_until_ms_ = now_ms + kErrorFlashMs;
+ 1265              		.loc 1 154 15 is_stmt 0 view .LVU370
+ 1266 007c 0423     		movs	r3, #4
+ 1267 007e CDE7     		b	.L70
+ 1268              	.LVL92:
+ 1269              	.L71:
+ 154:src/pm_manager.cpp ****     error_until_ms_ = now_ms + kErrorFlashMs;
+ 1270              		.loc 1 154 15 view .LVU371
+ 1271              	.LBE101:
+ 1272              	.LBE106:
+ 162:src/pm_manager.cpp ****                   : catalog_state_ == CatalogState::Ok   ? UiError::EmptySlot
+ 1273              		.loc 1 162 19 view .LVU372
+ 1274 0080 99F84436 		ldrb	r3, [r9, #1604]	@ zero_extendqisi2
+ 162:src/pm_manager.cpp ****                   : catalog_state_ == CatalogState::Ok   ? UiError::EmptySlot
+ 1275              		.loc 1 162 9 is_stmt 1 view .LVU373
+ 162:src/pm_manager.cpp ****                   : catalog_state_ == CatalogState::Ok   ? UiError::EmptySlot
+ 1276              		.loc 1 162 18 is_stmt 0 view .LVU374
+ 1277 0084 002B     		cmp	r3, #0
+ 1278 0086 C8D0     		beq	.L62
+ 163:src/pm_manager.cpp ****                                                           : UiError::Catalog,
+ 1279              		.loc 1 163 58 view .LVU375
+ 1280 0088 022B     		cmp	r3, #2
+ 1281 008a 01D1     		bne	.L61
+ 163:src/pm_manager.cpp ****                                                           : UiError::Catalog,
+ 1282              		.loc 1 163 58 discriminator 1 view .LVU376
+ 1283 008c 0123     		movs	r3, #1
+ 1284              	.LVL93:
+ 1285              	.LBB107:
+ 1286              	.LBI107:
+ 153:src/pm_manager.cpp ****     ui_error_ = error;
+ 1287              		.loc 1 153 6 is_stmt 1 view .LVU377
+ 1288              	.LBB108:
+ 154:src/pm_manager.cpp ****     error_until_ms_ = now_ms + kErrorFlashMs;
+ 1289              		.loc 1 154 5 view .LVU378
+ 1290 008e C5E7     		b	.L70
+ 1291              	.LVL94:
+ 1292              	.L61:
+ 154:src/pm_manager.cpp ****     error_until_ms_ = now_ms + kErrorFlashMs;
+ 1293              		.loc 1 154 5 is_stmt 0 view .LVU379
+ 1294              	.LBE108:
+ 1295              	.LBE107:
+ 163:src/pm_manager.cpp ****                                                           : UiError::Catalog,
+ 1296              		.loc 1 163 58 discriminator 2 view .LVU380
+ 1297 0090 0323     		movs	r3, #3
+ 1298 0092 C3E7     		b	.L70
+ 1299              		.cfi_endproc
+ 1300              	.LFE1334:
+ 1302              		.section	.text._ZN2pm7Manager12StartRequestEhPKcPKhjmmm,"ax",%progbits
+ 1303              		.align	1
+ 1304              		.p2align 2,,3
+ 1305              		.global	_ZN2pm7Manager12StartRequestEhPKcPKhjmmm
+ 1306              		.syntax unified
+ 1307              		.thumb
+ 1308              		.thumb_func
+ 1310              	_ZN2pm7Manager12StartRequestEhPKcPKhjmmm:
+ 1311              	.LVL95:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 32
+
+
+ 1312              	.LFB1335:
+ 176:src/pm_manager.cpp **** 
+ 177:src/pm_manager.cpp **** StartResult Manager::StartRequest(uint8_t slot, const char* id, const uint8_t* hash, size_t hash_le
+ 178:src/pm_manager.cpp ****                                   uint32_t generation, uint32_t request_id, uint32_t now_ms) {
+ 1313              		.loc 1 178 94 is_stmt 1 view -0
+ 1314              		.cfi_startproc
+ 1315              		@ args = 16, pretend = 0, frame = 0
+ 1316              		@ frame_needed = 0, uses_anonymous_args = 0
+ 179:src/pm_manager.cpp ****     if(!sd_supported_)
+ 1317              		.loc 1 179 5 view .LVU382
+ 178:src/pm_manager.cpp ****     if(!sd_supported_)
+ 1318              		.loc 1 178 94 is_stmt 0 view .LVU383
+ 1319 0000 2DE9F047 		push	{r4, r5, r6, r7, r8, r9, r10, lr}
+ 1320              		.cfi_def_cfa_offset 32
+ 1321              		.cfi_offset 4, -32
+ 1322              		.cfi_offset 5, -28
+ 1323              		.cfi_offset 6, -24
+ 1324              		.cfi_offset 7, -20
+ 1325              		.cfi_offset 8, -16
+ 1326              		.cfi_offset 9, -12
+ 1327              		.cfi_offset 10, -8
+ 1328              		.cfi_offset 14, -4
+ 178:src/pm_manager.cpp ****     if(!sd_supported_)
+ 1329              		.loc 1 178 94 view .LVU384
+ 1330 0004 0446     		mov	r4, r0
+ 1331              		.loc 1 179 5 view .LVU385
+ 1332 0006 90F82003 		ldrb	r0, [r0, #800]	@ zero_extendqisi2
+ 1333              	.LVL96:
+ 1334              		.loc 1 179 5 view .LVU386
+ 1335 000a 08B3     		cbz	r0, .L78
+ 180:src/pm_manager.cpp ****         return StartResult::Unsupported;
+ 181:src/pm_manager.cpp ****     if(has_last_rid_ && request_id == last_rid_)
+ 1336              		.loc 1 181 5 is_stmt 1 view .LVU387
+ 1337              		.loc 1 181 8 is_stmt 0 view .LVU388
+ 1338 000c 04F58056 		add	r6, r4, #4096
+ 1339 0010 1F46     		mov	r7, r3
+ 1340 0012 8946     		mov	r9, r1
+ 1341 0014 9046     		mov	r8, r2
+ 1342              		.loc 1 181 5 view .LVU389
+ 1343 0016 96F87C36 		ldrb	r3, [r6, #1660]	@ zero_extendqisi2
+ 1344              	.LVL97:
+ 1345              		.loc 1 181 5 view .LVU390
+ 1346 001a 93B9     		cbnz	r3, .L91
+ 1347              	.LVL98:
+ 1348              	.L75:
+ 182:src/pm_manager.cpp ****         return StartResult::Duplicate;  // replayed order (reconnect, retry): report, do not restar
+ 183:src/pm_manager.cpp ****     if(mode_ == Mode::Loading)
+ 1349              		.loc 1 183 5 is_stmt 1 view .LVU391
+ 1350              		.loc 1 183 8 is_stmt 0 view .LVU392
+ 1351 001c 94F82153 		ldrb	r5, [r4, #801]	@ zero_extendqisi2
+ 1352              		.loc 1 183 5 view .LVU393
+ 1353 0020 022D     		cmp	r5, #2
+ 1354 0022 43D0     		beq	.L77
+ 184:src/pm_manager.cpp ****         return StartResult::Busy;
+ 185:src/pm_manager.cpp ****     if(mode_ != Mode::Select)
+ 1355              		.loc 1 185 5 is_stmt 1 view .LVU394
+ 1356 0024 002D     		cmp	r5, #0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 33
+
+
+ 1357 0026 45D1     		bne	.L80
+ 186:src/pm_manager.cpp ****         return StartResult::WrongMode;
+ 187:src/pm_manager.cpp ****     if(catalog_state_ != CatalogState::Ok)
+ 1358              		.loc 1 187 5 view .LVU395
+ 1359 0028 96F84436 		ldrb	r3, [r6, #1604]	@ zero_extendqisi2
+ 1360 002c 022B     		cmp	r3, #2
+ 1361 002e 47D1     		bne	.L81
+ 188:src/pm_manager.cpp ****         return StartResult::NoCatalog;
+ 189:src/pm_manager.cpp ****     if(generation != generation_)
+ 1362              		.loc 1 189 5 view .LVU396
+ 1363 0030 D6F84C36 		ldr	r3, [r6, #1612]
+ 1364 0034 099A     		ldr	r2, [sp, #36]
+ 1365 0036 9342     		cmp	r3, r2
+ 1366 0038 0ED0     		beq	.L92
+ 190:src/pm_manager.cpp ****         return StartResult::Generation;
+ 1367              		.loc 1 190 29 is_stmt 0 view .LVU397
+ 1368 003a 0525     		movs	r5, #5
+ 191:src/pm_manager.cpp ****     const CatalogEntry* entry = catalog_.FindSlot(slot);
+ 192:src/pm_manager.cpp ****     if(entry == nullptr || id == nullptr || std::strcmp(entry->id, id) != 0)
+ 193:src/pm_manager.cpp ****         return StartResult::NoEntry;
+ 194:src/pm_manager.cpp ****     if(hash == nullptr || hash_len < 8 || hash_len > 32
+ 195:src/pm_manager.cpp ****        || std::memcmp(entry->payload_sha256, hash, hash_len) != 0)
+ 196:src/pm_manager.cpp ****         return StartResult::Hash;
+ 197:src/pm_manager.cpp ****     last_rid_ = request_id;
+ 198:src/pm_manager.cpp ****     has_last_rid_ = true;
+ 199:src/pm_manager.cpp ****     StartSlot(slot, request_id, now_ms);
+ 200:src/pm_manager.cpp ****     return mode_ == Mode::Loading ? StartResult::Accepted : StartResult::Busy;
+ 201:src/pm_manager.cpp **** }
+ 1369              		.loc 1 201 1 view .LVU398
+ 1370 003c 2846     		mov	r0, r5
+ 1371 003e BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 1372              	.LVL99:
+ 1373              	.L91:
+ 181:src/pm_manager.cpp ****         return StartResult::Duplicate;  // replayed order (reconnect, retry): report, do not restar
+ 1374              		.loc 1 181 22 discriminator 1 view .LVU399
+ 1375 0042 D6F87836 		ldr	r3, [r6, #1656]
+ 1376 0046 0A9A     		ldr	r2, [sp, #40]
+ 1377              	.LVL100:
+ 181:src/pm_manager.cpp ****         return StartResult::Duplicate;  // replayed order (reconnect, retry): report, do not restar
+ 1378              		.loc 1 181 22 discriminator 1 view .LVU400
+ 1379 0048 9342     		cmp	r3, r2
+ 1380 004a E7D1     		bne	.L75
+ 182:src/pm_manager.cpp ****     if(mode_ == Mode::Loading)
+ 1381              		.loc 1 182 29 view .LVU401
+ 1382 004c 0125     		movs	r5, #1
+ 1383 004e 00E0     		b	.L74
+ 1384              	.LVL101:
+ 1385              	.L78:
+ 180:src/pm_manager.cpp ****     if(has_last_rid_ && request_id == last_rid_)
+ 1386              		.loc 1 180 29 view .LVU402
+ 1387 0050 0825     		movs	r5, #8
+ 1388              	.LVL102:
+ 1389              	.L74:
+ 1390              		.loc 1 201 1 view .LVU403
+ 1391 0052 2846     		mov	r0, r5
+ 1392 0054 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 1393              	.LVL103:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 34
+
+
+ 1394              	.L92:
+ 191:src/pm_manager.cpp ****     if(entry == nullptr || id == nullptr || std::strcmp(entry->id, id) != 0)
+ 1395              		.loc 1 191 5 is_stmt 1 view .LVU404
+ 191:src/pm_manager.cpp ****     if(entry == nullptr || id == nullptr || std::strcmp(entry->id, id) != 0)
+ 1396              		.loc 1 191 50 is_stmt 0 view .LVU405
+ 1397 0058 4946     		mov	r1, r9
+ 1398              	.LVL104:
+ 191:src/pm_manager.cpp ****     if(entry == nullptr || id == nullptr || std::strcmp(entry->id, id) != 0)
+ 1399              		.loc 1 191 50 view .LVU406
+ 1400 005a 04F54970 		add	r0, r4, #804
+ 1401 005e FFF7FEFF 		bl	_ZNK2pm7Catalog8FindSlotEh
+ 1402              	.LVL105:
+ 192:src/pm_manager.cpp ****         return StartResult::NoEntry;
+ 1403              		.loc 1 192 5 is_stmt 1 view .LVU407
+ 192:src/pm_manager.cpp ****         return StartResult::NoEntry;
+ 1404              		.loc 1 192 14 is_stmt 0 view .LVU408
+ 1405 0062 8246     		mov	r10, r0
+ 192:src/pm_manager.cpp ****         return StartResult::NoEntry;
+ 1406              		.loc 1 192 5 view .LVU409
+ 1407 0064 80B3     		cbz	r0, .L84
+ 1408 0066 B8F1000F 		cmp	r8, #0
+ 1409 006a 2DD0     		beq	.L84
+ 192:src/pm_manager.cpp ****         return StartResult::NoEntry;
+ 1410              		.loc 1 192 56 discriminator 1 view .LVU410
+ 1411 006c 4146     		mov	r1, r8
+ 1412 006e 0130     		adds	r0, r0, #1
+ 1413              	.LVL106:
+ 192:src/pm_manager.cpp ****         return StartResult::NoEntry;
+ 1414              		.loc 1 192 56 discriminator 1 view .LVU411
+ 1415 0070 FFF7FEFF 		bl	strcmp
+ 1416              	.LVL107:
+ 192:src/pm_manager.cpp ****         return StartResult::NoEntry;
+ 1417              		.loc 1 192 42 discriminator 1 view .LVU412
+ 1418 0074 40BB     		cbnz	r0, .L84
+ 194:src/pm_manager.cpp ****        || std::memcmp(entry->payload_sha256, hash, hash_len) != 0)
+ 1419              		.loc 1 194 5 is_stmt 1 view .LVU413
+ 194:src/pm_manager.cpp ****        || std::memcmp(entry->payload_sha256, hash, hash_len) != 0)
+ 1420              		.loc 1 194 36 is_stmt 0 view .LVU414
+ 1421 0076 089B     		ldr	r3, [sp, #32]
+ 1422 0078 083B     		subs	r3, r3, #8
+ 194:src/pm_manager.cpp ****        || std::memcmp(entry->payload_sha256, hash, hash_len) != 0)
+ 1423              		.loc 1 194 40 discriminator 1 view .LVU415
+ 1424 007a 182B     		cmp	r3, #24
+ 1425 007c 1ED8     		bhi	.L86
+ 1426 007e EFB1     		cbz	r7, .L86
+ 195:src/pm_manager.cpp ****         return StartResult::Hash;
+ 1427              		.loc 1 195 22 view .LVU416
+ 1428 0080 3946     		mov	r1, r7
+ 1429 0082 0AF59370 		add	r0, r10, #294
+ 1430 0086 089A     		ldr	r2, [sp, #32]
+ 1431 0088 FFF7FEFF 		bl	memcmp
+ 1432              	.LVL108:
+ 195:src/pm_manager.cpp ****         return StartResult::Hash;
+ 1433              		.loc 1 195 8 discriminator 1 view .LVU417
+ 1434 008c B0B9     		cbnz	r0, .L86
+ 197:src/pm_manager.cpp ****     has_last_rid_ = true;
+ 1435              		.loc 1 197 5 is_stmt 1 view .LVU418
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 35
+
+
+ 198:src/pm_manager.cpp ****     StartSlot(slot, request_id, now_ms);
+ 1436              		.loc 1 198 19 is_stmt 0 view .LVU419
+ 1437 008e 0123     		movs	r3, #1
+ 197:src/pm_manager.cpp ****     has_last_rid_ = true;
+ 1438              		.loc 1 197 15 view .LVU420
+ 1439 0090 0A9A     		ldr	r2, [sp, #40]
+ 199:src/pm_manager.cpp ****     return mode_ == Mode::Loading ? StartResult::Accepted : StartResult::Busy;
+ 1440              		.loc 1 199 14 view .LVU421
+ 1441 0092 4946     		mov	r1, r9
+ 1442 0094 2046     		mov	r0, r4
+ 198:src/pm_manager.cpp ****     StartSlot(slot, request_id, now_ms);
+ 1443              		.loc 1 198 19 view .LVU422
+ 1444 0096 86F87C36 		strb	r3, [r6, #1660]
+ 197:src/pm_manager.cpp ****     has_last_rid_ = true;
+ 1445              		.loc 1 197 15 view .LVU423
+ 1446 009a C6F87826 		str	r2, [r6, #1656]
+ 198:src/pm_manager.cpp ****     StartSlot(slot, request_id, now_ms);
+ 1447              		.loc 1 198 5 is_stmt 1 view .LVU424
+ 199:src/pm_manager.cpp ****     return mode_ == Mode::Loading ? StartResult::Accepted : StartResult::Busy;
+ 1448              		.loc 1 199 5 view .LVU425
+ 199:src/pm_manager.cpp ****     return mode_ == Mode::Loading ? StartResult::Accepted : StartResult::Busy;
+ 1449              		.loc 1 199 14 is_stmt 0 view .LVU426
+ 1450 009e 0B9B     		ldr	r3, [sp, #44]
+ 1451 00a0 FFF7FEFF 		bl	_ZN2pm7Manager9StartSlotEhmm
+ 1452              	.LVL109:
+ 200:src/pm_manager.cpp **** }
+ 1453              		.loc 1 200 5 is_stmt 1 view .LVU427
+ 200:src/pm_manager.cpp **** }
+ 1454              		.loc 1 200 35 is_stmt 0 view .LVU428
+ 1455 00a4 94F82133 		ldrb	r3, [r4, #801]	@ zero_extendqisi2
+ 1456 00a8 022B     		cmp	r3, #2
+ 1457 00aa D2D0     		beq	.L74
+ 1458              	.LVL110:
+ 1459              	.L77:
+ 184:src/pm_manager.cpp ****     if(mode_ != Mode::Select)
+ 1460              		.loc 1 184 29 view .LVU429
+ 1461 00ac 0325     		movs	r5, #3
+ 1462              		.loc 1 201 1 view .LVU430
+ 1463 00ae 2846     		mov	r0, r5
+ 1464 00b0 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 1465              	.LVL111:
+ 1466              	.L80:
+ 186:src/pm_manager.cpp ****     if(catalog_state_ != CatalogState::Ok)
+ 1467              		.loc 1 186 29 view .LVU431
+ 1468 00b4 0225     		movs	r5, #2
+ 1469              		.loc 1 201 1 view .LVU432
+ 1470 00b6 2846     		mov	r0, r5
+ 1471 00b8 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 1472              	.LVL112:
+ 1473              	.L86:
+ 196:src/pm_manager.cpp ****     last_rid_ = request_id;
+ 1474              		.loc 1 196 29 view .LVU433
+ 1475 00bc 0725     		movs	r5, #7
+ 1476 00be C8E7     		b	.L74
+ 1477              	.LVL113:
+ 1478              	.L81:
+ 188:src/pm_manager.cpp ****     if(generation != generation_)
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 36
+
+
+ 1479              		.loc 1 188 29 view .LVU434
+ 1480 00c0 0425     		movs	r5, #4
+ 1481              		.loc 1 201 1 view .LVU435
+ 1482 00c2 2846     		mov	r0, r5
+ 1483 00c4 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 1484              	.LVL114:
+ 1485              	.L84:
+ 193:src/pm_manager.cpp ****     if(hash == nullptr || hash_len < 8 || hash_len > 32
+ 1486              		.loc 1 193 29 view .LVU436
+ 1487 00c8 0625     		movs	r5, #6
+ 1488 00ca C2E7     		b	.L74
+ 1489              		.cfi_endproc
+ 1490              	.LFE1335:
+ 1492              		.section	.text._ZN2pm7Manager16HandleSelectKeysEmt,"ax",%progbits
+ 1493              		.align	1
+ 1494              		.p2align 2,,3
+ 1495              		.global	_ZN2pm7Manager16HandleSelectKeysEmt
+ 1496              		.syntax unified
+ 1497              		.thumb
+ 1498              		.thumb_func
+ 1500              	_ZN2pm7Manager16HandleSelectKeysEmt:
+ 1501              	.LVL115:
+ 1502              	.LFB1336:
+ 202:src/pm_manager.cpp **** 
+ 203:src/pm_manager.cpp **** void Manager::HandleSelectKeys(uint32_t now_ms, uint16_t keys) {
+ 1503              		.loc 1 203 64 is_stmt 1 view -0
+ 1504              		.cfi_startproc
+ 1505              		@ args = 0, pretend = 0, frame = 0
+ 1506              		@ frame_needed = 0, uses_anonymous_args = 0
+ 204:src/pm_manager.cpp ****     if(release_gate_) {
+ 1507              		.loc 1 204 5 view .LVU438
+ 1508              		.loc 1 204 8 is_stmt 0 view .LVU439
+ 1509 0000 00F5805C 		add	ip, r0, #4096
+ 203:src/pm_manager.cpp ****     if(release_gate_) {
+ 1510              		.loc 1 203 64 view .LVU440
+ 1511 0004 10B5     		push	{r4, lr}
+ 1512              		.cfi_def_cfa_offset 8
+ 1513              		.cfi_offset 4, -8
+ 1514              		.cfi_offset 14, -4
+ 1515              		.loc 1 204 5 view .LVU441
+ 1516 0006 9CF85C46 		ldrb	r4, [ip, #1628]	@ zero_extendqisi2
+ 1517 000a 9CBB     		cbnz	r4, .L119
+ 1518              	.LVL116:
+ 1519              	.LBB117:
+ 1520              	.LBI117:
+ 203:src/pm_manager.cpp ****     if(release_gate_) {
+ 1521              		.loc 1 203 6 is_stmt 1 view .LVU442
+ 1522              	.LBB118:
+ 205:src/pm_manager.cpp ****         if(keys == 0)
+ 206:src/pm_manager.cpp ****             release_gate_ = false;
+ 207:src/pm_manager.cpp ****         return;
+ 208:src/pm_manager.cpp ****     }
+ 209:src/pm_manager.cpp ****     if(keys != 0) {
+ 1523              		.loc 1 209 5 view .LVU443
+ 210:src/pm_manager.cpp ****         if(cycle_keys_ == 0) {  // press begins
+ 1524              		.loc 1 210 12 is_stmt 0 view .LVU444
+ 1525 000c BCF85E46 		ldrh	r4, [ip, #1630]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 37
+
+
+ 209:src/pm_manager.cpp ****         if(cycle_keys_ == 0) {  // press begins
+ 1526              		.loc 1 209 5 view .LVU445
+ 1527 0010 02BB     		cbnz	r2, .L120
+ 211:src/pm_manager.cpp ****             cycle_since_ms_ = now_ms;
+ 212:src/pm_manager.cpp ****             cycle_valid_ = true;
+ 213:src/pm_manager.cpp ****         }
+ 214:src/pm_manager.cpp ****         cycle_keys_ |= keys;
+ 215:src/pm_manager.cpp ****         if(PopCount(cycle_keys_) > 1 || now_ms - cycle_since_ms_ >= kLongPressMs)
+ 216:src/pm_manager.cpp ****             cycle_valid_ = false;  // chord or long hold: never a selection
+ 217:src/pm_manager.cpp ****         return;
+ 218:src/pm_manager.cpp ****     }
+ 219:src/pm_manager.cpp ****     if(cycle_keys_ == 0)
+ 1528              		.loc 1 219 5 is_stmt 1 view .LVU446
+ 1529 0012 74B3     		cbz	r4, .L93
+ 220:src/pm_manager.cpp ****         return;  // nothing pressed
+ 221:src/pm_manager.cpp ****     const uint8_t slot = cycle_valid_ ? SingleKeySlot(cycle_keys_) : 0;
+ 1530              		.loc 1 221 5 view .LVU447
+ 1531              		.loc 1 221 70 is_stmt 0 view .LVU448
+ 1532 0014 9CF86436 		ldrb	r3, [ip, #1636]	@ zero_extendqisi2
+ 1533 0018 8BB3     		cbz	r3, .L104
+ 1534              	.LVL117:
+ 1535              	.LBB119:
+ 1536              	.LBI119:
+  16:src/pm_manager.cpp ****     if(mask == 0 || (mask & (mask - 1)) != 0)
+ 1537              		.loc 1 16 9 is_stmt 1 view .LVU449
+ 1538              	.LBB120:
+  17:src/pm_manager.cpp ****         return 0;
+ 1539              		.loc 1 17 5 view .LVU450
+  17:src/pm_manager.cpp ****         return 0;
+ 1540              		.loc 1 17 35 is_stmt 0 discriminator 1 view .LVU451
+ 1541 001a 631E     		subs	r3, r4, #1
+  17:src/pm_manager.cpp ****         return 0;
+ 1542              		.loc 1 17 18 discriminator 1 view .LVU452
+ 1543 001c 2340     		ands	r3, r3, r4
+ 1544 001e 2ED1     		bne	.L104
+ 1545              	.LVL118:
+  20:src/pm_manager.cpp ****         mask >>= 1;
+ 1546              		.loc 1 20 11 is_stmt 1 view .LVU453
+ 1547 0020 E207     		lsls	r2, r4, #31
+ 1548              	.LVL119:
+  19:src/pm_manager.cpp ****     while(!(mask & 1u)) {
+ 1549              		.loc 1 19 13 is_stmt 0 view .LVU454
+ 1550 0022 4FF0010E 		mov	lr, #1
+  20:src/pm_manager.cpp ****         mask >>= 1;
+ 1551              		.loc 1 20 11 view .LVU455
+ 1552 0026 49D4     		bmi	.L105
+ 1553              	.LVL120:
+ 1554              	.L106:
+  21:src/pm_manager.cpp ****         ++slot;
+ 1555              		.loc 1 21 9 is_stmt 1 view .LVU456
+  21:src/pm_manager.cpp ****         ++slot;
+ 1556              		.loc 1 21 14 is_stmt 0 view .LVU457
+ 1557 0028 6408     		lsrs	r4, r4, #1
+ 1558              	.LVL121:
+  22:src/pm_manager.cpp ****     }
+ 1559              		.loc 1 22 9 is_stmt 1 view .LVU458
+ 1560 002a 0EF1010E 		add	lr, lr, #1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 38
+
+
+ 1561              	.LVL122:
+  20:src/pm_manager.cpp ****         mask >>= 1;
+ 1562              		.loc 1 20 11 is_stmt 0 view .LVU459
+ 1563 002e E307     		lsls	r3, r4, #31
+  22:src/pm_manager.cpp ****     }
+ 1564              		.loc 1 22 9 view .LVU460
+ 1565 0030 5FFA8EFE 		uxtb	lr, lr
+ 1566              	.LVL123:
+  20:src/pm_manager.cpp ****         mask >>= 1;
+ 1567              		.loc 1 20 11 is_stmt 1 view .LVU461
+ 1568 0034 F8D5     		bpl	.L106
+ 1569              	.LVL124:
+  20:src/pm_manager.cpp ****         mask >>= 1;
+ 1570              		.loc 1 20 11 is_stmt 0 view .LVU462
+ 1571              	.LBE120:
+ 1572              	.LBE119:
+ 222:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1573              		.loc 1 222 5 is_stmt 1 view .LVU463
+ 1574              		.loc 1 222 17 is_stmt 0 view .LVU464
+ 1575 0036 0023     		movs	r3, #0
+ 223:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 224:src/pm_manager.cpp ****     if(slot == 0)
+ 225:src/pm_manager.cpp ****         return;
+ 226:src/pm_manager.cpp ****     if(slot == 16) {
+ 1576              		.loc 1 226 5 view .LVU465
+ 1577 0038 BEF1100F 		cmp	lr, #16
+ 222:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1578              		.loc 1 222 17 view .LVU466
+ 1579 003c ACF85E36 		strh	r3, [ip, #1630]	@ movhi
+ 223:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1580              		.loc 1 223 5 is_stmt 1 view .LVU467
+ 223:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1581              		.loc 1 223 18 is_stmt 0 view .LVU468
+ 1582 0040 8CF86436 		strb	r3, [ip, #1636]
+ 224:src/pm_manager.cpp ****         return;
+ 1583              		.loc 1 224 5 is_stmt 1 view .LVU469
+ 1584              		.loc 1 226 5 view .LVU470
+ 1585 0044 2FD0     		beq	.L121
+ 1586              	.LVL125:
+ 1587              	.L108:
+ 227:src/pm_manager.cpp ****         EnterMode(Mode::Diagnostics, now_ms);
+ 228:src/pm_manager.cpp ****         return;
+ 229:src/pm_manager.cpp ****     }
+ 230:src/pm_manager.cpp ****     StartSlot(slot, 0, now_ms);
+ 1588              		.loc 1 230 5 view .LVU471
+ 1589              		.loc 1 230 14 is_stmt 0 view .LVU472
+ 1590 0046 0B46     		mov	r3, r1
+ 1591 0048 0022     		movs	r2, #0
+ 1592 004a 7146     		mov	r1, lr
+ 1593              	.LVL126:
+ 1594              		.loc 1 230 14 view .LVU473
+ 1595              	.LBE118:
+ 1596              	.LBE117:
+ 231:src/pm_manager.cpp **** }
+ 1597              		.loc 1 231 1 view .LVU474
+ 1598 004c BDE81040 		pop	{r4, lr}
+ 1599              		.cfi_remember_state
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 39
+
+
+ 1600              		.cfi_restore 14
+ 1601              		.cfi_restore 4
+ 1602              		.cfi_def_cfa_offset 0
+ 1603              	.LBB136:
+ 1604              	.LBB131:
+ 230:src/pm_manager.cpp **** }
+ 1605              		.loc 1 230 14 view .LVU475
+ 1606 0050 FFF7FEBF 		b	_ZN2pm7Manager9StartSlotEhmm
+ 1607              	.LVL127:
+ 1608              	.L120:
+ 1609              		.cfi_restore_state
+ 210:src/pm_manager.cpp ****             cycle_since_ms_ = now_ms;
+ 1610              		.loc 1 210 9 is_stmt 1 view .LVU476
+ 1611 0054 CCB1     		cbz	r4, .L122
+ 214:src/pm_manager.cpp ****         if(PopCount(cycle_keys_) > 1 || now_ms - cycle_since_ms_ >= kLongPressMs)
+ 1612              		.loc 1 214 9 view .LVU477
+ 214:src/pm_manager.cpp ****         if(PopCount(cycle_keys_) > 1 || now_ms - cycle_since_ms_ >= kLongPressMs)
+ 1613              		.loc 1 214 21 is_stmt 0 view .LVU478
+ 1614 0056 2243     		orrs	r2, r2, r4
+ 1615              	.LVL128:
+ 215:src/pm_manager.cpp ****             cycle_valid_ = false;  // chord or long hold: never a selection
+ 1616              		.loc 1 215 9 is_stmt 1 view .LVU479
+ 1617              	.LBB121:
+ 1618              	.LBI121:
+   7:src/pm_manager.cpp ****     int n = 0;
+ 1619              		.loc 1 7 5 view .LVU480
+ 1620              	.LBB122:
+   8:src/pm_manager.cpp ****     while(v) {
+ 1621              		.loc 1 8 5 view .LVU481
+   9:src/pm_manager.cpp ****         n += v & 1u;
+ 1622              		.loc 1 9 5 view .LVU482
+   9:src/pm_manager.cpp ****         n += v & 1u;
+ 1623              		.loc 1 9 11 view .LVU483
+ 1624              	.L99:
+   8:src/pm_manager.cpp ****     while(v) {
+ 1625              		.loc 1 8 9 is_stmt 0 view .LVU484
+ 1626 0058 0020     		movs	r0, #0
+ 1627              	.LVL129:
+   8:src/pm_manager.cpp ****     while(v) {
+ 1628              		.loc 1 8 9 view .LVU485
+ 1629              	.LBE122:
+ 1630              	.LBE121:
+ 214:src/pm_manager.cpp ****         if(PopCount(cycle_keys_) > 1 || now_ms - cycle_since_ms_ >= kLongPressMs)
+ 1631              		.loc 1 214 21 view .LVU486
+ 1632 005a ACF85E26 		strh	r2, [ip, #1630]	@ movhi
+ 1633              	.LVL130:
+ 1634              	.L100:
+ 1635              	.LBB125:
+ 1636              	.LBB123:
+  10:src/pm_manager.cpp ****         v >>= 1;
+ 1637              		.loc 1 10 9 is_stmt 1 view .LVU487
+  10:src/pm_manager.cpp ****         v >>= 1;
+ 1638              		.loc 1 10 16 is_stmt 0 view .LVU488
+ 1639 005e 02F0010E 		and	lr, r2, #1
+   9:src/pm_manager.cpp ****         n += v & 1u;
+ 1640              		.loc 1 9 11 view .LVU489
+ 1641 0062 5208     		lsrs	r2, r2, #1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 40
+
+
+ 1642              	.LVL131:
+  10:src/pm_manager.cpp ****         v >>= 1;
+ 1643              		.loc 1 10 11 view .LVU490
+ 1644 0064 7044     		add	r0, r0, lr
+ 1645              	.LVL132:
+  11:src/pm_manager.cpp ****     }
+ 1646              		.loc 1 11 9 is_stmt 1 view .LVU491
+   9:src/pm_manager.cpp ****         n += v & 1u;
+ 1647              		.loc 1 9 11 view .LVU492
+ 1648 0066 FAD1     		bne	.L100
+  13:src/pm_manager.cpp **** }
+ 1649              		.loc 1 13 5 view .LVU493
+ 1650              	.LVL133:
+  13:src/pm_manager.cpp **** }
+ 1651              		.loc 1 13 5 is_stmt 0 view .LVU494
+ 1652              	.LBE123:
+ 1653              	.LBE125:
+ 215:src/pm_manager.cpp ****             cycle_valid_ = false;  // chord or long hold: never a selection
+ 1654              		.loc 1 215 38 discriminator 1 view .LVU495
+ 1655 0068 0128     		cmp	r0, #1
+ 1656 006a 14DD     		ble	.L123
+ 1657              	.L101:
+ 216:src/pm_manager.cpp ****         return;
+ 1658              		.loc 1 216 13 is_stmt 1 view .LVU496
+ 216:src/pm_manager.cpp ****         return;
+ 1659              		.loc 1 216 26 is_stmt 0 view .LVU497
+ 1660 006c 0023     		movs	r3, #0
+ 1661 006e 8CF86436 		strb	r3, [ip, #1636]
+ 1662              	.LVL134:
+ 1663              	.L93:
+ 216:src/pm_manager.cpp ****         return;
+ 1664              		.loc 1 216 26 view .LVU498
+ 1665              	.LBE131:
+ 1666              	.LBE136:
+ 1667              		.loc 1 231 1 view .LVU499
+ 1668 0072 10BD     		pop	{r4, pc}
+ 1669              	.LVL135:
+ 1670              	.L119:
+ 205:src/pm_manager.cpp ****             release_gate_ = false;
+ 1671              		.loc 1 205 9 is_stmt 1 view .LVU500
+ 1672 0074 002A     		cmp	r2, #0
+ 1673 0076 FCD1     		bne	.L93
+ 1674              	.LVL136:
+ 1675              	.L117:
+ 1676              	.LBB137:
+ 1677              	.LBB132:
+ 1678              	.LBB126:
+ 1679              	.LBB127:
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1680              		.loc 1 147 32 is_stmt 0 view .LVU501
+ 1681 0078 8CF85C26 		strb	r2, [ip, #1628]
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1682              		.loc 1 148 5 is_stmt 1 view .LVU502
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 1683              		.loc 1 149 5 view .LVU503
+ 150:src/pm_manager.cpp **** }
+ 1684              		.loc 1 150 5 view .LVU504
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 41
+
+
+ 1685              	.LBE127:
+ 1686              	.LBE126:
+ 228:src/pm_manager.cpp ****     }
+ 1687              		.loc 1 228 9 view .LVU505
+ 1688              	.LBE132:
+ 1689              	.LBE137:
+ 1690              		.loc 1 231 1 is_stmt 0 view .LVU506
+ 1691 007c 10BD     		pop	{r4, pc}
+ 1692              	.LVL137:
+ 1693              	.L104:
+ 1694              	.LBB138:
+ 1695              	.LBB133:
+ 222:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1696              		.loc 1 222 5 is_stmt 1 view .LVU507
+ 222:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1697              		.loc 1 222 17 is_stmt 0 view .LVU508
+ 1698 007e 0023     		movs	r3, #0
+ 1699 0080 ACF85E36 		strh	r3, [ip, #1630]	@ movhi
+ 223:src/pm_manager.cpp ****     if(slot == 0)
+ 1700              		.loc 1 223 5 is_stmt 1 view .LVU509
+ 223:src/pm_manager.cpp ****     if(slot == 0)
+ 1701              		.loc 1 223 18 is_stmt 0 view .LVU510
+ 1702 0084 8CF86436 		strb	r3, [ip, #1636]
+ 224:src/pm_manager.cpp ****         return;
+ 1703              		.loc 1 224 5 is_stmt 1 view .LVU511
+ 1704              	.LBE133:
+ 1705              	.LBE138:
+ 1706              		.loc 1 231 1 is_stmt 0 view .LVU512
+ 1707 0088 10BD     		pop	{r4, pc}
+ 1708              	.LVL138:
+ 1709              	.L122:
+ 1710              	.LBB139:
+ 1711              	.LBB134:
+ 211:src/pm_manager.cpp ****             cycle_valid_ = true;
+ 1712              		.loc 1 211 13 is_stmt 1 view .LVU513
+ 212:src/pm_manager.cpp ****         }
+ 1713              		.loc 1 212 26 is_stmt 0 view .LVU514
+ 1714 008a 0123     		movs	r3, #1
+ 211:src/pm_manager.cpp ****             cycle_valid_ = true;
+ 1715              		.loc 1 211 29 view .LVU515
+ 1716 008c CCF86016 		str	r1, [ip, #1632]
+ 212:src/pm_manager.cpp ****         }
+ 1717              		.loc 1 212 13 is_stmt 1 view .LVU516
+ 212:src/pm_manager.cpp ****         }
+ 1718              		.loc 1 212 26 is_stmt 0 view .LVU517
+ 1719 0090 8CF86436 		strb	r3, [ip, #1636]
+ 214:src/pm_manager.cpp ****         if(PopCount(cycle_keys_) > 1 || now_ms - cycle_since_ms_ >= kLongPressMs)
+ 1720              		.loc 1 214 9 is_stmt 1 view .LVU518
+ 215:src/pm_manager.cpp ****             cycle_valid_ = false;  // chord or long hold: never a selection
+ 1721              		.loc 1 215 9 view .LVU519
+ 1722              	.LVL139:
+ 1723              	.LBB129:
+   7:src/pm_manager.cpp ****     int n = 0;
+ 1724              		.loc 1 7 5 view .LVU520
+ 1725              	.LBB124:
+   8:src/pm_manager.cpp ****     while(v) {
+ 1726              		.loc 1 8 5 view .LVU521
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 42
+
+
+   9:src/pm_manager.cpp ****         n += v & 1u;
+ 1727              		.loc 1 9 5 view .LVU522
+   9:src/pm_manager.cpp ****         n += v & 1u;
+ 1728              		.loc 1 9 11 view .LVU523
+ 1729 0094 E0E7     		b	.L99
+ 1730              	.LVL140:
+ 1731              	.L123:
+   9:src/pm_manager.cpp ****         n += v & 1u;
+ 1732              		.loc 1 9 11 is_stmt 0 view .LVU524
+ 1733              	.LBE124:
+ 1734              	.LBE129:
+ 215:src/pm_manager.cpp ****             cycle_valid_ = false;  // chord or long hold: never a selection
+ 1735              		.loc 1 215 48 discriminator 2 view .LVU525
+ 1736 0096 DCF86036 		ldr	r3, [ip, #1632]
+ 215:src/pm_manager.cpp ****             cycle_valid_ = false;  // chord or long hold: never a selection
+ 1737              		.loc 1 215 38 discriminator 2 view .LVU526
+ 1738 009a 40F6B732 		movw	r2, #2999
+ 215:src/pm_manager.cpp ****             cycle_valid_ = false;  // chord or long hold: never a selection
+ 1739              		.loc 1 215 48 discriminator 2 view .LVU527
+ 1740 009e CB1A     		subs	r3, r1, r3
+ 215:src/pm_manager.cpp ****             cycle_valid_ = false;  // chord or long hold: never a selection
+ 1741              		.loc 1 215 38 discriminator 2 view .LVU528
+ 1742 00a0 9342     		cmp	r3, r2
+ 1743 00a2 E3D8     		bhi	.L101
+ 1744              	.LBE134:
+ 1745              	.LBE139:
+ 1746              		.loc 1 231 1 view .LVU529
+ 1747 00a4 10BD     		pop	{r4, pc}
+ 1748              	.LVL141:
+ 1749              	.L121:
+ 1750              	.LBB140:
+ 1751              	.LBB135:
+ 227:src/pm_manager.cpp ****         return;
+ 1752              		.loc 1 227 9 is_stmt 1 view .LVU530
+ 1753              	.LBB130:
+ 1754              	.LBI126:
+ 144:src/pm_manager.cpp ****     (void)now_ms;
+ 1755              		.loc 1 144 6 view .LVU531
+ 1756              	.LBB128:
+ 145:src/pm_manager.cpp ****     mode_ = mode;
+ 1757              		.loc 1 145 5 view .LVU532
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 1758              		.loc 1 146 5 view .LVU533
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1759              		.loc 1 147 32 is_stmt 0 view .LVU534
+ 1760 00a6 BCF85A26 		ldrh	r2, [ip, #1626]
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 1761              		.loc 1 146 11 view .LVU535
+ 1762 00aa 0121     		movs	r1, #1
+ 1763              	.LVL142:
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1764              		.loc 1 147 32 view .LVU536
+ 1765 00ac D21A     		subs	r2, r2, r3
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 1766              		.loc 1 146 11 view .LVU537
+ 1767 00ae 80F82113 		strb	r1, [r0, #801]
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 43
+
+
+ 1768              		.loc 1 147 5 is_stmt 1 view .LVU538
+ 150:src/pm_manager.cpp **** }
+ 1769              		.loc 1 150 21 is_stmt 0 view .LVU539
+ 1770 00b2 8CF86536 		strb	r3, [ip, #1637]
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1771              		.loc 1 147 32 view .LVU540
+ 1772 00b6 18BF     		it	ne
+ 1773 00b8 0122     		movne	r2, #1
+ 1774 00ba DDE7     		b	.L117
+ 1775              	.LVL143:
+ 1776              	.L105:
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1777              		.loc 1 147 32 view .LVU541
+ 1778              	.LBE128:
+ 1779              	.LBE130:
+ 222:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1780              		.loc 1 222 5 is_stmt 1 view .LVU542
+ 222:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1781              		.loc 1 222 17 is_stmt 0 view .LVU543
+ 1782 00bc ACF85E36 		strh	r3, [ip, #1630]	@ movhi
+ 223:src/pm_manager.cpp ****     if(slot == 0)
+ 1783              		.loc 1 223 5 is_stmt 1 view .LVU544
+ 223:src/pm_manager.cpp ****     if(slot == 0)
+ 1784              		.loc 1 223 18 is_stmt 0 view .LVU545
+ 1785 00c0 8CF86436 		strb	r3, [ip, #1636]
+ 224:src/pm_manager.cpp ****         return;
+ 1786              		.loc 1 224 5 is_stmt 1 view .LVU546
+ 226:src/pm_manager.cpp ****         EnterMode(Mode::Diagnostics, now_ms);
+ 1787              		.loc 1 226 5 view .LVU547
+ 1788 00c4 BFE7     		b	.L108
+ 1789              	.LBE135:
+ 1790              	.LBE140:
+ 1791              		.cfi_endproc
+ 1792              	.LFE1336:
+ 1794 00c6 00BF     		.section	.text._ZN2pm7Manager14HandleDiagKeysEmt,"ax",%progbits
+ 1795              		.align	1
+ 1796              		.p2align 2,,3
+ 1797              		.global	_ZN2pm7Manager14HandleDiagKeysEmt
+ 1798              		.syntax unified
+ 1799              		.thumb
+ 1800              		.thumb_func
+ 1802              	_ZN2pm7Manager14HandleDiagKeysEmt:
+ 1803              	.LVL144:
+ 1804              	.LFB1337:
+ 232:src/pm_manager.cpp **** 
+ 233:src/pm_manager.cpp **** void Manager::HandleDiagKeys(uint32_t now_ms, uint16_t keys) {
+ 1805              		.loc 1 233 62 view -0
+ 1806              		.cfi_startproc
+ 1807              		@ args = 0, pretend = 0, frame = 0
+ 1808              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1809              		@ link register save eliminated.
+ 234:src/pm_manager.cpp ****     if(release_gate_) {
+ 1810              		.loc 1 234 5 view .LVU549
+ 1811              		.loc 1 234 8 is_stmt 0 view .LVU550
+ 1812 0000 00F58053 		add	r3, r0, #4096
+ 233:src/pm_manager.cpp ****     if(release_gate_) {
+ 1813              		.loc 1 233 62 view .LVU551
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 44
+
+
+ 1814 0004 10B4     		push	{r4}
+ 1815              		.cfi_def_cfa_offset 4
+ 1816              		.cfi_offset 4, -4
+ 1817              		.loc 1 234 5 view .LVU552
+ 1818 0006 93F85C46 		ldrb	r4, [r3, #1628]	@ zero_extendqisi2
+ 1819 000a 14BB     		cbnz	r4, .L131
+ 235:src/pm_manager.cpp ****         if(keys == 0)
+ 236:src/pm_manager.cpp ****             release_gate_ = false;
+ 237:src/pm_manager.cpp ****         return;
+ 238:src/pm_manager.cpp ****     }
+ 239:src/pm_manager.cpp ****     if(keys != kReturnMask) {
+ 1820              		.loc 1 239 5 is_stmt 1 view .LVU553
+ 1821 000c 48F2010C 		movw	ip, #32769
+ 1822 0010 6245     		cmp	r2, ip
+ 1823 0012 04D0     		beq	.L127
+ 240:src/pm_manager.cpp ****         return_holding_ = false;
+ 1824              		.loc 1 240 9 view .LVU554
+ 1825              		.loc 1 240 25 is_stmt 0 view .LVU555
+ 1826 0014 83F86546 		strb	r4, [r3, #1637]
+ 241:src/pm_manager.cpp ****         return;
+ 1827              		.loc 1 241 9 is_stmt 1 view .LVU556
+ 1828              	.LVL145:
+ 1829              	.L124:
+ 242:src/pm_manager.cpp ****     }
+ 243:src/pm_manager.cpp ****     if(!return_holding_) {
+ 244:src/pm_manager.cpp ****         return_holding_ = true;
+ 245:src/pm_manager.cpp ****         return_since_ms_ = now_ms;
+ 246:src/pm_manager.cpp ****         return;
+ 247:src/pm_manager.cpp ****     }
+ 248:src/pm_manager.cpp ****     if(now_ms - return_since_ms_ >= kReturnHoldMs)
+ 249:src/pm_manager.cpp ****         EnterMode(Mode::Select, now_ms);
+ 250:src/pm_manager.cpp **** }
+ 1830              		.loc 1 250 1 is_stmt 0 view .LVU557
+ 1831 0018 5DF8044B 		ldr	r4, [sp], #4
+ 1832              		.cfi_remember_state
+ 1833              		.cfi_restore 4
+ 1834              		.cfi_def_cfa_offset 0
+ 1835 001c 7047     		bx	lr
+ 1836              	.LVL146:
+ 1837              	.L127:
+ 1838              		.cfi_restore_state
+ 243:src/pm_manager.cpp ****         return_holding_ = true;
+ 1839              		.loc 1 243 5 is_stmt 1 view .LVU558
+ 1840 001e 93F86526 		ldrb	r2, [r3, #1637]	@ zero_extendqisi2
+ 1841              	.LVL147:
+ 243:src/pm_manager.cpp ****         return_holding_ = true;
+ 1842              		.loc 1 243 5 is_stmt 0 view .LVU559
+ 1843 0022 DAB1     		cbz	r2, .L132
+ 248:src/pm_manager.cpp ****         EnterMode(Mode::Select, now_ms);
+ 1844              		.loc 1 248 5 is_stmt 1 view .LVU560
+ 248:src/pm_manager.cpp ****         EnterMode(Mode::Select, now_ms);
+ 1845              		.loc 1 248 15 is_stmt 0 view .LVU561
+ 1846 0024 D3F86826 		ldr	r2, [r3, #1640]
+ 1847 0028 891A     		subs	r1, r1, r2
+ 1848              	.LVL148:
+ 248:src/pm_manager.cpp ****         EnterMode(Mode::Select, now_ms);
+ 1849              		.loc 1 248 5 view .LVU562
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 45
+
+
+ 1850 002a 40F6B732 		movw	r2, #2999
+ 1851 002e 9142     		cmp	r1, r2
+ 1852 0030 F2D9     		bls	.L124
+ 1853              	.LVL149:
+ 1854              	.LBB145:
+ 1855              	.LBI145:
+ 233:src/pm_manager.cpp ****     if(release_gate_) {
+ 1856              		.loc 1 233 6 is_stmt 1 view .LVU563
+ 249:src/pm_manager.cpp **** }
+ 1857              		.loc 1 249 9 view .LVU564
+ 1858              	.LBB146:
+ 1859              	.LBI146:
+ 144:src/pm_manager.cpp ****     (void)now_ms;
+ 1860              		.loc 1 144 6 view .LVU565
+ 1861              	.LBB147:
+ 145:src/pm_manager.cpp ****     mode_ = mode;
+ 1862              		.loc 1 145 5 view .LVU566
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 1863              		.loc 1 146 5 view .LVU567
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1864              		.loc 1 147 32 is_stmt 0 view .LVU568
+ 1865 0032 B3F85A26 		ldrh	r2, [r3, #1626]
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 1866              		.loc 1 146 11 view .LVU569
+ 1867 0036 80F82143 		strb	r4, [r0, #801]
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1868              		.loc 1 147 5 is_stmt 1 view .LVU570
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1869              		.loc 1 147 32 is_stmt 0 view .LVU571
+ 1870 003a 003A     		subs	r2, r2, #0
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1871              		.loc 1 148 17 view .LVU572
+ 1872 003c A3F85E46 		strh	r4, [r3, #1630]	@ movhi
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 1873              		.loc 1 149 18 view .LVU573
+ 1874 0040 A3F86446 		strh	r4, [r3, #1636]	@ movhi
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1875              		.loc 1 147 32 view .LVU574
+ 1876 0044 18BF     		it	ne
+ 1877 0046 0122     		movne	r2, #1
+ 1878 0048 83F85C26 		strb	r2, [r3, #1628]
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1879              		.loc 1 148 5 is_stmt 1 view .LVU575
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 1880              		.loc 1 149 5 view .LVU576
+ 150:src/pm_manager.cpp **** }
+ 1881              		.loc 1 150 5 view .LVU577
+ 1882              	.LVL150:
+ 1883              	.L133:
+ 150:src/pm_manager.cpp **** }
+ 1884              		.loc 1 150 5 is_stmt 0 view .LVU578
+ 1885              	.LBE147:
+ 1886              	.LBE146:
+ 1887              	.LBE145:
+ 1888              		.loc 1 250 1 view .LVU579
+ 1889 004c 5DF8044B 		ldr	r4, [sp], #4
+ 1890              		.cfi_remember_state
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 46
+
+
+ 1891              		.cfi_restore 4
+ 1892              		.cfi_def_cfa_offset 0
+ 1893 0050 7047     		bx	lr
+ 1894              	.LVL151:
+ 1895              	.L131:
+ 1896              		.cfi_restore_state
+ 235:src/pm_manager.cpp ****             release_gate_ = false;
+ 1897              		.loc 1 235 9 is_stmt 1 view .LVU580
+ 1898 0052 002A     		cmp	r2, #0
+ 1899 0054 E0D1     		bne	.L124
+ 1900              	.LBB150:
+ 1901              	.LBB149:
+ 1902              	.LBB148:
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 1903              		.loc 1 147 32 is_stmt 0 view .LVU581
+ 1904 0056 83F85C26 		strb	r2, [r3, #1628]
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 1905              		.loc 1 148 5 is_stmt 1 view .LVU582
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 1906              		.loc 1 149 5 view .LVU583
+ 150:src/pm_manager.cpp **** }
+ 1907              		.loc 1 150 5 view .LVU584
+ 1908 005a F7E7     		b	.L133
+ 1909              	.LVL152:
+ 1910              	.L132:
+ 150:src/pm_manager.cpp **** }
+ 1911              		.loc 1 150 5 is_stmt 0 view .LVU585
+ 1912              	.LBE148:
+ 1913              	.LBE149:
+ 1914              	.LBE150:
+ 244:src/pm_manager.cpp ****         return_since_ms_ = now_ms;
+ 1915              		.loc 1 244 9 is_stmt 1 view .LVU586
+ 244:src/pm_manager.cpp ****         return_since_ms_ = now_ms;
+ 1916              		.loc 1 244 25 is_stmt 0 view .LVU587
+ 1917 005c 0122     		movs	r2, #1
+ 1918              		.loc 1 250 1 view .LVU588
+ 1919 005e 5DF8044B 		ldr	r4, [sp], #4
+ 1920              		.cfi_restore 4
+ 1921              		.cfi_def_cfa_offset 0
+ 245:src/pm_manager.cpp ****         return;
+ 1922              		.loc 1 245 26 view .LVU589
+ 1923 0062 C3F86816 		str	r1, [r3, #1640]
+ 244:src/pm_manager.cpp ****         return_since_ms_ = now_ms;
+ 1924              		.loc 1 244 25 view .LVU590
+ 1925 0066 83F86526 		strb	r2, [r3, #1637]
+ 245:src/pm_manager.cpp ****         return;
+ 1926              		.loc 1 245 9 is_stmt 1 view .LVU591
+ 246:src/pm_manager.cpp ****     }
+ 1927              		.loc 1 246 9 view .LVU592
+ 1928              		.loc 1 250 1 is_stmt 0 view .LVU593
+ 1929 006a 7047     		bx	lr
+ 1930              		.cfi_endproc
+ 1931              	.LFE1337:
+ 1933              		.section	.text._ZN2pm7Manager4StepEmtb,"ax",%progbits
+ 1934              		.align	1
+ 1935              		.p2align 2,,3
+ 1936              		.global	_ZN2pm7Manager4StepEmtb
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 47
+
+
+ 1937              		.syntax unified
+ 1938              		.thumb
+ 1939              		.thumb_func
+ 1941              	_ZN2pm7Manager4StepEmtb:
+ 1942              	.LVL153:
+ 1943              	.LFB1338:
+ 251:src/pm_manager.cpp **** 
+ 252:src/pm_manager.cpp **** void Manager::Step(uint32_t now_ms, uint16_t keys, bool card_present) {
+ 1944              		.loc 1 252 71 is_stmt 1 view -0
+ 1945              		.cfi_startproc
+ 1946              		@ args = 0, pretend = 0, frame = 0
+ 1947              		@ frame_needed = 0, uses_anonymous_args = 0
+ 253:src/pm_manager.cpp ****     last_keys_ = keys;
+ 1948              		.loc 1 253 5 view .LVU595
+ 252:src/pm_manager.cpp ****     last_keys_ = keys;
+ 1949              		.loc 1 252 71 is_stmt 0 view .LVU596
+ 1950 0000 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 1951              		.cfi_def_cfa_offset 24
+ 1952              		.cfi_offset 4, -24
+ 1953              		.cfi_offset 5, -20
+ 1954              		.cfi_offset 6, -16
+ 1955              		.cfi_offset 7, -12
+ 1956              		.cfi_offset 8, -8
+ 1957              		.cfi_offset 14, -4
+ 1958              		.loc 1 253 16 view .LVU597
+ 1959 0004 00F58054 		add	r4, r0, #4096
+ 252:src/pm_manager.cpp ****     last_keys_ = keys;
+ 1960              		.loc 1 252 71 view .LVU598
+ 1961 0008 1F46     		mov	r7, r3
+ 1962 000a 0546     		mov	r5, r0
+ 1963 000c 9046     		mov	r8, r2
+ 254:src/pm_manager.cpp ****     // Card state: scan after insertion settles, clear immediately after removal.
+ 255:src/pm_manager.cpp ****     if(!card_seen_) {
+ 1964              		.loc 1 255 5 view .LVU599
+ 1965 000e 94F85236 		ldrb	r3, [r4, #1618]	@ zero_extendqisi2
+ 1966              	.LVL154:
+ 252:src/pm_manager.cpp ****     last_keys_ = keys;
+ 1967              		.loc 1 252 71 view .LVU600
+ 1968 0012 0E46     		mov	r6, r1
+ 253:src/pm_manager.cpp ****     // Card state: scan after insertion settles, clear immediately after removal.
+ 1969              		.loc 1 253 16 view .LVU601
+ 1970 0014 A4F85A26 		strh	r2, [r4, #1626]	@ movhi
+ 1971              		.loc 1 255 5 is_stmt 1 view .LVU602
+ 1972 0018 C3BB     		cbnz	r3, .L135
+ 256:src/pm_manager.cpp ****         card_seen_ = true;
+ 1973              		.loc 1 256 9 view .LVU603
+ 1974              		.loc 1 256 20 is_stmt 0 view .LVU604
+ 1975 001a 0123     		movs	r3, #1
+ 257:src/pm_manager.cpp ****         card_present_ = card_present;
+ 1976              		.loc 1 257 23 view .LVU605
+ 1977 001c 84F85176 		strb	r7, [r4, #1617]
+ 258:src/pm_manager.cpp ****         card_since_ms_ = now_ms;
+ 1978              		.loc 1 258 24 view .LVU606
+ 1979 0020 C4F85416 		str	r1, [r4, #1620]
+ 256:src/pm_manager.cpp ****         card_seen_ = true;
+ 1980              		.loc 1 256 20 view .LVU607
+ 1981 0024 84F85236 		strb	r3, [r4, #1618]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 48
+
+
+ 257:src/pm_manager.cpp ****         card_present_ = card_present;
+ 1982              		.loc 1 257 9 is_stmt 1 view .LVU608
+ 1983              		.loc 1 258 9 view .LVU609
+ 259:src/pm_manager.cpp ****         scan_due_ = true;
+ 1984              		.loc 1 259 9 view .LVU610
+ 1985              		.loc 1 259 19 is_stmt 0 view .LVU611
+ 1986 0028 84F85936 		strb	r3, [r4, #1625]
+ 1987              	.LVL155:
+ 1988              	.L136:
+ 260:src/pm_manager.cpp ****     } else if(card_present != card_present_) {
+ 261:src/pm_manager.cpp ****         card_present_ = card_present;
+ 262:src/pm_manager.cpp ****         card_since_ms_ = now_ms;
+ 263:src/pm_manager.cpp ****         if(card_present)
+ 264:src/pm_manager.cpp ****             scan_due_ = true;
+ 265:src/pm_manager.cpp ****         else if(sd_supported_) {
+ 266:src/pm_manager.cpp ****             storage_.Unmount();
+ 267:src/pm_manager.cpp ****             ClearCatalog(CatalogState::NoCard);
+ 268:src/pm_manager.cpp ****             scan_due_ = false;
+ 269:src/pm_manager.cpp ****         }
+ 270:src/pm_manager.cpp ****     }
+ 271:src/pm_manager.cpp ****     if(mode_ == Mode::Loading) {
+ 1989              		.loc 1 271 5 is_stmt 1 view .LVU612
+ 1990              	.LBB151:
+ 1991              		.loc 1 271 8 is_stmt 0 view .LVU613
+ 1992 002c 95F82173 		ldrb	r7, [r5, #801]	@ zero_extendqisi2
+ 1993              	.LVL156:
+ 1994              		.loc 1 271 5 view .LVU614
+ 1995 0030 022F     		cmp	r7, #2
+ 1996 0032 47D0     		beq	.L170
+ 1997              	.LBE151:
+ 272:src/pm_manager.cpp ****         if(loader_.Active() && !loader_.Step(now_ms)) {
+ 273:src/pm_manager.cpp ****             const LoadStatus& st = loader_.Status();
+ 274:src/pm_manager.cpp ****             if(st.state == LoadState::Failed) {
+ 275:src/pm_manager.cpp ****                 EnterMode(Mode::Select, now_ms);
+ 276:src/pm_manager.cpp ****                 ShowError(st.error == LoadError::CardAbsent ? UiError::NoCard : UiError::Load, now_
+ 277:src/pm_manager.cpp ****             }
+ 278:src/pm_manager.cpp ****             // Committed: the hardware has reset; the host fake just stays here.
+ 279:src/pm_manager.cpp ****         }
+ 280:src/pm_manager.cpp ****         return;
+ 281:src/pm_manager.cpp ****     }
+ 282:src/pm_manager.cpp ****     if(mode_ == Mode::Service)
+ 1998              		.loc 1 282 5 is_stmt 1 view .LVU615
+ 1999 0034 032F     		cmp	r7, #3
+ 2000 0036 4BD0     		beq	.L134
+ 283:src/pm_manager.cpp ****         return;
+ 284:src/pm_manager.cpp ****     if((scan_due_ && (!card_present_ || now_ms - card_since_ms_ >= kCardSettleMs)) || rescan_pendin
+ 2001              		.loc 1 284 5 view .LVU616
+ 2002 0038 94F85936 		ldrb	r3, [r4, #1625]	@ zero_extendqisi2
+ 2003 003c DBB9     		cbnz	r3, .L171
+ 2004              	.L145:
+ 2005              		.loc 1 284 84 is_stmt 0 discriminator 4 view .LVU617
+ 2006 003e 94F85836 		ldrb	r3, [r4, #1624]	@ zero_extendqisi2
+ 2007 0042 2BB1     		cbz	r3, .L147
+ 2008              	.L146:
+ 285:src/pm_manager.cpp ****         ScanCatalog(now_ms);
+ 2009              		.loc 1 285 9 is_stmt 1 view .LVU618
+ 2010              		.loc 1 285 20 is_stmt 0 view .LVU619
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 49
+
+
+ 2011 0044 3146     		mov	r1, r6
+ 2012 0046 2846     		mov	r0, r5
+ 2013 0048 FFF7FEFF 		bl	_ZN2pm7Manager11ScanCatalogEm
+ 2014              	.LVL157:
+ 286:src/pm_manager.cpp ****     if(ui_error_ != UiError::None && static_cast<int32_t>(error_until_ms_ - now_ms) <= 0)
+ 287:src/pm_manager.cpp ****         ui_error_ = UiError::None;
+ 288:src/pm_manager.cpp ****     if(mode_ == Mode::Select)
+ 2015              		.loc 1 288 8 view .LVU620
+ 2016 004c 95F82173 		ldrb	r7, [r5, #801]	@ zero_extendqisi2
+ 2017              	.L147:
+ 286:src/pm_manager.cpp ****     if(ui_error_ != UiError::None && static_cast<int32_t>(error_until_ms_ - now_ms) <= 0)
+ 2018              		.loc 1 286 5 is_stmt 1 view .LVU621
+ 2019 0050 94F86C36 		ldrb	r3, [r4, #1644]	@ zero_extendqisi2
+ 2020 0054 3BB1     		cbz	r3, .L148
+ 286:src/pm_manager.cpp ****     if(ui_error_ != UiError::None && static_cast<int32_t>(error_until_ms_ - now_ms) <= 0)
+ 2021              		.loc 1 286 75 is_stmt 0 discriminator 1 view .LVU622
+ 2022 0056 D4F87036 		ldr	r3, [r4, #1648]
+ 2023 005a 9B1B     		subs	r3, r3, r6
+ 286:src/pm_manager.cpp ****     if(ui_error_ != UiError::None && static_cast<int32_t>(error_until_ms_ - now_ms) <= 0)
+ 2024              		.loc 1 286 35 discriminator 1 view .LVU623
+ 2025 005c 002B     		cmp	r3, #0
+ 2026 005e 02DC     		bgt	.L148
+ 287:src/pm_manager.cpp ****     if(mode_ == Mode::Select)
+ 2027              		.loc 1 287 9 is_stmt 1 view .LVU624
+ 287:src/pm_manager.cpp ****     if(mode_ == Mode::Select)
+ 2028              		.loc 1 287 19 is_stmt 0 view .LVU625
+ 2029 0060 0023     		movs	r3, #0
+ 2030 0062 84F86C36 		strb	r3, [r4, #1644]
+ 2031              	.L148:
+ 2032              		.loc 1 288 5 is_stmt 1 view .LVU626
+ 289:src/pm_manager.cpp ****         HandleSelectKeys(now_ms, keys);
+ 2033              		.loc 1 289 25 is_stmt 0 view .LVU627
+ 2034 0066 4246     		mov	r2, r8
+ 2035 0068 3146     		mov	r1, r6
+ 2036 006a 2846     		mov	r0, r5
+ 288:src/pm_manager.cpp ****         HandleSelectKeys(now_ms, keys);
+ 2037              		.loc 1 288 5 view .LVU628
+ 2038 006c 37BB     		cbnz	r7, .L149
+ 2039              	.LVL158:
+ 2040              		.loc 1 289 9 is_stmt 1 view .LVU629
+ 290:src/pm_manager.cpp ****     else
+ 291:src/pm_manager.cpp ****         HandleDiagKeys(now_ms, keys);
+ 292:src/pm_manager.cpp **** }
+ 2041              		.loc 1 292 1 is_stmt 0 view .LVU630
+ 2042 006e BDE8F041 		pop	{r4, r5, r6, r7, r8, lr}
+ 2043              		.cfi_remember_state
+ 2044              		.cfi_restore 14
+ 2045              		.cfi_restore 8
+ 2046              		.cfi_restore 7
+ 2047              		.cfi_restore 6
+ 2048              		.cfi_restore 5
+ 2049              		.cfi_restore 4
+ 2050              		.cfi_def_cfa_offset 0
+ 289:src/pm_manager.cpp ****     else
+ 2051              		.loc 1 289 25 view .LVU631
+ 2052 0072 FFF7FEBF 		b	_ZN2pm7Manager16HandleSelectKeysEmt
+ 2053              	.LVL159:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 50
+
+
+ 2054              	.L171:
+ 2055              		.cfi_restore_state
+ 284:src/pm_manager.cpp ****         ScanCatalog(now_ms);
+ 2056              		.loc 1 284 19 discriminator 1 view .LVU632
+ 2057 0076 94F85136 		ldrb	r3, [r4, #1617]	@ zero_extendqisi2
+ 2058 007a 002B     		cmp	r3, #0
+ 2059 007c E2D0     		beq	.L146
+ 284:src/pm_manager.cpp ****         ScanCatalog(now_ms);
+ 2060              		.loc 1 284 48 discriminator 3 view .LVU633
+ 2061 007e D4F85436 		ldr	r3, [r4, #1620]
+ 2062 0082 F31A     		subs	r3, r6, r3
+ 284:src/pm_manager.cpp ****         ScanCatalog(now_ms);
+ 2063              		.loc 1 284 38 discriminator 3 view .LVU634
+ 2064 0084 B3F5967F 		cmp	r3, #300
+ 2065 0088 DCD2     		bcs	.L146
+ 2066 008a D8E7     		b	.L145
+ 2067              	.LVL160:
+ 2068              	.L135:
+ 260:src/pm_manager.cpp ****         card_present_ = card_present;
+ 2069              		.loc 1 260 12 is_stmt 1 view .LVU635
+ 2070 008c 94F85136 		ldrb	r3, [r4, #1617]	@ zero_extendqisi2
+ 2071 0090 BB42     		cmp	r3, r7
+ 2072 0092 CBD0     		beq	.L136
+ 261:src/pm_manager.cpp ****         card_since_ms_ = now_ms;
+ 2073              		.loc 1 261 9 view .LVU636
+ 261:src/pm_manager.cpp ****         card_since_ms_ = now_ms;
+ 2074              		.loc 1 261 23 is_stmt 0 view .LVU637
+ 2075 0094 84F85176 		strb	r7, [r4, #1617]
+ 262:src/pm_manager.cpp ****         if(card_present)
+ 2076              		.loc 1 262 9 is_stmt 1 view .LVU638
+ 262:src/pm_manager.cpp ****         if(card_present)
+ 2077              		.loc 1 262 24 is_stmt 0 view .LVU639
+ 2078 0098 C4F85416 		str	r1, [r4, #1620]
+ 263:src/pm_manager.cpp ****             scan_due_ = true;
+ 2079              		.loc 1 263 9 is_stmt 1 view .LVU640
+ 2080 009c D7B9     		cbnz	r7, .L172
+ 265:src/pm_manager.cpp ****             storage_.Unmount();
+ 2081              		.loc 1 265 14 view .LVU641
+ 2082 009e 90F82033 		ldrb	r3, [r0, #800]	@ zero_extendqisi2
+ 2083 00a2 002B     		cmp	r3, #0
+ 2084 00a4 C2D0     		beq	.L136
+ 266:src/pm_manager.cpp ****             ClearCatalog(CatalogState::NoCard);
+ 2085              		.loc 1 266 13 view .LVU642
+ 2086 00a6 0068     		ldr	r0, [r0]
+ 2087              	.LVL161:
+ 266:src/pm_manager.cpp ****             ClearCatalog(CatalogState::NoCard);
+ 2088              		.loc 1 266 29 is_stmt 0 view .LVU643
+ 2089 00a8 0368     		ldr	r3, [r0]
+ 2090 00aa 9B69     		ldr	r3, [r3, #24]
+ 2091 00ac 9847     		blx	r3
+ 2092              	.LVL162:
+ 267:src/pm_manager.cpp ****             scan_due_ = false;
+ 2093              		.loc 1 267 13 is_stmt 1 view .LVU644
+ 267:src/pm_manager.cpp ****             scan_due_ = false;
+ 2094              		.loc 1 267 25 is_stmt 0 view .LVU645
+ 2095 00ae 3946     		mov	r1, r7
+ 2096 00b0 2846     		mov	r0, r5
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 51
+
+
+ 2097 00b2 FFF7FEFF 		bl	_ZN2pm7Manager12ClearCatalogENS_12CatalogStateE
+ 2098              	.LVL163:
+ 268:src/pm_manager.cpp ****         }
+ 2099              		.loc 1 268 13 is_stmt 1 view .LVU646
+ 268:src/pm_manager.cpp ****         }
+ 2100              		.loc 1 268 23 is_stmt 0 view .LVU647
+ 2101 00b6 84F85976 		strb	r7, [r4, #1625]
+ 2102 00ba B7E7     		b	.L136
+ 2103              	.LVL164:
+ 2104              	.L149:
+ 291:src/pm_manager.cpp **** }
+ 2105              		.loc 1 291 9 is_stmt 1 view .LVU648
+ 2106              		.loc 1 292 1 is_stmt 0 view .LVU649
+ 2107 00bc BDE8F041 		pop	{r4, r5, r6, r7, r8, lr}
+ 2108              		.cfi_remember_state
+ 2109              		.cfi_restore 14
+ 2110              		.cfi_restore 8
+ 2111              		.cfi_restore 7
+ 2112              		.cfi_restore 6
+ 2113              		.cfi_restore 5
+ 2114              		.cfi_restore 4
+ 2115              		.cfi_def_cfa_offset 0
+ 291:src/pm_manager.cpp **** }
+ 2116              		.loc 1 291 23 view .LVU650
+ 2117 00c0 FFF7FEBF 		b	_ZN2pm7Manager14HandleDiagKeysEmt
+ 2118              	.LVL165:
+ 2119              	.L170:
+ 2120              		.cfi_restore_state
+ 272:src/pm_manager.cpp ****             const LoadStatus& st = loader_.Status();
+ 2121              		.loc 1 272 9 is_stmt 1 view .LVU651
+ 2122              	.LBB171:
+ 2123              	.LBB152:
+ 272:src/pm_manager.cpp ****             const LoadStatus& st = loader_.Status();
+ 2124              		.loc 1 272 26 is_stmt 0 view .LVU652
+ 2125 00c4 05F10808 		add	r8, r5, #8
+ 2126 00c8 4046     		mov	r0, r8
+ 2127 00ca FFF7FEFF 		bl	_ZNK2pm6Loader6ActiveEv
+ 2128              	.LVL166:
+ 272:src/pm_manager.cpp ****             const LoadStatus& st = loader_.Status();
+ 2129              		.loc 1 272 29 discriminator 1 view .LVU653
+ 2130 00ce 28B9     		cbnz	r0, .L173
+ 2131              	.LVL167:
+ 2132              	.L134:
+ 272:src/pm_manager.cpp ****             const LoadStatus& st = loader_.Status();
+ 2133              		.loc 1 272 29 discriminator 1 view .LVU654
+ 2134              	.LBE152:
+ 2135              	.LBE171:
+ 2136              		.loc 1 292 1 view .LVU655
+ 2137 00d0 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 2138              	.LVL168:
+ 2139              	.L172:
+ 264:src/pm_manager.cpp ****         else if(sd_supported_) {
+ 2140              		.loc 1 264 13 is_stmt 1 view .LVU656
+ 264:src/pm_manager.cpp ****         else if(sd_supported_) {
+ 2141              		.loc 1 264 23 is_stmt 0 view .LVU657
+ 2142 00d4 0123     		movs	r3, #1
+ 2143 00d6 84F85936 		strb	r3, [r4, #1625]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 52
+
+
+ 2144 00da A7E7     		b	.L136
+ 2145              	.LVL169:
+ 2146              	.L173:
+ 2147              	.LBB172:
+ 2148              	.LBB170:
+ 272:src/pm_manager.cpp ****             const LoadStatus& st = loader_.Status();
+ 2149              		.loc 1 272 45 discriminator 1 view .LVU658
+ 2150 00dc 4046     		mov	r0, r8
+ 2151 00de 3146     		mov	r1, r6
+ 2152 00e0 FFF7FEFF 		bl	_ZN2pm6Loader4StepEm
+ 2153              	.LVL170:
+ 272:src/pm_manager.cpp ****             const LoadStatus& st = loader_.Status();
+ 2154              		.loc 1 272 29 discriminator 1 view .LVU659
+ 2155 00e4 0028     		cmp	r0, #0
+ 2156 00e6 F3D1     		bne	.L134
+ 2157              	.LBB153:
+ 273:src/pm_manager.cpp ****             if(st.state == LoadState::Failed) {
+ 2158              		.loc 1 273 13 is_stmt 1 view .LVU660
+ 2159              	.LVL171:
+ 274:src/pm_manager.cpp ****                 EnterMode(Mode::Select, now_ms);
+ 2160              		.loc 1 274 13 view .LVU661
+ 2161 00e8 2B7D     		ldrb	r3, [r5, #20]	@ zero_extendqisi2
+ 2162 00ea 072B     		cmp	r3, #7
+ 2163 00ec F0D1     		bne	.L134
+ 275:src/pm_manager.cpp ****                 ShowError(st.error == LoadError::CardAbsent ? UiError::NoCard : UiError::Load, now_
+ 2164              		.loc 1 275 17 view .LVU662
+ 2165              	.LVL172:
+ 2166              	.LBB154:
+ 2167              	.LBI154:
+ 144:src/pm_manager.cpp ****     (void)now_ms;
+ 2168              		.loc 1 144 6 view .LVU663
+ 2169              	.LBB155:
+ 145:src/pm_manager.cpp ****     mode_ = mode;
+ 2170              		.loc 1 145 5 view .LVU664
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 2171              		.loc 1 146 5 view .LVU665
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 2172              		.loc 1 147 32 is_stmt 0 view .LVU666
+ 2173 00ee B4F85A36 		ldrh	r3, [r4, #1626]
+ 2174              	.LBE155:
+ 2175              	.LBE154:
+ 2176              	.LBB160:
+ 2177              	.LBB161:
+ 155:src/pm_manager.cpp **** }
+ 2178              		.loc 1 155 30 view .LVU667
+ 2179 00f2 06F2DC56 		addw	r6, r6, #1500
+ 2180              	.LVL173:
+ 155:src/pm_manager.cpp **** }
+ 2181              		.loc 1 155 30 view .LVU668
+ 2182              	.LBE161:
+ 2183              	.LBE160:
+ 276:src/pm_manager.cpp ****             }
+ 2184              		.loc 1 276 26 view .LVU669
+ 2185 00f6 6A7D     		ldrb	r2, [r5, #21]	@ zero_extendqisi2
+ 2186              	.LBB164:
+ 2187              	.LBB156:
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 53
+
+
+ 2188              		.loc 1 147 32 view .LVU670
+ 2189 00f8 003B     		subs	r3, r3, #0
+ 146:src/pm_manager.cpp ****     release_gate_ = last_keys_ != 0;  // keys held during the change must be released first
+ 2190              		.loc 1 146 11 view .LVU671
+ 2191 00fa 85F82103 		strb	r0, [r5, #801]
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 2192              		.loc 1 147 5 is_stmt 1 view .LVU672
+ 2193              	.LBE156:
+ 2194              	.LBE164:
+ 2195              	.LBB165:
+ 2196              	.LBB162:
+ 155:src/pm_manager.cpp **** }
+ 2197              		.loc 1 155 21 is_stmt 0 view .LVU673
+ 2198 00fe C4F87066 		str	r6, [r4, #1648]
+ 2199              	.LBE162:
+ 2200              	.LBE165:
+ 2201              	.LBB166:
+ 2202              	.LBB157:
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 2203              		.loc 1 147 32 view .LVU674
+ 2204 0102 18BF     		it	ne
+ 2205 0104 0123     		movne	r3, #1
+ 2206              	.LBE157:
+ 2207              	.LBE166:
+ 276:src/pm_manager.cpp ****             }
+ 2208              		.loc 1 276 26 discriminator 2 view .LVU675
+ 2209 0106 032A     		cmp	r2, #3
+ 2210              	.LBB167:
+ 2211              	.LBB158:
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 2212              		.loc 1 148 17 view .LVU676
+ 2213 0108 A4F85E06 		strh	r0, [r4, #1630]	@ movhi
+ 2214              	.LBE158:
+ 2215              	.LBE167:
+ 276:src/pm_manager.cpp ****             }
+ 2216              		.loc 1 276 26 discriminator 2 view .LVU677
+ 2217 010c 18BF     		it	ne
+ 2218 010e 0427     		movne	r7, #4
+ 2219              	.LBB168:
+ 2220              	.LBB159:
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 2221              		.loc 1 149 18 view .LVU678
+ 2222 0110 A4F86406 		strh	r0, [r4, #1636]	@ movhi
+ 147:src/pm_manager.cpp ****     cycle_keys_ = 0;
+ 2223              		.loc 1 147 32 view .LVU679
+ 2224 0114 84F85C36 		strb	r3, [r4, #1628]
+ 148:src/pm_manager.cpp ****     cycle_valid_ = false;
+ 2225              		.loc 1 148 5 is_stmt 1 view .LVU680
+ 149:src/pm_manager.cpp ****     return_holding_ = false;
+ 2226              		.loc 1 149 5 view .LVU681
+ 150:src/pm_manager.cpp **** }
+ 2227              		.loc 1 150 5 view .LVU682
+ 2228              	.LVL174:
+ 150:src/pm_manager.cpp **** }
+ 2229              		.loc 1 150 5 is_stmt 0 view .LVU683
+ 2230              	.LBE159:
+ 2231              	.LBE168:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 54
+
+
+ 276:src/pm_manager.cpp ****             }
+ 2232              		.loc 1 276 17 is_stmt 1 view .LVU684
+ 2233              	.LBB169:
+ 2234              	.LBI160:
+ 153:src/pm_manager.cpp ****     ui_error_ = error;
+ 2235              		.loc 1 153 6 view .LVU685
+ 2236              	.LBB163:
+ 154:src/pm_manager.cpp ****     error_until_ms_ = now_ms + kErrorFlashMs;
+ 2237              		.loc 1 154 5 view .LVU686
+ 154:src/pm_manager.cpp ****     error_until_ms_ = now_ms + kErrorFlashMs;
+ 2238              		.loc 1 154 15 is_stmt 0 view .LVU687
+ 2239 0118 84F86C76 		strb	r7, [r4, #1644]
+ 155:src/pm_manager.cpp **** }
+ 2240              		.loc 1 155 5 is_stmt 1 view .LVU688
+ 2241              	.LVL175:
+ 156:src/pm_manager.cpp **** 
+ 2242              		.loc 1 156 1 is_stmt 0 view .LVU689
+ 2243 011c D8E7     		b	.L134
+ 2244              	.LBE163:
+ 2245              	.LBE169:
+ 2246              	.LBE153:
+ 2247              	.LBE170:
+ 2248              	.LBE172:
+ 2249              		.cfi_endproc
+ 2250              	.LFE1338:
+ 2252 011e 00BF     		.section	.text._ZNK2pm7Manager4LedsEm,"ax",%progbits
+ 2253              		.align	1
+ 2254              		.p2align 2,,3
+ 2255              		.global	_ZNK2pm7Manager4LedsEm
+ 2256              		.syntax unified
+ 2257              		.thumb
+ 2258              		.thumb_func
+ 2260              	_ZNK2pm7Manager4LedsEm:
+ 2261              	.LVL176:
+ 2262              	.LFB1339:
+ 293:src/pm_manager.cpp **** 
+ 294:src/pm_manager.cpp **** LedFrame Manager::Leds(uint32_t now_ms) const {
+ 2263              		.loc 1 294 47 is_stmt 1 view -0
+ 2264              		.cfi_startproc
+ 2265              		@ args = 0, pretend = 0, frame = 0
+ 2266              		@ frame_needed = 0, uses_anonymous_args = 0
+ 2267              	.LBB173:
+ 295:src/pm_manager.cpp ****     LedFrame f;
+ 296:src/pm_manager.cpp ****     switch(mode_) {
+ 2268              		.loc 1 296 12 is_stmt 0 view .LVU691
+ 2269 0000 91F82133 		ldrb	r3, [r1, #801]	@ zero_extendqisi2
+ 2270              	.LBE173:
+ 295:src/pm_manager.cpp ****     LedFrame f;
+ 2271              		.loc 1 295 14 view .LVU692
+ 2272 0004 4FF0000C 		mov	ip, #0
+ 2273              	.LBB180:
+ 2274              		.loc 1 296 5 view .LVU693
+ 2275 0008 022B     		cmp	r3, #2
+ 2276              	.LBE180:
+ 294:src/pm_manager.cpp ****     LedFrame f;
+ 2277              		.loc 1 294 47 view .LVU694
+ 2278 000a 10B5     		push	{r4, lr}
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 55
+
+
+ 2279              		.cfi_def_cfa_offset 8
+ 2280              		.cfi_offset 4, -8
+ 2281              		.cfi_offset 14, -4
+ 294:src/pm_manager.cpp ****     LedFrame f;
+ 2282              		.loc 1 294 47 view .LVU695
+ 2283 000c 0446     		mov	r4, r0
+ 295:src/pm_manager.cpp ****     LedFrame f;
+ 2284              		.loc 1 295 5 is_stmt 1 view .LVU696
+ 295:src/pm_manager.cpp ****     LedFrame f;
+ 2285              		.loc 1 295 14 is_stmt 0 view .LVU697
+ 2286 000e C0F800C0 		str	ip, [r0]	@ unaligned
+ 2287 0012 80F804C0 		strb	ip, [r0, #4]
+ 2288              		.loc 1 296 5 is_stmt 1 view .LVU698
+ 2289              	.LBB181:
+ 2290 0016 0BD0     		beq	.L175
+ 2291 0018 032B     		cmp	r3, #3
+ 2292 001a 04D0     		beq	.L176
+ 2293 001c 012B     		cmp	r3, #1
+ 2294 001e 19D1     		bne	.L177
+ 2295              	.LBB174:
+ 297:src/pm_manager.cpp ****         case Mode::Diagnostics:
+ 2296              		.loc 1 297 9 view .LVU699
+ 298:src/pm_manager.cpp ****             f.owner_diag = true;
+ 2297              		.loc 1 298 13 view .LVU700
+ 2298              		.loc 1 298 26 is_stmt 0 view .LVU701
+ 2299 0020 0371     		strb	r3, [r0, #4]
+ 299:src/pm_manager.cpp ****             return f;
+ 2300              		.loc 1 299 13 is_stmt 1 view .LVU702
+ 2301              	.LVL177:
+ 2302              	.L174:
+ 2303              		.loc 1 299 13 is_stmt 0 view .LVU703
+ 2304              	.LBE174:
+ 2305              	.LBE181:
+ 300:src/pm_manager.cpp ****         case Mode::Service:
+ 301:src/pm_manager.cpp ****             f.bright = 0xFFFF;
+ 302:src/pm_manager.cpp ****             return f;
+ 303:src/pm_manager.cpp ****         case Mode::Loading: {
+ 304:src/pm_manager.cpp ****             const uint8_t pct = loader_.Percent();
+ 305:src/pm_manager.cpp ****             const int count = 1 + (pct * 15) / 100;
+ 306:src/pm_manager.cpp ****             f.bright = static_cast<uint16_t>((1u << count) - 1u);
+ 307:src/pm_manager.cpp ****             return f;
+ 308:src/pm_manager.cpp ****         }
+ 309:src/pm_manager.cpp ****         case Mode::Select: break;
+ 310:src/pm_manager.cpp ****     }
+ 311:src/pm_manager.cpp ****     if(ui_error_ != UiError::None) {
+ 312:src/pm_manager.cpp ****         // Error flash: all LEDs blink; the affected slot (if any) stays on.
+ 313:src/pm_manager.cpp ****         const bool on = ((now_ms / kErrorBlinkMs) & 1u) == 0;
+ 314:src/pm_manager.cpp ****         f.bright = on ? 0xFFFF : 0;
+ 315:src/pm_manager.cpp ****         if(last_slot_ >= 1 && last_slot_ <= 15)
+ 316:src/pm_manager.cpp ****             f.bright |= static_cast<uint16_t>(1u << (last_slot_ - 1));
+ 317:src/pm_manager.cpp ****         return f;
+ 318:src/pm_manager.cpp ****     }
+ 319:src/pm_manager.cpp ****     if(catalog_state_ == CatalogState::Ok)
+ 320:src/pm_manager.cpp ****         for(uint8_t i = 0; i < catalog_.count; ++i)
+ 321:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 322:src/pm_manager.cpp ****     f.dim |= kDiagKey;  // slot 16: resident diagnostics, always available
+ 323:src/pm_manager.cpp ****     if(!release_gate_ && cycle_keys_ != 0 && cycle_valid_)
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 56
+
+
+ 324:src/pm_manager.cpp ****         f.bright |= cycle_keys_;  // the key being pressed lights up fully
+ 325:src/pm_manager.cpp ****     return f;
+ 326:src/pm_manager.cpp **** }
+ 2306              		.loc 1 326 1 view .LVU704
+ 2307 0022 2046     		mov	r0, r4
+ 2308 0024 10BD     		pop	{r4, pc}
+ 2309              	.LVL178:
+ 2310              	.L176:
+ 2311              	.LBB182:
+ 2312              	.LBB177:
+ 300:src/pm_manager.cpp ****         case Mode::Service:
+ 2313              		.loc 1 300 9 is_stmt 1 view .LVU705
+ 301:src/pm_manager.cpp ****             return f;
+ 2314              		.loc 1 301 13 view .LVU706
+ 301:src/pm_manager.cpp ****             return f;
+ 2315              		.loc 1 301 22 is_stmt 0 view .LVU707
+ 2316 0026 4FF6FF73 		movw	r3, #65535
+ 2317 002a 4380     		strh	r3, [r0, #2]	@ movhi
+ 302:src/pm_manager.cpp ****         case Mode::Loading: {
+ 2318              		.loc 1 302 13 is_stmt 1 view .LVU708
+ 2319              	.LBE177:
+ 2320              	.LBE182:
+ 2321              		.loc 1 326 1 is_stmt 0 view .LVU709
+ 2322 002c 2046     		mov	r0, r4
+ 2323              	.LVL179:
+ 2324              		.loc 1 326 1 view .LVU710
+ 2325 002e 10BD     		pop	{r4, pc}
+ 2326              	.LVL180:
+ 2327              	.L175:
+ 2328              	.LBB183:
+ 2329              	.LBB178:
+ 303:src/pm_manager.cpp ****             const uint8_t pct = loader_.Percent();
+ 2330              		.loc 1 303 9 is_stmt 1 view .LVU711
+ 303:src/pm_manager.cpp ****             const uint8_t pct = loader_.Percent();
+ 2331              		.loc 1 303 29 view .LVU712
+ 2332              	.LBB175:
+ 304:src/pm_manager.cpp ****             const int count = 1 + (pct * 15) / 100;
+ 2333              		.loc 1 304 13 view .LVU713
+ 304:src/pm_manager.cpp ****             const int count = 1 + (pct * 15) / 100;
+ 2334              		.loc 1 304 48 is_stmt 0 view .LVU714
+ 2335 0030 01F10800 		add	r0, r1, #8
+ 2336              	.LVL181:
+ 304:src/pm_manager.cpp ****             const int count = 1 + (pct * 15) / 100;
+ 2337              		.loc 1 304 48 view .LVU715
+ 2338 0034 FFF7FEFF 		bl	_ZNK2pm6Loader7PercentEv
+ 2339              	.LVL182:
+ 305:src/pm_manager.cpp ****             f.bright = static_cast<uint16_t>((1u << count) - 1u);
+ 2340              		.loc 1 305 13 is_stmt 1 view .LVU716
+ 306:src/pm_manager.cpp ****             return f;
+ 2341              		.loc 1 306 13 view .LVU717
+ 305:src/pm_manager.cpp ****             f.bright = static_cast<uint16_t>((1u << count) - 1u);
+ 2342              		.loc 1 305 46 is_stmt 0 view .LVU718
+ 2343 0038 294B     		ldr	r3, .L196
+ 305:src/pm_manager.cpp ****             f.bright = static_cast<uint16_t>((1u << count) - 1u);
+ 2344              		.loc 1 305 40 view .LVU719
+ 2345 003a 00B2     		sxth	r0, r0
+ 306:src/pm_manager.cpp ****             return f;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 57
+
+
+ 2346              		.loc 1 306 50 view .LVU720
+ 2347 003c 0122     		movs	r2, #1
+ 305:src/pm_manager.cpp ****             f.bright = static_cast<uint16_t>((1u << count) - 1u);
+ 2348              		.loc 1 305 40 view .LVU721
+ 2349 003e C0EB0010 		rsb	r0, r0, r0, lsl #4
+ 2350              	.LVL183:
+ 305:src/pm_manager.cpp ****             f.bright = static_cast<uint16_t>((1u << count) - 1u);
+ 2351              		.loc 1 305 46 view .LVU722
+ 2352 0042 A3FB0013 		umull	r1, r3, r3, r0
+ 2353              	.LBE175:
+ 2354              	.LBE178:
+ 2355              	.LBE183:
+ 2356              		.loc 1 326 1 view .LVU723
+ 2357 0046 2046     		mov	r0, r4
+ 2358              	.LBB184:
+ 2359              	.LBB179:
+ 2360              	.LBB176:
+ 305:src/pm_manager.cpp ****             f.bright = static_cast<uint16_t>((1u << count) - 1u);
+ 2361              		.loc 1 305 46 view .LVU724
+ 2362 0048 5B09     		lsrs	r3, r3, #5
+ 305:src/pm_manager.cpp ****             f.bright = static_cast<uint16_t>((1u << count) - 1u);
+ 2363              		.loc 1 305 23 view .LVU725
+ 2364 004a 1344     		add	r3, r3, r2
+ 306:src/pm_manager.cpp ****             return f;
+ 2365              		.loc 1 306 50 view .LVU726
+ 2366 004c 9A40     		lsls	r2, r2, r3
+ 306:src/pm_manager.cpp ****             return f;
+ 2367              		.loc 1 306 60 view .LVU727
+ 2368 004e 013A     		subs	r2, r2, #1
+ 306:src/pm_manager.cpp ****             return f;
+ 2369              		.loc 1 306 22 view .LVU728
+ 2370 0050 6280     		strh	r2, [r4, #2]	@ movhi
+ 307:src/pm_manager.cpp ****         }
+ 2371              		.loc 1 307 13 is_stmt 1 view .LVU729
+ 2372              	.LBE176:
+ 2373              	.LBE179:
+ 2374              	.LBE184:
+ 2375              		.loc 1 326 1 is_stmt 0 view .LVU730
+ 2376 0052 10BD     		pop	{r4, pc}
+ 2377              	.LVL184:
+ 2378              	.L177:
+ 311:src/pm_manager.cpp ****         // Error flash: all LEDs blink; the affected slot (if any) stays on.
+ 2379              		.loc 1 311 5 is_stmt 1 view .LVU731
+ 2380              	.LBB185:
+ 311:src/pm_manager.cpp ****         // Error flash: all LEDs blink; the affected slot (if any) stays on.
+ 2381              		.loc 1 311 8 is_stmt 0 view .LVU732
+ 2382 0054 01F5805C 		add	ip, r1, #4096
+ 311:src/pm_manager.cpp ****         // Error flash: all LEDs blink; the affected slot (if any) stays on.
+ 2383              		.loc 1 311 5 view .LVU733
+ 2384 0058 9CF86C36 		ldrb	r3, [ip, #1644]	@ zero_extendqisi2
+ 2385 005c A3B9     		cbnz	r3, .L194
+ 2386              	.LBE185:
+ 319:src/pm_manager.cpp ****         for(uint8_t i = 0; i < catalog_.count; ++i)
+ 2387              		.loc 1 319 5 is_stmt 1 view .LVU734
+ 2388              	.LBB187:
+ 2389 005e 9CF84426 		ldrb	r2, [ip, #1604]	@ zero_extendqisi2
+ 2390              	.LVL185:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 58
+
+
+ 319:src/pm_manager.cpp ****         for(uint8_t i = 0; i < catalog_.count; ++i)
+ 2391              		.loc 1 319 5 is_stmt 0 view .LVU735
+ 2392 0062 022A     		cmp	r2, #2
+ 2393 0064 23D0     		beq	.L195
+ 2394              	.L185:
+ 2395              	.LBB188:
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2396              		.loc 1 320 30 discriminator 1 view .LVU736
+ 2397 0066 4FF40043 		mov	r3, #32768
+ 2398              	.LVL186:
+ 2399              	.L181:
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2400              		.loc 1 320 30 discriminator 1 view .LVU737
+ 2401              	.LBE188:
+ 2402              	.LBE187:
+ 322:src/pm_manager.cpp ****     if(!release_gate_ && cycle_keys_ != 0 && cycle_valid_)
+ 2403              		.loc 1 322 5 is_stmt 1 view .LVU738
+ 323:src/pm_manager.cpp ****         f.bright |= cycle_keys_;  // the key being pressed lights up fully
+ 2404              		.loc 1 323 5 is_stmt 0 view .LVU739
+ 2405 006a 9CF85C26 		ldrb	r2, [ip, #1628]	@ zero_extendqisi2
+ 322:src/pm_manager.cpp ****     if(!release_gate_ && cycle_keys_ != 0 && cycle_valid_)
+ 2406              		.loc 1 322 11 view .LVU740
+ 2407 006e 2380     		strh	r3, [r4]	@ movhi
+ 323:src/pm_manager.cpp ****         f.bright |= cycle_keys_;  // the key being pressed lights up fully
+ 2408              		.loc 1 323 5 is_stmt 1 view .LVU741
+ 2409 0070 002A     		cmp	r2, #0
+ 2410 0072 D6D1     		bne	.L174
+ 323:src/pm_manager.cpp ****         f.bright |= cycle_keys_;  // the key being pressed lights up fully
+ 2411              		.loc 1 323 26 is_stmt 0 discriminator 1 view .LVU742
+ 2412 0074 BCF85E36 		ldrh	r3, [ip, #1630]
+ 323:src/pm_manager.cpp ****         f.bright |= cycle_keys_;  // the key being pressed lights up fully
+ 2413              		.loc 1 323 23 discriminator 1 view .LVU743
+ 2414 0078 002B     		cmp	r3, #0
+ 2415 007a D2D0     		beq	.L174
+ 323:src/pm_manager.cpp ****         f.bright |= cycle_keys_;  // the key being pressed lights up fully
+ 2416              		.loc 1 323 43 discriminator 2 view .LVU744
+ 2417 007c 9CF86426 		ldrb	r2, [ip, #1636]	@ zero_extendqisi2
+ 2418 0080 002A     		cmp	r2, #0
+ 2419 0082 CED0     		beq	.L174
+ 324:src/pm_manager.cpp ****     return f;
+ 2420              		.loc 1 324 9 is_stmt 1 view .LVU745
+ 324:src/pm_manager.cpp ****     return f;
+ 2421              		.loc 1 324 18 is_stmt 0 view .LVU746
+ 2422 0084 6380     		strh	r3, [r4, #2]	@ movhi
+ 2423 0086 CCE7     		b	.L174
+ 2424              	.LVL187:
+ 2425              	.L194:
+ 2426              	.LBB190:
+ 2427              	.LBB186:
+ 313:src/pm_manager.cpp ****         f.bright = on ? 0xFFFF : 0;
+ 2428              		.loc 1 313 9 is_stmt 1 view .LVU747
+ 314:src/pm_manager.cpp ****         if(last_slot_ >= 1 && last_slot_ <= 15)
+ 2429              		.loc 1 314 9 view .LVU748
+ 313:src/pm_manager.cpp ****         f.bright = on ? 0xFFFF : 0;
+ 2430              		.loc 1 313 34 is_stmt 0 view .LVU749
+ 2431 0088 164B     		ldr	r3, .L196+4
+ 315:src/pm_manager.cpp ****             f.bright |= static_cast<uint16_t>(1u << (last_slot_ - 1));
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 59
+
+
+ 2432              		.loc 1 315 12 view .LVU750
+ 2433 008a 9CF87416 		ldrb	r1, [ip, #1652]	@ zero_extendqisi2
+ 2434              	.LVL188:
+ 313:src/pm_manager.cpp ****         f.bright = on ? 0xFFFF : 0;
+ 2435              		.loc 1 313 34 view .LVU751
+ 2436 008e A3FB0232 		umull	r3, r2, r3, r2
+ 2437              	.LVL189:
+ 315:src/pm_manager.cpp ****             f.bright |= static_cast<uint16_t>(1u << (last_slot_ - 1));
+ 2438              		.loc 1 315 28 view .LVU752
+ 2439 0092 0139     		subs	r1, r1, #1
+ 313:src/pm_manager.cpp ****         f.bright = on ? 0xFFFF : 0;
+ 2440              		.loc 1 313 51 view .LVU753
+ 2441 0094 C2F3C003 		ubfx	r3, r2, #3, #1
+ 315:src/pm_manager.cpp ****             f.bright |= static_cast<uint16_t>(1u << (last_slot_ - 1));
+ 2442              		.loc 1 315 9 view .LVU754
+ 2443 0098 CAB2     		uxtb	r2, r1
+ 314:src/pm_manager.cpp ****         if(last_slot_ >= 1 && last_slot_ <= 15)
+ 2444              		.loc 1 314 18 view .LVU755
+ 2445 009a 013B     		subs	r3, r3, #1
+ 315:src/pm_manager.cpp ****             f.bright |= static_cast<uint16_t>(1u << (last_slot_ - 1));
+ 2446              		.loc 1 315 9 view .LVU756
+ 2447 009c 0E2A     		cmp	r2, #14
+ 314:src/pm_manager.cpp ****         if(last_slot_ >= 1 && last_slot_ <= 15)
+ 2448              		.loc 1 314 18 view .LVU757
+ 2449 009e 9BB2     		uxth	r3, r3
+ 314:src/pm_manager.cpp ****         if(last_slot_ >= 1 && last_slot_ <= 15)
+ 2450              		.loc 1 314 18 discriminator 4 view .LVU758
+ 2451 00a0 4380     		strh	r3, [r0, #2]	@ movhi
+ 315:src/pm_manager.cpp ****             f.bright |= static_cast<uint16_t>(1u << (last_slot_ - 1));
+ 2452              		.loc 1 315 9 is_stmt 1 view .LVU759
+ 2453 00a2 BED8     		bhi	.L174
+ 316:src/pm_manager.cpp ****         return f;
+ 2454              		.loc 1 316 13 view .LVU760
+ 316:src/pm_manager.cpp ****         return f;
+ 2455              		.loc 1 316 50 is_stmt 0 view .LVU761
+ 2456 00a4 0122     		movs	r2, #1
+ 2457 00a6 8A40     		lsls	r2, r2, r1
+ 316:src/pm_manager.cpp ****         return f;
+ 2458              		.loc 1 316 22 view .LVU762
+ 2459 00a8 1343     		orrs	r3, r3, r2
+ 2460 00aa 4380     		strh	r3, [r0, #2]	@ movhi
+ 2461 00ac B9E7     		b	.L174
+ 2462              	.LVL190:
+ 2463              	.L195:
+ 316:src/pm_manager.cpp ****         return f;
+ 2464              		.loc 1 316 22 view .LVU763
+ 2465              	.LBE186:
+ 2466              	.LBE190:
+ 2467              	.LBB191:
+ 2468              	.LBB189:
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2469              		.loc 1 320 30 is_stmt 1 discriminator 1 view .LVU764
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2470              		.loc 1 320 41 is_stmt 0 discriminator 1 view .LVU765
+ 2471 00ae 91F82823 		ldrb	r2, [r1, #808]	@ zero_extendqisi2
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2472              		.loc 1 320 30 discriminator 1 view .LVU766
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 60
+
+
+ 2473 00b2 002A     		cmp	r2, #0
+ 2474 00b4 D7D0     		beq	.L185
+ 2475 00b6 4FF4A370 		mov	r0, #326
+ 2476              	.LVL191:
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2477              		.loc 1 320 30 discriminator 1 view .LVU767
+ 2478 00ba 00FB021E 		mla	lr, r0, r2, r1
+ 2479              	.LVL192:
+ 2480              	.L182:
+ 321:src/pm_manager.cpp ****     f.dim |= kDiagKey;  // slot 16: resident diagnostics, always available
+ 2481              		.loc 1 321 13 is_stmt 1 view .LVU768
+ 321:src/pm_manager.cpp ****     f.dim |= kDiagKey;  // slot 16: resident diagnostics, always available
+ 2482              		.loc 1 321 71 is_stmt 0 view .LVU769
+ 2483 00be 91F82903 		ldrb	r0, [r1, #809]	@ zero_extendqisi2
+ 321:src/pm_manager.cpp ****     f.dim |= kDiagKey;  // slot 16: resident diagnostics, always available
+ 2484              		.loc 1 321 47 view .LVU770
+ 2485 00c2 0122     		movs	r2, #1
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2486              		.loc 1 320 30 discriminator 1 view .LVU771
+ 2487 00c4 01F5A371 		add	r1, r1, #326
+ 2488              	.LVL193:
+ 321:src/pm_manager.cpp ****     f.dim |= kDiagKey;  // slot 16: resident diagnostics, always available
+ 2489              		.loc 1 321 76 view .LVU772
+ 2490 00c8 0138     		subs	r0, r0, #1
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2491              		.loc 1 320 30 discriminator 1 view .LVU773
+ 2492 00ca 8E45     		cmp	lr, r1
+ 321:src/pm_manager.cpp ****     f.dim |= kDiagKey;  // slot 16: resident diagnostics, always available
+ 2493              		.loc 1 321 47 view .LVU774
+ 2494 00cc 02FA00F2 		lsl	r2, r2, r0
+ 321:src/pm_manager.cpp ****     f.dim |= kDiagKey;  // slot 16: resident diagnostics, always available
+ 2495              		.loc 1 321 19 view .LVU775
+ 2496 00d0 43EA0203 		orr	r3, r3, r2
+ 2497 00d4 9BB2     		uxth	r3, r3
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2498              		.loc 1 320 9 is_stmt 1 discriminator 3 view .LVU776
+ 2499              	.LVL194:
+ 320:src/pm_manager.cpp ****             f.dim |= static_cast<uint16_t>(1u << (catalog_.entries[i].slot - 1));
+ 2500              		.loc 1 320 30 discriminator 1 view .LVU777
+ 2501 00d6 F2D1     		bne	.L182
+ 2502              	.LBE189:
+ 2503              	.LBE191:
+ 322:src/pm_manager.cpp ****     if(!release_gate_ && cycle_keys_ != 0 && cycle_valid_)
+ 2504              		.loc 1 322 11 is_stmt 0 view .LVU778
+ 2505 00d8 43F40043 		orr	r3, r3, #32768
+ 2506 00dc C5E7     		b	.L181
+ 2507              	.L197:
+ 2508 00de 00BF     		.align	2
+ 2509              	.L196:
+ 2510 00e0 1F85EB51 		.word	1374389535
+ 2511 00e4 D34D6210 		.word	274877907
+ 2512              		.cfi_endproc
+ 2513              	.LFE1339:
+ 2515              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 2516              		.align	2
+ 2517              	.LC2:
+ 2518 0000 41434345 		.ascii	"ACCEPTED\000"
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 61
+
+
+ 2518      50544544 
+ 2518      00
+ 2519 0009 000000   		.align	2
+ 2520              	.LC3:
+ 2521 000c 4455504C 		.ascii	"DUPLICATE\000"
+ 2521      49434154 
+ 2521      4500
+ 2522 0016 0000     		.align	2
+ 2523              	.LC4:
+ 2524 0018 4D4F4445 		.ascii	"MODE\000"
+ 2524      00
+ 2525 001d 000000   		.align	2
+ 2526              	.LC5:
+ 2527 0020 42555359 		.ascii	"BUSY\000"
+ 2527      00
+ 2528 0025 000000   		.align	2
+ 2529              	.LC6:
+ 2530 0028 4E4F4341 		.ascii	"NOCATALOG\000"
+ 2530      54414C4F 
+ 2530      4700
+ 2531 0032 0000     		.align	2
+ 2532              	.LC7:
+ 2533 0034 47454E45 		.ascii	"GENERATION\000"
+ 2533      52415449 
+ 2533      4F4E00
+ 2534 003f 00       		.align	2
+ 2535              	.LC8:
+ 2536 0040 4E4F454E 		.ascii	"NOENTRY\000"
+ 2536      54525900 
+ 2537              		.align	2
+ 2538              	.LC9:
+ 2539 0048 48415348 		.ascii	"HASH\000"
+ 2539      00
+ 2540 004d 000000   		.align	2
+ 2541              	.LC10:
+ 2542 0050 554E5355 		.ascii	"UNSUPPORTED\000"
+ 2542      50504F52 
+ 2542      54454400 
+ 2543              		.section	.rodata.CSWTCH.24,"a"
+ 2544              		.align	2
+ 2547              	CSWTCH.24:
+ 2548 0000 00000000 		.word	.LC2
+ 2549 0004 0C000000 		.word	.LC3
+ 2550 0008 18000000 		.word	.LC4
+ 2551 000c 20000000 		.word	.LC5
+ 2552 0010 28000000 		.word	.LC6
+ 2553 0014 34000000 		.word	.LC7
+ 2554 0018 40000000 		.word	.LC8
+ 2555 001c 48000000 		.word	.LC9
+ 2556 0020 50000000 		.word	.LC10
+ 2557              		.section	.rodata.str1.4
+ 2558              		.align	2
+ 2559              	.LC11:
+ 2560 005c 4E4F4341 		.ascii	"NOCARD\000"
+ 2560      524400
+ 2561 0063 00       		.align	2
+ 2562              	.LC12:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 62
+
+
+ 2563 0064 5343414E 		.ascii	"SCANNING\000"
+ 2563      4E494E47 
+ 2563      00
+ 2564 006d 000000   		.align	2
+ 2565              	.LC13:
+ 2566 0070 4F4B00   		.ascii	"OK\000"
+ 2567 0073 00       		.align	2
+ 2568              	.LC14:
+ 2569 0074 4D495353 		.ascii	"MISSING\000"
+ 2569      494E4700 
+ 2570              		.align	2
+ 2571              	.LC15:
+ 2572 007c 494E5641 		.ascii	"INVALID\000"
+ 2572      4C494400 
+ 2573              		.align	2
+ 2574              	.LC16:
+ 2575 0084 4D4F554E 		.ascii	"MOUNT\000"
+ 2575      5400
+ 2576 008a 0000     		.align	2
+ 2577              	.LC17:
+ 2578 008c 52454144 		.ascii	"READ\000"
+ 2578      00
+ 2579              		.section	.rodata.CSWTCH.22,"a"
+ 2580              		.align	2
+ 2583              	CSWTCH.22:
+ 2584 0000 5C000000 		.word	.LC11
+ 2585 0004 64000000 		.word	.LC12
+ 2586 0008 70000000 		.word	.LC13
+ 2587 000c 74000000 		.word	.LC14
+ 2588 0010 7C000000 		.word	.LC15
+ 2589 0014 84000000 		.word	.LC16
+ 2590 0018 8C000000 		.word	.LC17
+ 2591 001c 50000000 		.word	.LC10
+ 2592              		.section	.rodata.str1.4
+ 2593 0091 000000   		.align	2
+ 2594              	.LC18:
+ 2595 0094 53454C45 		.ascii	"SELECT\000"
+ 2595      435400
+ 2596 009b 00       		.align	2
+ 2597              	.LC19:
+ 2598 009c 44494147 		.ascii	"DIAG\000"
+ 2598      00
+ 2599 00a1 000000   		.align	2
+ 2600              	.LC20:
+ 2601 00a4 4C4F4144 		.ascii	"LOADING\000"
+ 2601      494E4700 
+ 2602              		.align	2
+ 2603              	.LC21:
+ 2604 00ac 53455256 		.ascii	"SERVICE\000"
+ 2604      49434500 
+ 2605              		.section	.rodata.CSWTCH.20,"a"
+ 2606              		.align	2
+ 2609              	CSWTCH.20:
+ 2610 0000 94000000 		.word	.LC18
+ 2611 0004 9C000000 		.word	.LC19
+ 2612 0008 A4000000 		.word	.LC20
+ 2613 000c AC000000 		.word	.LC21
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 63
+
+
+ 2614              		.section	.rodata
+ 2615              		.align	2
+ 2616              	.LC0:
+ 2617 0000 00000000 		.word	0
+ 2618 0004 00       		.byte	0
+ 2619 0005 00       		.byte	0
+ 2620 0006 00       		.ascii	"\000"
+ 2621 0007 00000000 		.space	32
+ 2621      00000000 
+ 2621      00000000 
+ 2621      00000000 
+ 2621      00000000 
+ 2622 0027 00       		.ascii	"\000"
+ 2623 0028 00000000 		.space	64
+ 2623      00000000 
+ 2623      00000000 
+ 2623      00000000 
+ 2623      00000000 
+ 2624 0068 00       		.ascii	"\000"
+ 2625 0069 00000000 		.space	16
+ 2625      00000000 
+ 2625      00000000 
+ 2625      00000000 
+ 2626 0079 00       		.ascii	"\000"
+ 2627 007a 00000000 		.space	16
+ 2627      00000000 
+ 2627      00000000 
+ 2627      00000000 
+ 2628 008a 00       		.ascii	"\000"
+ 2629 008b 00000000 		.space	160
+ 2629      00000000 
+ 2629      00000000 
+ 2629      00000000 
+ 2629      00000000 
+ 2630 012b 00       		.ascii	"\000"
+ 2631 012c 00000000 		.space	31
+ 2631      00000000 
+ 2631      00000000 
+ 2631      00000000 
+ 2631      00000000 
+ 2632 014b 00       		.byte	0
+ 2633 014c 00       		.ascii	"\000"
+ 2634 014d 00000000 		.space	32
+ 2634      00000000 
+ 2634      00000000 
+ 2634      00000000 
+ 2634      00000000 
+ 2635 016d 00       		.ascii	"\000"
+ 2636 016e 00000000 		.space	64
+ 2636      00000000 
+ 2636      00000000 
+ 2636      00000000 
+ 2636      00000000 
+ 2637 01ae 00       		.ascii	"\000"
+ 2638 01af 00000000 		.space	16
+ 2638      00000000 
+ 2638      00000000 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 64
+
+
+ 2638      00000000 
+ 2639 01bf 00       		.ascii	"\000"
+ 2640 01c0 00000000 		.space	16
+ 2640      00000000 
+ 2640      00000000 
+ 2640      00000000 
+ 2641 01d0 00       		.ascii	"\000"
+ 2642 01d1 00000000 		.space	160
+ 2642      00000000 
+ 2642      00000000 
+ 2642      00000000 
+ 2642      00000000 
+ 2643 0271 00       		.ascii	"\000"
+ 2644 0272 00000000 		.space	31
+ 2644      00000000 
+ 2644      00000000 
+ 2644      00000000 
+ 2644      00000000 
+ 2645 0291 00       		.byte	0
+ 2646 0292 00       		.ascii	"\000"
+ 2647 0293 00000000 		.space	32
+ 2647      00000000 
+ 2647      00000000 
+ 2647      00000000 
+ 2647      00000000 
+ 2648 02b3 00       		.ascii	"\000"
+ 2649 02b4 00000000 		.space	64
+ 2649      00000000 
+ 2649      00000000 
+ 2649      00000000 
+ 2649      00000000 
+ 2650 02f4 00       		.ascii	"\000"
+ 2651 02f5 00000000 		.space	16
+ 2651      00000000 
+ 2651      00000000 
+ 2651      00000000 
+ 2652 0305 00       		.ascii	"\000"
+ 2653 0306 00000000 		.space	16
+ 2653      00000000 
+ 2653      00000000 
+ 2653      00000000 
+ 2654 0316 00       		.ascii	"\000"
+ 2655 0317 00000000 		.space	160
+ 2655      00000000 
+ 2655      00000000 
+ 2655      00000000 
+ 2655      00000000 
+ 2656 03b7 00       		.ascii	"\000"
+ 2657 03b8 00000000 		.space	31
+ 2657      00000000 
+ 2657      00000000 
+ 2657      00000000 
+ 2657      00000000 
+ 2658 03d7 00       		.byte	0
+ 2659 03d8 00       		.ascii	"\000"
+ 2660 03d9 00000000 		.space	32
+ 2660      00000000 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 65
+
+
+ 2660      00000000 
+ 2660      00000000 
+ 2660      00000000 
+ 2661 03f9 00       		.ascii	"\000"
+ 2662 03fa 00000000 		.space	64
+ 2662      00000000 
+ 2662      00000000 
+ 2662      00000000 
+ 2662      00000000 
+ 2663 043a 00       		.ascii	"\000"
+ 2664 043b 00000000 		.space	16
+ 2664      00000000 
+ 2664      00000000 
+ 2664      00000000 
+ 2665 044b 00       		.ascii	"\000"
+ 2666 044c 00000000 		.space	16
+ 2666      00000000 
+ 2666      00000000 
+ 2666      00000000 
+ 2667 045c 00       		.ascii	"\000"
+ 2668 045d 00000000 		.space	160
+ 2668      00000000 
+ 2668      00000000 
+ 2668      00000000 
+ 2668      00000000 
+ 2669 04fd 00       		.ascii	"\000"
+ 2670 04fe 00000000 		.space	31
+ 2670      00000000 
+ 2670      00000000 
+ 2670      00000000 
+ 2670      00000000 
+ 2671 051d 00       		.byte	0
+ 2672 051e 00       		.ascii	"\000"
+ 2673 051f 00000000 		.space	32
+ 2673      00000000 
+ 2673      00000000 
+ 2673      00000000 
+ 2673      00000000 
+ 2674 053f 00       		.ascii	"\000"
+ 2675 0540 00000000 		.space	64
+ 2675      00000000 
+ 2675      00000000 
+ 2675      00000000 
+ 2675      00000000 
+ 2676 0580 00       		.ascii	"\000"
+ 2677 0581 00000000 		.space	16
+ 2677      00000000 
+ 2677      00000000 
+ 2677      00000000 
+ 2678 0591 00       		.ascii	"\000"
+ 2679 0592 00000000 		.space	16
+ 2679      00000000 
+ 2679      00000000 
+ 2679      00000000 
+ 2680 05a2 00       		.ascii	"\000"
+ 2681 05a3 00000000 		.space	160
+ 2681      00000000 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 66
+
+
+ 2681      00000000 
+ 2681      00000000 
+ 2681      00000000 
+ 2682 0643 00       		.ascii	"\000"
+ 2683 0644 00000000 		.space	31
+ 2683      00000000 
+ 2683      00000000 
+ 2683      00000000 
+ 2683      00000000 
+ 2684 0663 00       		.byte	0
+ 2685 0664 00       		.ascii	"\000"
+ 2686 0665 00000000 		.space	32
+ 2686      00000000 
+ 2686      00000000 
+ 2686      00000000 
+ 2686      00000000 
+ 2687 0685 00       		.ascii	"\000"
+ 2688 0686 00000000 		.space	64
+ 2688      00000000 
+ 2688      00000000 
+ 2688      00000000 
+ 2688      00000000 
+ 2689 06c6 00       		.ascii	"\000"
+ 2690 06c7 00000000 		.space	16
+ 2690      00000000 
+ 2690      00000000 
+ 2690      00000000 
+ 2691 06d7 00       		.ascii	"\000"
+ 2692 06d8 00000000 		.space	16
+ 2692      00000000 
+ 2692      00000000 
+ 2692      00000000 
+ 2693 06e8 00       		.ascii	"\000"
+ 2694 06e9 00000000 		.space	160
+ 2694      00000000 
+ 2694      00000000 
+ 2694      00000000 
+ 2694      00000000 
+ 2695 0789 00       		.ascii	"\000"
+ 2696 078a 00000000 		.space	31
+ 2696      00000000 
+ 2696      00000000 
+ 2696      00000000 
+ 2696      00000000 
+ 2697 07a9 00       		.byte	0
+ 2698 07aa 00       		.ascii	"\000"
+ 2699 07ab 00000000 		.space	32
+ 2699      00000000 
+ 2699      00000000 
+ 2699      00000000 
+ 2699      00000000 
+ 2700 07cb 00       		.ascii	"\000"
+ 2701 07cc 00000000 		.space	64
+ 2701      00000000 
+ 2701      00000000 
+ 2701      00000000 
+ 2701      00000000 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 67
+
+
+ 2702 080c 00       		.ascii	"\000"
+ 2703 080d 00000000 		.space	16
+ 2703      00000000 
+ 2703      00000000 
+ 2703      00000000 
+ 2704 081d 00       		.ascii	"\000"
+ 2705 081e 00000000 		.space	16
+ 2705      00000000 
+ 2705      00000000 
+ 2705      00000000 
+ 2706 082e 00       		.ascii	"\000"
+ 2707 082f 00000000 		.space	160
+ 2707      00000000 
+ 2707      00000000 
+ 2707      00000000 
+ 2707      00000000 
+ 2708 08cf 00       		.ascii	"\000"
+ 2709 08d0 00000000 		.space	31
+ 2709      00000000 
+ 2709      00000000 
+ 2709      00000000 
+ 2709      00000000 
+ 2710 08ef 00       		.byte	0
+ 2711 08f0 00       		.ascii	"\000"
+ 2712 08f1 00000000 		.space	32
+ 2712      00000000 
+ 2712      00000000 
+ 2712      00000000 
+ 2712      00000000 
+ 2713 0911 00       		.ascii	"\000"
+ 2714 0912 00000000 		.space	64
+ 2714      00000000 
+ 2714      00000000 
+ 2714      00000000 
+ 2714      00000000 
+ 2715 0952 00       		.ascii	"\000"
+ 2716 0953 00000000 		.space	16
+ 2716      00000000 
+ 2716      00000000 
+ 2716      00000000 
+ 2717 0963 00       		.ascii	"\000"
+ 2718 0964 00000000 		.space	16
+ 2718      00000000 
+ 2718      00000000 
+ 2718      00000000 
+ 2719 0974 00       		.ascii	"\000"
+ 2720 0975 00000000 		.space	160
+ 2720      00000000 
+ 2720      00000000 
+ 2720      00000000 
+ 2720      00000000 
+ 2721 0a15 00       		.ascii	"\000"
+ 2722 0a16 00000000 		.space	31
+ 2722      00000000 
+ 2722      00000000 
+ 2722      00000000 
+ 2722      00000000 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 68
+
+
+ 2723 0a35 00       		.byte	0
+ 2724 0a36 00       		.ascii	"\000"
+ 2725 0a37 00000000 		.space	32
+ 2725      00000000 
+ 2725      00000000 
+ 2725      00000000 
+ 2725      00000000 
+ 2726 0a57 00       		.ascii	"\000"
+ 2727 0a58 00000000 		.space	64
+ 2727      00000000 
+ 2727      00000000 
+ 2727      00000000 
+ 2727      00000000 
+ 2728 0a98 00       		.ascii	"\000"
+ 2729 0a99 00000000 		.space	16
+ 2729      00000000 
+ 2729      00000000 
+ 2729      00000000 
+ 2730 0aa9 00       		.ascii	"\000"
+ 2731 0aaa 00000000 		.space	16
+ 2731      00000000 
+ 2731      00000000 
+ 2731      00000000 
+ 2732 0aba 00       		.ascii	"\000"
+ 2733 0abb 00000000 		.space	160
+ 2733      00000000 
+ 2733      00000000 
+ 2733      00000000 
+ 2733      00000000 
+ 2734 0b5b 00       		.ascii	"\000"
+ 2735 0b5c 00000000 		.space	31
+ 2735      00000000 
+ 2735      00000000 
+ 2735      00000000 
+ 2735      00000000 
+ 2736 0b7b 00       		.byte	0
+ 2737 0b7c 00       		.ascii	"\000"
+ 2738 0b7d 00000000 		.space	32
+ 2738      00000000 
+ 2738      00000000 
+ 2738      00000000 
+ 2738      00000000 
+ 2739 0b9d 00       		.ascii	"\000"
+ 2740 0b9e 00000000 		.space	64
+ 2740      00000000 
+ 2740      00000000 
+ 2740      00000000 
+ 2740      00000000 
+ 2741 0bde 00       		.ascii	"\000"
+ 2742 0bdf 00000000 		.space	16
+ 2742      00000000 
+ 2742      00000000 
+ 2742      00000000 
+ 2743 0bef 00       		.ascii	"\000"
+ 2744 0bf0 00000000 		.space	16
+ 2744      00000000 
+ 2744      00000000 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 69
+
+
+ 2744      00000000 
+ 2745 0c00 00       		.ascii	"\000"
+ 2746 0c01 00000000 		.space	160
+ 2746      00000000 
+ 2746      00000000 
+ 2746      00000000 
+ 2746      00000000 
+ 2747 0ca1 00       		.ascii	"\000"
+ 2748 0ca2 00000000 		.space	31
+ 2748      00000000 
+ 2748      00000000 
+ 2748      00000000 
+ 2748      00000000 
+ 2749 0cc1 00       		.byte	0
+ 2750 0cc2 00       		.ascii	"\000"
+ 2751 0cc3 00000000 		.space	32
+ 2751      00000000 
+ 2751      00000000 
+ 2751      00000000 
+ 2751      00000000 
+ 2752 0ce3 00       		.ascii	"\000"
+ 2753 0ce4 00000000 		.space	64
+ 2753      00000000 
+ 2753      00000000 
+ 2753      00000000 
+ 2753      00000000 
+ 2754 0d24 00       		.ascii	"\000"
+ 2755 0d25 00000000 		.space	16
+ 2755      00000000 
+ 2755      00000000 
+ 2755      00000000 
+ 2756 0d35 00       		.ascii	"\000"
+ 2757 0d36 00000000 		.space	16
+ 2757      00000000 
+ 2757      00000000 
+ 2757      00000000 
+ 2758 0d46 00       		.ascii	"\000"
+ 2759 0d47 00000000 		.space	160
+ 2759      00000000 
+ 2759      00000000 
+ 2759      00000000 
+ 2759      00000000 
+ 2760 0de7 00       		.ascii	"\000"
+ 2761 0de8 00000000 		.space	31
+ 2761      00000000 
+ 2761      00000000 
+ 2761      00000000 
+ 2761      00000000 
+ 2762 0e07 00       		.byte	0
+ 2763 0e08 00       		.ascii	"\000"
+ 2764 0e09 00000000 		.space	32
+ 2764      00000000 
+ 2764      00000000 
+ 2764      00000000 
+ 2764      00000000 
+ 2765 0e29 00       		.ascii	"\000"
+ 2766 0e2a 00000000 		.space	64
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 70
+
+
+ 2766      00000000 
+ 2766      00000000 
+ 2766      00000000 
+ 2766      00000000 
+ 2767 0e6a 00       		.ascii	"\000"
+ 2768 0e6b 00000000 		.space	16
+ 2768      00000000 
+ 2768      00000000 
+ 2768      00000000 
+ 2769 0e7b 00       		.ascii	"\000"
+ 2770 0e7c 00000000 		.space	16
+ 2770      00000000 
+ 2770      00000000 
+ 2770      00000000 
+ 2771 0e8c 00       		.ascii	"\000"
+ 2772 0e8d 00000000 		.space	160
+ 2772      00000000 
+ 2772      00000000 
+ 2772      00000000 
+ 2772      00000000 
+ 2773 0f2d 00       		.ascii	"\000"
+ 2774 0f2e 00000000 		.space	31
+ 2774      00000000 
+ 2774      00000000 
+ 2774      00000000 
+ 2774      00000000 
+ 2775 0f4d 00       		.byte	0
+ 2776 0f4e 00       		.ascii	"\000"
+ 2777 0f4f 00000000 		.space	32
+ 2777      00000000 
+ 2777      00000000 
+ 2777      00000000 
+ 2777      00000000 
+ 2778 0f6f 00       		.ascii	"\000"
+ 2779 0f70 00000000 		.space	64
+ 2779      00000000 
+ 2779      00000000 
+ 2779      00000000 
+ 2779      00000000 
+ 2780 0fb0 00       		.ascii	"\000"
+ 2781 0fb1 00000000 		.space	16
+ 2781      00000000 
+ 2781      00000000 
+ 2781      00000000 
+ 2782 0fc1 00       		.ascii	"\000"
+ 2783 0fc2 00000000 		.space	16
+ 2783      00000000 
+ 2783      00000000 
+ 2783      00000000 
+ 2784 0fd2 00       		.ascii	"\000"
+ 2785 0fd3 00000000 		.space	160
+ 2785      00000000 
+ 2785      00000000 
+ 2785      00000000 
+ 2785      00000000 
+ 2786 1073 00       		.ascii	"\000"
+ 2787 1074 00000000 		.space	31
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 71
+
+
+ 2787      00000000 
+ 2787      00000000 
+ 2787      00000000 
+ 2787      00000000 
+ 2788 1093 00       		.byte	0
+ 2789 1094 00       		.ascii	"\000"
+ 2790 1095 00000000 		.space	32
+ 2790      00000000 
+ 2790      00000000 
+ 2790      00000000 
+ 2790      00000000 
+ 2791 10b5 00       		.ascii	"\000"
+ 2792 10b6 00000000 		.space	64
+ 2792      00000000 
+ 2792      00000000 
+ 2792      00000000 
+ 2792      00000000 
+ 2793 10f6 00       		.ascii	"\000"
+ 2794 10f7 00000000 		.space	16
+ 2794      00000000 
+ 2794      00000000 
+ 2794      00000000 
+ 2795 1107 00       		.ascii	"\000"
+ 2796 1108 00000000 		.space	16
+ 2796      00000000 
+ 2796      00000000 
+ 2796      00000000 
+ 2797 1118 00       		.ascii	"\000"
+ 2798 1119 00000000 		.space	160
+ 2798      00000000 
+ 2798      00000000 
+ 2798      00000000 
+ 2798      00000000 
+ 2799 11b9 00       		.ascii	"\000"
+ 2800 11ba 00000000 		.space	31
+ 2800      00000000 
+ 2800      00000000 
+ 2800      00000000 
+ 2800      00000000 
+ 2801 11d9 00       		.byte	0
+ 2802 11da 00       		.ascii	"\000"
+ 2803 11db 00000000 		.space	32
+ 2803      00000000 
+ 2803      00000000 
+ 2803      00000000 
+ 2803      00000000 
+ 2804 11fb 00       		.ascii	"\000"
+ 2805 11fc 00000000 		.space	64
+ 2805      00000000 
+ 2805      00000000 
+ 2805      00000000 
+ 2805      00000000 
+ 2806 123c 00       		.ascii	"\000"
+ 2807 123d 00000000 		.space	16
+ 2807      00000000 
+ 2807      00000000 
+ 2807      00000000 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 72
+
+
+ 2808 124d 00       		.ascii	"\000"
+ 2809 124e 00000000 		.space	16
+ 2809      00000000 
+ 2809      00000000 
+ 2809      00000000 
+ 2810 125e 00       		.ascii	"\000"
+ 2811 125f 00000000 		.space	160
+ 2811      00000000 
+ 2811      00000000 
+ 2811      00000000 
+ 2811      00000000 
+ 2812 12ff 00       		.ascii	"\000"
+ 2813 1300 00000000 		.space	31
+ 2813      00000000 
+ 2813      00000000 
+ 2813      00000000 
+ 2813      00000000 
+ 2814 131f 00       		.space	1
+ 2815              		.text
+ 2816              	.Letext0:
+ 2817              		.file 3 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2818              		.file 4 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2819              		.file 5 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2820              		.file 6 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2821              		.file 7 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2822              		.file 8 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2823              		.file 9 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2824              		.file 10 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2825              		.file 11 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2826              		.file 12 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2827              		.file 13 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2828              		.file 14 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2829              		.file 15 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2830              		.file 16 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2831              		.file 17 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2832              		.file 18 "src/pm_image.h"
+ 2833              		.file 19 "src/pm_loader.h"
+ 2834              		.file 20 "src/pm_manager.h"
+ 2835              		.file 21 "src/pm_sha256.h"
+ 2836              		.file 22 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 73
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 pm_manager.cpp
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:20     .text._ZN2pm7Manager11ScanCatalogEm.part.0:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:26     .text._ZN2pm7Manager11ScanCatalogEm.part.0:00000000 _ZN2pm7Manager11ScanCatalogEm.part.0
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:95     .text._ZN2pm7Manager11ScanCatalogEm.part.0:00000044 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:101    .text._ZN2pm7Manager11ScanCatalogEm.part.0:0000004a $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:486    .text._ZN2pm7Manager11ScanCatalogEm.part.0:0000016c $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:491    .rodata._ZN2pm8ModeNameENS_4ModeE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:495    .text._ZN2pm8ModeNameENS_4ModeE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:502    .text._ZN2pm8ModeNameENS_4ModeE:00000000 _ZN2pm8ModeNameENS_4ModeE
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:528    .text._ZN2pm8ModeNameENS_4ModeE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2609   .rodata.CSWTCH.20:00000000 CSWTCH.20
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:534    .text._ZN2pm16CatalogStateNameENS_12CatalogStateE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:541    .text._ZN2pm16CatalogStateNameENS_12CatalogStateE:00000000 _ZN2pm16CatalogStateNameENS_12CatalogStateE
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:567    .text._ZN2pm16CatalogStateNameENS_12CatalogStateE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2583   .rodata.CSWTCH.22:00000000 CSWTCH.22
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:573    .text._ZN2pm15StartResultNameENS_11StartResultE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:580    .text._ZN2pm15StartResultNameENS_11StartResultE:00000000 _ZN2pm15StartResultNameENS_11StartResultE
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:606    .text._ZN2pm15StartResultNameENS_11StartResultE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2547   .rodata.CSWTCH.24:00000000 CSWTCH.24
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:612    .text._ZN2pm7ManagerC2ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:619    .text._ZN2pm7ManagerC2ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb:00000000 _ZN2pm7ManagerC2ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:619    .text._ZN2pm7ManagerC2ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb:00000000 _ZN2pm7ManagerC1ERNS_7StorageERNS_10LoadTargetERNS_10BootCommitEb
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:718    .text._ZN2pm7Manager12ClearCatalogENS_12CatalogStateE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:725    .text._ZN2pm7Manager12ClearCatalogENS_12CatalogStateE:00000000 _ZN2pm7Manager12ClearCatalogENS_12CatalogStateE
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:787    .text._ZN2pm7Manager11ScanCatalogEm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:794    .text._ZN2pm7Manager11ScanCatalogEm:00000000 _ZN2pm7Manager11ScanCatalogEm
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:880    .text._ZN2pm7Manager13RequestRescanEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:887    .text._ZN2pm7Manager13RequestRescanEv:00000000 _ZN2pm7Manager13RequestRescanEv
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:908    .text._ZN2pm7Manager14RequestServiceEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:915    .text._ZN2pm7Manager14RequestServiceEv:00000000 _ZN2pm7Manager14RequestServiceEv
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:952    .text._ZN2pm7Manager7SetModeENS_4ModeEm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:959    .text._ZN2pm7Manager7SetModeENS_4ModeEm:00000000 _ZN2pm7Manager7SetModeENS_4ModeEm
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1035   .text._ZN2pm7Manager9EnterModeENS_4ModeEm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1042   .text._ZN2pm7Manager9EnterModeENS_4ModeEm:00000000 _ZN2pm7Manager9EnterModeENS_4ModeEm
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1081   .text._ZN2pm7Manager9ShowErrorENS_7UiErrorEm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1088   .text._ZN2pm7Manager9ShowErrorENS_7UiErrorEm:00000000 _ZN2pm7Manager9ShowErrorENS_7UiErrorEm
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1114   .text._ZN2pm7Manager9StartSlotEhmm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1121   .text._ZN2pm7Manager9StartSlotEhmm:00000000 _ZN2pm7Manager9StartSlotEhmm
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1303   .text._ZN2pm7Manager12StartRequestEhPKcPKhjmmm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1310   .text._ZN2pm7Manager12StartRequestEhPKcPKhjmmm:00000000 _ZN2pm7Manager12StartRequestEhPKcPKhjmmm
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1493   .text._ZN2pm7Manager16HandleSelectKeysEmt:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1500   .text._ZN2pm7Manager16HandleSelectKeysEmt:00000000 _ZN2pm7Manager16HandleSelectKeysEmt
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1795   .text._ZN2pm7Manager14HandleDiagKeysEmt:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1802   .text._ZN2pm7Manager14HandleDiagKeysEmt:00000000 _ZN2pm7Manager14HandleDiagKeysEmt
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1934   .text._ZN2pm7Manager4StepEmtb:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:1941   .text._ZN2pm7Manager4StepEmtb:00000000 _ZN2pm7Manager4StepEmtb
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2253   .text._ZNK2pm7Manager4LedsEm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2260   .text._ZNK2pm7Manager4LedsEm:00000000 _ZNK2pm7Manager4LedsEm
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2510   .text._ZNK2pm7Manager4LedsEm:000000e0 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2516   .rodata.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2544   .rodata.CSWTCH.24:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2580   .rodata.CSWTCH.22:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2606   .rodata.CSWTCH.20:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s:2615   .rodata:00000000 $d
+
+UNDEFINED SYMBOLS
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccU74g8g.s 			page 74
+
+
+memcpy
+memset
+_ZN2pm12ParseCatalogEPKcjRNS_7CatalogEPNS_16CatalogParseInfoE
+_ZN2pm6LoaderC1ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
+_ZNK2pm7Catalog8FindSlotEh
+_ZN2pm6Loader5ResetEv
+_ZN2pm6Loader5StartERKNS_12CatalogEntryEmm
+strcmp
+memcmp
+_ZNK2pm6Loader6ActiveEv
+_ZN2pm6Loader4StepEm
+_ZNK2pm6Loader7PercentEv

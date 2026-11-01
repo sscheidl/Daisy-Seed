@@ -1,0 +1,2822 @@
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.arch armv7e-m
+   3              		.fpu fpv5-d16
+   4              		.eabi_attribute 28, 1
+   5              		.eabi_attribute 20, 1
+   6              		.eabi_attribute 21, 1
+   7              		.eabi_attribute 23, 3
+   8              		.eabi_attribute 24, 1
+   9              		.eabi_attribute 25, 1
+  10              		.eabi_attribute 26, 1
+  11              		.eabi_attribute 30, 2
+  12              		.eabi_attribute 34, 1
+  13              		.eabi_attribute 18, 4
+  14              		.file	"ro_sd.c"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.file 1 "../../common/sd/ro_sd.c"
+  19              		.section	.text.BSP_SD_ReadCpltCallback,"ax",%progbits
+  20              		.align	1
+  21              		.p2align 2,,3
+  22              		.global	BSP_SD_ReadCpltCallback
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	BSP_SD_ReadCpltCallback:
+  28              	.LFB337:
+   1:../../common/sd/ro_sd.c **** /* Read-only FatFs disk layer on libDaisy's BSP/HAL for SDMMC1.
+   2:../../common/sd/ro_sd.c ****  * Combines the Nebulae bridge (isolated IDMA bounce buffer, short per-transfer
+   3:../../common/sd/ro_sd.c ****  * timeout, card check and service hook between transfers) with the Diagnostics
+   4:../../common/sd/ro_sd.c ****  * driver (STA_PROTECT, re-initialization per mount, overall time budget).
+   5:../../common/sd/ro_sd.c ****  * libDaisy's SD_Driver/ff_gen_drv are not used; no write path exists.
+   6:../../common/sd/ro_sd.c ****  */
+   7:../../common/sd/ro_sd.c **** #include "ro_sd.h"
+   8:../../common/sd/ro_sd.c **** #include "diskio.h"
+   9:../../common/sd/ro_sd.c **** #include "stm32h7xx_hal.h"
+  10:../../common/sd/ro_sd.c **** #include "util/bsp_sd_diskio.h"
+  11:../../common/sd/ro_sd.c **** #include <string.h>
+  12:../../common/sd/ro_sd.c **** 
+  13:../../common/sd/ro_sd.c **** #if FF_FS_READONLY != 1 || FF_MIN_SS != 512 || FF_MAX_SS != 512 || FF_VOLUMES != 1
+  14:../../common/sd/ro_sd.c **** #error "common/sd requires its own ffconf.h: read-only, 512-byte sectors, one volume"
+  15:../../common/sd/ro_sd.c **** #endif
+  16:../../common/sd/ro_sd.c **** 
+  17:../../common/sd/ro_sd.c **** #define RO_SD_SECTOR 512u
+  18:../../common/sd/ro_sd.c **** 
+  19:../../common/sd/ro_sd.c **** extern SD_HandleTypeDef hsd1; /* libDaisy src/per/sdmmc.cpp */
+  20:../../common/sd/ro_sd.c **** 
+  21:../../common/sd/ro_sd.c **** static RoSdConfig config;
+  22:../../common/sd/ro_sd.c **** static int configured = 0;
+  23:../../common/sd/ro_sd.c **** static DSTATUS status = STA_NOINIT | STA_PROTECT;
+  24:../../common/sd/ro_sd.c **** static uint32_t deadline = 0;
+  25:../../common/sd/ro_sd.c **** static volatile uint32_t done, failed;
+  26:../../common/sd/ro_sd.c **** 
+  27:../../common/sd/ro_sd.c **** void BSP_SD_ReadCpltCallback(void) { done = 1; }
+  29              		.loc 1 27 36 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 2
+
+
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		@ link register save eliminated.
+  34              		.loc 1 27 38 view .LVU1
+  35              		.loc 1 27 43 is_stmt 0 view .LVU2
+  36 0000 014B     		ldr	r3, .L3
+  37 0002 0122     		movs	r2, #1
+  38 0004 1A60     		str	r2, [r3]
+  39              		.loc 1 27 48 view .LVU3
+  40 0006 7047     		bx	lr
+  41              	.L4:
+  42              		.align	2
+  43              	.L3:
+  44 0008 00000000 		.word	done
+  45              		.cfi_endproc
+  46              	.LFE337:
+  48              		.section	.text.BSP_SD_ErrorCallback,"ax",%progbits
+  49              		.align	1
+  50              		.p2align 2,,3
+  51              		.global	BSP_SD_ErrorCallback
+  52              		.syntax unified
+  53              		.thumb
+  54              		.thumb_func
+  56              	BSP_SD_ErrorCallback:
+  57              	.LFB338:
+  28:../../common/sd/ro_sd.c **** void BSP_SD_ErrorCallback(void) { failed = 1; }
+  58              		.loc 1 28 33 is_stmt 1 view -0
+  59              		.cfi_startproc
+  60              		@ args = 0, pretend = 0, frame = 0
+  61              		@ frame_needed = 0, uses_anonymous_args = 0
+  62              		@ link register save eliminated.
+  63              		.loc 1 28 35 view .LVU5
+  64              		.loc 1 28 42 is_stmt 0 view .LVU6
+  65 0000 014B     		ldr	r3, .L6
+  66 0002 0122     		movs	r2, #1
+  67 0004 1A60     		str	r2, [r3]
+  68              		.loc 1 28 47 view .LVU7
+  69 0006 7047     		bx	lr
+  70              	.L7:
+  71              		.align	2
+  72              	.L6:
+  73 0008 00000000 		.word	failed
+  74              		.cfi_endproc
+  75              	.LFE338:
+  77              		.section	.text.ro_sd_init,"ax",%progbits
+  78              		.align	1
+  79              		.p2align 2,,3
+  80              		.global	ro_sd_init
+  81              		.syntax unified
+  82              		.thumb
+  83              		.thumb_func
+  85              	ro_sd_init:
+  86              	.LVL0:
+  87              	.LFB343:
+  29:../../common/sd/ro_sd.c **** 
+  30:../../common/sd/ro_sd.c **** static int Present(void) { return !config.card_present || config.card_present(); }
+  31:../../common/sd/ro_sd.c **** 
+  32:../../common/sd/ro_sd.c **** static int BudgetLeft(void) {
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 3
+
+
+  33:../../common/sd/ro_sd.c ****     return !config.budget_ms || (int32_t)(deadline - HAL_GetTick()) > 0;
+  34:../../common/sd/ro_sd.c **** }
+  35:../../common/sd/ro_sd.c **** 
+  36:../../common/sd/ro_sd.c **** static int Expired(uint32_t start) {
+  37:../../common/sd/ro_sd.c ****     return HAL_GetTick() - start >= config.transfer_timeout_ms || !BudgetLeft();
+  38:../../common/sd/ro_sd.c **** }
+  39:../../common/sd/ro_sd.c **** 
+  40:../../common/sd/ro_sd.c **** static DRESULT Fail(void) {
+  41:../../common/sd/ro_sd.c ****     if(config.abort) config.abort();
+  42:../../common/sd/ro_sd.c ****     else HAL_SD_Abort(&hsd1);
+  43:../../common/sd/ro_sd.c ****     status |= STA_NOINIT;
+  44:../../common/sd/ro_sd.c ****     return RES_ERROR;
+  45:../../common/sd/ro_sd.c **** }
+  46:../../common/sd/ro_sd.c **** 
+  47:../../common/sd/ro_sd.c **** int ro_sd_init(const RoSdConfig* c) {
+  88              		.loc 1 47 37 is_stmt 1 view -0
+  89              		.cfi_startproc
+  90              		@ args = 0, pretend = 0, frame = 0
+  91              		@ frame_needed = 0, uses_anonymous_args = 0
+  48:../../common/sd/ro_sd.c ****     configured = 0;
+  92              		.loc 1 48 5 view .LVU9
+  93              		.loc 1 48 16 is_stmt 0 view .LVU10
+  94 0000 134A     		ldr	r2, .L17
+  95 0002 0023     		movs	r3, #0
+  47:../../common/sd/ro_sd.c ****     configured = 0;
+  96              		.loc 1 47 37 view .LVU11
+  97 0004 10B5     		push	{r4, lr}
+  98              		.cfi_def_cfa_offset 8
+  99              		.cfi_offset 4, -8
+ 100              		.cfi_offset 14, -4
+ 101              		.loc 1 48 16 view .LVU12
+ 102 0006 1360     		str	r3, [r2]
+  49:../../common/sd/ro_sd.c ****     if(!c || !c->bounce || ((uintptr_t)c->bounce & 31u) || c->bounce_bytes < RO_SD_SECTOR
+ 103              		.loc 1 49 5 is_stmt 1 view .LVU13
+ 104              		.loc 1 49 7 is_stmt 0 view .LVU14
+ 105 0008 F0B1     		cbz	r0, .L15
+ 106              		.loc 1 49 16 discriminator 1 view .LVU15
+ 107 000a 0368     		ldr	r3, [r0]
+ 108 000c 8446     		mov	ip, r0
+ 109              		.loc 1 49 11 discriminator 1 view .LVU16
+ 110 000e DBB1     		cbz	r3, .L15
+ 111              		.loc 1 49 25 discriminator 2 view .LVU17
+ 112 0010 DB06     		lsls	r3, r3, #27
+ 113 0012 19D1     		bne	.L15
+ 114              		.loc 1 49 61 discriminator 3 view .LVU18
+ 115 0014 4068     		ldr	r0, [r0, #4]
+ 116              	.LVL1:
+ 117              		.loc 1 49 57 discriminator 3 view .LVU19
+ 118 0016 B0F5007F 		cmp	r0, #512
+ 119 001a 15D3     		bcc	.L15
+  50:../../common/sd/ro_sd.c ****        || c->bounce_bytes % RO_SD_SECTOR || !c->transfer_timeout_ms)
+ 120              		.loc 1 50 27 view .LVU20
+ 121 001c C0F30800 		ubfx	r0, r0, #0, #9
+ 122              		.loc 1 50 8 view .LVU21
+ 123 0020 90B9     		cbnz	r0, .L15
+ 124              		.loc 1 50 42 discriminator 1 view .LVU22
+ 125 0022 DCF80830 		ldr	r3, [ip, #8]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 4
+
+
+ 126 0026 7BB1     		cbz	r3, .L15
+  51:../../common/sd/ro_sd.c ****         return -1;
+  52:../../common/sd/ro_sd.c ****     config = *c;
+ 127              		.loc 1 52 5 is_stmt 1 view .LVU23
+  53:../../common/sd/ro_sd.c ****     configured = 1;
+ 128              		.loc 1 53 16 is_stmt 0 view .LVU24
+ 129 0028 0123     		movs	r3, #1
+  52:../../common/sd/ro_sd.c ****     configured = 1;
+ 130              		.loc 1 52 12 view .LVU25
+ 131 002a 0A4C     		ldr	r4, .L17+4
+  54:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+  55:../../common/sd/ro_sd.c ****     return 0;
+ 132              		.loc 1 55 12 view .LVU26
+ 133 002c 8646     		mov	lr, r0
+  53:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+ 134              		.loc 1 53 16 view .LVU27
+ 135 002e 1360     		str	r3, [r2]
+  54:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+ 136              		.loc 1 54 12 view .LVU28
+ 137 0030 0522     		movs	r2, #5
+ 138 0032 094B     		ldr	r3, .L17+8
+ 139 0034 1A70     		strb	r2, [r3]
+  52:../../common/sd/ro_sd.c ****     configured = 1;
+ 140              		.loc 1 52 12 view .LVU29
+ 141 0036 BCE80F00 		ldmia	ip!, {r0, r1, r2, r3}
+ 142              	.LVL2:
+  52:../../common/sd/ro_sd.c ****     configured = 1;
+ 143              		.loc 1 52 12 view .LVU30
+ 144 003a 0FC4     		stmia	r4!, {r0, r1, r2, r3}
+ 145 003c 9CE80700 		ldm	ip, {r0, r1, r2}
+ 146 0040 84E80700 		stm	r4, {r0, r1, r2}
+  53:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+ 147              		.loc 1 53 5 is_stmt 1 view .LVU31
+  54:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+ 148              		.loc 1 54 5 view .LVU32
+ 149              		.loc 1 55 5 view .LVU33
+ 150              	.LVL3:
+ 151              	.L8:
+  56:../../common/sd/ro_sd.c **** }
+ 152              		.loc 1 56 1 is_stmt 0 view .LVU34
+ 153 0044 7046     		mov	r0, lr
+ 154 0046 10BD     		pop	{r4, pc}
+ 155              	.L15:
+  51:../../common/sd/ro_sd.c ****     config = *c;
+ 156              		.loc 1 51 16 view .LVU35
+ 157 0048 4FF0FF3E 		mov	lr, #-1
+ 158 004c FAE7     		b	.L8
+ 159              	.L18:
+ 160 004e 00BF     		.align	2
+ 161              	.L17:
+ 162 0050 00000000 		.word	configured
+ 163 0054 00000000 		.word	config
+ 164 0058 00000000 		.word	status
+ 165              		.cfi_endproc
+ 166              	.LFE343:
+ 168              		.section	.text.ro_sd_restart_budget,"ax",%progbits
+ 169              		.align	1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 5
+
+
+ 170              		.p2align 2,,3
+ 171              		.global	ro_sd_restart_budget
+ 172              		.syntax unified
+ 173              		.thumb
+ 174              		.thumb_func
+ 176              	ro_sd_restart_budget:
+ 177              	.LFB344:
+  57:../../common/sd/ro_sd.c **** 
+  58:../../common/sd/ro_sd.c **** void ro_sd_restart_budget(void) { deadline = HAL_GetTick() + config.budget_ms; }
+ 178              		.loc 1 58 33 is_stmt 1 view -0
+ 179              		.cfi_startproc
+ 180              		@ args = 0, pretend = 0, frame = 0
+ 181              		@ frame_needed = 0, uses_anonymous_args = 0
+ 182              		.loc 1 58 35 view .LVU37
+ 183              		.loc 1 58 33 is_stmt 0 view .LVU38
+ 184 0000 08B5     		push	{r3, lr}
+ 185              		.cfi_def_cfa_offset 8
+ 186              		.cfi_offset 3, -8
+ 187              		.cfi_offset 14, -4
+ 188              		.loc 1 58 46 view .LVU39
+ 189 0002 FFF7FEFF 		bl	HAL_GetTick
+ 190              	.LVL4:
+ 191              		.loc 1 58 68 discriminator 1 view .LVU40
+ 192 0006 034B     		ldr	r3, .L21
+ 193              		.loc 1 58 44 discriminator 1 view .LVU41
+ 194 0008 034A     		ldr	r2, .L21+4
+ 195              		.loc 1 58 60 discriminator 1 view .LVU42
+ 196 000a DB68     		ldr	r3, [r3, #12]
+ 197 000c 0344     		add	r3, r3, r0
+ 198              		.loc 1 58 44 discriminator 1 view .LVU43
+ 199 000e 1360     		str	r3, [r2]
+ 200              		.loc 1 58 80 view .LVU44
+ 201 0010 08BD     		pop	{r3, pc}
+ 202              	.L22:
+ 203 0012 00BF     		.align	2
+ 204              	.L21:
+ 205 0014 00000000 		.word	config
+ 206 0018 00000000 		.word	deadline
+ 207              		.cfi_endproc
+ 208              	.LFE344:
+ 210              		.section	.rodata.ro_sd_mount.str1.4,"aMS",%progbits,1
+ 211              		.align	2
+ 212              	.LC0:
+ 213 0000 303A00   		.ascii	"0:\000"
+ 214              		.section	.text.ro_sd_mount,"ax",%progbits
+ 215              		.align	1
+ 216              		.p2align 2,,3
+ 217              		.global	ro_sd_mount
+ 218              		.syntax unified
+ 219              		.thumb
+ 220              		.thumb_func
+ 222              	ro_sd_mount:
+ 223              	.LVL5:
+ 224              	.LFB345:
+  59:../../common/sd/ro_sd.c **** 
+  60:../../common/sd/ro_sd.c **** FRESULT ro_sd_mount(FATFS* fs) {
+ 225              		.loc 1 60 32 is_stmt 1 view -0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 6
+
+
+ 226              		.cfi_startproc
+ 227              		@ args = 0, pretend = 0, frame = 0
+ 228              		@ frame_needed = 0, uses_anonymous_args = 0
+  61:../../common/sd/ro_sd.c ****     if(!configured) return FR_NOT_READY;
+ 229              		.loc 1 61 5 view .LVU46
+ 230              		.loc 1 61 8 is_stmt 0 view .LVU47
+ 231 0000 0F4B     		ldr	r3, .L33
+ 232              		.loc 1 61 7 view .LVU48
+ 233 0002 1B68     		ldr	r3, [r3]
+ 234 0004 D3B1     		cbz	r3, .L24
+  62:../../common/sd/ro_sd.c ****     if(hsd1.State != HAL_SD_STATE_RESET) HAL_SD_DeInit(&hsd1); // fresh start after a swap
+ 235              		.loc 1 62 5 is_stmt 1 view .LVU49
+  60:../../common/sd/ro_sd.c ****     if(!configured) return FR_NOT_READY;
+ 236              		.loc 1 60 32 is_stmt 0 view .LVU50
+ 237 0006 10B5     		push	{r4, lr}
+ 238              		.cfi_def_cfa_offset 8
+ 239              		.cfi_offset 4, -8
+ 240              		.cfi_offset 14, -4
+ 241 0008 0446     		mov	r4, r0
+ 242              		.loc 1 62 12 view .LVU51
+ 243 000a 0E48     		ldr	r0, .L33+4
+ 244              	.LVL6:
+ 245              		.loc 1 62 12 view .LVU52
+ 246 000c 90F83030 		ldrb	r3, [r0, #48]	@ zero_extendqisi2
+ 247              		.loc 1 62 7 view .LVU53
+ 248 0010 8BB9     		cbnz	r3, .L32
+ 249              	.L25:
+  63:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+ 250              		.loc 1 63 5 is_stmt 1 view .LVU54
+ 251              		.loc 1 63 12 is_stmt 0 view .LVU55
+ 252 0012 0D4B     		ldr	r3, .L33+8
+ 253 0014 0522     		movs	r2, #5
+ 254 0016 1A70     		strb	r2, [r3]
+  64:../../common/sd/ro_sd.c ****     ro_sd_restart_budget();
+ 255              		.loc 1 64 5 is_stmt 1 view .LVU56
+ 256              	.LBB65:
+ 257              	.LBI65:
+  58:../../common/sd/ro_sd.c **** 
+ 258              		.loc 1 58 6 view .LVU57
+ 259              	.LBB66:
+  58:../../common/sd/ro_sd.c **** 
+ 260              		.loc 1 58 35 view .LVU58
+  58:../../common/sd/ro_sd.c **** 
+ 261              		.loc 1 58 46 is_stmt 0 view .LVU59
+ 262 0018 FFF7FEFF 		bl	HAL_GetTick
+ 263              	.LVL7:
+  58:../../common/sd/ro_sd.c **** 
+ 264              		.loc 1 58 68 discriminator 1 view .LVU60
+ 265 001c 0B4B     		ldr	r3, .L33+12
+  58:../../common/sd/ro_sd.c **** 
+ 266              		.loc 1 58 46 view .LVU61
+ 267 001e 8446     		mov	ip, r0
+  58:../../common/sd/ro_sd.c **** 
+ 268              		.loc 1 58 44 discriminator 1 view .LVU62
+ 269 0020 0B49     		ldr	r1, .L33+16
+ 270              	.LBE66:
+ 271              	.LBE65:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 7
+
+
+  65:../../common/sd/ro_sd.c ****     return f_mount(fs, "0:", 1);
+ 272              		.loc 1 65 12 view .LVU63
+ 273 0022 2046     		mov	r0, r4
+ 274              	.LBB70:
+ 275              	.LBB67:
+  58:../../common/sd/ro_sd.c **** 
+ 276              		.loc 1 58 60 discriminator 1 view .LVU64
+ 277 0024 DB68     		ldr	r3, [r3, #12]
+ 278              	.LBE67:
+ 279              	.LBE70:
+ 280              		.loc 1 65 12 view .LVU65
+ 281 0026 0122     		movs	r2, #1
+ 282              	.LBB71:
+ 283              	.LBB68:
+  58:../../common/sd/ro_sd.c **** 
+ 284              		.loc 1 58 60 discriminator 1 view .LVU66
+ 285 0028 6344     		add	r3, r3, ip
+ 286              	.LBE68:
+ 287              	.LBE71:
+  66:../../common/sd/ro_sd.c **** }
+ 288              		.loc 1 66 1 view .LVU67
+ 289 002a BDE81040 		pop	{r4, lr}
+ 290              		.cfi_remember_state
+ 291              		.cfi_restore 14
+ 292              		.cfi_restore 4
+ 293              		.cfi_def_cfa_offset 0
+ 294              	.LVL8:
+ 295              	.LBB72:
+ 296              	.LBB69:
+  58:../../common/sd/ro_sd.c **** 
+ 297              		.loc 1 58 44 discriminator 1 view .LVU68
+ 298 002e 0B60     		str	r3, [r1]
+ 299              	.LBE69:
+ 300              	.LBE72:
+  65:../../common/sd/ro_sd.c ****     return f_mount(fs, "0:", 1);
+ 301              		.loc 1 65 5 is_stmt 1 view .LVU69
+  65:../../common/sd/ro_sd.c ****     return f_mount(fs, "0:", 1);
+ 302              		.loc 1 65 12 is_stmt 0 view .LVU70
+ 303 0030 0849     		ldr	r1, .L33+20
+ 304 0032 FFF7FEBF 		b	f_mount
+ 305              	.LVL9:
+ 306              	.L32:
+ 307              		.cfi_restore_state
+  62:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+ 308              		.loc 1 62 42 is_stmt 1 discriminator 1 view .LVU71
+ 309 0036 FFF7FEFF 		bl	HAL_SD_DeInit
+ 310              	.LVL10:
+ 311 003a EAE7     		b	.L25
+ 312              	.LVL11:
+ 313              	.L24:
+ 314              		.cfi_def_cfa_offset 0
+ 315              		.cfi_restore 4
+ 316              		.cfi_restore 14
+ 317              		.loc 1 66 1 is_stmt 0 view .LVU72
+ 318 003c 0320     		movs	r0, #3
+ 319              	.LVL12:
+ 320              		.loc 1 66 1 view .LVU73
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 8
+
+
+ 321 003e 7047     		bx	lr
+ 322              	.L34:
+ 323              		.align	2
+ 324              	.L33:
+ 325 0040 00000000 		.word	configured
+ 326 0044 00000000 		.word	hsd1
+ 327 0048 00000000 		.word	status
+ 328 004c 00000000 		.word	config
+ 329 0050 00000000 		.word	deadline
+ 330 0054 00000000 		.word	.LC0
+ 331              		.cfi_endproc
+ 332              	.LFE345:
+ 334              		.section	.text.ro_sd_unmount,"ax",%progbits
+ 335              		.align	1
+ 336              		.p2align 2,,3
+ 337              		.global	ro_sd_unmount
+ 338              		.syntax unified
+ 339              		.thumb
+ 340              		.thumb_func
+ 342              	ro_sd_unmount:
+ 343              	.LFB346:
+  67:../../common/sd/ro_sd.c **** 
+  68:../../common/sd/ro_sd.c **** void ro_sd_unmount(void) { f_mount(0, "0:", 0); }
+ 344              		.loc 1 68 26 is_stmt 1 view -0
+ 345              		.cfi_startproc
+ 346              		@ args = 0, pretend = 0, frame = 0
+ 347              		@ frame_needed = 0, uses_anonymous_args = 0
+ 348              		@ link register save eliminated.
+ 349              		.loc 1 68 28 view .LVU75
+ 350 0000 0022     		movs	r2, #0
+ 351 0002 0249     		ldr	r1, .L36
+ 352 0004 1046     		mov	r0, r2
+ 353 0006 FFF7FEBF 		b	f_mount
+ 354              	.LVL13:
+ 355              	.L37:
+ 356 000a 00BF     		.align	2
+ 357              	.L36:
+ 358 000c 00000000 		.word	.LC0
+ 359              		.cfi_endproc
+ 360              	.LFE346:
+ 362              		.section	.text.ro_sd_status,"ax",%progbits
+ 363              		.align	1
+ 364              		.p2align 2,,3
+ 365              		.global	ro_sd_status
+ 366              		.syntax unified
+ 367              		.thumb
+ 368              		.thumb_func
+ 370              	ro_sd_status:
+ 371              	.LFB347:
+  69:../../common/sd/ro_sd.c **** 
+  70:../../common/sd/ro_sd.c **** DSTATUS ro_sd_status(void) {
+ 372              		.loc 1 70 28 view -0
+ 373              		.cfi_startproc
+ 374              		@ args = 0, pretend = 0, frame = 0
+ 375              		@ frame_needed = 0, uses_anonymous_args = 0
+  71:../../common/sd/ro_sd.c ****     return Present() ? status : (DSTATUS)(STA_NOINIT | STA_NODISK | STA_PROTECT);
+ 376              		.loc 1 71 5 view .LVU77
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 9
+
+
+ 377              	.LBB75:
+ 378              	.LBI75:
+  30:../../common/sd/ro_sd.c **** 
+ 379              		.loc 1 30 12 view .LVU78
+ 380              	.LBB76:
+  30:../../common/sd/ro_sd.c **** 
+ 381              		.loc 1 30 28 view .LVU79
+ 382              	.LBE76:
+ 383              	.LBE75:
+  70:../../common/sd/ro_sd.c ****     return Present() ? status : (DSTATUS)(STA_NOINIT | STA_NODISK | STA_PROTECT);
+ 384              		.loc 1 70 28 is_stmt 0 view .LVU80
+ 385 0000 08B5     		push	{r3, lr}
+ 386              		.cfi_def_cfa_offset 8
+ 387              		.cfi_offset 3, -8
+ 388              		.cfi_offset 14, -4
+ 389              	.LBB78:
+ 390              	.LBB77:
+  30:../../common/sd/ro_sd.c **** 
+ 391              		.loc 1 30 42 view .LVU81
+ 392 0002 054B     		ldr	r3, .L44
+ 393 0004 1B69     		ldr	r3, [r3, #16]
+  30:../../common/sd/ro_sd.c **** 
+ 394              		.loc 1 30 56 view .LVU82
+ 395 0006 0BB1     		cbz	r3, .L41
+  30:../../common/sd/ro_sd.c **** 
+ 396              		.loc 1 30 59 discriminator 2 view .LVU83
+ 397 0008 9847     		blx	r3
+ 398              	.LVL14:
+  30:../../common/sd/ro_sd.c **** 
+ 399              		.loc 1 30 56 discriminator 1 view .LVU84
+ 400 000a 10B1     		cbz	r0, .L43
+ 401              	.L41:
+ 402              	.LBE77:
+ 403              	.LBE78:
+ 404              		.loc 1 71 31 discriminator 1 view .LVU85
+ 405 000c 034B     		ldr	r3, .L44+4
+ 406 000e 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+  72:../../common/sd/ro_sd.c **** }
+ 407              		.loc 1 72 1 view .LVU86
+ 408 0010 08BD     		pop	{r3, pc}
+ 409              	.L43:
+  71:../../common/sd/ro_sd.c **** }
+ 410              		.loc 1 71 31 discriminator 2 view .LVU87
+ 411 0012 0720     		movs	r0, #7
+ 412              		.loc 1 72 1 view .LVU88
+ 413 0014 08BD     		pop	{r3, pc}
+ 414              	.L45:
+ 415 0016 00BF     		.align	2
+ 416              	.L44:
+ 417 0018 00000000 		.word	config
+ 418 001c 00000000 		.word	status
+ 419              		.cfi_endproc
+ 420              	.LFE347:
+ 422              		.section	.text.disk_status,"ax",%progbits
+ 423              		.align	1
+ 424              		.p2align 2,,3
+ 425              		.global	disk_status
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 10
+
+
+ 426              		.syntax unified
+ 427              		.thumb
+ 428              		.thumb_func
+ 430              	disk_status:
+ 431              	.LVL15:
+ 432              	.LFB348:
+  73:../../common/sd/ro_sd.c **** 
+  74:../../common/sd/ro_sd.c **** DSTATUS disk_status(BYTE drive) {
+ 433              		.loc 1 74 33 is_stmt 1 view -0
+ 434              		.cfi_startproc
+ 435              		@ args = 0, pretend = 0, frame = 0
+ 436              		@ frame_needed = 0, uses_anonymous_args = 0
+  75:../../common/sd/ro_sd.c ****     return drive ? (DSTATUS)(STA_NOINIT | STA_PROTECT) : ro_sd_status();
+ 437              		.loc 1 75 5 view .LVU90
+ 438              		.loc 1 75 56 is_stmt 0 view .LVU91
+ 439 0000 08B1     		cbz	r0, .L55
+ 440              		.loc 1 75 56 discriminator 2 view .LVU92
+ 441 0002 0520     		movs	r0, #5
+ 442              	.LVL16:
+  76:../../common/sd/ro_sd.c **** }
+ 443              		.loc 1 76 1 view .LVU93
+ 444 0004 7047     		bx	lr
+ 445              	.LVL17:
+ 446              	.L55:
+ 447              	.LBB83:
+ 448              	.LBI83:
+  70:../../common/sd/ro_sd.c ****     return Present() ? status : (DSTATUS)(STA_NOINIT | STA_NODISK | STA_PROTECT);
+ 449              		.loc 1 70 9 is_stmt 1 view .LVU94
+ 450              	.LBB84:
+  71:../../common/sd/ro_sd.c **** }
+ 451              		.loc 1 71 5 view .LVU95
+ 452              	.LBB85:
+ 453              	.LBI85:
+  30:../../common/sd/ro_sd.c **** 
+ 454              		.loc 1 30 12 view .LVU96
+ 455              	.LBB86:
+  30:../../common/sd/ro_sd.c **** 
+ 456              		.loc 1 30 28 view .LVU97
+ 457              	.LBE86:
+ 458              	.LBE85:
+ 459              	.LBE84:
+ 460              	.LBE83:
+  74:../../common/sd/ro_sd.c ****     return drive ? (DSTATUS)(STA_NOINIT | STA_PROTECT) : ro_sd_status();
+ 461              		.loc 1 74 33 is_stmt 0 view .LVU98
+ 462 0006 08B5     		push	{r3, lr}
+ 463              		.cfi_def_cfa_offset 8
+ 464              		.cfi_offset 3, -8
+ 465              		.cfi_offset 14, -4
+ 466              	.LBB91:
+ 467              	.LBB89:
+ 468              	.LBB88:
+ 469              	.LBB87:
+  30:../../common/sd/ro_sd.c **** 
+ 470              		.loc 1 30 42 view .LVU99
+ 471 0008 044B     		ldr	r3, .L57
+ 472 000a 1B69     		ldr	r3, [r3, #16]
+  30:../../common/sd/ro_sd.c **** 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 11
+
+
+ 473              		.loc 1 30 56 view .LVU100
+ 474 000c 0BB1     		cbz	r3, .L49
+  30:../../common/sd/ro_sd.c **** 
+ 475              		.loc 1 30 59 discriminator 2 view .LVU101
+ 476 000e 9847     		blx	r3
+ 477              	.LVL18:
+  30:../../common/sd/ro_sd.c **** 
+ 478              		.loc 1 30 56 discriminator 1 view .LVU102
+ 479 0010 10B1     		cbz	r0, .L56
+ 480              	.L49:
+ 481              	.LBE87:
+ 482              	.LBE88:
+  71:../../common/sd/ro_sd.c **** }
+ 483              		.loc 1 71 31 discriminator 1 view .LVU103
+ 484 0012 034B     		ldr	r3, .L57+4
+ 485 0014 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 486              	.LBE89:
+ 487              	.LBE91:
+ 488              		.loc 1 76 1 view .LVU104
+ 489 0016 08BD     		pop	{r3, pc}
+ 490              	.L56:
+ 491              	.LBB92:
+ 492              	.LBB90:
+  71:../../common/sd/ro_sd.c **** }
+ 493              		.loc 1 71 31 discriminator 2 view .LVU105
+ 494 0018 0720     		movs	r0, #7
+ 495              	.LBE90:
+ 496              	.LBE92:
+ 497              		.loc 1 76 1 view .LVU106
+ 498 001a 08BD     		pop	{r3, pc}
+ 499              	.L58:
+ 500              		.align	2
+ 501              	.L57:
+ 502 001c 00000000 		.word	config
+ 503 0020 00000000 		.word	status
+ 504              		.cfi_endproc
+ 505              	.LFE348:
+ 507              		.section	.text.disk_initialize,"ax",%progbits
+ 508              		.align	1
+ 509              		.p2align 2,,3
+ 510              		.global	disk_initialize
+ 511              		.syntax unified
+ 512              		.thumb
+ 513              		.thumb_func
+ 515              	disk_initialize:
+ 516              	.LVL19:
+ 517              	.LFB349:
+  77:../../common/sd/ro_sd.c **** 
+  78:../../common/sd/ro_sd.c **** DSTATUS disk_initialize(BYTE drive) {
+ 518              		.loc 1 78 37 is_stmt 1 view -0
+ 519              		.cfi_startproc
+ 520              		@ args = 0, pretend = 0, frame = 0
+ 521              		@ frame_needed = 0, uses_anonymous_args = 0
+  79:../../common/sd/ro_sd.c ****     if(drive || !configured) return STA_NOINIT | STA_PROTECT;
+ 522              		.loc 1 79 5 view .LVU108
+ 523              		.loc 1 79 7 is_stmt 0 view .LVU109
+ 524 0000 C0B9     		cbnz	r0, .L66
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 12
+
+
+  78:../../common/sd/ro_sd.c ****     if(drive || !configured) return STA_NOINIT | STA_PROTECT;
+ 525              		.loc 1 78 37 view .LVU110
+ 526 0002 38B5     		push	{r3, r4, r5, lr}
+ 527              		.cfi_def_cfa_offset 16
+ 528              		.cfi_offset 3, -16
+ 529              		.cfi_offset 4, -12
+ 530              		.cfi_offset 5, -8
+ 531              		.cfi_offset 14, -4
+ 532              		.loc 1 79 17 discriminator 2 view .LVU111
+ 533 0004 114B     		ldr	r3, .L76
+ 534              		.loc 1 79 14 discriminator 2 view .LVU112
+ 535 0006 1B68     		ldr	r3, [r3]
+ 536 0008 93B1     		cbz	r3, .L67
+  80:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+ 537              		.loc 1 80 5 is_stmt 1 view .LVU113
+ 538              	.LBB99:
+ 539              	.LBB100:
+  30:../../common/sd/ro_sd.c **** 
+ 540              		.loc 1 30 42 is_stmt 0 view .LVU114
+ 541 000a 114D     		ldr	r5, .L76+4
+ 542              	.LBE100:
+ 543              	.LBE99:
+ 544              		.loc 1 80 12 view .LVU115
+ 545 000c 0522     		movs	r2, #5
+ 546 000e 114C     		ldr	r4, .L76+8
+ 547              	.LBB103:
+ 548              	.LBB101:
+  30:../../common/sd/ro_sd.c **** 
+ 549              		.loc 1 30 42 view .LVU116
+ 550 0010 2B69     		ldr	r3, [r5, #16]
+ 551              	.LBE101:
+ 552              	.LBE103:
+ 553              		.loc 1 80 12 view .LVU117
+ 554 0012 2270     		strb	r2, [r4]
+  81:../../common/sd/ro_sd.c ****     if(!Present()) return ro_sd_status();
+ 555              		.loc 1 81 5 is_stmt 1 view .LVU118
+ 556              	.LBB104:
+ 557              	.LBI99:
+  30:../../common/sd/ro_sd.c **** 
+ 558              		.loc 1 30 12 view .LVU119
+ 559              	.LBB102:
+  30:../../common/sd/ro_sd.c **** 
+ 560              		.loc 1 30 28 view .LVU120
+  30:../../common/sd/ro_sd.c **** 
+ 561              		.loc 1 30 56 is_stmt 0 view .LVU121
+ 562 0014 3BB1     		cbz	r3, .L61
+  30:../../common/sd/ro_sd.c **** 
+ 563              		.loc 1 30 59 discriminator 2 view .LVU122
+ 564 0016 9847     		blx	r3
+ 565              	.LVL20:
+  30:../../common/sd/ro_sd.c **** 
+ 566              		.loc 1 30 56 discriminator 1 view .LVU123
+ 567 0018 28B9     		cbnz	r0, .L61
+ 568              	.LBE102:
+ 569              	.LBE104:
+ 570              		.loc 1 81 20 is_stmt 1 discriminator 1 view .LVU124
+ 571              	.LBB105:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 13
+
+
+ 572              	.LBI105:
+  70:../../common/sd/ro_sd.c ****     return Present() ? status : (DSTATUS)(STA_NOINIT | STA_NODISK | STA_PROTECT);
+ 573              		.loc 1 70 9 view .LVU125
+ 574              	.LBB106:
+  71:../../common/sd/ro_sd.c **** }
+ 575              		.loc 1 71 5 view .LVU126
+ 576              	.LBB107:
+ 577              	.LBI107:
+  30:../../common/sd/ro_sd.c **** 
+ 578              		.loc 1 30 12 view .LVU127
+ 579              	.LBB108:
+  30:../../common/sd/ro_sd.c **** 
+ 580              		.loc 1 30 28 view .LVU128
+  30:../../common/sd/ro_sd.c **** 
+ 581              		.loc 1 30 42 is_stmt 0 view .LVU129
+ 582 001a 2B69     		ldr	r3, [r5, #16]
+  30:../../common/sd/ro_sd.c **** 
+ 583              		.loc 1 30 56 view .LVU130
+ 584 001c 33B1     		cbz	r3, .L75
+  30:../../common/sd/ro_sd.c **** 
+ 585              		.loc 1 30 59 discriminator 2 view .LVU131
+ 586 001e 9847     		blx	r3
+ 587              	.LVL21:
+  30:../../common/sd/ro_sd.c **** 
+ 588              		.loc 1 30 56 discriminator 1 view .LVU132
+ 589 0020 20B9     		cbnz	r0, .L75
+ 590              	.LBE108:
+ 591              	.LBE107:
+  71:../../common/sd/ro_sd.c **** }
+ 592              		.loc 1 71 31 discriminator 2 view .LVU133
+ 593 0022 0720     		movs	r0, #7
+ 594              	.LBE106:
+ 595              	.LBE105:
+  82:../../common/sd/ro_sd.c ****     if(BSP_SD_Init() == MSD_OK) {
+  83:../../common/sd/ro_sd.c ****         HAL_NVIC_SetPriority(SDMMC1_IRQn, 2, 0); // audio DMA stays at priority 0
+  84:../../common/sd/ro_sd.c ****         status = STA_PROTECT;
+  85:../../common/sd/ro_sd.c ****     }
+  86:../../common/sd/ro_sd.c ****     return status;
+  87:../../common/sd/ro_sd.c **** }
+ 596              		.loc 1 87 1 view .LVU134
+ 597 0024 38BD     		pop	{r3, r4, r5, pc}
+ 598              	.L61:
+  82:../../common/sd/ro_sd.c ****     if(BSP_SD_Init() == MSD_OK) {
+ 599              		.loc 1 82 5 is_stmt 1 view .LVU135
+  82:../../common/sd/ro_sd.c ****     if(BSP_SD_Init() == MSD_OK) {
+ 600              		.loc 1 82 8 is_stmt 0 view .LVU136
+ 601 0026 FFF7FEFF 		bl	BSP_SD_Init
+ 602              	.LVL22:
+  82:../../common/sd/ro_sd.c ****     if(BSP_SD_Init() == MSD_OK) {
+ 603              		.loc 1 82 7 discriminator 1 view .LVU137
+ 604 002a 28B1     		cbz	r0, .L64
+ 605              	.L75:
+  86:../../common/sd/ro_sd.c **** }
+ 606              		.loc 1 86 12 view .LVU138
+ 607 002c 2078     		ldrb	r0, [r4]	@ zero_extendqisi2
+ 608              		.loc 1 87 1 view .LVU139
+ 609 002e 38BD     		pop	{r3, r4, r5, pc}
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 14
+
+
+ 610              	.LVL23:
+ 611              	.L67:
+  79:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+ 612              		.loc 1 79 37 discriminator 3 view .LVU140
+ 613 0030 0520     		movs	r0, #5
+ 614              	.LVL24:
+ 615              		.loc 1 87 1 view .LVU141
+ 616 0032 38BD     		pop	{r3, r4, r5, pc}
+ 617              	.LVL25:
+ 618              	.L66:
+ 619              		.cfi_def_cfa_offset 0
+ 620              		.cfi_restore 3
+ 621              		.cfi_restore 4
+ 622              		.cfi_restore 5
+ 623              		.cfi_restore 14
+  79:../../common/sd/ro_sd.c ****     status = STA_NOINIT | STA_PROTECT;
+ 624              		.loc 1 79 37 discriminator 3 view .LVU142
+ 625 0034 0520     		movs	r0, #5
+ 626              	.LVL26:
+ 627              		.loc 1 87 1 view .LVU143
+ 628 0036 7047     		bx	lr
+ 629              	.L64:
+ 630              		.cfi_def_cfa_offset 16
+ 631              		.cfi_offset 3, -16
+ 632              		.cfi_offset 4, -12
+ 633              		.cfi_offset 5, -8
+ 634              		.cfi_offset 14, -4
+  83:../../common/sd/ro_sd.c ****         status = STA_PROTECT;
+ 635              		.loc 1 83 9 is_stmt 1 view .LVU144
+ 636 0038 0246     		mov	r2, r0
+ 637 003a 0221     		movs	r1, #2
+ 638 003c 3120     		movs	r0, #49
+ 639 003e FFF7FEFF 		bl	HAL_NVIC_SetPriority
+ 640              	.LVL27:
+  84:../../common/sd/ro_sd.c ****     }
+ 641              		.loc 1 84 9 view .LVU145
+  84:../../common/sd/ro_sd.c ****     }
+ 642              		.loc 1 84 16 is_stmt 0 view .LVU146
+ 643 0042 0423     		movs	r3, #4
+ 644 0044 1846     		mov	r0, r3
+  86:../../common/sd/ro_sd.c **** }
+ 645              		.loc 1 86 5 is_stmt 1 view .LVU147
+  84:../../common/sd/ro_sd.c ****     }
+ 646              		.loc 1 84 16 is_stmt 0 view .LVU148
+ 647 0046 2370     		strb	r3, [r4]
+ 648              		.loc 1 87 1 view .LVU149
+ 649 0048 38BD     		pop	{r3, r4, r5, pc}
+ 650              	.L77:
+ 651 004a 00BF     		.align	2
+ 652              	.L76:
+ 653 004c 00000000 		.word	configured
+ 654 0050 00000000 		.word	config
+ 655 0054 00000000 		.word	status
+ 656              		.cfi_endproc
+ 657              	.LFE349:
+ 659              		.section	.text.disk_read,"ax",%progbits
+ 660              		.align	1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 15
+
+
+ 661              		.p2align 2,,3
+ 662              		.global	disk_read
+ 663              		.syntax unified
+ 664              		.thumb
+ 665              		.thumb_func
+ 667              	disk_read:
+ 668              	.LVL28:
+ 669              	.LFB350:
+  88:../../common/sd/ro_sd.c **** 
+  89:../../common/sd/ro_sd.c **** DRESULT disk_read(BYTE drive, BYTE* buffer, LBA_t sector, UINT count) {
+ 670              		.loc 1 89 71 is_stmt 1 view -0
+ 671              		.cfi_startproc
+ 672              		@ args = 0, pretend = 0, frame = 24
+ 673              		@ frame_needed = 0, uses_anonymous_args = 0
+  90:../../common/sd/ro_sd.c ****     if(drive || !buffer || !count) return RES_PARERR;
+ 674              		.loc 1 90 5 view .LVU151
+ 675              		.loc 1 90 25 is_stmt 0 discriminator 2 view .LVU152
+ 676 0000 002B     		cmp	r3, #0
+ 677 0002 18BF     		it	ne
+ 678 0004 0029     		cmpne	r1, #0
+ 679 0006 00F09480 		beq	.L117
+ 680 000a 0028     		cmp	r0, #0
+ 681 000c 40F09180 		bne	.L117
+  91:../../common/sd/ro_sd.c ****     if(ro_sd_status() & STA_NOINIT) return RES_NOTRDY;
+ 682              		.loc 1 91 5 is_stmt 1 view .LVU153
+ 683              	.LBB152:
+ 684              	.LBI152:
+  70:../../common/sd/ro_sd.c ****     return Present() ? status : (DSTATUS)(STA_NOINIT | STA_NODISK | STA_PROTECT);
+ 685              		.loc 1 70 9 view .LVU154
+ 686              	.LBB153:
+  71:../../common/sd/ro_sd.c **** }
+ 687              		.loc 1 71 5 view .LVU155
+ 688              	.LBB154:
+ 689              	.LBI154:
+  30:../../common/sd/ro_sd.c **** 
+ 690              		.loc 1 30 12 view .LVU156
+ 691              	.LBB155:
+  30:../../common/sd/ro_sd.c **** 
+ 692              		.loc 1 30 28 view .LVU157
+ 693              	.LBE155:
+ 694              	.LBE154:
+ 695              	.LBE153:
+ 696              	.LBE152:
+  89:../../common/sd/ro_sd.c ****     if(drive || !buffer || !count) return RES_PARERR;
+ 697              		.loc 1 89 71 is_stmt 0 view .LVU158
+ 698 0010 2DE9F04F 		push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+ 699              		.cfi_def_cfa_offset 36
+ 700              		.cfi_offset 4, -36
+ 701              		.cfi_offset 5, -32
+ 702              		.cfi_offset 6, -28
+ 703              		.cfi_offset 7, -24
+ 704              		.cfi_offset 8, -20
+ 705              		.cfi_offset 9, -16
+ 706              		.cfi_offset 10, -12
+ 707              		.cfi_offset 11, -8
+ 708              		.cfi_offset 14, -4
+ 709              	.LBB162:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 16
+
+
+ 710              	.LBB160:
+ 711              	.LBB158:
+ 712              	.LBB156:
+  30:../../common/sd/ro_sd.c **** 
+ 713              		.loc 1 30 42 view .LVU159
+ 714 0014 694C     		ldr	r4, .L150
+ 715 0016 1646     		mov	r6, r2
+ 716              	.LBE156:
+ 717              	.LBE158:
+ 718              	.LBE160:
+ 719              	.LBE162:
+  89:../../common/sd/ro_sd.c ****     if(drive || !buffer || !count) return RES_PARERR;
+ 720              		.loc 1 89 71 view .LVU160
+ 721 0018 87B0     		sub	sp, sp, #28
+ 722              		.cfi_def_cfa_offset 64
+ 723 001a 8B46     		mov	fp, r1
+ 724              	.LBB163:
+ 725              	.LBB161:
+ 726              	.LBB159:
+ 727              	.LBB157:
+  30:../../common/sd/ro_sd.c **** 
+ 728              		.loc 1 30 42 view .LVU161
+ 729 001c 2269     		ldr	r2, [r4, #16]
+ 730              	.LVL29:
+  30:../../common/sd/ro_sd.c **** 
+ 731              		.loc 1 30 42 view .LVU162
+ 732 001e 9A46     		mov	r10, r3
+  30:../../common/sd/ro_sd.c **** 
+ 733              		.loc 1 30 56 view .LVU163
+ 734 0020 1AB1     		cbz	r2, .L83
+  30:../../common/sd/ro_sd.c **** 
+ 735              		.loc 1 30 59 discriminator 2 view .LVU164
+ 736 0022 9047     		blx	r2
+ 737              	.LVL30:
+  30:../../common/sd/ro_sd.c **** 
+ 738              		.loc 1 30 56 discriminator 1 view .LVU165
+ 739 0024 0028     		cmp	r0, #0
+ 740 0026 00F08C80 		beq	.L84
+ 741              	.L83:
+ 742              	.LBE157:
+ 743              	.LBE159:
+  71:../../common/sd/ro_sd.c **** }
+ 744              		.loc 1 71 31 discriminator 1 view .LVU166
+ 745 002a DFF8A491 		ldr	r9, .L150+20
+ 746              	.LBE161:
+ 747              	.LBE163:
+ 748              		.loc 1 91 7 discriminator 1 view .LVU167
+ 749 002e 99F80020 		ldrb	r2, [r9]	@ zero_extendqisi2
+ 750 0032 D307     		lsls	r3, r2, #31
+ 751 0034 00F18580 		bmi	.L84
+  92:../../common/sd/ro_sd.c ****     const UINT chunk = config.bounce_bytes / RO_SD_SECTOR;
+ 752              		.loc 1 92 5 is_stmt 1 view .LVU168
+ 753              		.loc 1 92 16 is_stmt 0 view .LVU169
+ 754 0038 6268     		ldr	r2, [r4, #4]
+ 755              	.LBB164:
+ 756              	.LBB165:
+ 757              	.LBB166:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 17
+
+
+ 758              	.LBB167:
+ 759              	.LBB168:
+  33:../../common/sd/ro_sd.c **** }
+ 760              		.loc 1 33 52 discriminator 2 view .LVU170
+ 761 003a 0196     		str	r6, [sp, #4]
+ 762              	.LBE168:
+ 763              	.LBE167:
+ 764              	.LBE166:
+ 765              	.LBE165:
+ 766              	.LBE164:
+ 767              		.loc 1 92 16 view .LVU171
+ 768 003c 530A     		lsrs	r3, r2, #9
+ 769              	.LBB219:
+ 770              	.LBB178:
+ 771              	.LBB173:
+ 772              	.LBB171:
+ 773              	.LBB169:
+  33:../../common/sd/ro_sd.c **** }
+ 774              		.loc 1 33 52 discriminator 2 view .LVU172
+ 775 003e CDE902B3 		strd	fp, r3, [sp, #8]
+ 776              	.LVL31:
+ 777              	.L116:
+  33:../../common/sd/ro_sd.c **** }
+ 778              		.loc 1 33 52 discriminator 2 view .LVU173
+ 779              	.LBE169:
+ 780              	.LBE171:
+ 781              	.LBE173:
+ 782              	.LBE178:
+  93:../../common/sd/ro_sd.c ****     while(count) {
+  94:../../common/sd/ro_sd.c ****         const UINT n = count < chunk ? count : chunk;
+ 783              		.loc 1 94 9 is_stmt 1 view .LVU174
+  95:../../common/sd/ro_sd.c ****         const uint32_t bytes = n * RO_SD_SECTOR;
+ 784              		.loc 1 95 9 view .LVU175
+  96:../../common/sd/ro_sd.c ****         if(!Present()) { status |= STA_NOINIT; return RES_NOTRDY; }
+ 785              		.loc 1 96 9 view .LVU176
+ 786              	.LBB179:
+ 787              	.LBI179:
+  30:../../common/sd/ro_sd.c **** 
+ 788              		.loc 1 30 12 view .LVU177
+ 789              	.LBB180:
+  30:../../common/sd/ro_sd.c **** 
+ 790              		.loc 1 30 28 view .LVU178
+  30:../../common/sd/ro_sd.c **** 
+ 791              		.loc 1 30 42 is_stmt 0 view .LVU179
+ 792 0042 2369     		ldr	r3, [r4, #16]
+  30:../../common/sd/ro_sd.c **** 
+ 793              		.loc 1 30 56 view .LVU180
+ 794 0044 13B1     		cbz	r3, .L85
+  30:../../common/sd/ro_sd.c **** 
+ 795              		.loc 1 30 59 discriminator 2 view .LVU181
+ 796 0046 9847     		blx	r3
+ 797              	.LVL32:
+  30:../../common/sd/ro_sd.c **** 
+ 798              		.loc 1 30 56 discriminator 1 view .LVU182
+ 799 0048 0028     		cmp	r0, #0
+ 800 004a 74D0     		beq	.L147
+ 801              	.L85:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 18
+
+
+ 802              	.LBE180:
+ 803              	.LBE179:
+  97:../../common/sd/ro_sd.c ****         if(!BudgetLeft()) return RES_ERROR; // nothing started; the card stays usable
+ 804              		.loc 1 97 9 is_stmt 1 view .LVU183
+ 805              	.LBB181:
+ 806              	.LBI181:
+  32:../../common/sd/ro_sd.c ****     return !config.budget_ms || (int32_t)(deadline - HAL_GetTick()) > 0;
+ 807              		.loc 1 32 12 view .LVU184
+ 808              	.LBB182:
+  33:../../common/sd/ro_sd.c **** }
+ 809              		.loc 1 33 5 view .LVU185
+  33:../../common/sd/ro_sd.c **** }
+ 810              		.loc 1 33 30 is_stmt 0 view .LVU186
+ 811 004c E368     		ldr	r3, [r4, #12]
+ 812 004e 002B     		cmp	r3, #0
+ 813 0050 40F0AA80 		bne	.L86
+ 814              	.L88:
+ 815              	.LBE182:
+ 816              	.LBE181:
+  98:../../common/sd/ro_sd.c ****         const uint32_t start = HAL_GetTick();
+ 817              		.loc 1 98 9 is_stmt 1 view .LVU187
+ 818              		.loc 1 98 32 is_stmt 0 view .LVU188
+ 819 0054 FFF7FEFF 		bl	HAL_GetTick
+ 820              	.LVL33:
+ 821 0058 0546     		mov	r5, r0
+ 822              	.LVL34:
+  99:../../common/sd/ro_sd.c ****         while(BSP_SD_GetCardState() != SD_TRANSFER_OK)
+ 823              		.loc 1 99 9 is_stmt 1 view .LVU189
+ 824              	.L92:
+ 825              		.loc 1 99 37 view .LVU190
+ 826              		.loc 1 99 15 is_stmt 0 view .LVU191
+ 827 005a FFF7FEFF 		bl	BSP_SD_GetCardState
+ 828              	.LVL35:
+ 100:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 829              		.loc 1 100 13 is_stmt 1 view .LVU192
+ 830              	.LBB184:
+ 831              	.LBI165:
+  36:../../common/sd/ro_sd.c ****     return HAL_GetTick() - start >= config.transfer_timeout_ms || !BudgetLeft();
+ 832              		.loc 1 36 12 view .LVU193
+ 833              	.LBB174:
+  37:../../common/sd/ro_sd.c **** }
+ 834              		.loc 1 37 5 view .LVU194
+ 835              	.LBE174:
+ 836              	.LBE184:
+  99:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 837              		.loc 1 99 37 is_stmt 0 discriminator 1 view .LVU195
+ 838 005e 08B3     		cbz	r0, .L148
+ 839              	.L96:
+ 840              	.LBB185:
+ 841              	.LBB175:
+  37:../../common/sd/ro_sd.c **** }
+ 842              		.loc 1 37 12 view .LVU196
+ 843 0060 FFF7FEFF 		bl	HAL_GetTick
+ 844              	.LVL36:
+  37:../../common/sd/ro_sd.c **** }
+ 845              		.loc 1 37 64 discriminator 1 view .LVU197
+ 846 0064 A368     		ldr	r3, [r4, #8]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 19
+
+
+  37:../../common/sd/ro_sd.c **** }
+ 847              		.loc 1 37 26 discriminator 1 view .LVU198
+ 848 0066 401B     		subs	r0, r0, r5
+  37:../../common/sd/ro_sd.c **** }
+ 849              		.loc 1 37 64 discriminator 1 view .LVU199
+ 850 0068 9842     		cmp	r0, r3
+ 851 006a 0DD3     		bcc	.L89
+ 852              	.L144:
+  37:../../common/sd/ro_sd.c **** }
+ 853              		.loc 1 37 64 discriminator 1 view .LVU200
+ 854              	.LBE175:
+ 855              	.LBE185:
+ 101:../../common/sd/ro_sd.c ****         done = failed = 0;
+ 102:../../common/sd/ro_sd.c ****         SCB_CleanInvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 103:../../common/sd/ro_sd.c ****         if(BSP_SD_ReadBlocks_DMA((uint32_t*)config.bounce, (uint32_t)sector, n) != MSD_OK)
+ 104:../../common/sd/ro_sd.c ****             return Fail();
+ 105:../../common/sd/ro_sd.c ****         while(!done && !failed)
+ 106:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 107:../../common/sd/ro_sd.c ****         if(failed) return Fail();
+ 856              		.loc 1 107 20 is_stmt 1 discriminator 1 view .LVU201
+ 857              	.LBB186:
+ 858              	.LBI186:
+  40:../../common/sd/ro_sd.c ****     if(config.abort) config.abort();
+ 859              		.loc 1 40 16 view .LVU202
+ 860              	.LBB187:
+  41:../../common/sd/ro_sd.c ****     else HAL_SD_Abort(&hsd1);
+ 861              		.loc 1 41 5 view .LVU203
+  41:../../common/sd/ro_sd.c ****     else HAL_SD_Abort(&hsd1);
+ 862              		.loc 1 41 14 is_stmt 0 view .LVU204
+ 863 006c A369     		ldr	r3, [r4, #24]
+  41:../../common/sd/ro_sd.c ****     else HAL_SD_Abort(&hsd1);
+ 864              		.loc 1 41 7 view .LVU205
+ 865 006e 002B     		cmp	r3, #0
+ 866 0070 5BD0     		beq	.L111
+ 867              	.L149:
+  41:../../common/sd/ro_sd.c ****     else HAL_SD_Abort(&hsd1);
+ 868              		.loc 1 41 22 is_stmt 1 discriminator 1 view .LVU206
+ 869 0072 9847     		blx	r3
+ 870              	.LVL37:
+ 871              	.L112:
+  43:../../common/sd/ro_sd.c ****     return RES_ERROR;
+ 872              		.loc 1 43 5 view .LVU207
+  43:../../common/sd/ro_sd.c ****     return RES_ERROR;
+ 873              		.loc 1 43 12 is_stmt 0 view .LVU208
+ 874 0074 99F80030 		ldrb	r3, [r9]	@ zero_extendqisi2
+ 875 0078 43F00103 		orr	r3, r3, #1
+ 876 007c 89F80030 		strb	r3, [r9]
+  44:../../common/sd/ro_sd.c **** }
+ 877              		.loc 1 44 5 is_stmt 1 view .LVU209
+ 878              	.LVL38:
+ 879              	.L95:
+  44:../../common/sd/ro_sd.c **** }
+ 880              		.loc 1 44 5 is_stmt 0 view .LVU210
+ 881              	.LBE187:
+ 882              	.LBE186:
+  97:../../common/sd/ro_sd.c ****         const uint32_t start = HAL_GetTick();
+ 883              		.loc 1 97 34 discriminator 1 view .LVU211
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 20
+
+
+ 884 0080 0120     		movs	r0, #1
+ 885              	.L79:
+  97:../../common/sd/ro_sd.c ****         const uint32_t start = HAL_GetTick();
+ 886              		.loc 1 97 34 discriminator 1 view .LVU212
+ 887              	.LBE219:
+ 108:../../common/sd/ro_sd.c ****         SCB_InvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 109:../../common/sd/ro_sd.c ****         memcpy(buffer, config.bounce, bytes);
+ 110:../../common/sd/ro_sd.c ****         buffer += bytes; sector += n; count -= n;
+ 111:../../common/sd/ro_sd.c ****         if(config.service) config.service();
+ 112:../../common/sd/ro_sd.c ****     }
+ 113:../../common/sd/ro_sd.c ****     return RES_OK;
+ 114:../../common/sd/ro_sd.c **** }
+ 888              		.loc 1 114 1 view .LVU213
+ 889 0082 07B0     		add	sp, sp, #28
+ 890              		.cfi_remember_state
+ 891              		.cfi_def_cfa_offset 36
+ 892              		@ sp needed
+ 893 0084 BDE8F08F 		pop	{r4, r5, r6, r7, r8, r9, r10, fp, pc}
+ 894              	.LVL39:
+ 895              	.L89:
+ 896              		.cfi_restore_state
+ 897              	.LBB220:
+ 898              	.LBB189:
+ 899              	.LBB176:
+ 900              	.LBB172:
+ 901              	.LBI167:
+  32:../../common/sd/ro_sd.c ****     return !config.budget_ms || (int32_t)(deadline - HAL_GetTick()) > 0;
+ 902              		.loc 1 32 12 is_stmt 1 view .LVU214
+ 903              	.LBB170:
+  33:../../common/sd/ro_sd.c **** }
+ 904              		.loc 1 33 5 view .LVU215
+  33:../../common/sd/ro_sd.c **** }
+ 905              		.loc 1 33 30 is_stmt 0 view .LVU216
+ 906 0088 E368     		ldr	r3, [r4, #12]
+ 907 008a 002B     		cmp	r3, #0
+ 908 008c E5D0     		beq	.L92
+  33:../../common/sd/ro_sd.c **** }
+ 909              		.loc 1 33 52 discriminator 2 view .LVU217
+ 910 008e 4C4B     		ldr	r3, .L150+4
+ 911 0090 1E68     		ldr	r6, [r3]
+  33:../../common/sd/ro_sd.c **** }
+ 912              		.loc 1 33 54 discriminator 2 view .LVU218
+ 913 0092 FFF7FEFF 		bl	HAL_GetTick
+ 914              	.LVL40:
+  33:../../common/sd/ro_sd.c **** }
+ 915              		.loc 1 33 52 discriminator 1 view .LVU219
+ 916 0096 361A     		subs	r6, r6, r0
+  33:../../common/sd/ro_sd.c **** }
+ 917              		.loc 1 33 30 discriminator 1 view .LVU220
+ 918 0098 002E     		cmp	r6, #0
+ 919 009a E7DD     		ble	.L144
+ 920              	.LVL41:
+  33:../../common/sd/ro_sd.c **** }
+ 921              		.loc 1 33 30 discriminator 1 view .LVU221
+ 922              	.LBE170:
+ 923              	.LBE172:
+ 924              	.LBE176:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 21
+
+
+ 925              	.LBE189:
+  99:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 926              		.loc 1 99 37 is_stmt 1 view .LVU222
+  99:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 927              		.loc 1 99 15 is_stmt 0 view .LVU223
+ 928 009c FFF7FEFF 		bl	BSP_SD_GetCardState
+ 929              	.LVL42:
+ 100:../../common/sd/ro_sd.c ****         done = failed = 0;
+ 930              		.loc 1 100 13 is_stmt 1 view .LVU224
+ 931              	.LBB190:
+  36:../../common/sd/ro_sd.c ****     return HAL_GetTick() - start >= config.transfer_timeout_ms || !BudgetLeft();
+ 932              		.loc 1 36 12 view .LVU225
+ 933              	.LBB177:
+  37:../../common/sd/ro_sd.c **** }
+ 934              		.loc 1 37 5 view .LVU226
+ 935              	.LBE177:
+ 936              	.LBE190:
+  99:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 937              		.loc 1 99 37 is_stmt 0 discriminator 1 view .LVU227
+ 938 00a0 0028     		cmp	r0, #0
+ 939 00a2 DDD1     		bne	.L96
+ 940              	.L148:
+  94:../../common/sd/ro_sd.c ****         const uint32_t bytes = n * RO_SD_SECTOR;
+ 941              		.loc 1 94 20 view .LVU228
+ 942 00a4 039E     		ldr	r6, [sp, #12]
+ 101:../../common/sd/ro_sd.c ****         SCB_CleanInvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 943              		.loc 1 101 23 view .LVU229
+ 944 00a6 474F     		ldr	r7, .L150+8
+  94:../../common/sd/ro_sd.c ****         const uint32_t bytes = n * RO_SD_SECTOR;
+ 945              		.loc 1 94 20 view .LVU230
+ 946 00a8 5645     		cmp	r6, r10
+ 101:../../common/sd/ro_sd.c ****         SCB_CleanInvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 947              		.loc 1 101 14 view .LVU231
+ 948 00aa DFF82881 		ldr	r8, .L150+24
+ 101:../../common/sd/ro_sd.c ****         SCB_CleanInvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 949              		.loc 1 101 23 view .LVU232
+ 950 00ae 3860     		str	r0, [r7]
+  94:../../common/sd/ro_sd.c ****         const uint32_t bytes = n * RO_SD_SECTOR;
+ 951              		.loc 1 94 20 view .LVU233
+ 952 00b0 28BF     		it	cs
+ 953 00b2 5646     		movcs	r6, r10
+ 101:../../common/sd/ro_sd.c ****         SCB_CleanInvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 954              		.loc 1 101 14 view .LVU234
+ 955 00b4 C8F80000 		str	r0, [r8]
+ 102:../../common/sd/ro_sd.c ****         if(BSP_SD_ReadBlocks_DMA((uint32_t*)config.bounce, (uint32_t)sector, n) != MSD_OK)
+ 956              		.loc 1 102 60 view .LVU235
+ 957 00b8 2068     		ldr	r0, [r4]
+  95:../../common/sd/ro_sd.c ****         if(!Present()) { status |= STA_NOINIT; return RES_NOTRDY; }
+ 958              		.loc 1 95 24 view .LVU236
+ 959 00ba 4FEA462B 		lsl	fp, r6, #9
+ 101:../../common/sd/ro_sd.c ****         SCB_CleanInvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 960              		.loc 1 101 9 is_stmt 1 view .LVU237
+ 102:../../common/sd/ro_sd.c ****         if(BSP_SD_ReadBlocks_DMA((uint32_t*)config.bounce, (uint32_t)sector, n) != MSD_OK)
+ 961              		.loc 1 102 9 view .LVU238
+ 962              	.LVL43:
+ 963              	.LBB191:
+ 964              	.LBI191:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 22
+
+
+ 965              		.file 2 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h"
+   1:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /******************************************************************************
+   2:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * @file     cachel1_armv7.h
+   3:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * @brief    CMSIS Level 1 Cache API for Armv7-M and later
+   4:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * @version  V1.0.1
+   5:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * @date     19. April 2021
+   6:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  ******************************************************************************/
+   7:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /*
+   8:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * Copyright (c) 2020-2021 Arm Limited. All rights reserved.
+   9:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  *
+  10:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * SPDX-License-Identifier: Apache-2.0
+  11:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  *
+  12:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * Licensed under the Apache License, Version 2.0 (the License); you may
+  13:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * not use this file except in compliance with the License.
+  14:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * You may obtain a copy of the License at
+  15:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  *
+  16:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * www.apache.org/licenses/LICENSE-2.0
+  17:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  *
+  18:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * Unless required by applicable law or agreed to in writing, software
+  19:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+  20:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  21:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * See the License for the specific language governing permissions and
+  22:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  * limitations under the License.
+  23:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  */
+  24:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  25:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #if   defined ( __ICCARM__ )
+  26:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #pragma system_include         /* treat file as system include file for MISRA check */
+  27:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #elif defined (__clang__)
+  28:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #pragma clang system_header    /* treat file as system include file */
+  29:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #endif
+  30:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  31:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #ifndef ARM_CACHEL1_ARMV7_H
+  32:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #define ARM_CACHEL1_ARMV7_H
+  33:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  34:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+  35:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \ingroup  CMSIS_Core_FunctionInterface
+  36:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \defgroup CMSIS_Core_CacheFunctions Cache Functions
+  37:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief    Functions that configure Instruction and Data cache.
+  38:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   @{
+  39:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****  */
+  40:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  41:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /* Cache Size ID Register Macros */
+  42:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #define CCSIDR_WAYS(x)         (((x) & SCB_CCSIDR_ASSOCIATIVITY_Msk) >> SCB_CCSIDR_ASSOCIATIVITY_Po
+  43:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #define CCSIDR_SETS(x)         (((x) & SCB_CCSIDR_NUMSETS_Msk      ) >> SCB_CCSIDR_NUMSETS_Pos     
+  44:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  45:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #ifndef __SCB_DCACHE_LINE_SIZE
+  46:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #define __SCB_DCACHE_LINE_SIZE  32U /*!< Cortex-M7 cache line size is fixed to 32 bytes (8 words). 
+  47:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #endif
+  48:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  49:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #ifndef __SCB_ICACHE_LINE_SIZE
+  50:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #define __SCB_ICACHE_LINE_SIZE  32U /*!< Cortex-M7 cache line size is fixed to 32 bytes (8 words). 
+  51:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** #endif
+  52:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  53:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+  54:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   Enable I-Cache
+  55:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Turns on I-Cache
+  56:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   */
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 23
+
+
+  57:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_EnableICache (void)
+  58:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+  59:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1U)
+  60:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     if (SCB->CCR & SCB_CCR_IC_Msk) return;  /* return if ICache is already enabled */
+  61:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  62:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+  63:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+  64:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->ICIALLU = 0UL;                     /* invalidate I-Cache */
+  65:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+  66:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+  67:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CCR |=  (uint32_t)SCB_CCR_IC_Msk;  /* enable I-Cache */
+  68:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+  69:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+  70:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+  71:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+  72:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  73:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  74:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+  75:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   Disable I-Cache
+  76:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Turns off I-Cache
+  77:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   */
+  78:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_DisableICache (void)
+  79:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+  80:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1U)
+  81:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+  82:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+  83:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CCR &= ~(uint32_t)SCB_CCR_IC_Msk;  /* disable I-Cache */
+  84:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->ICIALLU = 0UL;                     /* invalidate I-Cache */
+  85:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+  86:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+  87:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+  88:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+  89:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  90:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+  91:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+  92:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   Invalidate I-Cache
+  93:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Invalidates I-Cache
+  94:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   */
+  95:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_InvalidateICache (void)
+  96:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+  97:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1U)
+  98:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+  99:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+ 100:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->ICIALLU = 0UL;
+ 101:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 102:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+ 103:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+ 104:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+ 105:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 106:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 107:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+ 108:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   I-Cache Invalidate by address
+ 109:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Invalidates I-Cache for the given address.
+ 110:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****            I-Cache is invalidated starting from a 32 byte aligned address in 32 byte granularity.
+ 111:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****            I-Cache memory blocks which are part of given address + given size are invalidated.
+ 112:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   addr    address
+ 113:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   isize   size of memory block (in number of bytes)
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 24
+
+
+ 114:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** */
+ 115:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_InvalidateICache_by_Addr (volatile void *addr, int32_t isize)
+ 116:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 117:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__ICACHE_PRESENT) && (__ICACHE_PRESENT == 1U)
+ 118:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     if ( isize > 0 ) {
+ 119:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****        int32_t op_size = isize + (((uint32_t)addr) & (__SCB_ICACHE_LINE_SIZE - 1U));
+ 120:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_ICACHE_LINE_SIZE - 1U) */;
+ 121:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 122:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __DSB();
+ 123:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 124:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       do {
+ 125:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->ICIMVAU = op_addr;             /* register accepts only 32byte aligned values, only bi
+ 126:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_addr += __SCB_ICACHE_LINE_SIZE;
+ 127:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_size -= __SCB_ICACHE_LINE_SIZE;
+ 128:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while ( op_size > 0 );
+ 129:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 130:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __DSB();
+ 131:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __ISB();
+ 132:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     }
+ 133:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+ 134:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+ 135:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 136:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 137:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+ 138:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   Enable D-Cache
+ 139:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Turns on D-Cache
+ 140:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   */
+ 141:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_EnableDCache (void)
+ 142:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 143:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+ 144:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ccsidr;
+ 145:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t sets;
+ 146:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ways;
+ 147:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 148:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     if (SCB->CCR & SCB_CCR_DC_Msk) return;  /* return if DCache is already enabled */
+ 149:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 150:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CSSELR = 0U;                       /* select Level 1 data cache */
+ 151:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 152:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 153:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     ccsidr = SCB->CCSIDR;
+ 154:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 155:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                                             /* invalidate D-Cache */
+ 156:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     sets = (uint32_t)(CCSIDR_SETS(ccsidr));
+ 157:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     do {
+ 158:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       ways = (uint32_t)(CCSIDR_WAYS(ccsidr));
+ 159:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       do {
+ 160:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCISW = (((sets << SCB_DCISW_SET_Pos) & SCB_DCISW_SET_Msk) |
+ 161:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                       ((ways << SCB_DCISW_WAY_Pos) & SCB_DCISW_WAY_Msk)  );
+ 162:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #if defined ( __CC_ARM )
+ 163:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****           __schedule_barrier();
+ 164:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #endif
+ 165:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while (ways-- != 0U);
+ 166:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     } while(sets-- != 0U);
+ 167:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 168:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 169:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CCR |=  (uint32_t)SCB_CCR_DC_Msk;  /* enable D-Cache */
+ 170:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 25
+
+
+ 171:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 172:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+ 173:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+ 174:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+ 175:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 176:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 177:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+ 178:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   Disable D-Cache
+ 179:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Turns off D-Cache
+ 180:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   */
+ 181:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_DisableDCache (void)
+ 182:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 183:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+ 184:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ccsidr;
+ 185:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t sets;
+ 186:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ways;
+ 187:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 188:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CSSELR = 0U;                       /* select Level 1 data cache */
+ 189:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 190:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 191:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CCR &= ~(uint32_t)SCB_CCR_DC_Msk;  /* disable D-Cache */
+ 192:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 193:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 194:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     ccsidr = SCB->CCSIDR;
+ 195:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 196:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                                             /* clean & invalidate D-Cache */
+ 197:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     sets = (uint32_t)(CCSIDR_SETS(ccsidr));
+ 198:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     do {
+ 199:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       ways = (uint32_t)(CCSIDR_WAYS(ccsidr));
+ 200:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       do {
+ 201:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCCISW = (((sets << SCB_DCCISW_SET_Pos) & SCB_DCCISW_SET_Msk) |
+ 202:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                        ((ways << SCB_DCCISW_WAY_Pos) & SCB_DCCISW_WAY_Msk)  );
+ 203:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #if defined ( __CC_ARM )
+ 204:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****           __schedule_barrier();
+ 205:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #endif
+ 206:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while (ways-- != 0U);
+ 207:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     } while(sets-- != 0U);
+ 208:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 209:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 210:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+ 211:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+ 212:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+ 213:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 214:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 215:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+ 216:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   Invalidate D-Cache
+ 217:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Invalidates D-Cache
+ 218:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   */
+ 219:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_InvalidateDCache (void)
+ 220:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 221:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+ 222:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ccsidr;
+ 223:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t sets;
+ 224:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ways;
+ 225:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 226:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CSSELR = 0U;                       /* select Level 1 data cache */
+ 227:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 26
+
+
+ 228:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 229:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     ccsidr = SCB->CCSIDR;
+ 230:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 231:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                                             /* invalidate D-Cache */
+ 232:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     sets = (uint32_t)(CCSIDR_SETS(ccsidr));
+ 233:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     do {
+ 234:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       ways = (uint32_t)(CCSIDR_WAYS(ccsidr));
+ 235:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       do {
+ 236:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCISW = (((sets << SCB_DCISW_SET_Pos) & SCB_DCISW_SET_Msk) |
+ 237:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                       ((ways << SCB_DCISW_WAY_Pos) & SCB_DCISW_WAY_Msk)  );
+ 238:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #if defined ( __CC_ARM )
+ 239:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****           __schedule_barrier();
+ 240:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #endif
+ 241:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while (ways-- != 0U);
+ 242:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     } while(sets-- != 0U);
+ 243:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 244:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 245:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+ 246:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+ 247:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+ 248:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 249:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 250:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+ 251:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   Clean D-Cache
+ 252:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Cleans D-Cache
+ 253:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   */
+ 254:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_CleanDCache (void)
+ 255:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 256:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+ 257:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ccsidr;
+ 258:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t sets;
+ 259:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ways;
+ 260:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 261:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CSSELR = 0U;                       /* select Level 1 data cache */
+ 262:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 263:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 264:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     ccsidr = SCB->CCSIDR;
+ 265:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 266:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                                             /* clean D-Cache */
+ 267:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     sets = (uint32_t)(CCSIDR_SETS(ccsidr));
+ 268:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     do {
+ 269:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       ways = (uint32_t)(CCSIDR_WAYS(ccsidr));
+ 270:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       do {
+ 271:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCCSW = (((sets << SCB_DCCSW_SET_Pos) & SCB_DCCSW_SET_Msk) |
+ 272:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                       ((ways << SCB_DCCSW_WAY_Pos) & SCB_DCCSW_WAY_Msk)  );
+ 273:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #if defined ( __CC_ARM )
+ 274:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****           __schedule_barrier();
+ 275:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #endif
+ 276:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while (ways-- != 0U);
+ 277:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     } while(sets-- != 0U);
+ 278:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 279:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 280:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+ 281:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+ 282:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+ 283:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 284:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 27
+
+
+ 285:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+ 286:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   Clean & Invalidate D-Cache
+ 287:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Cleans and Invalidates D-Cache
+ 288:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   */
+ 289:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_CleanInvalidateDCache (void)
+ 290:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 291:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+ 292:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ccsidr;
+ 293:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t sets;
+ 294:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     uint32_t ways;
+ 295:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 296:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CSSELR = 0U;                       /* select Level 1 data cache */
+ 297:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 298:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 299:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     ccsidr = SCB->CCSIDR;
+ 300:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 301:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                                             /* clean & invalidate D-Cache */
+ 302:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     sets = (uint32_t)(CCSIDR_SETS(ccsidr));
+ 303:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     do {
+ 304:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       ways = (uint32_t)(CCSIDR_WAYS(ccsidr));
+ 305:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       do {
+ 306:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCCISW = (((sets << SCB_DCCISW_SET_Pos) & SCB_DCCISW_SET_Msk) |
+ 307:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****                        ((ways << SCB_DCCISW_WAY_Pos) & SCB_DCCISW_WAY_Msk)  );
+ 308:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #if defined ( __CC_ARM )
+ 309:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****           __schedule_barrier();
+ 310:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         #endif
+ 311:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while (ways-- != 0U);
+ 312:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     } while(sets-- != 0U);
+ 313:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 314:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
+ 315:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __ISB();
+ 316:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+ 317:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+ 318:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 319:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 320:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+ 321:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   D-Cache Invalidate by address
+ 322:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Invalidates D-Cache for the given address.
+ 323:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****            D-Cache is invalidated starting from a 32 byte aligned address in 32 byte granularity.
+ 324:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****            D-Cache memory blocks which are part of given address + given size are invalidated.
+ 325:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   addr    address
+ 326:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   dsize   size of memory block (in number of bytes)
+ 327:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** */
+ 328:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_InvalidateDCache_by_Addr (volatile void *addr, int32_t dsize)
+ 329:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 330:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+ 331:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     if ( dsize > 0 ) {
+ 332:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****        int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
+ 333:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_DCACHE_LINE_SIZE - 1U) */;
+ 334:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 335:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __DSB();
+ 336:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 337:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       do {
+ 338:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCIMVAC = op_addr;             /* register accepts only 32byte aligned values, only bi
+ 339:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_addr += __SCB_DCACHE_LINE_SIZE;
+ 340:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_size -= __SCB_DCACHE_LINE_SIZE;
+ 341:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while ( op_size > 0 );
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 28
+
+
+ 342:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 343:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __DSB();
+ 344:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __ISB();
+ 345:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     }
+ 346:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+ 347:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+ 348:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 349:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 350:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+ 351:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   D-Cache Clean by address
+ 352:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Cleans D-Cache for the given address
+ 353:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****            D-Cache is cleaned starting from a 32 byte aligned address in 32 byte granularity.
+ 354:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****            D-Cache memory blocks which are part of given address + given size are cleaned.
+ 355:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   addr    address
+ 356:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   dsize   size of memory block (in number of bytes)
+ 357:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** */
+ 358:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_CleanDCache_by_Addr (volatile void *addr, int32_t dsize)
+ 359:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 360:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+ 361:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     if ( dsize > 0 ) {
+ 362:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****        int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
+ 363:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_DCACHE_LINE_SIZE - 1U) */;
+ 364:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 365:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __DSB();
+ 366:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 367:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       do {
+ 368:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCCMVAC = op_addr;             /* register accepts only 32byte aligned values, only bi
+ 369:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_addr += __SCB_DCACHE_LINE_SIZE;
+ 370:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_size -= __SCB_DCACHE_LINE_SIZE;
+ 371:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while ( op_size > 0 );
+ 372:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 373:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __DSB();
+ 374:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __ISB();
+ 375:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     }
+ 376:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #endif
+ 377:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
+ 378:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 379:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 380:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
+ 381:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   D-Cache Clean and Invalidate by address
+ 382:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Cleans and invalidates D_Cache for the given address
+ 383:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****            D-Cache is cleaned and invalidated starting from a 32 byte aligned address in 32 byte gr
+ 384:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****            D-Cache memory blocks which are part of given address + given size are cleaned and inval
+ 385:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   addr    address (aligned to 32-byte boundary)
+ 386:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   dsize   size of memory block (in number of bytes)
+ 387:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** */
+ 388:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_CleanInvalidateDCache_by_Addr (volatile void *addr, int32_t dsize)
+ 966              		.loc 2 388 27 view .LVU239
+ 967              	.LBB192:
+ 389:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 390:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+ 391:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     if ( dsize > 0 ) {
+ 968              		.loc 2 391 5 view .LVU240
+ 969              		.loc 2 391 8 is_stmt 0 view .LVU241
+ 970 00be BBF1000F 		cmp	fp, #0
+ 971 00c2 11DD     		ble	.L97
+ 972              	.LBB193:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 29
+
+
+ 392:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****        int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
+ 973              		.loc 2 392 8 is_stmt 1 view .LVU242
+ 974              		.loc 2 392 52 is_stmt 0 view .LVU243
+ 975 00c4 00F01F02 		and	r2, r0, #31
+ 976              		.loc 2 392 32 view .LVU244
+ 977 00c8 5A44     		add	r2, r2, fp
+ 978              	.LVL44:
+ 393:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_DCACHE_LINE_SIZE - 1U) */;
+ 979              		.loc 2 393 7 is_stmt 1 view .LVU245
+ 394:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 395:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __DSB();
+ 980              		.loc 2 395 7 view .LVU246
+ 981              	.LBB194:
+ 982              	.LBI194:
+ 983              		.file 3 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h"
+   1:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /**************************************************************************//**
+   2:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * @file     cmsis_gcc.h
+   3:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * @brief    CMSIS compiler GCC header file
+   4:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * @version  V5.4.1
+   5:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * @date     27. May 2021
+   6:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  ******************************************************************************/
+   7:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /*
+   8:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * Copyright (c) 2009-2021 Arm Limited. All rights reserved.
+   9:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  *
+  10:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * SPDX-License-Identifier: Apache-2.0
+  11:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  *
+  12:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * Licensed under the Apache License, Version 2.0 (the License); you may
+  13:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * not use this file except in compliance with the License.
+  14:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * You may obtain a copy of the License at
+  15:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  *
+  16:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * www.apache.org/licenses/LICENSE-2.0
+  17:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  *
+  18:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * Unless required by applicable law or agreed to in writing, software
+  19:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+  20:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  21:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * See the License for the specific language governing permissions and
+  22:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * limitations under the License.
+  23:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  */
+  24:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+  25:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __CMSIS_GCC_H
+  26:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __CMSIS_GCC_H
+  27:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+  28:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /* ignore some GCC warnings */
+  29:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #pragma GCC diagnostic push
+  30:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #pragma GCC diagnostic ignored "-Wsign-conversion"
+  31:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #pragma GCC diagnostic ignored "-Wconversion"
+  32:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #pragma GCC diagnostic ignored "-Wunused-parameter"
+  33:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+  34:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /* Fallback for __has_builtin */
+  35:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __has_builtin
+  36:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __has_builtin(x) (0)
+  37:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  38:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+  39:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /* CMSIS compiler specific defines */
+  40:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __ASM
+  41:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __ASM                                  __asm
+  42:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 30
+
+
+  43:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __INLINE
+  44:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __INLINE                               inline
+  45:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  46:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __STATIC_INLINE
+  47:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __STATIC_INLINE                        static inline
+  48:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  49:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __STATIC_FORCEINLINE
+  50:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __STATIC_FORCEINLINE                   __attribute__((always_inline)) static inline
+  51:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  52:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __NO_RETURN
+  53:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __NO_RETURN                            __attribute__((__noreturn__))
+  54:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  55:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __USED
+  56:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __USED                                 __attribute__((used))
+  57:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  58:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __WEAK
+  59:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __WEAK                                 __attribute__((weak))
+  60:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  61:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __PACKED
+  62:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __PACKED                               __attribute__((packed, aligned(1)))
+  63:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  64:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __PACKED_STRUCT
+  65:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __PACKED_STRUCT                        struct __attribute__((packed, aligned(1)))
+  66:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  67:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __PACKED_UNION
+  68:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __PACKED_UNION                         union __attribute__((packed, aligned(1)))
+  69:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  70:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT32        /* deprecated */
+  71:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+  72:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+  73:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+  74:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   struct __attribute__((packed)) T_UINT32 { uint32_t v; };
+  75:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+  76:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT32(x)                  (((struct T_UINT32 *)(x))->v)
+  77:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  78:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT16_WRITE
+  79:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+  80:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+  81:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+  82:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   __PACKED_STRUCT T_UINT16_WRITE { uint16_t v; };
+  83:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+  84:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT16_WRITE(addr, val)    (void)((((struct T_UINT16_WRITE *)(void *)(addr))-
+  85:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  86:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT16_READ
+  87:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+  88:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+  89:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+  90:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   __PACKED_STRUCT T_UINT16_READ { uint16_t v; };
+  91:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+  92:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT16_READ(addr)          (((const struct T_UINT16_READ *)(const void *)(add
+  93:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+  94:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT32_WRITE
+  95:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+  96:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+  97:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+  98:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   __PACKED_STRUCT T_UINT32_WRITE { uint32_t v; };
+  99:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 31
+
+
+ 100:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT32_WRITE(addr, val)    (void)((((struct T_UINT32_WRITE *)(void *)(addr))-
+ 101:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 102:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __UNALIGNED_UINT32_READ
+ 103:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic push
+ 104:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wpacked"
+ 105:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
+ 106:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   __PACKED_STRUCT T_UINT32_READ { uint32_t v; };
+ 107:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
+ 108:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT32_READ(addr)          (((const struct T_UINT32_READ *)(const void *)(add
+ 109:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 110:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __ALIGNED
+ 111:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __ALIGNED(x)                           __attribute__((aligned(x)))
+ 112:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 113:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __RESTRICT
+ 114:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __RESTRICT                             __restrict
+ 115:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 116:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __COMPILER_BARRIER
+ 117:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __COMPILER_BARRIER()                   __ASM volatile("":::"memory")
+ 118:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 119:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 120:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /* #########################  Startup and Lowlevel Init  ######################## */
+ 121:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 122:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __PROGRAM_START
+ 123:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 124:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /**
+ 125:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \brief   Initializes data and bss sections
+ 126:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \details This default implementations initialized all data and additional bss
+ 127:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****            sections relying on .copy.table and .zero.table specified properly
+ 128:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****            in the used linker script.
+ 129:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 130:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  */
+ 131:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** __STATIC_FORCEINLINE __NO_RETURN void __cmsis_start(void)
+ 132:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** {
+ 133:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   extern void _start(void) __NO_RETURN;
+ 134:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 135:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   typedef struct {
+ 136:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     uint32_t const* src;
+ 137:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     uint32_t* dest;
+ 138:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     uint32_t  wlen;
+ 139:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   } __copy_table_t;
+ 140:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 141:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   typedef struct {
+ 142:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     uint32_t* dest;
+ 143:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     uint32_t  wlen;
+ 144:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   } __zero_table_t;
+ 145:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 146:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   extern const __copy_table_t __copy_table_start__;
+ 147:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   extern const __copy_table_t __copy_table_end__;
+ 148:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   extern const __zero_table_t __zero_table_start__;
+ 149:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   extern const __zero_table_t __zero_table_end__;
+ 150:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 151:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   for (__copy_table_t const* pTable = &__copy_table_start__; pTable < &__copy_table_end__; ++pTable
+ 152:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     for(uint32_t i=0u; i<pTable->wlen; ++i) {
+ 153:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****       pTable->dest[i] = pTable->src[i];
+ 154:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     }
+ 155:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   }
+ 156:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 32
+
+
+ 157:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   for (__zero_table_t const* pTable = &__zero_table_start__; pTable < &__zero_table_end__; ++pTable
+ 158:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     for(uint32_t i=0u; i<pTable->wlen; ++i) {
+ 159:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****       pTable->dest[i] = 0u;
+ 160:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     }
+ 161:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   }
+ 162:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 163:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   _start();
+ 164:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** }
+ 165:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 166:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __PROGRAM_START           __cmsis_start
+ 167:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 168:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 169:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __INITIAL_SP
+ 170:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __INITIAL_SP              __StackTop
+ 171:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 172:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 173:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __STACK_LIMIT
+ 174:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __STACK_LIMIT             __StackLimit
+ 175:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 176:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 177:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __VECTOR_TABLE
+ 178:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __VECTOR_TABLE            __Vectors
+ 179:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 180:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 181:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __VECTOR_TABLE_ATTRIBUTE
+ 182:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __VECTOR_TABLE_ATTRIBUTE  __attribute__((used, section(".vectors")))
+ 183:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 184:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 185:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #if defined (__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
+ 186:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __STACK_SEAL
+ 187:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __STACK_SEAL              __StackSeal
+ 188:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 189:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 190:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __TZ_STACK_SEAL_SIZE
+ 191:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __TZ_STACK_SEAL_SIZE      8U
+ 192:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 193:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 194:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef __TZ_STACK_SEAL_VALUE
+ 195:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __TZ_STACK_SEAL_VALUE     0xFEF5EDA5FEF5EDA5ULL
+ 196:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 197:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 198:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 199:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** __STATIC_FORCEINLINE void __TZ_set_STACKSEAL_S (uint32_t* stackTop) {
+ 200:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   *((uint64_t *)stackTop) = __TZ_STACK_SEAL_VALUE;
+ 201:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** }
+ 202:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 203:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 204:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 205:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /* ##########################  Core Instruction Access  ######################### */
+ 206:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /** \defgroup CMSIS_Core_InstructionInterface CMSIS Core Instruction Interface
+ 207:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   Access to dedicated instructions
+ 208:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   @{
+ 209:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** */
+ 210:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 211:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /* Define macros for porting to both thumb1 and thumb2.
+ 212:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * For thumb1, use low register (r0-r7), specified by constraint "l"
+ 213:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * Otherwise, use general registers, specified by constraint "r" */
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 33
+
+
+ 214:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #if defined (__thumb__) && !defined (__thumb2__)
+ 215:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __CMSIS_GCC_OUT_REG(r) "=l" (r)
+ 216:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __CMSIS_GCC_RW_REG(r) "+l" (r)
+ 217:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __CMSIS_GCC_USE_REG(r) "l" (r)
+ 218:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #else
+ 219:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __CMSIS_GCC_OUT_REG(r) "=r" (r)
+ 220:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __CMSIS_GCC_RW_REG(r) "+r" (r)
+ 221:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __CMSIS_GCC_USE_REG(r) "r" (r)
+ 222:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
+ 223:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 224:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /**
+ 225:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \brief   No Operation
+ 226:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \details No Operation does nothing. This instruction can be used for code alignment purposes.
+ 227:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  */
+ 228:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __NOP()                             __ASM volatile ("nop")
+ 229:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 230:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /**
+ 231:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \brief   Wait For Interrupt
+ 232:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \details Wait For Interrupt is a hint instruction that suspends execution until one of a number o
+ 233:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  */
+ 234:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __WFI()                             __ASM volatile ("wfi":::"memory")
+ 235:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 236:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 237:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /**
+ 238:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \brief   Wait For Event
+ 239:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \details Wait For Event is a hint instruction that permits the processor to enter
+ 240:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****            a low-power state until one of a number of events occurs.
+ 241:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  */
+ 242:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __WFE()                             __ASM volatile ("wfe":::"memory")
+ 243:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 244:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 245:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /**
+ 246:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \brief   Send Event
+ 247:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \details Send Event is a hint instruction. It causes an event to be signaled to the CPU.
+ 248:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  */
+ 249:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #define __SEV()                             __ASM volatile ("sev")
+ 250:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 251:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 252:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /**
+ 253:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \brief   Instruction Synchronization Barrier
+ 254:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \details Instruction Synchronization Barrier flushes the pipeline in the processor,
+ 255:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****            so that all instructions following the ISB are fetched from cache or memory,
+ 256:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****            after the instruction has been completed.
+ 257:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  */
+ 258:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** __STATIC_FORCEINLINE void __ISB(void)
+ 259:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** {
+ 260:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   __ASM volatile ("isb 0xF":::"memory");
+ 261:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** }
+ 262:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 263:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
+ 264:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /**
+ 265:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \brief   Data Synchronization Barrier
+ 266:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   \details Acts as a special kind of Data Memory Barrier.
+ 267:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****            It completes when all explicit memory accesses before this instruction complete.
+ 268:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  */
+ 269:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** __STATIC_FORCEINLINE void __DSB(void)
+ 984              		.loc 3 269 27 view .LVU247
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 34
+
+
+ 985              	.LBB195:
+ 270:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** {
+ 271:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   __ASM volatile ("dsb 0xF":::"memory");
+ 986              		.loc 3 271 3 view .LVU248
+ 987              		.syntax unified
+ 988              	@ 271 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h" 1
+ 989 00ca BFF34F8F 		dsb 0xF
+ 990              	@ 0 "" 2
+ 991              		.thumb
+ 992              		.syntax unified
+ 993              	.LBE195:
+ 994              	.LBE194:
+ 396:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 397:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       do {
+ 398:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCCIMVAC = op_addr;            /* register accepts only 32byte aligned values, only bi
+ 995              		.loc 2 398 23 is_stmt 0 view .LVU249
+ 996 00ce 3E49     		ldr	r1, .L150+12
+ 997 00d0 0244     		add	r2, r2, r0
+ 998              	.LVL45:
+ 999              	.L98:
+ 397:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCCIMVAC = op_addr;            /* register accepts only 32byte aligned values, only bi
+ 1000              		.loc 2 397 7 is_stmt 1 view .LVU250
+ 1001              		.loc 2 398 9 view .LVU251
+ 1002              		.loc 2 398 23 is_stmt 0 view .LVU252
+ 1003 00d2 C1F87002 		str	r0, [r1, #624]
+ 399:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_addr +=          __SCB_DCACHE_LINE_SIZE;
+ 1004              		.loc 2 399 9 is_stmt 1 view .LVU253
+ 1005              		.loc 2 399 17 is_stmt 0 view .LVU254
+ 1006 00d6 2030     		adds	r0, r0, #32
+ 1007              	.LVL46:
+ 400:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_size -=          __SCB_DCACHE_LINE_SIZE;
+ 1008              		.loc 2 400 9 is_stmt 1 view .LVU255
+ 401:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while ( op_size > 0 );
+ 1009              		.loc 2 401 25 discriminator 1 view .LVU256
+ 1010 00d8 131A     		subs	r3, r2, r0
+ 1011 00da 002B     		cmp	r3, #0
+ 1012 00dc F9DC     		bgt	.L98
+ 402:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 403:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __DSB();
+ 1013              		.loc 2 403 7 view .LVU257
+ 1014              	.LBB196:
+ 1015              	.LBI196:
+ 269:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** {
+ 1016              		.loc 3 269 27 view .LVU258
+ 1017              	.LBB197:
+ 1018              		.loc 3 271 3 view .LVU259
+ 1019              		.syntax unified
+ 1020              	@ 271 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h" 1
+ 1021 00de BFF34F8F 		dsb 0xF
+ 1022              	@ 0 "" 2
+ 1023              		.thumb
+ 1024              		.syntax unified
+ 1025              	.LBE197:
+ 1026              	.LBE196:
+ 404:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __ISB();
+ 1027              		.loc 2 404 7 view .LVU260
+ 1028              	.LBB198:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 35
+
+
+ 1029              	.LBI198:
+ 258:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** {
+ 1030              		.loc 3 258 27 view .LVU261
+ 1031              	.LBB199:
+ 260:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** }
+ 1032              		.loc 3 260 3 view .LVU262
+ 1033              		.syntax unified
+ 1034              	@ 260 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h" 1
+ 1035 00e2 BFF36F8F 		isb 0xF
+ 1036              	@ 0 "" 2
+ 1037              	.LVL47:
+ 260:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** }
+ 1038              		.loc 3 260 3 is_stmt 0 view .LVU263
+ 1039              		.thumb
+ 1040              		.syntax unified
+ 1041              	.LBE199:
+ 1042              	.LBE198:
+ 1043              	.LBE193:
+ 1044              	.LBE192:
+ 1045              	.LBE191:
+ 103:../../common/sd/ro_sd.c ****             return Fail();
+ 1046              		.loc 1 103 51 view .LVU264
+ 1047 00e6 2068     		ldr	r0, [r4]
+ 1048              	.LVL48:
+ 1049              	.L97:
+ 103:../../common/sd/ro_sd.c ****             return Fail();
+ 1050              		.loc 1 103 9 is_stmt 1 view .LVU265
+ 103:../../common/sd/ro_sd.c ****             return Fail();
+ 1051              		.loc 1 103 12 is_stmt 0 view .LVU266
+ 1052 00e8 3246     		mov	r2, r6
+ 1053 00ea 0199     		ldr	r1, [sp, #4]
+ 1054 00ec FFF7FEFF 		bl	BSP_SD_ReadBlocks_DMA
+ 1055              	.LVL49:
+ 103:../../common/sd/ro_sd.c ****             return Fail();
+ 1056              		.loc 1 103 11 discriminator 1 view .LVU267
+ 1057 00f0 0590     		str	r0, [sp, #20]
+ 1058 00f2 0028     		cmp	r0, #0
+ 1059 00f4 BAD1     		bne	.L144
+ 1060              	.L105:
+ 106:../../common/sd/ro_sd.c ****         if(failed) return Fail();
+ 1061              		.loc 1 106 13 is_stmt 1 view .LVU268
+ 1062              	.LVL50:
+ 1063              	.LBB200:
+ 1064              	.LBI200:
+  36:../../common/sd/ro_sd.c ****     return HAL_GetTick() - start >= config.transfer_timeout_ms || !BudgetLeft();
+ 1065              		.loc 1 36 12 view .LVU269
+ 1066              	.LBB201:
+  37:../../common/sd/ro_sd.c **** }
+ 1067              		.loc 1 37 5 view .LVU270
+  37:../../common/sd/ro_sd.c **** }
+ 1068              		.loc 1 37 5 is_stmt 0 view .LVU271
+ 1069              	.LBE201:
+ 1070              	.LBE200:
+ 105:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 1071              		.loc 1 105 21 is_stmt 1 view .LVU272
+ 105:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 1072              		.loc 1 105 15 is_stmt 0 view .LVU273
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 36
+
+
+ 1073 00f6 D8F80030 		ldr	r3, [r8]
+ 105:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 1074              		.loc 1 105 21 view .LVU274
+ 1075 00fa 33BB     		cbnz	r3, .L108
+ 105:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 1076              		.loc 1 105 24 discriminator 1 view .LVU275
+ 1077 00fc 3B68     		ldr	r3, [r7]
+ 105:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
+ 1078              		.loc 1 105 21 discriminator 1 view .LVU276
+ 1079 00fe 23BB     		cbnz	r3, .L108
+ 1080              	.LBB205:
+ 1081              	.LBB204:
+  37:../../common/sd/ro_sd.c **** }
+ 1082              		.loc 1 37 12 view .LVU277
+ 1083 0100 FFF7FEFF 		bl	HAL_GetTick
+ 1084              	.LVL51:
+  37:../../common/sd/ro_sd.c **** }
+ 1085              		.loc 1 37 64 discriminator 1 view .LVU278
+ 1086 0104 A368     		ldr	r3, [r4, #8]
+  37:../../common/sd/ro_sd.c **** }
+ 1087              		.loc 1 37 26 discriminator 1 view .LVU279
+ 1088 0106 401B     		subs	r0, r0, r5
+  37:../../common/sd/ro_sd.c **** }
+ 1089              		.loc 1 37 64 discriminator 1 view .LVU280
+ 1090 0108 9842     		cmp	r0, r3
+ 1091 010a AFD2     		bcs	.L144
+ 1092              	.LBB202:
+ 1093              	.LBI202:
+  32:../../common/sd/ro_sd.c ****     return !config.budget_ms || (int32_t)(deadline - HAL_GetTick()) > 0;
+ 1094              		.loc 1 32 12 is_stmt 1 view .LVU281
+ 1095              	.LBB203:
+  33:../../common/sd/ro_sd.c **** }
+ 1096              		.loc 1 33 5 view .LVU282
+  33:../../common/sd/ro_sd.c **** }
+ 1097              		.loc 1 33 30 is_stmt 0 view .LVU283
+ 1098 010c E368     		ldr	r3, [r4, #12]
+ 1099 010e 002B     		cmp	r3, #0
+ 1100 0110 F1D0     		beq	.L105
+  33:../../common/sd/ro_sd.c **** }
+ 1101              		.loc 1 33 52 discriminator 2 view .LVU284
+ 1102 0112 2B4B     		ldr	r3, .L150+4
+ 1103 0114 1B68     		ldr	r3, [r3]
+ 1104 0116 0493     		str	r3, [sp, #16]
+  33:../../common/sd/ro_sd.c **** }
+ 1105              		.loc 1 33 54 discriminator 2 view .LVU285
+ 1106 0118 FFF7FEFF 		bl	HAL_GetTick
+ 1107              	.LVL52:
+  33:../../common/sd/ro_sd.c **** }
+ 1108              		.loc 1 33 52 discriminator 1 view .LVU286
+ 1109 011c 049B     		ldr	r3, [sp, #16]
+ 1110 011e 1B1A     		subs	r3, r3, r0
+  33:../../common/sd/ro_sd.c **** }
+ 1111              		.loc 1 33 30 discriminator 1 view .LVU287
+ 1112 0120 002B     		cmp	r3, #0
+ 1113 0122 E8DC     		bgt	.L105
+ 1114              	.LBE203:
+ 1115              	.LBE202:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 37
+
+
+ 1116              	.LBE204:
+ 1117              	.LBE205:
+ 107:../../common/sd/ro_sd.c ****         SCB_InvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 1118              		.loc 1 107 20 is_stmt 1 discriminator 1 view .LVU288
+ 1119              	.LBB206:
+  40:../../common/sd/ro_sd.c ****     if(config.abort) config.abort();
+ 1120              		.loc 1 40 16 view .LVU289
+ 1121              	.LBB188:
+  41:../../common/sd/ro_sd.c ****     else HAL_SD_Abort(&hsd1);
+ 1122              		.loc 1 41 5 view .LVU290
+  41:../../common/sd/ro_sd.c ****     else HAL_SD_Abort(&hsd1);
+ 1123              		.loc 1 41 14 is_stmt 0 view .LVU291
+ 1124 0124 A369     		ldr	r3, [r4, #24]
+  41:../../common/sd/ro_sd.c ****     else HAL_SD_Abort(&hsd1);
+ 1125              		.loc 1 41 7 view .LVU292
+ 1126 0126 002B     		cmp	r3, #0
+ 1127 0128 A3D1     		bne	.L149
+ 1128              	.L111:
+  42:../../common/sd/ro_sd.c ****     status |= STA_NOINIT;
+ 1129              		.loc 1 42 10 is_stmt 1 view .LVU293
+ 1130 012a 2848     		ldr	r0, .L150+16
+ 1131 012c FFF7FEFF 		bl	HAL_SD_Abort
+ 1132              	.LVL53:
+ 1133 0130 A0E7     		b	.L112
+ 1134              	.LVL54:
+ 1135              	.L117:
+ 1136              		.cfi_def_cfa_offset 0
+ 1137              		.cfi_restore 4
+ 1138              		.cfi_restore 5
+ 1139              		.cfi_restore 6
+ 1140              		.cfi_restore 7
+ 1141              		.cfi_restore 8
+ 1142              		.cfi_restore 9
+ 1143              		.cfi_restore 10
+ 1144              		.cfi_restore 11
+ 1145              		.cfi_restore 14
+  42:../../common/sd/ro_sd.c ****     status |= STA_NOINIT;
+ 1146              		.loc 1 42 10 is_stmt 0 view .LVU294
+ 1147              	.LBE188:
+ 1148              	.LBE206:
+ 1149              	.LBE220:
+  90:../../common/sd/ro_sd.c ****     if(ro_sd_status() & STA_NOINIT) return RES_NOTRDY;
+ 1150              		.loc 1 90 43 discriminator 3 view .LVU295
+ 1151 0132 0420     		movs	r0, #4
+ 1152              	.LVL55:
+ 1153              		.loc 1 114 1 view .LVU296
+ 1154 0134 7047     		bx	lr
+ 1155              	.LVL56:
+ 1156              	.L147:
+ 1157              		.cfi_def_cfa_offset 64
+ 1158              		.cfi_offset 4, -36
+ 1159              		.cfi_offset 5, -32
+ 1160              		.cfi_offset 6, -28
+ 1161              		.cfi_offset 7, -24
+ 1162              		.cfi_offset 8, -20
+ 1163              		.cfi_offset 9, -16
+ 1164              		.cfi_offset 10, -12
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 38
+
+
+ 1165              		.cfi_offset 11, -8
+ 1166              		.cfi_offset 14, -4
+ 1167              	.LBB221:
+  96:../../common/sd/ro_sd.c ****         if(!BudgetLeft()) return RES_ERROR; // nothing started; the card stays usable
+ 1168              		.loc 1 96 26 is_stmt 1 discriminator 1 view .LVU297
+  96:../../common/sd/ro_sd.c ****         if(!BudgetLeft()) return RES_ERROR; // nothing started; the card stays usable
+ 1169              		.loc 1 96 33 is_stmt 0 discriminator 1 view .LVU298
+ 1170 0136 99F80030 		ldrb	r3, [r9]	@ zero_extendqisi2
+ 1171 013a 43F00103 		orr	r3, r3, #1
+ 1172 013e 89F80030 		strb	r3, [r9]
+  96:../../common/sd/ro_sd.c ****         if(!BudgetLeft()) return RES_ERROR; // nothing started; the card stays usable
+ 1173              		.loc 1 96 48 is_stmt 1 discriminator 1 view .LVU299
+ 1174              	.LVL57:
+ 1175              	.L84:
+  96:../../common/sd/ro_sd.c ****         if(!BudgetLeft()) return RES_ERROR; // nothing started; the card stays usable
+ 1176              		.loc 1 96 48 is_stmt 0 discriminator 1 view .LVU300
+ 1177              	.LBE221:
+  91:../../common/sd/ro_sd.c ****     const UINT chunk = config.bounce_bytes / RO_SD_SECTOR;
+ 1178              		.loc 1 91 44 discriminator 1 view .LVU301
+ 1179 0142 0320     		movs	r0, #3
+ 1180              		.loc 1 114 1 view .LVU302
+ 1181 0144 07B0     		add	sp, sp, #28
+ 1182              		.cfi_remember_state
+ 1183              		.cfi_def_cfa_offset 36
+ 1184              		@ sp needed
+ 1185 0146 BDE8F08F 		pop	{r4, r5, r6, r7, r8, r9, r10, fp, pc}
+ 1186              	.LVL58:
+ 1187              	.L108:
+ 1188              		.cfi_restore_state
+ 1189              	.LBB222:
+ 107:../../common/sd/ro_sd.c ****         SCB_InvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 1190              		.loc 1 107 9 is_stmt 1 view .LVU303
+ 107:../../common/sd/ro_sd.c ****         SCB_InvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 1191              		.loc 1 107 12 is_stmt 0 view .LVU304
+ 1192 014a 3B68     		ldr	r3, [r7]
+ 107:../../common/sd/ro_sd.c ****         SCB_InvalidateDCache_by_Addr((uint32_t*)config.bounce, (int32_t)bytes);
+ 1193              		.loc 1 107 11 view .LVU305
+ 1194 014c 002B     		cmp	r3, #0
+ 1195 014e 8DD1     		bne	.L144
+ 108:../../common/sd/ro_sd.c ****         memcpy(buffer, config.bounce, bytes);
+ 1196              		.loc 1 108 9 is_stmt 1 view .LVU306
+ 1197              	.LBB207:
+ 1198              	.LBB208:
+ 331:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****        int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
+ 1199              		.loc 2 331 8 is_stmt 0 view .LVU307
+ 1200 0150 BBF1000F 		cmp	fp, #0
+ 1201              	.LBE208:
+ 1202              	.LBE207:
+ 108:../../common/sd/ro_sd.c ****         memcpy(buffer, config.bounce, bytes);
+ 1203              		.loc 1 108 55 view .LVU308
+ 1204 0154 2168     		ldr	r1, [r4]
+ 1205              	.LVL59:
+ 1206              	.LBB217:
+ 1207              	.LBI207:
+ 328:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
+ 1208              		.loc 2 328 27 is_stmt 1 view .LVU309
+ 1209              	.LBB216:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 39
+
+
+ 331:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****        int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
+ 1210              		.loc 2 331 5 view .LVU310
+ 331:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****        int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
+ 1211              		.loc 2 331 8 is_stmt 0 view .LVU311
+ 1212 0156 11DD     		ble	.L113
+ 1213              	.LBB209:
+ 332:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_DCACHE_LINE_SIZE - 1U) */;
+ 1214              		.loc 2 332 8 is_stmt 1 view .LVU312
+ 332:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_DCACHE_LINE_SIZE - 1U) */;
+ 1215              		.loc 2 332 52 is_stmt 0 view .LVU313
+ 1216 0158 01F01F02 		and	r2, r1, #31
+ 332:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       uint32_t op_addr = (uint32_t)addr /* & ~(__SCB_DCACHE_LINE_SIZE - 1U) */;
+ 1217              		.loc 2 332 32 view .LVU314
+ 1218 015c 5A44     		add	r2, r2, fp
+ 1219              	.LVL60:
+ 333:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 1220              		.loc 2 333 7 is_stmt 1 view .LVU315
+ 335:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 1221              		.loc 2 335 7 view .LVU316
+ 1222              	.LBB210:
+ 1223              	.LBI210:
+ 269:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** {
+ 1224              		.loc 3 269 27 view .LVU317
+ 1225              	.LBB211:
+ 1226              		.loc 3 271 3 view .LVU318
+ 1227              		.syntax unified
+ 1228              	@ 271 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h" 1
+ 1229 015e BFF34F8F 		dsb 0xF
+ 1230              	@ 0 "" 2
+ 1231              		.thumb
+ 1232              		.syntax unified
+ 1233              	.LBE211:
+ 1234              	.LBE210:
+ 338:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_addr += __SCB_DCACHE_LINE_SIZE;
+ 1235              		.loc 2 338 22 is_stmt 0 view .LVU319
+ 1236 0162 1948     		ldr	r0, .L150+12
+ 1237 0164 0A44     		add	r2, r2, r1
+ 1238              	.LVL61:
+ 1239              	.L114:
+ 337:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         SCB->DCIMVAC = op_addr;             /* register accepts only 32byte aligned values, only bi
+ 1240              		.loc 2 337 7 is_stmt 1 view .LVU320
+ 338:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_addr += __SCB_DCACHE_LINE_SIZE;
+ 1241              		.loc 2 338 9 view .LVU321
+ 338:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_addr += __SCB_DCACHE_LINE_SIZE;
+ 1242              		.loc 2 338 22 is_stmt 0 view .LVU322
+ 1243 0166 C0F85C12 		str	r1, [r0, #604]
+ 339:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_size -= __SCB_DCACHE_LINE_SIZE;
+ 1244              		.loc 2 339 9 is_stmt 1 view .LVU323
+ 339:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_size -= __SCB_DCACHE_LINE_SIZE;
+ 1245              		.loc 2 339 17 is_stmt 0 view .LVU324
+ 1246 016a 2031     		adds	r1, r1, #32
+ 1247              	.LVL62:
+ 340:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while ( op_size > 0 );
+ 1248              		.loc 2 340 9 is_stmt 1 view .LVU325
+ 341:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
+ 1249              		.loc 2 341 25 discriminator 1 view .LVU326
+ 1250 016c 531A     		subs	r3, r2, r1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 40
+
+
+ 1251 016e 002B     		cmp	r3, #0
+ 1252 0170 F9DC     		bgt	.L114
+ 343:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __ISB();
+ 1253              		.loc 2 343 7 view .LVU327
+ 1254              	.LBB212:
+ 1255              	.LBI212:
+ 269:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** {
+ 1256              		.loc 3 269 27 view .LVU328
+ 1257              	.LBB213:
+ 1258              		.loc 3 271 3 view .LVU329
+ 1259              		.syntax unified
+ 1260              	@ 271 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h" 1
+ 1261 0172 BFF34F8F 		dsb 0xF
+ 1262              	@ 0 "" 2
+ 1263              		.thumb
+ 1264              		.syntax unified
+ 1265              	.LBE213:
+ 1266              	.LBE212:
+ 344:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     }
+ 1267              		.loc 2 344 7 view .LVU330
+ 1268              	.LBB214:
+ 1269              	.LBI214:
+ 258:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** {
+ 1270              		.loc 3 258 27 view .LVU331
+ 1271              	.LBB215:
+ 260:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** }
+ 1272              		.loc 3 260 3 view .LVU332
+ 1273              		.syntax unified
+ 1274              	@ 260 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h" 1
+ 1275 0176 BFF36F8F 		isb 0xF
+ 1276              	@ 0 "" 2
+ 1277              	.LVL63:
+ 260:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** }
+ 1278              		.loc 3 260 3 is_stmt 0 view .LVU333
+ 1279              		.thumb
+ 1280              		.syntax unified
+ 1281              	.LBE215:
+ 1282              	.LBE214:
+ 1283              	.LBE209:
+ 1284              	.LBE216:
+ 1285              	.LBE217:
+ 109:../../common/sd/ro_sd.c ****         buffer += bytes; sector += n; count -= n;
+ 1286              		.loc 1 109 30 view .LVU334
+ 1287 017a 2168     		ldr	r1, [r4]
+ 1288              	.LVL64:
+ 1289              	.L113:
+ 109:../../common/sd/ro_sd.c ****         buffer += bytes; sector += n; count -= n;
+ 1290              		.loc 1 109 9 is_stmt 1 view .LVU335
+ 1291 017c 029D     		ldr	r5, [sp, #8]
+ 1292              	.LVL65:
+ 109:../../common/sd/ro_sd.c ****         buffer += bytes; sector += n; count -= n;
+ 1293              		.loc 1 109 9 is_stmt 0 view .LVU336
+ 1294 017e 5A46     		mov	r2, fp
+ 110:../../common/sd/ro_sd.c ****         if(config.service) config.service();
+ 1295              		.loc 1 110 45 view .LVU337
+ 1296 0180 AAEB060A 		sub	r10, r10, r6
+ 1297              	.LVL66:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 41
+
+
+ 109:../../common/sd/ro_sd.c ****         buffer += bytes; sector += n; count -= n;
+ 1298              		.loc 1 109 9 view .LVU338
+ 1299 0184 2846     		mov	r0, r5
+ 1300 0186 FFF7FEFF 		bl	memcpy
+ 1301              	.LVL67:
+ 110:../../common/sd/ro_sd.c ****         if(config.service) config.service();
+ 1302              		.loc 1 110 9 is_stmt 1 view .LVU339
+ 110:../../common/sd/ro_sd.c ****         if(config.service) config.service();
+ 1303              		.loc 1 110 16 is_stmt 0 view .LVU340
+ 1304 018a 2B46     		mov	r3, r5
+ 1305 018c 5B44     		add	r3, r3, fp
+ 1306 018e 0293     		str	r3, [sp, #8]
+ 1307              	.LVL68:
+ 110:../../common/sd/ro_sd.c ****         if(config.service) config.service();
+ 1308              		.loc 1 110 26 is_stmt 1 view .LVU341
+ 110:../../common/sd/ro_sd.c ****         if(config.service) config.service();
+ 1309              		.loc 1 110 33 is_stmt 0 view .LVU342
+ 1310 0190 019B     		ldr	r3, [sp, #4]
+ 1311              	.LVL69:
+ 110:../../common/sd/ro_sd.c ****         if(config.service) config.service();
+ 1312              		.loc 1 110 33 view .LVU343
+ 1313 0192 3344     		add	r3, r3, r6
+ 1314 0194 0193     		str	r3, [sp, #4]
+ 1315              	.LVL70:
+ 110:../../common/sd/ro_sd.c ****         if(config.service) config.service();
+ 1316              		.loc 1 110 39 is_stmt 1 view .LVU344
+ 111:../../common/sd/ro_sd.c ****     }
+ 1317              		.loc 1 111 9 view .LVU345
+ 111:../../common/sd/ro_sd.c ****     }
+ 1318              		.loc 1 111 18 is_stmt 0 view .LVU346
+ 1319 0196 6369     		ldr	r3, [r4, #20]
+ 1320              	.LVL71:
+ 111:../../common/sd/ro_sd.c ****     }
+ 1321              		.loc 1 111 11 view .LVU347
+ 1322 0198 03B1     		cbz	r3, .L115
+ 111:../../common/sd/ro_sd.c ****     }
+ 1323              		.loc 1 111 28 is_stmt 1 discriminator 1 view .LVU348
+ 1324 019a 9847     		blx	r3
+ 1325              	.LVL72:
+ 1326              	.L115:
+ 111:../../common/sd/ro_sd.c ****     }
+ 1327              		.loc 1 111 28 is_stmt 0 discriminator 1 view .LVU349
+ 1328              	.LBE222:
+  93:../../common/sd/ro_sd.c ****         const UINT n = count < chunk ? count : chunk;
+ 1329              		.loc 1 93 11 is_stmt 1 view .LVU350
+ 1330 019c BAF1000F 		cmp	r10, #0
+ 1331 01a0 7FF44FAF 		bne	.L116
+ 1332 01a4 0598     		ldr	r0, [sp, #20]
+ 1333 01a6 6CE7     		b	.L79
+ 1334              	.LVL73:
+ 1335              	.L86:
+ 1336              	.LBB223:
+ 1337              	.LBB218:
+ 1338              	.LBB183:
+  33:../../common/sd/ro_sd.c **** }
+ 1339              		.loc 1 33 52 is_stmt 0 discriminator 2 view .LVU351
+ 1340 01a8 054B     		ldr	r3, .L150+4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 42
+
+
+ 1341 01aa 1D68     		ldr	r5, [r3]
+  33:../../common/sd/ro_sd.c **** }
+ 1342              		.loc 1 33 54 discriminator 2 view .LVU352
+ 1343 01ac FFF7FEFF 		bl	HAL_GetTick
+ 1344              	.LVL74:
+  33:../../common/sd/ro_sd.c **** }
+ 1345              		.loc 1 33 52 discriminator 1 view .LVU353
+ 1346 01b0 2D1A     		subs	r5, r5, r0
+  33:../../common/sd/ro_sd.c **** }
+ 1347              		.loc 1 33 30 discriminator 1 view .LVU354
+ 1348 01b2 002D     		cmp	r5, #0
+ 1349 01b4 3FF74EAF 		bgt	.L88
+ 1350 01b8 62E7     		b	.L95
+ 1351              	.L151:
+ 1352 01ba 00BF     		.align	2
+ 1353              	.L150:
+ 1354 01bc 00000000 		.word	config
+ 1355 01c0 00000000 		.word	deadline
+ 1356 01c4 00000000 		.word	failed
+ 1357 01c8 00ED00E0 		.word	-536810240
+ 1358 01cc 00000000 		.word	hsd1
+ 1359 01d0 00000000 		.word	status
+ 1360 01d4 00000000 		.word	done
+ 1361              	.LBE183:
+ 1362              	.LBE218:
+ 1363              	.LBE223:
+ 1364              		.cfi_endproc
+ 1365              	.LFE350:
+ 1367              		.section	.text.disk_ioctl,"ax",%progbits
+ 1368              		.align	1
+ 1369              		.p2align 2,,3
+ 1370              		.global	disk_ioctl
+ 1371              		.syntax unified
+ 1372              		.thumb
+ 1373              		.thumb_func
+ 1375              	disk_ioctl:
+ 1376              	.LVL75:
+ 1377              	.LFB351:
+ 115:../../common/sd/ro_sd.c **** 
+ 116:../../common/sd/ro_sd.c **** DRESULT disk_ioctl(BYTE drive, BYTE cmd, void* data) {
+ 1378              		.loc 1 116 54 is_stmt 1 view -0
+ 1379              		.cfi_startproc
+ 1380              		@ args = 0, pretend = 0, frame = 40
+ 1381              		@ frame_needed = 0, uses_anonymous_args = 0
+ 117:../../common/sd/ro_sd.c ****     if(drive) return RES_PARERR;
+ 1382              		.loc 1 117 5 view .LVU356
+ 116:../../common/sd/ro_sd.c ****     if(drive) return RES_PARERR;
+ 1383              		.loc 1 116 54 is_stmt 0 view .LVU357
+ 1384 0000 70B5     		push	{r4, r5, r6, lr}
+ 1385              		.cfi_def_cfa_offset 16
+ 1386              		.cfi_offset 4, -16
+ 1387              		.cfi_offset 5, -12
+ 1388              		.cfi_offset 6, -8
+ 1389              		.cfi_offset 14, -4
+ 1390 0002 8AB0     		sub	sp, sp, #40
+ 1391              		.cfi_def_cfa_offset 56
+ 1392              		.loc 1 117 7 view .LVU358
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 43
+
+
+ 1393 0004 0028     		cmp	r0, #0
+ 1394 0006 30D1     		bne	.L153
+ 118:../../common/sd/ro_sd.c ****     if(ro_sd_status() & STA_NOINIT) return RES_NOTRDY;
+ 1395              		.loc 1 118 5 is_stmt 1 view .LVU359
+ 1396              	.LBB229:
+ 1397              	.LBI229:
+  70:../../common/sd/ro_sd.c ****     return Present() ? status : (DSTATUS)(STA_NOINIT | STA_NODISK | STA_PROTECT);
+ 1398              		.loc 1 70 9 view .LVU360
+ 1399              	.LBB230:
+  71:../../common/sd/ro_sd.c **** }
+ 1400              		.loc 1 71 5 view .LVU361
+ 1401              	.LBB231:
+ 1402              	.LBI231:
+  30:../../common/sd/ro_sd.c **** 
+ 1403              		.loc 1 30 12 view .LVU362
+ 1404              	.LBB232:
+  30:../../common/sd/ro_sd.c **** 
+ 1405              		.loc 1 30 28 view .LVU363
+  30:../../common/sd/ro_sd.c **** 
+ 1406              		.loc 1 30 42 is_stmt 0 view .LVU364
+ 1407 0008 194B     		ldr	r3, .L168
+ 1408 000a 0C46     		mov	r4, r1
+ 1409 000c 1646     		mov	r6, r2
+ 1410 000e 1B69     		ldr	r3, [r3, #16]
+  30:../../common/sd/ro_sd.c **** 
+ 1411              		.loc 1 30 56 view .LVU365
+ 1412 0010 2BB1     		cbz	r3, .L154
+  30:../../common/sd/ro_sd.c **** 
+ 1413              		.loc 1 30 59 discriminator 2 view .LVU366
+ 1414 0012 9847     		blx	r3
+ 1415              	.LVL76:
+  30:../../common/sd/ro_sd.c **** 
+ 1416              		.loc 1 30 56 discriminator 1 view .LVU367
+ 1417 0014 18B9     		cbnz	r0, .L154
+ 1418              	.L156:
+ 1419              	.LBE232:
+ 1420              	.LBE231:
+ 1421              	.LBE230:
+ 1422              	.LBE229:
+ 1423              		.loc 1 118 44 discriminator 1 view .LVU368
+ 1424 0016 0325     		movs	r5, #3
+ 1425              	.LVL77:
+ 1426              	.L155:
+ 119:../../common/sd/ro_sd.c ****     switch(cmd) {
+ 120:../../common/sd/ro_sd.c ****     case CTRL_SYNC: return RES_OK;
+ 121:../../common/sd/ro_sd.c ****     case GET_SECTOR_SIZE: *(WORD*)data = RO_SD_SECTOR; return RES_OK;
+ 122:../../common/sd/ro_sd.c ****     case GET_BLOCK_SIZE: *(DWORD*)data = 1; return RES_OK;
+ 123:../../common/sd/ro_sd.c ****     case GET_SECTOR_COUNT: {
+ 124:../../common/sd/ro_sd.c ****         DSY_SD_CardInfoTypeDef info;
+ 125:../../common/sd/ro_sd.c ****         BSP_SD_GetCardInfo(&info);
+ 126:../../common/sd/ro_sd.c ****         *(LBA_t*)data = info.LogBlockNbr;
+ 127:../../common/sd/ro_sd.c ****         return RES_OK;
+ 128:../../common/sd/ro_sd.c ****     }
+ 129:../../common/sd/ro_sd.c ****     default: return RES_PARERR;
+ 130:../../common/sd/ro_sd.c ****     }
+ 131:../../common/sd/ro_sd.c **** }
+ 1427              		.loc 1 131 1 view .LVU369
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 44
+
+
+ 1428 0018 2846     		mov	r0, r5
+ 1429 001a 0AB0     		add	sp, sp, #40
+ 1430              		.cfi_remember_state
+ 1431              		.cfi_def_cfa_offset 16
+ 1432              		@ sp needed
+ 1433 001c 70BD     		pop	{r4, r5, r6, pc}
+ 1434              	.LVL78:
+ 1435              	.L154:
+ 1436              		.cfi_restore_state
+ 1437              	.LBB234:
+ 1438              	.LBB233:
+  71:../../common/sd/ro_sd.c **** }
+ 1439              		.loc 1 71 31 discriminator 1 view .LVU370
+ 1440 001e 154B     		ldr	r3, .L168+4
+ 1441 0020 1D78     		ldrb	r5, [r3]	@ zero_extendqisi2
+ 1442              	.LBE233:
+ 1443              	.LBE234:
+ 118:../../common/sd/ro_sd.c ****     switch(cmd) {
+ 1444              		.loc 1 118 7 discriminator 1 view .LVU371
+ 1445 0022 15F00105 		ands	r5, r5, #1
+ 1446 0026 F6D1     		bne	.L156
+ 119:../../common/sd/ro_sd.c ****     switch(cmd) {
+ 1447              		.loc 1 119 5 is_stmt 1 view .LVU372
+ 1448 0028 032C     		cmp	r4, #3
+ 1449 002a 1ED8     		bhi	.L153
+ 1450 002c 01A3     		adr	r3, .L158
+ 1451 002e 53F824F0 		ldr	pc, [r3, r4, lsl #2]
+ 1452 0032 00BF     		.p2align 2
+ 1453              	.L158:
+ 1454 0034 19000000 		.word	.L155+1
+ 1455 0038 5B000000 		.word	.L160+1
+ 1456 003c 4F000000 		.word	.L159+1
+ 1457 0040 45000000 		.word	.L157+1
+ 1458              		.p2align 1
+ 1459              	.L157:
+ 122:../../common/sd/ro_sd.c ****     case GET_SECTOR_COUNT: {
+ 1460              		.loc 1 122 26 view .LVU373
+ 122:../../common/sd/ro_sd.c ****     case GET_SECTOR_COUNT: {
+ 1461              		.loc 1 122 40 is_stmt 0 view .LVU374
+ 1462 0044 0123     		movs	r3, #1
+ 1463              		.loc 1 131 1 view .LVU375
+ 1464 0046 2846     		mov	r0, r5
+ 122:../../common/sd/ro_sd.c ****     case GET_SECTOR_COUNT: {
+ 1465              		.loc 1 122 40 view .LVU376
+ 1466 0048 3360     		str	r3, [r6]
+ 122:../../common/sd/ro_sd.c ****     case GET_SECTOR_COUNT: {
+ 1467              		.loc 1 122 45 is_stmt 1 view .LVU377
+ 1468              		.loc 1 131 1 is_stmt 0 view .LVU378
+ 1469 004a 0AB0     		add	sp, sp, #40
+ 1470              		.cfi_remember_state
+ 1471              		.cfi_def_cfa_offset 16
+ 1472              		@ sp needed
+ 1473 004c 70BD     		pop	{r4, r5, r6, pc}
+ 1474              	.LVL79:
+ 1475              	.L159:
+ 1476              		.cfi_restore_state
+ 121:../../common/sd/ro_sd.c ****     case GET_BLOCK_SIZE: *(DWORD*)data = 1; return RES_OK;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 45
+
+
+ 1477              		.loc 1 121 27 is_stmt 1 view .LVU379
+ 121:../../common/sd/ro_sd.c ****     case GET_BLOCK_SIZE: *(DWORD*)data = 1; return RES_OK;
+ 1478              		.loc 1 121 40 is_stmt 0 view .LVU380
+ 1479 004e 4FF40073 		mov	r3, #512
+ 1480              		.loc 1 131 1 view .LVU381
+ 1481 0052 2846     		mov	r0, r5
+ 121:../../common/sd/ro_sd.c ****     case GET_BLOCK_SIZE: *(DWORD*)data = 1; return RES_OK;
+ 1482              		.loc 1 121 40 view .LVU382
+ 1483 0054 3380     		strh	r3, [r6]	@ movhi
+ 121:../../common/sd/ro_sd.c ****     case GET_BLOCK_SIZE: *(DWORD*)data = 1; return RES_OK;
+ 1484              		.loc 1 121 56 is_stmt 1 view .LVU383
+ 1485              		.loc 1 131 1 is_stmt 0 view .LVU384
+ 1486 0056 0AB0     		add	sp, sp, #40
+ 1487              		.cfi_remember_state
+ 1488              		.cfi_def_cfa_offset 16
+ 1489              		@ sp needed
+ 1490 0058 70BD     		pop	{r4, r5, r6, pc}
+ 1491              	.LVL80:
+ 1492              	.L160:
+ 1493              		.cfi_restore_state
+ 1494              	.LBB235:
+ 124:../../common/sd/ro_sd.c ****         BSP_SD_GetCardInfo(&info);
+ 1495              		.loc 1 124 9 is_stmt 1 view .LVU385
+ 125:../../common/sd/ro_sd.c ****         *(LBA_t*)data = info.LogBlockNbr;
+ 1496              		.loc 1 125 9 view .LVU386
+ 1497 005a 01A8     		add	r0, sp, #4
+ 1498 005c FFF7FEFF 		bl	BSP_SD_GetCardInfo
+ 1499              	.LVL81:
+ 126:../../common/sd/ro_sd.c ****         return RES_OK;
+ 1500              		.loc 1 126 9 view .LVU387
+ 126:../../common/sd/ro_sd.c ****         return RES_OK;
+ 1501              		.loc 1 126 23 is_stmt 0 view .LVU388
+ 1502 0060 079B     		ldr	r3, [sp, #28]
+ 1503              	.LBE235:
+ 1504              		.loc 1 131 1 view .LVU389
+ 1505 0062 2846     		mov	r0, r5
+ 1506              	.LBB236:
+ 126:../../common/sd/ro_sd.c ****         return RES_OK;
+ 1507              		.loc 1 126 23 view .LVU390
+ 1508 0064 3360     		str	r3, [r6]
+ 127:../../common/sd/ro_sd.c ****     }
+ 1509              		.loc 1 127 9 is_stmt 1 view .LVU391
+ 1510              	.LBE236:
+ 1511              		.loc 1 131 1 is_stmt 0 view .LVU392
+ 1512 0066 0AB0     		add	sp, sp, #40
+ 1513              		.cfi_remember_state
+ 1514              		.cfi_def_cfa_offset 16
+ 1515              		@ sp needed
+ 1516 0068 70BD     		pop	{r4, r5, r6, pc}
+ 1517              	.LVL82:
+ 1518              	.L153:
+ 1519              		.cfi_restore_state
+ 116:../../common/sd/ro_sd.c ****     if(drive) return RES_PARERR;
+ 1520              		.loc 1 116 54 view .LVU393
+ 1521 006a 0425     		movs	r5, #4
+ 1522 006c D4E7     		b	.L155
+ 1523              	.L169:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 46
+
+
+ 1524 006e 00BF     		.align	2
+ 1525              	.L168:
+ 1526 0070 00000000 		.word	config
+ 1527 0074 00000000 		.word	status
+ 1528              		.cfi_endproc
+ 1529              	.LFE351:
+ 1531              		.section	.bss.failed,"aw",%nobits
+ 1532              		.align	2
+ 1535              	failed:
+ 1536 0000 00000000 		.space	4
+ 1537              		.section	.bss.done,"aw",%nobits
+ 1538              		.align	2
+ 1541              	done:
+ 1542 0000 00000000 		.space	4
+ 1543              		.section	.bss.deadline,"aw",%nobits
+ 1544              		.align	2
+ 1547              	deadline:
+ 1548 0000 00000000 		.space	4
+ 1549              		.section	.data.status,"aw"
+ 1552              	status:
+ 1553 0000 05       		.byte	5
+ 1554              		.section	.bss.configured,"aw",%nobits
+ 1555              		.align	2
+ 1558              	configured:
+ 1559 0000 00000000 		.space	4
+ 1560              		.section	.bss.config,"aw",%nobits
+ 1561              		.align	2
+ 1564              	config:
+ 1565 0000 00000000 		.space	28
+ 1565      00000000 
+ 1565      00000000 
+ 1565      00000000 
+ 1565      00000000 
+ 1566              		.text
+ 1567              	.Letext0:
+ 1568              		.file 4 "../../libDaisy/Drivers/CMSIS-Device/ST/STM32H7xx/Include/stm32h750xx.h"
+ 1569              		.file 5 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1570              		.file 6 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1571              		.file 7 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/core_cm7.h"
+ 1572              		.file 8 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1573              		.file 9 "../../libDaisy/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_def.h"
+ 1574              		.file 10 "../../libDaisy/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_ll_sdmmc.h"
+ 1575              		.file 11 "../../libDaisy/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_sd.h"
+ 1576              		.file 12 "../../common/sd/fatfs/ff.h"
+ 1577              		.file 13 "../../common/sd/fatfs/diskio.h"
+ 1578              		.file 14 "../../common/sd/ro_sd.h"
+ 1579              		.file 15 "../../libDaisy/src/util/bsp_sd_diskio.h"
+ 1580              		.file 16 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1581              		.file 17 "../../libDaisy/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_cortex.h"
+ 1582              		.file 18 "../../libDaisy/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h"
+ 1583              		.file 19 "<built-in>"
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 47
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ro_sd.c
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:20     .text.BSP_SD_ReadCpltCallback:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:27     .text.BSP_SD_ReadCpltCallback:00000000 BSP_SD_ReadCpltCallback
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:44     .text.BSP_SD_ReadCpltCallback:00000008 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1541   .bss.done:00000000 done
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:49     .text.BSP_SD_ErrorCallback:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:56     .text.BSP_SD_ErrorCallback:00000000 BSP_SD_ErrorCallback
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:73     .text.BSP_SD_ErrorCallback:00000008 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1535   .bss.failed:00000000 failed
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:78     .text.ro_sd_init:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:85     .text.ro_sd_init:00000000 ro_sd_init
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:162    .text.ro_sd_init:00000050 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1558   .bss.configured:00000000 configured
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1564   .bss.config:00000000 config
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1552   .data.status:00000000 status
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:169    .text.ro_sd_restart_budget:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:176    .text.ro_sd_restart_budget:00000000 ro_sd_restart_budget
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:205    .text.ro_sd_restart_budget:00000014 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1547   .bss.deadline:00000000 deadline
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:211    .rodata.ro_sd_mount.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:215    .text.ro_sd_mount:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:222    .text.ro_sd_mount:00000000 ro_sd_mount
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:325    .text.ro_sd_mount:00000040 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:335    .text.ro_sd_unmount:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:342    .text.ro_sd_unmount:00000000 ro_sd_unmount
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:358    .text.ro_sd_unmount:0000000c $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:363    .text.ro_sd_status:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:370    .text.ro_sd_status:00000000 ro_sd_status
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:417    .text.ro_sd_status:00000018 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:423    .text.disk_status:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:430    .text.disk_status:00000000 disk_status
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:502    .text.disk_status:0000001c $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:508    .text.disk_initialize:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:515    .text.disk_initialize:00000000 disk_initialize
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:653    .text.disk_initialize:0000004c $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:660    .text.disk_read:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:667    .text.disk_read:00000000 disk_read
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1354   .text.disk_read:000001bc $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1368   .text.disk_ioctl:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1375   .text.disk_ioctl:00000000 disk_ioctl
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1454   .text.disk_ioctl:00000034 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1458   .text.disk_ioctl:00000044 $t
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1526   .text.disk_ioctl:00000070 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1532   .bss.failed:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1538   .bss.done:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1544   .bss.deadline:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1555   .bss.configured:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1561   .bss.config:00000000 $d
+
+UNDEFINED SYMBOLS
+HAL_GetTick
+f_mount
+HAL_SD_DeInit
+hsd1
+BSP_SD_Init
+HAL_NVIC_SetPriority
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 48
+
+
+BSP_SD_GetCardState
+BSP_SD_ReadBlocks_DMA
+HAL_SD_Abort
+memcpy
+BSP_SD_GetCardInfo
