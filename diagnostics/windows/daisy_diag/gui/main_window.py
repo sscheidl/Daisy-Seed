@@ -145,6 +145,7 @@ class MainWindow(QMainWindow):
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(12, 12, 6, 12)
         self.board = BoardWidget()
+        self.board.clock = self._clock
         left_layout.addWidget(self.board, 1)
         split.addWidget(left)
 
@@ -855,6 +856,8 @@ class MainWindow(QMainWindow):
             self._sync_sim_controls()
         if not s.connected and self.board.state is not None:
             self._apply_board()
+        elif self.board.flash_pending():
+            self.board.update()  # let a gate-ring flash decay even without new frames
 
     @staticmethod
     def _uncheck_all(group: QButtonGroup, buttons) -> None:

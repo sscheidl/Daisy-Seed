@@ -1,8 +1,18 @@
-# Diagnostic App 0.3.4: Control Panel in Kategorien, Review-Korrekturen
+# Diagnostic App 0.3.4/0.3.5: Control Panel in Kategorien, Review-Korrekturen
 
 Die Firmware bleibt bei 0.3.2; die DDP-Version ist unverändert. App 0.3.4 löst den
 Reviewkandidaten 0.3.3 ab und setzt die Host-/GUI-Befunde des unabhängigen
 Meilenstein-Reviews ([Auftrag](CLAUDE_MILESTONE_REVIEW.md)) um.
+
+## 0.3.5: Buchsenringe für CV und Gate (01.11.2026)
+
+Die CV-/Gate-Buchsen der Platinenansicht melden ihren Zustand wie LED-Ringe an
+Eurorack-Modulen zurück: CV-IN-Ringe laufen farblich von Rot (−1) über Bernstein
+(0) nach Grün (+1), CV-OUT-Ringe nutzen dieselbe Skala über den DAC-Code 0…4095
+(kein Ring bei Off), Gate-Ringe leuchten grün bei High und blitzen bei jeder
+gezählten steigenden Flanke kurz auf (150 ms), sodass auch kurze Trigger sichtbar
+werden. Die Skala ist der normierte Wert, keine Spannung (Skalierung ungemessen).
+Rendertest in `test_gui_design.py`; sonst nur Simulator, **NICHT GEMESSEN**.
 
 ## Oberfläche
 
