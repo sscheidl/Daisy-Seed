@@ -1,5 +1,15 @@
 # Test report
 
+## Firmware 0.4.1 snapshot queue fix, 01.11.2026
+
+Targeted host reproduction identifies snapshot bulk traffic filling the pending
+USB queue and causing status-frame drops during a 10 ms busy interval. Firmware
+0.4.1 queues at most one snapshot chunk behind the active USB transfer. The new
+256/2048-frame regression passes; main-loop and core/protocol suites pass.
+**0.4.1 hardware: NICHT GEMESSEN.** The separate incomplete snapshot measured
+on 0.4.0 after reboot remains a hardware-retest item, not a proven host-buffer
+fault or a confirmed fix. [Investigation and evidence](SCOPE_TRANSPORT_0.4.1.md).
+
 ## Native CV quick probe and control-panel candidate, 31.10.2026
 
 RAMP/SAW CV-1 loopback on firmware 0.3.2: RAMP functional criterion passed;

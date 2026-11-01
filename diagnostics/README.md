@@ -16,7 +16,17 @@ acknowledgement ([profile](docs/NEBULAE_PROFILE.md)). The card-reader sources mo
 unchanged to `common/sd/reader/`; both diagnostic images rebuild byte-identical.
 Simulation-tested only (`--sim-nebulae`), **NICHT GEMESSEN** on hardware.
 
-## Firmware 0.4.0 and app 0.4.0 (audio, not yet flashed)
+## Firmware 0.4.1: snapshot transmit-queue fix
+
+Firmware **0.4.1** keeps snapshot bulk traffic from filling the pending USB
+queue and crowding out status frames during short busy intervals. The new
+regression test reproduces the 0.4.0 loss and passes with the fix. App 0.4.0
+remains compatible; no protocol or GUI change. **0.4.1 hardware validation is
+NICHT GEMESSEN.** The separate incomplete snapshot observed once on 0.4.0
+still needs a hardware retest; its cause is not established.
+[Investigation and targeted validation](docs/SCOPE_TRANSPORT_0.4.1.md).
+
+## Firmware 0.4.0 and app 0.4.0 (audio)
 
 Firmware **0.4.0** adds the audio extension: a capped test tone on AUDIO OUT, peak
 meters for inputs and outputs, an input snapshot (oscilloscope) and the LED mode
@@ -24,8 +34,11 @@ POTDIM (VR1 dims all LEDs), plus two review fixes (outputs silenced before block
 SD access, no CMD13 after a reset abort). App **0.4.0** adds the **Audio** tab
 (meters, tone generator, snapshot with frequency/peak measurement) and a rolling
 CV/gate trace. [Firmware notes](docs/FIRMWARE.md), [protocol](protocol/PROTOCOL.md),
-[control panel](docs/CONTROL_PANEL_0.3.4.md). **The 0.4.0 image is built but not
-flashed: all audio behaviour is simulator-tested only, NICHT GEMESSEN.**
+[control panel](docs/CONTROL_PANEL_0.3.4.md). **GEMESSEN, 01.11.2026:** 1 kHz
+stereo loopback, separate L/R routing and complete input snapshots; a repeated
+run after reboot also exposed an incomplete snapshot. Status-stream losses
+were observed during snapshot transfers. See the [investigation](docs/SCOPE_TRANSPORT_0.4.1.md)
+for evidence, the queue fix and the remaining acceptance boundary.
 
 App 0.3.4/0.3.5 reorganised the control panel into categories (USB, Buttons, Pots,
 CV / Gate, SD card, Log; plus Simulation), made **Buttons → LEDs** the default and
