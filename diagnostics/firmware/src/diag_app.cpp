@@ -35,11 +35,12 @@ void TxQueue::Discard(Stats& stats) {
     }
 }
 
-App::App(Board& board, UsbSink& usb, const char* bootloader_name, uint32_t now_ms)
+App::App(Board& board, UsbSink& usb, const char* bootloader_name, uint32_t now_ms,
+         const Identity* identity)
     : board_(board), usb_(usb), start_ms_(now_ms), last_state_ms_(now_ms),
       last_sys_ms_(now_ms), last_led_ms_(now_ms - kLedMinIntervalMs), last_stat_ms_(now_ms),
       last_audio_ms_(now_ms) {
-    session_.Init(bootloader_name);
+    session_.Init(bootloader_name, identity);
     last_ticks_ = board_.ControlTicks();
 }
 
@@ -108,7 +109,15 @@ void App::Step(uint32_t now) {
             continue;
         char reply_buf[ddp::kMaxBody + 1];
         ddp::Writer reply(reply_buf, sizeof(reply_buf));
-        const uint32_t r = session_.Handle(parser_.Body(), now, reply);
+        uint32_t r = kRequestNone;
+        bool handled = false;
+        if(hook_) {
+            char type[13];
+            ddp::MessageType(parser_.Body(), type, sizeof(type));
+            handled = hook_->Handle(parser_.Body(), type, session_.HostActive(now), now, reply, r);
+        }
+        if(!handled)
+            r = session_.Handle(parser_.Body(), now, reply);
         if(r & (kRequestReaderShare | kRequestReaderReturn | kRequestReaderStatus)) {
             // Execute in wire order, not after coalescing command bits. This also
             // prevents a queued SDTEST from running after a SHARE in the same RX batch.

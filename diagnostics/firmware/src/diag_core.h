@@ -172,11 +172,24 @@ enum Request : uint32_t {
     kRequestScope = 1u << 10,      // SCOPE: capture an audio snapshot (App answers)
 };
 
+// Identity a hosting firmware reports in HELLO instead of the diagnostics defaults
+// (the program manager embeds this layer). `extra_caps` is appended to the caps list
+// and must start with a comma, e.g. ",pm,pmsd". All pointers must stay valid.
+struct Identity {
+    const char* app = kAppName;
+    const char* fw = kFirmwareVersion;
+    const char* boot = "BOOT_SRAM";
+    const char* extra_caps = "";
+};
+
 // Command handling and host liveness. Streaming starts with HELLO and stops after
 // BYE or kHostTimeoutMs without a valid frame; only a new HELLO restarts it.
 class Session {
   public:
-    void Init(const char* bootloader_name) { bootloader_ = bootloader_name; }
+    void Init(const char* bootloader_name, const Identity* identity = nullptr) {
+        bootloader_ = bootloader_name;
+        identity_ = identity;
+    }
     // Handles one valid frame body. Writes a reply body into `reply` (left empty
     // when there is nothing to answer) and returns a mask of Request flags.
     uint32_t Handle(const char* body, uint32_t now_ms, ddp::Writer& reply);
@@ -194,6 +207,7 @@ class Session {
   private:
     void Expire(uint32_t now_ms);
     const char* bootloader_ = "unknown";
+    const Identity* identity_ = nullptr;
     bool streaming_ = false;
     uint32_t last_rx_ms_ = 0;
 };
