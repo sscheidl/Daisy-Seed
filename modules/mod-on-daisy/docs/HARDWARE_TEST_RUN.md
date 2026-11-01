@@ -1,126 +1,124 @@
-# Laufzettel Hardwaretest — Mod on Daisy, Toy Piano v0.3, Physical Modeling, Editoren
+# Hardware test run sheet — Mod on Daisy, Toy Piano v0.3, Physical Modeling, editors
 
-**Stand:** 24. Oktober 2026 (Korrekturauftrag: E7b in zwei Reihenfolgen, E11–E17
-neu). Ausgeführt wird lokal unter Windows am Seed3 Desktop Kit.
-Die Firmware-Images und Werkzeuge sind gebaut und auf dem Host getestet. Am Gerät
-wurde noch nichts gemessen.
+**As of:** 24 October 2026 (correction request: E7b in two orders, E11–E17
+new). Executed locally under Windows on the Seed3 Desktop Kit.
+The firmware images and tools are built and tested on the host. Nothing has been
+measured on the device yet.
 
-Dieser Laufzettel fasst die einzelnen Checklisten zu einer Reihenfolge zusammen. Er
-liegt auch als `README.md` im Hardwaretest-Paket.
+This run sheet combines the individual checklists into one sequence. It is also
+included as `README.md` in the hardware test package.
 
-**Rollen:**
-* **[A] Agent** (Codex oder Claude Code lokal): Kommandozeile, USB-MIDI, Skripte,
-  Ergebnisse eintragen.
-* **[M] Mensch**: hören, Tasten und Regler, Keyboard, Kabel, BOOT/RESET. Bei
-  Hörtests beschreibt der Mensch das Ergebnis, der Agent trägt es ein.
+**Roles:**
+* **[A] Agent** (Codex or Claude Code locally): command line, USB MIDI, scripts,
+  entering results.
+* **[M] Human**: listening, keys and knobs, keyboard, cables, BOOT/RESET. In listening
+  tests the human describes the result and the agent enters it.
 
-`P` steht für `python modules/mod-on-daisy/tools/mod_probe.py`, im Paket für
+`P` stands for `python modules/mod-on-daisy/tools/mod_probe.py`, in the package for
 `python mod_probe.py`.
 
-## 0. Vorbereitung
+## 0. Preparation
 
-| Nr. | Rolle | Schritt |
+| No. | Role | Step |
 | --- | --- | --- |
-| V1 | A | Repo aktualisieren und das Paket bauen: `python scripts/hardware_test_package.py`. Ergebnis in `build/hardware-test/`. Ohne lokale ARM-Toolchain die CI-Artefakte nehmen (Actions → Firmware bzw. Editor) |
-| V2 | A | JUCE-Editor: `ModOnDaisyEditor.exe` aus Actions → Editor holen oder selbst bauen ([Editor-README](../../../editors/mod-on-daisy/README.md)). Mit `--editor-exe <Pfad>` kommt er ins Paket |
-| V3 | A | `pip install mido python-rtmidi`, dann `P selftest` (ohne Gerät): `PASS` |
-| V4 | A | Selbsttest des JUCE-Editors unter Windows, Ergebnis in `out/selftest.txt` (endet mit `PASS`). Mit dem CI-Artefakt im entpackten Ordner: `.\ModOnDaisyEditor.exe --selftest out`. Mit eigenem Build vom Repo-Wurzelverzeichnis: `& "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor.exe" --selftest out` |
-| V5 | M | Studio One schließen oder dort „Daisy Seed External“ deaktivieren. Windows gibt den Port nur einer Anwendung |
-| V6 | M | Flashen nach [docs/FLASHING.md](../../../docs/FLASHING.md): J7, RESET, dann BOOT im 2-s-Fenster, Web Programmer oder `make PROJECT=<id> program-dfu`. Den externen Bootloader v6.x nur installieren, wenn er fehlt |
+| V1 | A | Update the repo and build the package: `python scripts/hardware_test_package.py`. Result in `build/hardware-test/`. Without a local ARM toolchain, use the CI artifacts (Actions → Firmware or Editor) |
+| V2 | A | JUCE editor: get `ModOnDaisyEditor.exe` from Actions → Editor or build it yourself ([editor README](../../../editors/mod-on-daisy/README.md)). With `--editor-exe <path>` it is added to the package |
+| V3 | A | `pip install mido python-rtmidi`, then `P selftest` (without device): `PASS` |
+| V4 | A | Self-test of the JUCE editor under Windows, result in `out/selftest.txt` (ends with `PASS`). With the CI artifact in the unpacked folder: `.\ModOnDaisyEditor.exe --selftest out`. With your own build from the repo root: `& "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor.exe" --selftest out` |
+| V5 | M | Close Studio One or disable "Daisy Seed External" there. Windows gives the port to only one application |
+| V6 | M | Flash according to [docs/FLASHING.md](../../../docs/FLASHING.md): J7, RESET, then BOOT within the 2 s window, Web Programmer or `make PROJECT=<id> program-dfu`. Install the external bootloader v6.x only if it is missing |
 
-Agenten flashen nur, wenn der Mensch den Bootloader-Modus hergestellt und das Flashen
-freigegeben hat.
+Agents flash only after the human has put the kit into bootloader mode and approved
+the flashing.
 
-## 1. Messfirmware ModBench (Grundlage)
+## 1. Measurement firmware ModBench (basis)
 
-Image `ModBench-v0.1.0.bin`, Anleitung in [bench/README.md](../bench/README.md), Plan in
-[TEST_PLAN_PHASE2.md](TEST_PLAN_PHASE2.md) § 3–4. Ergebnisse in
+Image `ModBench-v0.1.0.bin`, instructions in [bench/README.md](../bench/README.md), plan in
+[TEST_PLAN_PHASE2.md](TEST_PLAN_PHASE2.md) § 3–4. Results in
 [VALIDATION.md](VALIDATION.md) § 3.
 
-| Nr. | Rolle | Schritt | Erwartet |
+| No. | Role | Step | Expected |
 | --- | --- | --- | --- |
-| H1 | A | `P ports` | „Daisy Seed External“ als Ein- und Ausgang |
-| H2/H3 | A | `P identify`, dann `P lengths` | `mod-bench`; `frame lengths OK` in beide Richtungen |
-| H4 | M+A | Studio One mit aktivem Port öffnen, dann `P identify` | Ergebnis notieren: lässt sich der Port gleichzeitig öffnen? |
-| S0–S8 | A | `P bench --seconds 60 --csv s48.csv` | Tabelle § 3.1: Zyklen, Last, Überläufe 0, MIDI verloren 0 |
-| S6 | M+A | `ModBench-v0.1.0-max64.bin` flashen, `P bench --seconds 60 --csv s48-max64.csv` | Szenario S6 gültig, keine Überläufe |
-| B256 | M+A | `ModBench-v0.1.0-block256.bin` flashen, `P bench --seconds 60 --csv s256.csv` | zweite Tabelle für Block 256 |
-| H5 | A | `P monitor --seconds 20` mit offenen CV-Buchsen, dann mit 0 V | Mittelwert und Rauschen der CV-Rohwerte |
-| H6 | M+A | CC1, Channel AT und Poly AT vom Keyboard senden, dabei `P monitor` | Werte sichtbar; Poly AT der richtigen Note zugeordnet |
-| H7 | M | Hörtest: LFO 0,02–20 Hz, Modwheel-Sweep, Poly AT | keine Zipper-Geräusche bei Block 48 |
-| H8 | M+A | LFO auf MIDI-Clock (Studio One) und auf Gate 1/2 mit Impulsen von 1, 5 und 20 ms | im Tempo; Start auf Taktanfang; Impulse gezählt |
+| H1 | A | `P ports` | "Daisy Seed External" as input and output |
+| H2/H3 | A | `P identify`, then `P lengths` | `mod-bench`; `frame lengths OK` in both directions |
+| H4 | M+A | Open Studio One with the port active, then `P identify` | Note the result: can the port be opened at the same time? |
+| S0–S8 | A | `P bench --seconds 60 --csv s48.csv` | Table § 3.1: cycles, load, overruns 0, MIDI lost 0 |
+| S6 | M+A | Flash `ModBench-v0.1.0-max64.bin`, `P bench --seconds 60 --csv s48-max64.csv` | Scenario S6 valid, no overruns |
+| B256 | M+A | Flash `ModBench-v0.1.0-block256.bin`, `P bench --seconds 60 --csv s256.csv` | second table for block 256 |
+| H5 | A | `P monitor --seconds 20` with open CV jacks, then with 0 V | mean value and noise of the CV raw values |
+| H6 | M+A | Send CC1, Channel AT and Poly AT from the keyboard, with `P monitor` running | values visible; Poly AT assigned to the correct note |
+| H7 | M | Listening test: LFO 0.02–20 Hz, modwheel sweep, Poly AT | no zipper noise at block 48 |
+| H8 | M+A | LFO on MIDI clock (Studio One) and on gate 1/2 with pulses of 1, 5 and 20 ms | in tempo; start on the start of the bar; pulses counted |
 
-**Abbruch:** Scheitert `P lengths` (H2/H3), dann hier anhalten. Alles Weitere hängt
-davon ab, dass SysEx unter Windows sauber ankommt. Bitte die Konsolenausgabe
-festhalten.
+**Abort:** if `P lengths` fails (H2/H3), stop here. Everything else depends on SysEx
+arriving cleanly under Windows. Please record the console output.
 
 ## 2. Toy Piano v0.3
 
-Image `ToyPiano-v0.3.bin`, Checkliste **T1–T15** in
+Image `ToyPiano-v0.3.bin`, checklist **T1–T15** in
 [instruments/toy-piano/docs/HARDWARE_TEST_V0.3.md](../../../instruments/toy-piano/docs/HARDWARE_TEST_V0.3.md).
 
-* [M]: T1 (ohne PC wie v0.2), T5–T13 (hören, Tasten, Keyboard, CV, Clock, Gate), T15
-  (aus- und wieder einschalten).
-* [A]: T2–T4, T14 und die `P`-Befehle in T5–T13.
-* Ergebnisse in die Tabelle der Checkliste und in
+* [M]: T1 (without PC, like v0.2), T5–T13 (listening, keys, keyboard, CV, clock, gate), T15
+  (power off and on again).
+* [A]: T2–T4, T14 and the `P` commands in T5–T13.
+* Results into the table of the checklist and into
   [instruments/toy-piano/docs/VALIDATION.md](../../../instruments/toy-piano/docs/VALIDATION.md).
-* **Release:** Ein Entwurf v0.3 liegt unter GitHub → Releases. Veröffentlichen erst, wenn
-  T1–T15 bestanden sind. Das entscheidet der Mensch.
+* **Release:** a draft v0.3 is under GitHub → Releases. Publish only when T1–T15 have
+  passed. The human decides.
 
-## 3. Physical Modeling mit Matrix
+## 3. Physical Modeling with matrix
 
-Image `PhysicalModelingMod-v0.1.0.bin`, Checkliste **R1–R10** in
+Image `PhysicalModelingMod-v0.1.0.bin`, checklist **R1–R10** in
 [instruments/physical-modeling/docs/MODULATION.md](../../../instruments/physical-modeling/docs/MODULATION.md).
-Zum Vergleich bei R1 kurz `PhysicalModeling-v0.1.0.bin` flashen. Diese reguläre
-Fassung ist bytegleich zum bisherigen Stand.
+For comparison in R1, briefly flash `PhysicalModeling-v0.1.0.bin`. This regular
+build is byte-identical to the previous state.
 
-* [A]: R2, R3, R9 (`cpu_probe.py`) und die `P`-Befehle.
-* [M]: R1 und R4–R8, R10 (hören, Poly-AT-Keyboard, Clock).
+* [A]: R2, R3, R9 (`cpu_probe.py`) and the `P` commands.
+* [M]: R1 and R4–R8, R10 (listening, poly AT keyboard, clock).
 
-## 4. Editoren am Gerät
+## 4. Editors on the device
 
-Mit `ToyPiano-v0.3.bin`, für E9 mit `PhysicalModelingMod-v0.1.0.bin`. Vorher `P` und
-andere MIDI-Programme schließen, weil der Port nur einer Anwendung gehört.
+With `ToyPiano-v0.3.bin`, for E9 with `PhysicalModelingMod-v0.1.0.bin`. Close `P` and
+other MIDI programs beforehand, because the port belongs to only one application.
 
-| Nr. | Rolle | Schritt | Erwartet |
+| No. | Role | Step | Expected |
 | --- | --- | --- | --- |
-| E1 | M | `ModOnDaisyEditor.exe` starten, Daisy-Port wählen, **Verbinden** | Status „toy-piano 0.3 · ID 0“; Spalten wie T3; Poly AT unter Attack/Decay und Spalten 6–8 schraffiert |
-| E2 | M | Note mit langem Decay halten, LFO 1 → Pitch auf +30 ziehen | Vibrato hörbar; gelber Punkt verschwindet; unten „Gerät bestätigt (Patch-CRC …)“ |
-| E3 | M | Live-Anzeige beobachten, Modwheel und Aftertouch bewegen | LFO-Balken laufen; Modwheel, Channel AT und Poly AT schlagen aus; der Pitch-Balken unter der Spalte zeigt den Offset |
-| E4 | M | LFO 1: Form S&H, Rate verstellen; Random: geglättet | hörbar, ohne Knacken |
-| E5 | M | 8 Verbindungen anlegen, eine 9. versuchen | 9. bleibt aus (gestrichelt), Meldung „Höchstens 8 …“ |
-| E6 | M | Datei speichern, Matrix leeren, Datei öffnen | Klang wie vor dem Leeren; dieselbe Datei lädt auch im Browser-Editor |
-| E7 | M | Studio One mit aktivem Daisy-Port öffnen, dann im Editor **Verbinden** | klare Meldung „… belegt (z. B. Studio One) …“, kein Absturz |
-| E8 | M | Während der Verbindung das USB-Kabel an J7 ziehen, wieder stecken, **Verbinden** | „Gerät getrennt“, offline weiter bearbeitbar; danach Zustand vom Gerät geladen |
-| E9 | M | Physical Modeling: verbinden, Poly AT → Brightness +70, Akkord halten, eine Taste drücken | Poly AT × Excitation schraffiert; nur die gedrückte Stimme ändert sich |
-| E9b | M | Physical Modeling (`0.1.0-mod4`), im Editor **„Daisy Seed External“** gewählt (kein Simulator): Potis drehen, Modwheel → Level −100 | Spaltenköpfe zeigen einen weißen Strich am Grundwert, der dem Poti folgt, und darüber den aktuellen Wert (z. B. „63 %“, Pitch in Halbtönen); bei Level steht er fest bei 0,5 („+0 %“). Spalte 7 heißt „Level“, das Modwheel blendet bis Stille aus |
-| E7b | M | Mehrere Programme pro Port prüfen (Windows MIDI Services), siehe [Editor-README](../../../editors/mod-on-daisy/README.md#studio-one-und-der-editor-gleichzeitig). **Beide Reihenfolgen**: (a) erst Studio One, dann Editor; (b) erst Editor, dann Studio One | Ergebnis je Reihenfolge notieren: gehen beide gleichzeitig? Bei (b): bekommt Studio One Noten, bleibt der Editor grün? |
-| E11 | M | Physical Modeling, LFO 1 → Structure +50, LFO 1 frei auf 20 Hz, dann MIDI-Clock 150 BPM 1/32 aus Studio One | LFO-1-Balken zeigt ein breites Band (nicht einen stehenden Wert); Spaltenkopf Structure zeigt den Bereich um den Grundwert, rote Enden, wenn er an 0 oder 1 anstößt. Clock stoppen: Zeile „Takt“ meldet „Kein MIDI-Clock – LFO steht“, das Band schrumpft |
-| E12 | M | Potis Structure auf ca. 10 %, 50 %, 90 %, jeweils mit LFO ±50 | Bereich ungefähr 0…0,6 / 0…1 / 0,4…1, begrenzte Enden rot; Klang passt zur Anzeige |
-| E13 | M | Keyboard nur mit Channel AT, dann nur mit Poly AT; bei Poly AT zwei Tasten halten und nur auf die **erste** drücken; loslassen | Anzeige „Aftertouch · Kanal“ bzw. „Poly · Note“, Punkt an der passenden Zeile; bei der ersten von zwei Tasten zeigt sie deren Druck; nach dem Loslassen 0. Klangwirkung wie bisher |
-| E14 | M | LFO 2 langsam (0,3 Hz) → nichts; LFO 1 → Pitch +20, „FM ← L2“ auf +60 | LFO 1 wird periodisch schneller und langsamer (hörbar am Vibrato). Bei LFO 1 auf MIDI-Clock ist der FM-Regler gesperrt |
-| E15 | M | Datei `legacy-reverb.modpatch` (aus `editors/mod-on-daisy/web/tests/`) im verbundenen Editor öffnen | Frage „Patch passt nicht genau …“ nennt „Reverb → Level“; „Abbrechen“ ändert nichts; „Ohne betroffene laden“ lässt Modwheel → Level ausgeschaltet |
-| E16 | M | Studio One belegt den Port, dann im Editor **Verbinden**; danach Studio One schließen und erneut **Verbinden** (beide Editoren) | Erster Versuch: klare Meldung, Port wird freigegeben; zweiter Versuch verbindet ohne Neustart des Editors |
-| E17 | M | Verbunden, dann in Studio One den Daisy-Eingang aktivieren (falls möglich) oder Kabel ziehen | Status wird nach ca. 1,5 s gelb „keine Live-Daten“, nach 5 s rot „keine Antwort“, eine Meldung im Log; nach Wiederherstellung grün und „Zustand wird neu geladen“ |
-| E18 | M | Physical Modeling (`0.1.0-mod4`): SW17/SW18 durch alle sechs Stellungen, dann CC28 aus Studio One oder vom Keyboard | Oben neben dem Status steht „Modell: …“ passend zur Schalterstellung (Tooltip: Bank/SW18); nach CC28 „… (MIDI)“. Beide Editoren gleich |
-| E19 | M | Toy Piano v0.3 verbinden | Keine Modell-Anzeige; Spaltenköpfe zeigen weiter den Hub (Toy Piano meldet keine Grundwerte) |
-| E10 | M | `editor/ModOnDaisyEditor.html` in Chrome/Edge, SysEx erlauben, verbinden, eine Zelle ändern | Bestätigung mit Patch-CRC wie im JUCE-Editor |
-| P1 | M | VST3: `Mod on Daisy.vst3` nach `C:\Program Files\Common Files\VST3\` kopieren, Studio One neu scannen, „Mod on Daisy“ als Effekt auf eine Spur legen (Kit mit mod4 an J7, Daisy in Studio One aktiv) | Plugin erscheint unter Daisy-Seed; ohne das Fenster zu öffnen verbindet es sich (Fenster öffnen: Status grün, Modell angezeigt); Ton der Spur unverändert |
-| P2 | M | Im Plugin LFO 1 → Pitch +20 setzen, Fenster schließen, Noten spielen | Vibrato hörbar; Fenster wieder öffnen: alles wie zuvor, Status grün, Live-Anzeige läuft |
-| P3 | M | Song speichern, Studio One schließen, Kit aus- und einschalten (leere Matrix), Studio One und Song öffnen | Plugin verbindet sich und sendet den Song-Patch: Vibrato wieder da, Raster zeigt LFO 1 → Pitch +20 |
-| P4 | M | Im Plugin „Trennen“, dann Kit abziehen und wieder anstecken | Bleibt getrennt bis „Verbinden“; danach normal |
-| P5 | M | Standalone-Editor zusätzlich zum Plugin öffnen und verbinden | Beide grün; eine Änderung in einem erscheint im anderen nach „Vom Gerät laden“ |
+| E1 | M | Start `ModOnDaisyEditor.exe`, select the Daisy port, **Connect** | Status "toy-piano 0.3 · ID 0"; columns as in T3; Poly AT under Attack/Decay and columns 6–8 hatched |
+| E2 | M | Hold a note with long decay, drag LFO 1 → Pitch to +30 | vibrato audible; yellow dot disappears; at the bottom "Device confirmed (patch CRC …)" |
+| E3 | M | Watch the live display, move modwheel and aftertouch | LFO bars move; Modwheel, Channel AT and Poly AT deflect; the pitch bar under the column shows the offset |
+| E4 | M | LFO 1: shape S&H, change the rate; Random: smooth | audible, without clicks |
+| E5 | M | Create 8 connections, try a 9th | the 9th stays off (dashed), message "At most 8 …" |
+| E6 | M | Save file, Clear matrix, Open file | sound as before clearing; the same file also loads in the browser editor |
+| E7 | M | Open Studio One with the Daisy port active, then **Connect** in the editor | clear message "… in use (e.g. Studio One) …", no crash |
+| E8 | M | While connected, pull the USB cable at J7, plug it back in, **Connect** | "Device disconnected", still editable offline; afterwards state loaded from the device |
+| E9 | M | Physical Modeling: connect, Poly AT → Brightness +70, hold a chord, press one key | Poly AT × Excitation hatched; only the pressed voice changes |
+| E9b | M | Physical Modeling (`0.1.0-mod4`), **"Daisy Seed External"** selected in the editor (no simulator): turn the pots, Modwheel → Level −100 | Column headers show a white line at the base value that follows the pot, and above it the current value (e.g. "63 %", Pitch in semitones); for Level it stays fixed at 0.5 ("+0 %"). Column 7 is called "Level", the modwheel fades out to silence |
+| E7b | M | Check several programs per port (Windows MIDI Services), see [editor README](../../../editors/mod-on-daisy/README.md#studio-one-und-der-editor-gleichzeitig). **Both orders**: (a) Studio One first, then the editor; (b) the editor first, then Studio One | Note the result for each order: do both work at the same time? For (b): does Studio One get notes, does the editor stay green? |
+| E11 | M | Physical Modeling, LFO 1 → Structure +50, LFO 1 free at 20 Hz, then MIDI clock 150 BPM 1/32 from Studio One | LFO 1 bar shows a wide band (not a stationary value); column header Structure shows the range around the base value, red ends when it hits 0 or 1. Stop the clock: the "Clock" row reports "No MIDI clock – LFO stopped", the band shrinks |
+| E12 | M | Structure pots at approx. 10 %, 50 %, 90 %, each with LFO ±50 | range roughly 0…0.6 / 0…1 / 0.4…1, clamped ends red; sound matches the display |
+| E13 | M | Keyboard with Channel AT only, then with Poly AT only; with Poly AT hold two keys and press only on the **first**; release | Display "Aftertouch · Channel" or "Poly · Note", dot at the matching row; for the first of two keys it shows that key's pressure; 0 after release. Sound effect as before |
+| E14 | M | LFO 2 slow (0.3 Hz) → nothing; LFO 1 → Pitch +20, "FM ← L2" at +60 | LFO 1 periodically gets faster and slower (audible in the vibrato). With LFO 1 on MIDI clock the FM control is locked |
+| E15 | M | Open the file `legacy-reverb.modpatch` (from `editors/mod-on-daisy/web/tests/`) in the connected editor | Question "Patch does not exactly match …" names "Reverb → Level"; "Cancel" changes nothing; "Load without affected" leaves Modwheel → Level switched off |
+| E16 | M | Studio One holds the port, then **Connect** in the editor; then close Studio One and **Connect** again (both editors) | First attempt: clear message, port is released; second attempt connects without restarting the editor |
+| E17 | M | Connected, then enable the Daisy input in Studio One (if possible) or pull the cable | After approx. 1.5 s the status turns yellow "no live data", after 5 s red "no reply", one message in the log; after recovery green and "reloading state" |
+| E18 | M | Physical Modeling (`0.1.0-mod4`): SW17/SW18 through all six positions, then CC28 from Studio One or from the keyboard | At the top next to the status, "Model: …" matching the switch position (tooltip: bank/SW18); after CC28 "… (MIDI)". Both editors the same |
+| E19 | M | Connect Toy Piano v0.3 | No model display; column headers keep showing the excursion (Toy Piano reports no base values) |
+| E10 | M | `editor/ModOnDaisyEditor.html` in Chrome/Edge, allow SysEx, connect, change a cell | Confirmation with patch CRC as in the JUCE editor |
+| P1 | M | VST3: copy `Mod on Daisy.vst3` to `C:\Program Files\Common Files\VST3\`, rescan in Studio One, put "Mod on Daisy" as an effect on a track (kit with mod4 on J7, Daisy active in Studio One) | Plug-in appears under Daisy-Seed; it connects without opening the window (open the window: status green, model shown); sound of the track unchanged |
+| P2 | M | In the plug-in set LFO 1 → Pitch +20, close the window, play notes | vibrato audible; reopen the window: everything as before, status green, live display running |
+| P3 | M | Save the song, close Studio One, power the kit off and on (empty matrix), open Studio One and the song | Plug-in connects and sends the song patch: vibrato back, grid shows LFO 1 → Pitch +20 |
+| P4 | M | In the plug-in "Disconnect", then unplug the kit and plug it back in | Stays disconnected until "Connect"; normal afterwards |
+| P5 | M | Open and connect the standalone editor in addition to the plug-in | Both green; a change in one appears in the other after "Load from device" |
 
-Ergebnisse in [VALIDATION.md](VALIDATION.md) § 1b (JUCE-Editor) bzw. § 1a
-(Browser-Editor) unter einem neuen Punkt „Am Gerät“.
+Results into [VALIDATION.md](VALIDATION.md) § 1b (JUCE editor) or § 1a
+(browser editor) under a new item "On the device".
 
-## 5. Ergebnisse festhalten
+## 5. Recording results
 
-* Nur eintragen, was beobachtet oder gemessen wurde. Jede Zeile kennzeichnen:
-  `GEMESSEN` mit Datum oder `NICHT GEMESSEN`.
-* Konsolenausgaben und CSV-Dateien (`s48.csv`, `s256.csv`, …) gehören in den Bericht
-  oder als Anhang in den PR.
-* Bei einem Fehler zuerst die genaue Ausgabe und die Schritte festhalten, dann im
-  selben Branch beheben. Dabei gilt: Host-Tests und CI grün, bevor es wieder ans Gerät
-  geht.
-* Ergebnisse auf einem eigenen Branch committen und per PR zusammenführen.
+* Enter only what was observed or measured. Mark every line:
+  `MEASURED` with date or `NOT MEASURED`.
+* Console outputs and CSV files (`s48.csv`, `s256.csv`, …) belong in the report
+  or as an attachment in the PR.
+* On a failure, first record the exact output and the steps, then fix it in the same
+  branch. The rule is: host tests and CI green before going back to the device.
+* Commit results on a separate branch and merge them via PR.
