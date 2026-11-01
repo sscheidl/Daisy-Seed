@@ -380,6 +380,10 @@ class SelfTest {
         SELFTEST_CHECK(e_.GetSqPanel().isVisible() && e_.GetSqPanel().Streichwurst());
         SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("registration") != nullptr); // page "Strings"
         SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("solo_tone") == nullptr);
+        e_.GetSqPanel().ReadCounters(); // all counters readable, incl. callback peak and stack
+        e_.Step(20);
+        e_.RefreshNow();
+        SELFTEST_CHECK(s.Stats().size() >= 17 && e_.GetSqPanel().CounterLines() == int(s.Stats().size()));
         Shot("streichwurst-strings.png");
         e_.GetSqPanel().SelectTab(3); // FX
         SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("reverb") != nullptr);
