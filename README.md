@@ -5,11 +5,17 @@ Desktop Development Kit**. Each instrument or effect has its own directory and
 documentation, and each implemented project has its own firmware build. Projects
 share the pinned libraries, toolchain, and board build configuration.
 
+**Mandatory architecture:** all new instruments/effects and substantial
+extensions follow the [modular development policy](docs/MODULAR_DEVELOPMENT_POLICY.md).
+Instrument, replaceable FX, MIDI/control, modulation and control app are separate
+versioned/tested components composed into a firmware product. Modules can be
+developed independently and reintegrated through their documented contracts.
+
 ## Projects
 
 | Project | Directory | Status |
 | --- | --- | --- |
-| [Streichwurst](instruments/streichwurst/) | `instruments/streichwurst/` | Prepared Claude work order: independent String/Solo engine and ensemble/FX for Seed3 Desktop, aiming for Streichfett fidelity; research snapshots and own reference model included; firmware not implemented |
+| [Streichwurst](instruments/streichwurst/) | `instruments/streichwurst/`, FX in `effects/streichwurst-fx/` | Prepared modular Claude work order: Stringsection/Soli instrument, separate Streichfett FX, shared MIDI/control and Mod-on-Daisy-app integration; firmware not implemented |
 | [Toy Piano v0.4](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); v0.4 has the full Mod on Daisy panel like Physical Modeling (pot positions, extended monitor, LFO cross modulation) and ignores echoed replies (Studio One input monitoring); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3/v0.4 hardware test pending |
 | [Toy Piano + Ambient Reverb v0.1.2](instruments/toy-piano/docs/AMBIENT.md) | `instruments/toy-piano/` (`AMBIENT=1`) | Separate `toy-piano-ambient` build: six reverb modes including Shimmer, Stretch, physical transpose/decay, existing matrix/editor contract and callback diagnostics; host/sanitizer/ARM checks pass, hardware untested |
 | [Toy Piano + Tape FX v0.1.0](instruments/toy-piano/docs/TAPE.md) | `instruments/toy-piano/` (`TAPE=1`) | Separate `toy-piano-tape` test build: Toy Piano into the TapeVibe port, all eight pots for the tape, bypass/character switches, existing matrix/editor contract and callback diagnostics; host/sanitizer/ARM checks pass, hardware untested |

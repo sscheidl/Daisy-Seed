@@ -1,5 +1,13 @@
 # Übergabe — lokal weiterarbeiten
 
+**Verbindliche Modularität, Nutzerentscheidung 01.11.2026:**
+[Entwicklungsrichtlinie](docs/MODULAR_DEVELOPMENT_POLICY.md) und AGENTS.md gelten
+für alle neuen Daisy-Entwicklungen und wesentlichen Erweiterungen: Instrument,
+FX, MIDI/control, Modulation, Control App und Firmwarezusammensetzung getrennt;
+kompatible FX austauschbar; Module mit eigenen Verträgen, Versionen und Tests
+unabhängig weiterentwickeln und geprüft wieder einbinden. Bestehende Architektur-
+Dokumente verweisen darauf; keine breite Bestandsmigration gestartet.
+
 **Streichwurst, Vorbereitung 01.11.2026:** Neues Instrument unter
 `instruments/streichwurst/`, eigener Branch `claude/streichwurst`,
 [Claude-Auftrag](instruments/streichwurst/docs/CLAUDE_AUFTRAG.md). Ziel Seed3
@@ -8,6 +16,12 @@ Forschung und eigenes Pythonmodell liegen beim Projekt; Originale und Rohdaten
 bleiben außerhalb Git. Firmware noch nicht implementiert, Build-ID `streichwurst`
 als `planned` registriert. Lokal eigener Worktree `.work/streichwurst/`;
 bestehender Hauptcheckout und seine fremden Änderungen bleiben erhalten.
+
+**Streichwurst-Präzisierung:** Instrument = Stringsection und Soli; separate
+FX-Komponente unter `effects/streichwurst-fx/`. Die Firmware verbindet beide
+mit gemeinsamer MIDI-/Control-Anbindung. Nutzer wählt die Erweiterung der
+bestehenden Mod-on-Daisy-App. [Modulvertrag](instruments/streichwurst/docs/MODULAR_ARCHITECTURE.md)
+und Claude-Auftrag sind entsprechend erweitert; Appanbindung ist Pflichtumfang.
 
 **Diagnose 31.10.2026:** PR #70 gemergt, Suite 0.3.2. SD-Kartenleser mit
 Dateioperationen, physischer Schreibunterbrechung und Wiederanlauf GEMESSEN;

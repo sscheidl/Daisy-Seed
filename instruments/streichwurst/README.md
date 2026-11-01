@@ -5,6 +5,13 @@ Eigenständiges String-/Solo-Instrument mit Ensemble und FX für das
 originalnahe Annäherung an den Waldorf Streichfett auf Grundlage lokaler,
 statischer Pluginforschung und selbst entwickelter DSP-Daten und Algorithmen.
 
+**Modularer Aufbau:** Instrument = Stringsection und Soli;
+[separate FX-Komponente](../../effects/streichwurst-fx/README.md) = Animate,
+Ensemble/Chorus, Phaser und Reverb. Das Firmwareprodukt verbindet beide mit
+einer gemeinsamen MIDI-/Control-Anbindung. Die bestehende Mod-on-Daisy-
+Control-App erhält Instrument- und FX-Seiten. Der
+[Modul-/Routingvertrag](docs/MODULAR_ARCHITECTURE.md) ist verbindlich.
+
 **Stand 2026-11-01:** Umgebung und Claude-Auftrag vorbereitet; Projektstatus
 `planned`. Es gibt noch keine Streichwurst-C++-Engine, Firmware oder
 Hardwareabnahme. Die beigefügten Pythonmodelle sind eigene Forschungsmodelle.
@@ -48,8 +55,10 @@ das Projekt erst nach erfolgreichem ARM-Build als `buildable`.
 
 ## Geplante Struktur
 
-* `include/streichwurst/`: portabler C++17-DSP-Kern, Parameter und Ereignisse.
-* `src/`: Desktop-Kit-Adapter und Firmwareeinstieg.
+* `include/streichwurst/`: portabler Instrument-DSP mit Stringsection und Soli.
+* `../../effects/streichwurst-fx/`: eigenständiger FX-DSP mit eigenen Tests/Version.
+* `src/`: Firmwarezusammensetzung, Desktop-Kit- und MIDI-/Control-Adapter.
+* `../../editors/mod-on-daisy/`: Erweiterung der vorhandenen Control App.
 * `tests/`: eigene DSP-/Ereignis-/Adaptertests und Referenzmodell.
 * `docs/`: Auftrag, Bedienung, Forschung, Abweichungen und Prüfberichte.
 * `build/`: ignorierte lokale Buildausgaben.

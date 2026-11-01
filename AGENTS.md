@@ -3,6 +3,23 @@
 Firmware for the Electro-Smith Seed3 Desktop Kit plus host tools. Start with
 [README.md](README.md), [HANDOVER.md](HANDOVER.md) and the project's own README.
 
+## Mandatory modular architecture
+
+The user made the modular approach mandatory for all Daisy developments on
+2026-11-01. Read [MODULAR_DEVELOPMENT_POLICY.md](docs/MODULAR_DEVELOPMENT_POLICY.md)
+for every new instrument/effect or substantial extension.
+
+* Keep instrument DSP, FX DSP, MIDI/control, modulation, the control app and
+  firmware composition separate. Use the existing shared services and app.
+* Compatible FX must be replaceable through product composition/adapters
+  (for example reverb to delay) without rewriting the instrument core.
+* Give modules independent contracts, version sources and tests, so they can
+  evolve separately and be reintegrated with targeted consumer tests.
+* Record the actual product composition and component versions in the manifest.
+  Build-time composition is the baseline; never claim an unimplemented runtime loader.
+* Preserve accepted legacy sound and migrate existing products deliberately,
+  rather than refactoring unrelated instruments as a side effect.
+
 ## GitHub Actions budget policy (mandatory)
 
 The GitHub Free Actions quota is shared across private repositories. Preserve it.

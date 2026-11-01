@@ -1,5 +1,12 @@
 # Modularer Ausbau: erste konkrete Stufe
 
+**Verbindliche Nutzerpräzisierung 01.11.2026:** Die
+[modulare Entwicklungsrichtlinie](MODULAR_DEVELOPMENT_POLICY.md) gilt generell
+für neue Daisy-Entwicklungen und wesentliche Erweiterungen. Sie fordert
+austauschbare FX, unabhängig versionierte/getestete Module und geprüfte
+Wiedereinbindung. Die folgenden Abschnitte dokumentieren die erste
+implementierte Stufe und ihren damaligen Prüfstand.
+
 Instrumente, Effekte und Control Panels werden getrennt entwickelt und beim
 Bauen zu benannten Produkten kombiniert. Diese Stufe ergänzt den vorhandenen
 Rings/Torus-/Mod-on-Daisy-Aufbau. Es gibt keinen Laufzeit-Lader, keine zweite

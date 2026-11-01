@@ -5,6 +5,7 @@ Dev Kit:
 
 | Effect | Project ID | Status |
 | --- | --- | --- |
+| [Streichwurst FX](streichwurst-fx/) | Komponente `streichwurst-fx` (geplant) | Separate Animate-/Ensemble-/Phaser-/Reverb-Stufen; zunächst im Firmwareprodukt `streichwurst`, noch keine Implementierung |
 | [Ambient Reverb](reverb/) | `reverb-fx` | Buildable original stereo reverb; hardware test pending. Clouds/Nimbus remains a separate study |
 | [Tape FX](tape-fx/) | `tape-fx` | Buildable TapeVibe/MixForge port as reusable component and stereo effect; also used by `toy-piano-tape`; hardware test pending |
 | [Drive](drive/) | `drive-fx` | v0.1.0: saturation curves shared with Tape FX, tone, auto level; buildable, hardware test pending |
@@ -16,3 +17,9 @@ Other effects will get the same structure when implemented. DSP actually shared
 by an instrument and effect can then move to `common/` instead of maintaining
 two engine copies. There is no combined effect chain. Resonators remain models and
 excitation variants within [Physical Modeling](../instruments/physical-modeling/).
+
+New developments follow the mandatory
+[modular development policy](../docs/MODULAR_DEVELOPMENT_POLICY.md): compatible
+FX are replaceable through product composition, independently versioned and
+tested. The Streichwurst routing contract also supports separate section/global
+processing stages.

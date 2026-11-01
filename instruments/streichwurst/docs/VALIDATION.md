@@ -61,3 +61,12 @@ ungetrackten Reviewdateien wurden nicht übernommen oder verändert.
 
 Es wurde kein manueller Actions-Workflow gestartet und kein Gerät angesprochen.
 Host-/Toolchainprüfungen sind keine Hardwaremessung und kein Klangvergleich.
+
+## Modulare Präzisierung am 01.11.2026
+
+[Modulvertrag](MODULAR_ARCHITECTURE.md) und Claude-Auftrag ergänzt: Instrument
+Stringsection/Soli, separate FX, gemeinsamer MIDI-/Control-Adapter und Erweiterung
+der vom Nutzer gewählten Mod-on-Daisy-App. Noch reine Dokument-/Strukturänderung;
+die oben berichteten Softwaretests wurden dafür nicht erneut ausgeführt.
+Link-, UTF-8- und Whitespaceprüfung für die geänderten Übergabedateien.
+Noch keine Implementierung der neuen Schnittstellen oder Appseiten.

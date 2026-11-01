@@ -1,4 +1,4 @@
-# Arbeitsauftrag an Claude: Streichwurst auf Seed3 Desktop
+# Arbeitsauftrag an Claude: modulares Streichwurst auf Seed3 Desktop
 
 ## Ziel und Autorisierung
 
@@ -8,6 +8,13 @@ Zielhardware ist das **Seed3 Desktop Development Kit**. Bedienung am Waldorf
 Streichfett orientiert, Klang möglichst originalgetreu. Eigenständiger Code,
 eigene mathematisch erzeugte Daten; kein Herstellerport.
 
+**Verbindliche Nutzerpräzisierung:** Modular entwickeln. Das Instrument umfasst
+Stringsection und Soli; die FX-Sektion ist ein separater Baustein. Das
+Firmwareprodukt führt beide mit der MIDI-/Control-Engine zusammen. Die
+bestehende **Mod-on-Daisy-Control-App** wird für dieses Produkt erweitert,
+einschließlich ihrer gemeinsamen JUCE-/VST3- und Browserpfade. Maßgeblicher
+[Modul-, Routing- und Appvertrag](MODULAR_ARCHITECTURE.md).
+
 Dieser Auftrag erlaubt Implementierung, gezielte lokale Softwaretests und
 lokale ARM-Builds. Stringsektion und Ensemble bilden den ersten vollständigen
 Signalpfad; danach Solo und weitere FX ergänzen. Führe die Phasen innerhalb
@@ -15,16 +22,24 @@ dieses Umfangs ohne wiederholte Routinefreigaben aus. Dokumentiere technisch
 offene Punkte und arbeite an unabhängig lösbaren Modulen weiter. Kein Flashen,
 Gerätezugriff, Originalpluginbetrieb oder Release. Nach dem geprüften
 Firmwareprototyp mit dokumentierten Grenzen endet dieser Auftrag.
+Die Control-App-Anbindung gehört zum vollständigen Auftrag; ein nur am Board
+bedienbares Instrument erfüllt den Endumfang nicht.
 
 ## Zuerst lesen
 
 * Repository: [AGENTS.md](../../../AGENTS.md), [CLAUDE.md](../../../CLAUDE.md),
+  [verbindliche modulare Richtlinie](../../../docs/MODULAR_DEVELOPMENT_POLICY.md),
   [HANDOVER.md](../../../HANDOVER.md), [BUILD.md](../../../docs/BUILD.md),
   [HARDWARE.md](../../../docs/HARDWARE.md),
   [gemeinsamer Build](../../../common/desktop.mk),
-  [Bootloader-Einstieg](../../../common/bootloader/README.md).
+  [Bootloader-Einstieg](../../../common/bootloader/README.md),
+  [modulare Komponenten](../../../docs/MODULAR_COMPONENTS.md),
+  [FX-Vertrag](../../../common/audio/fx_contract.h),
+  [Komponentenregister](../../../components/README.md),
+  [bestehende Control App](../../../editors/mod-on-daisy/README.md).
 * Projekt: [Regeln](../AGENTS.md), [Herkunft und Befundgrade](PROVENANCE.md),
-  [Bedienentwurf](CONTROLS.md), [Prüfstatus](VALIDATION.md).
+  [Modulstruktur](MODULAR_ARCHITECTURE.md), [Bedienentwurf](CONTROLS.md),
+  [Prüfstatus](VALIDATION.md), [FX-Projekt](../../../effects/streichwurst-fx/README.md).
 * Forschung, in dieser Reihenfolge:
   [Audio und Stimmen](research/audio-and-voices.md),
   [gezielte Vertiefung](research/focused-findings.md),
@@ -73,8 +88,10 @@ Besonders wichtig:
 
 ## Phase 1: Portabler Kern und erster Klangpfad
 
-1. C++17-DSP ohne libDaisy-/HAL-Abhängigkeit unter `include/streichwurst/`.
-   Definierte `Prepare`, `Reset`, Parameter-, Event- und Stereo-Renderverträge.
+1. Instrument-C++17-DSP ohne libDaisy-/HAL-Abhängigkeit unter
+   `instruments/streichwurst/include/streichwurst/`; eigenständiger FX-C++17-DSP
+   unter `effects/streichwurst-fx/`. Instrument besitzt Stringsection und Soli.
+   Definierte `Prepare`, `Reset`, Parameter-, Event- und getrennte Busverträge.
    Keine Allokationen, Locks, Dateizugriffe oder blockierende I/O beim Rendern.
 2. Note-on/off, Velocity-null-Off, Wiederholnoten, Sustain, Pitchbend,
    AllNotesOff und AllSoundOff implementieren. Kanalzuordnung explizit;
@@ -84,7 +101,8 @@ Besonders wichtig:
    Spektralmodell; Register, Oktaven, Crescendo und Release. Maximalbelegung
    und Steal-/Auswahlregel deterministisch festlegen. Die bisher geplanten
    16 Tonlagen sind ein Startbudget, keine bestätigte Originalpolyphonie.
-4. Ensemble samt Stereo, Bypass und Moduswechsel. Quantisierung/Blockreader
+4. Ensemble im separaten FX-Baustein samt Stereo, Bypass und Moduswechsel.
+   Quantisierung/Blockreader
    sind im Original teilweise offen; die eigene Interpolation ausdrücklich
    benennen. Hüllkurven und Modulation müssen unabhängig von Hostblockgrenzen
    laufen. Pegel bei Moduswechsel und Monosumme prüfen.
@@ -105,18 +123,42 @@ Besonders wichtig:
   Kein Flash-/QSPI-Schreiben. Presets zunächst nur im RAM bzw. als eigene Defaults.
 * Echte Projekt-Makefile, eindeutige Firmwareversion und Zielname
   `Streichwurst-v<version>`. Include `../../common/desktop.mk`, Bibliothekspins
-  erhalten. `make PROJECT=streichwurst` muss dieses Instrument bauen.
+  erhalten. `make PROJECT=streichwurst` baut das zusammengesetzte Produkt.
+* Eine gemeinsame MIDI-/Control-Anbindung verteilt Noten an das Instrument,
+  Parameter an Instrument/FX und Protokollbefehle an die zuständigen Module.
+  Gezielte Wiederverwendung bestehender Helfer; kein eigener MIDIstack je DSP.
 
 ## Phase 3: Solo, Formung und FX
 
 * Acht Soloobjekte als Startvertrag mit dokumentierter eigener Allokation,
   Hüllkurven, Timbre/Morph, Sustain und Tremolo. Split/Layer und Balance.
-* Animate/Formung, Phaser und globalen Reverb ergänzen. Begründete eigene
+* Animate/Formung, Phaser und globalen Reverb im FX-Baustein ergänzen. Begründete eigene
   Algorithmen dort, wo die Referenz offen ist; Modulgrenzen erlauben spätere
   Präzisierungen. Lizenzgeprüfte vorhandene FX nur gezielt einsetzen und
   ihre Klangabweichung benennen. Kein Shimmer als vermeintlichen Streichfett-FX ableiten.
 * Gain/Headroom, Wet/Dry, Pan und Ausgangsbegrenzung konsistent spezifizieren.
   Alle Stufen isoliert und zusammen prüfen, dann die Produktfassung dokumentieren.
+
+## Phase 4: Mod-on-Daisy-Control-App und gemeinsame Zustände
+
+* Vollständige Instrument- und FX-Parameterseiten in der vorhandenen App;
+  identifizierte Produkt-/Komponentenstände und getrennte Modulversionen.
+  Gemeinsame JUCE-Standalone-/VST3-Pfade und Browser anpassen. Vorhandene
+  Geräteerkennung, Protokolle und Patchformate erhalten.
+* Einheitliches Parameterregister für Kit, MIDI CC und App. Readback,
+  angewandte Revision, Rückmeldungen von Poti/MIDI, Soft takeover und eigene
+  Produktpatches konsistent implementieren. Alle Parameter bleiben auch dann
+  erreichbar, wenn die Modulationsmatrix nur acht Zielspalten exponiert.
+* Vorhandene Matrix als eigenes Modul anbinden; Instrument-/FX-Ziele und
+  Regelungstakte definieren. Leere Matrix verändert den eigenen Basisklang nicht.
+* Protokollbedarf anhand vorhandener MD-/SQ-Bausteine prüfen und dokumentieren.
+  Erforderliche Erweiterungen gemeinsam in Firmware, CLI-Probe, App und Tests
+  umsetzen; keine Nachrichten-ID-Kollisionen, kein neuer unabhängiger Appstack.
+* App-/Protokoll-/Sessiontests sowie Firmware-End-to-End-Tests auf Host-Fakes:
+  Verbinden liest zuerst, Parameteränderung/ACK/Readback, Reconnect,
+  Clamp/Fehlermeldung, stale Antworten, Rückkopplung und Patchkompatibilität.
+  Native App lokal bauen, soweit vorhandene Werkzeuge dies ermöglichen;
+  fehlende Native-/VST3-Builds präzise ausweisen und unabhängig weiterarbeiten.
 
 ## Abnahme und GitHub
 
@@ -131,7 +173,10 @@ Besonders wichtig:
   auf DTCM/AXI/SDRAM/Stackreserve prüfen. Ziel Audio ≤60 % ist ungemessen.
   Keine M7-Last aus Python- oder Desktoplaufzeit behaupten.
 * Erst danach `projects.mk` auf buildable setzen, Komponentenmanifest und
-  gezielte CI-Testauswahl ergänzen. Keine breite automatische Buildmatrix,
+  gezielte CI-Testauswahl ergänzen. Instrument und FX erhalten eigene
+  Versionsquellen und Komponenten-IDs, das Firmwareprodukt eine eigene Version.
+  App bleibt ein separat versioniertes Panel im Manifest.
+  Keine breite automatische Buildmatrix,
   keine manuelle Actions-Ausführung oder Veröffentlichung starten.
 * Bestehende Instrumente unverändert lassen. Bei Änderungen gemeinsam genutzter
   Quellen die tatsächlichen Verbraucher testen; keine Goldens beiläufig ändern.
@@ -148,6 +193,8 @@ Besonders wichtig:
 Arbeite im vorbereiteten Daisy-Seed-Worktree auf Branch claude/streichwurst.
 Lies AGENTS.md und instruments/streichwurst/CLAUDE.md. Führe anschließend
 instruments/streichwurst/docs/CLAUDE_AUFTRAG.md vollständig aus.
-Neues Instrument: Streichwurst, Ziel Seed3 Desktop Development Kit,
+Produkt Streichwurst: getrenntes Instrument (Stringsection und Soli),
+separater Streichfett-FX-Baustein, gemeinsame MIDI-/Control-Engine und
+Erweiterung der bestehenden Mod-on-Daisy-Control-App. Ziel Seed3 Desktop,
 Klang möglichst originalgetreu, Bedienung am Streichfett orientiert.
 ```

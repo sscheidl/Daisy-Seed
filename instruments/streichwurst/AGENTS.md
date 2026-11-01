@@ -4,6 +4,9 @@ Zusätzlich zu den Repositoryregeln:
 
 * Maßgeblicher Implementierungsauftrag: [CLAUDE_AUFTRAG.md](docs/CLAUDE_AUFTRAG.md).
   Name und Build-ID sind `Streichwurst` / `streichwurst`.
+* [Modulstruktur](docs/MODULAR_ARCHITECTURE.md) ist verbindlich: Instrument
+  Stringsection/Soli, separate FX unter `effects/streichwurst-fx/`, gemeinsame
+  MIDI-/Control-Anbindung und Erweiterung der Mod-on-Daisy-Control-App.
 * Eigener DSP-Code und eigene Daten. Keine Herstellerprogramme, Samples,
   Presets, Wellen-/Filtertabellen, Dekompilate, Disassemblierungen, direkten
   Codeübersetzungen oder rekonstruierbaren Dumps importieren oder hochladen.
@@ -17,6 +20,7 @@ Zusätzlich zu den Repositoryregeln:
 * Firmware nur lokal bauen; kein Flashen, Pluginbetrieb, Hardwarezugriff oder
   Release in diesem Auftrag. Keine Herstellerdateien öffnen oder analysieren;
   weitere Originalanalyse ist ein eigener Arbeitsschritt.
-* Änderungen auf Streichwurst und notwendige gezielte Registry-/CI-Erweiterungen
-  begrenzen. Andere Instrumente und Bibliothekspins erhalten.
+* Änderungen auf Instrument, separate Streichwurst-FX, gemeinsame gezielte
+  MIDI-/Control-Adapter, Mod-on-Daisy-App und notwendige Registry-/CI-
+  Erweiterungen begrenzen. Andere Instrumente und Bibliothekspins erhalten.
 * Code und Codekommentare Englisch, Projekt-/Bedien-/Prüfdokumentation Deutsch.

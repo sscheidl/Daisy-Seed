@@ -5,6 +5,12 @@ acht Potis, 16 Taster/LEDs laut [Repository-Hardwarebasis](../../../docs/HARDWAR
 Noch nicht implementiert oder am Gerät getestet. Kein Display vorausgesetzt.
 Keine Behauptung einer identischen Waldorf-Beschriftung oder Parameterrange.
 
+Die Zuordnung gehört zum Firmware-/Bedienadapter gemäß
+[Modulvertrag](MODULAR_ARCHITECTURE.md). String- und Soli-Regler bedienen das
+Instrument; Animate/Ensemble/Phaser/Reverb bedienen die separate FX-Komponente.
+Kit, MIDI und Mod-on-Daisy-Control-App verwenden dasselbe Parameterregister.
+Die App bietet alle Parameter unabhängig von der gewählten Reglerseite an.
+
 ## Reglerseiten
 
 | Regler | Hauptseite | Solo-Seite | FX-Seite |

@@ -1,5 +1,10 @@
 # Komponenten und Produktversionen
 
+Für neue Module und wesentliche Erweiterungen gilt die
+[verbindliche modulare Entwicklungsrichtlinie](../docs/MODULAR_DEVELOPMENT_POLICY.md):
+eigene Modulversionen und Verträge, getrennte Tests, austauschbare FX und
+reproduzierbare Produktzusammenstellungen.
+
 `registry.json` ordnet allen implementierten Instrumenten, den beiden Reverb-
 Komponenten, der Tape-FX-Komponente (`tape-fx`), Mod on Daisy, dem gemeinsamen Bootloader-Einstieg (`bootloader-entry`,
 in jedem Firmwareprodukt) und den drei Control Panels stabile IDs zu. Die
