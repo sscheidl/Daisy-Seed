@@ -6,7 +6,6 @@ from the simulator carries ``sim=1`` and the GUI labels all data as simulated.
 """
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 
 from . import protocol as p
@@ -390,7 +389,9 @@ class SimulatedDevice:
         cv = [o / p.DAC_MAX for o in out] if self.cv_patched else list(self.inputs.cv)
         return p.CvGateState(
             cv=[p.cv_to_int(v) / 10000.0 for v in cv],
-            cv_raw=[min(65535, int((v + 1.0) / 2.0 * 65535 + 0.5)) for v in cv],
+            # libDaisy's bipolar CV inputs are inverted: raw 0 reads +1.0, raw 65535 reads
+            # -1.0 (hardware trace 2026-10-31: cv=+0.9906 at cvr=307).
+            cv_raw=[max(0, min(65535, int((1.0 - v) / 2.0 * 65535 + 0.5))) for v in cv],
             gates=list(self.inputs.gates),
             gate_counts=list(self.inputs.gate_counts),
             cv_out_mode=self.cv_mode,
@@ -493,16 +494,3 @@ class SimulatedCable:
         if port != self.PORT_NAME or not self.plugged:
             raise LinkError(f"cannot open {port}")
         return SimulatedLink(self.device, clock, self)
-
-
-def demo_pattern(device: SimulatedDevice, t: float) -> None:
-    """Optional animated input pattern for demonstrations ("Demo" in the GUI)."""
-    for i in range(p.NUM_POTS):
-        device.set_pot(i, 0.5 + 0.5 * math.sin(t * 0.7 + i * 0.6))
-    active = int(t * 4) % p.NUM_BUTTONS
-    for i in range(p.NUM_BUTTONS):
-        device.set_button(i, i == active)
-    for i in range(p.NUM_CV):
-        device.set_cv(i, math.sin(t * 0.9 + i * 1.7))
-    device.set_gate(0, int(t * 2) % 2 == 0)
-    device.set_gate(1, int(t * 3) % 3 == 0)

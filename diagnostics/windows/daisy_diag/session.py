@@ -160,7 +160,8 @@ class DeviceSession:
     def snapshot(self) -> dict:
         """JSON-serializable observed state; missing measurements stay null."""
         return {
-            "simulated": self.simulated, "connected": self.connected, "port": self.port,
+            "simulated": self.simulated, "connected": self.connected,
+            "port": self.port if self.connected else None,
             **{key: asdict(value) if value is not None else None for key, value in
                (("device", self.device), ("reader", self.reader), ("board", self.board),
                 ("sd", self.sd), ("system", self.sys))},
@@ -380,8 +381,10 @@ class DeviceSession:
             self._failed_ports[self.port] = self._clock() + FAILED_PORT_BACKOFF_S
         was_connected = self.state == ConnState.CONNECTED
         self._link = None
+        self.device = None
         self.board = None
         self.sys = None
+        self.sd = None  # a read-test result belongs to the connection that produced it
         self._sd_deadline = None
         self._reader_deadline = None
         self._reader_action = None
@@ -422,6 +425,10 @@ class DeviceSession:
                 state = p.parse_state(msg)
                 if self.board is not None:
                     self.lost_frames += self._sequence_gap(self.board.seq, state.seq)
+                    if self.board.sd_card and not state.sd_card and self.sd is not None:
+                        # Card removed: the read-test result describes a card that is gone.
+                        self.sd = None
+                        self._event("sd", None)
                 self.board = state
                 self._state_times.append(now)
                 self._event("board", state)
@@ -463,6 +470,12 @@ class DeviceSession:
                     self._reader_action = None
                     self.reader = None
                     self._event("reader", None)
+                elif msg.get("c") == "SDTEST" and self.sd_test_pending:
+                    # Rejected (e.g. BUSY while Windows owns the card): no SD reply follows,
+                    # so the 20 s test tolerance must not keep the controls locked.
+                    self._sd_deadline = None
+                    self.sd = None
+                    self._event("sd", None)
                 if self.state == ConnState.HANDSHAKE and msg.get("e") == "PROTO":
                     self._failed_ports[self.port or ""] = now + FAILED_PORT_BACKOFF_S
                     self._drop_link("Firmware does not support protocol "

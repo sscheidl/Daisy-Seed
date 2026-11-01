@@ -1,5 +1,16 @@
 # Test report
 
+## Native CV quick probe and control-panel candidate, 31.10.2026
+
+RAMP/SAW CV-1 loopback on firmware 0.3.2: RAMP functional criterion passed;
+SAW raw trace has a failed correlation assertion and unresolved timing at the
+reset. 878 frames without transport errors; OFF confirmed. [Evidence](HARDWARE_NATIVE_CV_2026-10-31.md).
+App 0.3.4 (01.11.2026) replaces the 0.3.3 candidate: control panel in six
+categories, buttons drive LEDs by default, and the host findings of the independent
+milestone review fixed; firmware unchanged, simulator-only validation.
+[Change and validation](CONTROL_PANEL_0.3.4.md). The firmware findings of the review
+(SD initialisation bound, CV OUT during blocking SD access) remain open.
+
 ## Review-Korrekturen 0.3.2, 31.10.2026 — Software
 
 239 Python-/GUI-Tests bestanden; C++-Suites unter Clang normal/ASan/UBSan und

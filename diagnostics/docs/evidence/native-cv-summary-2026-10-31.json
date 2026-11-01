@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-31",
+  "firmware": "0.3.2",
+  "operator_patch": "CV OUT 1 -> CV IN 1",
+  "raw_sha256": "887ce5395099991c5cbc695d2983764bf30faf247b578a01ce19b5a6d819acc1",
+  "raw_result_completed": false,
+  "raw_errors": [
+    "AssertionError()"
+  ],
+  "off_confirmed": true,
+  "counters": {
+    "frames": 878,
+    "frame_errors": 0,
+    "content_errors": 0,
+    "lost_frames": 0,
+    "reconnects": 0
+  },
+  "ramp": {
+    "mode": "RAMP",
+    "samples": 306,
+    "input1_min": 0.0053,
+    "input1_max": 0.9912,
+    "echo_vs_input_correlation": 0.9994009815647493,
+    "rising_midpoint_crossings_ms": [
+      2182526,
+      2184526,
+      2186526
+    ],
+    "periods_ms": [
+      2000,
+      2000
+    ],
+    "channel2_reported_inverse": true
+  },
+  "saw_offline_observation": {
+    "samples": 305,
+    "min": 0.0051,
+    "max": 0.9906,
+    "correlation": 0.9615932301686759,
+    "periods_ms": [
+      2000,
+      2000
+    ],
+    "mismatch_samples": [
+      {
+        "device_ms": 2190006,
+        "reported_dac_code": 12,
+        "input_normalized": 0.9906
+      },
+      {
+        "device_ms": 2192006,
+        "reported_dac_code": 12,
+        "input_normalized": 0.9905
+      }
+    ]
+  },
+  "assessment": "RAMP functional check passed. SAW captured; strict correlation assertion failed. Timing/ADC pipeline vs implementation fault not resolved. No further hardware testing today.",
+  "raw_file": "native-cv-0.3.2-2026-10-31.json.gz"
+}

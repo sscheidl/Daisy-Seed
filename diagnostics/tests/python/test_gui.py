@@ -154,24 +154,102 @@ def test_toggle_switches_by_click(sim):
     assert window.in_labels["sw17"].text().startswith("D")
 
 
-def test_led_mode_buttons_and_board_led_click(sim):
+def test_leds_follow_buttons_by_default_and_test_patterns_are_explicit(sim):
     window, step = sim
+    assert window.board.state.led_mode == "FOLLOW"
+    assert window.led_buttons["FOLLOW"].isChecked()
+    assert set(window.led_buttons) == {"FOLLOW", "OFF", "ON", "CHASE"}  # no per-LED mask
     window.led_buttons["ON"].click()
     step(0.05)
     assert window.board.state.led_mode == "ON" and all(window.board.state.leds)
     window.led_buttons["OFF"].click()
     step(0.05)
     assert not any(window.board.state.leds)
+    # Clicking an LED on the board is not a control any more: nothing changes.
     QTest.mouseClick(window.board, Qt.LeftButton, Qt.NoModifier,
                      widget_point(window, board_mod.led_rect(6).center()))
     step(0.05)
-    assert window.board.state.led_mode == "MASK"
-    assert [i for i, on in enumerate(window.board.state.leds) if on] == [6]
-    assert window.led_checks[6].isChecked()
+    assert window.board.state.led_mode == "OFF" and not any(window.board.state.leds)
     window.led_buttons["CHASE"].click()
     step(0.05)
     assert window.board.state.led_mode == "CHASE" and sum(window.board.state.leds) == 1
     assert window.led_buttons["CHASE"].isChecked()
+    window.led_buttons["FOLLOW"].click()
+    step(0.05)
+    pos = widget_point(window, board_mod.button_rect(3).center())
+    QTest.mousePress(window.board, Qt.LeftButton, Qt.NoModifier, pos)
+    step(0.05)
+    assert window.board.state.led_mode == "FOLLOW"
+    assert [i for i, on in enumerate(window.board.state.leds) if on] == [3]
+    QTest.mouseRelease(window.board, Qt.LeftButton, Qt.NoModifier, pos)
+    step(0.05)
+    assert not any(window.board.state.leds)
+
+
+def test_cv_min_max_cover_every_received_frame(sim):
+    window, step = sim
+    window.sim_cv_patch.setChecked(True)
+    window.cv_period_spin.setValue(200)
+    window.cv_mode_buttons["SAW"].click()
+    step(0.1)
+    window._reset_minmax()
+    step(3.0)  # 150 frames at 50 Hz; a 10 Hz panel refresh would alias to one phase
+    assert window.cv_min[0] is not None and window.cv_min[0] < 0.15
+    assert window.cv_max[0] > 0.85
+    assert window.cv_table.item(0, 3).text() == f"{window.cv_min[0]:+.3f}"
+    assert window.cv_table.item(0, 4).text() == f"{window.cv_max[0]:+.3f}"
+    window.cv_mode_buttons["OFF"].click()
+    step(0.05)
+
+
+def test_saved_report_has_no_stale_sd_result_after_card_removal_or_unplug(sim, monkeypatch,
+                                                                          tmp_path):
+    import json
+    window, step = sim
+    destination = tmp_path / "report.json"
+    monkeypatch.setattr(mw.QFileDialog, "getSaveFileName",
+                        lambda *args: (str(destination), "JSON (*.json)"))
+    window.sim_sd_card.setChecked(True)
+    step()
+    window.sd_button.click()
+    step()
+    assert window.sd_result is not None and window.sd_result.status == "MOUNTED"
+    window.save_report.click()
+    assert json.loads(destination.read_text(encoding="utf-8"))["sd"]["status"] == "MOUNTED"
+    window.sim_sd_card.setChecked(False)
+    step()
+    assert window.sd_status.text() == "No card"
+    window.save_report.click()
+    report = json.loads(destination.read_text(encoding="utf-8"))
+    assert report["sd"] is None and report["board"]["sd_card"] is False
+    window.sim_sd_card.setChecked(True)
+    step()
+    window.sd_button.click()
+    step()
+    window.sim_plug.click()
+    step(0.2)
+    window.save_report.click()
+    report = json.loads(destination.read_text(encoding="utf-8"))
+    assert report["connected"] is False
+    assert report["sd"] is None and report["device"] is None and report["port"] is None
+
+
+def test_sd_test_switches_an_active_cv_out_off_first(sim, monkeypatch):
+    window, step = sim
+    window.sim_sd_card.setChecked(True)
+    window.cv_code_spins[0].setValue(2000)
+    window.cv_mode_buttons["FIX"].click()
+    step()
+    assert window.board.state.cvgate.cv_out_mode == "FIX"
+    monkeypatch.setattr(mw.QMessageBox, "question", lambda *args: mw.QMessageBox.No)
+    window.sd_button.click()
+    step()
+    assert window.board.state.cvgate.cv_out_mode == "FIX" and window.sd_result is None
+    monkeypatch.setattr(mw.QMessageBox, "question", lambda *args: mw.QMessageBox.Yes)
+    window.sd_button.click()
+    step()
+    assert window.board.state.cvgate.cv_out_mode == "OFF"
+    assert window.sd_status.text().startswith("Filesystem readable (FAT32")
 
 
 def test_sd_states(sim):
@@ -228,16 +306,11 @@ def test_frozen_firmware_shows_connection_error(sim):
     assert window.session.connected
 
 
-def test_not_implemented_sections_are_labelled(sim):
+def test_board_marks_unimplemented_connectors(sim):
     window, _ = sim
-    badges = [w for w in window.findChildren(QLabel) if w.objectName() == "niBadge"]
-    assert len(badges) == len(mw.EXTENSIONS) == 5
-    assert all(b.text() == 'Not implemented' for b in badges)
-    names = {name for name, _ in mw.EXTENSIONS}
-    assert names == {"Audio Input/Output", "Audio-Engine / DSP", "MIDI DIN", "USB-MIDI",
-                     "USB-Host"}  # CV and gate are implemented since 0.3.0
     tip = window.board.tooltip_for(("midi", 0))
     assert 'Not implemented' in tip
+    assert not [w for w in window.findChildren(QLabel) if w.objectName() == "niBadge"]
 
 
 def test_led_tooltip_states_no_optical_feedback(sim):
@@ -260,6 +333,8 @@ def test_hardware_mode_without_device(app, monkeypatch):
     assert window.status_pill.text() == 'Disconnected'
     assert "No Daisy" in window.status_detail.text()
     assert window.board.state is None
+    tabs = [window.control_tabs.tabText(i) for i in range(window.control_tabs.count())]
+    assert tabs == list(mw.TABS)  # no simulation tab in hardware mode
     window.close()
 
 
@@ -278,7 +353,7 @@ def test_cv_gate_panel_and_board(sim):
                      widget_point(window, board_mod.CV_JACKS["gate_in_2"][0]))
     step(0.05)
     assert window.board.state.cvgate.gates == [False, True]
-    assert window.gate_labels[1].text() == "GATE 2: HIGH · edges 1"
+    assert window.gate_labels[1].text() == "GATE 2: HIGH · rising edges 1"
     dev.pulse_gate(0)
     step(0.05)
     assert window.board.state.cvgate.gate_counts[0] == 1
@@ -323,3 +398,66 @@ def test_reader_diagnostics_display_and_saved_report(sim, monkeypatch, tmp_path)
     assert report['reader']['fault'] == 7 and report['reader']['he'] == 32
     assert report['reader']['io'] == 'WRITE' and report['reader']['lba'] == 777
     assert report['reader']['ms'] == 1000 and report['captured_at']
+
+
+def test_control_tabs_are_categories_with_report_always_reachable(sim):
+    window, step = sim
+    tabs = [window.control_tabs.tabText(i) for i in range(window.control_tabs.count())]
+    assert tabs == list(mw.TABS) + [mw.SIM_TAB]
+    assert tabs == ["USB", "Buttons", "Pots", "CV / Gate", "SD card", "Log", "Simulation"]
+    expectations = {
+        "USB": [window.port_combo, window.boot_button],
+        "Buttons": [window.counter_labels[15], window.led_buttons["FOLLOW"]],
+        "Pots": [window.pot_table, window.in_labels["sw18"]],
+        "CV / Gate": [window.cv_table, window.cv_apply, window.gate_labels[1]],
+        "SD card": [window.sd_button, window.reader_share],
+        "Log": [window.log],
+        "Simulation": [window.sim_plug, window.sim_cv_patch],
+    }
+    for index, title in enumerate(tabs):
+        window.control_tabs.setCurrentIndex(index)
+        step()
+        for widget in expectations[title]:
+            assert widget.isVisible(), (title, widget)
+        assert window.save_report.isVisible()
+        assert window.control_tabs.tabToolTip(index)
+
+
+def test_switching_control_tabs_preserves_reader_and_cv_output(sim):
+    window, step = sim
+    window.cable.device.inputs.sd_card = True
+    step()
+    window.reader_share.click()
+    step()
+    window.cv_code_spins[0].setValue(1234)
+    window.cv_mode_buttons['FIX'].click()
+    step()
+    for i in range(window.control_tabs.count()):
+        window.control_tabs.setCurrentIndex(i)
+        step()
+        assert window.session.reader.state == 'SHARED'
+        assert window.board.state.cvgate.cv_out_mode == 'FIX'
+        assert window.board.state.cvgate.cv_out == [1234, 0]
+        assert 'OUT 1 = 1234' in window.cv_out_status.text()
+        assert 'OUT 2 = 0' in window.cv_out_status.text()
+
+
+@pytest.mark.parametrize('width', [1280, 1560])
+def test_control_pages_fit_width_and_keep_buttons_inside_viewport(sim, width):
+    window, step = sim
+    window.resize(width, 850)
+    step()
+    bar = window.control_tabs.tabBar()
+    assert bar.tabRect(bar.count() - 1).right() <= bar.width()  # all tabs visible, no scrolling
+    for i in range(window.control_tabs.count()):
+        window.control_tabs.setCurrentIndex(i)
+        step()
+        page = window.control_tabs.currentWidget()
+        assert page.widget().width() <= page.viewport().width()
+        from PySide6.QtWidgets import QPushButton
+        for button in page.widget().findChildren(QPushButton):
+            if not button.isVisible():
+                continue
+            left = button.mapTo(page.viewport(), QPoint(0, 0)).x()
+            assert left >= 0
+            assert left + button.width() <= page.viewport().width()
