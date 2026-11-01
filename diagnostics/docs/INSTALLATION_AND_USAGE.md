@@ -92,7 +92,11 @@ Use `--help` for the English command-line reference.
 * **microSD:** No card / Card detected / Filesystem readable / Error.
 * **Audio inputs:** plug indicators. **Audio outputs have no jack detection.**
 * **CV / Gate:** CV IN 1/2 show the normalized value (−1…+1), GATE 1/2 a filled dot
-  when high and the rising-edge count, CV OUT 1/2 the mode and DAC code.
+  when high and the rising-edge count, CV OUT 1/2 the mode and DAC code. The jack
+  rings give Eurorack-style feedback: CV IN rings run red (−1) over amber (0) to
+  green (+1), CV OUT rings use the same scale over DAC code 0…4095 (no ring when
+  Off), GATE rings light green while high and flash briefly on every counted
+  rising edge. The scale is the normalized value, not volts.
 * Gray **N/I** labels mark unimplemented functions; tooltips explain them.
 
 ### Control panel
