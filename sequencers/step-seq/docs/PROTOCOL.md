@@ -26,7 +26,7 @@ eigenes Protokoll.
 | --- | --- | --- |
 | `F0 7D 53 51 …` („SQ“) | dieses Protokoll | § 3 |
 | `F0 7D 42 4C …` („BL“) | Bootloader-Anfrage ([common/bootloader](../../../common/bootloader/README.md)) | wird vor dem SQ-Parser geprüft. Vor dem Eintritt gibt die Firmware Gates und Noten frei (4.1) |
-| `F0 7D 4D 44 …` („MD“) | Mod on Daisy | gehört nicht zu SQ. Eine Firmware ohne Mod-Kern verwirft sie stumm |
+| `F0 7D 4D 44 …` („MD“) | Mod on Daisy | gehört nicht zu SQ. Eine Firmware ohne Mod-Kern verwirft sie stumm; eine SQ-1.1-Firmware mit Fähigkeit Bit 6 (Streichwurst) beantwortet sie mit ihrem Mod-on-Daisy-Kern (§ 8) |
 | alle anderen | fremd | verworfen, nicht beantwortet |
 
 ## 2. Rahmenformat
@@ -116,14 +116,14 @@ Beispiel: 120 BPM = `120000`, −1,5 dB = `−1500`, Enum-Index 2 = `2000`.
 | Typ | Name | Anfrage | Antwort (`type \| 0x40`) |
 | --- | --- | --- | --- |
 | `0x01` | `IDENTIFY` | — | `u7` Haupt-, `u7` Nebenversion des Protokolls · `str` Produkt (≤ 16, z. B. `step-seq`, `acid-seq`) · `str` Produktversion (≤ 12) · `u32` Boot-ID · 3 × `u32` STM32-UID (Wort 0, 1, 2) · `u14` Fähigkeiten · `u7` Anzahl der Komponenten |
-| `0x02` | `GET_COMPONENT` | `u7` Index | `u7` Index · `u7` Anzahl · `str` Komponenten-ID (≤ 16, wie im Register) · `u7` Art (0 Sequencer, 1 Instrument, 2 Effekt, 3 DSP) · `str` Version (≤ 12) · `u7` Schema-Version der Parameter · `u7` Anzahl der Parameter |
+| `0x02` | `GET_COMPONENT` | `u7` Index | `u7` Index · `u7` Anzahl · `str` Komponenten-ID (≤ 16, ab 1.1 ≤ 24, wie im Register) · `u7` Art (0 Sequencer, 1 Instrument, 2 Effekt, 3 DSP, ab 1.1: 4 Produkt) · `str` Version (≤ 12) · `u7` Schema-Version der Parameter · `u7` Anzahl der Parameter |
 | `0x03` | `GET_PARAM_DESC` | `u7` Komponente · `u7` Parameter-Index | `u7` Komponente · `u7` Index · `u7` Anzahl · `u14` Parameter-ID · `u7` Typ · `u7` Einheit · `u7` Flags · `i32` Min · `i32` Max · `i32` Standard · `u7` CC (127 = keiner) · `str` Schlüssel (≤ 16) |
 | `0x04` | `GET_ENUM_LABEL` | `u7` Komponente · `u14` Parameter-ID · `u7` Wert | dieselben Felder · `str` Schlüssel des Werts (≤ 16) |
 
 * **Boot-ID:** zufällig pro Start. Ändert sie sich, ist das Gerät neu gestartet, und
   das Panel liest den Zustand neu.
 * **Fähigkeiten:** Bit 0 CV-Ausgänge, Bit 1 DIN-MIDI, Bit 2 interne Stimme, Bit 3
-  Pattern, Bit 4 Monitor, Bit 5 Kalibrierung.
+  Pattern, Bit 4 Monitor, Bit 5 Kalibrierung, ab 1.1 Bit 6 Mod on Daisy am selben Port (§ 8).
 * **Fragmente:** Listen werden über Index und Anzahl abgefragt (Komponenten,
   Deskriptoren, `GET_PARAMS`). Jeder Rahmen trägt Index und Gesamtzahl, damit das
   Panel Lücken erkennt.
@@ -270,3 +270,24 @@ Eine Änderung an diesem Protokoll geschieht nur zusammen mit Firmware, `sq_code
 bzw. `sq_probe.py`, beiden Editoren und ihren Tests. Neue Nachrichten und
 angehängte Felder erhöhen die Nebenversion, inkompatible Änderungen die
 Hauptversion.
+
+## 8. SQ 1.1 (Streichwurst, 01.11.2026)
+
+Kompatible Erweiterung für Firmwareprodukte, die Instrument, Effekte und die
+Mod-on-Daisy-Matrix auf **einem** USB-Port verbinden. Die Nebenversion meldet jedes
+Gerät selbst in IDENTIFY (`sq::Device::protocol_minor`); die Acid-Seq-Firmwares melden
+unverändert 1.0 und senden bytegleiche Rahmen.
+
+| Erweiterung | Bedeutung |
+| --- | --- |
+| IDENTIFY Fähigkeit Bit 6 (`CapModMatrix`) | Das Gerät beantwortet auch Mod on Daisy v1 (`F0 7D 4D 44`, [PROTOCOL.md](../../../modules/mod-on-daisy/docs/PROTOCOL.md)) auf demselben Port. Der Editor startet seine MD-Sitzung erst, nachdem der SQ-Zustand gelesen ist, und liest auch dort zuerst. |
+| GET_COMPONENT Art 4 (`KindProduct`) | Parameter des Firmwareprodukts selbst (Mischung, MIDI-Kanal, Zustand am Kit), getrennt von Instrument und Effekten |
+| Komponenten-ID bis 24 Zeichen | IDs wie `streichwurst-instrument` stimmen mit dem Komponentenregister überein |
+| GET_PATTERN nur mit Bit 3 | Panel und Probe lesen das Pattern nur bei Geräten mit Sequencer; GET_STATE liefert auch dort die angenommene und angewandte Revision |
+
+Ein 1.0-Editor sieht ein 1.1-Gerät weiterhin als SQ-Gerät mit Parameterseiten; ihm fehlt
+nur die Matrix. Ein 1.1-Editor bedient 1.0-Geräte wie bisher. Kein Nachrichtentyp, kein
+Fehlercode und kein Feld bestehender Rahmen wurde umgedeutet. Parameter, Bereiche und
+CCs von Streichwurst stehen in
+[instruments/streichwurst/contracts/parameters.json](../../../instruments/streichwurst/contracts/parameters.json);
+`tools/gen_params.py` erzeugt daraus die Firmwaretabelle und die Editorbeschriftungen.

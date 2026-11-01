@@ -48,4 +48,10 @@ erst mit dem ersten validierten Build dazu, weil die Produktliste genau
 `BUILDABLE_PROJECTS` entsprechen muss. Gültige Arten: `instrument`, `effect`,
 `control`, `panel`, `contract`, `sequencer`, `dsp`.
 
+**Streichwurst** (01.11.2026): Komponenten `streichwurst-instrument` (Art `instrument`)
+und `streichwurst-fx` (Art `effect`, hängt vom FX-Vertrag ab) mit eigenen
+Versionsheadern; das Produkt `streichwurst` (Version `src/version.h`) bettet zusätzlich
+Mod on Daisy, das SQ-Gerät und die Queues aus `step-seq` sowie den Bootloader-Einstieg
+ein. Die drei Panels hängen vom Streichwurst-Parametervertrag ab.
+
 Audiovertrag und genaue Grenzen: [MODULAR_COMPONENTS.md](../docs/MODULAR_COMPONENTS.md).

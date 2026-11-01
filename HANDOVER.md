@@ -17,6 +17,16 @@ bleiben außerhalb Git. Firmware noch nicht implementiert, Build-ID `streichwurs
 als `planned` registriert. Lokal eigener Worktree `.work/streichwurst/`;
 bestehender Hauptcheckout und seine fremden Änderungen bleiben erhalten.
 
+**Streichwurst 0.1.0, 01.11.2026 (Branch `claude/streichwurst`, PR #77):**
+Firmwareprototyp implementiert: Instrument (`streichwurst-instrument` 0.1.0),
+separater FX (`streichwurst-fx` 0.1.0), Produkt `streichwurst` 0.1.0 mit einem
+Parameterregister für Kit, MIDI CC, SQ 1.1 und Mod-on-Daisy-Matrix; Control App
+0.3.0 (JUCE, VST3, Browser) mit Streichwurst-Seiten, Matrix am selben Port und
+`.swpatch`. Host-, Sanitizer-, App- und ARM-Builds lokal bestanden
+([Prüfstatus](instruments/streichwurst/docs/VALIDATION.md)); Hardware, CPU-Last und
+Klangvergleich NICHT GEMESSEN ([Laufzettel](instruments/streichwurst/docs/HARDWARE_TEST.md),
+[Klangtreue](instruments/streichwurst/docs/FIDELITY.md)).
+
 **Streichwurst-Präzisierung:** Instrument = Stringsection und Soli; separate
 FX-Komponente unter `effects/streichwurst-fx/`. Die Firmware verbindet beide
 mit gemeinsamer MIDI-/Control-Anbindung. Nutzer wählt die Erweiterung der

@@ -110,6 +110,33 @@ async function openEditor(browser, sim, sent) {
   await page.click('#connect'); // disconnect
   assert.ok(await page.isHidden('#sqMain'));
   await sq.stop();
+  // ---- Streichwurst (SQ 1.1): SQ pages first, then Mod on Daisy alongside on the same port
+  const sw = startSim(SQ_SIM, 'streichwurst');
+  const swSent = [];
+  const swPage = await openEditor(browser, sw, swSent);
+  await swPage.click('#connect');
+  await swPage.waitForSelector('#sqMain:not([hidden])', { timeout: 10000 });
+  await swPage.waitForFunction(() => document.querySelector('#status').textContent.includes('SQ + Matrix'), { timeout: 10000 });
+  assert.match(await swPage.textContent('#sqTitle'), /Streichwurst/);
+  assert.ok(await swPage.isHidden('#sqSteps')); // no pattern card
+  const firstMd = swSent.findIndex((h) => h.startsWith('f07d4d44'));
+  assert.ok(firstMd > 0 && swSent.slice(0, firstMd).every((h) => h.startsWith('f07d5351')), 'SQ is read before MD starts');
+  assert.ok(swSent.every((h) => !['06', '11', '12'].includes(h.slice(10, 12)) || !h.startsWith('f07d5351')), 'read-only connect');
+  await swPage.click('#sqTabs button[data-tab="strings"]');
+  await swPage.selectOption('#sqParams select[data-key="octave"]', '1');
+  await swPage.waitForFunction(() => document.querySelector('#log').textContent.length >= 0);
+  assert.ok((await sw.command('T 10')) && swSent.some((h) => h.startsWith('f07d5351') && h.slice(10, 12) === '06'));
+  await swPage.click('#sqTabs button[data-tab="fx"]');
+  assert.ok(await swPage.isVisible('#sqParams [data-key="reverb"]'));
+  if (SHOTS) await swPage.screenshot({ path: path.join(SHOTS, 'streichwurst-panel.png'), fullPage: true });
+  await swPage.click('#swViewBtn'); // the matrix of the same device
+  assert.ok(await swPage.isVisible('#mdMain') && await swPage.isHidden('#sqMain'));
+  await swPage.waitForFunction(() => document.querySelector('#mdMain').textContent.includes('Registr.'), { timeout: 10000 });
+  if (SHOTS) await swPage.screenshot({ path: path.join(SHOTS, 'streichwurst-matrix.png'), fullPage: true });
+  await swPage.click('#swViewBtn');
+  await swPage.click('#connect'); // disconnect: both sessions end
+  assert.ok(await swPage.isHidden('#sqMain') && await swPage.isHidden('#swViewBtn'));
+  await sw.stop();
   // ---- an MD device still gets the matrix (the SQ probe stays unanswered)
   if (MOD_SIM) {
     const md = startSim(MOD_SIM, 'toy-piano');
@@ -122,6 +149,6 @@ async function openEditor(browser, sim, sent) {
     await md.stop();
   }
   await browser.close();
-  console.log('PASS: browser Acid Seq pages against the firmware SQ device (no MD request, read-only connect, step, '
-    + 'parameter, transport, calibration/enable, stats) and MD devices unchanged');
+  console.log('PASS: browser Acid Seq and Streichwurst pages against the firmware SQ device (Acid Seq: no MD request, read-only connect, step, '
+    + 'parameter, transport, calibration/enable, stats; Streichwurst: SQ first, matrix alongside, pages, view switch) and MD devices unchanged');
 })().catch((e) => { console.error(e); process.exit(1); });

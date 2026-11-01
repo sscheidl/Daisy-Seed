@@ -4,7 +4,9 @@
 // event order, sustain, retrigger, solo stealing, pending-queue limits, variable and zero
 // blocks, invalid input and long renders. Signals are own test signals, not original renders.
 #include "streichwurst/instrument.h"
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <vector>
 
@@ -20,6 +22,7 @@ static int failures = 0;
         }                                                                                          \
     } while(0)
 
+constexpr double kPi = 3.14159265358979323846;
 constexpr float kFs = 48000.f;
 constexpr std::size_t kBlock = 48;
 
@@ -50,10 +53,10 @@ static Rendered Render(Instrument& inst, std::size_t samples, const std::vector<
 }
 
 static double Goertzel(const std::vector<float>& x, std::size_t from, std::size_t n, double hz) {
-    const double w = 2.0 * M_PI * hz / kFs, c = 2.0 * std::cos(w);
+    const double w = 2.0 * kPi * hz / kFs, c = 2.0 * std::cos(w);
     double s1 = 0, s2 = 0;
     for(std::size_t i = 0; i < n; ++i) {
-        const double win = 0.5 - 0.5 * std::cos(2.0 * M_PI * double(i) / double(n - 1));
+        const double win = 0.5 - 0.5 * std::cos(2.0 * kPi * double(i) / double(n - 1));
         const double s = x[from + i] * win + c * s1 - s2;
         s2 = s1;
         s1 = s;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SQ probe: command-line client for Acid Seq firmwares (docs/PROTOCOL.md).
+"""SQ probe: command-line client for the SQ firmwares, Acid Seq and Streichwurst (docs/PROTOCOL.md).
 
 Not the editor. Calibration, CV enable and diagnostics already in phase 1 (4.5).
 
@@ -9,6 +9,7 @@ Not the editor. Calibration, CV enable and diagnostics already in phase 1 (4.5).
     python sq_probe.py components                 # components and parameter descriptors
     python sq_probe.py params step-seq
     python sq_probe.py set step-seq tempo 128
+    python sq_probe.py set streichwurst-fx reverb 35   # Streichwurst (SQ 1.1)
     python sq_probe.py pattern
     python sq_probe.py state
     python sq_probe.py transport start|stop
@@ -97,6 +98,7 @@ def identify(link):
     info = {'protocol': f'{r.u7()}.{r.u7()}', 'product': r.text(), 'version': r.text(),
             'boot_id': f'{r.u32():08X}', 'uid': [r.u32(), r.u32(), r.u32()],
             'capabilities': r.u14(), 'components': r.u7()}
+    info['capability_names'] = [name for name, bit in sq.CAPABILITIES.items() if info['capabilities'] & bit]
     return info
 
 
@@ -108,6 +110,7 @@ def components(link):
         r.u7(), r.u7()
         entry = {'index': index, 'id': r.text(), 'kind': r.u7(), 'version': r.text(), 'schema': r.u7(),
                  'params': []}
+        entry['kind_name'] = sq.KINDS[entry['kind']] if entry['kind'] < len(sq.KINDS) else '?'
         for p in range(r.u7()):
             d = link.request(sq.TYPES['GET_PARAM_DESC'], sq.u7(index) + sq.u7(p))
             d.u7(), d.u7(), d.u7()

@@ -5,7 +5,7 @@
 #
 # JUCE 9.0.4 is fetched by CMake; -DMOD_EDITOR_JUCE_DIR=<path> uses a local checkout.
 cmake_minimum_required(VERSION 3.22)
-project(ModOnDaisyEditor VERSION 0.2.0 LANGUAGES C CXX)
+project(ModOnDaisyEditor VERSION 0.3.0 LANGUAGES C CXX)
 
 # Static MSVC runtime: the .exe runs without the Visual C++ redistributable.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -16,7 +16,11 @@ set(MOD_MODULE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../../modules/mod-on-daisy/i
 # Shared bootloader request (common/bootloader), header-only like the module.
 set(BOOTLOADER_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../../common/bootloader")
 # Acid Seq: the firmware's SQ codec, device and parameter table (shared with the panel).
-set(SQ_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../../sequencers/step-seq/include")
+set(SQ_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../../sequencers/step-seq/include"
+    # Streichwurst: parameter register, tables and Mod on Daisy columns (simulator, patch).
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../instruments/streichwurst/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../instruments/streichwurst/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../effects/streichwurst-fx/include")
 
 if(MOD_EDITOR_JUCE_DIR)
     add_subdirectory("${MOD_EDITOR_JUCE_DIR}" juce EXCLUDE_FROM_ALL)

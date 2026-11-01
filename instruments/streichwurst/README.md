@@ -5,63 +5,59 @@ Eigenständiges String-/Solo-Instrument mit Ensemble und FX für das
 originalnahe Annäherung an den Waldorf Streichfett auf Grundlage lokaler,
 statischer Pluginforschung und selbst entwickelter DSP-Daten und Algorithmen.
 
-**Modularer Aufbau:** Instrument = Stringsection und Soli;
-[separate FX-Komponente](../../effects/streichwurst-fx/README.md) = Animate,
-Ensemble/Chorus, Phaser und Reverb. Das Firmwareprodukt verbindet beide mit
-einer gemeinsamen MIDI-/Control-Anbindung. Die bestehende Mod-on-Daisy-
-Control-App erhält Instrument- und FX-Seiten. Der
-[Modul-/Routingvertrag](docs/MODULAR_ARCHITECTURE.md) ist verbindlich.
+**Stand 01.11.2026: Firmwareprototyp 0.1.0** (Instrument 0.1.0, FX 0.1.0,
+Control App 0.3.0). Host-, Sanitizer-, App- und ARM-Builds lokal bestanden
+([Prüfstatus](docs/VALIDATION.md)). **Hardware, CPU-Last und Klangvergleich zum
+Original: NICHT GEMESSEN** ([Laufzettel](docs/HARDWARE_TEST.md)). Abweichungen vom
+Original je Modul: [FIDELITY.md](docs/FIDELITY.md).
 
-**Stand 2026-11-01:** Umgebung und Claude-Auftrag vorbereitet; Projektstatus
-`planned`. Es gibt noch keine Streichwurst-C++-Engine, Firmware oder
-Hardwareabnahme. Die beigefügten Pythonmodelle sind eigene Forschungsmodelle.
+## Modularer Aufbau
 
-## Einstieg für Claude
+| Baustein | Ort, Komponenten-ID, Version | Inhalt |
+| --- | --- | --- |
+| Instrument | [include/streichwurst/](include/streichwurst/), `streichwurst-instrument`, `STREICHWURST_INSTRUMENT_VERSION` | Stringsection (zwölf Tonklassentakte, Teilerkette, Ereigniskern, Leckintegration, Hüllkurven, Registrierung, Oktaven) und acht Soli |
+| FX | [effects/streichwurst-fx/](../../effects/streichwurst-fx/README.md), `streichwurst-fx`, `STREICHWURST_FX_VERSION` | Animate, Ensemble (3/5/3 Taps), Phaser im Summenarm, Reverb; Stringstufe und Globalstufe getrennt |
+| MIDI/Control | [src/register.h](src/register.h), [src/controls.h](src/controls.h), SQ-Gerät aus `sequencers/step-seq`, Mod on Daisy | ein Parameterregister für Kit, MIDI CC, App und Matrix |
+| Firmwareprodukt | [src/](src/), Build-ID `streichwurst`, `STREICHWURST_VERSION` | Audiograph ([product.h](src/product.h)), Speicher, Board, Queues, Bootloader-Einstieg |
+| Control App | [editors/mod-on-daisy](../../editors/mod-on-daisy/README.md) 0.3.0 | Seiten Strings/Solo/Tastatur/FX/Global, Matrix am selben Port, `.swpatch` |
 
-1. Repositoryregeln [AGENTS.md](../../AGENTS.md),
-   [CLAUDE.md](../../CLAUDE.md) und [HANDOVER.md](../../HANDOVER.md) lesen.
-2. [Projektregeln](AGENTS.md) und [Arbeitsauftrag](docs/CLAUDE_AUFTRAG.md) lesen.
-3. [Forschungsstand und Herkunft](docs/PROVENANCE.md),
-   [Bedienentwurf](docs/CONTROLS.md) und [Prüfstatus](docs/VALIDATION.md) lesen.
-4. Stringsektion plus Ensemble zuerst umsetzen, anschließend Solo und übrige FX.
+Signalfluss (Belege in [FIDELITY.md](docs/FIDELITY.md)): Strings → Animate-Formung →
+Ensemble-Summe → Phaser → Stereo-Tapkorrektur; Soli umgehen die String-FX; Balance;
+globaler Slot (Reverb oder jede andere Wet-Stufe des FX-Vertrags 1.0, z. B. der
+Stereo-Delay); Ensemble-Gainwort × Master; Ausgangsschutz. Die Produktschicht ist
+Build-Zeit-Komposition; einen Laufzeitlader gibt es nicht.
 
-Die [Spezifikation 0.2](docs/research/daisy-dsp-draft-0.2.md) enthält absichtlich
-eigene Ersatzverfahren. Sie ist eine Ausgangsbasis; ihre Vereinfachungen sind
-keine Nachweise des Originalklangs. Die spätere Firmware soll belegte Beziehungen
-bevorzugen und verbleibende Annahmen im Projektbericht offenlegen.
+## Bauen und prüfen
 
-## Arbeitsbereich und Werkzeuge
-
-Projektverzeichnis: `instruments/streichwurst/`, Branch `claude/streichwurst`.
-Lokal wurde dafür ein eigener Worktree unter `.work/streichwurst/` vorbereitet,
-damit andere laufende Instrumentarbeiten erhalten bleiben.
-
-PowerShell im Repositorywurzelverzeichnis dieses Worktrees:
-
-```powershell
-. ./instruments/streichwurst/tools/enter-local.ps1
-make list
-python -B instruments/streichwurst/tests/reference/own_dsp_model.py --test
+```bash
+make PROJECT=streichwurst                         # ARM-Image build/Streichwurst-v0.1.0.bin
+make -C effects/streichwurst-fx test               # FX allein
+make -C instruments/streichwurst test              # Instrument, Produkt, Firmware auf Hostfakes
+make -C instruments/streichwurst test-sanitize
+make -C instruments/streichwurst compare-rates     # 40 kHz + Resampler gegen 48 kHz
+make -C instruments/streichwurst render            # eigene Testsignale nach build/render/*.wav
+python scripts/check-firmware.py instruments/streichwurst/build/Streichwurst-v0.1.0.bin
+make PROJECT=streichwurst manifest                 # Produktmanifest mit Komponentenversionen
 ```
 
-Das lokale Setup verwendet die bereits installierte Toolchain im gemeinsamen
-Checkout. Andere Rechner richten die gepinnten Werkzeuge gemäß
-[BUILD.md](../../docs/BUILD.md) ein. Keine globale PATH-Änderung und kein Download
-durch das Setupskript.
+Unter Windows vorher `. ./instruments/streichwurst/tools/enter-local.ps1` und
+`HOST_CXX=clang++` verwenden. Flashen nur durch den Menschen ([FLASHING.md](../../docs/FLASHING.md)).
 
-`make PROJECT=streichwurst` wird derzeit ausdrücklich als noch nicht
-implementiertes Projekt abgewiesen. Claude ergänzt den echten Build und meldet
-das Projekt erst nach erfolgreichem ARM-Build als `buildable`.
+## Bedienung
 
-## Geplante Struktur
+Kit: [CONTROLS.md](docs/CONTROLS.md) (drei Reglerseiten, Soft takeover, Taster S1–S16,
+S9+S16 5 s = Bootloader). MIDI: USB (J7) und DIN, Kanal einstellbar (Standard Omni),
+CC-Plan und alle Parameter: [PARAMETERS.md](docs/PARAMETERS.md). Mod-Matrix: acht eigene
+Ziele, 1 kHz. Control App: Verbinden liest zuerst SQ, dann die Matrix; „Matrix“/
+„Klangparameter“ schaltet die Ansicht.
 
-* `include/streichwurst/`: portabler Instrument-DSP mit Stringsection und Soli.
-* `../../effects/streichwurst-fx/`: eigenständiger FX-DSP mit eigenen Tests/Version.
-* `src/`: Firmwarezusammensetzung, Desktop-Kit- und MIDI-/Control-Adapter.
-* `../../editors/mod-on-daisy/`: Erweiterung der vorhandenen Control App.
-* `tests/`: eigene DSP-/Ereignis-/Adaptertests und Referenzmodell.
-* `docs/`: Auftrag, Bedienung, Forschung, Abweichungen und Prüfberichte.
-* `build/`: ignorierte lokale Buildausgaben.
+## Dokumente
 
-Eigener Code unter der MIT-Lizenz des Repositorys. Herstellerprogramme,
-Originaldaten, kopierte Tabellen und rohe Analyseausgaben gehören nicht hierher.
+[Arbeitsauftrag](docs/CLAUDE_AUFTRAG.md) · [Modulvertrag](docs/MODULAR_ARCHITECTURE.md) ·
+[Herkunft](docs/PROVENANCE.md) · [Forschung](docs/research/) · [Klangtreue](docs/FIDELITY.md) ·
+[Parameter](docs/PARAMETERS.md) · [Bedienung](docs/CONTROLS.md) ·
+[Abtastrate](docs/RATE_COMPARISON.md) · [Prüfstatus](docs/VALIDATION.md) ·
+[Hardwaretest](docs/HARDWARE_TEST.md) · [Änderungen](CHANGELOG.md)
+
+Eigener Code unter der MIT-Lizenz des Repositorys. Herstellerprogramme, Originaldaten,
+kopierte Tabellen und rohe Analyseausgaben gehören nicht hierher.

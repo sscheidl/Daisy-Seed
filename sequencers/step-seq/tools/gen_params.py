@@ -201,6 +201,7 @@ def generate_labels():
              '    const char* label;',
              '    const char* const* enum_labels;',
              '    int enum_count;',
+             '    const char* page; // panel page of products that group by page ("" = by component)',
              '};',
              '']
     entries = []
@@ -212,7 +213,8 @@ def generate_labels():
                 name = f"kSqEnum{ident(component)}{p['id']}"
                 lines.append(f"inline constexpr const char* {name}[] = {{{', '.join(cstr(l) for l in p['enum_labels'])}}};")
                 count = len(p['enum_labels'])
-            entries.append(f"    {{{cstr(component)}, {cstr(p['key'])}, {cstr(p['label'])}, {name}, {count}}},")
+            entries.append(f"    {{{cstr(component)}, {cstr(p['key'])}, {cstr(p['label'])}, {name}, {count}, "
+                           f"{cstr(p.get('page', ''))}}},")
     lines += ['', 'inline constexpr SqLabel kSqLabels[] = {'] + entries + ['};', '',
               'inline const SqLabel* FindSqLabel(const char* component, const char* key) {',
               '    for(const SqLabel& l : kSqLabels)',

@@ -30,6 +30,12 @@ TYPES = {
     'MONITOR': 0x30, 'GET_STATS': 0x31, 'RESET_STATS': 0x32,
 }
 
+# IDENTIFY capabilities and GET_COMPONENT kinds. SQ 1.1 (compatible) adds bit 6 (the device
+# also speaks Mod on Daisy on this port) and kind 4 (the firmware product, e.g. Streichwurst);
+# component IDs may have 24 characters. Devices report their minor version in IDENTIFY.
+CAPABILITIES = {'cv': 1, 'din': 2, 'voice': 4, 'pattern': 8, 'monitor': 16, 'calibration': 32, 'mod_matrix': 64}
+KINDS = ['sequencer', 'instrument', 'effect', 'dsp', 'product']
+
 ERRORS = {'LENGTH': 1, 'CRC': 2, 'UNKNOWN_TYPE': 3, 'BAD_ARGUMENT': 4, 'BUSY': 5,
           'VERSION': 6, 'UID_MISMATCH': 7, 'NOT_CALIBRATED': 8, 'NOT_ALLOWED': 9}
 

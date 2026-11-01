@@ -82,7 +82,7 @@ static void TestRegister() {
             int32_t v = 0;
             CHECK(ReadParam(s, c, d.id, v));
             if(v != d.def)
-                std::printf("  default mismatch %s: %d != %d\n", d.key, v, d.def);
+                std::printf("  default mismatch %s: %d != %d\n", d.key, int(v), int(d.def));
             CHECK(v == d.def);
             // Round trip over min, max, middle (rasterized for whole-number types).
             for(int32_t w : {d.min, d.max, d.min + (d.max - d.min) / 2}) {

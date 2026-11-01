@@ -2,7 +2,8 @@
 
 2026-11-01. Eigene Adaption für das Seed3 Desktop Development Kit:
 acht Potis, 16 Taster/LEDs laut [Repository-Hardwarebasis](../../../docs/HARDWARE.md).
-Noch nicht implementiert oder am Gerät getestet. Kein Display vorausgesetzt.
+**Implementiert in Firmware 0.1.0** ([src/controls.h](../src/controls.h), Hosttests in
+`tests/test_product.cpp`); am Gerät **NICHT GEMESSEN**. Kein Display vorausgesetzt.
 Keine Behauptung einer identischen Waldorf-Beschriftung oder Parameterrange.
 
 Die Zuordnung gehört zum Firmware-/Bedienadapter gemäß
@@ -56,3 +57,29 @@ Soft takeover bis zum Überqueren des gespeicherten Werts mit Hysterese;
 Anzeige/Latch pro Parameter. MIDIänderungen berücksichtigen. Glättung und
 MIDI-/Poti-Priorität dokumentieren. Dieser Entwurf darf bei realen
 Bedienkonflikten begründet verbessert werden.
+
+## Umsetzung in 0.1.0 (eigene Festlegungen)
+
+* Parameter je Seite und Taster wie oben; Bereiche, Standardwerte und CCs in
+  [PARAMETERS.md](PARAMETERS.md). Ganzzahl-/Enum-Parameter am Poti in gleich breiten Zonen.
+* **Soft takeover:** Nach Start, Seitenwechsel, RAM-Preset oder einer Änderung über MIDI
+  bzw. App ist ein Poti gesperrt, bis es den gespeicherten Wert überquert oder ihm auf
+  2 % nahekommt. Danach schreibt es erst ab 0,4 % Bewegung (Rauschschwelle). Letzte
+  Änderung gewinnt; die Änderung erscheint im SQ-Monitor und damit in der App.
+* **S9/S16:** wirken beim Loslassen und nur, wenn der jeweils andere Taster zwischendurch
+  nicht gedrückt war. Ein begonnener S9+S16-Chord unterdrückt beide Einzelaktionen, auch
+  nach dem 5-s-Bootloadereinstieg oder einem Abbruch durch eine dritte Taste.
+* **S13 Solo-Sustainmodus:** 0 „Abklingen auf Pegel“ (Decay 80 ms auf VR6 Solo),
+  1 „Halten“ (bleibt auf vollem Pegel), 2 „Perkussiv“ (klingt auch gehalten aus,
+  Abklingzeit 0,05–3,2 s über VR6 Solo).
+* **S14:** Layer (alle Tasten an Strings und Soli) / Split (unter dem Splitpunkt Strings,
+  ab dem Splitpunkt Soli). Zuordnung und Transposition gelten je Taste bis zum Loslassen.
+* **S15:** vier eigene RAM-Presets (0 Vertragsstandard, 1 dunkle Strings, 2 helle Strings
+  mit beiden Oktaven und Phaser, 3 Split mit Solo); MIDI-Kanal, Master und Balance bleiben.
+  Kein Flash-/QSPI-Schreiben.
+* **LEDs:** S1–S8 gedrückte Spieltasten; S9–S11 aktive Seite (kurzes Blinken nach dem
+  Wechsel); S12 Ensemble an; S13 aus/schwach/hell je Sustainmodus; S14 Split;
+  S15 blinkt Presetnummer + 1 Mal; S16 leuchtet während der Panikrampe. LED-I²C nur im
+  Hauptprogramm, höchstens alle 10 ms.
+* Glättung: Parameter wirken über die Glieder des DSP (20 ms Mengen, 25,4 ms Balance,
+  51 ms Master, 5 ms Tonhöhe); Potis werden nicht zusätzlich gefiltert.

@@ -123,7 +123,40 @@ function connect(sim, { drop = 0 } = {}) {
   // Out-of-range values are clamped to the descriptor before sending, never wrapped.
   assert.strictEqual(await client.setParam('acid-303', 'cutoff', 1e12), client.component('acid-303').parameters.find((p) => p.key === 'cutoff').max);
   await assert.rejects(client.setParam('acid-303', 'cutoff', NaN));
-  for (const s of [sim, other, fx]) { s.proc.stdin.write('Q\n'); }
+  // Streichwurst (SQ 1.1): Mod on Daisy on the same port, a product component, no pattern.
+  const sw = startSim('streichwurst');
+  const swc = connect(sw);
+  await swc.client.readAll();
+  const swId = swc.client.identity;
+  assert.strictEqual(swId.product, 'streichwurst');
+  assert.strictEqual(swId.protocol, '1.1');
+  assert.ok(swId.hasModMatrix && !(swId.capabilities & S.CAP.pattern));
+  assert.deepStrictEqual(swc.client.components.map((c) => c.id), ['streichwurst-instrument', 'streichwurst-fx', 'streichwurst']);
+  assert.deepStrictEqual(swc.client.components.map((c) => c.kind), [S.KIND.instrument, S.KIND.effect, S.KIND.product]);
+  assert.ok(swc.sent.every((f) => f[5] !== S.TYPE.getPattern && !writes.includes(f[5])));
+  assert.strictEqual(swc.client.component('streichwurst-fx').parameters.find((p) => p.key === 'reverb').value, 20);
+  assert.strictEqual(await swc.client.setParam('streichwurst-instrument', 'registration', 70), 70);
+  assert.strictEqual(await swc.client.setParam('streichwurst-instrument', 'split_key', 61.4), 61);
+  await assert.rejects(swc.client.setParam('streichwurst', 'pot_page', 1));
+  // A pot on the kit appears in the app (monitor).
+  await sw.command('K 1 5 42000').then((l) => l.filter((x) => x.startsWith('R ')).forEach((x) => swc.client.onMessage(bytes(x.slice(2)))));
+  (await sw.command('T 200')).filter((l) => l.startsWith('R ')).forEach((l) => swc.client.onMessage(bytes(l.slice(2))));
+  assert.strictEqual(swc.client.component('streichwurst-fx').parameters.find((p) => p.key === 'phaser').value, 42);
+  // The product patch carries the matrix as an embedded .modpatch object.
+  const matrix = { format: 'mod-on-daisy-patch', version: 1, instrument: { key: 'streichwurst' } };
+  const swText = S.serializePatch(S.patchFromClient(swc.client, matrix));
+  assert.ok(swText.includes('"streichwurst-patch"') && !swText.includes('pot_page'));
+  const swPatch = S.parsePatch(swText);
+  assert.deepStrictEqual(swPatch.matrix, matrix);
+  assert.strictEqual(S.serializePatch(swPatch), swText);
+  assert.strictEqual(S.patchExtension('streichwurst'), 'swpatch');
+  assert.ok(S.checkPatch(swPatch, swc.client).clean);
+  assert.throws(() => S.parsePatch(swText.replace('"product": "streichwurst"', '"product": "acid-seq"')));
+  assert.throws(() => S.parsePatch(swText.replace(/"matrix": .*\n/, '"matrix": [1]\n')));
+  // An Acid Seq patch keeps its format and has no matrix.
+  assert.ok(!text.includes('"matrix"') && text.includes('"acid-seq-patch"'));
+  for (const s of [sim, other, fx, sw]) { s.proc.stdin.write('Q\n'); }
   console.log('PASS: browser SQ client against the firmware device (retry, read-only connect, edits, NAK, '
-    + 'calibration/enable, monitor, stats) and .acidpatch (round trip, explicit upload, compatibility)');
+    + 'calibration/enable, monitor, stats), .acidpatch (round trip, explicit upload, compatibility) '
+    + 'and Streichwurst (SQ 1.1, product kind, monitor, .swpatch with matrix)');
 })().catch((e) => { console.error(e); process.exit(1); });

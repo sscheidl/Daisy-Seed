@@ -19,6 +19,7 @@ const char streichwurst_firmware_version[] = "STREICHWURST-FW-VERSION=" STREICHW
 #include "product.h"
 #include "register.h"
 #include "mod_on_daisy/module.h"
+#include "mod_targets.h"
 #include "mod_on_daisy_desktop.h"
 #include "step_seq/device.h"
 #include "step_seq/diagnostics.h"
@@ -70,21 +71,7 @@ static step_seq::CallbackMeter meter;
 static mod::Module modulation;
 static uint32_t control_ms = 0, panic_count = 0, all_off_seen = 0;
 
-static mod::InstrumentInfo MakeModInfo() {
-    mod::InstrumentInfo info;
-    info.key = "streichwurst";
-    info.version = STREICHWURST_VERSION;
-    info.targets[fw::TargetRegistration] = {"Registr.", "+-100%", 1.0f, false, false};
-    info.targets[fw::TargetAnimate] = {"Animate", "+-100%", 1.0f, false, false};
-    info.targets[fw::TargetPhaser] = {"Phaser", "+-100%", 1.0f, false, false};
-    info.targets[fw::TargetReverb] = {"Reverb", "+-100%", 1.0f, false, false};
-    info.targets[fw::TargetBalance] = {"Balance", "+-100%", 1.0f, false, false};
-    info.targets[fw::TargetSoloTone] = {"Solo Tone", "+-100%", 1.0f, false, false};
-    info.targets[fw::TargetTremolo] = {"Tremolo", "+-100%", 1.0f, false, false};
-    info.targets[fw::TargetPitch] = {"Pitch", "+-1 st", 0.5f, false, false};
-    return info;
-}
-static const mod::InstrumentInfo kModInfo = MakeModInfo();
+static const mod::InstrumentInfo kModInfo = fw::ModInfo(STREICHWURST_VERSION);
 static mod::adapter::UsbMidiSender mod_sender(usb_midi);
 
 // ----- audio callback ---------------------------------------------------------------------

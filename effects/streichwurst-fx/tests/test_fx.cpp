@@ -8,6 +8,7 @@
 #include "streichwurst_fx/reverb_adapter.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <vector>
 

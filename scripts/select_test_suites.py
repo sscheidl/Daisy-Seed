@@ -65,7 +65,12 @@ def select_suites(changed):
         'reverb': shared or touched('effects/reverb/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),
         'mod': shared or touched('modules/mod-on-daisy/'),
-        'editor': shared or touched('editors/mod-on-daisy/', 'instruments/streichwurst/contracts/') or mod_api or
+        # The editor's Streichwurst simulator and patch use the product register and tables.
+        'editor': shared or touched('editors/mod-on-daisy/', 'instruments/streichwurst/contracts/',
+                                    'instruments/streichwurst/src/register.h', 'instruments/streichwurst/src/mod_targets.h',
+                                    'instruments/streichwurst/include/streichwurst/param_table.h',
+                                    'instruments/streichwurst/include/streichwurst/params.h',
+                                    'effects/streichwurst-fx/include/streichwurst_fx/params.h') or mod_api or
                   sq_contract or sq_codec or sq_generator,
         'diagnostics': shared or touched('diagnostics/', 'common/sd/reader/'),
         'fx': shared or fx or dsp or acid_fx,
