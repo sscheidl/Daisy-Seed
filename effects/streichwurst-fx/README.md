@@ -37,5 +37,8 @@ make -C effects/streichwurst-fx test           # HOST_CXX=clang++ unter Windows
 make -C effects/streichwurst-fx test-sanitize
 ```
 
-Eine eigenständige FX-Firmware gibt es in dieser Version nicht; Pflicht war die
-unabhängige Host-Testbarkeit und die Einbindung ins Produkt.
+Eine eigenständige FX-Firmware gibt es in dieser Version nicht; der Auftrag verlangte
+die unabhängige Host-Testbarkeit und die Einbindung ins Produkt. **Offen:** Die seit
+01.11.2026 auf `main` geltende Regel „Modular FX first“ (AGENTS.md) verlangt eine
+Standalone-FX-Firmware und deren Hardwareabnahme, bevor der FX im Instrument abgenommen
+wird. Diese Firmware ist noch nicht gebaut.
