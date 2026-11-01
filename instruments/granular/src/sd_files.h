@@ -33,7 +33,7 @@ class FatFile final : public File {
     uint32_t Size() const override { return open_ ? uint32_t(f_size(&handle_)) : 0; }
     bool Read(uint32_t offset, void* dst, uint32_t bytes) override;
     void Close() override;
-    unsigned Bank() const { return bank_; }
+    unsigned Bank() const override { return bank_; }
 
   private:
     const BankScanner& banks_;

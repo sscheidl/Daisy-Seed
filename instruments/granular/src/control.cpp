@@ -39,13 +39,21 @@ void Parameters::CC(unsigned i,float value) { if(i<8) {primary[i]=Unit(value); c
 void Parameters::ResetAlt() { for(unsigned i=0;i<8;++i) {secondary[i]=0; caught_[1][i]=false;} }
 void Ui::Process(const ControlFrame& f,Sink& sink) {
     const uint8_t sw=f.toggle<=2?f.toggle:0;
-    if(!initialized_) { stable_=candidate_=sw; initialized_=true; mode=sw==1?0:sw==2?2:1; }
+    if(!initialized_) { stable_=candidate_=sw; stable17_=candidate17_=f.toggle17; initialized_=true; mode=sw==1?0:sw==2?2:1; }
     if(sw!=candidate_) {candidate_=sw;switch_at_=f.ms;}
+    if(f.toggle17!=candidate17_) {candidate17_=f.toggle17;switch17_at_=f.ms;}
+    // SW17 (20 ms stable, like SW18): keys held across the change stay suppressed
+    // until released. It only matters in SAMPLE mode but is tracked in every mode.
+    if(candidate17_!=stable17_ && f.ms-switch17_at_>=20) {
+        stable17_=candidate17_;
+        if(mode==1) {held_=f.keys; suppressed_|=f.keys;}
+    }
     if(candidate_!=stable_ && f.ms-switch_at_>=20) {
         for(unsigned i=0;i<16;++i) if(keyboard&(1u<<i)) sink.Key(i,kNotes[i],false);
         keyboard=0; stable_=candidate_; mode=stable_==1?0:stable_==2?2:1;
         held_=f.keys; suppressed_=f.keys; secondary=false; source_used_=file_used_=true;
     }
+    bank_view=mode==1 && stable17_==kSw17BankWhenPressed;
     suppressed_ &= f.keys;
     const uint16_t keys=f.keys & ~suppressed_, rise=keys & ~held_, fall=held_ & ~keys;
     held_=keys;
@@ -56,7 +64,10 @@ void Ui::Process(const ControlFrame& f,Sink& sink) {
             if(fall&(1u<<i)) sink.Key(i,kNotes[i],false);
         }
     } else if(mode==1) {
-        for(unsigned i=0;i<16;++i) if(rise&(1u<<i)) sink.Select(i+1);
+        // Choosing a bank loads nothing; only a slot press in slot view loads.
+        for(unsigned i=0;i<16;++i) if(rise&(1u<<i)) {
+            if(bank_view) sink.SelectBank(i+1); else sink.Select(i+1);
+        }
     } else {
         if(rise&4) {source_at_=f.ms;source_used_=false;}
         secondary=(keys&4) && f.ms-source_at_>=300;

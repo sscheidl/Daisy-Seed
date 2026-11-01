@@ -320,3 +320,14 @@
 
 
 /*--- End of configuration options ---*/
+
+/*---------------------------------------------------------------------------/
+/ Compatibility with libDaisy headers (not an upstream option)
+/----------------------------------------------------------------------------/
+/ libDaisy's daisy.h always includes sys/fatfs.h and util/FileTable.h, which declare
+/ FatFSInterface/FileTable with the R0.12c option names. Firmware on this driver never
+/ uses them (scripts/check-sd-symbols.py bans FatFSInterface and the R0.12c driver);
+/ the aliases only let those declarations compile against R0.16.
+*/
+#define _VOLUMES	FF_VOLUMES
+#define _MAX_LFN	FF_MAX_LFN

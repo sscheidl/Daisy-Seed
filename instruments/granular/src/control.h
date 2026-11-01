@@ -6,7 +6,11 @@ namespace neb {
 constexpr uint8_t kNotes[16]={60,62,64,65,67,69,71,72,72,74,76,77,79,81,83,84};
 enum Param { Start, Speed, Size, Density, Pitch, Overlap, Blend, Window };
 enum class Action { Record, FileNext, Source, Reset, Freeze, Clear, Circular, Order, GrainTrigger, ResetAlt };
-struct ControlFrame { float pot[8]{}; uint32_t ms=0; uint16_t keys=0; uint8_t toggle=0; };
+// toggle: SW18 position (Switch3: 0 center, 1 up, 2 down). toggle17: SW17 Pressed().
+struct ControlFrame { float pot[8]{}; uint32_t ms=0; uint16_t keys=0; uint8_t toggle=0; bool toggle17=false; };
+// SW17 in SAMPLE mode: which mechanical position selects banks. The lever direction
+// is verified in the hardware test (HARDWARE_TEST_PLAN.md); one constant to flip.
+constexpr bool kSw17BankWhenPressed = true;
 struct Midi { uint8_t type=0, channel=0, a=0, b=0; }; // status upper nibble
 class MidiParser {
   public:
@@ -36,6 +40,7 @@ struct Sink {
     virtual ~Sink()=default;
     virtual void Act(Action action)=0;
     virtual void Select(unsigned slot)=0;
+    virtual void SelectBank(unsigned bank)=0;
     virtual void Key(unsigned id,unsigned note,bool on)=0;
 };
 class Parameters {
@@ -54,11 +59,13 @@ class Ui {
     unsigned mode=1;
     uint16_t keyboard=0;
     bool secondary=false;
+    bool bank_view=false; // SAMPLE mode with SW17 in its bank position
     void Process(const ControlFrame& f,Sink& sink);
   private:
     uint16_t held_=0, suppressed_=0;
     uint8_t stable_=0,candidate_=0;
-    uint32_t switch_at_=0,source_at_=0,file_at_=0;
+    bool stable17_=false,candidate17_=false;
+    uint32_t switch_at_=0,switch17_at_=0,source_at_=0,file_at_=0;
     bool initialized_=false, source_used_=false,file_used_=false;
 };
 // Distinct source IDs prevent keyboard/MIDI and per-channel note-off collisions.

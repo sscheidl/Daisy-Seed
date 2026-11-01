@@ -91,9 +91,10 @@ static void TestWav(size_t actual_capacity=41695360) {
     std::puts("PASS WAV: format matrix, exact capacities, truncation, duplicate/padded/reordered chunks, 10000 corruptions");
 }
 struct UiSink : Sink {
-    std::vector<Action> actions;std::vector<unsigned> slots;unsigned on=0,off=0;
+    std::vector<Action> actions;std::vector<unsigned> slots,banks;unsigned on=0,off=0;
     void Act(Action a) override {actions.push_back(a);}
     void Select(unsigned s) override {slots.push_back(s);}
+    void SelectBank(unsigned b) override {banks.push_back(b);}
     void Key(unsigned,unsigned,bool pressed) override {if(pressed)++on;else ++off;}
 };
 static void TestUi() {
@@ -284,6 +285,121 @@ static void TestLoader() {
     CHECK(ll.active==2);
     std::puts("PASS loader: preflight retention, bounded load, atomic fade/ack/publish, destructive I/O failure, no-card, back-to-back loads");
 }
+
+// ---------------- v0.2.0: SW17 banks, panel LEDs, FILE per bank, F6, F3 ----------------
+static void TestSw17() {
+    Ui ui;UiSink s;ControlFrame f;
+    ui.Process(f,s);CHECK(ui.mode==1 && !ui.bank_view);
+    f.keys=1;f.ms=1;ui.Process(f,s);f.keys=0;f.ms=2;ui.Process(f,s);CHECK(s.slots.back()==1 && s.banks.empty());
+    // SW17 to the bank position, stable for 20 ms; a key held across the change stays muted.
+    f.keys=4;f.ms=10;ui.Process(f,s);const size_t slots=s.slots.size();
+    f.toggle17=kSw17BankWhenPressed;f.ms=11;ui.Process(f,s);f.ms=30;ui.Process(f,s);CHECK(!ui.bank_view);
+    f.ms=31;ui.Process(f,s);CHECK(ui.bank_view);
+    f.keys=4|8;f.ms=40;ui.Process(f,s);CHECK(s.banks.size()==1 && s.banks.back()==4);  // only the new key
+    f.keys=0;f.ms=41;ui.Process(f,s);f.keys=4;f.ms=42;ui.Process(f,s);CHECK(s.banks.back()==3);
+    CHECK(s.slots.size()==slots);  // no slot selection while in bank view
+    for(unsigned i=0;i<16;++i) {f.keys=uint16_t(1u<<i);f.ms+=2;ui.Process(f,s);f.keys=0;f.ms+=2;ui.Process(f,s);CHECK(s.banks.back()==i+1);}
+    // A bounce shorter than 20 ms is ignored.
+    f.toggle17=!kSw17BankWhenPressed;f.ms+=1;ui.Process(f,s);f.toggle17=kSw17BankWhenPressed;f.ms+=10;ui.Process(f,s);
+    f.ms+=30;ui.Process(f,s);CHECK(ui.bank_view);
+    // NEBULAE and KEYBOARD ignore SW17.
+    f.toggle=1;f.ms+=1;ui.Process(f,s);f.ms+=25;ui.Process(f,s);CHECK(ui.mode==0 && !ui.bank_view);
+    f.toggle=2;f.ms+=1;ui.Process(f,s);f.ms+=25;ui.Process(f,s);CHECK(ui.mode==2 && !ui.bank_view);
+    const size_t banks=s.banks.size();f.keys=1;f.ms+=1;ui.Process(f,s);CHECK(s.on==1 && s.banks.size()==banks);
+    f.keys=0;f.toggle=0;f.ms+=1;ui.Process(f,s);f.ms+=25;ui.Process(f,s);CHECK(ui.mode==1 && ui.bank_view);
+    std::puts("PASS SW17: slot/bank view only in SAMPLE, 20 ms debounce, held keys suppressed, 16 bank keys");
+}
+static void TestPanelLeds() {
+    LedState s;s.mode=1;s.bank_view=true;s.bank=3;s.bank_mask=0x00ff;
+    LedFrame f=PanelLeds(s);CHECK(f.on==0x4 && f.dim==0xfb);
+    s.bank_mask=0x0003;s.bank=2;f=PanelLeds(s);CHECK(f.on==2 && f.dim==1);  // missing banks off
+    s.scanning_bank=2;unsigned lit=0;for(s.ms=0;s.ms<1000;++s.ms) {f=PanelLeds(s);lit+=f.on==2;CHECK((f.dim&2)==0);}
+    CHECK(lit==500);  // 5 Hz flash
+    s.scanning_bank=0;s.bank_failed=true;unsigned pulses=0;bool last=false;
+    for(s.ms=0;s.ms<2000;++s.ms) {const bool on=PanelLeds(s).on&2;if(on&&!last)++pulses;last=on;}
+    CHECK(pulses==4);
+    s=LedState{};s.mode=1;s.active=5;f=PanelLeds(s);CHECK(f.on==0x10 && f.dim==0);
+    s.active=0;f=PanelLeds(s);CHECK(f.on==0);  // playing sample from another bank: no slot LED
+    s.mode=0;s.status=1|4;s.overrun=true;f=PanelLeds(s);CHECK(f.on==(1|4|kOverrunLed));
+    s.overrun=false;CHECK(PanelLeds(s).on==(1|4));
+    s.mode=2;s.keys=0x8001;s.overrun=true;s.bank_mask=0xffff;f=PanelLeds(s);CHECK(f.on==0x8001 && f.dim==0);
+    std::puts("PASS panel LEDs: bank view bright/dim/off, scan flash, code 4, slot only in its bank, D16 overrun latch in NEBULAE only");
+}
+static void TestFileBanks() {
+    Rig r;r.e->occupied=0b1011;r.e->selected_bank=2;
+    r.bridge.slot=2;r.bridge.bank=1;r.bridge.generation.fetch_add(1);r.Tick();CHECK(r.e->PlayingBank()==1);
+    r.e->Act(Action::FileNext);CHECK(r.e->requested_slot==1);  // other bank: first slot of the order
+    r.e->file_order=1;r.e->Act(Action::FileNext);CHECK(r.e->requested_slot==4);  // backward: last
+    r.bridge.bank=2;r.bridge.generation.fetch_add(1);r.Tick();
+    r.e->file_order=0;r.e->Act(Action::FileNext);CHECK(r.e->requested_slot==4);  // same bank: after 2
+    r.e->file_order=1;r.e->Act(Action::FileNext);CHECK(r.e->requested_slot==1);
+    r.e->SelectBank(7);CHECK(r.e->requested_bank==7 && r.e->requested_slot==1);  // a bank loads nothing
+    std::puts("PASS FILE per bank: forward/backward start in the selected bank, bank select without load");
+}
+static void TestTriggerClock() {
+    {   // Trigger in the very first block: period 0, cap 0, the 0.5 ms floor (original: 0 -> 0.5).
+        Rig z;z.e->ui.params.primary[Density]=0;z.e->ui.params.primary[Overlap]=1;
+        z.e->Init(z.a.data(),z.b.data(),8192,z.pcm.data(),z.bridge);z.e->trigger_mode=true;
+        z.e->TriggerGrain();z.Tick();Near(z.e->LastGrainMs(),.5f,1e-6);
+    }
+    Rig r;r.e->trigger_mode=true;r.e->ui.params.primary[Density]=0;r.e->ui.params.primary[Overlap]=1;
+    for(unsigned i=0;i<100;++i) r.Tick();
+    // First edge: the period counts from start (original ktickssincelastclock init 0), but
+    // the portk-smoothed value starts at 0, so the first grains stay short.
+    r.e->TriggerGrain();r.Tick();
+    CHECK(r.e->LastGrainMs()<30 && r.e->LastGrainMs()<=6*r.e->SmoothedClockSeconds()*1000*1.0001f+.5f);
+    // Clock every 19 blocks (101.3 ms): after settling, size <= 6 x period.
+    const float period=19.f*kBlock/kRate;
+    for(unsigned b=0;b<19*80;++b) {if(b%19==0) r.e->TriggerGrain();r.Tick();}
+    Near(r.e->SmoothedClockSeconds(),period,period*.01);
+    r.e->TriggerGrain();r.Tick();
+    CHECK(r.e->LastGrainMs()<=6*r.e->SmoothedClockSeconds()*1000*1.0001f && r.e->LastGrainMs()>590);
+    // Faster clock shrinks grains; a very slow clock leaves the overlap law (1000.5 ms) in force.
+    for(unsigned b=0;b<2*400;++b) {if(b%2==0) r.e->TriggerGrain();r.Tick();}
+    r.e->TriggerGrain();r.Tick();CHECK(r.e->LastGrainMs()<70 && r.e->LastGrainMs()>=.5f);
+    for(unsigned b=0;b<3;++b) {for(unsigned i=0;i<1900;++i) r.Tick();r.e->TriggerGrain();r.Tick();}  // ~10 s period
+    for(unsigned i=0;i<800;++i) r.Tick();
+    r.e->TriggerGrain();r.Tick();Near(r.e->LastGrainMs(),1000.5f,.5f);
+    // 2 minutes without a clock: the counter saturates at 60 s, everything stays finite.
+    for(unsigned i=0;i<22600;++i) r.Tick();
+    r.e->TriggerGrain();r.Tick();CHECK(std::isfinite(r.e->SmoothedClockSeconds()) && r.e->SmoothedClockSeconds()<=60.f);
+    // Internal density (> 0) is never clock-limited.
+    Rig d;d.e->ui.params.primary[Density]=.3f;d.e->ui.params.primary[Overlap]=1;
+    for(unsigned i=0;i<200;++i) d.Tick();
+    CHECK(d.e->LastGrainMs()>100);
+    std::puts("PASS F6 trigger clock: 0.5 ms floor, 6x smoothed period cap, fast/slow/saturated clocks, internal density unaffected");
+}
+static void TestPackedFft() {
+    auto fft=std::make_unique<RFFT>();fft->Init();
+    std::mt19937 rng(99);std::uniform_real_distribution<float> u(-1,1);
+    float a[FFT_N+2],b[FFT_N+2],ra[FFT_N+2],rb[FFT_N+2];
+    for(unsigned trial=0;trial<20;++trial) {
+        for(unsigned i=0;i<FFT_N;++i) {ra[i]=a[i]=u(rng)*(trial%3==0?1e-3f:1.f);rb[i]=b[i]=trial%5==0?0:u(rng);}
+        fft->Forward(ra);fft->Forward(rb);fft->ForwardPair(a,b);
+        float peak=0,err=0;
+        for(unsigned i=0;i<FFT_N;++i) {peak=std::max({peak,std::abs(ra[i]),std::abs(rb[i])});err=std::max({err,std::abs(a[i]-ra[i]),std::abs(b[i]-rb[i])});}
+        CHECK(err<=peak*2e-5f+1e-7f);
+    }
+    // Mincer A/B on a stereo source: identical hop timing (no L/R offset), outputs equal
+    // within float rounding, channels stay isolated.
+    const unsigned frames=96000;std::vector<int16_t> pcm(frames*2);
+    for(unsigned i=0;i<frames;++i) {pcm[2*i]=Encode(.3f*std::sin(6.283185307f*220*i/48000));pcm[2*i+1]=Encode(i%4800<64?.5f:0.f);}
+    const PcmView view{pcm.data(),frames,48000,2};
+    auto packed=std::make_unique<Mincer>(),plain=std::make_unique<Mincer>();
+    packed->Init(48000);plain->Init(48000);plain->SetPackedForward(false);
+    double positions[kBlock];float pa[kBlock],pb[kBlock];double pos=0,diff=0,energy=0,error=0;
+    for(unsigned c=0;c<2;++c) {
+        packed->Reset();plain->Reset();pos=0;
+        for(unsigned block=0;block<300;++block) {
+            for(unsigned s=0;s<kBlock;++s) {positions[s]=pos;pos+=.7;}
+            packed->Process(positions,view,c,1.3f,1.f,pa,kBlock);plain->Process(positions,view,c,1.3f,1.f,pb,kBlock);
+            for(unsigned s=0;s<kBlock;++s) {diff=std::max(diff,double(std::abs(pa[s]-pb[s])));energy+=double(pb[s])*pb[s];error+=double(pa[s]-pb[s])*(pa[s]-pb[s]);CHECK(std::isfinite(pa[s]));}
+        }
+    }
+    const double ratio_db=10*std::log10(error/energy);
+    CHECK(energy>1 && diff<2e-4 && ratio_db<-80);
+    std::printf("PASS F3 packed forward FFT: 20 random pairs, Mincer A/B max diff %.2e, error/signal %.1f dB, same hop timing per channel\n",diff,ratio_db);
+}
 int main(int argc,char** argv) {
     if(argc==3 && std::strcmp(argv[1],"--wav-capacity")==0) {
         const size_t capacity=size_t(std::strtoull(argv[2],nullptr,10));
@@ -291,5 +407,6 @@ int main(int argc,char** argv) {
     }
     const auto start=std::chrono::steady_clock::now();
     TestWav();TestUi();TestDsp();TestMidi();TestFreePlayback();TestRecordSource();TestLoader();
+    TestSw17();TestPanelLeds();TestFileBanks();TestTriggerClock();TestPackedFft();
     std::printf("PASS %u assertions in %.2f s (HOST timing, not Cortex-M7 CPU evidence)\n",checks,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
 }

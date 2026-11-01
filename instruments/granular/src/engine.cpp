@@ -41,7 +41,10 @@ void Engine::Act(Action a) {
     case Action::Record: if(recording) EndRecord();else BeginRecord();break;
     case Action::FileNext: {
         if(!occupied) {requested_slot=1;break;}
-        unsigned start=active_slot_?active_slot_:(file_order==1?1:0), step=file_order==1?15:1;
+        // FILE steps inside the selected bank; a sample from another bank starts the
+        // order at that bank's first slot (last slot when stepping backward).
+        const unsigned current=playing_bank_==selected_bank?active_slot_:0;
+        unsigned start=current?current:(file_order==1?1:0), step=file_order==1?15:1;
         if(file_order==2) start=unsigned(Random()*16);
         for(unsigned j=1;j<=16;++j) {unsigned s=(start+step*j+15)%16; if(occupied&(1u<<s)) {requested_slot=s+1;break;}}
         break;
@@ -99,7 +102,9 @@ void Engine::RenderGrains(const PcmView& src,const float* left,const float* righ
                 if(g && Random()>=alt_[Window]*.99f) {
                     const float overlap=std::clamp(smoothed_[Overlap]*smoothed_[Overlap]+(2*Random()-1)*alt_[Overlap]*alt_[Overlap],0.f,1.f);
                     float ms=density>0 ? overlap*(density<4?4:6)*1000/density+1 : overlap*overlap*1000+.5f;
+                    if(density<=0) ms=std::max(.5f,std::min(ms,6*smooth_clock_*1000)); // F6
                     ms=std::min(ms,8000.f);
+                    last_grain_ms_=ms;
                     g->active=true;g->envelope=0;g->increment=1000/(kRate*ms);
                     g->position=positions_[s]+(2*Random()-1)*alt_[Start]*alt_[Start]*src.frames;
                     g->position=std::fmod(g->position,double(src.frames));
@@ -138,10 +143,16 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
     if(gen!=generation_) {
         const auto& f=bridge_->published;
         file_view_={file_,f.frames,f.rate,f.channels};generation_=gen;active_slot_=bridge_->slot;
+        playing_bank_=bridge_->bank;
         file_detached_=false;
         if(!live) {position_=0;ResetDsp();}
     }
     if(!gate) bridge_->ack.store(false,std::memory_order_release);
+    // External clock period for trigger mode (F6), measured in samples between gate
+    // edges and smoothed like Csound portk with a 0.5 s half-time, once per block.
+    if(clock_edge_) {clock_period_=float(clock_samples_)/kRate;clock_samples_=0;clock_edge_=false;}
+    smooth_clock_=clock_period_+std::pow(.5f,float(n)/(.5f*kRate))*(smooth_clock_-clock_period_);
+    clock_samples_=std::min(clock_samples_+n,uint32_t(60*kRate));
     const float smooth=1-std::exp(-float(n)/(kRate*.02f));
     for(unsigned i=0;i<8;++i) {
         if(!(recording && !circular && (i==Start||i==Size||i==Speed)))
