@@ -222,6 +222,83 @@ def test_invalid_cv_fields_are_rejected(bad):
         p.parse_state(p.parse_message(bad))
 
 
+AU_EXAMPLE = "AU il=10000 ir=0 ol=5000 or=1 tone=SINE,1000,1000,LR"
+SC_LAST_CHUNK = ("SC i=6 k=7 n=256 d=" + "".join(
+    f"{i & 0xFFFF:04X}{(-i) & 0xFFFF:04X}" for i in range(240, 256)))
+
+
+def test_audio_levels_parse_and_dbfs():
+    a = p.parse_audio(p.parse_message(AU_EXAMPLE))
+    assert a.inputs == [1.0, 0.0] and a.outputs == [0.5, 0.0001]
+    assert (a.tone_mode, a.tone_freq_hz, a.tone_amplitude, a.tone_channels) == ("SINE", 1000, 1000, "LR")
+    assert p.AudioLevels.dbfs(0.0) is None
+    assert p.AudioLevels.dbfs(1.0) == pytest.approx(0.0)
+    assert p.AudioLevels.dbfs(0.5) == pytest.approx(-6.02, abs=0.01)
+
+
+@pytest.mark.parametrize("bad", [
+    AU_EXAMPLE.replace("il=10000", "il=10001"),
+    AU_EXAMPLE.replace("il=10000", "il=+1"),
+    AU_EXAMPLE.replace(" or=1", ""),
+    AU_EXAMPLE.replace("tone=SINE,1000,1000,LR", "tone=SINE,1000,1000"),
+    AU_EXAMPLE.replace("tone=SINE,1000,1000,LR", "tone=SQUARE,1000,1000,LR"),
+    AU_EXAMPLE.replace("tone=SINE,1000,1000,LR", "tone=SINE,19,1000,LR"),
+    AU_EXAMPLE.replace("tone=SINE,1000,1000,LR", "tone=SINE,1000,5001,LR"),
+    AU_EXAMPLE.replace("tone=SINE,1000,1000,LR", "tone=SINE,1000,1000,X"),
+])
+def test_invalid_audio_frames_are_rejected(bad):
+    with pytest.raises(p.ProtocolError):
+        p.parse_audio(p.parse_message(bad))
+
+
+def test_scope_chunk_parse_and_assembly():
+    last = p.parse_scope_chunk(p.parse_message(SC_LAST_CHUNK))
+    assert (last.index, last.chunks, last.frames) == (6, 7, 256)
+    assert last.samples[0] == (240, -240) and last.samples[-1] == (255, -255)
+    assert len(last.samples) == 16  # 256 - 6 * 40
+    assembler = p.ScopeAssembler()
+    chunks = []
+    for k in range(7):
+        frames = range(k * 40, min(256, (k + 1) * 40))
+        data = "".join(f"{i & 0xFFFF:04X}{(-i) & 0xFFFF:04X}" for i in frames)
+        chunks.append(p.parse_scope_chunk(p.parse_message(f"SC i={k} k=7 n=256 d={data}")))
+    for chunk in chunks[:-1]:
+        assert assembler.add(chunk) is None
+    capture = assembler.add(chunks[-1])
+    assert capture is not None and len(capture) == 256
+    assert capture[0] == (0, 0) and capture[255] == (255, -255)
+    # A restarted capture (index 0 again) discards the previous partial set.
+    assert assembler.add(chunks[3]) is None
+    assert assembler.add(chunks[0]) is None
+    assert assembler.frames == 256 and len(assembler._parts) == 1
+
+
+@pytest.mark.parametrize("bad", [
+    SC_LAST_CHUNK.replace("i=6", "i=7"),                 # index >= chunks
+    SC_LAST_CHUNK.replace("n=256", "n=255"),             # below the minimum
+    SC_LAST_CHUNK[:-8],                                  # one frame short
+    SC_LAST_CHUNK + "00",                                # not a multiple of 8 hex digits
+    SC_LAST_CHUNK.replace("00F0FF10", "00G0FF10"),       # not hex
+    SC_LAST_CHUNK.replace("k=7", "k=8"),                 # k inconsistent with n
+])
+def test_invalid_scope_chunks_are_rejected(bad):
+    with pytest.raises(p.ProtocolError):
+        p.parse_scope_chunk(p.parse_message(bad))
+
+
+def test_tone_and_scope_commands_clamp_like_the_firmware_limits():
+    assert p.cmd_tone("SINE") == "TONE m=SINE"
+    assert p.cmd_tone("SINE", 10, 9000, "L") == "TONE m=SINE f=20 a=5000 ch=L"
+    assert p.cmd_tone("OFF", 30000) == "TONE m=OFF f=20000"
+    with pytest.raises(ValueError):
+        p.cmd_tone("SQUARE")
+    with pytest.raises(ValueError):
+        p.cmd_tone("SINE", channels="X")
+    assert p.cmd_scope() == "SCOPE"
+    assert p.cmd_scope(100, False) == "SCOPE n=256 t=0"
+    assert p.cmd_scope(4096, True) == "SCOPE n=2048 t=1"
+
+
 def test_cv_rounding_and_command():
     assert p.cv_to_int(float("nan")) == 0
     assert p.cv_to_int(-2.0) == -10000

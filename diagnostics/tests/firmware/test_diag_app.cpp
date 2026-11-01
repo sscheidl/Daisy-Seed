@@ -74,6 +74,49 @@ class FakeBoard final : public diag::Board {
         if(usb)
             delivered_at_boot = usb->delivered.size();
     }
+
+    // ---- audio (0.4.0) ----
+    bool audio = false;
+    diag::ToneSettings tone;
+    uint32_t tone_until = 0;
+    int tone_writes = 0;
+    diag::AudioLevels levels;
+    int level_reads = 0;
+    uint16_t scope_frames = 0;
+    bool scope_trigger = false;
+    bool scope_ready = false;
+    int scope_starts = 0;
+    std::vector<int16_t> scope_samples;
+
+    bool AudioSupported() override { return audio; }
+    void ApplyTone(const diag::ToneSettings& t, uint32_t keep_until) override {
+        tone = t;
+        tone_until = keep_until;
+        ++tone_writes;
+    }
+    diag::AudioLevels ReadAudioLevels() override {
+        ++level_reads;
+        const diag::AudioLevels read = levels;
+        levels = diag::AudioLevels();
+        return read;
+    }
+    bool StartScope(uint16_t frames, bool trigger) override {
+        if(scope_frames && !scope_ready)
+            return false;  // still capturing
+        ++scope_starts;
+        scope_frames = frames;
+        scope_trigger = trigger;
+        scope_ready = false;
+        return true;
+    }
+    const int16_t* ScopeData(uint16_t& frames) override {
+        if(!scope_ready) {
+            frames = 0;
+            return nullptr;
+        }
+        frames = scope_frames;
+        return scope_samples.data();
+    }
 };
 
 struct Rig {
@@ -136,7 +179,7 @@ void TestHandshakeAndRate() {
     r.Run(1);
     auto got = r.Received();
     CHECK(got.size() == 3);
-    CHECK(got.size() == 3 && StartsWith(got[0], "HELLO proto=1 fw=0.3.2"));
+    CHECK(got.size() == 3 && StartsWith(got[0], "HELLO proto=1 fw=0.4.0"));
     CHECK(got.size() == 3 && StartsWith(got[1], "ST n=0 "));
     CHECK(got.size() == 3 && StartsWith(got[2], "SYS "));
     for(int k = 0; k < 4; ++k) {  // keep the host alive with PINGs
@@ -474,9 +517,184 @@ void TestGatesInState() {
     CHECK(!got.empty() && got[0].find(" cv=0,-2500 cvr=0,24575 g=10 gc=0300 ") != std::string::npos);
 }
 
+// ---- audio extension (firmware 0.4.0) ---------------------------------------------
+void TestToneLifecycle() {
+    Rig r;
+    r.board.audio = true;
+    r.Host("TONE m=SINE");
+    r.Run(5);
+    auto got = r.Received();
+    CHECK(Count(got, "ERR c=TONE e=SESSION") == 1);
+    CHECK(r.board.tone.mode == diag::ToneMode::Off);
+    r.Host("HELLO proto=1");
+    r.Run(50);
+    r.Received();
+    r.Host("TONE m=SINE f=1000 a=2000");
+    r.Run(5);
+    got = r.Received();
+    CHECK(Count(got, "ACK c=TONE m=SINE f=1000 a=2000 ch=LR") == 1);
+    CHECK(r.board.tone.mode == diag::ToneMode::Sine && r.board.tone.amplitude == 2000);
+    CHECK(r.board.tone_until > r.now && r.board.tone_until <= r.now + diag::App::kToneKeepAliveMs);
+    const uint32_t before = r.board.tone_until;
+    r.Run(300);
+    CHECK(r.board.tone_until > before);  // the running main loop refreshes the deadline
+    r.board.levels.in[0] = 1234;
+    r.board.levels.out[1] = 2000;
+    r.Run(100);
+    got = r.Received();
+    CHECK(Count(got, "AU ") >= 1);
+    bool levels_seen = false;
+    for(const auto& b : got)
+        if(b.find("il=1234 ") != std::string::npos && b.find(" or=2000 ") != std::string::npos
+           && b.find("tone=SINE,1000,2000,LR") != std::string::npos)
+            levels_seen = true;
+    CHECK(levels_seen);
+    CHECK(r.board.level_reads >= 1);
+    // Session end: the tone is switched off and no AU frames follow.
+    r.Host("BYE");
+    r.Run(5);
+    CHECK(r.board.tone.mode == diag::ToneMode::Off);
+    r.Received();
+    r.Run(500);
+    CHECK(Count(r.Received(), "AU ") == 0);
+    // Timeout as well.
+    r.Host("HELLO proto=1");
+    r.Host("TONE m=SINE");
+    r.Run(5);
+    CHECK(r.board.tone.mode == diag::ToneMode::Sine);
+    r.Run(diag::kHostTimeoutMs + 10);
+    CHECK(r.board.tone.mode == diag::ToneMode::Off);
+}
+
+void TestOutputsSilencedBeforeBlockingSdTest() {
+    Rig r;
+    r.board.audio = true;
+    r.board.inputs.sd_card = true;
+    r.board.clock = &r.now;
+    r.board.sd_block_ms = 3000;
+    r.Host("HELLO proto=1");
+    r.Run(50);
+    r.Host("CVOUT m=FIX c1=4000 c2=1");
+    r.Host("TONE m=SINE");
+    r.Run(5);
+    r.Received();
+    CHECK(!r.board.cv_writes.empty());
+    const auto applied = r.board.cv_writes.back();
+    CHECK(applied.first == 4000 && applied.second == 1);
+    r.board.cv_writes.clear();
+    r.Host("SDTEST");
+    r.Run(1);  // blocks: CV OUT and tone must be off before the test starts
+    CHECK(!r.board.cv_writes.empty());
+    const auto silenced = r.board.cv_writes.front();
+    CHECK(silenced.first == 0 && silenced.second == 0);
+    CHECK(r.board.tone.mode == diag::ToneMode::Off);
+    CHECK(r.app.settings().cv_mode == diag::CvOutMode::Off);
+    CHECK(Count(r.Received(), "SD st=") == 1);
+    // Without queued host frames the blocked time counts as silence: no artificial keep-alive.
+    r.Run(10);
+    CHECK(!r.app.HostActive(r.now));
+}
+
+void TestScopeTransfer() {
+    Rig r;
+    r.board.audio = true;
+    r.Host("SCOPE");
+    r.Run(2);
+    auto got = r.Received();
+    CHECK(Count(got, "ERR c=SCOPE e=SESSION") == 1);
+    r.Host("HELLO proto=1");
+    r.Run(50);
+    r.Received();
+    r.Host("SCOPE n=256 t=0");
+    r.Run(2);
+    got = r.Received();
+    CHECK(Count(got, "ACK c=SCOPE n=256 t=0 k=7") == 1);
+    CHECK(r.board.scope_starts == 1 && r.board.scope_frames == 256 && !r.board.scope_trigger);
+    r.Host("SCOPE");
+    r.Run(2);
+    got = r.Received();
+    CHECK(Count(got, "ERR c=SCOPE e=BUSY") == 1);
+    CHECK(Count(got, "SC ") == 0);  // nothing until the capture is complete
+    r.board.scope_samples.assign(512, 0);
+    for(int i = 0; i < 256; ++i) {
+        r.board.scope_samples[2 * i] = static_cast<int16_t>(i);
+        r.board.scope_samples[2 * i + 1] = static_cast<int16_t>(-i);
+    }
+    r.board.scope_ready = true;
+    r.Run(50);
+    got = r.Received();
+    CHECK(Count(got, "SC ") == 7);
+    int expected_index = 0;
+    size_t hex_digits = 0;
+    for(const auto& b : got) {
+        if(!StartsWith(b, "SC "))
+            continue;
+        char v[12];
+        uint32_t index = 999;
+        CHECK(ddp::FindField(b.c_str(), "i", v, sizeof(v)) && ddp::ParseU32(v, index));
+        CHECK(static_cast<int>(index) == expected_index++);
+        CHECK(ddp::FindField(b.c_str(), "k", v, sizeof(v)) && std::string(v) == "7");
+        CHECK(ddp::FindField(b.c_str(), "n", v, sizeof(v)) && std::string(v) == "256");
+        const size_t d = b.find(" d=");
+        CHECK(d != std::string::npos && b.size() <= ddp::kMaxBody);
+        hex_digits += b.size() - (d + 3);
+    }
+    CHECK(hex_digits == 256u * 8u);  // every stereo frame exactly once
+    CHECK(Count(got, "ST ") >= 1);  // the state stream keeps flowing between chunks
+    CHECK(r.app.stats().tx_drop == 0);
+    r.Host("SCOPE n=512");  // accepted again after the transfer
+    r.Run(2);
+    got = r.Received();
+    CHECK(Count(got, "ACK c=SCOPE n=512 t=1 k=13") == 1);
+    CHECK(r.board.scope_starts == 2);
+}
+
+void TestScopeUnsupportedBoard() {
+    Rig r;  // protected/default board without audio
+    r.Host("HELLO proto=1");
+    r.Run(50);
+    r.Received();
+    r.Host("SCOPE");
+    r.Run(2);
+    auto got = r.Received();
+    CHECK(Count(got, "ERR c=SCOPE e=UNSUPPORTED") == 1);
+    r.Run(300);
+    CHECK(Count(r.Received(), "AU ") == 0);
+    CHECK(r.board.tone_writes == 0 || r.board.tone.mode == diag::ToneMode::Off);
+}
+
+void TestPotDimBrightness() {
+    Rig r;
+    r.Host("HELLO proto=1");
+    r.Run(50);
+    r.Host("LED m=POTDIM");
+    r.board.inputs.pot_norm[0] = 5000;
+    r.Run(20);
+    const auto& writes = r.board.led_writes;
+    CHECK(!writes.empty() && writes.back().first == 0xffff && writes.back().second == 50);
+    r.board.inputs.pot_norm[0] = 10000;
+    r.Run(20);
+    CHECK(writes.back().second == 100);
+    auto got = r.Received();
+    bool reported = false;
+    for(const auto& b : got)
+        if(StartsWith(b, "ST ") && b.find("lm=POTDIM") != std::string::npos
+           && b.find(" br=100") != std::string::npos)
+            reported = true;
+    CHECK(reported);
+    r.Host("LED m=FOLLOW br=30");
+    r.Run(20);
+    CHECK(writes.back().second == 30);
+}
+
 int main() {
     TestBootloader();
     TestBootloaderKeys();
+    TestToneLifecycle();
+    TestOutputsSilencedBeforeBlockingSdTest();
+    TestScopeTransfer();
+    TestScopeUnsupportedBoard();
+    TestPotDimBrightness();
     TestSilentUntilHello();
     TestHandshakeAndRate();
     TestImmediateFrameOnChange();

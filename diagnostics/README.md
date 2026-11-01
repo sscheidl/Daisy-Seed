@@ -8,14 +8,20 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > Windows SD card reader, both CV channels and both gate inputs. Results are
 > real-board measurements, separate from software/simulation tests.
 
-## Control panel 0.3.5
+## Firmware 0.4.0 and app 0.4.0 (audio, not yet flashed)
 
-App **0.3.5** (0.3.4 plus coloured CV/gate jack rings) splits the control panel into six categories (USB, Buttons, Pots,
-CV / Gate, SD card, Log; plus Simulation in simulation mode), keeps the
-firmware's **Buttons → LEDs** behaviour as the default instead of
-per-LED checkboxes, and fixes the host findings of the independent milestone review
-(stale SD result in saved reports, CV min/max aliasing, stuck SD-test lock).
-Firmware stays at 0.3.2. [Change and validation](docs/CONTROL_PANEL_0.3.4.md) (0.3.4 and 0.3.5).
+Firmware **0.4.0** adds the audio extension: a capped test tone on AUDIO OUT, peak
+meters for inputs and outputs, an input snapshot (oscilloscope) and the LED mode
+POTDIM (VR1 dims all LEDs), plus two review fixes (outputs silenced before blocking
+SD access, no CMD13 after a reset abort). App **0.4.0** adds the **Audio** tab
+(meters, tone generator, snapshot with frequency/peak measurement) and a rolling
+CV/gate trace. [Firmware notes](docs/FIRMWARE.md), [protocol](protocol/PROTOCOL.md),
+[control panel](docs/CONTROL_PANEL_0.3.4.md). **The 0.4.0 image is built but not
+flashed: all audio behaviour is simulator-tested only, NICHT GEMESSEN.**
+
+App 0.3.4/0.3.5 reorganised the control panel into categories (USB, Buttons, Pots,
+CV / Gate, SD card, Log; plus Simulation), made **Buttons → LEDs** the default and
+fixed the host findings of the independent milestone review.
 The existing 0.3.2 downloads below remain the published binary baseline.
 
 ## Hardware validation
@@ -58,12 +64,13 @@ See [review fixes](docs/PR70_REVIEW_FIXES_2026-10-31.md) and the
 | Area | Firmware | Windows GUI |
 | --- | --- | --- |
 | 16 buttons S1–S16 | libDaisy debounce, held state, press counts | Two rows of eight, highlighting and counts |
-| 16 LEDs D1–D16 | Off / on / individual / chase / follow buttons, brightness | Commanded state and controls |
+| 16 LEDs D1–D16 | Buttons → LEDs (default), all off / on, chase, POTDIM (VR1 dims), brightness | Commanded state and controls |
 | 8 knobs VR1–VR8 | Normalized value and raw ADC value | Knobs, percentage, min/max |
 | SW17 / SW18 | Two-position / three-position switches; SW18 debounce | Position display |
 | microSD | Card detection; optional **read-only** filesystem test | No card / detected / readable / error |
 | Optional SD card reader | Separate writable CDC + MSC firmware variant; exclusive card ownership | Explicit share, Windows eject, return or interruption acknowledgement |
-| Audio inputs L/R | Input jack detection only; outputs have no detection | Input connector indicators |
+| Audio inputs L/R | Input jack detection; peak meters, input snapshot (firmware 0.4.0) | Connector indicators, Audio tab |
+| Audio outputs L/R | Test tone 20–20000 Hz, ≤ −6 dBFS, left/right/both (firmware 0.4.0); no jack detection | Audio tab (tone, OUT meters) |
 | CV IN 1/2, GATE IN 1/2 | Normalized CV and raw ADC; gate state and edge counters (1 kHz) | Values at the jacks, CV / Gate panel with min/max |
 | CV OUT 1/2 | Test signals Off / Fixed / Ramp / Saw as DAC codes; off when the session ends | Mode, codes and period |
 | USB | DDP v1: handshake, 10–100 Hz state stream, CRC, keepalive | Discovery, timeouts, reconnection |

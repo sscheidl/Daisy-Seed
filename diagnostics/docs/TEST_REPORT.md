@@ -8,8 +8,16 @@ reset. 878 frames without transport errors; OFF confirmed. [Evidence](HARDWARE_N
 App 0.3.4 (01.11.2026) replaces the 0.3.3 candidate: control panel in six
 categories, buttons drive LEDs by default, and the host findings of the independent
 milestone review fixed; firmware unchanged, simulator-only validation.
-[Change and validation](CONTROL_PANEL_0.3.4.md). The firmware findings of the review
-(SD initialisation bound, CV OUT during blocking SD access) remain open.
+[Change and validation](CONTROL_PANEL_0.3.4.md).
+
+## Firmware/App 0.4.0 audio extension, 01.11.2026 — software only
+
+Test tone, peak meters, input snapshot, LED mode POTDIM, outputs silenced before
+blocking SD access (review F3b) and no CMD13 after a reset abort (review F1).
+Host tests (C++ MSVC/clang, Python/GUI against the simulator) and both ARM images
+built; **no hardware test, NICHT GEMESSEN**: codec levels, jack wiring, headphone
+path, tone safety on the real kit and the 0.4.0 image itself await a flash and
+acceptance by the human. The unbounded SD initialisation wait (review F2) remains open.
 
 ## Review-Korrekturen 0.3.2, 31.10.2026 — Software
 

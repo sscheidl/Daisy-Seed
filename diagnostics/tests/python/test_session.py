@@ -36,7 +36,7 @@ def connected():
 def test_handshake_reports_versions(connected):
     _, _, s = connected
     assert s.device.protocol == p.PROTOCOL_VERSION
-    assert s.device.firmware == "0.3.2-sim"
+    assert s.device.firmware == "0.4.0-sim"
     assert s.device.simulated
     events = [k for k, _ in s.drain_events()]
     assert "connected" in events
@@ -113,11 +113,13 @@ def test_jack_detection(connected):
 def test_led_modes(connected, mode):
     clock, cable, s = connected
     cable.device.set_button(2, True)
+    cable.device.set_pot(0, 0.73)  # POTDIM takes the brightness from VR1, not from br=
     assert s.set_led(mode, mask=0x8001, brightness=40, step_ms=100)
     run(clock, s, 0.03)
     assert s.board.led_mode == mode
-    assert s.board.led_brightness == 40
-    expected = {"OFF": [], "ON": list(range(16)), "MASK": [0, 15], "FOLLOW": [2]}
+    assert s.board.led_brightness == (73 if mode == "POTDIM" else 40)
+    expected = {"OFF": [], "ON": list(range(16)), "MASK": [0, 15], "FOLLOW": [2],
+                "POTDIM": list(range(16))}
     if mode in expected:
         assert [i for i, on in enumerate(s.board.leds) if on] == expected[mode]
     else:  # CHASE: exactly one LED, moving every 100 ms
@@ -608,3 +610,70 @@ def test_rejected_sd_test_releases_the_pending_state(connected):
     assert any("ERR c=SDTEST e=BUSY" in str(v) for k, v in events if k == "log")
     run(clock, s, 2.0)
     assert s.connected  # the RX timeout is armed again and the stream keeps it alive
+
+
+def test_audio_levels_arrive_and_tone_follows_the_session(connected):
+    clock, cable, s = connected
+    assert s.audio_supported
+    run(clock, s, 0.3)
+    assert s.audio is not None and s.audio.tone_mode == "OFF"
+    assert s.audio.outputs == [0.0, 0.0]
+    assert s.request_tone("SINE", 440, 2000, "L")
+    run(clock, s, 0.3)
+    assert cable.device.tone_mode == "SINE" and cable.device.tone_freq_hz == 440
+    assert s.audio.tone_mode == "SINE" and s.audio.tone_channels == "L"
+    assert s.audio.outputs[0] == pytest.approx(0.2) and s.audio.outputs[1] == 0.0
+    assert s.audio.inputs == [0.0, 0.0]  # nothing patched back
+    cable.device.audio_patched = True
+    run(clock, s, 0.3)
+    assert s.audio.inputs[0] == pytest.approx(0.2, abs=0.01) and s.audio.inputs[1] == 0.0
+    events = [k for k, _ in s.drain_events()]
+    assert events.count("audio") >= 3
+    s.disconnect()
+    assert cable.device.tone_mode == "OFF"  # BYE ends the tone
+    assert s.snapshot()["audio"] is None
+
+
+def test_scope_capture_is_assembled_from_chunks(connected):
+    clock, cable, s = connected
+    cable.device.audio_patched = True
+    run(clock, s, 0.1)
+    assert s.request_tone("SINE", 1000, 5000, "LR")
+    assert s.request_scope(512, True)
+    assert s.scope_pending and not s.request_scope()  # one capture at a time
+    run(clock, s, 0.3)
+    assert not s.scope_pending and s.scope is not None and len(s.scope) == 512
+    captures = [v for k, v in s.drain_events() if k == "scope"]
+    assert len(captures) == 1 and captures[0] is s.scope
+    left = [frame[0] for frame in s.scope]
+    assert max(left) > 16000 and min(left) < -16000  # about 0.5 FS
+    assert left[0] >= 0 and left[1] > left[0]  # trigger on the rising zero crossing
+    report = s.snapshot()["scope"]
+    assert report["frames"] == 512 and report["sample_rate"] == 48000
+    assert report["samples"][0] == list(s.scope[0])
+
+
+def test_scope_request_times_out_without_data(connected):
+    clock, cable, s = connected
+    cable.device.responsive = False
+    assert s.request_scope()
+    run(clock, s, 1.4)  # still inside the 1.5 s RX timeout
+    assert s.scope_pending
+    run(clock, s, 0.7)
+    assert not s.scope_pending and s.scope is None
+
+
+def test_audio_commands_need_the_capability():
+    clock, cable, s = make(lambda: SimulatedDevice(audio_supported=False))  # firmware < 0.4.0
+    run(clock, s, 0.2)
+    assert s.connected and not s.audio_supported
+    assert not s.request_tone("SINE") and not s.request_scope()
+    run(clock, s, 0.5)
+    assert s.audio is None and s.content_errors == 0  # no AU frames, nothing discarded
+    s.send("TONE m=SINE")
+    run(clock, s, 0.05)
+    logs = [str(v) for k, v in s.drain_events() if k == "log"]
+    assert any("ERR c=TONE e=UNKNOWN" in line for line in logs)
+    # An AU frame from a device that did not advertise audio is discarded, not applied.
+    s._handle("AU il=1 ir=1 ol=1 or=1 tone=OFF,1000,1000,LR", clock())
+    assert s.audio is None and s.content_errors == 1
