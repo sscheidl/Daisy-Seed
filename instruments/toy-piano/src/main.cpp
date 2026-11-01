@@ -1,6 +1,8 @@
 #include "desktop_devkit.h"
 #include "bootloader_daisy.h"
 #include "bootloader_midi.h"
+#include "return_daisy.h"
+#include "return_midi.h"
 #include "modulation.h"
 #include "mod_on_daisy_desktop.h"
 #include "spsc_queue.h"
@@ -109,6 +111,9 @@ bool modulating = false; // audio callback only
 // Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 bootloader::KeyCombo boot_keys; // audio callback only
 bootloader::Request boot_request;
+// Return to the program manager: S1+S16 for 3 s, or SysEx "PM" OPEN over J7.
+manager_return::KeyCombo return_keys; // audio callback only
+manager_return::Request return_request;
 static_assert(std::atomic<uint32_t>::is_always_lock_free, "LED mailbox must be lock-free");
 static_assert(daisy::desktop_devkit::kNumButtons == toy_piano::kNumKeys);
 static_assert(daisy::desktop_devkit::kNumLeds == toy_piano::kNumKeys);
@@ -259,6 +264,8 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     led_mask.store(held, std::memory_order_relaxed);
     if(boot_keys.Process(held, daisy::System::GetNow()))
         boot_request.Set(bootloader::Request::kKeys);
+    if(return_keys.Process(held, daisy::System::GetNow()))
+        return_request.Set(manager_return::Request::kKeys);
     ModulateVoices(size);
 #if TOY_PIANO_FX
     std::array<float, toy_piano::kBlockSize> mono{};
@@ -325,6 +332,10 @@ void ServiceUsbMidi() {
             boot_request.Set(bootloader::Request::kSysEx);
             continue;
         }
+        if(manager_return::IsRequest(event)) {
+            return_request.Set(manager_return::Request::kSysEx);
+            continue;
+        }
         mod::MidiMessage message; // Mod on Daisy sees every event first (SysEx, CC1, AT)
         if(mod::adapter::ToMessage(event, message) && modulation.controller.HandleMidi(message))
             continue;
@@ -352,6 +363,18 @@ void ServiceUsbMidi() {
 // Main loop only: replies over USB if a host asked, then resets into the bootloader.
 void ServiceBootloader() {
     bootloader::Service(boot_request, hw, [](uint8_t* bytes, size_t size) {
+        if(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
+            usb_midi.SendMessage(bytes, size);
+    });
+}
+
+// Main loop only: return to the program manager (common/bootloader/return_entry.h).
+// Audio stops first so no voice keeps sounding into the reset; the manager restarts.
+void ServiceReturn() {
+    if(!return_request.Pending())
+        return;
+    hw.seed.StopAudio();
+    manager_return::Service(return_request, hw, [](uint8_t* bytes, size_t size) {
         if(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
             usb_midi.SendMessage(bytes, size);
     });
@@ -387,6 +410,7 @@ int main() {
     while(true) {
         ServiceUsbMidi();
         ServiceBootloader();
+        ServiceReturn();
         const uint32_t now = daisy::System::GetNow();
         if(now - last_led_update >= toy_piano::kLedIntervalMs) {
             last_led_update = now;

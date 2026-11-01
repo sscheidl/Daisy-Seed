@@ -85,6 +85,7 @@ struct Hardware {
         void SetAudioBlockSize(std::size_t) {}
         float AudioSampleRate() const { return 48000.0f; }
         template <typename Callback> void StartAudio(Callback) {}
+        void StopAudio() {}
     } seed;
     struct Pot {
         float value = 0;

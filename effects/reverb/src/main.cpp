@@ -8,6 +8,8 @@ const char ambient_reverb_firmware_version[] =
 #include "desktop_devkit.h"
 #include "bootloader_daisy.h"
 #include "bootloader_midi.h"
+#include "return_daisy.h"
+#include "return_midi.h"
 #include "usbd_core.h"
 #include <atomic>
 #include <cmath>
@@ -27,6 +29,9 @@ static uint32_t downMask = 0;
 // Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 static bootloader::KeyCombo bootKeys; // audio callback only
 static bootloader::Request bootRequest;
+// Return to the program manager: S1+S16 for 3 s, or SysEx "PM" OPEN over J7.
+static manager_return::KeyCombo returnKeys; // audio callback only
+static manager_return::Request returnRequest;
 // libDaisy's USB device state for the external port (J7 on the carrier).
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
 // USB-MIDI on J7. Parameter control and presets are not implemented yet.
@@ -66,6 +71,8 @@ static void Controls() {
     }
     if (bootKeys.Process(downMask, System::GetNow()))
         bootRequest.Set(bootloader::Request::kKeys);
+    if (returnKeys.Process(downMask, System::GetNow()))
+        returnRequest.Set(manager_return::Request::kKeys);
     for (unsigned i = 0; i < 6; ++i)
         if (newPresses & (1u << i)) {
             parameters.mode = kModeButtons[i];
@@ -172,12 +179,26 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
 // Main loop only: the bootloader request; other messages are ignored for now.
 static void ServiceUsbMidi() {
     usbMidi.Listen(); // restarts reception after an overflow
-    while (usbMidi.HasEvents())
-        if (bootloader::IsRequest(usbMidi.PopEvent()))
+    while (usbMidi.HasEvents()) {
+        const MidiEvent event = usbMidi.PopEvent();
+        if (bootloader::IsRequest(event))
             bootRequest.Set(bootloader::Request::kSysEx);
+        else if (manager_return::IsRequest(event))
+            returnRequest.Set(manager_return::Request::kSysEx);
+    }
 }
 static void ServiceBootloader() {
     bootloader::Service(bootRequest, hw, [](uint8_t *bytes, size_t size) {
+        if (hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
+            usbMidi.SendMessage(bytes, size);
+    });
+}
+// Return to the program manager: audio stops first (no tail into the reset).
+static void ServiceReturn() {
+    if (!returnRequest.Pending())
+        return;
+    hw.seed.StopAudio();
+    manager_return::Service(returnRequest, hw, [](uint8_t *bytes, size_t size) {
         if (hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
             usbMidi.SendMessage(bytes, size);
     });
@@ -221,6 +242,7 @@ int main() {
         }
         ServiceUsbMidi();
         ServiceBootloader();
+        ServiceReturn();
         // Inspect maximumCycles / overruns in a debugger for on-board CPU evidence.
     }
 }

@@ -45,7 +45,8 @@ bool Service(Request& request, Hardware& hw, SendAck send_ack) {
 
 template <class Hardware>
 bool Service(Request& request, Hardware& hw) {
-    return Service(request, hw, [](uint8_t*, std::size_t) {});
+    // Qualified: `Request` is bootloader::Request, so ADL would also find bootloader::Service.
+    return manager_return::Service(request, hw, [](uint8_t*, std::size_t) {});
 }
 
 } // namespace manager_return

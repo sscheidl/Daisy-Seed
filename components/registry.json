@@ -286,7 +286,8 @@
       "components": [
         "toy-piano",
         "mod-on-daisy",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -386,7 +387,8 @@
       "marker": "LOOPER-VERSION=",
       "components": [
         "looper",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": []
     },
@@ -398,7 +400,8 @@
       "components": [
         "looper",
         "mod-on-daisy",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -413,7 +416,8 @@
       "marker": "AMBIENT-REVERB-VERSION=",
       "components": [
         "ambient-reverb",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": []
     },
@@ -451,7 +455,8 @@
         "mod-on-daisy",
         "callback-diagnostics",
         "fx-contract",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -490,7 +495,8 @@
         "mod-on-daisy",
         "callback-diagnostics",
         "fx-contract",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -510,7 +516,8 @@
       "device_id": "step-seq",
       "components": [
         "step-seq",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",

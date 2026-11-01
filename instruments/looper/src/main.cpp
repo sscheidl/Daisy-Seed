@@ -17,6 +17,8 @@ const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
 #include "desktop_devkit.h"
 #include "bootloader_daisy.h"
 #include "bootloader_midi.h"
+#include "return_daisy.h"
+#include "return_midi.h"
 #include "usbd_core.h"
 #if LOOPER_MOD
 #include "modulation.h"
@@ -69,6 +71,9 @@ static float settled[knobs::Decay + 1] = {-1, -1, -1, -1, -1, -1, -1, -1};
 // Software entry into the Daisy bootloader: S9+S16 for 5 s, or SysEx over J7.
 static bootloader::KeyCombo bootKeys;  // audio callback only
 static bootloader::Request bootRequest;
+// Return to the program manager: S1+S16 for 3 s, or SysEx "PM" OPEN over J7.
+static manager_return::KeyCombo returnKeys;  // audio callback only
+static manager_return::Request returnRequest;
 
 // libDaisy's USB device state for the external port (J7 on the carrier).
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
@@ -249,6 +254,8 @@ static void Controls() {
     }
     if (bootKeys.Process(downMask, System::GetNow()))
         bootRequest.Set(bootloader::Request::kKeys);
+    if (returnKeys.Process(downMask, System::GetNow()))
+        returnRequest.Set(manager_return::Request::kKeys);
 #if LOOPER_MOD
     const uint32_t midiPresses = midiIn.TakePresses();
     constexpr uint32_t kModeKeys =
@@ -428,6 +435,13 @@ static void ServiceUsbMidi() {
 #endif
             continue;
         }
+        if (manager_return::IsRequest(event)) {
+            uint8_t ack[sizeof(manager_return::kAck)];
+            std::copy(std::begin(manager_return::kAck), std::end(manager_return::kAck), ack);
+            SendMidi(ack, sizeof(ack));
+            returnRequest.Set(manager_return::Request::kKeys);  // already answered
+            continue;
+        }
         if (!bootloader::IsRequest(event)) {
 #if LOOPER_MOD
             ForwardToModulation(event);
@@ -445,6 +459,15 @@ static void ServiceUsbMidi() {
 static void ServiceBootloader() {
     if (!storageReady || !store.Active())
         bootloader::Service(bootRequest, hw);
+}
+
+// Main loop: the return to the program manager also waits for card writes/imports
+// and stops audio before the reset.
+static void ServiceReturn() {
+    if (!returnRequest.Pending() || (storageReady && store.Active()))
+        return;
+    hw.seed.StopAudio();
+    manager_return::Service(returnRequest, hw);
 }
 
 static float CardLed(looper::LoopStore::Status status, uint32_t now) {
@@ -527,6 +550,7 @@ int main() {
         modulation.controller.Service(System::GetNow(), modSender);
 #endif
         ServiceBootloader();
+        ServiceReturn();
         if (now - ledsAt >= 10) {
             ledsAt = now;
             ShowLeds(now, shown);
