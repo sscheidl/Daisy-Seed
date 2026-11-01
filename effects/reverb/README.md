@@ -1,4 +1,4 @@
-# Ambient Reverb v0.4.0 — Seed3 Desktop Dev Kit
+# Ambient Reverb v0.5.0 — Seed3 Desktop Dev Kit
 
 **Buildable prototype; no hardware run has been reported.** Project ID: `reverb-fx`.
 The shared FX now limits its wet clock to **32–12 kHz** and processes only the
@@ -15,6 +15,10 @@ manufacturer material, and rendered audio were not copied. This engine uses
 Slöer as a design reference; it is **not** a port of the Slöer algorithm, which
 has not been identified. The separate Clouds/Nimbus reverb study is still
 planned; its code is not included in this firmware.
+
+The 0.5.0 control revision increases maximum modulation depth by 33% and X
+by 25%, with Bloom rise extended to 5 s. Shared control mappings and limits are
+owned by the FX component. See [changelog](CHANGELOG.md).
 
 ## What it does
 
@@ -50,7 +54,7 @@ The exact physical button and pot orientation still needs a board check.
 | Two-way `tog_sw17` | Stereo / Legacy Mono; polarity to confirm on the board |
 | VR1 | Nominal decay, 1–45 s, exponential mapping |
 | VR2 | Tone, 400–14,000 Hz, exponential mapping |
-| VR3 | Modulation depth, 0–3 ms |
+| VR3 | Modulation depth, 0–3.99 ms (+33%) |
 | VR4 | Dry/wet mix, 0–100%, equal-power mapping |
 | VR5 | Wet Pan, left–center–right |
 | VR6 | Mode-dependent X: sustained Cloud vibrato, Halo/Abyss/Shimmer octave amount, Scatter tap diffusion, Bloom rise |
@@ -74,13 +78,17 @@ and its clock range have not been verified.
 
 The [Desktop control plan](docs/CONTROL_PLAN.md) records the source checks,
 mode expansion path, and hardware acceptance steps. The table above describes
-the v0.4.0 firmware; the older plan predates the sixth algorithm.
+the v0.5.0 firmware; the older plan predates the sixth algorithm.
 
 ## Reuse inside an instrument
 
+Control app 0.4.0 exposes **Ambient FX → Reverb LFO rate** (0.03–1.5 Hz) over the
+existing SQ protocol. On standalone FX, VR7 takes over when moved; other pots
+preserve the app setting. [Control contract and validation](docs/CONTROL_APP.md).
+
 `src/fx_adapter.h` exposes the existing DSP through the shared wet-only audio
 contract. Its integration adapter has its own version in `adapter_version.h`;
-the shared core is versioned 0.4.0 and its adapter 0.2.0. The wet-clock cap and
+the shared core is versioned 0.5.0 and its adapter 0.2.0. The wet-clock cap and
 pitch policy live in the FX component, so all consumers compile the same behavior.
 Existing instrument integrations are regression-tested consumers; their device
 CPU and listening acceptance is a later, separate step. The first composed firmware is
@@ -97,10 +105,10 @@ as in [BUILD.md](../../docs/BUILD.md):
 make PROJECT=reverb-fx test
 make PROJECT=reverb-fx test-sanitize
 make PROJECT=reverb-fx -j4
-python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.4.0.bin
+python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.5.0.bin
 ```
 
-The firmware is `effects/reverb/build/AmbientReverb-v0.4.0.bin`, built with the
+The firmware is `effects/reverb/build/AmbientReverb-v0.5.0.bin`, built with the
 same `BOOT_SRAM` setup and external DFU bootloader as Toy Piano. Follow the
 [Desktop Kit flashing guide](../../docs/FLASHING.md); no bootloader change is
 required. Do not flash the research project's original image if you want the

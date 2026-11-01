@@ -19,6 +19,8 @@ ROOT = HERE.parent.parent
 # Further SQ products: (contract, table header, product name). Their tables reuse the
 # types of step_seq/param_table.h, so their type, unit and flag lists must be identical.
 EXTRA_SOURCES = [
+    (ROOT / 'effects' / 'reverb' / 'contracts' / 'parameters.json',
+     ROOT / 'effects' / 'reverb' / 'src' / 'param_table.h', 'Ambient Reverb'),
     (ROOT / 'instruments' / 'streichwurst' / 'contracts' / 'parameters.json',
      ROOT / 'instruments' / 'streichwurst' / 'include' / 'streichwurst' / 'param_table.h', 'Streichwurst'),
 ]

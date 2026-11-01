@@ -51,6 +51,22 @@ function connect(sim, { drop = 0 } = {}) {
 }
 
 (async () => {
+  for (const product of ['ambient-reverb', 'toy-piano-amb']) {
+    const ambientSim = startSim(product);
+    const { client: ambientClient, sent: ambientSent } = connect(ambientSim);
+    await ambientClient.readAll();
+    assert.strictEqual(ambientClient.identity.product, product);
+    assert.strictEqual(!!(ambientClient.identity.capabilities & 64), product === 'toy-piano-amb');
+    const rate = () => ambientClient.component('ambient-reverb').parameters.find((p) => p.key === 'reverb_lfo_rate');
+    assert.strictEqual(rate().value, .18);
+    assert.ok(ambientSent.every((f) => f[5] !== S.TYPE.setParam));
+    for (const hz of [1.5, .03, .72]) {
+      assert.strictEqual(await ambientClient.setParam('ambient-reverb', 'reverb_lfo_rate', hz), hz);
+      assert.strictEqual(rate().value, hz);
+    }
+    ambientSim.proc.stdin.write('Q\n');
+  }
+  console.log('PASS Ambient browser client: FX and Toy Piano identities, device-first read and rate endpoints');
   const sim = startSim('acid-seq');
   const { client, sent } = connect(sim, { drop: 1 }); // the first request is lost: retried
   await client.readAll();

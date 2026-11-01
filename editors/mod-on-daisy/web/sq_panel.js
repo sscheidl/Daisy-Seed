@@ -11,13 +11,13 @@
 })(typeof self !== 'undefined' ? self : this, function (S, CONTRACT) {
   'use strict';
 
-  const TABS = [['step-seq', 'Sequencer'], ['acid-303', 'Stimme'], ['drive', 'Drive'], ['stereo-delay', 'Delay']];
+  const TABS = [['step-seq', 'Sequencer'], ['acid-303', 'Stimme'], ['drive', 'Drive'], ['stereo-delay', 'Delay'], ['ambient-reverb', 'Ambient FX']];
   // Streichwurst pages: [tab, title, component, contract page ('' = whole component)].
   const SW_TABS = [['strings', 'Strings', 'streichwurst-instrument', 'strings'], ['solo', 'Solo', 'streichwurst-instrument', 'solo'],
     ['keyboard', 'Tastatur', 'streichwurst-instrument', 'keyboard'], ['fx', 'FX', 'streichwurst-fx', ''], ['global', 'Global', 'streichwurst', '']];
   // The product or the standalone Streichwurst FX firmware (FX page only).
   const isStreichwurst = (client) => !!(client.component('streichwurst-instrument') || client.component('streichwurst-fx'));
-  const productOf = (componentId) => (componentId.startsWith('streichwurst') ? 'streichwurst' : 'acid-seq');
+  const productOf = (componentId) => (componentId === 'ambient-reverb' ? 'ambient-reverb' : componentId.startsWith('streichwurst') ? 'streichwurst' : 'acid-seq');
   const MIDI_KEYS = ['seq_channel', 'voice_channel', 'usb_out', 'din_out', 'velocity', 'accent_velocity', 'clock_out'];
   const STATS = ['Rahmenlänge', 'Prüfsumme', 'Version', 'unbekannter Typ', 'zu lang', 'Statusbyte im Rahmen', 'Wiederholung',
     'Echo', 'beschäftigt', 'Monitor verworfen', 'Note-On verworfen', 'MIDI-Queue übergelaufen', 'Clock ignoriert',
@@ -43,7 +43,7 @@
       return (cp && cp.enum_labels && cp.enum_labels[v]) || (p.enumKeys && p.enumKeys[v]) || String(v);
     }
     if (p.type === 3) return v ? 'an' : 'aus';
-    const digits = p.type === 1 ? 0 : Math.abs(p.max - p.min) > 100 ? 0 : 1;
+    const digits = p.key === 'reverb_lfo_rate' ? 2 : p.type === 1 ? 0 : Math.abs(p.max - p.min) > 100 ? 0 : 1;
     return v.toFixed(digits) + (S.UNIT_TEXT[p.unit] ? ' ' + S.UNIT_TEXT[p.unit] : '');
   };
 
@@ -53,10 +53,11 @@
     constructor(product = 'acid-seq') {
       this.offline = true;
       const sw = product === 'streichwurst';
-      this.identity = { product, version: 'offline', uid: [0, 0, 0], capabilities: sw ? 16 : 63, bootId: 0 };
+      const ambient = product === 'ambient-reverb';
+      this.identity = { product, version: 'offline', uid: [0, 0, 0], capabilities: sw || ambient ? 16 : 63, bootId: 0 };
       const types = ['float', 'int', 'enum', 'bool'], units = ['none', 'percent', 'hz', 'ms', 'db', 'semitones', 'cents', 'bpm', 'channel', 'velocity'];
       // Only the components of this product (the contract lists Acid Seq and Streichwurst).
-      this.components = Object.entries(CONTRACT).filter(([id]) => productOf(id) === (sw ? 'streichwurst' : 'acid-seq')).map(([id, c]) => ({
+      this.components = Object.entries(CONTRACT).filter(([id]) => productOf(id) === (ambient ? 'ambient-reverb' : sw ? 'streichwurst' : 'acid-seq')).map(([id, c]) => ({
         id, version: '0.1.0', schema: c.schema, kind: id === 'streichwurst' ? 4 : 0,
         parameters: c.parameters.map((p) => ({ id: p.id, key: p.key, type: types.indexOf(p.type), unit: units.indexOf(p.unit),
           flags: ((p.flags || []).includes('readonly') ? 1 : 0) | ((p.flags || []).includes('log') ? 2 : 0), min: p.min, max: p.max,
@@ -140,7 +141,7 @@
       const s = client.state, id = client.identity;
       const seq = client.component('step-seq'), sw = isStreichwurst(client);
       const pill = (text, kind = '') => el('span', { class: 'pill ' + kind }, text);
-      title.textContent = sw ? 'Streichwurst' : 'Acid Seq';
+      title.textContent = client.component('ambient-reverb') ? 'Ambient FX' : sw ? 'Streichwurst' : 'Acid Seq';
       patternCard.hidden = sw; // no sequencer, no CV outputs
       calCard.hidden = sw;
       status.replaceChildren(

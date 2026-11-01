@@ -1,5 +1,13 @@
 # Mod on Daisy Editor
 
+## Ambient Reverb (control app 0.4.0)
+
+The shared JUCE standalone/VST3 UI and browser now expose **Ambient FX → Reverb LFO
+rate**, 0.03–1.5 Hz (default 0.18 Hz), for Ambient Reverb 0.5.0 and compatible
+composed products. This is the internal reverb modulation rate; the matrix LFOs
+remain separate. The existing SQ descriptor contract supplies range, units and
+readback. [Firmware/control contract](../../effects/reverb/docs/CONTROL_APP.md).
+
 Grafischer Editor für die Modulationsmatrix [Mod on Daisy](../../modules/mod-on-daisy/).
 Zentrales Bedienelement ist die vollständig sichtbare **8×8-Rastermatrix** nach dem
 Vorbild von MatrixBrute/MiniFreak. Dazu kommen die Parameter der Quellen. Die
