@@ -71,3 +71,8 @@ PROJECTS += streichwurst
 BUILDABLE_PROJECTS += streichwurst
 PROJECT_DIR_streichwurst := instruments/streichwurst
 PROJECT_STATUS_streichwurst := buildable
+# Standalone Streichwurst FX ("Modular FX first"): ARM build verified 2026-11-01.
+PROJECTS += streichwurst-fx
+BUILDABLE_PROJECTS += streichwurst-fx
+PROJECT_DIR_streichwurst-fx := effects/streichwurst-fx
+PROJECT_STATUS_streichwurst-fx := buildable

@@ -284,7 +284,8 @@ class SqPanel : public juce::Component {
         Refresh();
     }
 
-    bool Streichwurst() const { return s_.HasComponent("streichwurst-instrument"); }
+    // The product or the standalone Streichwurst FX firmware (FX page only).
+    bool Streichwurst() const { return s_.HasComponent("streichwurst-instrument") || s_.HasComponent("streichwurst-fx"); }
     int TabIndex() const { return tab_; }
 
   private:

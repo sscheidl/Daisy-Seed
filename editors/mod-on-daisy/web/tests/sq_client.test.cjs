@@ -155,8 +155,17 @@ function connect(sim, { drop = 0 } = {}) {
   assert.throws(() => S.parsePatch(swText.replace(/"matrix": .*\n/, '"matrix": [1]\n')));
   // An Acid Seq patch keeps its format and has no matrix.
   assert.ok(!text.includes('"matrix"') && text.includes('"acid-seq-patch"'));
-  for (const s of [sim, other, fx, sw]) { s.proc.stdin.write('Q\n'); }
+  // The standalone Streichwurst FX firmware: one effect component, no matrix.
+  const swfx = startSim('streichwurst-fx');
+  const fxc = connect(swfx).client;
+  await fxc.readAll();
+  assert.strictEqual(fxc.identity.product, 'streichwurst-fx');
+  assert.ok(!fxc.identity.hasModMatrix);
+  assert.deepStrictEqual(fxc.components.map((c) => c.id), ['streichwurst-fx']);
+  assert.strictEqual(await fxc.setParam('streichwurst-fx', 'reverb', 35), 35);
+  assert.ok(S.checkPatch(swPatch, fxc).missing.includes('streichwurst-instrument'));
+  for (const s of [sim, other, fx, sw, swfx]) { s.proc.stdin.write('Q\n'); }
   console.log('PASS: browser SQ client against the firmware device (retry, read-only connect, edits, NAK, '
     + 'calibration/enable, monitor, stats), .acidpatch (round trip, explicit upload, compatibility) '
-    + 'and Streichwurst (SQ 1.1, product kind, monitor, .swpatch with matrix)');
+    + 'and Streichwurst (SQ 1.1, product kind, monitor, .swpatch with matrix, standalone FX)');
 })().catch((e) => { console.error(e); process.exit(1); });

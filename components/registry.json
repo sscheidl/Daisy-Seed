@@ -606,6 +606,28 @@
         "mod-editor-juce",
         "mod-editor-vst3"
       ]
+    },
+    "streichwurst-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/streichwurst-fx/src/version.h",
+        "name": "STREICHWURST_FX_FIRMWARE_VERSION"
+      },
+      "directory": "effects/streichwurst-fx/build",
+      "image": "StreichwurstFx",
+      "marker": "STREICHWURST-FX-VERSION=",
+      "device_id": "streichwurst-fx",
+      "components": [
+        "streichwurst-fx",
+        "fx-contract",
+        "step-seq",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
     }
   }
 }

@@ -15,7 +15,8 @@
   // Streichwurst pages: [tab, title, component, contract page ('' = whole component)].
   const SW_TABS = [['strings', 'Strings', 'streichwurst-instrument', 'strings'], ['solo', 'Solo', 'streichwurst-instrument', 'solo'],
     ['keyboard', 'Tastatur', 'streichwurst-instrument', 'keyboard'], ['fx', 'FX', 'streichwurst-fx', ''], ['global', 'Global', 'streichwurst', '']];
-  const isStreichwurst = (client) => !!client.component('streichwurst-instrument');
+  // The product or the standalone Streichwurst FX firmware (FX page only).
+  const isStreichwurst = (client) => !!(client.component('streichwurst-instrument') || client.component('streichwurst-fx'));
   const productOf = (componentId) => (componentId.startsWith('streichwurst') ? 'streichwurst' : 'acid-seq');
   const MIDI_KEYS = ['seq_channel', 'voice_channel', 'usb_out', 'din_out', 'velocity', 'accent_velocity', 'clock_out'];
   const STATS = ['Rahmenlänge', 'Prüfsumme', 'Version', 'unbekannter Typ', 'zu lang', 'Statusbyte im Rahmen', 'Wiederholung',
@@ -193,8 +194,9 @@
     }
     // Streichwurst: pages by the contract's "page" of each parameter.
     function renderStreichwurstParams() {
-      if (!SW_TABS.some(([id]) => id === tab)) tab = SW_TABS[0][0];
-      tabs.replaceChildren(...SW_TABS.filter(([, , c]) => client.component(c)).map(([id, name]) =>
+      const present = SW_TABS.filter(([, , c]) => client.component(c));
+      if (!present.some(([id]) => id === tab) && present.length) tab = present[0][0];
+      tabs.replaceChildren(...present.map(([id, name]) =>
         el('button', { class: id === tab ? 'on' : '', 'data-tab': id, onclick: () => { tab = id; renderParams(); } }, name)));
       const [, , component, page] = SW_TABS.find(([id]) => id === tab);
       const comp = client.component(component);

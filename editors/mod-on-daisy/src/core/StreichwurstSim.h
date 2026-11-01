@@ -4,6 +4,7 @@
 // firmware's own controller with the Streichwurst columns), like the firmware on J7.
 // Parameter changes apply at once (no audio). Used by the core tests, the JUCE self-test,
 // the "Streichwurst (Sim)" port with --simulators and tools/sq_sim (browser tests).
+// fx_only: the standalone Streichwurst FX firmware (one SQ component, no Mod on Daisy).
 #include "mod_on_daisy/module.h"
 #include "mod_targets.h"
 #include "register.h"
@@ -18,7 +19,8 @@ class StreichwurstSim : private sq::Host {
     using Out = std::function<void(const uint8_t*, std::size_t)>;
     static constexpr const char* kVersion = "0.1.0";
 
-    StreichwurstSim() : device_(*this), info_(streichwurst::product::ModInfo(kVersion)) {
+    explicit StreichwurstSim(bool fx_only = false)
+        : device_(*this), info_(streichwurst::product::ModInfo(kVersion)), fx_only_(fx_only) {
         using namespace streichwurst::product;
         const uint8_t kinds[kComponents] = {sq::KindInstrument, sq::KindEffect, sq::KindProduct};
         const char* ids[kComponents] = {"streichwurst-instrument", "streichwurst-fx", "streichwurst"};
@@ -27,16 +29,17 @@ class StreichwurstSim : private sq::Host {
                 ReadParam(state_, k, Table(k).params[i].id, values_[k][i]);
             components_[k] = {ids[k], kinds[k], kVersion, &Table(k), values_[k]};
         }
-        device_.product = "streichwurst";
+        device_.product = fx_only ? "streichwurst-fx" : "streichwurst";
         device_.version = kVersion;
-        device_.protocol_minor = 1;
+        device_.protocol_minor = fx_only ? 0 : 1;
         device_.boot_id = 0x5EED0002u;
         device_.uid[0] = 0x00410032u;
         device_.uid[1] = 0x3138510Bu;
         device_.uid[2] = 0x32313533u;
-        device_.capabilities = sq::CapVoice | sq::CapDin | sq::CapMonitor | sq::CapModMatrix;
-        device_.components = components_;
-        device_.component_count = kComponents;
+        device_.capabilities = fx_only ? uint16_t(sq::CapDin | sq::CapMonitor)
+                                       : uint16_t(sq::CapVoice | sq::CapDin | sq::CapMonitor | sq::CapModMatrix);
+        device_.components = fx_only ? &components_[kFx] : components_;
+        device_.component_count = fx_only ? 1 : kComponents;
         module_.Init(info_, 48000.f, 48);
         module_.EnableExtensions({true, true, false});
     }
@@ -49,6 +52,8 @@ class StreichwurstSim : private sq::Host {
             device_.Handle(bytes, size, now_ms);
             return;
         }
+        if(fx_only_)
+            return; // no Mod on Daisy in the standalone FX firmware
         mod::MidiMessage m;
         if(size >= 2 && bytes[0] == 0xF0) {
             m.status = 0xF0;
@@ -77,15 +82,17 @@ class StreichwurstSim : private sq::Host {
         sender_.out = std::move(out);
     }
 
-    // For tests: a pot moves on the kit (the monitor reports it).
+    // For tests: a pot moves on the kit (the monitor reports it). `component` is the SQ
+    // component index of this device.
     void TurnKnob(uint8_t component, uint16_t id, int32_t value) {
-        streichwurst::product::WriteParam(state_, component, id, value, true);
-        Sync(component, id);
+        const uint8_t c = Register(component);
+        streichwurst::product::WriteParam(state_, c, id, value, true);
+        Sync(c, id);
         device_.ParamChanged(component, id);
     }
     int32_t Value(uint8_t component, uint16_t id) const {
         int32_t v = 0;
-        streichwurst::product::ReadParam(state_, component, id, v);
+        streichwurst::product::ReadParam(state_, Register(component), id, v);
         return v;
     }
     float MatrixOffset(int target) const { return module_.engine.Offset(std::size_t(target)); }
@@ -95,6 +102,9 @@ class StreichwurstSim : private sq::Host {
     void Restart() { device_.boot_id ^= 0x00010000u; }
 
   private:
+    uint8_t Register(uint8_t component) const {
+        return fx_only_ ? uint8_t(streichwurst::product::kFx) : component;
+    }
     struct Sender : mod::MidiSender {
         Out out;
         bool Send(const uint8_t* bytes, std::size_t size) override {
@@ -128,6 +138,7 @@ class StreichwurstSim : private sq::Host {
                 streichwurst::product::ReadParam(state_, component, id, values_[component][i]);
     }
     bool PushParam(uint8_t component, uint16_t id, int32_t value, uint16_t revision) override {
+        component = Register(component);
         if(!streichwurst::product::WriteParam(state_, component, id, value))
             return false;
         Sync(component, id);
@@ -154,6 +165,7 @@ class StreichwurstSim : private sq::Host {
     Sender sender_;
     Out out_;
     unsigned writes_ = 0;
+    bool fx_only_ = false;
 };
 
 } // namespace editor

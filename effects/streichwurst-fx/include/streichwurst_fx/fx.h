@@ -5,7 +5,7 @@
 //
 //  * Prepare(config, storage) once outside the audio callback; storage is owned and
 //    placed by the host (reverb lines). Reset() clears all state; ClearTails() empties
-//    the delay line and reverb only.
+//    the delay line, reverb and filter states; LFO phases run on.
 //  * ProcessStrings(in, out_l, out_r, gain, n): mono string sum -> Animate forming ->
 //    Ensemble common sum -> Phaser -> stereo tap correction. `in` may alias `out_l`
 //    exactly; `gain` (optional, n values) receives the relative output gain word of the
@@ -62,6 +62,8 @@ class StreichwurstFx {
     void ClearTails() {
         ensemble_.ClearLine();
         reverb_.Clear();
+        phaser_.Clear();
+        animate_.Clear();
     }
     void SetParameters(const FxParams& in) {
         params_ = Sanitize(in, params_);

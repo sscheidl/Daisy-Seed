@@ -66,6 +66,8 @@ class Animate {
             return x;
         return x + 0.3f * d * (lp_fc_ - lp_200_);
     }
+    // Filter states to zero (All Sound Off); the LFO keeps its phase.
+    void Clear() { lp_fc_ = lp_200_ = 0.f; }
     float RegistrationOffset() const { return offset_; }
     float Amount() const { return amount_.value; }
 
@@ -110,6 +112,12 @@ class Phaser {
     void Set(float amount, float rate_hz) {
         amount_.target = amount;
         inc_ = rate_hz * float(kControlHop) / fs_;
+    }
+    // All-pass and feedback states to zero (All Sound Off); the LFO keeps its phase.
+    void Clear() {
+        std::memset(x1_, 0, sizeof(x1_));
+        std::memset(y1_, 0, sizeof(y1_));
+        last_ = 0.f;
     }
     float Process(float x) {
         if(hop_ == 0)

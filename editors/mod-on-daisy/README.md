@@ -80,6 +80,8 @@ Alle drei Fassungen bedienen die [Streichwurst-Firmware](../../instruments/strei
   `.swpatch` der Songzustand, mit derselben Rückfrage wie bei Acid Seq. `.modpatch` und
   `.acidpatch` bleiben unverändert.
 * **Offline:** Browser „Streichwurst offline“ zeigt die Seiten aus dem Vertrag.
+* **Standalone-FX** (`StreichwurstFx-v0.1.0`, SQ 1.0, eine Komponente): nur die Seite FX, keine
+  Matrix.
 * **Simulator:** Mit `--simulators` gibt es „Streichwurst (Sim)“: SQ-Gerät, Register und
   Mod-on-Daisy-Kern der Firmware auf dem PC (kein Audio-DSP im Editor).
 

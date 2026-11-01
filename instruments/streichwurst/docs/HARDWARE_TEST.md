@@ -4,6 +4,9 @@ Stand 01.11.2026. Alle Punkte sind **NICHT GEMESSEN**, bis der Mensch sie am Kit
 durchführt und das Ergebnis berichtet. Der Agent flasht nicht; Flashen nur, wenn der
 Mensch das Kit in den Bootloader gebracht und darum gebeten hat ([FLASHING.md](../../../docs/FLASHING.md)).
 
+**Reihenfolge (Modular FX first):** zuerst die Standalone-FX-Firmware abnehmen
+([FX-Laufzettel](../../../effects/streichwurst-fx/docs/HARDWARE_TEST.md)), danach dieses Produkt.
+
 Image: `instruments/streichwurst/build/Streichwurst-v0.1.0.bin` (lokal gebaut, nicht
 veröffentlicht). Vorher: `python scripts/check-firmware.py <bin>`.
 

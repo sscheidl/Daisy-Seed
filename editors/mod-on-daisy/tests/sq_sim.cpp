@@ -1,7 +1,8 @@
 // Host simulator of an SQ device for the browser tests (web/tests/sq_client.test.cjs,
 // web/tests/e2e_sq.cjs): the firmware's SQ device side through SqSimulator, as text lines.
 //   sq_sim [product]          product: acid-seq (default), step-seq, acid-303, drive-fx, delay-fx,
-//                             streichwurst (SQ 1.1 and Mod on Daisy on the same port)
+//                             streichwurst (SQ 1.1 and Mod on Daisy on the same port),
+//                             streichwurst-fx (standalone FX firmware)
 //   S <hex frame>             frame to the device; replies as "R <hex>"
 //   T <ms>                    time passes (monitor frames as "R <hex>")
 //   K <component> <id> <milli> a knob on the kit moves
@@ -71,8 +72,8 @@ static int Run(Sim& sim) {
 
 int main(int argc, char** argv) {
     const std::string product = argc > 1 ? argv[1] : "acid-seq";
-    if(product == "streichwurst") {
-        static editor::StreichwurstSim sim;
+    if(product == "streichwurst" || product == "streichwurst-fx") {
+        static editor::StreichwurstSim sim(product == "streichwurst-fx");
         return Run(sim);
     }
     static editor::SqSimulator sim(product);

@@ -7,6 +7,7 @@ Stand 01.11.2026, Produkt 0.1.0 (Instrument 0.1.0, FX 0.1.0), Control App 0.3.0.
 | Instrument-DSP, FX-DSP, Produkt, Firmware-Hostfakes | Hosttests bestanden, auch mit ASan/UBSan (GEMESSEN 01.11.2026) |
 | ARM-Firmware | gebaut, Imageprüfung bestanden, Speicher aus der Mapdatei (GEMESSEN 01.11.2026) |
 | Control App (Kern, Browser, JUCE-Standalone, VST3) | Tests, Selbsttest und Plugin-Check bestanden (GEMESSEN 01.11.2026) |
+| Standalone-FX-Firmware (FX zuerst) | gebaut und auf Hostfakes geprüft; Abnahme am Kit **NICHT GEMESSEN** ([FX-Laufzettel](../../../effects/streichwurst-fx/docs/HARDWARE_TEST.md)) |
 | Board-Audio / Regler / LEDs / USB- und DIN-MIDI / CPU-Last | **NICHT GEMESSEN**, Laufzettel [HARDWARE_TEST.md](HARDWARE_TEST.md) |
 | Klangvergleich zum Originalplugin/-gerät | **NICHT GEMESSEN** |
 
@@ -29,8 +30,11 @@ installierten Edge. libDaisy `f715e48`, DaisySP `2c72eaf` unverändert (lokal ge
 | `make -C instruments/streichwurst test HOST_CXX=clang++` | bestanden: Instrument (Takte, Tonhöhe, Bandgrenze: Alias der 5. Harmonischen −30 dB, τ-Messung 0,630/0,370, Registrierung/Oktaven, gleiche Ausgabe bei Blockgrößen 48/7/1, Sustain/Retrigger/Steal, Queue- und Null-Blöcke, NaN), Produkt (Register, Routing, Gainwort 0,6250, Balance-Mitte Faktor 1, leere Matrix bitgleich, Panik, Kopfreserve: Spitze 0,691, Reverb→Delay-Tausch, Bedienung inkl. Bootloader-Chord, eigener Fingerprint), Firmware auf Hostfakes (SQ 1.1, Lesen zuerst, ACK/Revision, Wiederholung, Echo, CC, Potis im Monitor, Matrix, Kanalfilter, USB-Verlust, Queue-Überlauf ohne hängende Noten, Bootloader nach Panik, keine Allokation im Callback) |
 | `make -C instruments/streichwurst test-sanitize HOST_CXX=clang++` | bestanden (ASan + UBSan) |
 | TSan (`test-thread`) | **nicht ausführbar**: eine Probeübersetzung mit `clang++ -fsanitize=thread` meldet „unsupported option … for target x86_64-w64-windows-gnu“. Die Übergabe nutzt die mit TSan geprüfte SPSC-Queue und den Triple-Buffer von Step Seq sowie einen atomaren Zähler |
-| `make PROJECT=streichwurst` (ARM, `-O3`, BOOT_SRAM) | gebaut: `Streichwurst-v0.1.0.bin`, 239 172 Byte, SHA-256 `8edf7ad3…127fc4a` (lokales Build, nicht veröffentlicht) |
-| `python scripts/check-firmware.py instruments/streichwurst/build/Streichwurst-v0.1.0.bin` | `PASS: v0.1.0, 239172 bytes, stack=0x20020000, reset=0x24000749` |
+| `make PROJECT=streichwurst` (ARM, `-O3`, BOOT_SRAM) | gebaut: `Streichwurst-v0.1.0.bin`, 239 020 Byte, SHA-256 `f244ae6b…681ca75e9` (lokales Build nach Merge von `main` und `ClearTails`-Erweiterung, nicht veröffentlicht) |
+| `python scripts/check-firmware.py instruments/streichwurst/build/Streichwurst-v0.1.0.bin` | `PASS: v0.1.0, 239020 bytes, stack=0x20020000, reset=0x24000749` |
+| `make -C effects/streichwurst-fx test` / `test-sanitize` (inkl. Standalone-Firmware auf Hostfakes) | bestanden: exakter Durchgang bei Ensemble aus, Mono-Eingang, Modi, Potis, CC, SQ mit Monitor, S16 löscht (Restenergie 0), Bootloader-Tasten, keine Allokation |
+| `make PROJECT=streichwurst-fx` (Standalone-FX, ARM) | gebaut: `StreichwurstFx-v0.1.0.bin`, 164 508 Byte, SHA-256 `1a0f4c96…5479f9b6`; DTCM 112 760 B (86,0 %), Stackreserve 18 312 B, SDRAM 31 872 B |
+| `python scripts/check-firmware.py effects/streichwurst-fx/build/StreichwurstFx-v0.1.0.bin` | `PASS: v0.1.0, 164508 bytes, stack=0x20020000, reset=0x240003d1` |
 | `python -m unittest discover -s tests -p test_firmware_checker.py` | bestanden (neue Streichwurst-Fälle, Acid Seq unverändert) |
 | `python -m unittest discover -s tests -p test_components.py` | bestanden (Register, Produkt = BUILDABLE_PROJECTS, CI-Auswahl) |
 | `python scripts/component_manifest.py --validate` | `PASS: 23 components, 19 firmware products` |
@@ -57,7 +61,7 @@ Suite `streichwurst`), manuelle Actions-Workflows (nicht gestartet).
 | --- | --- | --- |
 | DTCM (128 KiB) | 122 296 Byte (93,3 %) | `.data` 13 448 + `.bss` 108 848; davon libDaisy-`hw` 38,7 KiB und `usb_midi` 37,2 KiB, Produkt-DSP-Zustand ≈ 17 KiB |
 | Stackreserve DTCM | 8 776 Byte | Rest bis `_estack` 0x20020000; Laufzeitbedarf über Zähler „Stack frei“ prüfen (H18) |
-| AXI-SRAM (480 KiB, Image) | 239 172 Byte (48,7 %) | Code, Konstanten inkl. 8-KiB-Ereigniskern (`constexpr`) |
+| AXI-SRAM (480 KiB, Image) | 239 020 Byte (48,6 %) | Code, Konstanten inkl. 8-KiB-Ereigniskern (`constexpr`) |
 | SDRAM | 38 016 Byte | Reverbleitungen (31,9 KiB) und Tastentabellen des Instruments (6 KiB), nur bei Ereignissen benutzt |
 | RAM_D2_DMA | 18 084 Byte | Audio-DMA (libDaisy) |
 

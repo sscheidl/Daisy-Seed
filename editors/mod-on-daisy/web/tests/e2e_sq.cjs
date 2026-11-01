@@ -137,6 +137,17 @@ async function openEditor(browser, sim, sent) {
   await swPage.click('#connect'); // disconnect: both sessions end
   assert.ok(await swPage.isHidden('#sqMain') && await swPage.isHidden('#swViewBtn'));
   await sw.stop();
+  // ---- the standalone Streichwurst FX firmware: only the FX page, no matrix session
+  const swfx = startSim(SQ_SIM, 'streichwurst-fx');
+  const fxSent = [];
+  const fxPage = await openEditor(browser, swfx, fxSent);
+  await fxPage.click('#connect');
+  await fxPage.waitForSelector('#sqMain:not([hidden])', { timeout: 10000 });
+  await fxPage.waitForSelector('#sqParams [data-key="reverb"]');
+  assert.deepStrictEqual(await fxPage.$$eval('#sqTabs button', (b) => b.map((x) => x.dataset.tab)), ['fx']);
+  assert.ok(await fxPage.isHidden('#swViewBtn') && fxSent.every((h) => !h.startsWith('f07d4d44')));
+  await fxPage.click('#connect');
+  await swfx.stop();
   // ---- an MD device still gets the matrix (the SQ probe stays unanswered)
   if (MOD_SIM) {
     const md = startSim(MOD_SIM, 'toy-piano');

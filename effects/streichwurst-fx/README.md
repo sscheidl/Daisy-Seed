@@ -7,7 +7,8 @@ und eigene Daten; belegte Beziehungen und eigene Ersatzverfahren stehen getrennt
 [FIDELITY.md](../../instruments/streichwurst/docs/FIDELITY.md).
 
 **Stand 01.11.2026:** implementiert, Hosttests bestanden (auch ASan/UBSan), im Produkt
-`streichwurst` eingebunden. Hörvergleich mit dem Original NICHT GEMESSEN.
+`streichwurst` eingebunden; eigene Standalone-FX-Firmware 0.1.0 gebaut (unten).
+Hardwareabnahme und Hörvergleich mit dem Original NICHT GEMESSEN.
 
 ## Vertrag ([include/streichwurst_fx/fx.h](include/streichwurst_fx/fx.h))
 
@@ -33,12 +34,30 @@ Stereo-Delay) verwenden, ohne Instrument oder Stringstufe zu ändern (Produkttes
 ## Prüfen
 
 ```bash
-make -C effects/streichwurst-fx test           # HOST_CXX=clang++ unter Windows
-make -C effects/streichwurst-fx test-sanitize
+make -C effects/streichwurst-fx test           # FX allein und die Firmware auf Hostfakes
+make -C effects/streichwurst-fx test-sanitize  # unter Windows HOST_CXX=clang++
+make PROJECT=streichwurst-fx                   # ARM-Image
+python scripts/check-firmware.py effects/streichwurst-fx/build/StreichwurstFx-v0.1.0.bin
 ```
 
-Eine eigenständige FX-Firmware gibt es in dieser Version nicht; der Auftrag verlangte
-die unabhängige Host-Testbarkeit und die Einbindung ins Produkt. **Offen:** Die seit
-01.11.2026 auf `main` geltende Regel „Modular FX first“ (AGENTS.md) verlangt eine
-Standalone-FX-Firmware und deren Hardwareabnahme, bevor der FX im Instrument abgenommen
-wird. Diese Firmware ist noch nicht gebaut.
+## Standalone-FX-Firmware 0.1.0 („Modular FX first“)
+
+`make PROJECT=streichwurst-fx` baut `StreichwurstFx-v0.1.0.bin` (Version
+`STREICHWURST_FX_FIRMWARE_VERSION` in [src/version.h](src/version.h), getrennt von der
+Komponentenversion). Stereo-Line-Eingang (nur links = Mono) → Mono-Speisung der
+Stringstufe → Globalstufe → Hostmischung mit Gainwort, Ein- und Ausgangspegel und
+Ausgangsschutz. Gleicher FX-Code und gleicher Parametervertrag wie im Produkt (die
+Firmware nutzt das Streichwurst-Register nur für die FX-Einträge); sie besitzt nur
+Boardzuordnung, Routing und Mischung.
+
+* Potis (wirken erst nach Bewegung): VR1 Animate, VR2 Animate-Rate, VR3 Phaser,
+  VR4 Phaser-Rate, VR5 Reverb, VR6 Reverb-Decay, VR7 Eingangspegel, VR8 Ausgangspegel.
+* Taster: S1–S3 Ensemble-Modus 0/1/2, S12 Ensemble an/aus, S16 Leitung, Hall und
+  Filterzustände löschen (beim Loslassen, nicht im S9+S16-Bootloaderchord).
+* MIDI CC 102–109 auf allen Kanälen (USB und DIN), SQ über USB mit einer Komponente
+  `streichwurst-fx`; die Control App zeigt nur die Seite FX.
+* Mit Ensemble aus und Animate/Phaser/Reverb auf 0 gibt die Stringstufe den Eingang
+  exakt weiter (Hostfake-Test).
+
+Abnahme am Kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md) (F1–F14, **NICHT
+GEMESSEN**). Erst danach gilt der FX als abgenommener Baustein für Streichwurst.
