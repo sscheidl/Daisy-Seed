@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 1
 
 
    1              		.cpu cortex-m7
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   23:src/pm_protocol.cpp ****            || c == '_' || c == '-';
   24:src/pm_protocol.cpp **** }
   25:src/pm_protocol.cpp **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 2
 
 
   26:src/pm_protocol.cpp **** } // namespace
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   75              		@ args = 0, pretend = 0, frame = 0
   76              		@ frame_needed = 0, uses_anonymous_args = 0
   77              	.LBB101:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 3
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 3
 
 
   40:src/pm_protocol.cpp ****     : manager_(manager), config_(config) {}
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   43:../../diagnostics/firmware/src/diag_app.h ****     virtual void EnterBootloader() = 0;
   44:../../diagnostics/firmware/src/diag_app.h **** 
   45:../../diagnostics/firmware/src/diag_app.h ****     // ---- audio (firmware 0.4.0): all optional; the default board has no audio ----
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 4
 
 
   46:../../diagnostics/firmware/src/diag_app.h ****     virtual bool AudioSupported() { return false; }
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  121              		.p2align 2,,3
  122              		.global	_ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE
  123              		.syntax unified
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 5
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 5
 
 
  124              		.thumb
@@ -298,7 +298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  171 001f 1E       		.byte	(.L15-.L16)/2
  172 0020 26       		.byte	(.L14-.L16)/2
  173 0021 1E       		.byte	(.L15-.L16)/2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 6
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 6
 
 
  174 0022 1E       		.byte	(.L15-.L16)/2
@@ -358,7 +358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   22:src/pm_protocol.cpp ****            || c == '_' || c == '-';
  228              		.loc 1 22 5 is_stmt 0 view .LVU26
  229              	.LBE109:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 7
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 7
 
 
   45:src/pm_protocol.cpp ****             out.Char(*p);
@@ -418,7 +418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  273              		.thumb
  274              		.thumb_func
  276              	_ZN2pm8Protocol15ParseHashPrefixEPKcPhRj:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 8
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 8
 
 
  277              	.LVL17:
@@ -478,7 +478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  324              	.LBB123:
  325              	.LBB124:
  326              	.LBB125:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 9
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 9
 
 
   16:src/pm_protocol.cpp ****     if(c >= 'A' && c <= 'F') return c - 'A' + 10;
@@ -538,7 +538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  368              		.loc 1 15 5 view .LVU63
  369 0044 DEB2     		uxtb	r6, r3
  370 0046 092E     		cmp	r6, #9
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 10
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 10
 
 
  371 0048 0BD9     		bls	.L32
@@ -598,7 +598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  414              		.loc 1 60 16 view .LVU76
  415              	.LBE153:
   55:src/pm_protocol.cpp ****         const int hi = HexValue(text[2 * i]);
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 11
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 11
 
 
  416              		.loc 1 55 5 is_stmt 1 discriminator 2 view .LVU77
@@ -658,7 +658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   16:src/pm_protocol.cpp ****     if(c >= 'A' && c <= 'F') return c - 'A' + 10;
  456              		.loc 1 16 5 is_stmt 1 view .LVU92
  457 008e A2F16103 		sub	r3, r2, #97
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 12
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 12
 
 
  458 0092 052B     		cmp	r3, #5
@@ -718,7 +718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  499              		.loc 1 63 5 is_stmt 1 view .LVU110
   64:src/pm_protocol.cpp **** }
  500              		.loc 1 64 1 is_stmt 0 view .LVU111
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 13
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 13
 
 
  501 00ae 70BD     		pop	{r4, r5, r6, pc}
@@ -778,7 +778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  545              	.LBB150:
   14:src/pm_protocol.cpp ****     if(c >= '0' && c <= '9') return c - '0';
  546              		.loc 1 14 5 view .LVU123
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 14
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 14
 
 
  547              	.LBB144:
@@ -838,7 +838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  592 0020 20627569 		.ascii	" build=\000"
  592      6C643D00 
  593              		.align	2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 15
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 15
 
 
  594              	.LC5:
@@ -898,7 +898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  637              		.cfi_offset 4, -12
  638              		.cfi_offset 5, -8
  639              		.cfi_offset 14, -4
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 16
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 16
 
 
   66:src/pm_protocol.cpp ****     out.Str("PMINFO app=").Str(config_.app)
@@ -958,7 +958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
    3:src/pm_manager.h **** // storage, target and boot commit, and feeds keys/card state once per main-loop step.
    4:src/pm_manager.h **** //
    5:src/pm_manager.h **** // Modes (docs/CONTRACT.md, section 8):
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 17
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 17
 
 
    6:src/pm_manager.h **** //   Select      keys 1..15 choose a catalog slot, key 16 opens the resident diagnostics
@@ -1018,7 +1018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   60:src/pm_manager.h **** 
   61:src/pm_manager.h **** class Manager {
   62:src/pm_manager.h ****   public:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 18
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 18
 
 
   63:src/pm_manager.h ****     static constexpr uint16_t kDiagKey = 1u << 15;                 // S16
@@ -1078,7 +1078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   86:src/pm_manager.h ****     StartResult StartRequest(uint8_t slot, const char* id, const uint8_t* hash, size_t hash_len,
   87:src/pm_manager.h ****                              uint32_t generation, uint32_t request_id, uint32_t now_ms);
   88:src/pm_manager.h **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 19
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 19
 
 
   89:src/pm_manager.h ****     const Catalog& catalog() const { return catalog_; }
@@ -1138,7 +1138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  760              		.loc 1 74 13 view .LVU164
  761 0084 1E49     		ldr	r1, .L60+28
  762 0086 FFF7FEFF 		bl	_ZN3ddp6Writer3StrEPKc
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 20
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 20
 
 
  763              	.LVL63:
@@ -1198,7 +1198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  812              	.LBE174:
  813              	.LBE173:
  814              		.loc 1 77 31 discriminator 4 view .LVU179
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 21
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 21
 
 
  815 00c8 93F85016 		ldrb	r1, [r3, #1616]	@ zero_extendqisi2
@@ -1258,7 +1258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  864 0014 20653D00 		.ascii	" e=\000"
  865              		.align	2
  866              	.LC16:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 22
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 22
 
 
  867 0018 2069653D 		.ascii	" ie=\000"
@@ -1318,7 +1318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  909              	.LVL75:
   81:src/pm_protocol.cpp ****     const LoadStatus& ls = manager_.loader().Status();
  910              		.loc 1 81 52 view .LVU188
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 23
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 23
 
 
  911 0004 70B5     		push	{r4, r5, r6, lr}
@@ -1378,7 +1378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  958 0026 FFF7FEFF 		bl	_ZN3ddp6Writer3StrEPKc
  959              	.LVL82:
  960 002a 0646     		mov	r6, r0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 24
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 24
 
 
  961              		.loc 1 84 28 discriminator 1 view .LVU203
@@ -1438,7 +1438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1012              		.loc 1 87 25 discriminator 2 view .LVU215
  1013 0078 2846     		mov	r0, r5
  1014 007a FFF7FEFF 		bl	_ZN3ddp6Writer3StrEPKc
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 25
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 25
 
 
  1015              	.LVL94:
@@ -1498,7 +1498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  100:src/pm_manager.h ****     uint32_t last_request_id() const { return last_rid_; }
  1059              		.loc 3 100 47 is_stmt 0 view .LVU229
  1060 00a4 D3F87816 		ldr	r1, [r3, #1656]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 26
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 26
 
 
  1061              	.LVL100:
@@ -1558,7 +1558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   93:src/pm_manager.h ****     bool card_present() const { return card_present_; }
  1107              		.loc 3 93 35 view .LVU242
   93:src/pm_manager.h ****     bool card_present() const { return card_present_; }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 27
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 27
 
 
  1108              		.loc 3 93 42 is_stmt 0 view .LVU243
@@ -1618,7 +1618,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1155 00fe 6368     		ldr	r3, [r4, #4]
  1156              	.LBE196:
  1157              	.LBE195:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 28
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 28
 
 
  1158              		.loc 1 93 13 view .LVU255
@@ -1678,7 +1678,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1204              	.LBI201:
   94:src/pm_manager.h ****     bool root_bin_warning() const { return root_bin_; }
  1205              		.loc 3 94 10 is_stmt 1 view .LVU268
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 29
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 29
 
 
  1206              	.LBB202:
@@ -1738,7 +1738,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   97:src/pm_manager.h ****     // Slot that was last started or failed (for status frames), 0 = none.
  1251              		.loc 3 97 13 is_stmt 1 view .LVU280
  1252              	.LBB207:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 30
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 30
 
 
   97:src/pm_manager.h ****     // Slot that was last started or failed (for status frames), 0 = none.
@@ -1798,7 +1798,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1298              		.cfi_restore 5
  1299              		.cfi_restore 4
  1300              		.cfi_def_cfa_offset 0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 31
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 31
 
 
  1301              	.LVL129:
@@ -1858,7 +1858,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1349              		.thumb
  1350              		.thumb_func
  1352              	_ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 32
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 32
 
 
  1353              	.LVL131:
@@ -1918,7 +1918,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1397 0014 03F58053 		add	r3, r3, #4096
  1398              	.LBE213:
  1399              	.LBE214:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 33
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 33
 
 
  101:src/pm_protocol.cpp ****         .Str(" slot=").U32(entry.slot)
@@ -1978,7 +1978,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1448              	.LVL146:
  1449              		.loc 1 107 26 discriminator 1 view .LVU320
  1450 006c FFF7FEFF 		bl	_ZN3ddp6Writer3StrEPKc
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 34
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 34
 
 
  1451              	.LVL147:
@@ -2038,7 +2038,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1498              	.LC31:
  1499 0010 504D5354 		.ascii	"PMSTART\000"
  1499      41525400 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 35
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 35
 
 
  1500              		.align	2
@@ -2098,7 +2098,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1542              		.cfi_offset 5, -20
  1543              		.cfi_offset 6, -16
  1544              		.cfi_offset 7, -12
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 36
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 36
 
 
  1545              		.cfi_offset 8, -8
@@ -2158,7 +2158,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   40:../../diagnostics/protocol/ddp.h ****     uint32_t overflow = 0;
   41:../../diagnostics/protocol/ddp.h **** 
   42:../../diagnostics/protocol/ddp.h ****   private:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 37
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 37
 
 
   43:../../diagnostics/protocol/ddp.h ****     enum class State : uint8_t { Idle, Body, Crc, Cr };
@@ -2218,7 +2218,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1573              	.LBE233:
  1574              		.loc 1 115 24 view .LVU342
  1575 0018 CDE90544 		strd	r4, r4, [sp, #20]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 38
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 38
 
 
  116:src/pm_protocol.cpp ****     char id[kIdMax + 1];
@@ -2278,7 +2278,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1614              		.loc 1 11 14 is_stmt 0 view .LVU356
  1615 003a 4B49     		ldr	r1, .L98+4
  1616 003c 3046     		mov	r0, r6
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 39
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 39
 
 
  1617 003e FFF7FEFF 		bl	_ZN3ddp6Writer3StrEPKc
@@ -2338,7 +2338,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1650              		.loc 4 82 23 is_stmt 0 view .LVU365
  1651 005a 2123     		movs	r3, #33
  1652 005c 4649     		ldr	r1, .L98+20
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 40
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 40
 
 
  1653 005e 2846     		mov	r0, r5
@@ -2398,7 +2398,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1701              		.loc 4 82 23 is_stmt 0 view .LVU379
  1702 0088 0C23     		movs	r3, #12
  1703 008a 1AAA     		add	r2, sp, #104
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 41
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 41
 
 
  1704              	.LVL172:
@@ -2458,7 +2458,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1751 00bc 0028     		cmp	r0, #0
  1752 00be BCD0     		beq	.L79
  127:src/pm_protocol.cpp ****     switch(r) {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 42
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 42
 
 
  1753              		.loc 1 127 5 is_stmt 1 view .LVU393
@@ -2518,7 +2518,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
   11:src/pm_protocol.cpp **** }
  1797              		.loc 1 11 5 view .LVU404
   11:src/pm_protocol.cpp **** }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 43
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 43
 
 
  1798              		.loc 1 11 14 is_stmt 0 view .LVU405
@@ -2578,7 +2578,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1839              		.loc 1 130 57 discriminator 2 view .LVU418
  1840 0114 1D49     		ldr	r1, .L98+40
  1841 0116 FFF7FEFF 		bl	_ZN3ddp6Writer3StrEPKc
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 44
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 44
 
 
  1842              	.LVL190:
@@ -2638,7 +2638,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1883              	.LVL199:
  135:src/pm_protocol.cpp ****             return;
  1884              		.loc 1 135 21 view .LVU432
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 45
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 45
 
 
  1885 014a 0949     		ldr	r1, .L98+12
@@ -2698,7 +2698,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1933      464F00
  1934 001f 00       		.align	2
  1935              	.LC43:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 46
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 46
 
 
  1936 0020 504D5354 		.ascii	"PMSTATUS\000"
@@ -2758,7 +2758,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  1974              	.LC56:
  1975 0094 41434B20 		.ascii	"ACK c=PMRESCAN\000"
  1975      633D504D 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 47
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 47
 
 
  1975      52455343 
@@ -2818,7 +2818,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2020 0016 58F8041B 		ldr	r1, [r8], #4
  2021              	.LVL205:
  2022              		.loc 1 147 23 view .LVU444
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 48
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 48
 
 
  2023 001a 2046     		mov	r0, r4
@@ -2878,7 +2878,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  159:src/pm_protocol.cpp ****         return false;  // Session/App: ACK, flush, Board::EnterBootloader
  160:src/pm_protocol.cpp ****     }
  161:src/pm_protocol.cpp ****     if(std::strncmp(type, "PM", 2) != 0)
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 49
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 49
 
 
  162:src/pm_protocol.cpp ****         return false;
@@ -2938,7 +2938,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  216:src/pm_protocol.cpp ****     if(std::strcmp(type, "PMMODE") == 0) {
  217:src/pm_protocol.cpp ****         char text[8];
  218:src/pm_protocol.cpp ****         Mode mode;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 50
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 50
 
 
  219:src/pm_protocol.cpp ****         if(!ddp::FindField(body, "m", text, sizeof(text))) {
@@ -2998,7 +2998,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2086 0058 00F09980 		beq	.L153
  167:src/pm_protocol.cpp ****         WriteStatus(reply);
  2087              		.loc 1 167 5 is_stmt 1 view .LVU464
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 51
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 51
 
 
  167:src/pm_protocol.cpp ****         WriteStatus(reply);
@@ -3058,7 +3058,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  214:src/pm_protocol.cpp ****     }
  2129              		.loc 1 214 9 is_stmt 1 view .LVU478
  214:src/pm_protocol.cpp ****     }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 52
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 52
 
 
  2130              		.loc 1 214 16 is_stmt 0 view .LVU479
@@ -3118,7 +3118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2172              	.LVL222:
   11:src/pm_protocol.cpp **** }
  2173              		.loc 1 11 49 discriminator 3 view .LVU492
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 53
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 53
 
 
  2174              	.LBE304:
@@ -3178,7 +3178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2218              	.LVL228:
   11:src/pm_protocol.cpp **** }
  2219              		.loc 1 11 49 discriminator 3 view .LVU504
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 54
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 54
 
 
  2220              	.LBE342:
@@ -3238,7 +3238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2263              	.LVL232:
  2264              	.LBE346:
  2265              	.LBE345:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 55
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 55
 
 
  219:src/pm_protocol.cpp ****             Error(reply, type, "ARG");
@@ -3298,7 +3298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2309              	.LVL236:
  2310              	.LBB349:
  2311              	.LBB350:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 56
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 56
 
 
   77:src/pm_manager.h ****     // Host-initiated mode change between Select and Diagnostics. False while loading/service.
@@ -3358,7 +3358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2353 0152 FFF7FEFF 		bl	_ZN3ddp11LookupFieldEPKcS1_Pcj
  2354              	.LVL241:
  174:src/pm_protocol.cpp ****             uint16_t mask = 0;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 57
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 57
 
 
  2355              		.loc 1 174 9 is_stmt 1 view .LVU545
@@ -3418,7 +3418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2394              		.loc 1 11 14 is_stmt 0 view .LVU560
  2395 0172 5F49     		ldr	r1, .L161+20
  2396 0174 0D98     		ldr	r0, [sp, #52]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 58
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 58
 
 
  2397 0176 FFF7FEFF 		bl	_ZN3ddp6Writer3StrEPKc
@@ -3478,7 +3478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2439 019c FFF7FEFF 		bl	strcmp
  2440              	.LVL252:
  204:src/pm_protocol.cpp ****         if(!session_active) {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 59
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 59
 
 
  2441              		.loc 1 204 8 discriminator 1 view .LVU573
@@ -3538,7 +3538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2480              		.loc 3 90 49 is_stmt 0 view .LVU588
  2481 01ba 06F58053 		add	r3, r6, #4096
  2482              	.LBE314:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 60
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 60
 
 
  2483              	.LBE313:
@@ -3598,7 +3598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2525              		.loc 1 182 32 discriminator 1 view .LVU600
  2526 01f2 96F82813 		ldrb	r1, [r6, #808]	@ zero_extendqisi2
  2527 01f6 FFF7FEFF 		bl	_ZN3ddp6Writer3U32Em
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 61
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 61
 
 
  2528              	.LVL263:
@@ -3658,7 +3658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2570              		.loc 1 185 20 is_stmt 0 view .LVU612
  2571 0226 48E7     		b	.L103
  2572              	.LVL270:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 62
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 62
 
 
  2573              	.L120:
@@ -3718,7 +3718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  168:src/pm_protocol.cpp ****         return true;
  2615              		.loc 1 168 9 is_stmt 1 view .LVU625
  168:src/pm_protocol.cpp ****         return true;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 63
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 63
 
 
  2616              		.loc 1 168 20 is_stmt 0 view .LVU626
@@ -3778,7 +3778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2658              	.LVL280:
  195:src/pm_protocol.cpp ****             Error(reply, type, "NOENTRY");
  2659              		.loc 1 195 9 is_stmt 1 view .LVU639
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 64
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 64
 
 
  2660 0266 0146     		mov	r1, r0
@@ -3838,7 +3838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  178:src/pm_protocol.cpp ****                     mask |= static_cast<uint16_t>(1u << (cat.entries[i].slot - 1));
  2703              		.loc 1 178 38 discriminator 1 view .LVU651
  2704 0294 93B1     		cbz	r3, .L137
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 65
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 65
 
 
  2705 0296 4FF4A374 		mov	r4, #326
@@ -3898,7 +3898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2745              	.LVL290:
  2746              	.L117:
  178:src/pm_protocol.cpp ****                     mask |= static_cast<uint16_t>(1u << (cat.entries[i].slot - 1));
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 66
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 66
 
 
  2747              		.loc 1 178 38 discriminator 1 view .LVU666
@@ -3958,7 +3958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2791 02f0 08000000 		.word	.LC30
  2792 02f4 14000000 		.word	.LC15
  2793 02f8 00000000 		.word	.LC39
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 67
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 67
 
 
  2794 02fc 10000000 		.word	.LC41
@@ -4018,7 +4018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2847              		.align	2
  2850              	_ZTVN2pm8ProtocolE:
  2851 0000 00000000 		.word	0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 68
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 68
 
 
  2852 0004 00000000 		.word	0
@@ -4078,59 +4078,59 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 1
  2903              		.file 22 "src/pm_catalog.h"
  2904              		.file 23 "src/pm_image.h"
  2905              		.file 24 "src/pm_loader.h"
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 69
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 69
 
 
  2906              		.file 25 "src/pm_protocol.h"
  2907              		.file 26 "src/pm_sha256.h"
  2908              		.file 27 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 70
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 70
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 pm_protocol.cpp
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:20     .rodata._ZN2pm11UiErrorNameENS_7UiErrorE.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:24     .text._ZN2pm11UiErrorNameENS_7UiErrorE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:31     .text._ZN2pm11UiErrorNameENS_7UiErrorE:00000000 _ZN2pm11UiErrorNameENS_7UiErrorE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:57     .text._ZN2pm11UiErrorNameENS_7UiErrorE:00000010 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:2839   .rodata.CSWTCH.49:00000000 CSWTCH.49
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:63     .text._ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:70     .text._ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE:00000000 _ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:113    .text._ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE:0000001c $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:2850   .rodata._ZTVN2pm8ProtocolE:00000000 _ZTVN2pm8ProtocolE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:70     .text._ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE:00000000 _ZN2pm8ProtocolC1ERNS_7ManagerERKNS_14ProtocolConfigE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:120    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:127    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:00000000 _ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:170    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:0000001e $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:269    .text._ZN2pm8Protocol15ParseHashPrefixEPKcPhRj:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:276    .text._ZN2pm8Protocol15ParseHashPrefixEPKcPhRj:00000000 _ZN2pm8Protocol15ParseHashPrefixEPKcPhRj
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:581    .rodata._ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:618    .text._ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:625    .text._ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE:00000000 _ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:840    .text._ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE:000000e4 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:856    .rodata._ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:890    .text._ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:897    .text._ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE:00000000 _ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1308   .text._ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE:0000018c $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1329   .rodata._ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1345   .text._ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1352   .text._ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE:00000000 _ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1480   .text._ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE:00000088 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1491   .rodata._ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1522   .text._ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1529   .text._ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE:00000000 _ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1903   .text._ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE:00000164 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1922   .rodata._ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1977   .text._ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:1984   .text._ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm:00000000 _ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:2786   .text._ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm:000002dc $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:2877   .rodata._ZN2pm12_GLOBAL__N_1L9kDiagOnlyE:00000000 _ZN2pm12_GLOBAL__N_1L9kDiagOnlyE
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:2820   .rodata.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:2836   .rodata.CSWTCH.49:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:2847   .rodata._ZTVN2pm8ProtocolE:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:2874   .rodata._ZN2pm12_GLOBAL__N_1L9kDiagOnlyE:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:221    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:00000051 $d
-C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s:221    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:00000052 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:20     .rodata._ZN2pm11UiErrorNameENS_7UiErrorE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:24     .text._ZN2pm11UiErrorNameENS_7UiErrorE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:31     .text._ZN2pm11UiErrorNameENS_7UiErrorE:00000000 _ZN2pm11UiErrorNameENS_7UiErrorE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:57     .text._ZN2pm11UiErrorNameENS_7UiErrorE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:2839   .rodata.CSWTCH.49:00000000 CSWTCH.49
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:63     .text._ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:70     .text._ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE:00000000 _ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:113    .text._ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE:0000001c $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:2850   .rodata._ZTVN2pm8ProtocolE:00000000 _ZTVN2pm8ProtocolE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:70     .text._ZN2pm8ProtocolC2ERNS_7ManagerERKNS_14ProtocolConfigE:00000000 _ZN2pm8ProtocolC1ERNS_7ManagerERKNS_14ProtocolConfigE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:120    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:127    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:00000000 _ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:170    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:0000001e $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:269    .text._ZN2pm8Protocol15ParseHashPrefixEPKcPhRj:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:276    .text._ZN2pm8Protocol15ParseHashPrefixEPKcPhRj:00000000 _ZN2pm8Protocol15ParseHashPrefixEPKcPhRj
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:581    .rodata._ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:618    .text._ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:625    .text._ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE:00000000 _ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:840    .text._ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE:000000e4 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:856    .rodata._ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:890    .text._ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:897    .text._ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE:00000000 _ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1308   .text._ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE:0000018c $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1329   .rodata._ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1345   .text._ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1352   .text._ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE:00000000 _ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1480   .text._ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE:00000088 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1491   .rodata._ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1522   .text._ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1529   .text._ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE:00000000 _ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1903   .text._ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE:00000164 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1922   .rodata._ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1977   .text._ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:1984   .text._ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm:00000000 _ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:2786   .text._ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm:000002dc $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:2877   .rodata._ZN2pm12_GLOBAL__N_1L9kDiagOnlyE:00000000 _ZN2pm12_GLOBAL__N_1L9kDiagOnlyE
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:2820   .rodata.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:2836   .rodata.CSWTCH.49:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:2847   .rodata._ZTVN2pm8ProtocolE:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:2874   .rodata._ZN2pm12_GLOBAL__N_1L9kDiagOnlyE:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:221    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:00000051 $d
+C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s:221    .text._ZN2pm8Protocol10EncodeNameEPKcRN3ddp6WriterE:00000052 $t
 
 UNDEFINED SYMBOLS
 _ZN3ddp6Writer4CharEc
@@ -4144,7 +4144,7 @@ _ZN2pm13LoadStateNameENS_9LoadStateE
 _ZN2pm13LoadErrorNameENS_9LoadErrorE
 _ZN2pm14ImageErrorNameENS_10ImageErrorE
 _ZN2pm15VectorErrorNameENS_11VectorErrorE
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc2bFiyg.s 			page 71
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccWeJpfN.s 			page 71
 
 
 _ZNK2pm6Loader7PercentEv

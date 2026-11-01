@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 1
 
 
    1              		.cpu cortex-m7
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
   29              		.loc 1 27 36 view -0
   30              		.cfi_startproc
   31              		@ args = 0, pretend = 0, frame = 0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 2
 
 
   32              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
   30:../../common/sd/ro_sd.c **** static int Present(void) { return !config.card_present || config.card_present(); }
   31:../../common/sd/ro_sd.c **** 
   32:../../common/sd/ro_sd.c **** static int BudgetLeft(void) {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 3
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 3
 
 
   33:../../common/sd/ro_sd.c ****     return !config.budget_ms || (int32_t)(deadline - HAL_GetTick()) > 0;
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  123 0020 90B9     		cbnz	r0, .L15
  124              		.loc 1 50 42 discriminator 1 view .LVU22
  125 0022 DCF80830 		ldr	r3, [ip, #8]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 4
 
 
  126 0026 7BB1     		cbz	r3, .L15
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  166              	.LFE343:
  168              		.section	.text.ro_sd_restart_budget,"ax",%progbits
  169              		.align	1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 5
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 5
 
 
  170              		.p2align 2,,3
@@ -298,7 +298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
   59:../../common/sd/ro_sd.c **** 
   60:../../common/sd/ro_sd.c **** FRESULT ro_sd_mount(FATFS* fs) {
  225              		.loc 1 60 32 is_stmt 1 view -0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 6
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 6
 
 
  226              		.cfi_startproc
@@ -358,7 +358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  269 0020 0B49     		ldr	r1, .L33+16
  270              	.LBE66:
  271              	.LBE65:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 7
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 7
 
 
   65:../../common/sd/ro_sd.c ****     return f_mount(fs, "0:", 1);
@@ -418,7 +418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  318 003c 0320     		movs	r0, #3
  319              	.LVL12:
  320              		.loc 1 66 1 view .LVU73
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 8
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 8
 
 
  321 003e 7047     		bx	lr
@@ -478,7 +478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  375              		@ frame_needed = 0, uses_anonymous_args = 0
   71:../../common/sd/ro_sd.c ****     return Present() ? status : (DSTATUS)(STA_NOINIT | STA_NODISK | STA_PROTECT);
  376              		.loc 1 71 5 view .LVU77
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 9
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 9
 
 
  377              	.LBB75:
@@ -538,7 +538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  423              		.align	1
  424              		.p2align 2,,3
  425              		.global	disk_status
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 10
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 10
 
 
  426              		.syntax unified
@@ -598,7 +598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  471 0008 044B     		ldr	r3, .L57
  472 000a 1B69     		ldr	r3, [r3, #16]
   30:../../common/sd/ro_sd.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 11
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 11
 
 
  473              		.loc 1 30 56 view .LVU100
@@ -658,7 +658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  522              		.loc 1 79 5 view .LVU108
  523              		.loc 1 79 7 is_stmt 0 view .LVU109
  524 0000 C0B9     		cbnz	r0, .L66
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 12
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 12
 
 
   78:../../common/sd/ro_sd.c ****     if(drive || !configured) return STA_NOINIT | STA_PROTECT;
@@ -718,7 +718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  569              	.LBE104:
  570              		.loc 1 81 20 is_stmt 1 discriminator 1 view .LVU124
  571              	.LBB105:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 13
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 13
 
 
  572              	.LBI105:
@@ -778,7 +778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  607 002c 2078     		ldrb	r0, [r4]	@ zero_extendqisi2
  608              		.loc 1 87 1 view .LVU139
  609 002e 38BD     		pop	{r3, r4, r5, pc}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 14
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 14
 
 
  610              	.LVL23:
@@ -838,7 +838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  657              	.LFE349:
  659              		.section	.text.disk_read,"ax",%progbits
  660              		.align	1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 15
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 15
 
 
  661              		.p2align 2,,3
@@ -898,7 +898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  707              		.cfi_offset 11, -8
  708              		.cfi_offset 14, -4
  709              	.LBB162:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 16
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 16
 
 
  710              	.LBB160:
@@ -958,7 +958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  755              	.LBB164:
  756              	.LBB165:
  757              	.LBB166:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 17
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 17
 
 
  758              	.LBB167:
@@ -1018,7 +1018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  799 0048 0028     		cmp	r0, #0
  800 004a 74D0     		beq	.L147
  801              	.L85:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 18
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 18
 
 
  802              	.LBE180:
@@ -1078,7 +1078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
   37:../../common/sd/ro_sd.c **** }
  845              		.loc 1 37 64 discriminator 1 view .LVU197
  846 0064 A368     		ldr	r3, [r4, #8]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 19
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 19
 
 
   37:../../common/sd/ro_sd.c **** }
@@ -1138,7 +1138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  882              	.LBE186:
   97:../../common/sd/ro_sd.c ****         const uint32_t start = HAL_GetTick();
  883              		.loc 1 97 34 discriminator 1 view .LVU211
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 20
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 20
 
 
  884 0080 0120     		movs	r0, #1
@@ -1198,7 +1198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  922              	.LBE170:
  923              	.LBE172:
  924              	.LBE176:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 21
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 21
 
 
  925              	.LBE189:
@@ -1258,7 +1258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  962              	.LVL43:
  963              	.LBB191:
  964              	.LBI191:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 22
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 22
 
 
  965              		.file 2 "../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h"
@@ -1318,7 +1318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
   54:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \brief   Enable I-Cache
   55:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \details Turns on I-Cache
   56:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 23
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 23
 
 
   57:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** __STATIC_FORCEINLINE void SCB_EnableICache (void)
@@ -1378,7 +1378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  111:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****            I-Cache memory blocks which are part of given address + given size are invalidated.
  112:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   addr    address
  113:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****   \param[in]   isize   size of memory block (in number of bytes)
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 24
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 24
 
 
  114:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** */
@@ -1438,7 +1438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  168:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
  169:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CCR |=  (uint32_t)SCB_CCR_DC_Msk;  /* enable D-Cache */
  170:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 25
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 25
 
 
  171:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
@@ -1498,7 +1498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  225:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
  226:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     SCB->CSSELR = 0U;                       /* select Level 1 data cache */
  227:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****     __DSB();
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 26
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 26
 
 
  228:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
@@ -1558,7 +1558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  282:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** }
  283:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
  284:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 27
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 27
 
 
  285:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** /**
@@ -1618,7 +1618,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  339:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_addr += __SCB_DCACHE_LINE_SIZE;
  340:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****         op_size -= __SCB_DCACHE_LINE_SIZE;
  341:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       } while ( op_size > 0 );
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 28
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 28
 
 
  342:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
@@ -1678,7 +1678,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  970 00be BBF1000F 		cmp	fp, #0
  971 00c2 11DD     		ble	.L97
  972              	.LBB193:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 29
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 29
 
 
  392:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****        int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
@@ -1738,7 +1738,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
   40:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __ASM
   41:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __ASM                                  __asm
   42:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #endif
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 30
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 30
 
 
   43:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #ifndef   __INLINE
@@ -1798,7 +1798,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
   97:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic ignored "-Wattributes"
   98:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   __PACKED_STRUCT T_UINT32_WRITE { uint32_t v; };
   99:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #pragma GCC diagnostic pop
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 31
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 31
 
 
  100:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   #define __UNALIGNED_UINT32_WRITE(addr, val)    (void)((((struct T_UINT32_WRITE *)(void *)(addr))-
@@ -1858,7 +1858,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  154:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****     }
  155:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   }
  156:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 32
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 32
 
 
  157:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****   for (__zero_table_t const* pTable = &__zero_table_start__; pTable < &__zero_table_end__; ++pTable
@@ -1918,7 +1918,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  211:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** /* Define macros for porting to both thumb1 and thumb2.
  212:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * For thumb1, use low register (r0-r7), specified by constraint "l"
  213:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  * Otherwise, use general registers, specified by constraint "r" */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 33
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 33
 
 
  214:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** #if defined (__thumb__) && !defined (__thumb2__)
@@ -1978,7 +1978,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  268:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h ****  */
  269:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h **** __STATIC_FORCEINLINE void __DSB(void)
  984              		.loc 3 269 27 view .LVU247
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 34
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 34
 
 
  985              	.LBB195:
@@ -2038,7 +2038,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  404:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****       __ISB();
  1027              		.loc 2 404 7 view .LVU260
  1028              	.LBB198:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 35
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 35
 
 
  1029              	.LBI198:
@@ -2098,7 +2098,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  1071              		.loc 1 105 21 is_stmt 1 view .LVU272
  105:../../common/sd/ro_sd.c ****             if(Expired(start)) return Fail();
  1072              		.loc 1 105 15 is_stmt 0 view .LVU273
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 36
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 36
 
 
  1073 00f6 D8F80030 		ldr	r3, [r8]
@@ -2158,7 +2158,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  1113 0122 E8DC     		bgt	.L105
  1114              	.LBE203:
  1115              	.LBE202:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 37
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 37
 
 
  1116              	.LBE204:
@@ -2218,7 +2218,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  1162              		.cfi_offset 8, -20
  1163              		.cfi_offset 9, -16
  1164              		.cfi_offset 10, -12
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 38
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 38
 
 
  1165              		.cfi_offset 11, -8
@@ -2278,7 +2278,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  328:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** {
  1208              		.loc 2 328 27 is_stmt 1 view .LVU309
  1209              	.LBB216:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 39
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 39
 
 
  331:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h ****        int32_t op_size = dsize + (((uint32_t)addr) & (__SCB_DCACHE_LINE_SIZE - 1U));
@@ -2338,7 +2338,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  341:../../libDaisy/Drivers/CMSIS_5/CMSIS/Core/Include/cachel1_armv7.h **** 
  1249              		.loc 2 341 25 discriminator 1 view .LVU326
  1250 016c 531A     		subs	r3, r2, r1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 40
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 40
 
 
  1251 016e 002B     		cmp	r3, #0
@@ -2398,7 +2398,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  1295              		.loc 1 110 45 view .LVU337
  1296 0180 AAEB060A 		sub	r10, r10, r6
  1297              	.LVL66:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 41
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 41
 
 
  109:../../common/sd/ro_sd.c ****         buffer += bytes; sector += n; count -= n;
@@ -2458,7 +2458,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
   33:../../common/sd/ro_sd.c **** }
  1339              		.loc 1 33 52 is_stmt 0 discriminator 2 view .LVU351
  1340 01a8 054B     		ldr	r3, .L150+4
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 42
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 42
 
 
  1341 01aa 1D68     		ldr	r5, [r3]
@@ -2518,7 +2518,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  1390 0002 8AB0     		sub	sp, sp, #40
  1391              		.cfi_def_cfa_offset 56
  1392              		.loc 1 117 7 view .LVU358
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 43
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 43
 
 
  1393 0004 0028     		cmp	r0, #0
@@ -2578,7 +2578,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  130:../../common/sd/ro_sd.c ****     }
  131:../../common/sd/ro_sd.c **** }
  1427              		.loc 1 131 1 view .LVU369
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 44
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 44
 
 
  1428 0018 2846     		mov	r0, r5
@@ -2638,7 +2638,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  1475              	.L159:
  1476              		.cfi_restore_state
  121:../../common/sd/ro_sd.c ****     case GET_BLOCK_SIZE: *(DWORD*)data = 1; return RES_OK;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 45
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 45
 
 
  1477              		.loc 1 121 27 is_stmt 1 view .LVU379
@@ -2698,7 +2698,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  1521 006a 0425     		movs	r5, #4
  1522 006c D4E7     		b	.L155
  1523              	.L169:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 46
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 46
 
 
  1524 006e 00BF     		.align	2
@@ -2752,58 +2752,58 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 1
  1581              		.file 17 "../../libDaisy/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_cortex.h"
  1582              		.file 18 "../../libDaisy/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h"
  1583              		.file 19 "<built-in>"
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 47
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 47
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 ro_sd.c
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:20     .text.BSP_SD_ReadCpltCallback:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:27     .text.BSP_SD_ReadCpltCallback:00000000 BSP_SD_ReadCpltCallback
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:44     .text.BSP_SD_ReadCpltCallback:00000008 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1541   .bss.done:00000000 done
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:49     .text.BSP_SD_ErrorCallback:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:56     .text.BSP_SD_ErrorCallback:00000000 BSP_SD_ErrorCallback
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:73     .text.BSP_SD_ErrorCallback:00000008 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1535   .bss.failed:00000000 failed
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:78     .text.ro_sd_init:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:85     .text.ro_sd_init:00000000 ro_sd_init
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:162    .text.ro_sd_init:00000050 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1558   .bss.configured:00000000 configured
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1564   .bss.config:00000000 config
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1552   .data.status:00000000 status
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:169    .text.ro_sd_restart_budget:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:176    .text.ro_sd_restart_budget:00000000 ro_sd_restart_budget
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:205    .text.ro_sd_restart_budget:00000014 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1547   .bss.deadline:00000000 deadline
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:211    .rodata.ro_sd_mount.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:215    .text.ro_sd_mount:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:222    .text.ro_sd_mount:00000000 ro_sd_mount
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:325    .text.ro_sd_mount:00000040 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:335    .text.ro_sd_unmount:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:342    .text.ro_sd_unmount:00000000 ro_sd_unmount
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:358    .text.ro_sd_unmount:0000000c $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:363    .text.ro_sd_status:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:370    .text.ro_sd_status:00000000 ro_sd_status
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:417    .text.ro_sd_status:00000018 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:423    .text.disk_status:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:430    .text.disk_status:00000000 disk_status
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:502    .text.disk_status:0000001c $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:508    .text.disk_initialize:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:515    .text.disk_initialize:00000000 disk_initialize
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:653    .text.disk_initialize:0000004c $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:660    .text.disk_read:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:667    .text.disk_read:00000000 disk_read
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1354   .text.disk_read:000001bc $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1368   .text.disk_ioctl:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1375   .text.disk_ioctl:00000000 disk_ioctl
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1454   .text.disk_ioctl:00000034 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1458   .text.disk_ioctl:00000044 $t
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1526   .text.disk_ioctl:00000070 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1532   .bss.failed:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1538   .bss.done:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1544   .bss.deadline:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1555   .bss.configured:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s:1561   .bss.config:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:20     .text.BSP_SD_ReadCpltCallback:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:27     .text.BSP_SD_ReadCpltCallback:00000000 BSP_SD_ReadCpltCallback
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:44     .text.BSP_SD_ReadCpltCallback:00000008 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1541   .bss.done:00000000 done
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:49     .text.BSP_SD_ErrorCallback:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:56     .text.BSP_SD_ErrorCallback:00000000 BSP_SD_ErrorCallback
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:73     .text.BSP_SD_ErrorCallback:00000008 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1535   .bss.failed:00000000 failed
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:78     .text.ro_sd_init:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:85     .text.ro_sd_init:00000000 ro_sd_init
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:162    .text.ro_sd_init:00000050 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1558   .bss.configured:00000000 configured
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1564   .bss.config:00000000 config
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1552   .data.status:00000000 status
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:169    .text.ro_sd_restart_budget:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:176    .text.ro_sd_restart_budget:00000000 ro_sd_restart_budget
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:205    .text.ro_sd_restart_budget:00000014 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1547   .bss.deadline:00000000 deadline
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:211    .rodata.ro_sd_mount.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:215    .text.ro_sd_mount:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:222    .text.ro_sd_mount:00000000 ro_sd_mount
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:325    .text.ro_sd_mount:00000040 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:335    .text.ro_sd_unmount:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:342    .text.ro_sd_unmount:00000000 ro_sd_unmount
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:358    .text.ro_sd_unmount:0000000c $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:363    .text.ro_sd_status:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:370    .text.ro_sd_status:00000000 ro_sd_status
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:417    .text.ro_sd_status:00000018 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:423    .text.disk_status:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:430    .text.disk_status:00000000 disk_status
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:502    .text.disk_status:0000001c $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:508    .text.disk_initialize:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:515    .text.disk_initialize:00000000 disk_initialize
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:653    .text.disk_initialize:0000004c $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:660    .text.disk_read:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:667    .text.disk_read:00000000 disk_read
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1354   .text.disk_read:000001bc $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1368   .text.disk_ioctl:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1375   .text.disk_ioctl:00000000 disk_ioctl
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1454   .text.disk_ioctl:00000034 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1458   .text.disk_ioctl:00000044 $t
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1526   .text.disk_ioctl:00000070 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1532   .bss.failed:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1538   .bss.done:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1544   .bss.deadline:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1555   .bss.configured:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s:1561   .bss.config:00000000 $d
 
 UNDEFINED SYMBOLS
 HAL_GetTick
@@ -2812,7 +2812,7 @@ HAL_SD_DeInit
 hsd1
 BSP_SD_Init
 HAL_NVIC_SetPriority
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccnPqINo.s 			page 48
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccDj4k9G.s 			page 48
 
 
 BSP_SD_GetCardState

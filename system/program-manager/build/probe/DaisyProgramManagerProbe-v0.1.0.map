@@ -310,8 +310,6 @@ Discarded input sections
  .text          0x00000000        0x0 build/probe/pm_main.o
  .data          0x00000000        0x0 build/probe/pm_main.o
  .bss           0x00000000        0x0 build/probe/pm_main.o
- .rodata._ZN12_GLOBAL__N_1L14kVersionMarkerE
-                0x00000000       0x21 build/probe/pm_main.o
  .text          0x00000000        0x0 build/probe/pm_image.o
  .data          0x00000000        0x0 build/probe/pm_image.o
  .bss           0x00000000        0x0 build/probe/pm_image.o
@@ -3024,7 +3022,7 @@ LOAD D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-n
                 0x90040000                g_pfnVectors
                 0x90040298                        . = ALIGN (0x4)
 
-.text           0x900402a0    0x21e20
+.text           0x900402a0    0x21e40
                 0x900402a0                        . = ALIGN (0x4)
                 0x900402a0                        _stext = .
  *(.text)
@@ -5283,280 +5281,284 @@ LOAD D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-n
  .rodata.kRound
                 0x90060efc      0x100 build/probe/pm_sha256.o
  .rodata._ZN12_GLOBAL__N_112ManagerBoard9RunSdTestEb.str1.4
-                0x90060ffc      0xa11 build/probe/pm_main.o
+                0x90060ffc      0xa09 build/probe/pm_main.o
                                   0x2 (size before relaxing)
  .rodata._ZN4diag5Board13ReaderCommandEmRN3ddp6WriterE.str1.4
-                0x90061a0d       0x1b build/probe/pm_main.o
+                0x90061a05       0x1b build/probe/pm_main.o
  .rodata.main.str1.4
-                0x90061a0d       0x42 build/probe/pm_main.o
+                0x90061a05       0x3a build/probe/pm_main.o
  .rodata.str1.4
-                0x90061a0d       0x30 build/probe/pm_main.o
- *fill*         0x90061a0d        0x3 
+                0x90061a05       0x30 build/probe/pm_main.o
+ *fill*         0x90061a05        0x3 
  .rodata.CSWTCH.136
-                0x90061a10       0x10 build/probe/pm_main.o
+                0x90061a08       0x10 build/probe/pm_main.o
  .rodata._ZTVN4diag6devkit7CdcSinkE
-                0x90061a20        0xc build/probe/pm_main.o
-                0x90061a20                vtable for diag::devkit::CdcSink
+                0x90061a18        0xc build/probe/pm_main.o
+                0x90061a18                vtable for diag::devkit::CdcSink
  .rodata._ZTVN12_GLOBAL__N_110SramTargetE
-                0x90061a2c       0x14 build/probe/pm_main.o
+                0x90061a24       0x14 build/probe/pm_main.o
  .rodata._ZTVN12_GLOBAL__N_115DaisyBootCommitE
-                0x90061a40       0x10 build/probe/pm_main.o
+                0x90061a38       0x10 build/probe/pm_main.o
  .rodata._ZTVN12_GLOBAL__N_19NoStorageE
-                0x90061a50       0x24 build/probe/pm_main.o
+                0x90061a48       0x24 build/probe/pm_main.o
  .rodata._ZTVN12_GLOBAL__N_112ManagerBoardE
-                0x90061a74       0x3c build/probe/pm_main.o
+                0x90061a6c       0x3c build/probe/pm_main.o
  .rodata._ZZ4mainE8identity
-                0x90061ab0       0x10 build/probe/pm_main.o
+                0x90061aa8       0x10 build/probe/pm_main.o
+ .rodata._ZN12_GLOBAL__N_1L14kVersionMarkerE
+                0x90061ab8       0x21 build/probe/pm_main.o
  .rodata._ZN2pm14ImageErrorNameENS_10ImageErrorE.str1.4
-                0x90061ac0        0x2 build/probe/pm_image.o
+                0x90061ad9        0x2 build/probe/pm_image.o
  .rodata._ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE.str1.4
-                0x90061ac0       0x21 build/probe/pm_image.o
+                0x90061ad9       0x21 build/probe/pm_image.o
  .rodata.str1.4
-                0x90061ac0       0x8d build/probe/pm_image.o
+                0x90061ad9       0x8d build/probe/pm_image.o
+ *fill*         0x90061ad9        0x3 
  .rodata.CSWTCH.29
-                0x90061ac0        0xc build/probe/pm_image.o
+                0x90061adc        0xc build/probe/pm_image.o
  .rodata.CSWTCH.27
-                0x90061acc       0x3c build/probe/pm_image.o
+                0x90061ae8       0x3c build/probe/pm_image.o
  .rodata._ZN2pmL6kMagicE
-                0x90061b08        0x8 build/probe/pm_image.o
+                0x90061b24        0x8 build/probe/pm_image.o
  .rodata._ZN2pm12_GLOBAL__N_16Reader10SkipStringEv.str1.4
-                0x90061b10        0x9 build/probe/pm_catalog.o
+                0x90061b2c        0x9 build/probe/pm_catalog.o
  .rodata._ZN2pm12_GLOBAL__N_16Reader9SkipValueEi.str1.4
-                0x90061b10       0x15 build/probe/pm_catalog.o
+                0x90061b2c       0x15 build/probe/pm_catalog.o
  .rodata._ZN2pm16CatalogErrorNameENS_12CatalogErrorE.str1.4
-                0x90061b10        0x2 build/probe/pm_catalog.o
+                0x90061b2c        0x2 build/probe/pm_catalog.o
  .rodata._ZN2pm9ValidPathEPKc.str1.4
-                0x90061b10       0x25 build/probe/pm_catalog.o
+                0x90061b2c       0x25 build/probe/pm_catalog.o
  .rodata._ZN2pm12ParseCatalogEPKcjRNS_7CatalogEPNS_16CatalogParseInfoE.str1.4
-                0x90061b10       0xaa build/probe/pm_catalog.o
+                0x90061b2c       0xaa build/probe/pm_catalog.o
  .rodata.str1.4
-                0x90061b10       0xd2 build/probe/pm_catalog.o
+                0x90061b2c       0xd2 build/probe/pm_catalog.o
  .rodata.CSWTCH.78
-                0x90061b10       0x54 build/probe/pm_catalog.o
+                0x90061b2c       0x54 build/probe/pm_catalog.o
  .rodata._ZN2pm12_GLOBAL__N_1L11kCategoriesE
-                0x90061b64       0x10 build/probe/pm_catalog.o
+                0x90061b80       0x10 build/probe/pm_catalog.o
  .rodata._ZN2pm13LoadStateNameENS_9LoadStateE.str1.4
-                0x90061b74        0x2 build/probe/pm_loader.o
+                0x90061b90        0x2 build/probe/pm_loader.o
  .rodata.str1.4
-                0x90061b74       0xca build/probe/pm_loader.o
+                0x90061b90       0xca build/probe/pm_loader.o
  .rodata.CSWTCH.18
-                0x90061b74       0x44 build/probe/pm_loader.o
+                0x90061b90       0x44 build/probe/pm_loader.o
  .rodata.CSWTCH.16
-                0x90061bb8       0x20 build/probe/pm_loader.o
+                0x90061bd4       0x20 build/probe/pm_loader.o
  .rodata._ZN2pm8ModeNameENS_4ModeE.str1.4
-                0x90061bd8        0x2 build/probe/pm_manager.o
+                0x90061bf4        0x2 build/probe/pm_manager.o
  .rodata.str1.4
-                0x90061bd8       0xb4 build/probe/pm_manager.o
+                0x90061bf4       0xb4 build/probe/pm_manager.o
  .rodata.CSWTCH.24
-                0x90061bd8       0x24 build/probe/pm_manager.o
+                0x90061bf4       0x24 build/probe/pm_manager.o
  .rodata.CSWTCH.22
-                0x90061bfc       0x20 build/probe/pm_manager.o
+                0x90061c18       0x20 build/probe/pm_manager.o
  .rodata.CSWTCH.20
-                0x90061c1c       0x10 build/probe/pm_manager.o
+                0x90061c38       0x10 build/probe/pm_manager.o
  .rodata._ZN2pm11UiErrorNameENS_7UiErrorE.str1.4
-                0x90061c2c        0x2 build/probe/pm_protocol.o
+                0x90061c48        0x2 build/probe/pm_protocol.o
  .rodata._ZNK2pm8Protocol9WriteInfoERN3ddp6WriterE.str1.4
-                0x90061c2c       0x68 build/probe/pm_protocol.o
+                0x90061c48       0x68 build/probe/pm_protocol.o
  .rodata._ZNK2pm8Protocol11WriteStatusERN3ddp6WriterE.str1.4
-                0x90061c2c       0x57 build/probe/pm_protocol.o
+                0x90061c48       0x57 build/probe/pm_protocol.o
  .rodata._ZNK2pm8Protocol10WriteEntryERKNS_12CatalogEntryERN3ddp6WriterE.str1.4
-                0x90061c2c       0x2b build/probe/pm_protocol.o
+                0x90061c48       0x2b build/probe/pm_protocol.o
  .rodata._ZN2pm8Protocol11HandleStartEPKcmRN3ddp6WriterE.str1.4
-                0x90061c2c       0x52 build/probe/pm_protocol.o
+                0x90061c48       0x52 build/probe/pm_protocol.o
  .rodata._ZN2pm8Protocol6HandleEPKcS2_bmRN3ddp6WriterERm.str1.4
-                0x90061c2c       0xa3 build/probe/pm_protocol.o
+                0x90061c48       0xa3 build/probe/pm_protocol.o
  .rodata.str1.4
-                0x90061c2c       0x4f build/probe/pm_protocol.o
+                0x90061c48       0x4f build/probe/pm_protocol.o
  .rodata.CSWTCH.49
-                0x90061c2c       0x14 build/probe/pm_protocol.o
+                0x90061c48       0x14 build/probe/pm_protocol.o
  .rodata._ZTVN2pm8ProtocolE
-                0x90061c40        0xc build/probe/pm_protocol.o
-                0x90061c40                vtable for pm::Protocol
+                0x90061c5c        0xc build/probe/pm_protocol.o
+                0x90061c5c                vtable for pm::Protocol
  .rodata._ZN2pm12_GLOBAL__N_1L9kDiagOnlyE
-                0x90061c4c       0x18 build/probe/pm_protocol.o
+                0x90061c68       0x18 build/probe/pm_protocol.o
  .rodata._ZN4diag5Board13ReaderCommandEmRN3ddp6WriterE.str1.4
-                0x90061c64       0x1b build/probe/diag_app.o
+                0x90061c80       0x1b build/probe/diag_app.o
  .rodata._ZN4diag3App4StepEm.str1.4
-                0x90061c64       0x7c build/probe/diag_app.o
+                0x90061c80       0x7c build/probe/diag_app.o
  .rodata._ZN4diag11LedModeNameENS_7LedModeE.str1.4
-                0x90061c64        0x4 build/probe/diag_core.o
+                0x90061c80        0x4 build/probe/diag_core.o
  .rodata._ZN4diag12ToneModeNameENS_8ToneModeE.str1.4
-                0x90061c64        0x5 build/probe/diag_core.o
+                0x90061c80        0x5 build/probe/diag_core.o
  .rodata._ZN4diag16ToneChannelsNameENS_12ToneChannelsE.str1.4
-                0x90061c64        0x3 build/probe/diag_core.o
+                0x90061c80        0x3 build/probe/diag_core.o
  .rodata._ZNK4diag7Session10WriteHelloERN3ddp6WriterE.str1.4
-                0x90061c64       0xa5 build/probe/diag_core.o
+                0x90061c80       0xa5 build/probe/diag_core.o
  .rodata._ZN4diag7Session6HandleEPKcmRN3ddp6WriterE.str1.4
-                0x90061c64      0x154 build/probe/diag_core.o
+                0x90061c80      0x154 build/probe/diag_core.o
  .rodata._ZN4diag10WriteStateERKNS_6InputsERKNS_8SettingsEtmmRN3ddp6WriterEPKt.str1.4
-                0x90061c64       0x75 build/probe/diag_core.o
+                0x90061c80       0x75 build/probe/diag_core.o
  .rodata._ZN4diag8WriteSysERKNS_5StatsEbhRN3ddp6WriterE.str1.4
-                0x90061c64       0x4f build/probe/diag_core.o
+                0x90061c80       0x4f build/probe/diag_core.o
  .rodata._ZN4diag10WriteAudioERKNS_11AudioLevelsERKNS_12ToneSettingsERN3ddp6WriterE.str1.4
-                0x90061c64       0x27 build/probe/diag_core.o
+                0x90061c80       0x27 build/probe/diag_core.o
  .rodata._ZN4diag15WriteScopeChunkEPKstttRN3ddp6WriterE.str1.4
-                0x90061c64       0x14 build/probe/diag_core.o
+                0x90061c80       0x14 build/probe/diag_core.o
  .rodata._ZN4diag7WriteSdERKNS_8SdResultERN3ddp6WriterE.str1.4
-                0x90061c64       0x46 build/probe/diag_core.o
+                0x90061c80       0x46 build/probe/diag_core.o
  .rodata.str1.4
-                0x90061c64       0x63 build/probe/diag_core.o
+                0x90061c80       0x63 build/probe/diag_core.o
  .rodata._ZZNK4diag7Session10WriteHelloERN3ddp6WriterEE8kDefault
-                0x90061c64       0x10 build/probe/diag_core.o
+                0x90061c80       0x10 build/probe/diag_core.o
  .rodata._ZN4diag12_GLOBAL__N_1L12kCvModeNamesE
-                0x90061c74       0x20 build/probe/diag_core.o
+                0x90061c90       0x20 build/probe/diag_core.o
  .rodata._ZN4diag12_GLOBAL__N_1L10kHexDigitsE
-                0x90061c94       0x11 build/probe/diag_core.o
- *fill*         0x90061ca5        0x3 
+                0x90061cb0       0x11 build/probe/diag_core.o
+ *fill*         0x90061cc1        0x3 
  .rodata._ZN4diag12_GLOBAL__N_1L17kToneChannelNamesE
-                0x90061ca8       0x18 build/probe/diag_core.o
+                0x90061cc4       0x18 build/probe/diag_core.o
  .rodata._ZN4diag12_GLOBAL__N_1L14kToneModeNamesE
-                0x90061cc0       0x10 build/probe/diag_core.o
+                0x90061cdc       0x10 build/probe/diag_core.o
  .rodata._ZN4diag12_GLOBAL__N_1L10kModeNamesE
-                0x90061cd0       0x30 build/probe/diag_core.o
+                0x90061cec       0x30 build/probe/diag_core.o
  .rodata._ZN3ddp12_GLOBAL__N_1L10kHexDigitsE
-                0x90061d00       0x11 build/probe/ddp.o
- *fill*         0x90061d11        0x3 
+                0x90061d1c       0x11 build/probe/ddp.o
+ *fill*         0x90061d2d        0x3 
  .rodata._ZN5daisy14desktop_devkitL14led_i2c_configE
-                0x90061d14       0x14 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+                0x90061d30       0x14 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
  .rodata._ZN5daisy4seedL3D28E
-                0x90061d28        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
- *fill*         0x90061d2a        0x2 
- .rodata._ZN5daisy4seedL3D27E
-                0x90061d2c        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
- *fill*         0x90061d2e        0x2 
- .rodata._ZN5daisy4seedL3D26E
-                0x90061d30        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
- *fill*         0x90061d32        0x2 
- .rodata._ZN5daisy4seedL3D25E
-                0x90061d34        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
- *fill*         0x90061d36        0x2 
- .rodata._ZN5daisy4seedL3D14E
-                0x90061d38        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
- *fill*         0x90061d3a        0x2 
- .rodata._ZN5daisy4seedL3D13E
-                0x90061d3c        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
- *fill*         0x90061d3e        0x2 
- .rodata._ZN5daisy4seedL3D10E
-                0x90061d40        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
- *fill*         0x90061d42        0x2 
- .rodata._ZN5daisy4seedL2D9E
                 0x90061d44        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
  *fill*         0x90061d46        0x2 
- .rodata._ZN5daisy4seedL2D8E
+ .rodata._ZN5daisy4seedL3D27E
                 0x90061d48        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
  *fill*         0x90061d4a        0x2 
+ .rodata._ZN5daisy4seedL3D26E
+                0x90061d4c        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+ *fill*         0x90061d4e        0x2 
+ .rodata._ZN5daisy4seedL3D25E
+                0x90061d50        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+ *fill*         0x90061d52        0x2 
+ .rodata._ZN5daisy4seedL3D14E
+                0x90061d54        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+ *fill*         0x90061d56        0x2 
+ .rodata._ZN5daisy4seedL3D13E
+                0x90061d58        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+ *fill*         0x90061d5a        0x2 
+ .rodata._ZN5daisy4seedL3D10E
+                0x90061d5c        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+ *fill*         0x90061d5e        0x2 
+ .rodata._ZN5daisy4seedL2D9E
+                0x90061d60        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+ *fill*         0x90061d62        0x2 
+ .rodata._ZN5daisy4seedL2D8E
+                0x90061d64        0x2 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+ *fill*         0x90061d66        0x2 
  .rodata._ZL16dsy_adc_rank_map
-                0x90061d4c       0x40 ../../libDaisy/build\libdaisy.a(adc.o)
+                0x90061d68       0x40 ../../libDaisy/build\libdaisy.a(adc.o)
  .rodata._ZN5daisyL10kI2CPinMapE
-                0x90061d8c       0x9c ../../libDaisy/build\libdaisy.a(i2c.o)
+                0x90061da8       0x9c ../../libDaisy/build\libdaisy.a(i2c.o)
  .rodata._ZN5daisy10QSPIHandle4Impl5GetAFEj.str1.4
-                0x90061e28        0x7 ../../libDaisy/build\libdaisy.a(qspi.o)
+                0x90061e44        0x7 ../../libDaisy/build\libdaisy.a(qspi.o)
  .rodata.CSWTCH.66
-                0x90061e28       0x18 ../../libDaisy/build\libdaisy.a(sai.o)
+                0x90061e44       0x18 ../../libDaisy/build\libdaisy.a(sai.o)
  .rodata.CSWTCH.115
-                0x90061e40        0xc ../../libDaisy/build\libdaisy.a(uart.o)
- .rodata.CSWTCH.114
-                0x90061e4c       0x10 ../../libDaisy/build\libdaisy.a(uart.o)
- .rodata.CSWTCH.113
                 0x90061e5c        0xc ../../libDaisy/build\libdaisy.a(uart.o)
+ .rodata.CSWTCH.114
+                0x90061e68       0x10 ../../libDaisy/build\libdaisy.a(uart.o)
+ .rodata.CSWTCH.113
+                0x90061e78        0xc ../../libDaisy/build\libdaisy.a(uart.o)
  .rodata.CSWTCH.112
-                0x90061e68       0x24 ../../libDaisy/build\libdaisy.a(uart.o)
+                0x90061e84       0x24 ../../libDaisy/build\libdaisy.a(uart.o)
  .rodata.USBD_FS_ManufacturerStrDescriptor.str1.4
-                0x90061e8c        0xd ../../libDaisy/build\libdaisy.a(usbd_desc.o)
+                0x90061ea8        0xd ../../libDaisy/build\libdaisy.a(usbd_desc.o)
  .rodata.USBD_HS_ProductStrDescriptor.str1.4
-                0x90061e8c       0x14 ../../libDaisy/build\libdaisy.a(usbd_desc.o)
+                0x90061ea8       0x14 ../../libDaisy/build\libdaisy.a(usbd_desc.o)
  .rodata.USBD_FS_ConfigStrDescriptor.str1.4
-                0x90061e8c        0xb ../../libDaisy/build\libdaisy.a(usbd_desc.o)
+                0x90061ea8        0xb ../../libDaisy/build\libdaisy.a(usbd_desc.o)
  .rodata.USBD_FS_InterfaceStrDescriptor.str1.4
-                0x90061e8c        0xe ../../libDaisy/build\libdaisy.a(usbd_desc.o)
+                0x90061ea8        0xe ../../libDaisy/build\libdaisy.a(usbd_desc.o)
  .rodata.USBD_FS_ProductStrDescriptor.str1.4
-                0x90061e8c       0x14 ../../libDaisy/build\libdaisy.a(usbd_desc.o)
+                0x90061ea8       0x14 ../../libDaisy/build\libdaisy.a(usbd_desc.o)
  .rodata.flagBitshiftOffset.0
-                0x90061e8c        0x8 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_dma.o)
+                0x90061ea8        0x8 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_dma.o)
  .rodata.UARTPrescTable
-                0x90061e94       0x18 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart.o)
-                0x90061e94                UARTPrescTable
+                0x90061eb0       0x18 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart.o)
+                0x90061eb0                UARTPrescTable
  .rodata.denominator.0
-                0x90061eac        0x8 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart_ex.o)
+                0x90061ec8        0x8 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart_ex.o)
  .rodata.numerator.1
-                0x90061eb4        0x8 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart_ex.o)
+                0x90061ed0        0x8 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart_ex.o)
  .rodata.USBD_Init.str1.4
-                0x90061ebc       0x1e ../../libDaisy/build\libdaisy.a(usbd_core.o)
+                0x90061ed8       0x1e ../../libDaisy/build\libdaisy.a(usbd_core.o)
  .rodata.USBD_RegisterClass.str1.4
-                0x90061ebc       0x15 ../../libDaisy/build\libdaisy.a(usbd_core.o)
+                0x90061ed8       0x15 ../../libDaisy/build\libdaisy.a(usbd_core.o)
  .rodata._ZL16pins_periphs_spi
-                0x90061ebc       0x60 ../../libDaisy/build\libdaisy.a(spi.o)
+                0x90061ed8       0x60 ../../libDaisy/build\libdaisy.a(spi.o)
  .rodata._ZL13pins_none_spi
-                0x90061f1c        0x3 ../../libDaisy/build\libdaisy.a(spi.o)
- *fill*         0x90061f1f        0x1 
+                0x90061f38        0x3 ../../libDaisy/build\libdaisy.a(spi.o)
+ *fill*         0x90061f3b        0x1 
  .rodata.D1CorePrescTable
-                0x90061f20       0x10 ../../libDaisy/build\libdaisy.a(system_stm32h7xx.o)
-                0x90061f20                D1CorePrescTable
+                0x90061f3c       0x10 ../../libDaisy/build\libdaisy.a(system_stm32h7xx.o)
+                0x90061f3c                D1CorePrescTable
  .rodata.__inv_pio4
-                0x90061f30       0x60 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libm.a(libm_a-sincosf_data.o)
-                0x90061f30                __inv_pio4
+                0x90061f4c       0x60 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libm.a(libm_a-sincosf_data.o)
+                0x90061f4c                __inv_pio4
+ *fill*         0x90061fac        0x4 
  .rodata.__sincosf_table
-                0x90061f90       0xe0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libm.a(libm_a-sincosf_data.o)
-                0x90061f90                __sincosf_table
+                0x90061fb0       0xe0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libm.a(libm_a-sincosf_data.o)
+                0x90061fb0                __sincosf_table
  .rodata.__on_exit_args
-                0x90062070        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-on_exit_args.o)
-                0x90062070                __on_exit_args
+                0x90062090        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-on_exit_args.o)
+                0x90062090                __on_exit_args
  .rodata._vfprintf_r.str1.1
-                0x90062074       0x33 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-nano-vfprintf.o)
+                0x90062094       0x33 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-nano-vfprintf.o)
                                  0x11 (size before relaxing)
  .rodata._printf_i.str1.1
-                0x900620a7       0x22 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-nano-vfprintf_i.o)
+                0x900620c7       0x22 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-nano-vfprintf_i.o)
  *(.glue_7)
- .glue_7        0x900620a7        0x0 linker stubs
+ .glue_7        0x900620c7        0x0 linker stubs
  *(.glue_7t)
- .glue_7t       0x900620a7        0x0 linker stubs
+ .glue_7t       0x900620c7        0x0 linker stubs
  *(.init)
- *fill*         0x900620a7        0x1 
- .init          0x900620a8        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crti.o
-                0x900620a8                _init
- .init          0x900620ac        0x8 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtn.o
+ *fill*         0x900620c7        0x1 
+ .init          0x900620c8        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crti.o
+                0x900620c8                _init
+ .init          0x900620cc        0x8 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtn.o
  *(.fini)
- .fini          0x900620b4        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crti.o
-                0x900620b4                _fini
- .fini          0x900620b8        0x8 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtn.o
-                0x900620c0                        . = ALIGN (0x4)
-                0x900620c0                        _etext = .
+ .fini          0x900620d4        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crti.o
+                0x900620d4                _fini
+ .fini          0x900620d8        0x8 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtn.o
+                0x900620e0                        . = ALIGN (0x4)
+                0x900620e0                        _etext = .
 
-.eh_frame       0x900620c0        0x0
- .eh_frame      0x900620c0        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
+.eh_frame       0x900620e0        0x0
+ .eh_frame      0x900620e0        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
 
-.vfp11_veneer   0x900620c0        0x0
- .vfp11_veneer  0x900620c0        0x0 linker stubs
+.vfp11_veneer   0x900620e0        0x0
+ .vfp11_veneer  0x900620e0        0x0 linker stubs
 
-.v4_bx          0x900620c0        0x0
- .v4_bx         0x900620c0        0x0 linker stubs
+.v4_bx          0x900620e0        0x0
+ .v4_bx         0x900620e0        0x0 linker stubs
 
-.iplt           0x900620c0        0x0
- .iplt          0x900620c0        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
+.iplt           0x900620e0        0x0
+ .iplt          0x900620e0        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
 
-.ARM.extab      0x900620c0        0x0
-                0x900620c0                        . = ALIGN (0x4)
+.ARM.extab      0x900620e0        0x0
+                0x900620e0                        . = ALIGN (0x4)
  *(.ARM.extab)
  *(.gnu.linkonce.armextab.*)
-                0x900620c0                        . = ALIGN (0x4)
+                0x900620e0                        . = ALIGN (0x4)
 
-.exidx          0x900620c0        0x8
-                0x900620c0                        . = ALIGN (0x4)
+.exidx          0x900620e0        0x8
+                0x900620e0                        . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__exidx_start = .)
  *(.ARM.exidx*)
- .ARM.exidx     0x900620c0        0x8 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-strcmp.o)
- .ARM.exidx     0x900620c8        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-strlen.o)
+ .ARM.exidx     0x900620e0        0x8 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-strcmp.o)
+ .ARM.exidx     0x900620e8        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-strlen.o)
                                   0x8 (size before relaxing)
- .ARM.exidx     0x900620c8        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-memchr.o)
+ .ARM.exidx     0x900620e8        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libc_nano.a(libc_a-memchr.o)
                                   0x8 (size before relaxing)
  .ARM.exidx.text.__udivmoddi4
-                0x900620c8        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_udivmoddi4.o)
+                0x900620e8        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_udivmoddi4.o)
                                   0x8 (size before relaxing)
-                0x900620c8                        . = ALIGN (0x4)
+                0x900620e8                        . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__exidx_end = .)
 
-.rel.dyn        0x900620c8        0x0
- .rel.iplt      0x900620c8        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
+.rel.dyn        0x900620e8        0x0
+ .rel.iplt      0x900620e8        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
 
 .ARM.attributes
                 0x00000000       0x2e
@@ -5834,36 +5836,36 @@ LOAD D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-n
  .ARM.attributes
                 0x000019d1       0x20 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtn.o
 
-.preinit_array  0x900620c8        0x0
-                0x900620c8                        PROVIDE (__preinit_array_start = .)
+.preinit_array  0x900620e8        0x0
+                0x900620e8                        PROVIDE (__preinit_array_start = .)
  *(.preinit_array*)
-                0x900620c8                        PROVIDE (__preinit_array_end = .)
+                0x900620e8                        PROVIDE (__preinit_array_end = .)
 
-.init_array     0x900620c8       0x34
-                0x900620c8                        PROVIDE (__init_array_start = .)
+.init_array     0x900620e8       0x34
+                0x900620e8                        PROVIDE (__init_array_start = .)
  *(SORT_BY_NAME(.init_array.*))
  *(.init_array*)
- .init_array    0x900620c8        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
- .init_array    0x900620cc        0x4 build/probe/pm_main.o
- .init_array    0x900620d0        0x4 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
- .init_array    0x900620d4        0x4 ../../libDaisy/build\libdaisy.a(audio.o)
- .init_array    0x900620d8        0x4 ../../libDaisy/build\libdaisy.a(adc.o)
- .init_array    0x900620dc        0x4 ../../libDaisy/build\libdaisy.a(dac.o)
- .init_array    0x900620e0        0x4 ../../libDaisy/build\libdaisy.a(i2c.o)
- .init_array    0x900620e4        0x4 ../../libDaisy/build\libdaisy.a(qspi.o)
- .init_array    0x900620e8        0x4 ../../libDaisy/build\libdaisy.a(sai.o)
- .init_array    0x900620ec        0x4 ../../libDaisy/build\libdaisy.a(tim.o)
- .init_array    0x900620f0        0x4 ../../libDaisy/build\libdaisy.a(uart.o)
- .init_array    0x900620f4        0x4 ../../libDaisy/build\libdaisy.a(system.o)
- .init_array    0x900620f8        0x4 ../../libDaisy/build\libdaisy.a(spi.o)
-                0x900620fc                        PROVIDE (__init_array_end = .)
+ .init_array    0x900620e8        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
+ .init_array    0x900620ec        0x4 build/probe/pm_main.o
+ .init_array    0x900620f0        0x4 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+ .init_array    0x900620f4        0x4 ../../libDaisy/build\libdaisy.a(audio.o)
+ .init_array    0x900620f8        0x4 ../../libDaisy/build\libdaisy.a(adc.o)
+ .init_array    0x900620fc        0x4 ../../libDaisy/build\libdaisy.a(dac.o)
+ .init_array    0x90062100        0x4 ../../libDaisy/build\libdaisy.a(i2c.o)
+ .init_array    0x90062104        0x4 ../../libDaisy/build\libdaisy.a(qspi.o)
+ .init_array    0x90062108        0x4 ../../libDaisy/build\libdaisy.a(sai.o)
+ .init_array    0x9006210c        0x4 ../../libDaisy/build\libdaisy.a(tim.o)
+ .init_array    0x90062110        0x4 ../../libDaisy/build\libdaisy.a(uart.o)
+ .init_array    0x90062114        0x4 ../../libDaisy/build\libdaisy.a(system.o)
+ .init_array    0x90062118        0x4 ../../libDaisy/build\libdaisy.a(spi.o)
+                0x9006211c                        PROVIDE (__init_array_end = .)
 
-.fini_array     0x900620fc        0x4
-                0x900620fc                        PROVIDE (__fini_array_start = .)
+.fini_array     0x9006211c        0x4
+                0x9006211c                        PROVIDE (__fini_array_start = .)
  *(.fini_array*)
- .fini_array    0x900620fc        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
+ .fini_array    0x9006211c        0x4 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
  *(SORT_BY_NAME(.fini_array.*))
-                0x90062100                        PROVIDE (__fini_array_end = .)
+                0x90062120                        PROVIDE (__fini_array_end = .)
 
 .sram1_bss      0x30000000     0x42c8
                 0x30000000                        . = ALIGN (0x4)
@@ -5880,7 +5882,7 @@ LOAD D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-n
                 0x300042c8                        _esram1_bss = .
                 [!provide]                        PROVIDE (__sram1_bss_end__ = _esram1_bss)
 
-.data           0x20000000      0x628 load address 0x90062100
+.data           0x20000000      0x628 load address 0x90062120
                 0x20000000                        . = ALIGN (0x4)
                 0x20000000                        _sdata = .
                 [!provide]                        PROVIDE (__data_start__ = _sdata)
@@ -6099,12 +6101,12 @@ LOAD D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-n
                 0x20000628                        . = ALIGN (0x4)
                 0x20000628                        _edata = .
                 [!provide]                        PROVIDE (__data_end__ = _edata)
-                0x90062100                        _sidata = LOADADDR (.data)
+                0x90062120                        _sidata = LOADADDR (.data)
 
-.igot.plt       0x20000628        0x0 load address 0x90062728
+.igot.plt       0x20000628        0x0 load address 0x90062748
  .igot.plt      0x20000628        0x0 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard/crtbegin.o
 
-.bss            0x20000628    0x185c8 load address 0x90062728
+.bss            0x20000628    0x185c8 load address 0x90062748
                 0x20000628                        . = ALIGN (0x4)
                 0x20000628                        _sbss = .
                 0x20000628                        PROVIDE (__bss_start__ = _sbss)
@@ -6320,7 +6322,7 @@ LOAD D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-n
                 0x20018bf0                        _ebss = .
                 0x20018bf0                        PROVIDE (__bss_end__ = _ebss)
 
-.dtcmram_bss    0x20018bf0        0x0 load address 0x90062728
+.dtcmram_bss    0x20018bf0        0x0 load address 0x90062748
                 0x20018bf0                        . = ALIGN (0x4)
                 0x20018bf0                        _sdtcmram_bss = .
                 [!provide]                        PROVIDE (__dtcmram_bss_start__ = _sdtcmram_bss)
@@ -6536,84 +6538,84 @@ LOAD D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-n
  .comment       0x00000039       0x3a D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libnosys.a(sbrk.o)
  .comment       0x00000039       0x3a D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/../../../../arm-none-eabi/lib/thumb/v7e-m+dp/hard\libnosys.a(write.o)
 
-.debug_info     0x00000000    0xe295b
+.debug_info     0x00000000    0xe296c
  .debug_info    0x00000000      0x889 build/probe/pm_sha256.o
  .debug_info    0x00000889      0x1b5 build/probe/startup_stm32h750xx.o
- .debug_info    0x00000a3e    0x15815 build/probe/pm_main.o
- .debug_info    0x00016253     0x2bd2 build/probe/pm_image.o
- .debug_info    0x00018e25     0x4a67 build/probe/pm_catalog.o
- .debug_info    0x0001d88c     0x3015 build/probe/pm_loader.o
- .debug_info    0x000208a1     0x3afb build/probe/pm_manager.o
- .debug_info    0x0002439c     0x5146 build/probe/pm_protocol.o
- .debug_info    0x000294e2     0x5d94 build/probe/diag_app.o
- .debug_info    0x0002f276     0x553c build/probe/diag_core.o
- .debug_info    0x000347b2     0x2632 build/probe/ddp.o
- .debug_info    0x00036de4     0x130a ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_cortex.o)
- .debug_info    0x000380ee     0x6ac7 ../../libDaisy/build\libdaisy.a(daisy_seed.o)
- .debug_info    0x0003ebb5     0xa290 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
- .debug_info    0x00048e45     0x2807 ../../libDaisy/build\libdaisy.a(codec_ak4556.o)
- .debug_info    0x0004b64c     0x323c ../../libDaisy/build\libdaisy.a(codec_wm8731.o)
- .debug_info    0x0004e888     0x31b1 ../../libDaisy/build\libdaisy.a(sdram.o)
- .debug_info    0x00051a39     0x4975 ../../libDaisy/build\libdaisy.a(audio.o)
- .debug_info    0x000563ae     0x18b2 ../../libDaisy/build\libdaisy.a(ctrl.o)
- .debug_info    0x00057c60      0xc8a ../../libDaisy/build\libdaisy.a(gatein.o)
- .debug_info    0x000588ea     0x28c0 ../../libDaisy/build\libdaisy.a(midi.o)
- .debug_info    0x0005b1aa     0x10c2 ../../libDaisy/build\libdaisy.a(midi_parser.o)
- .debug_info    0x0005c26c     0x2ab7 ../../libDaisy/build\libdaisy.a(switch.o)
- .debug_info    0x0005ed23     0x3112 ../../libDaisy/build\libdaisy.a(usb.o)
- .debug_info    0x00061e35     0x3feb ../../libDaisy/build\libdaisy.a(adc.o)
- .debug_info    0x00065e20     0x59b8 ../../libDaisy/build\libdaisy.a(dac.o)
- .debug_info    0x0006b7d8     0x2dd4 ../../libDaisy/build\libdaisy.a(gpio.o)
- .debug_info    0x0006e5ac     0x6f14 ../../libDaisy/build\libdaisy.a(i2c.o)
- .debug_info    0x000754c0     0x7be5 ../../libDaisy/build\libdaisy.a(qspi.o)
- .debug_info    0x0007d0a5     0x514b ../../libDaisy/build\libdaisy.a(sai.o)
- .debug_info    0x000821f0     0x4949 ../../libDaisy/build\libdaisy.a(tim.o)
- .debug_info    0x00086b39     0x78cf ../../libDaisy/build\libdaisy.a(uart.o)
- .debug_info    0x0008e408     0x11d6 ../../libDaisy/build\libdaisy.a(dma.o)
- .debug_info    0x0008f5de     0x51ea ../../libDaisy/build\libdaisy.a(system.o)
- .debug_info    0x000947c8      0xd1a ../../libDaisy/build\libdaisy.a(usbd_cdc_if.o)
- .debug_info    0x000954e2     0x2b3b ../../libDaisy/build\libdaisy.a(usbd_conf.o)
- .debug_info    0x0009801d      0x86e ../../libDaisy/build\libdaisy.a(usbd_desc.o)
- .debug_info    0x0009888b     0x296f ../../libDaisy/build\libdaisy.a(usbh_conf.o)
- .debug_info    0x0009b1fa     0x166d ../../libDaisy/build\libdaisy.a(stm32h7xx_hal.o)
- .debug_info    0x0009c867     0x3074 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_adc.o)
- .debug_info    0x0009f8db     0x323b ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_adc_ex.o)
- .debug_info    0x000a2b16      0xce0 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_dac.o)
- .debug_info    0x000a37f6      0xcb8 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_dac_ex.o)
- .debug_info    0x000a44ae      0xf62 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_dma.o)
- .debug_info    0x000a5410      0xc83 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_gpio.o)
- .debug_info    0x000a6093     0x17bd ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_hcd.o)
- .debug_info    0x000a7850     0x69f9 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_i2c.o)
- .debug_info    0x000ae249      0xda5 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_i2c_ex.o)
- .debug_info    0x000aefee     0x1f5a ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_pcd.o)
- .debug_info    0x000b0f48      0xa21 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_pcd_ex.o)
- .debug_info    0x000b1969     0x1176 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_pwr_ex.o)
- .debug_info    0x000b2adf     0x1e51 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_qspi.o)
- .debug_info    0x000b4930     0x1363 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_rcc.o)
- .debug_info    0x000b5c93     0x2451 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_rcc_ex.o)
- .debug_info    0x000b80e4     0x1efa ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_sai.o)
- .debug_info    0x000b9fde     0x12e3 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_sdram.o)
- .debug_info    0x000bb2c1     0x4f7c ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_tim.o)
- .debug_info    0x000c023d     0x1f12 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_tim_ex.o)
- .debug_info    0x000c214f     0x7dd2 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart.o)
- .debug_info    0x000c9f21     0x13e1 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart_ex.o)
- .debug_info    0x000cb302      0xc94 ../../libDaisy/build\libdaisy.a(stm32h7xx_ll_fmc.o)
- .debug_info    0x000cbf96     0x2323 ../../libDaisy/build\libdaisy.a(stm32h7xx_ll_usb.o)
- .debug_info    0x000ce2b9     0x15c7 ../../libDaisy/build\libdaisy.a(usbd_cdc.o)
- .debug_info    0x000cf880     0x1378 ../../libDaisy/build\libdaisy.a(usbd_core.o)
- .debug_info    0x000d0bf8     0x1326 ../../libDaisy/build\libdaisy.a(usbd_ctlreq.o)
- .debug_info    0x000d1f1e      0x922 ../../libDaisy/build\libdaisy.a(usbd_ioreq.o)
- .debug_info    0x000d2840     0x16bc ../../libDaisy/build\libdaisy.a(usbh_core.o)
- .debug_info    0x000d3efc      0xb67 ../../libDaisy/build\libdaisy.a(usbh_pipes.o)
- .debug_info    0x000d4a63     0x28cd ../../libDaisy/build\libdaisy.a(rng.o)
- .debug_info    0x000d7330     0x7a8b ../../libDaisy/build\libdaisy.a(spi.o)
- .debug_info    0x000dedbb      0xa49 ../../libDaisy/build\libdaisy.a(system_stm32h7xx.o)
- .debug_info    0x000df804      0xed6 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_mdma.o)
- .debug_info    0x000e06da     0x1a4b ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_spi.o)
- .debug_info    0x000e2125       0xd3 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_arm_addsubdf3.o)
- .debug_info    0x000e21f8       0x24 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_aeabi_uldivmod.o)
- .debug_info    0x000e221c      0x703 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_udivmoddi4.o)
- .debug_info    0x000e291f       0x3c D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_dvmd_tls.o)
+ .debug_info    0x00000a3e    0x15826 build/probe/pm_main.o
+ .debug_info    0x00016264     0x2bd2 build/probe/pm_image.o
+ .debug_info    0x00018e36     0x4a67 build/probe/pm_catalog.o
+ .debug_info    0x0001d89d     0x3015 build/probe/pm_loader.o
+ .debug_info    0x000208b2     0x3afb build/probe/pm_manager.o
+ .debug_info    0x000243ad     0x5146 build/probe/pm_protocol.o
+ .debug_info    0x000294f3     0x5d94 build/probe/diag_app.o
+ .debug_info    0x0002f287     0x553c build/probe/diag_core.o
+ .debug_info    0x000347c3     0x2632 build/probe/ddp.o
+ .debug_info    0x00036df5     0x130a ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_cortex.o)
+ .debug_info    0x000380ff     0x6ac7 ../../libDaisy/build\libdaisy.a(daisy_seed.o)
+ .debug_info    0x0003ebc6     0xa290 ../../libDaisy/build\libdaisy.a(desktop_devkit.o)
+ .debug_info    0x00048e56     0x2807 ../../libDaisy/build\libdaisy.a(codec_ak4556.o)
+ .debug_info    0x0004b65d     0x323c ../../libDaisy/build\libdaisy.a(codec_wm8731.o)
+ .debug_info    0x0004e899     0x31b1 ../../libDaisy/build\libdaisy.a(sdram.o)
+ .debug_info    0x00051a4a     0x4975 ../../libDaisy/build\libdaisy.a(audio.o)
+ .debug_info    0x000563bf     0x18b2 ../../libDaisy/build\libdaisy.a(ctrl.o)
+ .debug_info    0x00057c71      0xc8a ../../libDaisy/build\libdaisy.a(gatein.o)
+ .debug_info    0x000588fb     0x28c0 ../../libDaisy/build\libdaisy.a(midi.o)
+ .debug_info    0x0005b1bb     0x10c2 ../../libDaisy/build\libdaisy.a(midi_parser.o)
+ .debug_info    0x0005c27d     0x2ab7 ../../libDaisy/build\libdaisy.a(switch.o)
+ .debug_info    0x0005ed34     0x3112 ../../libDaisy/build\libdaisy.a(usb.o)
+ .debug_info    0x00061e46     0x3feb ../../libDaisy/build\libdaisy.a(adc.o)
+ .debug_info    0x00065e31     0x59b8 ../../libDaisy/build\libdaisy.a(dac.o)
+ .debug_info    0x0006b7e9     0x2dd4 ../../libDaisy/build\libdaisy.a(gpio.o)
+ .debug_info    0x0006e5bd     0x6f14 ../../libDaisy/build\libdaisy.a(i2c.o)
+ .debug_info    0x000754d1     0x7be5 ../../libDaisy/build\libdaisy.a(qspi.o)
+ .debug_info    0x0007d0b6     0x514b ../../libDaisy/build\libdaisy.a(sai.o)
+ .debug_info    0x00082201     0x4949 ../../libDaisy/build\libdaisy.a(tim.o)
+ .debug_info    0x00086b4a     0x78cf ../../libDaisy/build\libdaisy.a(uart.o)
+ .debug_info    0x0008e419     0x11d6 ../../libDaisy/build\libdaisy.a(dma.o)
+ .debug_info    0x0008f5ef     0x51ea ../../libDaisy/build\libdaisy.a(system.o)
+ .debug_info    0x000947d9      0xd1a ../../libDaisy/build\libdaisy.a(usbd_cdc_if.o)
+ .debug_info    0x000954f3     0x2b3b ../../libDaisy/build\libdaisy.a(usbd_conf.o)
+ .debug_info    0x0009802e      0x86e ../../libDaisy/build\libdaisy.a(usbd_desc.o)
+ .debug_info    0x0009889c     0x296f ../../libDaisy/build\libdaisy.a(usbh_conf.o)
+ .debug_info    0x0009b20b     0x166d ../../libDaisy/build\libdaisy.a(stm32h7xx_hal.o)
+ .debug_info    0x0009c878     0x3074 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_adc.o)
+ .debug_info    0x0009f8ec     0x323b ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_adc_ex.o)
+ .debug_info    0x000a2b27      0xce0 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_dac.o)
+ .debug_info    0x000a3807      0xcb8 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_dac_ex.o)
+ .debug_info    0x000a44bf      0xf62 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_dma.o)
+ .debug_info    0x000a5421      0xc83 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_gpio.o)
+ .debug_info    0x000a60a4     0x17bd ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_hcd.o)
+ .debug_info    0x000a7861     0x69f9 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_i2c.o)
+ .debug_info    0x000ae25a      0xda5 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_i2c_ex.o)
+ .debug_info    0x000aefff     0x1f5a ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_pcd.o)
+ .debug_info    0x000b0f59      0xa21 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_pcd_ex.o)
+ .debug_info    0x000b197a     0x1176 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_pwr_ex.o)
+ .debug_info    0x000b2af0     0x1e51 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_qspi.o)
+ .debug_info    0x000b4941     0x1363 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_rcc.o)
+ .debug_info    0x000b5ca4     0x2451 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_rcc_ex.o)
+ .debug_info    0x000b80f5     0x1efa ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_sai.o)
+ .debug_info    0x000b9fef     0x12e3 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_sdram.o)
+ .debug_info    0x000bb2d2     0x4f7c ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_tim.o)
+ .debug_info    0x000c024e     0x1f12 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_tim_ex.o)
+ .debug_info    0x000c2160     0x7dd2 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart.o)
+ .debug_info    0x000c9f32     0x13e1 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_uart_ex.o)
+ .debug_info    0x000cb313      0xc94 ../../libDaisy/build\libdaisy.a(stm32h7xx_ll_fmc.o)
+ .debug_info    0x000cbfa7     0x2323 ../../libDaisy/build\libdaisy.a(stm32h7xx_ll_usb.o)
+ .debug_info    0x000ce2ca     0x15c7 ../../libDaisy/build\libdaisy.a(usbd_cdc.o)
+ .debug_info    0x000cf891     0x1378 ../../libDaisy/build\libdaisy.a(usbd_core.o)
+ .debug_info    0x000d0c09     0x1326 ../../libDaisy/build\libdaisy.a(usbd_ctlreq.o)
+ .debug_info    0x000d1f2f      0x922 ../../libDaisy/build\libdaisy.a(usbd_ioreq.o)
+ .debug_info    0x000d2851     0x16bc ../../libDaisy/build\libdaisy.a(usbh_core.o)
+ .debug_info    0x000d3f0d      0xb67 ../../libDaisy/build\libdaisy.a(usbh_pipes.o)
+ .debug_info    0x000d4a74     0x28cd ../../libDaisy/build\libdaisy.a(rng.o)
+ .debug_info    0x000d7341     0x7a8b ../../libDaisy/build\libdaisy.a(spi.o)
+ .debug_info    0x000dedcc      0xa49 ../../libDaisy/build\libdaisy.a(system_stm32h7xx.o)
+ .debug_info    0x000df815      0xed6 ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_mdma.o)
+ .debug_info    0x000e06eb     0x1a4b ../../libDaisy/build\libdaisy.a(stm32h7xx_hal_spi.o)
+ .debug_info    0x000e2136       0xd3 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_arm_addsubdf3.o)
+ .debug_info    0x000e2209       0x24 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_aeabi_uldivmod.o)
+ .debug_info    0x000e222d      0x703 D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_udivmoddi4.o)
+ .debug_info    0x000e2930       0x3c D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-13.2.1-1.1/bin/../lib/gcc/arm-none-eabi/13.2.1/thumb/v7e-m+dp/hard\libgcc.a(_dvmd_tls.o)
 
 .debug_abbrev   0x00000000    0x16bc0
  .debug_abbrev  0x00000000      0x270 build/probe/pm_sha256.o

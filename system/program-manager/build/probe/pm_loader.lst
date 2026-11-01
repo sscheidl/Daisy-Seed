@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 1
 
 
    1              		.cpu cortex-m7
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
    6:src/pm_loader.cpp ****     switch(state) {
   49              		.loc 1 6 44 view .LVU3
   50 000c 0148     		ldr	r0, .L5+4
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 2
 
 
   51              	.LVL3:
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
   23:src/pm_loader.cpp ****         case LoadError::Busy: return "BUSY";
   24:src/pm_loader.cpp ****         case LoadError::NoEntry: return "NOENTRY";
   25:src/pm_loader.cpp ****         case LoadError::CardAbsent: return "NOCARD";
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 3
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 3
 
 
   26:src/pm_loader.cpp ****         case LoadError::Open: return "OPEN";
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
    1:src/pm_loader.h **** // Loads one .dsy package from the card into the SRAM target and commits the start.
    2:src/pm_loader.h **** // Portable state machine, driven from the main loop in small steps; the hardware
    3:src/pm_loader.h **** // (SD/FatFs, cache, BootInfo, reset) is reached only through the interfaces below,
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 4
 
 
    4:src/pm_loader.h **** // so the complete order of checks and the commit sequence are host-tested.
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
   58:src/pm_loader.h **** 
   59:src/pm_loader.h **** enum class LoadError : uint8_t {
   60:src/pm_loader.h ****     None = 0,
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 5
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 5
 
 
   61:src/pm_loader.h ****     Busy,          // Start() while a load is active
@@ -298,7 +298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  145              	.LBB43:
  146              		.loc 3 16 8 view .LVU15
  147 0008 2026     		movs	r6, #32
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 6
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 6
 
 
  148              	.LBE43:
@@ -358,7 +358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  201 0036 2946     		mov	r1, r5
  202 0038 A122     		movs	r2, #161
  203 003a 04F1A900 		add	r0, r4, #169
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 7
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 7
 
 
  204 003e C4F88750 		str	r5, [r4, #135]	@ unaligned
@@ -418,7 +418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
   32:src/pm_image.h **** constexpr uint32_t kDtcmBase = 0x20000000u;
   33:src/pm_image.h **** constexpr uint32_t kDtcmEnd = 0x20020000u;          // _estack of the official linkers
   34:src/pm_image.h **** constexpr char kMagic[8] = {'D', 'S', 'Y', 'I', 'M', 'A', 'G', 'E'};
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 8
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 8
 
 
   35:src/pm_image.h **** constexpr const char* kHardwareId = "seed3-desktop";
@@ -478,7 +478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  272              		.loc 1 46 5 is_stmt 1 view .LVU34
  273              		.loc 1 46 16 is_stmt 0 view .LVU35
  274 00ee A022     		movs	r2, #160
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 9
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 9
 
 
  275 00f0 2946     		mov	r1, r5
@@ -538,7 +538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  320              		.global	__aeabi_ldivmod
  321 000e 00BF     		.section	.text._ZNK2pm6Loader7PercentEv,"ax",%progbits
  322              		.align	1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 10
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 10
 
 
  323              		.p2align 2,,3
@@ -598,7 +598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
   77:src/pm_loader.cpp ****     return 0;
   78:src/pm_loader.cpp **** }
  359              		.loc 1 78 1 view .LVU47
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 11
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 11
 
 
  360 0016 08BD     		pop	{r3, pc}
@@ -658,7 +658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  401              	.LVL31:
  402              		.loc 1 78 1 view .LVU63
  403 003a 08BD     		pop	{r3, pc}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 12
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 12
 
 
  404              	.LVL32:
@@ -718,7 +718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  451              		.cfi_def_cfa_offset 160
  452              	.LBB65:
  453              	.LBB63:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 13
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 13
 
 
   50:src/pm_loader.cpp ****         case LoadState::Opening:
@@ -778,7 +778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  488              	.LBB67:
  489              	.LBI67:
  490              		.loc 2 82 8 view .LVU85
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 14
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 14
 
 
  491              		.loc 2 82 8 is_stmt 0 view .LVU86
@@ -838,7 +838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  529              	.LBI68:
  530              		.loc 4 40 8 is_stmt 1 view .LVU103
  531              	.LBB69:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 15
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 15
 
 
  532 0048 2946     		mov	r1, r5
@@ -898,7 +898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
   97:src/pm_loader.cpp ****     if(open_) {
  581              		.loc 1 97 5 view .LVU113
   96:src/pm_loader.cpp ****     if(open_) {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 16
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 16
 
 
  582              		.loc 1 96 36 is_stmt 0 view .LVU114
@@ -958,7 +958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  629              		.thumb_func
  631              	_ZN2pm6Loader6CancelEv:
  632              	.LVL48:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 17
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 17
 
 
  633              	.LFB1317:
@@ -1018,7 +1018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  674              		.loc 1 98 22 is_stmt 0 view .LVU140
  675 0014 0368     		ldr	r3, [r0]
  676 0016 9B68     		ldr	r3, [r3, #8]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 18
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 18
 
 
  677 0018 9847     		blx	r3
@@ -1078,7 +1078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
   50:src/pm_loader.cpp ****         case LoadState::Opening:
  723              		.loc 1 50 5 is_stmt 0 view .LVU151
  724 0000 037B     		ldrb	r3, [r0, #12]	@ zero_extendqisi2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 19
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 19
 
 
  725 0002 013B     		subs	r3, r3, #1
@@ -1138,7 +1138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  767              	.LVL59:
  768              	.L48:
   99:src/pm_loader.cpp ****     }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 20
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 20
 
 
  769              		.loc 1 99 15 view .LVU164
@@ -1198,7 +1198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  818 0006 0E46     		mov	r6, r1
  819 0008 1546     		mov	r5, r2
  117:src/pm_loader.cpp ****     uint32_t got = 0;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 21
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 21
 
 
  820              		.loc 1 117 14 view .LVU176
@@ -1258,7 +1258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  124:src/pm_loader.cpp **** }
  862              		.loc 1 124 12 view .LVU190
  863 0028 0120     		movs	r0, #1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 22
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 22
 
 
  864              	.LVL67:
@@ -1318,7 +1318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  127:src/pm_loader.cpp ****     if(!Active())
  912              		.loc 1 127 36 view .LVU200
  913 0006 F0B5     		push	{r4, r5, r6, r7, lr}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 23
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 23
 
 
  914              		.cfi_def_cfa_offset 20
@@ -1378,7 +1378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  161:src/pm_loader.cpp ****             }
  162:src/pm_loader.cpp ****             if(std::strcmp(header_.product, entry_.id) != 0) {
  163:src/pm_loader.cpp ****                 Fail(LoadError::Product);
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 24
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 24
 
 
  164:src/pm_loader.cpp ****                 return false;
@@ -1438,7 +1438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  218:src/pm_loader.cpp ****         }
  219:src/pm_loader.cpp ****         case LoadState::Verify: {
  220:src/pm_loader.cpp ****             uint8_t digest[PM_SHA256_DIGEST_SIZE];
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 25
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 25
 
 
  221:src/pm_loader.cpp ****             pm_sha256_final(&sha_, digest);
@@ -1498,7 +1498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  956              		.loc 1 130 5 view .LVU210
  957 001e 9142     		cmp	r1, r2
  958 0020 13D8     		bhi	.L174
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 26
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 26
 
 
  134:src/pm_loader.cpp ****         Fail(LoadError::CardAbsent);
@@ -1558,7 +1558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1002 0052 0368     		ldr	r3, [r0]
  1003 0054 9B68     		ldr	r3, [r3, #8]
  1004 0056 9847     		blx	r3
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 27
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 27
 
 
  1005              	.LVL78:
@@ -1618,7 +1618,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1043 0070 2022     		movs	r2, #32
  1044 0072 04F5EE71 		add	r1, r4, #476
  1045 0076 6846     		mov	r0, sp
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 28
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 28
 
 
  1046 0078 FFF7FEFF 		bl	memcmp
@@ -1678,7 +1678,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1085              		.loc 1 234 13 is_stmt 1 view .LVU252
  234:src/pm_loader.cpp ****         }
  1086              		.loc 1 234 20 is_stmt 0 view .LVU253
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 29
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 29
 
 
  1087 00ac AFE7     		b	.L161
@@ -1738,7 +1738,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1125              		.loc 1 192 47 view .LVU269
  1126 00c6 B2F5805F 		cmp	r2, #4096
  1127 00ca 0368     		ldr	r3, [r0]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 30
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 30
 
 
  1128 00cc 28BF     		it	cs
@@ -1798,7 +1798,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1168              	.LBB161:
  1169              	.LBB160:
  103:src/pm_loader.cpp **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 31
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 31
 
 
  1170              		.loc 1 103 1 is_stmt 0 view .LVU284
@@ -1858,7 +1858,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  118:src/pm_loader.cpp ****         const int32_t n = source_.Read(dst + got, len - got);
  1211              		.loc 1 118 15 view .LVU298
  1212 0104 9F2D     		cmp	r5, #159
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 32
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 32
 
 
  1213 0106 7AD8     		bhi	.L177
@@ -1918,7 +1918,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1253 0122 2068     		ldr	r0, [r4]
   98:src/pm_loader.cpp ****         open_ = false;
  1254              		.loc 1 98 22 is_stmt 0 view .LVU313
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 33
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 33
 
 
  1255 0124 0368     		ldr	r3, [r0]
@@ -1978,7 +1978,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1294              		.loc 1 140 13 discriminator 1 view .LVU328
  1295 0148 0546     		mov	r5, r0
  1296 014a 0028     		cmp	r0, #0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 34
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 34
 
 
  1297 014c 4AD0     		beq	.L179
@@ -2038,7 +2038,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1336              		.loc 1 240 26 discriminator 1 view .LVU343
  1337 017e 2846     		mov	r0, r5
  1338 0180 B047     		blx	r6
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 35
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 35
 
 
  1339              	.LVL109:
@@ -2098,7 +2098,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
   99:src/pm_loader.cpp ****     }
  1378              		.loc 1 99 9 is_stmt 1 view .LVU359
   99:src/pm_loader.cpp ****     }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 36
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 36
 
 
  1379              		.loc 1 99 15 is_stmt 0 view .LVU360
@@ -2158,7 +2158,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1420 01c0 40F0B980 		bne	.L181
  216:src/pm_loader.cpp ****             return true;
  1421              		.loc 1 216 13 view .LVU374
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 37
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 37
 
 
  216:src/pm_loader.cpp ****             return true;
@@ -2218,7 +2218,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1461              	.LBB151:
  103:src/pm_loader.cpp **** 
  1462              		.loc 1 103 1 is_stmt 0 view .LVU390
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 38
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 38
 
 
  1463 01de 40F60753 		movw	r3, 3335	@ movhi
@@ -2278,7 +2278,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1503 01fc 06E7     		b	.L69
  1504              	.LVL123:
  1505              	.L177:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 39
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 39
 
 
  103:src/pm_loader.cpp **** 
@@ -2338,7 +2338,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1546              		.loc 1 170 13 view .LVU418
  1547 023e D4F8FC21 		ldr	r2, [r4, #508]
  170:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 40
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 40
 
 
  1548              		.loc 1 170 42 view .LVU419
@@ -2398,7 +2398,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1588              		.loc 1 181 13 is_stmt 1 view .LVU433
  181:src/pm_loader.cpp ****             status_.bytes_done = 0;
  1589              		.loc 1 181 33 is_stmt 0 view .LVU434
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 41
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 41
 
 
  1590 0272 D4F8D831 		ldr	r3, [r4, #472]
@@ -2458,7 +2458,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1628              		.loc 1 203 17 is_stmt 1 view .LVU450
  203:src/pm_loader.cpp ****             }
  1629              		.loc 1 203 24 is_stmt 0 view .LVU451
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 42
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 42
 
 
  1630 029c B7E6     		b	.L161
@@ -2518,7 +2518,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1668              		.loc 1 103 1 is_stmt 0 view .LVU467
  1669 02b2 ABE6     		b	.L69
  1670              	.L176:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 43
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 43
 
 
  103:src/pm_loader.cpp **** 
@@ -2578,7 +2578,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1711              	.LBE194:
  171:src/pm_loader.cpp ****                 return false;
  1712              		.loc 1 171 17 is_stmt 1 view .LVU482
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 44
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 44
 
 
  1713              	.LVL141:
@@ -2638,7 +2638,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  194:src/pm_loader.cpp ****                     return false;
  1754              		.loc 1 194 21 is_stmt 1 view .LVU496
  1755              	.LBB162:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 45
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 45
 
 
  1756              	.LBI162:
@@ -2698,7 +2698,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
   96:src/pm_loader.cpp ****     if(open_) {
  1797              		.loc 1 96 6 view .LVU510
  1798              	.LBB201:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 46
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 46
 
 
   97:src/pm_loader.cpp ****         source_.Close();
@@ -2758,7 +2758,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1838              		.loc 1 97 5 view .LVU525
  1839 031c 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
  1840 0320 2BB1     		cbz	r3, .L89
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 47
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 47
 
 
   98:src/pm_loader.cpp ****         open_ = false;
@@ -2818,7 +2818,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1880              		.loc 1 98 9 view .LVU540
  1881 033c 2068     		ldr	r0, [r4]
  1882              	.LVL154:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 48
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 48
 
 
   98:src/pm_loader.cpp ****         open_ = false;
@@ -2878,7 +2878,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1923 035a 9B68     		ldr	r3, [r3, #8]
  1924 035c 9847     		blx	r3
  1925              	.LVL158:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 49
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 49
 
 
   99:src/pm_loader.cpp ****     }
@@ -2938,7 +2938,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  1970 001c 4F50454E 		.ascii	"OPEN\000"
  1970      00
  1971 0021 000000   		.align	2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 50
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 50
 
 
  1972              	.LC6:
@@ -2998,7 +2998,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  2014 0008 0C000000 		.word	.LC3
  2015 000c 14000000 		.word	.LC4
  2016 0010 1C000000 		.word	.LC5
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 51
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 51
 
 
  2017 0014 24000000 		.word	.LC6
@@ -3058,7 +3058,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  2064              		.text
  2065              	.Letext0:
  2066              		.file 5 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 52
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 52
 
 
  2067              		.file 6 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
@@ -3077,49 +3077,49 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 1
  2080              		.file 19 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
  2081              		.file 20 "src/pm_sha256.h"
  2082              		.file 21 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s 			page 53
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s 			page 53
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 pm_loader.cpp
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:20     .rodata._ZN2pm13LoadStateNameENS_9LoadStateE.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:24     .text._ZN2pm13LoadStateNameENS_9LoadStateE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:31     .text._ZN2pm13LoadStateNameENS_9LoadStateE:00000000 _ZN2pm13LoadStateNameENS_9LoadStateE
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:57     .text._ZN2pm13LoadStateNameENS_9LoadStateE:00000010 $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:2055   .rodata.CSWTCH.16:00000000 CSWTCH.16
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:63     .text._ZN2pm13LoadErrorNameENS_9LoadErrorE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:70     .text._ZN2pm13LoadErrorNameENS_9LoadErrorE:00000000 _ZN2pm13LoadErrorNameENS_9LoadErrorE
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:96     .text._ZN2pm13LoadErrorNameENS_9LoadErrorE:00000010 $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:2011   .rodata.CSWTCH.18:00000000 CSWTCH.18
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:102    .text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:109    .text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:00000000 _ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:109    .text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:00000000 _ZN2pm6LoaderC1ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:290    .text._ZNK2pm6Loader6ActiveEv:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:297    .text._ZNK2pm6Loader6ActiveEv:00000000 _ZNK2pm6Loader6ActiveEv
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:322    .text._ZNK2pm6Loader7PercentEv:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:329    .text._ZNK2pm6Loader7PercentEv:00000000 _ZNK2pm6Loader7PercentEv
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:349    .text._ZNK2pm6Loader7PercentEv:0000000e $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:415    .text._ZN2pm6Loader5StartERKNS_12CatalogEntryEmm:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:422    .text._ZN2pm6Loader5StartERKNS_12CatalogEntryEmm:00000000 _ZN2pm6Loader5StartERKNS_12CatalogEntryEmm
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:567    .text._ZN2pm6Loader4FailENS_9LoadErrorE:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:574    .text._ZN2pm6Loader4FailENS_9LoadErrorE:00000000 _ZN2pm6Loader4FailENS_9LoadErrorE
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:624    .text._ZN2pm6Loader6CancelEv:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:631    .text._ZN2pm6Loader6CancelEv:00000000 _ZN2pm6Loader6CancelEv
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:706    .text._ZN2pm6Loader5ResetEv:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:713    .text._ZN2pm6Loader5ResetEv:00000000 _ZN2pm6Loader5ResetEv
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:790    .text._ZN2pm6Loader9ReadExactEPhm:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:797    .text._ZN2pm6Loader9ReadExactEPhm:00000000 _ZN2pm6Loader9ReadExactEPhm
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:885    .text._ZN2pm6Loader4StepEm:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:892    .text._ZN2pm6Loader4StepEm:00000000 _ZN2pm6Loader4StepEm
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:982    .text._ZN2pm6Loader4StepEm:00000044 $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:1947   .text._ZN2pm6Loader4StepEm:0000036c $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:1956   .rodata.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:2008   .rodata.CSWTCH.18:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:2052   .rodata.CSWTCH.16:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:354    .text._ZNK2pm6Loader7PercentEv:00000013 $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:354    .text._ZNK2pm6Loader7PercentEv:00000014 $t
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:987    .text._ZN2pm6Loader4StepEm:00000049 $d
-C:\Users\ssche\AppData\Local\Temp\cc23EUBd.s:987    .text._ZN2pm6Loader4StepEm:0000004a $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:20     .rodata._ZN2pm13LoadStateNameENS_9LoadStateE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:24     .text._ZN2pm13LoadStateNameENS_9LoadStateE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:31     .text._ZN2pm13LoadStateNameENS_9LoadStateE:00000000 _ZN2pm13LoadStateNameENS_9LoadStateE
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:57     .text._ZN2pm13LoadStateNameENS_9LoadStateE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:2055   .rodata.CSWTCH.16:00000000 CSWTCH.16
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:63     .text._ZN2pm13LoadErrorNameENS_9LoadErrorE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:70     .text._ZN2pm13LoadErrorNameENS_9LoadErrorE:00000000 _ZN2pm13LoadErrorNameENS_9LoadErrorE
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:96     .text._ZN2pm13LoadErrorNameENS_9LoadErrorE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:2011   .rodata.CSWTCH.18:00000000 CSWTCH.18
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:102    .text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:109    .text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:00000000 _ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:109    .text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:00000000 _ZN2pm6LoaderC1ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:290    .text._ZNK2pm6Loader6ActiveEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:297    .text._ZNK2pm6Loader6ActiveEv:00000000 _ZNK2pm6Loader6ActiveEv
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:322    .text._ZNK2pm6Loader7PercentEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:329    .text._ZNK2pm6Loader7PercentEv:00000000 _ZNK2pm6Loader7PercentEv
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:349    .text._ZNK2pm6Loader7PercentEv:0000000e $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:415    .text._ZN2pm6Loader5StartERKNS_12CatalogEntryEmm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:422    .text._ZN2pm6Loader5StartERKNS_12CatalogEntryEmm:00000000 _ZN2pm6Loader5StartERKNS_12CatalogEntryEmm
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:567    .text._ZN2pm6Loader4FailENS_9LoadErrorE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:574    .text._ZN2pm6Loader4FailENS_9LoadErrorE:00000000 _ZN2pm6Loader4FailENS_9LoadErrorE
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:624    .text._ZN2pm6Loader6CancelEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:631    .text._ZN2pm6Loader6CancelEv:00000000 _ZN2pm6Loader6CancelEv
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:706    .text._ZN2pm6Loader5ResetEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:713    .text._ZN2pm6Loader5ResetEv:00000000 _ZN2pm6Loader5ResetEv
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:790    .text._ZN2pm6Loader9ReadExactEPhm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:797    .text._ZN2pm6Loader9ReadExactEPhm:00000000 _ZN2pm6Loader9ReadExactEPhm
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:885    .text._ZN2pm6Loader4StepEm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:892    .text._ZN2pm6Loader4StepEm:00000000 _ZN2pm6Loader4StepEm
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:982    .text._ZN2pm6Loader4StepEm:00000044 $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:1947   .text._ZN2pm6Loader4StepEm:0000036c $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:1956   .rodata.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:2008   .rodata.CSWTCH.18:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:2052   .rodata.CSWTCH.16:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:354    .text._ZNK2pm6Loader7PercentEv:00000013 $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:354    .text._ZNK2pm6Loader7PercentEv:00000014 $t
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:987    .text._ZN2pm6Loader4StepEm:00000049 $d
+C:\Users\ssche\AppData\Local\Temp\cc46Y7qK.s:987    .text._ZN2pm6Loader4StepEm:0000004a $t
 
 UNDEFINED SYMBOLS
 memset

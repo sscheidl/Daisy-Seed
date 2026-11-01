@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 1
 
 
    1              		.cpu cortex-m7
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
   36              	.LBB11:
   37              		.loc 1 20 25 discriminator 1 view .LVU3
   38 0000 D9B1     		cbz	r1, .L7
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 2
 
 
   39 0002 00F1FF3C 		add	ip, r0, #-1
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
   86 0030 F3D1     		bne	.L5
   87              	.LBE13:
   88              	.LBE12:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 3
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 3
 
 
   20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  133 000a 70B5     		push	{r4, r5, r6, lr}
  134              		.cfi_def_cfa_offset 16
  135              		.cfi_offset 4, -16
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 4
 
 
  136              		.cfi_offset 5, -12
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
   14:../../diagnostics/protocol/ddp.h **** 
   15:../../diagnostics/protocol/ddp.h **** // CRC-16/CCITT-FALSE: poly 0x1021, init 0xFFFF, no reflection, no final XOR.
   16:../../diagnostics/protocol/ddp.h **** uint16_t Crc16(const char* data, size_t len);
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 5
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 5
 
 
   17:../../diagnostics/protocol/ddp.h **** 
@@ -298,7 +298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
   35:../../diagnostics/protocol/ddp.cpp ****             return 0;
  216              		.loc 1 35 9 is_stmt 1 view .LVU61
  217              	.LBB32:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 6
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 6
 
 
   19:../../diagnostics/protocol/ddp.h ****     return c >= 0x20 && c <= 0x7e && c != '$' && c != '*';
@@ -358,7 +358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  261              	.LBB33:
  262              	.LBB34:
   19:../../diagnostics/protocol/ddp.cpp ****     for(size_t i = 0; i < len; ++i) {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 7
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 7
 
 
  263              		.loc 1 19 14 view .LVU73
@@ -418,7 +418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  302 0088 F0D1     		bne	.L22
  303              	.LBE37:
  304              	.LBE36:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 8
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 8
 
 
   20:../../diagnostics/protocol/ddp.cpp ****         crc ^= static_cast<uint16_t>(static_cast<uint8_t>(data[i]) << 8);
@@ -478,7 +478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  343              		.loc 1 41 31 discriminator 1 view .LVU104
  344 00a8 081D     		adds	r0, r1, #4
  345 00aa F5D1     		bne	.L24
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 9
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 9
 
 
  346              	.LBE38:
@@ -538,7 +538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
   60:../../diagnostics/protocol/ddp.cpp ****                 state_ = State::Crc;
   61:../../diagnostics/protocol/ddp.cpp ****                 crc_len_ = 0;
   62:../../diagnostics/protocol/ddp.cpp ****             } else if(!IsBodyChar(c)) {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 10
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 10
 
 
   63:../../diagnostics/protocol/ddp.cpp ****                 ++bad_format;
@@ -598,7 +598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  395              		.loc 1 102 12 view .LVU116
  396 0002 0023     		movs	r3, #0
  101:../../diagnostics/protocol/ddp.cpp ****     state_ = State::Idle;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 11
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 11
 
 
  397              		.loc 1 101 28 view .LVU117
@@ -658,7 +658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  440              		.loc 1 8 17 is_stmt 0 view .LVU132
  441 0016 A3F1300C 		sub	ip, r3, #48
   10:../../diagnostics/protocol/ddp.cpp ****         return c - 'A' + 10;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 12
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 12
 
 
  442              		.loc 1 10 5 view .LVU133
@@ -718,7 +718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  483 003c B942     		cmp	r1, r7
  484              	.LBB70:
  485              		.loc 1 110 18 view .LVU145
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 13
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 13
 
 
  486 003e 90B2     		uxth	r0, r2
@@ -778,7 +778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
   21:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
  524              		.loc 1 21 65 is_stmt 0 view .LVU161
  525 0056 1EF8012F 		ldrb	r2, [lr, #1]!	@ zero_extendqisi2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 14
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 14
 
 
   21:../../diagnostics/protocol/ddp.cpp ****         for(int bit = 0; bit < 8; ++bit)
@@ -838,7 +838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  564              	.LVL54:
   26:../../diagnostics/protocol/ddp.cpp **** }
  565              		.loc 1 26 5 is_stmt 0 view .LVU178
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 15
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 15
 
 
  566              	.LBE75:
@@ -898,7 +898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
   11:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'a' && c <= 'f')
  607              		.loc 1 11 9 view .LVU189
   11:../../diagnostics/protocol/ddp.cpp ****     if(c >= 'a' && c <= 'f')
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 16
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 16
 
 
  608              		.loc 1 11 26 is_stmt 0 view .LVU190
@@ -958,7 +958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  648 00aa EEE7     		b	.L48
  649              	.LBE73:
  650              	.LBE82:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 17
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 17
 
 
  651              		.cfi_endproc
@@ -1018,7 +1018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  698              	.LVL67:
  699              		.loc 2 20 47 view .LVU217
  700              	.LBE90:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 18
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 18
 
 
  701              	.LBE89:
@@ -1078,7 +1078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  738              		.loc 1 86 13 view .LVU234
  739 0042 0A29     		cmp	r1, #10
  740 0044 27D0     		beq	.L94
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 19
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 19
 
 
  741              	.L73:
@@ -1138,7 +1138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
   99:../../diagnostics/protocol/ddp.cpp **** 
  778              		.loc 1 99 1 is_stmt 0 view .LVU252
  779 0066 0020     		movs	r0, #0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 20
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 20
 
 
  780              	.LVL72:
@@ -1198,7 +1198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
   78:../../diagnostics/protocol/ddp.cpp ****                 }
  820              		.loc 1 78 38 view .LVU267
  821 008a 0344     		add	r3, r3, r0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 21
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 21
 
 
   78:../../diagnostics/protocol/ddp.cpp ****                 }
@@ -1258,7 +1258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  124:../../diagnostics/protocol/ddp.cpp **** 
  125:../../diagnostics/protocol/ddp.cpp **** Writer& Writer::Char(char c) {
  865              		.loc 1 125 30 is_stmt 1 view -0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 22
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 22
 
 
  866              		.cfi_startproc
@@ -1318,7 +1318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  908              		.loc 1 133 1 view .LVU297
  909 0026 5DF8044B 		ldr	r4, [sp], #4
  910              		.cfi_restore 4
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 23
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 23
 
 
  911              		.cfi_def_cfa_offset 0
@@ -1378,7 +1378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  957              		.loc 1 128 9 is_stmt 0 view .LVU308
  958              	.LBE96:
  959              	.LBE95:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 24
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 24
 
 
  960              		.loc 1 136 11 is_stmt 1 view .LVU309
@@ -1438,7 +1438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  136:../../diagnostics/protocol/ddp.cpp ****         Char(*s++);
  1001              		.loc 1 136 11 is_stmt 1 view .LVU325
  1002 002e 11F8013F 		ldrb	r3, [r1, #1]!	@ zero_extendqisi2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 25
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 25
 
 
  1003              	.LVL84:
@@ -1498,7 +1498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1050              		.loc 1 143 9 view .LVU335
  1051 0004 4FF0000C 		mov	ip, #0
  1052 0008 0DF1040E 		add	lr, sp, #4
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 26
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 26
 
 
  141:../../diagnostics/protocol/ddp.cpp ****     char tmp[10];
@@ -1558,7 +1558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1095              		.loc 1 148 11 view .LVU351
  1096 003c 7345     		cmp	r3, lr
  1097              	.LBB109:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 27
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 27
 
 
  1098              	.LBB105:
@@ -1618,7 +1618,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1138 005a A142     		cmp	r1, r4
  1139 005c EDD3     		bcc	.L122
  1140              	.LBE107:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 28
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 28
 
 
  1141              	.LBE111:
@@ -1678,7 +1678,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1188 0000 013A     		subs	r2, r2, #1
  1189              	.LVL99:
  1190              		.loc 1 154 45 is_stmt 1 discriminator 1 view .LVU378
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 29
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 29
 
 
  1191 0002 9200     		lsls	r2, r2, #2
@@ -1738,7 +1738,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1238              	.LBE127:
  1239              		.loc 1 154 45 discriminator 1 view .LVU390
  1240 001c 0FD4     		bmi	.L135
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 30
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 30
 
 
  1241              	.L129:
@@ -1798,7 +1798,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1284 0036 043A     		subs	r2, r2, #4
  1285              	.LVL106:
  1286              	.LBB132:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 31
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 31
 
 
  1287              	.LBB125:
@@ -1858,7 +1858,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1333              		.cfi_startproc
  1334              		@ args = 0, pretend = 0, frame = 0
  1335              		@ frame_needed = 0, uses_anonymous_args = 0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 32
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 32
 
 
  160:../../diagnostics/protocol/ddp.cpp ****     size_t n = 0;
@@ -1918,7 +1918,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1380 0030 F4D1     		bne	.L141
  1381              	.L151:
  164:../../diagnostics/protocol/ddp.cpp ****     }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 33
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 33
 
 
  165:../../diagnostics/protocol/ddp.cpp ****     out[n] = 0;
@@ -1978,7 +1978,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1429 0002 8446     		mov	ip, r0
  1430              	.LVL118:
  170:../../diagnostics/protocol/ddp.cpp ****     while(*p && *p != ' ')
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 34
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 34
 
 
  1431              		.loc 1 170 5 is_stmt 1 view .LVU442
@@ -2038,7 +2038,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1469 0024 2028     		cmp	r0, #32
  1470 0026 FBD0     		beq	.L157
  1471              	.LVL124:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 35
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 35
 
 
  1472              		.loc 1 177 18 is_stmt 1 view .LVU459
@@ -2098,7 +2098,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1503              	.LVL129:
  196:../../diagnostics/protocol/ddp.cpp ****             ++p;
  1504              		.loc 1 196 18 view .LVU470
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 36
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 36
 
 
  196:../../diagnostics/protocol/ddp.cpp ****             ++p;
@@ -2158,7 +2158,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1545 0070 0EEB0302 		add	r2, lr, r3
  1546 0074 0EF10203 		add	r3, lr, #2
  1547 0078 01E0     		b	.L169
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 37
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 37
 
 
  1548              	.LVL135:
@@ -2218,7 +2218,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1588              	.LVL139:
  1589              	.L171:
  1590              	.LBB142:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 38
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 38
 
 
  177:../../diagnostics/protocol/ddp.cpp ****             ++k;
@@ -2278,7 +2278,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  201:../../diagnostics/protocol/ddp.cpp **** 
  202:../../diagnostics/protocol/ddp.cpp **** bool ParseU32(const char* s, uint32_t& out) {
  1640              		.loc 1 202 45 is_stmt 1 view -0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 39
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 39
 
 
  1641              		.cfi_startproc
@@ -2338,7 +2338,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1682              		.loc 1 206 11 discriminator 1 view .LVU521
  1683 0022 7AB1     		cbz	r2, .L204
  1684              	.LVL149:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 40
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 40
 
 
  1685              	.L195:
@@ -2398,7 +2398,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1725              		.cfi_offset 14, -4
  213:../../diagnostics/protocol/ddp.cpp ****     return true;
  1726              		.loc 1 213 5 is_stmt 1 view .LVU534
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 41
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 41
 
 
  214:../../diagnostics/protocol/ddp.cpp **** }
@@ -2458,7 +2458,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  220:../../diagnostics/protocol/ddp.cpp ****     uint64_t v = 0;
  1774              		.loc 1 220 14 view .LVU547
  1775 0006 0024     		movs	r4, #0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 42
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 42
 
 
  1776 0008 2246     		mov	r2, r4
@@ -2518,7 +2518,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  221:../../diagnostics/protocol/ddp.cpp ****     for(; *s; ++s) {
  1818              		.loc 1 221 11 is_stmt 1 discriminator 1 view .LVU559
  1819              	.LBB167:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 43
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 43
 
 
  1820              		.loc 1 226 9 is_stmt 0 view .LVU560
@@ -2578,7 +2578,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1860              	.LBE159:
  1861              	.LBE160:
  1862              	.LBE163:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 44
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 44
 
 
  223:../../diagnostics/protocol/ddp.cpp ****             return false;
@@ -2638,7 +2638,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  227:../../diagnostics/protocol/ddp.cpp ****             return false;
  228:../../diagnostics/protocol/ddp.cpp ****     }
  229:../../diagnostics/protocol/ddp.cpp ****     out = static_cast<uint32_t>(v);
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 45
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 45
 
 
  230:../../diagnostics/protocol/ddp.cpp ****     return true;
@@ -2698,7 +2698,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1950              		.file 3 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
  1951              		.file 4 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
  1952              		.file 5 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 46
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 46
 
 
  1953              		.file 6 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
@@ -2712,39 +2712,39 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 1
  1961              		.file 14 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
  1962              		.file 15 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
  1963              		.file 16 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s 			page 47
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s 			page 47
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 ddp.cpp
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:20     .text._ZN3ddp5Crc16EPKcj:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:27     .text._ZN3ddp5Crc16EPKcj:00000000 _ZN3ddp5Crc16EPKcj
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:112    .text._ZN3ddp10BuildFrameEPKcjPcj:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:119    .text._ZN3ddp10BuildFrameEPKcjPcj:00000000 _ZN3ddp10BuildFrameEPKcjPcj
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:367    .text._ZN3ddp10BuildFrameEPKcjPcj:000000b8 $d
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1946   .rodata._ZN3ddp12_GLOBAL__N_1L10kHexDigitsE:00000000 _ZN3ddp12_GLOBAL__N_1L10kHexDigitsE
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:372    .text._ZN3ddp11FrameParser6FinishEv:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:379    .text._ZN3ddp11FrameParser6FinishEv:00000000 _ZN3ddp11FrameParser6FinishEv
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:655    .text._ZN3ddp11FrameParser4FeedEc:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:662    .text._ZN3ddp11FrameParser4FeedEc:00000000 _ZN3ddp11FrameParser4FeedEc
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:855    .text._ZN3ddp6Writer4CharEc:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:862    .text._ZN3ddp6Writer4CharEc:00000000 _ZN3ddp6Writer4CharEc
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:921    .text._ZN3ddp6Writer3StrEPKc:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:928    .text._ZN3ddp6Writer3StrEPKc:00000000 _ZN3ddp6Writer3StrEPKc
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1025   .text._ZN3ddp6Writer3U32Em:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1032   .text._ZN3ddp6Writer3U32Em:00000000 _ZN3ddp6Writer3U32Em
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1166   .text._ZN3ddp6Writer3U32Em:0000006c $d
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1171   .text._ZN3ddp6Writer3HexEmi:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1178   .text._ZN3ddp6Writer3HexEmi:00000000 _ZN3ddp6Writer3HexEmi
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1317   .text._ZN3ddp6Writer3HexEmi:00000044 $d
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1322   .text._ZN3ddp11MessageTypeEPKcPcj:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1329   .text._ZN3ddp11MessageTypeEPKcPcj:00000000 _ZN3ddp11MessageTypeEPKcPcj
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1405   .text._ZN3ddp11LookupFieldEPKcS1_Pcj:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1412   .text._ZN3ddp11LookupFieldEPKcS1_Pcj:00000000 _ZN3ddp11LookupFieldEPKcS1_Pcj
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1630   .text._ZN3ddp8ParseU32EPKcRm:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1637   .text._ZN3ddp8ParseU32EPKcRm:00000000 _ZN3ddp8ParseU32EPKcRm
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1747   .text._ZN3ddp8ParseHexEPKcRm:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1754   .text._ZN3ddp8ParseHexEPKcRm:00000000 _ZN3ddp8ParseHexEPKcRm
-C:\Users\ssche\AppData\Local\Temp\ccf6Owql.s:1943   .rodata._ZN3ddp12_GLOBAL__N_1L10kHexDigitsE:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:20     .text._ZN3ddp5Crc16EPKcj:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:27     .text._ZN3ddp5Crc16EPKcj:00000000 _ZN3ddp5Crc16EPKcj
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:112    .text._ZN3ddp10BuildFrameEPKcjPcj:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:119    .text._ZN3ddp10BuildFrameEPKcjPcj:00000000 _ZN3ddp10BuildFrameEPKcjPcj
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:367    .text._ZN3ddp10BuildFrameEPKcjPcj:000000b8 $d
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1946   .rodata._ZN3ddp12_GLOBAL__N_1L10kHexDigitsE:00000000 _ZN3ddp12_GLOBAL__N_1L10kHexDigitsE
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:372    .text._ZN3ddp11FrameParser6FinishEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:379    .text._ZN3ddp11FrameParser6FinishEv:00000000 _ZN3ddp11FrameParser6FinishEv
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:655    .text._ZN3ddp11FrameParser4FeedEc:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:662    .text._ZN3ddp11FrameParser4FeedEc:00000000 _ZN3ddp11FrameParser4FeedEc
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:855    .text._ZN3ddp6Writer4CharEc:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:862    .text._ZN3ddp6Writer4CharEc:00000000 _ZN3ddp6Writer4CharEc
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:921    .text._ZN3ddp6Writer3StrEPKc:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:928    .text._ZN3ddp6Writer3StrEPKc:00000000 _ZN3ddp6Writer3StrEPKc
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1025   .text._ZN3ddp6Writer3U32Em:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1032   .text._ZN3ddp6Writer3U32Em:00000000 _ZN3ddp6Writer3U32Em
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1166   .text._ZN3ddp6Writer3U32Em:0000006c $d
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1171   .text._ZN3ddp6Writer3HexEmi:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1178   .text._ZN3ddp6Writer3HexEmi:00000000 _ZN3ddp6Writer3HexEmi
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1317   .text._ZN3ddp6Writer3HexEmi:00000044 $d
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1322   .text._ZN3ddp11MessageTypeEPKcPcj:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1329   .text._ZN3ddp11MessageTypeEPKcPcj:00000000 _ZN3ddp11MessageTypeEPKcPcj
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1405   .text._ZN3ddp11LookupFieldEPKcS1_Pcj:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1412   .text._ZN3ddp11LookupFieldEPKcS1_Pcj:00000000 _ZN3ddp11LookupFieldEPKcS1_Pcj
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1630   .text._ZN3ddp8ParseU32EPKcRm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1637   .text._ZN3ddp8ParseU32EPKcRm:00000000 _ZN3ddp8ParseU32EPKcRm
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1747   .text._ZN3ddp8ParseHexEPKcRm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1754   .text._ZN3ddp8ParseHexEPKcRm:00000000 _ZN3ddp8ParseHexEPKcRm
+C:\Users\ssche\AppData\Local\Temp\ccL8OgIi.s:1943   .rodata._ZN3ddp12_GLOBAL__N_1L10kHexDigitsE:00000000 $d
 
 NO UNDEFINED SYMBOLS

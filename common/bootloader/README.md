@@ -118,3 +118,15 @@ corrupted, interrupted, echoed reply, Mod on Daisy frames, real-time bytes), the
 5 s gesture (extra keys, bounce, release, counter wrap) and the service order
 (reply before reset, one reset, LEDs). Each app's callback tests drive both triggers
 through its production `main.cpp` with a fake `ResetToBootloader()`.
+
+## Rückkehr zur Programmverwaltung (`return_entry.h`, `return_daisy.h`)
+
+Neben dem Service-Einstieg gibt es seit 01.11.2026 einen zweiten, getrennten Dienst:
+die Rückkehr aus einer Anwendung in die [Programmverwaltung](../../system/program-manager/README.md).
+
+* Tasten: **S1 und S16**, sonst keine, 3 s gehalten (die eigenen Tastenaktionen laufen bis zum Reset weiter).
+* USB-MIDI SysEx: `F0 7D 50 4D 01 01 4F 50 45 4E F7` („PM", OPEN); Antwort `F0 7D 50 4D 01 41 F7`.
+* Hauptschleife: Anwendung beendet Audio, MIDI-Noten, CV-Ruhezustand und Kartenschreibvorgänge selbst,
+  dann `manager_return::Enter(hw)` → LEDs aus → `ResetToBootloader(DAISY_SKIP_TIMEOUT)`. Der Bootloader
+  startet nach 100 ms die QSPI-Anwendung (= Verwaltung). S9+S16/BL/`BOOT` bleiben Service/DFU.
+* Hardware: NICHT GEMESSEN. Komponente `manager-return 1.0.0` im Register.
