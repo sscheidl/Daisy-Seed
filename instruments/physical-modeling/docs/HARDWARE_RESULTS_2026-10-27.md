@@ -23,7 +23,8 @@ B wurde zuerst gemessen, A unmittelbar danach unter denselben Bedingungen.
 
 ## Ablauf
 
-Die Testroutine (`pm_ab_test.py`, nur lokal im Hardware-Testordner) liest dieselbe
+Die Testroutine ([`tools/pm_ab_test.py`](../tools/pm_ab_test.py), Rohdaten in
+[`data/2026-10-27/`](data/2026-10-27/)) liest dieselbe
 Telemetrie wie [`tools/cpu_probe.py`](../tools/cpu_probe.py): Kanal 16, CC119. Sie
 geht die sechs Modelle über CC28 durch. Die Mod-on-Daisy-Matrix war leer, an den
 Reglern wurde während der Läufe nichts verändert.

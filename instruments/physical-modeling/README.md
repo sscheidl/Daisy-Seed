@@ -5,7 +5,8 @@ Seed3 Desktop Development Kit**. Native C++17, pinned libDaisy, 48 kHz stereo.
 No external audio input or extra synthesis/reverb engine is used.
 The [performance implementation and A/B procedure](docs/PERFORMANCE_IMPLEMENTATION.md)
 describe equivalent DSP optimizations, optional AXI placement and diagnostic builds.
-Hardware CPU gains and ARM render comparisons are not measured yet.
+Hardware CPU gains were measured in the [A/B run on 27 October](docs/HARDWARE_RESULTS_2026-10-27.md);
+listening acceptance and ARM render comparisons remain unmeasured.
 Status: **software validated; functional hardware acceptance reported;
 four-voice CPU measured** (2026-10-22). See
 [executed validation and artifact](docs/VALIDATION.md) and

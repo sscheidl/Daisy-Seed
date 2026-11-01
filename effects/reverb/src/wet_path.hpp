@@ -2,8 +2,15 @@
 // SPDX-License-Identifier: MIT
 #include "ambient_reverb.hpp"
 
+#ifndef AMBIENT_CONTIGUOUS_FIR
+#define AMBIENT_CONTIGUOUS_FIR 0
+#endif
+
 namespace ambient {
-// Keeps dry audio at codec rate. The wet engine is clocked at 12–48 kHz by a
+// Shared wet-clock policy for every host, independent of the codec sample rate.
+constexpr float kMinimumWetRate = 12000.f;
+constexpr float kMaximumWetRate = 32000.f;
+// Keeps dry audio at codec rate. The wet engine is clocked at 12–32 kHz by a
 // fractional scheduler; a 64-tap low-pass FIR precedes decimation and the wet
 // output is linearly interpolated. No allocation or coefficient design in Process().
 class WetPath {
@@ -17,6 +24,7 @@ class WetPath {
     Stereo Process(Stereo input, bool rightConnected);
     const Diagnostics &GetDiagnostics() const { return core_.GetDiagnostics(); }
     float InternalRateRatio() const { return ratio_; }
+    float InternalSampleRate() const { return sampleRate_ * ratio_; }
 
   private:
     static constexpr unsigned kTaps = 64;
@@ -25,8 +33,16 @@ class WetPath {
     AmbientReverb core_;
     Parameters parameters_{};
     float sampleRate_ = 48000, ratio_ = 1, targetRatio_ = 1, phase_ = 0;
+    float minimumRatio_ = .25f, maximumRatio_ = 2.f / 3.f;
     float filterRatio_ = -1;
+#if AMBIENT_CONTIGUOUS_FIR
+    // Diagnostic (default off): each sample is stored twice, so the newest kTaps
+    // samples are contiguous; the summation order is unchanged (bit-identical).
+    std::array<float, kTaps> coefficients_{};
+    std::array<float, 2 * kTaps> historyLeft_{}, historyRight_{};
+#else
     std::array<float, kTaps> coefficients_{}, historyLeft_{}, historyRight_{};
+#endif
     std::array<std::array<float, kTaps>, kFilterBands> coefficientBank_{};
     unsigned historyIndex_ = 0;
     Stereo previousWet_{}, currentWet_{};
@@ -35,5 +51,6 @@ class WetPath {
     void DesignFilterBank(); // Called only by Prepare(), before audio starts.
     void ConfigureFilter(float safeRatio);
     Stereo Filter(Stereo input);
+    float StretchRatio(float stretch) const;
 };
 } // namespace ambient

@@ -1,5 +1,12 @@
 # Toy Piano + Ambient Reverb v0.1.2
 
+**Entwicklungsstand 01.11.2026:** Der gemeinsame FX-Kern ist jetzt 0.4.0,
+Adapter 0.2.0 (32–12 kHz, bedarfsgerechte Pitchshifter). Zuerst wird die
+Standalone-FX-Fassung am Gerät abgenommen, danach dieses Produkt separat neu
+versioniert und gemessen. Die v0.1.2-Prüfsummen unten bezeichnen historische
+Images; aktuelle Entwicklungsbuilds sind über Git-Revision und Komponentenmanifest
+zu unterscheiden. [Aktuelle FX-Arbeit](../../../effects/reverb/docs/PERFORMANCE.md).
+
 Eigenes Produkt `toy-piano-ambient`, aufbauend auf der modularen FX-Stufe in
 PR #38. Das bisherige Toy Piano v0.3 und die reine Ambient-FX-Firmware bleiben
 eigene Buildziele. Kein Gerät wurde verbunden oder geflasht. v0.1.2 ist v0.1.1 plus
@@ -15,7 +22,7 @@ Bedienung sind sonst unverändert.
 | VR5 | Modulation Depth |
 | VR6 | Dry/Wet Mix |
 | VR7 | Modusspezifisches X |
-| VR8 | Stretch, interner Wet-Takt 48 bis 12 kHz |
+| VR8 | Stretch, interner Wet-Takt 32 bis 12 kHz seit FX-Kern 0.4.0 |
 
 Der Piano-Attack ist physisch fest auf 2 ms gesetzt. Die Matrix kann ihn als
 erweiterten Parameter weiterhin modulieren. Zeiten werden je Anschlag übernommen;

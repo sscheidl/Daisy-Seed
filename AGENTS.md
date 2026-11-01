@@ -66,6 +66,14 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   Mod on Daisy runs at 1 kHz control rate. The protocol is `modules/mod-on-daisy/docs/PROTOCOL.md`
   (SysEx 0x7D); change it only together with firmware, `mod_probe.py`, both editors
   and their tests.
+* **Modular FX first**: develop and validate an effect in its own `effects/<id>/`
+  component and standalone FX firmware before accepting it inside an instrument.
+  Instrument hosts reuse that component and own only mapping, routing and mixing.
+  Ambient wet-clock limits and pitch-shifter policy belong solely to
+  `effects/reverb/src/`; do not copy them into Toy Piano, Rings/Torus or a branch.
+  Continue FX work from current `main` and merge it into a relevant feature branch
+  before further FX edits. Record component versions and separate FX hardware
+  acceptance from each composed product's CPU/listening acceptance.
 * **No flash writes** for Mod on Daisy storage until the human approves (D8,
   `STORAGE.md`).
 * **Pinned versions**: libDaisy, DaisySP, xPack GCC 13.2.1-1.1 (`docs/BUILD.md`) and
