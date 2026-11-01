@@ -302,7 +302,7 @@ inline bool AcidInt(const acid_json::Value* v, double lo, double hi, int& out) {
 inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::string& error) {
     acid_json::Value root;
     if(!acid_json::Parser(text).Parse(root) || root.kind != acid_json::Value::Kind::Object) {
-        error = "keine gültige JSON-Datei";
+        error = "not a valid JSON file";
         return std::nullopt;
     }
     const acid_json::Value* format = root.Get("format");
@@ -310,11 +310,11 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
     int format_version = 0;
     if(!format || (format->s != "acid-seq-patch" && format->s != "streichwurst-patch") ||
        !AcidInt(version, 1, 1e6, format_version)) {
-        error = "kein Acid-Seq- oder Streichwurst-Patch";
+        error = "not an Acid Seq or Streichwurst patch";
         return std::nullopt;
     }
     if(format_version > kAcidPatchFormat) {
-        error = "Patch-Format " + std::to_string(format_version) + " ist neuer als dieser Editor";
+        error = "Patch format " + std::to_string(format_version) + " is newer than this editor";
         return std::nullopt;
     }
     AcidPatch p;
@@ -329,7 +329,7 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
                 pc.version = v->s;
             if(const acid_json::Value* s = c.Get("schema"))
                 if(!AcidInt(s, 0, 127, pc.schema)) {
-                    error = "ungültige Schema-Version";
+                    error = "invalid schema version";
                     return std::nullopt;
                 }
             if(const acid_json::Value* params = c.Get("params"))
@@ -339,21 +339,21 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
                     } else if(kv.second.kind == acid_json::Value::Kind::Number) {
                         // Any finite value fits: the device's range clamps it when sent.
                         if(!std::isfinite(kv.second.n) || std::fabs(kv.second.n) > 2147483.0) {
-                            error = "ungültiger Wert für " + kv.first;
+                            error = "invalid value for " + kv.first;
                             return std::nullopt;
                         }
                         pc.params[kv.first] = kv.second.n;
                     }
                 }
             if(pc.id.empty()) {
-                error = "Komponente ohne ID";
+                error = "component without ID";
                 return std::nullopt;
             }
             p.components.push_back(pc);
         }
     if(const acid_json::Value* pattern = root.Get("pattern")) {
         if(pattern->a.size() != step_seq::kSteps) {
-            error = "Pattern braucht 16 Steps";
+            error = "pattern needs 16 steps";
             return std::nullopt;
         }
         for(std::size_t i = 0; i < pattern->a.size(); ++i) {
@@ -363,7 +363,7 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
             const acid_json::Value* length = s.Get("gate_length");
             int note_value = 0, length_value = 50;
             if((note && !AcidInt(note, 0, 127, note_value)) || (length && !AcidInt(length, 0, 100, length_value))) {
-                error = "ungültiger Step " + std::to_string(i + 1);
+                error = "invalid step " + std::to_string(i + 1);
                 return std::nullopt;
             }
             st.note = uint8_t(note_value);
@@ -372,7 +372,7 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
             st.accent = s.Get("accent") && s.Get("accent")->b;
             st.slide = s.Get("slide") && s.Get("slide")->b;
             if(!st.Valid()) {
-                error = "ungültiger Step " + std::to_string(i + 1);
+                error = "invalid step " + std::to_string(i + 1);
                 return std::nullopt;
             }
         }
@@ -380,13 +380,13 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
     }
     if(const acid_json::Value* matrix = root.Get("matrix")) {
         if(matrix->kind != acid_json::Value::Kind::Object) {
-            error = "ungültige Matrix";
+            error = "invalid matrix";
             return std::nullopt;
         }
         p.matrix = acid_json::Write(*matrix);
     }
     if(format->s == "streichwurst-patch" && p.product != "streichwurst") {
-        error = "Streichwurst-Patch für ein anderes Produkt";
+        error = "Streichwurst patch for another product";
         return std::nullopt;
     }
     return p;

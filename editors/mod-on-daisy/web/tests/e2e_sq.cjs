@@ -39,7 +39,7 @@ function startSim(binary, arg) {
 // Calibration of the simulated device only (Codex F17): the uncalibrated simulator reports
 // zeros, which the device rightly refuses. These values are no advice for real hardware.
 const SIM_CAL = { offset: 2048, scale: -409.6, gateLow: 2048, gateHigh: 410, clampMin: 0, clampMax: 4095 };
-const validOutputs = () => [...document.querySelectorAll('#sqCal .hint')].filter((h) => h.textContent.trim() === 'gültig').length;
+const validOutputs = () => [...document.querySelectorAll('#sqCal .hint')].filter((h) => h.textContent.trim() === 'valid').length;
 
 async function openEditor(browser, sim, sent) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 1400 } });
@@ -95,7 +95,7 @@ async function openEditor(browser, sim, sent) {
   await page.waitForFunction(() => document.querySelector('#sqSteps .step.play'));
   // Calibration and the separate enable.
   await page.click('#sqCvOn');
-  await page.waitForFunction(() => document.querySelector('#log').textContent.includes('nicht kalibriert'));
+  await page.waitForFunction(() => document.querySelector('#log').textContent.includes('not calibrated'));
   for (const output of [0, 1]) {
     for (const [key, value] of Object.entries(SIM_CAL)) await page.fill(`#sqCal${output}${key}`, String(value));
     await page.click(`#sqCalSend${output}`);
@@ -103,7 +103,7 @@ async function openEditor(browser, sim, sent) {
   }
   await page.click('#sqCvOn');
   await page.evaluate(() => window.__tick(300));
-  await page.waitForFunction(() => document.querySelector('#sqStatus').innerText.includes('CV frei'));
+  await page.waitForFunction(() => document.querySelector('#sqStatus').innerText.includes('CV enabled'));
   await page.click('#sqStatsBtn');
   await page.waitForFunction(() => document.querySelectorAll('#sqStats tr').length === 17);
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'acid-seq-panel.png'), fullPage: true });

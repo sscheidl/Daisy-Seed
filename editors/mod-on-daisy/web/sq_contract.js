@@ -32,7 +32,7 @@
      {
       "id": 3,
       "key": "length",
-      "label": "Länge",
+      "label": "Length",
       "type": "int",
       "unit": "none",
       "min": 1,
@@ -44,7 +44,7 @@
      {
       "id": 4,
       "key": "transpose",
-      "label": "Transponierung",
+      "label": "Transpose",
       "type": "int",
       "unit": "semitones",
       "min": -12,
@@ -56,7 +56,7 @@
      {
       "id": 5,
       "key": "play_mode",
-      "label": "Modus",
+      "label": "Mode",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -73,15 +73,15 @@
        "random"
       ],
       "enum_labels": [
-       "Vorwärts",
-       "Rückwärts",
-       "Zufall"
+       "Forward",
+       "Reverse",
+       "Random"
       ]
      },
      {
       "id": 6,
       "key": "scale",
-      "label": "Skala",
+      "label": "Scale",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -94,15 +94,15 @@
        "minor"
       ],
       "enum_labels": [
-       "Chromatisch",
-       "Dur",
-       "Moll"
+       "Chromatic",
+       "Major",
+       "Minor"
       ]
      },
      {
       "id": 7,
       "key": "clock_source",
-      "label": "Clock-Quelle",
+      "label": "Clock source",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -116,7 +116,7 @@
        "auto"
       ],
       "enum_labels": [
-       "Intern",
+       "Internal",
        "Gate IN 1",
        "MIDI",
        "Auto"
@@ -125,7 +125,7 @@
      {
       "id": 8,
       "key": "clock_divider",
-      "label": "Clock-Teiler",
+      "label": "Clock divider",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -139,10 +139,10 @@
        "ppq24"
       ],
       "enum_labels": [
-       "1 pro Step",
-       "2 pro Viertel",
-       "4 pro Viertel",
-       "24 pro Viertel"
+       "1 per step",
+       "2 per quarter",
+       "4 per quarter",
+       "24 per quarter"
       ]
      },
      {
@@ -179,8 +179,8 @@
        "off"
       ],
       "enum_labels": [
-       "Transponierung",
-       "Aus"
+       "Transpose",
+       "Off"
       ]
      },
      {
@@ -199,15 +199,15 @@
        "swing"
       ],
       "enum_labels": [
-       "Aus",
-       "Gate-Länge",
+       "Off",
+       "Gate length",
        "Swing"
       ]
      },
      {
       "id": 12,
       "key": "seq_channel",
-      "label": "Seq-Kanal",
+      "label": "Seq channel",
       "type": "int",
       "unit": "channel",
       "min": 1,
@@ -218,7 +218,7 @@
      {
       "id": 13,
       "key": "voice_channel",
-      "label": "Stimmen-Kanal",
+      "label": "Voice channel",
       "type": "int",
       "unit": "channel",
       "min": 1,
@@ -229,7 +229,7 @@
      {
       "id": 14,
       "key": "usb_out",
-      "label": "USB-Ausgang",
+      "label": "USB out",
       "type": "bool",
       "unit": "none",
       "min": 0,
@@ -240,7 +240,7 @@
      {
       "id": 15,
       "key": "din_out",
-      "label": "DIN-Ausgang",
+      "label": "DIN out",
       "type": "bool",
       "unit": "none",
       "min": 0,
@@ -251,7 +251,7 @@
      {
       "id": 16,
       "key": "accent_velocity",
-      "label": "Accent-Anschlag",
+      "label": "Accent velocity",
       "type": "int",
       "unit": "velocity",
       "min": 1,
@@ -262,7 +262,7 @@
      {
       "id": 17,
       "key": "velocity",
-      "label": "Anschlag",
+      "label": "Velocity",
       "type": "int",
       "unit": "velocity",
       "min": 1,
@@ -273,7 +273,7 @@
      {
       "id": 18,
       "key": "glide_time",
-      "label": "Glide-Zeit",
+      "label": "Glide time",
       "type": "float",
       "unit": "ms",
       "min": 10,
@@ -284,7 +284,7 @@
      {
       "id": 19,
       "key": "clock_out",
-      "label": "Clock senden",
+      "label": "Send clock",
       "type": "bool",
       "unit": "none",
       "min": 0,
@@ -300,7 +300,7 @@
      {
       "id": 1,
       "key": "waveform",
-      "label": "Wellenform",
+      "label": "Waveform",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -312,8 +312,8 @@
        "square"
       ],
       "enum_labels": [
-       "Säge",
-       "Rechteck"
+       "Saw",
+       "Square"
       ]
      },
      {
@@ -330,7 +330,7 @@
      {
       "id": 3,
       "key": "fine",
-      "label": "Fein",
+      "label": "Fine",
       "type": "float",
       "unit": "cents",
       "min": -100,
@@ -355,7 +355,7 @@
      {
       "id": 5,
       "key": "resonance",
-      "label": "Resonanz",
+      "label": "Resonance",
       "type": "float",
       "unit": "percent",
       "min": 0,
@@ -402,7 +402,7 @@
      {
       "id": 9,
       "key": "volume",
-      "label": "Lautstärke",
+      "label": "Volume",
       "type": "float",
       "unit": "percent",
       "min": 0,
@@ -413,7 +413,7 @@
      {
       "id": 10,
       "key": "slide_time",
-      "label": "Slide-Zeit",
+      "label": "Slide time",
       "type": "float",
       "unit": "ms",
       "min": 10,
@@ -424,7 +424,7 @@
      {
       "id": 11,
       "key": "slide_mode",
-      "label": "Slide-Modus",
+      "label": "Slide mode",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -437,9 +437,9 @@
        "always"
       ],
       "enum_labels": [
-       "Aus",
+       "Off",
        "Legato",
-       "Immer"
+       "Always"
       ]
      }
     ]
@@ -450,7 +450,7 @@
      {
       "id": 1,
       "key": "enabled",
-      "label": "Drive an",
+      "label": "Drive on",
       "type": "bool",
       "unit": "none",
       "min": 0,
@@ -461,7 +461,7 @@
      {
       "id": 2,
       "key": "curve",
-      "label": "Kurve",
+      "label": "Curve",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -506,7 +506,7 @@
      {
       "id": 5,
       "key": "level",
-      "label": "Pegel",
+      "label": "Level",
       "type": "float",
       "unit": "db",
       "min": -24,
@@ -528,7 +528,7 @@
      {
       "id": 7,
       "key": "compensation",
-      "label": "Ausgleich",
+      "label": "Compensation",
       "type": "float",
       "unit": "percent",
       "min": 0,
@@ -539,7 +539,7 @@
      {
       "id": 8,
       "key": "target_offset",
-      "label": "Zielversatz",
+      "label": "Target offset",
       "type": "float",
       "unit": "db",
       "min": -3,
@@ -555,7 +555,7 @@
      {
       "id": 1,
       "key": "enabled",
-      "label": "Delay an",
+      "label": "Delay on",
       "type": "bool",
       "unit": "none",
       "min": 0,
@@ -566,7 +566,7 @@
      {
       "id": 2,
       "key": "mode",
-      "label": "Modus",
+      "label": "Mode",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -585,7 +585,7 @@
      {
       "id": 3,
       "key": "time",
-      "label": "Zeit",
+      "label": "Time",
       "type": "float",
       "unit": "ms",
       "min": 10,
@@ -610,7 +610,7 @@
      {
       "id": 5,
       "key": "note_value",
-      "label": "Notenwert",
+      "label": "Note value",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -640,22 +640,22 @@
       "enum_labels": [
        "1/32",
        "1/32 T",
-       "1/32 p",
+       "1/32 d",
        "1/16",
        "1/16 T",
-       "1/16 p",
+       "1/16 d",
        "1/8",
        "1/8 T",
-       "1/8 p",
+       "1/8 d",
        "1/4",
        "1/4 T",
-       "1/4 p",
+       "1/4 d",
        "1/2",
        "1/2 T",
-       "1/2 p",
+       "1/2 d",
        "1/1",
        "1/1 T",
-       "1/1 p"
+       "1/1 d"
       ]
      },
      {
@@ -683,7 +683,7 @@
      {
       "id": 8,
       "key": "damping",
-      "label": "Dämpfung",
+      "label": "Damping",
       "type": "float",
       "unit": "hz",
       "min": 1000,
@@ -702,20 +702,20 @@
      {
       "id": 1,
       "key": "registration",
-      "label": "Registrierung",
+      "label": "Registration",
       "type": "float",
       "unit": "percent",
       "min": 0,
       "max": 100,
       "default": 50,
       "cc": 20,
-      "control": "VR1 Haupt",
+      "control": "VR1 Main",
       "page": "strings"
      },
      {
       "id": 2,
       "key": "octave",
-      "label": "Oktaven",
+      "label": "Octaves",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -730,9 +730,9 @@
        "upper"
       ],
       "enum_labels": [
-       "Grundlage",
-       "Beide",
-       "Höhere"
+       "Base",
+       "Both",
+       "Upper"
       ]
      },
      {
@@ -745,20 +745,20 @@
       "max": 100,
       "default": 20,
       "cc": 22,
-      "control": "VR2 Haupt",
+      "control": "VR2 Main",
       "page": "strings"
      },
      {
       "id": 4,
       "key": "release",
-      "label": "Release Strings",
+      "label": "Release (strings)",
       "type": "float",
       "unit": "percent",
       "min": 0,
       "max": 100,
       "default": 45,
       "cc": 23,
-      "control": "VR3 Haupt",
+      "control": "VR3 Main",
       "page": "strings"
      },
      {
@@ -803,7 +803,7 @@
      {
       "id": 8,
       "key": "solo_sus_mode",
-      "label": "Solo Sustain-Modus",
+      "label": "Solo sustain mode",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -818,9 +818,9 @@
        "percussive"
       ],
       "enum_labels": [
-       "Abklingen auf Pegel",
-       "Halten",
-       "Perkussiv"
+       "Decay to level",
+       "Hold",
+       "Percussive"
       ]
      },
      {
@@ -839,7 +839,7 @@
      {
       "id": 10,
       "key": "solo_trem_depth",
-      "label": "Tremolo-Tiefe",
+      "label": "Tremolo depth",
       "type": "float",
       "unit": "percent",
       "min": 0,
@@ -852,7 +852,7 @@
      {
       "id": 11,
       "key": "solo_trem_rate",
-      "label": "Tremolo-Rate",
+      "label": "Tremolo rate",
       "type": "float",
       "unit": "hz",
       "min": 0.5,
@@ -868,7 +868,7 @@
      {
       "id": 12,
       "key": "split_mode",
-      "label": "Layer/Split",
+      "label": "Layer / Split",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -889,7 +889,7 @@
      {
       "id": 13,
       "key": "split_key",
-      "label": "Splitpunkt (MIDI-Note)",
+      "label": "Split key (MIDI note)",
       "type": "int",
       "unit": "none",
       "min": 0,
@@ -902,7 +902,7 @@
      {
       "id": 14,
       "key": "string_velocity",
-      "label": "Anschlag Strings",
+      "label": "Velocity (strings)",
       "type": "float",
       "unit": "percent",
       "min": 0,
@@ -914,7 +914,7 @@
      {
       "id": 15,
       "key": "solo_velocity",
-      "label": "Anschlag Solo",
+      "label": "Velocity (solo)",
       "type": "float",
       "unit": "percent",
       "min": 0,
@@ -926,7 +926,7 @@
      {
       "id": 16,
       "key": "bend_range",
-      "label": "Bend-Bereich",
+      "label": "Bend range",
       "type": "int",
       "unit": "semitones",
       "min": 0,
@@ -938,7 +938,7 @@
      {
       "id": 17,
       "key": "transpose",
-      "label": "Transponierung",
+      "label": "Transpose",
       "type": "int",
       "unit": "semitones",
       "min": -24,
@@ -950,7 +950,7 @@
      {
       "id": 18,
       "key": "tune",
-      "label": "Stimmung",
+      "label": "Tune",
       "type": "float",
       "unit": "cents",
       "min": -50,
@@ -974,13 +974,13 @@
       "max": 100,
       "default": 0,
       "cc": 102,
-      "control": "VR5 Haupt, VR1 FX",
+      "control": "VR5 Main, VR1 FX",
       "page": "fx"
      },
      {
       "id": 2,
       "key": "animate_rate",
-      "label": "Animate-Rate (eigen)",
+      "label": "Animate rate (own)",
       "type": "float",
       "unit": "hz",
       "min": 0.05,
@@ -996,7 +996,7 @@
      {
       "id": 3,
       "key": "ensemble_on",
-      "label": "Ensemble",
+      "label": "Ensemble on/off",
       "type": "bool",
       "unit": "none",
       "min": 0,
@@ -1009,7 +1009,7 @@
      {
       "id": 4,
       "key": "ensemble_mode",
-      "label": "Ensemble-Modus",
+      "label": "Ensemble mode",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -1024,9 +1024,9 @@
        "mode_2"
       ],
       "enum_labels": [
-       "Modus 0 (3 Taps)",
-       "Modus 1 (Dry + 5)",
-       "Modus 2 (Dry + 3)"
+       "Mode 0 (3 taps)",
+       "Mode 1 (dry + 5)",
+       "Mode 2 (dry + 3)"
       ]
      },
      {
@@ -1039,13 +1039,13 @@
       "max": 100,
       "default": 0,
       "cc": 106,
-      "control": "VR6 Haupt, VR3 FX",
+      "control": "VR6 Main, VR3 FX",
       "page": "fx"
      },
      {
       "id": 6,
       "key": "phaser_rate",
-      "label": "Phaser-Rate (eigen)",
+      "label": "Phaser rate (own)",
       "type": "float",
       "unit": "hz",
       "min": 0.05,
@@ -1068,13 +1068,13 @@
       "max": 100,
       "default": 20,
       "cc": 108,
-      "control": "VR7 Haupt, VR5 FX",
+      "control": "VR7 Main, VR5 FX",
       "page": "fx"
      },
      {
       "id": 8,
       "key": "reverb_decay",
-      "label": "Reverb-Decay (eigen)",
+      "label": "Reverb decay (own)",
       "type": "float",
       "unit": "percent",
       "min": 0,
@@ -1092,14 +1092,14 @@
      {
       "id": 1,
       "key": "balance",
-      "label": "Balance Strings/Solo",
+      "label": "Balance strings/solo",
       "type": "float",
       "unit": "percent",
       "min": 0,
       "max": 100,
       "default": 50,
       "cc": 8,
-      "control": "VR4 Haupt, VR8 FX",
+      "control": "VR4 Main, VR8 FX",
       "page": "global"
      },
      {
@@ -1112,13 +1112,13 @@
       "max": 100,
       "default": 80,
       "cc": 7,
-      "control": "VR8 Haupt/Solo, VR7 FX",
+      "control": "VR8 Main/Solo, VR7 FX",
       "page": "global"
      },
      {
       "id": 3,
       "key": "midi_channel",
-      "label": "MIDI-Kanal (0 = Omni)",
+      "label": "MIDI channel (0 = omni)",
       "type": "int",
       "unit": "channel",
       "min": 0,
@@ -1130,7 +1130,7 @@
      {
       "id": 4,
       "key": "pot_page",
-      "label": "Reglerseite am Kit",
+      "label": "Pot page on the kit",
       "type": "enum",
       "unit": "none",
       "min": 0,
@@ -1148,7 +1148,7 @@
        "fx"
       ],
       "enum_labels": [
-       "Haupt",
+       "Main",
        "Solo",
        "FX"
       ]
@@ -1156,7 +1156,7 @@
      {
       "id": 5,
       "key": "preset",
-      "label": "RAM-Preset (zuletzt geladen)",
+      "label": "RAM preset (last recalled)",
       "type": "int",
       "unit": "none",
       "min": 0,

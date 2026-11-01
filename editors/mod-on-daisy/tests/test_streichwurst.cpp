@@ -101,7 +101,7 @@ static void TestConnectReadsFirst(Rig& r) {
     CHECK(r.sq.Components().size() == 3);
     CHECK(r.sq.ComponentIndex("streichwurst-instrument") == 0); // 23 characters, SQ 1.1
     CHECK(r.sq.Components()[0].kind == 1 && r.sq.Components()[1].kind == 2 && r.sq.Components()[2].kind == 4);
-    CHECK(std::string(SqKindName(4)) == "Produkt");
+    CHECK(std::string(SqKindName(4)) == "Product");
     CHECK(r.sq.Components()[0].parameters.size() == 18 && r.sq.Components()[1].parameters.size() == 8 &&
           r.sq.Components()[2].parameters.size() == 5);
     // Values and enum labels as the device holds them (contract defaults).

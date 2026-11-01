@@ -18,9 +18,9 @@ class MidiPort : public Transport, private juce::MidiInputCallback {
         if(port->output_)
             port->input_ = juce::MidiInput::openDevice(in.identifier, port.get());
         if(!port->output_ || !port->input_) {
-            error = U("Port „") + (port->output_ ? in.name : out.name)
-                + U("“ lässt sich nicht öffnen. Ist er von einer anderen Anwendung belegt (z. B. Studio One)? Dort "
-                    "„Daisy Seed External“ deaktivieren.");
+            error = U("Cannot open port “") + (port->output_ ? in.name : out.name)
+                + U("”. Is it held by another application (e.g. Studio One)? Disable "
+                    "“Daisy Seed External” there.");
             return nullptr;
         }
         port->output_info_ = out;
