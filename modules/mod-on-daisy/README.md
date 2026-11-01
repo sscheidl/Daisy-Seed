@@ -42,6 +42,7 @@ editor is developed separately under [`editors/mod-on-daisy/`](../../editors/mod
 | Document | Content |
 | --- | --- |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Decisions v0.1, **technical objections**, architecture changes, open points |
+| [docs/ASSIGNABLE_DESTINATIONS.md](docs/ASSIGNABLE_DESTINATIONS.md) | **Proposal (01.11.2026):** freely assignable destinations per column, default VR1–VR8 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module structure, data structures, processing, global and per-voice modulation, instrument interface, estimate |
 | [docs/PROTOCOL.md](docs/PROTOCOL.md) | MIDI protocol v1 |
 | [docs/STORAGE.md](docs/STORAGE.md) | QSPI layout, write and erase procedure, data integrity |
