@@ -23,4 +23,6 @@ Zusätzlich zu den Repositoryregeln:
 * Änderungen auf Instrument, separate Streichwurst-FX, gemeinsame gezielte
   MIDI-/Control-Adapter, Mod-on-Daisy-App und notwendige Registry-/CI-
   Erweiterungen begrenzen. Andere Instrumente und Bibliothekspins erhalten.
-* Code und Codekommentare Englisch, Projekt-/Bedien-/Prüfdokumentation Deutsch.
+* Language: English first, as in the repository rule (AGENTS.md). New and revised
+  documents, manuals and UI texts are English; the existing German project documents
+  are migrated deliberately.

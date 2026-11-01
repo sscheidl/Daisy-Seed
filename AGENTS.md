@@ -95,7 +95,13 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   `STORAGE.md`).
 * **Pinned versions**: libDaisy, DaisySP, xPack GCC 13.2.1-1.1 (`docs/BUILD.md`) and
   JUCE 9.0.4 (`editors/mod-on-daisy/CMakeLists.txt`). Do not bump them as a side effect.
-* **Language**: code and code comments in English; user-facing documentation of the
-  Mod on Daisy module, the editors and the hardware tests in German, as it is now.
+* **Language: English first** (user decision 2026-11-01). English is the primary language
+  for everything: code and comments, software GUIs (control app, browser editor, VST3,
+  diagnostics app, firmware texts), manuals and PDFs, READMEs and all other docs, and
+  everything on GitHub (PR and issue texts, release notes, commit messages). A German
+  translation may be added as a secondary version, never instead of the English one.
+  New and substantially revised content is written in English; existing German content
+  is migrated deliberately (its own task or when a file is reworked), not as a side effect.
+  Firmware/protocol strings keep their wire format; only their display text changes.
 * Work on a branch and merge via pull request; describe validation (commands, results,
   what is still untested on hardware) in the PR.
