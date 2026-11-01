@@ -1,5 +1,14 @@
 # Übergabe — lokal weiterarbeiten
 
+**Streichwurst, Vorbereitung 01.11.2026:** Neues Instrument unter
+`instruments/streichwurst/`, eigener Branch `claude/streichwurst`,
+[Claude-Auftrag](instruments/streichwurst/docs/CLAUDE_AUFTRAG.md). Ziel Seed3
+Desktop, Bedienung am Streichfett orientiert, Klang möglichst originalgetreu.
+Forschung und eigenes Pythonmodell liegen beim Projekt; Originale und Rohdaten
+bleiben außerhalb Git. Firmware noch nicht implementiert, Build-ID `streichwurst`
+als `planned` registriert. Lokal eigener Worktree `.work/streichwurst/`;
+bestehender Hauptcheckout und seine fremden Änderungen bleiben erhalten.
+
 **Diagnose 31.10.2026:** PR #70 gemergt, Suite 0.3.2. SD-Kartenleser mit
 Dateioperationen, physischer Schreibunterbrechung und Wiederanlauf GEMESSEN;
 beide CV-Kanäle und beide Gate-Eingänge funktional mit 0.3.1 GEMESSEN.
