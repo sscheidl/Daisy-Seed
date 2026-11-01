@@ -1,18 +1,26 @@
 // SPDX-License-Identifier: MIT
 #include "wet_path.hpp"
 
+static_assert(AMBIENT_WET_MAX_HZ == 0 || AMBIENT_WET_MAX_HZ >= 32000,
+              "the reverb core runs at 32 kHz or more");
 namespace ambient {
 bool WetPath::Prepare(float sampleRate, Memory &memory) {
     if (!std::isfinite(sampleRate) || sampleRate < 32000 || sampleRate > 96000)
         return false;
     sampleRate_ = sampleRate;
+#if AMBIENT_WET_MAX_HZ
+    const float coreRate = std::min(sampleRate, float(AMBIENT_WET_MAX_HZ));
+    maxRatio_ = coreRate / sampleRate;
+#else
+    const float coreRate = sampleRate;
+#endif
     ready_ = false;
     historyLeft_.fill(0);
     historyRight_.fill(0);
     historyIndex_ = 0;
     phase_ = 0;
     previousWet_ = currentWet_ = {};
-    ratio_ = targetRatio_ = std::pow(.25f, Bounded(parameters_.stretch, 0, 1, 0));
+    ratio_ = targetRatio_ = StretchRatio(Bounded(parameters_.stretch, 0, 1, 0));
     filterRatio_ = -1;
     DesignFilterBank();
     ConfigureFilter(ratio_);
@@ -23,7 +31,7 @@ bool WetPath::Prepare(float sampleRate, Memory &memory) {
     wetParameters.trails = true;
     wetParameters.hold = false;
     core_.SetParameters(wetParameters);
-    if (!core_.Prepare(sampleRate, memory))
+    if (!core_.Prepare(coreRate, memory))
         return false;
     const float dry = parameters_.bypass ? 1.f : std::cos(parameters_.mix * kPi * .5f);
     dry_.Set(dry, 0);
@@ -42,7 +50,7 @@ void WetPath::SetParameters(const Parameters &input) {
     p.stretch = Bounded(p.stretch, 0, 1, 0);
     p.outputGain = Bounded(p.outputGain, 0, 1, .8f);
     parameters_ = p;
-    targetRatio_ = std::pow(.25f, p.stretch);
+    targetRatio_ = StretchRatio(p.stretch);
     if (!ready_)
         return;
     Parameters wetParameters = p;

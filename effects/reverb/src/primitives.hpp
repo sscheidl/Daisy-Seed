@@ -6,6 +6,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+// Diagnostic (default off): run only the octave shifters the current mode can hear.
+#ifndef AMBIENT_PITCH_GATE
+#define AMBIENT_PITCH_GATE 0
+#endif
 namespace ambient {
 constexpr float kPi = 3.14159265358979323846f;
 inline float Bounded(float x, float lo, float hi, float fallback) {
@@ -71,6 +75,16 @@ template <std::size_t N> class Delay {
         const float a = data_[(write_ - n) & (N - 1)], b = data_[(write_ - n - 1) & (N - 1)];
         return a + f * (b - a);
     }
+#if AMBIENT_PITCH_GATE
+    // Same as Read on a line that was cleared `filled` pushes ago: older entries read 0.
+    float ReadFilled(float delay, std::size_t filled) const {
+        unsigned n = unsigned(delay);
+        float f = delay - float(n);
+        const float a = n - 1 < filled ? data_[(write_ - n) & (N - 1)] : 0.f;
+        const float b = n < filled ? data_[(write_ - n - 1) & (N - 1)] : 0.f;
+        return a + f * (b - a);
+    }
+#endif
     float Allpass(float x, unsigned length, float g) {
         float d = Read(float(length));
         float v = x + g * d;
@@ -122,6 +136,9 @@ struct AntiAlias {
     float Process(float x) {
         return b.Process(a.Process(x));
     }
+#if AMBIENT_PITCH_GATE
+    void Reset() { a.z1 = a.z2 = b.z1 = b.z2 = 0; }
+#endif
 };
 // Shared phase per stereo shifter; Hann windows form a partition of unity.
 // Independent native redesign of the two-read-head principle, not rom_pitch bit emulation.
@@ -132,6 +149,9 @@ class Octave {
     Lowpass post_[2];
     float postCoefficient_ = 1, ratio_ = 2;
     std::array<float, 1025> hann_{};
+#if AMBIENT_PITCH_GATE
+    std::size_t filled_ = 0; // Pushes since Prepare/Restart, saturating at the capacity.
+#endif
     float Weight(float phase) const {
         float t = phase / window_ * 1024;
         unsigned i = unsigned(t);
@@ -145,6 +165,9 @@ class Octave {
         left_.Bind(left);
         right_.Bind(right);
         position_ = 0;
+#if AMBIENT_PITCH_GATE
+        filled_ = 0;
+#endif
         ratio_ = ratio;
         window_ = std::round(.0853333333f * sampleRate); // ~85ms at every supported host rate
         window_ = std::min(window_, 8190.f);
@@ -158,6 +181,18 @@ class Octave {
             f = {};
         postCoefficient_ = 1 - std::exp(-2 * kPi * (ratio < 1 ? 3500.f : 11000.f) / sampleRate);
     }
+#if AMBIENT_PITCH_GATE
+    // Returns to the state right after Prepare without clearing the lines in the
+    // audio thread: ReadFilled hides everything pushed before the restart.
+    void Restart() {
+        position_ = 0;
+        filled_ = 0;
+        for (auto &f : aa_)
+            f.Reset();
+        for (auto &f : post_)
+            f = {};
+    }
+#endif
     Stereo Process(Stereo x) {
         left_.Push(aa_[0].Process(x.left));
         right_.Push(aa_[1].Process(x.right));
@@ -165,8 +200,17 @@ class Octave {
         if (other >= window_)
             other -= window_;
         float w = Weight(position_);
+#if AMBIENT_PITCH_GATE
+        if (filled_ < 8192)
+            ++filled_;
+        Stereo y{w * left_.ReadFilled(position_ + 1, filled_) +
+                     (1 - w) * left_.ReadFilled(other + 1, filled_),
+                 w * right_.ReadFilled(position_ + 1, filled_) +
+                     (1 - w) * right_.ReadFilled(other + 1, filled_)};
+#else
         Stereo y{w * left_.Read(position_ + 1) + (1 - w) * left_.Read(other + 1),
                  w * right_.Read(position_ + 1) + (1 - w) * right_.Read(other + 1)};
+#endif
         y.left = post_[0].Process(y.left, postCoefficient_);
         y.right = post_[1].Process(y.right, postCoefficient_);
         position_ += 1 - ratio_;

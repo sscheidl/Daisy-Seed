@@ -15,16 +15,22 @@ TARGET = ToyPianoAmbient-v$(VERSION)
 # Diagnostic reverb memory experiments, all off by default (bit-identical audio):
 # AMB_WA=1 SDRAM write-allocate, AMB_COMPACT=1 48 kHz buffers with all-pass/pitch
 # lines in AXI SRAM, AMB_FIR=1 contiguous anti-alias FIR. Own build directory.
+# CPU experiments, also off by default: AMB_GATE=1 runs only the octave shifters the
+# mode can hear (bit-identical without a mode change), AMB_WET32=1 caps the wet
+# engine at 32 kHz (deliberate sound change: Stretch 32-12 kHz).
 AMB_WA ?= 0
 AMB_COMPACT ?= 0
 AMB_FIR ?= 0
-ifeq ($(AMB_WA)$(AMB_COMPACT)$(AMB_FIR),000)
+AMB_GATE ?= 0
+AMB_WET32 ?= 0
+ifeq ($(AMB_WA)$(AMB_COMPACT)$(AMB_FIR)$(AMB_GATE)$(AMB_WET32),00000)
 override BUILD_DIR = build/ambient
 else
-override BUILD_DIR = build/ambient-exp-w$(AMB_WA)-c$(AMB_COMPACT)-f$(AMB_FIR)
+override BUILD_DIR = build/ambient-exp-w$(AMB_WA)-c$(AMB_COMPACT)-f$(AMB_FIR)-g$(AMB_GATE)-r$(AMB_WET32)
 endif
 FX_DEFS = -DTOY_PIANO_FX=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DAMBIENT_SDRAM_WRITE_ALLOCATE=$(AMB_WA) \
-          -DAMBIENT_COMPACT_48K=$(AMB_COMPACT) -DAMBIENT_CONTIGUOUS_FIR=$(AMB_FIR)
+          -DAMBIENT_COMPACT_48K=$(AMB_COMPACT) -DAMBIENT_CONTIGUOUS_FIR=$(AMB_FIR) \
+          -DAMBIENT_PITCH_GATE=$(AMB_GATE) -DAMBIENT_WET_MAX_HZ=$(if $(filter 1,$(AMB_WET32)),32000,0)
 C_DEFS = $(FX_DEFS)
 FX_SOURCES = ../../effects/reverb/src/ambient_reverb.cpp ../../effects/reverb/src/wet_path.cpp
 else

@@ -5,6 +5,12 @@
 #ifndef AMBIENT_CONTIGUOUS_FIR
 #define AMBIENT_CONTIGUOUS_FIR 0
 #endif
+// Diagnostic (default 0 = off): highest wet engine rate in Hz, e.g. 32000 like a
+// real FV-1. The core is prepared at that rate, so its times stay correct; Stretch
+// still reaches the same lowest rate (a quarter of the host rate).
+#ifndef AMBIENT_WET_MAX_HZ
+#define AMBIENT_WET_MAX_HZ 0
+#endif
 
 namespace ambient {
 // Keeps dry audio at codec rate. The wet engine is clocked at 12–48 kHz by a
@@ -30,6 +36,14 @@ class WetPath {
     Parameters parameters_{};
     float sampleRate_ = 48000, ratio_ = 1, targetRatio_ = 1, phase_ = 0;
     float filterRatio_ = -1;
+#if AMBIENT_WET_MAX_HZ
+    float maxRatio_ = 1; // Core rate / host rate at Stretch 0.
+    float StretchRatio(float stretch) const {
+        return maxRatio_ * std::pow(.25f / maxRatio_, stretch);
+    }
+#else
+    float StretchRatio(float stretch) const { return std::pow(.25f, stretch); }
+#endif
 #if AMBIENT_CONTIGUOUS_FIR
     // Diagnostic (default off): each sample is stored twice, so the newest kTaps
     // samples are contiguous; the summation order is unchanged (bit-identical).

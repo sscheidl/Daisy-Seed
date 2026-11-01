@@ -96,6 +96,9 @@ class AmbientReverb {
     Highpass highpass_[8];
     Oscillator lfo_[8];
     Octave up_, down_;
+#if AMBIENT_PITCH_GATE
+    bool upRunning_ = true, downRunning_ = true;
+#endif
     Stereo feedback_{};
     float envelope_ = 0, swell_ = 1;
     bool gate_ = false;

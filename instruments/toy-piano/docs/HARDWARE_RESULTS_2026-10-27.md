@@ -106,19 +106,61 @@ GEMESSEN: write-allocate verschlechtert die Akkordphase, weil jeder Schreibzugri
 auf eine neue Delay-Zeile erst eine Cache-Zeile aus dem SDRAM lädt. Die einzelnen
 Images (nur WA, nur COMPACT, nur FIR) wurden nicht gemessen.
 
+## Algorithmus-Experimente (28.10.2026)
+
+Zwei weitere Build-Schalter, im Standard ebenfalls aus:
+
+| Schalter | Wirkung |
+| --- | --- |
+| `AMB_GATE=1` | Rechnet nur die Oktav-Shifter, die der Modus hört: Cloud, Bloom und Scatter keinen, Abyss den unteren, Halo und Shimmer den oberen. Wird ein Shifter wieder hörbar, startet er wie nach `Prepare` mit leerem Puffer, ohne den Puffer im Audio-Thread zu löschen. |
+| `AMB_WET32=1` | Wet-Takt höchstens 32 kHz. Der Kern wird mit 32 kHz vorbereitet, Hallzeiten und Delays bleiben also richtig; VR8 regelt 32–12 kHz. **Bewusste Klangänderung.** |
+
+```sh
+make -C instruments/toy-piano AMBIENT=1 AMB_GATE=1 AMB_WET32=1 -j4
+```
+
+**GEMESSEN (Host, 28.10.2026):**
+
+- `effects/reverb/tests/test_variants.cpp` rendert alle sechs Modi ab `Prepare` ohne
+  Moduswechsel (Stretch-Endpunkte und -Fahrten, Rauschstöße): mit `AMB_GATE`
+  1 728 000 Samples, 0 Abweichungen. Gegenprobe: ein absichtlich falsch abgeschalteter
+  unterer Shifter liefert 277 342 Abweichungen, ein zu kurzer Füllzähler 835 293.
+- Moduswechsel durch alle Shifter-Kombinationen bleiben endlich und unter 1, ohne
+  Guard-Eingriff. Beim Wechsel in einen Pitch-Modus ist die Ausgabe nicht bitgleich
+  (der Shifter startet leer).
+- Mit `AMB_WET32`: 32 000 Kernaufrufe pro Host-Sekunde bei Stretch 0, 12 000 bei
+  Stretch 1.
+- `make AMBIENT=1 test` mit und ohne die Schalter und `test-sanitize` mit
+  `AMB_GATE=1 AMB_WET32=1`: PASS.
+
+**GEMESSEN (ARM-Build, 28.10.2026, xPack GCC 13.2.1-1.1):** Das Standard-Image ist
+weiterhin byte-identisch (`0ecfb4f9…`), ebenso `AmbientReverb-v0.3.1.bin`
+(`3a19183d…`). Alle Images bestehen `scripts/check-firmware.py`.
+
+| Image (Build-Verzeichnis `build/ambient-exp-…`) | Bytes | SHA256 |
+| --- | ---: | --- |
+| `w0-c0-f0-g1-r0` (nur Gate) | 185148 | `bf1bd425cd19126416912cb287c19e5307be6912612df27a1084bb5ab12fc494` |
+| `w0-c0-f0-g1-r1` (Gate + 32 kHz) | 185212 | `c9113184646b0de89f81fc2ee104c6b568725843bdf0054a53afb5ebc890d8bb` |
+| `w0-c1-f1-g1-r1` (Gate + 32 kHz + COMPACT + FIR, ohne WA) | 185236 | `43463379d0a8ecb5fd285fef17dc1ad63863e8daf11827f0288df50f15659571` |
+
+Alle drei melden sich als `toy-piano-ambient 0.1.2`; das Image ist nur über den Hash
+zu unterscheiden.
+
+**Schätzung, NICHT GEMESSEN:** Aus dem linearen Lastmodell (16 % fest + 77 % ×
+Wet-Rate / 48 kHz) und rund 20 % Kernanteil der Shifter ergeben sich bei VR8 links
+etwa 57 % Ø und 74 % Spitze bei Akkorden für Gate + 32 kHz. Der Host-Benchmark
+(x86, nicht repräsentativ) zeigt in Cloud rund −19 % für das Gate und −31 % für
+beides zusammen.
+
 ## Nächste Schritte (offen)
 
-1. `AMB_COMPACT=1 AMB_FIR=1` **ohne** `AMB_WA` messen, um die WA-Vermutung zu prüfen.
-2. Algorithmus sparsamer machen, Entscheidung des Menschen ausstehend:
-   - **Ungenutzte Pitchshifter abschalten:** Cloud, Bloom und Scatter brauchen keinen,
-     Abyss nur den unteren, Halo und Shimmer nur den oberen. Rund 20 % der
-     Kern-Instruktionen; im eingeschwungenen Modus bitgleich, beim Wechsel in einen
-     Pitch-Modus startet der Shifter mit leerem Puffer (Einblenden über ~85 ms).
-   - **Wet-Takt auf höchstens 32 kHz begrenzen** (Takt eines echten FV-1), Stretch dann
-     32–12 kHz: Kernkosten ×2/3. Bewusste Klangänderung: weniger Höhen im Hall
-     oberhalb von etwa 14 kHz bei maximaler Rate.
-   - Geschätzt zusammen 50–60 % Last bei voller Rate. NICHT GEMESSEN.
-3. Danach Hörtest und erneute Messung mit `tools/toy_ambient_probe.py`.
+1. Am Kit, VR8 ganz links, mit `tools/toy_ambient_probe.py` (ruhig, Akkorde) messen,
+   in dieser Reihenfolge: nur Gate, Gate + 32 kHz, Gate + 32 kHz + COMPACT + FIR.
+   Modus Cloud und Shimmer.
+2. Hörtest: Artefakte bei VR8 links weg? Klingt 32 kHz im Hall dunkler? Knackt der
+   Wechsel in Abyss, Halo oder Shimmer?
+3. Danach entscheidet der Mensch, welche Schalter Standard werden; das wird dann eine
+   neue Version mit Changelog-Eintrag.
 
 ## Nicht gemessen
 
@@ -126,3 +168,4 @@ Images (nur WA, nur COMPACT, nur FIR) wurden nicht gemessen.
 - Dichte Akkorde (Abbruch durch USB-Sendefehler unter Last).
 - Abschnittsweise Zyklen im Reverb-Kern (Profiling-Build).
 - Standalone-Ambient-Reverb und Physical Modeling + Ambient.
+- Alle Images mit `AMB_GATE` oder `AMB_WET32` am Kit (Last, Hörtest, Moduswechsel).
