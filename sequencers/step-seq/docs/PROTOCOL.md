@@ -163,7 +163,7 @@ once it moves beyond its hysteresis.
 | Type | Name | Request | Response |
 | --- | --- | --- | --- |
 | `0x20` | `TRANSPORT` | `u7` command (0 Stop, 1 Start) | `u7` status · `u7` state |
-| `0x21` | `GET_STATE` | — | `u7` state (0 STOP, 1 WARTET (waiting), 2 LÄUFT (running), 3 PAUSE) · `u7` mode · `u7` SW17 (0 Stop, 1 Run) · `u7` SW18 (0 up, 1 centre, 2 down) · `u7` active clock source (0 internal, 1 Gate IN 1, 2 MIDI USB, 3 MIDI DIN) · `u7` current step (0…15, 127 none) · `i32` tempo in milli-BPM · `u14` accepted · `u14` applied revision · `u7` CV enabled (0/1) · `u7` USB connected (0/1) |
+| `0x21` | `GET_STATE` | — | `u7` state (0 STOP, 1 WAITING, 2 RUNNING, 3 PAUSE) · `u7` mode · `u7` SW17 (0 Stop, 1 Run) · `u7` SW18 (0 up, 1 centre, 2 down) · `u7` active clock source (0 internal, 1 Gate IN 1, 2 MIDI USB, 3 MIDI DIN) · `u7` current step (0…15, 127 none) · `i32` tempo in milli-BPM · `u14` accepted · `u14` applied revision · `u7` CV enabled (0/1) · `u7` USB connected (0/1) |
 
 Panel start and stop only take effect when enabled (SW17 on Run, see 4.3 of the work order),
 otherwise `NAK NOT_ALLOWED`.

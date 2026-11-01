@@ -24,7 +24,7 @@ the entry.
 | B7 | Buttons in Physical Modeling (normal and MOD build), Nebulae, Looper, Reverb, Mod bench, diagnostics | S9 + S16 for 5 s → kit as in B1 | NOT MEASURED |
 | B8 | Looper during a card save | Stop recording, immediately S9 + S16 or the editor button: response immediately, reset only after saving; `loop.wav` readable afterwards | NOT MEASURED |
 | B9 | Diagnostics firmware | Windows app **Firmware update mode …** → kit as in B1; in the card reader build locked while the card is shared (button and keys) | NOT MEASURED |
-| B10 | Older firmware | Editor button with an image without the entry: "No response" after 2 s, kit keeps running | NOT MEASURED |
+| B10 | Older firmware | Editor button with an image without the entry: "No answer from the kit" after 2 s, kit keeps running | NOT MEASURED |
 | B11 | Studio One with input monitoring | Kit's response sent back: no second reset, no loop | NOT MEASURED |
 | B12 | Recovery | RESET, then BOOT within about 2 s still works | NOT MEASURED |
 | B13 | Looper and Reverb with USB MIDI | Normal operation unchanged (recording, playback, effect), no clicks; unplugging and replugging the USB cable without disturbance | NOT MEASURED |

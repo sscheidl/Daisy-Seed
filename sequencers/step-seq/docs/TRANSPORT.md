@@ -89,7 +89,7 @@ voice.AllNotesOff(source);          // Panic of one source
 
 ## 6. Transport states
 
-STOP, WARTET (waiting), LÄUFT (running) and PAUSE with the transitions from 4.3 of the work order. `TransportEvent`
+STOP, WAITING, RUNNING and PAUSE with the transitions from 4.3 of the work order. `TransportEvent`
 reports every change. The panic rules from 4.4 apply at every transition to STOP
 and PAUSE and on the clock timeout.
 

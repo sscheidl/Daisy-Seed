@@ -40,7 +40,7 @@ Start with a low listening level.
 | # | Test | Expectation | Result |
 | --- | --- | --- | --- |
 | M1 | Notes from a DAW to Toy Piano Ambient | Plays with velocity; keys send notes | NOT MEASURED |
-| M2 | Studio One with input monitoring | No response loop (Mod on Daisy and bootloader) | NOT MEASURED |
+| M2 | Studio One with input monitoring | No reply feedback loop (Mod on Daisy and bootloader) | NOT MEASURED |
 
 ## Bootloader (both images)
 
