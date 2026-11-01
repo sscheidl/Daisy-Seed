@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daisy Program Manager</title>
+<style>
+  :root { --bg:#f6f6f3; --fg:#1d1d1b; --mute:#6b6b66; --line:#d8d8d2; --card:#fff; --ok:#1f7a3a; --warn:#b26a00; --err:#b3261e; --accent:#2b5db9; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#15161a; --fg:#ebebe6; --mute:#9a9a94; --line:#33353b; --card:#1e2026; --accent:#7ea2ea; } }
+  body { margin:0; padding:16px; font:14px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  h1 { font-size:18px; margin:0 0 8px; } h2 { font-size:14px; margin:16px 0 6px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:12px; }
+  button { font:inherit; padding:6px 12px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--fg); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button:disabled { opacity:.45; cursor:default; }
+  table { width:100%; border-collapse:collapse; } td, th { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--mute); font-weight:600; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--line); font-size:12px; }
+  .ok { color:var(--ok); } .warn { color:var(--warn); } .err { color:var(--err); }
+  .sim { background:#fff3cd; color:#5c4400; border:1px solid #e0c36a; padding:8px 12px; border-radius:6px; margin-bottom:12px; font-weight:600; }
+  pre { margin:0; max-height:220px; overflow:auto; font:12px/1.4 ui-monospace, monospace; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:8px; }
+  code { font-family: ui-monospace, monospace; }
+  .mute { color:var(--mute); }
+</style>
+</head>
+<body>
+<h1>Daisy Program Manager · Control Panel</h1>
+<div id="simbanner" class="sim" hidden>SIMULATION – kein Gerät verbunden. Nichts hier ist ein Hardwarebefund.</div>
+
+<div class="card">
+  <div class="row">
+    <button id="connect" class="primary">Verbinden (Web Serial)</button>
+    <button id="disconnect" disabled>Trennen</button>
+    <span id="conn" class="badge">getrennt</span>
+    <span id="ident" class="mute"></span>
+    <span style="flex:1"></span>
+    <button id="simulate" title="Nur zur Entwicklung: eingebauter Simulator, deutlich gekennzeichnet">Simulator starten</button>
+  </div>
+  <p class="mute" id="hint">Benötigt Chrome/Edge (Web Serial). Es wird nur der ausgewählte Port angesprochen; ohne HELLO-Identität <code>app=DaisyProgramManager…</code> werden keine Befehle gesendet. Ein Programmstart erfolgt nur nach Klick und Bestätigung – nie beim Verbinden oder Wiederverbinden.</p>
+</div>
+
+<div class="card">
+  <h2>Status</h2>
+  <div id="status" class="row"><span class="mute">–</span></div>
+</div>
+
+<div class="card">
+  <h2>Programme</h2>
+  <div class="row" style="margin-bottom:8px">
+    <button id="refresh" disabled>Liste laden</button>
+    <button id="rescan" disabled>Karte neu lesen</button>
+    <span id="catinfo" class="mute"></span>
+  </div>
+  <table><thead><tr><th>Platz</th><th>Programm</th><th>Version</th><th>Art</th><th>Hash (Katalog)</th><th></th></tr></thead>
+  <tbody id="programs"><tr><td colspan="6" class="mute">keine Liste geladen</td></tr></tbody></table>
+</div>
+
+<div class="card">
+  <h2>Diagnose</h2>
+  <div class="row">
+    <button id="modeDiag" disabled>Diagnosemodus</button>
+    <button id="modeSelect" disabled>Auswahlmodus</button>
+    <button id="ledOn" disabled>LEDs an</button>
+    <button id="ledFollow" disabled>LEDs folgen Tasten</button>
+    <button id="service" disabled title="Startet den Bootloader (DFU) – nur nach Bestätigung">Service (DFU)</button>
+  </div>
+  <div id="diag" class="mute" style="margin-top:8px">Eingänge erscheinen hier (ST-Rahmen), sobald eine Sitzung läuft.</div>
+</div>
+
+<div class="card">
+  <h2>Protokoll</h2>
+  <pre id="log"></pre>
+</div>
+
+<script src="pm_protocol.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const log = (dir, text) => { const el = $('log'); el.textContent += dir + ' ' + text + '\n'; el.scrollTop = el.scrollHeight; };
+
+  // ---- transport: Web Serial or the clearly marked simulator ----
+  let port = null, reader = null, writer = null, sim = null, connected = false, sessionTimer = null;
+  const parser = new PM.Parser();
+  const waiters = [];   // {types, resolve, reject, timer}
+  let identity = null, gen = null, entries = {}, mode = '?';
+
+  async function write(body) {
+    log('>', body);
+    const bytes = new TextEncoder().encode(PM.frame(body));
+    if (sim) sim.receive(PM.frame(body)); else await writer.write(bytes);
+  }
+  function deliver(text) {
+    for (const body of parser.feed(text)) {
+      log('<', body);
+      const f = PM.fields(body);
+      const i = waiters.findIndex(w => w.types.includes(f._type) || f._type === 'ERR');
+      if (i >= 0) { const w = waiters.splice(i, 1)[0]; clearTimeout(w.timer); w.resolve(f); }
+      else if (f._type === 'ST') showInputs(f);
+    }
+  }
+  function ask(body, types, timeout = 2000) {
+    return new Promise((resolve, reject) => {
+      const w = { types, resolve, reject };
+      w.timer = setTimeout(() => { waiters.splice(waiters.indexOf(w), 1); reject(new Error('keine Antwort auf ' + body.split(' ')[0])); }, timeout);
+      waiters.push(w);
+      write(body).catch(reject);
+    });
+  }
+
+  async function connect() {
+    try {
+      if (!('serial' in navigator)) throw new Error('Web Serial nicht verfügbar (Chrome/Edge verwenden)');
+      port = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x0483, usbProductId: 0x5740 }] });
+      await port.open({ baudRate: 115200 });
+      writer = port.writable.getWriter();
+      reader = port.readable.getReader();
+      readLoop();
+      await afterOpen();
+    } catch (e) { setConn(false, e.message); }
+  }
+  async function readLoop() {
+    const dec = new TextDecoder();
+    try {
+      for (;;) { const { value, done } = await reader.read(); if (done) break; deliver(dec.decode(value)); }
+    } catch (e) { log('!', 'Port verloren: ' + e.message); }
+    onDisconnected('Port geschlossen (Neustart des Geräts?)');
+  }
+  async function afterOpen() {
+    const info = await ask('PMINFO', ['PMINFO']);
+    if (info._type !== 'PMINFO' || !/^DaisyProgramManager/.test(info.app || '')) throw new Error('kein Program Manager: ' + JSON.stringify(info));
+    const hello = await ask('HELLO proto=1', ['HELLO']);
+    if (!PM.isManager(hello)) throw new Error('HELLO abgelehnt oder fremdes Gerät');
+    identity = hello; connected = true;
+    setConn(true, hello.app + ' ' + hello.fw + ' (' + info.profile + ', build ' + info.build + ', bl ' + hello.bl + ')');
+    sessionTimer = setInterval(() => { ask('PING n=1', ['PONG'], 1500).catch(() => {}); refreshStatus(); }, 700);
+    await refreshStatus(); await loadList();
+  }
+  function onDisconnected(reason) {
+    connected = false; identity = null; clearInterval(sessionTimer); sessionTimer = null;
+    try { reader && reader.releaseLock(); writer && writer.releaseLock(); port && port.close(); } catch (e) {}
+    reader = writer = port = null;
+    setConn(false, reason || 'getrennt');
+  }
+  async function disconnect() {
+    if (connected) { try { await ask('BYE', ['ACK'], 500); } catch (e) {} }
+    if (sim) { sim = null; $('simbanner').hidden = true; }
+    onDisconnected('getrennt');
+  }
+  function setConn(on, text) {
+    $('conn').textContent = on ? 'verbunden' : 'getrennt'; $('conn').className = 'badge ' + (on ? 'ok' : 'warn');
+    $('ident').textContent = text || '';
+    for (const id of ['disconnect', 'refresh', 'rescan', 'modeDiag', 'modeSelect', 'ledOn', 'ledFollow', 'service']) $(id).disabled = !on;
+    $('connect').disabled = on;
+    if (!on) { $('status').innerHTML = '<span class="mute">–</span>'; }
+  }
+
+  // ---- status / list ----
+  async function refreshStatus() {
+    if (!connected) return;
+    try {
+      const st = await ask('PMSTATUS', ['PMST'], 1500);
+      mode = st.mode; gen = st.gen;
+      const parts = [['Modus', st.mode], ['Lader', st.state + (st.e !== 'OK' ? ' · ' + st.e : '') + (st.state === 'LOADING' ? ' ' + st.pct + '%' : '')],
+        ['Karte', st.sd === '1' ? 'eingelegt' : 'fehlt'], ['Katalog', st.cat + (st.ce !== 'OK' ? ' · ' + st.ce : '')], ['Generation', st.gen],
+        ['Platz', st.slot], ['Bedienfehler', st.uerr], ['Wurzel .bin', st.rootbin === '1' ? 'JA – Karte nicht konform!' : 'nein']];
+      $('status').innerHTML = parts.map(([k, v]) => '<span class="badge' + (/JA|ERROR|Fehler/.test(v) && v !== 'OK' ? ' err' : '') + '">' + k + ': ' + v + '</span>').join('');
+      if (st.state === 'RESTARTING') log('!', 'Gerät startet das Programm – der Port verschwindet gleich (erwartet).');
+    } catch (e) { /* the device may be restarting */ }
+  }
+  async function loadList() {
+    const l = await ask('PMLIST', ['PMLIST']);
+    if (l._type !== 'PMLIST') return;
+    gen = l.gen; entries = {};
+    $('catinfo').textContent = 'Katalog ' + l.cat + ', Generation ' + l.gen + ', ' + l.n + ' Programm(e)';
+    const rows = [];
+    for (const s of PM.slotsOf(l.mask)) {
+      const e = await ask('PMLIST s=' + s, ['PMENT']);
+      if (e._type !== 'PMENT') continue;
+      entries[s] = e;
+      rows.push('<tr><td>' + s + '</td><td>' + esc(PM.decodeName(e.name)) + '<br><span class="mute">' + esc(e.id) + '</span></td><td>' + esc(e.ver) + '</td><td>' + esc(e.cat) +
+        '</td><td><code title="' + esc(e.hash) + '">' + esc(e.hash.slice(0, 16)) + '…</code></td><td><button data-slot="' + s + '" class="start">Starten</button></td></tr>');
+    }
+    rows.push('<tr><td>16</td><td>Diagnose (resident)</td><td>–</td><td>control</td><td>–</td><td><button id="startDiag">Öffnen</button></td></tr>');
+    $('programs').innerHTML = rows.join('') || '<tr><td colspan="6" class="mute">keine Programme</td></tr>';
+    for (const b of document.querySelectorAll('button.start')) b.onclick = () => startSlot(parseInt(b.dataset.slot, 10));
+    $('startDiag').onclick = () => ask('PMMODE m=DIAG', ['ACK']).then(refreshStatus);
+  }
+  async function startSlot(slot) {
+    const e = entries[slot]; if (!e) return;
+    if (!confirm('Programm "' + PM.decodeName(e.name) + '" (' + e.id + ' ' + e.ver + ') auf Platz ' + slot + ' starten?\nDas Gerät startet neu; die Verbindung geht verloren.')) return;
+    const rid = Math.floor(Math.random() * 0xFFFFFFFE) + 1;
+    const r = await ask(PM.startBody(e, gen, rid), ['ACK']);
+    if (r._type !== 'ACK') { alert('Abgelehnt: ' + (r.e || JSON.stringify(r))); return; }
+    log('!', 'angenommen (rid ' + rid + ') – ACK ist noch kein Startnachweis; Status folgt.');
+  }
+
+  function showInputs(f) {
+    if (!connected) return;
+    $('diag').textContent = 'Tasten ' + f.b + ' · Potis ' + f.p + ' · SW17 ' + f.s17 + ' · SW18 ' + f.s18 + ' · SD ' + f.sd + ' · Gates ' + f.g + ' · CV OUT ' + f.co;
+  }
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  $('connect').onclick = connect;
+  $('disconnect').onclick = disconnect;
+  $('refresh').onclick = () => loadList().catch(e => log('!', e.message));
+  $('rescan').onclick = () => ask('PMRESCAN', ['ACK']).then(() => setTimeout(loadList, 400)).catch(e => log('!', e.message));
+  $('modeDiag').onclick = () => ask('PMMODE m=DIAG', ['ACK']).then(refreshStatus);
+  $('modeSelect').onclick = () => ask('PMMODE m=SELECT', ['ACK']).then(refreshStatus);
+  $('ledOn').onclick = () => ask('LED m=ON', ['ACK']).then(r => r._type === 'ERR' && log('!', 'nur im Diagnosemodus: ' + r.e));
+  $('ledFollow').onclick = () => ask('LED m=FOLLOW', ['ACK']);
+  $('service').onclick = async () => {
+    if (!confirm('Service: das Gerät startet in den DFU-Bootloader (Firmware-Update der Verwaltung). Fortfahren?')) return;
+    await ask('BOOT', ['ACK']);
+  };
+
+  // ---- simulator (development only, visibly marked) ----
+  $('simulate').onclick = async () => {
+    if (connected) await disconnect();
+    sim = makeSimulator(text => deliver(text));
+    $('simbanner').hidden = false;
+    writer = { write: async () => {} };
+    try { await afterOpen(); } catch (e) { setConn(false, e.message); }
+  };
+  function makeSimulator(send) {
+    const H = '3F9A1C2E0B7D4466' + 'A'.repeat(48);
+    const state = { mode: 'SELECT', loading: -1, rid: 0, gen: 1, rids: {} };
+    const p = new PM.Parser();
+    const reply = b => setTimeout(() => send(PM.frame(b)), 15);
+    const st = () => reply('PMST mode=' + state.mode + ' state=' + (state.loading < 0 ? 'IDLE' : state.loading < 3 ? 'LOADING' : 'RESTARTING') +
+      ' e=OK ie=OK ve=OK slot=1 rid=' + state.rid + ' pct=' + (state.loading < 0 ? 0 : Math.min(100, state.loading * 34)) + ' gen=' + state.gen + ' cat=OK ce=OK cd=0 sd=1 rootbin=0 uerr=OK');
+    return { receive(text) { for (const body of p.feed(text)) {
+      const f = PM.fields(body);
+      switch (f._type) {
+        case 'PMINFO': reply('PMINFO app=DaisyProgramManager fw=0.1.0-sim profile=manager build=sim mode=' + state.mode + ' gen=' + state.gen + ' cat=OK cgen=9 n=2 sd=1 rootbin=0 slots=15'); break;
+        case 'HELLO': reply('HELLO proto=1 fw=0.1.0-sim app=DaisyProgramManager dev=seed3-desktop boot=BOOT_QSPI bl=sim libdaisy=sim caps=btn,pm,pmsd'); break;
+        case 'PING': reply('PONG n=' + f.n); break;
+        case 'PMSTATUS': if (state.loading >= 0 && state.loading < 4) state.loading++; st(); break;
+        case 'PMLIST': if (!f.s) reply('PMLIST gen=' + state.gen + ' cgen=9 n=2 mask=0005 cat=OK');
+          else if (f.s === '1') reply('PMENT gen=' + state.gen + ' slot=1 id=toy-piano name=Toy%20Piano cat=instrument ver=0.4.0 hash=' + H);
+          else if (f.s === '3') reply('PMENT gen=' + state.gen + ' slot=3 id=reverb-fx name=Ambient%20Reverb cat=effect ver=0.3.1 hash=' + 'B'.repeat(64));
+          else reply('ERR c=PMLIST e=NOENTRY'); break;
+        case 'PMSTART': if (f.gen !== String(state.gen)) reply('ERR c=PMSTART e=GENERATION');
+          else if (state.rids[f.rid]) reply('ACK c=PMSTART rid=' + f.rid + ' dup=1 state=LOADING e=OK');
+          else { state.rids[f.rid] = 1; state.rid = f.rid; state.loading = 0; state.mode = 'LOADING'; reply('ACK c=PMSTART rid=' + f.rid + ' slot=' + f.slot); } break;
+        case 'PMMODE': state.mode = f.m; reply('ACK c=PMMODE m=' + f.m); break;
+        case 'PMRESCAN': state.gen++; reply('ACK c=PMRESCAN'); break;
+        case 'LED': reply(state.mode === 'DIAG' ? 'ACK c=LED m=' + f.m + ' mask=0000 br=100 ms=120' : 'ERR c=LED e=MODE'); break;
+        case 'BOOT': reply('ACK c=BOOT'); break;
+        case 'BYE': reply('ACK c=BYE'); break;
+        default: reply('ERR c=' + f._type + ' e=UNKNOWN');
+      } } } };
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1337 @@
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.arch armv7e-m
+   3              		.fpu fpv5-d16
+   4              		.eabi_attribute 28, 1
+   5              		.eabi_attribute 20, 1
+   6              		.eabi_attribute 21, 1
+   7              		.eabi_attribute 23, 3
+   8              		.eabi_attribute 24, 1
+   9              		.eabi_attribute 25, 1
+  10              		.eabi_attribute 26, 1
+  11              		.eabi_attribute 30, 2
+  12              		.eabi_attribute 34, 1
+  13              		.eabi_attribute 18, 4
+  14              		.file	"pm_sha256.c"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.file 1 "src/pm_sha256.c"
+  19              		.section	.text.Compress,"ax",%progbits
+  20              		.align	1
+  21              		.p2align 2,,3
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	Compress:
+  27              	.LVL0:
+  28              	.LFB340:
+   1:src/pm_sha256.c **** #include "pm_sha256.h"
+   2:src/pm_sha256.c **** #include <string.h>
+   3:src/pm_sha256.c **** 
+   4:src/pm_sha256.c **** static const uint32_t kRound[64] = {
+   5:src/pm_sha256.c ****     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+   6:src/pm_sha256.c ****     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+   7:src/pm_sha256.c ****     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+   8:src/pm_sha256.c ****     0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+   9:src/pm_sha256.c ****     0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  10:src/pm_sha256.c ****     0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  11:src/pm_sha256.c ****     0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  12:src/pm_sha256.c ****     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  13:src/pm_sha256.c **** };
+  14:src/pm_sha256.c **** 
+  15:src/pm_sha256.c **** static uint32_t Rotr(uint32_t x, unsigned n) { return (x >> n) | (x << (32u - n)); }
+  16:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+  17:src/pm_sha256.c ****     return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | (uint32_t)p[3]
+  18:src/pm_sha256.c **** }
+  19:src/pm_sha256.c **** static void Store32(uint8_t* p, uint32_t v) {
+  20:src/pm_sha256.c ****     p[0] = (uint8_t)(v >> 24); p[1] = (uint8_t)(v >> 16); p[2] = (uint8_t)(v >> 8); p[3] = (uint8_t
+  21:src/pm_sha256.c **** }
+  22:src/pm_sha256.c **** 
+  23:src/pm_sha256.c **** static void Compress(uint32_t state[8], const uint8_t block[64]) {
+  29              		.loc 1 23 66 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 304
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  24:src/pm_sha256.c ****     uint32_t w[64];
+  33              		.loc 1 24 5 view .LVU1
+  25:src/pm_sha256.c ****     uint32_t a, b, c, d, e, f, g, h;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 2
+
+
+  34              		.loc 1 25 5 view .LVU2
+  26:src/pm_sha256.c ****     int i;
+  35              		.loc 1 26 5 view .LVU3
+  27:src/pm_sha256.c ****     for(i = 0; i < 16; ++i)
+  36              		.loc 1 27 5 view .LVU4
+  37              		.loc 1 27 18 discriminator 1 view .LVU5
+  23:src/pm_sha256.c ****     uint32_t w[64];
+  38              		.loc 1 23 66 is_stmt 0 view .LVU6
+  39 0000 2DE9F04F 		push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+  40              		.cfi_def_cfa_offset 36
+  41              		.cfi_offset 4, -36
+  42              		.cfi_offset 5, -32
+  43              		.cfi_offset 6, -28
+  44              		.cfi_offset 7, -24
+  45              		.cfi_offset 8, -20
+  46              		.cfi_offset 9, -16
+  47              		.cfi_offset 10, -12
+  48              		.cfi_offset 11, -8
+  49              		.cfi_offset 14, -4
+  50 0004 CDB0     		sub	sp, sp, #308
+  51              		.cfi_def_cfa_offset 344
+  23:src/pm_sha256.c ****     uint32_t w[64];
+  52              		.loc 1 23 66 view .LVU7
+  53 0006 8346     		mov	fp, r0
+  54 0008 0DF12C09 		add	r9, sp, #44
+  55 000c 0CA8     		add	r0, sp, #48
+  56              	.LVL1:
+  23:src/pm_sha256.c ****     uint32_t w[64];
+  57              		.loc 1 23 66 view .LVU8
+  58 000e 1BAC     		add	r4, sp, #108
+  59 0010 4A46     		mov	r2, r9
+  60              	.LVL2:
+  61              	.L2:
+  28:src/pm_sha256.c ****         w[i] = Load32(block + 4 * i);
+  62              		.loc 1 28 9 is_stmt 1 view .LVU9
+  63              		.loc 1 28 9 is_stmt 0 view .LVU10
+  64 0012 51F8043B 		ldr	r3, [r1], #4	@ unaligned
+  65              	.LVL3:
+  66              		.loc 1 28 9 view .LVU11
+  67 0016 1BBA     		rev	r3, r3
+  68              	.LVL4:
+  69              		.loc 1 28 14 discriminator 1 view .LVU12
+  70 0018 42F8043F 		str	r3, [r2, #4]!
+  27:src/pm_sha256.c ****     for(i = 0; i < 16; ++i)
+  71              		.loc 1 27 24 is_stmt 1 discriminator 3 view .LVU13
+  27:src/pm_sha256.c ****     for(i = 0; i < 16; ++i)
+  72              		.loc 1 27 18 discriminator 1 view .LVU14
+  73 001c A242     		cmp	r2, r4
+  74 001e F8D1     		bne	.L2
+  75 0020 0CAF     		add	r7, sp, #48
+  76 0022 1B9B     		ldr	r3, [sp, #108]
+  77 0024 1A9D     		ldr	r5, [sp, #104]
+  78 0026 57F8C01B 		ldr	r1, [r7], #192
+  79 002a 1E46     		mov	r6, r3
+  80              	.L3:
+  81              	.LBB28:
+  29:src/pm_sha256.c ****     for(i = 16; i < 64; ++i) {
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 3
+
+
+  30:src/pm_sha256.c ****         const uint32_t s0 = Rotr(w[i - 15], 7) ^ Rotr(w[i - 15], 18) ^ (w[i - 15] >> 3);
+  82              		.loc 1 30 9 view .LVU15
+  83 002c 0C46     		mov	r4, r1
+  84              	.LBB29:
+  85              	.LBB30:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+  86              		.loc 1 15 64 is_stmt 0 view .LVU16
+  87 002e 4FEA7543 		ror	r3, r5, #17
+  88              	.LBE30:
+  89              	.LBE29:
+  90              		.loc 1 30 29 view .LVU17
+  91 0032 50F8041F 		ldr	r1, [r0, #4]!
+  92              	.LVL5:
+  93              	.LBB32:
+  94              	.LBI32:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+  95              		.loc 1 15 17 is_stmt 1 view .LVU18
+  96              	.LBB33:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+  97              		.loc 1 15 48 view .LVU19
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+  98              		.loc 1 15 48 is_stmt 0 view .LVU20
+  99              	.LBE33:
+ 100              	.LBE32:
+ 101              	.LBB35:
+ 102              	.LBI35:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 103              		.loc 1 15 17 is_stmt 1 view .LVU21
+ 104              	.LBB36:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 105              		.loc 1 15 48 view .LVU22
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 106              		.loc 1 15 48 is_stmt 0 view .LVU23
+ 107              	.LBE36:
+ 108              	.LBE35:
+  31:src/pm_sha256.c ****         const uint32_t s1 = Rotr(w[i - 2], 17) ^ Rotr(w[i - 2], 19) ^ (w[i - 2] >> 10);
+ 109              		.loc 1 31 9 is_stmt 1 view .LVU24
+ 110              	.LBB37:
+ 111              	.LBI29:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 112              		.loc 1 15 17 view .LVU25
+ 113              	.LBB31:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 114              		.loc 1 15 48 view .LVU26
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 115              		.loc 1 15 48 is_stmt 0 view .LVU27
+ 116              	.LBE31:
+ 117              	.LBE37:
+ 118              	.LBB38:
+ 119              	.LBI38:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 120              		.loc 1 15 17 is_stmt 1 view .LVU28
+ 121              	.LBB39:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 122              		.loc 1 15 48 view .LVU29
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 123              		.loc 1 15 48 is_stmt 0 view .LVU30
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 4
+
+
+ 124              	.LBE39:
+ 125              	.LBE38:
+  32:src/pm_sha256.c ****         w[i] = w[i - 16] + s0 + w[i - 7] + s1;
+ 126              		.loc 1 32 9 is_stmt 1 view .LVU31
+  31:src/pm_sha256.c ****         const uint32_t s1 = Rotr(w[i - 2], 17) ^ Rotr(w[i - 2], 19) ^ (w[i - 2] >> 10);
+ 127              		.loc 1 31 48 is_stmt 0 discriminator 2 view .LVU32
+ 128 0036 83EAF543 		eor	r3, r3, r5, ror #19
+ 129              	.LBB40:
+ 130              	.LBB34:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 131              		.loc 1 15 64 view .LVU33
+ 132 003a 4FEAF112 		ror	r2, r1, #7
+ 133              	.LBE34:
+ 134              	.LBE40:
+ 135              	.LBE28:
+  29:src/pm_sha256.c ****         const uint32_t s0 = Rotr(w[i - 15], 7) ^ Rotr(w[i - 15], 18) ^ (w[i - 15] >> 3);
+ 136              		.loc 1 29 19 discriminator 1 view .LVU34
+ 137 003e B842     		cmp	r0, r7
+ 138              	.LBB41:
+  31:src/pm_sha256.c ****         const uint32_t s1 = Rotr(w[i - 2], 17) ^ Rotr(w[i - 2], 19) ^ (w[i - 2] >> 10);
+ 139              		.loc 1 31 24 discriminator 2 view .LVU35
+ 140 0040 83EA9523 		eor	r3, r3, r5, lsr #10
+ 141 0044 3546     		mov	r5, r6
+ 142              	.LVL6:
+  30:src/pm_sha256.c ****         const uint32_t s1 = Rotr(w[i - 2], 17) ^ Rotr(w[i - 2], 19) ^ (w[i - 2] >> 10);
+ 143              		.loc 1 30 48 discriminator 2 view .LVU36
+ 144 0046 82EAB142 		eor	r2, r2, r1, ror #18
+ 145 004a 066A     		ldr	r6, [r0, #32]
+  30:src/pm_sha256.c ****         const uint32_t s1 = Rotr(w[i - 2], 17) ^ Rotr(w[i - 2], 19) ^ (w[i - 2] >> 10);
+ 146              		.loc 1 30 24 discriminator 2 view .LVU37
+ 147 004c 82EAD102 		eor	r2, r2, r1, lsr #3
+ 148 0050 3344     		add	r3, r3, r6
+ 149 0052 1344     		add	r3, r3, r2
+ 150              		.loc 1 32 42 view .LVU38
+ 151 0054 03EB0406 		add	r6, r3, r4
+ 152              		.loc 1 32 14 view .LVU39
+ 153 0058 C663     		str	r6, [r0, #60]
+ 154              	.LBE41:
+  29:src/pm_sha256.c ****         const uint32_t s0 = Rotr(w[i - 15], 7) ^ Rotr(w[i - 15], 18) ^ (w[i - 15] >> 3);
+ 155              		.loc 1 29 25 is_stmt 1 discriminator 3 view .LVU40
+  29:src/pm_sha256.c ****         const uint32_t s0 = Rotr(w[i - 15], 7) ^ Rotr(w[i - 15], 18) ^ (w[i - 15] >> 3);
+ 156              		.loc 1 29 19 discriminator 1 view .LVU41
+ 157 005a E7D1     		bne	.L3
+  33:src/pm_sha256.c ****     }
+  34:src/pm_sha256.c ****     a = state[0]; b = state[1]; c = state[2]; d = state[3];
+ 158              		.loc 1 34 5 view .LVU42
+  35:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 159              		.loc 1 35 49 is_stmt 0 view .LVU43
+ 160 005c DBF81C50 		ldr	r5, [fp, #28]
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 161              		.loc 1 34 49 view .LVU44
+ 162 0060 DBF80C40 		ldr	r4, [fp, #12]
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 163              		.loc 1 34 35 view .LVU45
+ 164 0064 DBF80830 		ldr	r3, [fp, #8]
+ 165              		.loc 1 35 7 view .LVU46
+ 166 0068 DBF81000 		ldr	r0, [fp, #16]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 5
+
+
+ 167              		.loc 1 35 21 view .LVU47
+ 168 006c DBF81470 		ldr	r7, [fp, #20]
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 169              		.loc 1 34 35 view .LVU48
+ 170 0070 9E46     		mov	lr, r3
+ 171              		.loc 1 35 35 view .LVU49
+ 172 0072 DBF81860 		ldr	r6, [fp, #24]
+ 173              		.loc 1 35 49 view .LVU50
+ 174 0076 0395     		str	r5, [sp, #12]
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 175              		.loc 1 34 49 view .LVU51
+ 176 0078 0594     		str	r4, [sp, #20]
+ 177 007a 0194     		str	r4, [sp, #4]
+ 178 007c 324D     		ldr	r5, .L10
+ 179              		.loc 1 35 49 view .LVU52
+ 180 007e DDF80CA0 		ldr	r10, [sp, #12]
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 181              		.loc 1 34 35 view .LVU53
+ 182 0082 0493     		str	r3, [sp, #16]
+ 183              		.loc 1 35 7 view .LVU54
+ 184 0084 0690     		str	r0, [sp, #24]
+ 185              		.loc 1 35 21 view .LVU55
+ 186 0086 0797     		str	r7, [sp, #28]
+ 187              		.loc 1 35 35 view .LVU56
+ 188 0088 0896     		str	r6, [sp, #32]
+ 189 008a CDF82CB0 		str	fp, [sp, #44]
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 190              		.loc 1 34 21 view .LVU57
+ 191 008e DBE90012 		ldrd	r1, r2, [fp]
+ 192              	.LVL7:
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 193              		.loc 1 34 33 is_stmt 1 view .LVU58
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 194              		.loc 1 34 47 view .LVU59
+ 195              		.loc 1 35 5 view .LVU60
+ 196              		.loc 1 35 19 view .LVU61
+ 197              		.loc 1 35 33 view .LVU62
+ 198              		.loc 1 35 47 view .LVU63
+  36:src/pm_sha256.c ****     for(i = 0; i < 64; ++i) {
+ 199              		.loc 1 36 5 view .LVU64
+ 200              		.loc 1 36 18 discriminator 1 view .LVU65
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 201              		.loc 1 34 21 is_stmt 0 view .LVU66
+ 202 0092 1446     		mov	r4, r2
+ 203              	.LVL8:
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 204              		.loc 1 34 7 view .LVU67
+ 205 0094 8C46     		mov	ip, r1
+ 206 0096 CDE90912 		strd	r1, r2, [sp, #36]
+ 207 009a 05E0     		b	.L4
+ 208              	.LVL9:
+ 209              	.L5:
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 210              		.loc 1 34 7 view .LVU68
+ 211 009c 3E46     		mov	r6, r7
+ 212              	.LVL10:
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 6
+
+
+ 213              		.loc 1 34 7 view .LVU69
+ 214 009e A646     		mov	lr, r4
+ 215              	.LVL11:
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 216              		.loc 1 34 7 view .LVU70
+ 217 00a0 0746     		mov	r7, r0
+ 218              	.LVL12:
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 219              		.loc 1 34 7 view .LVU71
+ 220 00a2 6446     		mov	r4, ip
+ 221              	.LVL13:
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 222              		.loc 1 34 7 view .LVU72
+ 223 00a4 4046     		mov	r0, r8
+ 224              	.LVL14:
+  34:src/pm_sha256.c ****     e = state[4]; f = state[5]; g = state[6]; h = state[7];
+ 225              		.loc 1 34 7 view .LVU73
+ 226 00a6 9C46     		mov	ip, r3
+ 227              	.LVL15:
+ 228              	.L4:
+ 229              	.LBB42:
+  37:src/pm_sha256.c ****         const uint32_t S1 = Rotr(e, 6) ^ Rotr(e, 11) ^ Rotr(e, 25);
+ 230              		.loc 1 37 9 is_stmt 1 view .LVU74
+ 231              	.LBB43:
+ 232              	.LBI43:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 233              		.loc 1 15 17 view .LVU75
+ 234              	.LBB44:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 235              		.loc 1 15 48 view .LVU76
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 236              		.loc 1 15 48 is_stmt 0 view .LVU77
+ 237              	.LBE44:
+ 238              	.LBE43:
+ 239              	.LBB46:
+ 240              	.LBI46:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 241              		.loc 1 15 17 is_stmt 1 view .LVU78
+ 242              	.LBB47:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 243              		.loc 1 15 48 view .LVU79
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 244              		.loc 1 15 48 is_stmt 0 view .LVU80
+ 245              	.LBE47:
+ 246              	.LBE46:
+ 247              	.LBB48:
+ 248              	.LBI48:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 249              		.loc 1 15 17 is_stmt 1 view .LVU81
+ 250              	.LBB49:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 251              		.loc 1 15 48 view .LVU82
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 252              		.loc 1 15 48 is_stmt 0 view .LVU83
+ 253              	.LBE49:
+ 254              	.LBE48:
+  38:src/pm_sha256.c ****         const uint32_t ch = (e & f) ^ (~e & g);
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 7
+
+
+ 255              		.loc 1 38 9 is_stmt 1 view .LVU84
+  39:src/pm_sha256.c ****         const uint32_t t1 = h + S1 + ch + kRound[i] + w[i];
+ 256              		.loc 1 39 9 view .LVU85
+ 257              	.LBB50:
+ 258              	.LBB45:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 259              		.loc 1 15 64 is_stmt 0 view .LVU86
+ 260 00a8 4FEAB013 		ror	r3, r0, #6
+ 261              	.LBE45:
+ 262              	.LBE50:
+ 263              		.loc 1 39 24 view .LVU87
+ 264 00ac 55F8042F 		ldr	r2, [r5, #4]!
+ 265 00b0 59F8041F 		ldr	r1, [r9, #4]!
+  38:src/pm_sha256.c ****         const uint32_t ch = (e & f) ^ (~e & g);
+ 266              		.loc 1 38 43 view .LVU88
+ 267 00b4 26EA0008 		bic	r8, r6, r0
+  37:src/pm_sha256.c ****         const uint32_t ch = (e & f) ^ (~e & g);
+ 268              		.loc 1 37 40 discriminator 2 view .LVU89
+ 269 00b8 83EAF023 		eor	r3, r3, r0, ror #11
+  40:src/pm_sha256.c ****         const uint32_t S0 = Rotr(a, 2) ^ Rotr(a, 13) ^ Rotr(a, 22);
+  41:src/pm_sha256.c ****         const uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+ 270              		.loc 1 41 53 view .LVU90
+ 271 00bc 04EA0E0B 		and	fp, r4, lr
+  39:src/pm_sha256.c ****         const uint32_t S0 = Rotr(a, 2) ^ Rotr(a, 13) ^ Rotr(a, 22);
+ 272              		.loc 1 39 24 view .LVU91
+ 273 00c0 0A44     		add	r2, r2, r1
+ 274              		.loc 1 41 38 view .LVU92
+ 275 00c2 84EA0E01 		eor	r1, r4, lr
+  37:src/pm_sha256.c ****         const uint32_t ch = (e & f) ^ (~e & g);
+ 276              		.loc 1 37 24 discriminator 3 view .LVU93
+ 277 00c6 83EA7063 		eor	r3, r3, r0, ror #25
+ 278              		.loc 1 41 38 view .LVU94
+ 279 00ca 01EA0C01 		and	r1, r1, ip
+  39:src/pm_sha256.c ****         const uint32_t S0 = Rotr(a, 2) ^ Rotr(a, 13) ^ Rotr(a, 22);
+ 280              		.loc 1 39 24 view .LVU95
+ 281 00ce 1344     		add	r3, r3, r2
+  38:src/pm_sha256.c ****         const uint32_t t1 = h + S1 + ch + kRound[i] + w[i];
+ 282              		.loc 1 38 32 view .LVU96
+ 283 00d0 00EA0702 		and	r2, r0, r7
+ 284              		.loc 1 41 24 view .LVU97
+ 285 00d4 81EA0B01 		eor	r1, r1, fp
+  38:src/pm_sha256.c ****         const uint32_t t1 = h + S1 + ch + kRound[i] + w[i];
+ 286              		.loc 1 38 24 view .LVU98
+ 287 00d8 88EA0208 		eor	r8, r8, r2
+ 288              	.LVL16:
+ 289              	.LBB51:
+ 290              	.LBB52:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 291              		.loc 1 15 64 view .LVU99
+ 292 00dc 4FEABC02 		ror	r2, ip, #2
+ 293              	.LBE52:
+ 294              	.LBE51:
+  40:src/pm_sha256.c ****         const uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+ 295              		.loc 1 40 40 discriminator 2 view .LVU100
+ 296 00e0 82EA7C32 		eor	r2, r2, ip, ror #13
+  39:src/pm_sha256.c ****         const uint32_t S0 = Rotr(a, 2) ^ Rotr(a, 13) ^ Rotr(a, 22);
+ 297              		.loc 1 39 24 view .LVU101
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 8
+
+
+ 298 00e4 4344     		add	r3, r3, r8
+  40:src/pm_sha256.c ****         const uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+ 299              		.loc 1 40 24 discriminator 3 view .LVU102
+ 300 00e6 82EABC52 		eor	r2, r2, ip, ror #22
+  39:src/pm_sha256.c ****         const uint32_t S0 = Rotr(a, 2) ^ Rotr(a, 13) ^ Rotr(a, 22);
+ 301              		.loc 1 39 24 view .LVU103
+ 302 00ea 5344     		add	r3, r3, r10
+ 303              	.LVL17:
+  40:src/pm_sha256.c ****         const uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+ 304              		.loc 1 40 9 is_stmt 1 view .LVU104
+ 305              	.LBB54:
+ 306              	.LBI51:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 307              		.loc 1 15 17 view .LVU105
+ 308              	.LBB53:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 309              		.loc 1 15 48 view .LVU106
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 310              		.loc 1 15 48 is_stmt 0 view .LVU107
+ 311              	.LBE53:
+ 312              	.LBE54:
+ 313              	.LBB55:
+ 314              	.LBI55:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 315              		.loc 1 15 17 is_stmt 1 view .LVU108
+ 316              	.LBB56:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 317              		.loc 1 15 48 view .LVU109
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 318              		.loc 1 15 48 is_stmt 0 view .LVU110
+ 319              	.LBE56:
+ 320              	.LBE55:
+ 321              	.LBB57:
+ 322              	.LBI57:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 323              		.loc 1 15 17 is_stmt 1 view .LVU111
+ 324              	.LBB58:
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 325              		.loc 1 15 48 view .LVU112
+  15:src/pm_sha256.c **** static uint32_t Load32(const uint8_t* p) {
+ 326              		.loc 1 15 48 is_stmt 0 view .LVU113
+ 327              	.LBE58:
+ 328              	.LBE57:
+ 329              		.loc 1 41 9 is_stmt 1 view .LVU114
+  42:src/pm_sha256.c ****         const uint32_t t2 = S0 + maj;
+ 330              		.loc 1 42 9 view .LVU115
+ 331 00ec B246     		mov	r10, r6
+ 332              	.LVL18:
+  40:src/pm_sha256.c ****         const uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+ 333              		.loc 1 40 24 is_stmt 0 discriminator 3 view .LVU116
+ 334 00ee 0292     		str	r2, [sp, #8]
+  43:src/pm_sha256.c ****         h = g; g = f; f = e; e = d + t1;
+ 335              		.loc 1 43 32 view .LVU117
+ 336 00f0 019A     		ldr	r2, [sp, #4]
+ 337 00f2 CDF804E0 		str	lr, [sp, #4]
+ 338              	.LVL19:
+ 339              		.loc 1 43 32 view .LVU118
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 9
+
+
+ 340 00f6 1A44     		add	r2, r2, r3
+ 341              	.LVL20:
+ 342              		.loc 1 43 32 view .LVU119
+ 343 00f8 9046     		mov	r8, r2
+ 344              	.LVL21:
+  42:src/pm_sha256.c ****         const uint32_t t2 = S0 + maj;
+ 345              		.loc 1 42 24 view .LVU120
+ 346 00fa 029A     		ldr	r2, [sp, #8]
+ 347 00fc 0A44     		add	r2, r2, r1
+ 348              	.LVL22:
+ 349              		.loc 1 43 9 is_stmt 1 view .LVU121
+ 350              		.loc 1 43 16 view .LVU122
+ 351              		.loc 1 43 23 view .LVU123
+ 352              		.loc 1 43 30 view .LVU124
+  44:src/pm_sha256.c ****         d = c; c = b; b = a; a = t1 + t2;
+ 353              		.loc 1 44 9 view .LVU125
+ 354              		.loc 1 44 16 view .LVU126
+ 355              		.loc 1 44 23 view .LVU127
+ 356              		.loc 1 44 30 view .LVU128
+ 357              		.loc 1 44 32 is_stmt 0 view .LVU129
+ 358 00fe 1344     		add	r3, r3, r2
+ 359              	.LVL23:
+ 360              		.loc 1 44 32 view .LVU130
+ 361              	.LBE42:
+  36:src/pm_sha256.c ****         const uint32_t S1 = Rotr(e, 6) ^ Rotr(e, 11) ^ Rotr(e, 25);
+ 362              		.loc 1 36 24 is_stmt 1 discriminator 3 view .LVU131
+  36:src/pm_sha256.c ****         const uint32_t S1 = Rotr(e, 6) ^ Rotr(e, 11) ^ Rotr(e, 25);
+ 363              		.loc 1 36 18 discriminator 1 view .LVU132
+ 364 0100 124A     		ldr	r2, .L10+4
+ 365              	.LVL24:
+  36:src/pm_sha256.c ****         const uint32_t S1 = Rotr(e, 6) ^ Rotr(e, 11) ^ Rotr(e, 25);
+ 366              		.loc 1 36 18 is_stmt 0 discriminator 1 view .LVU133
+ 367 0102 9542     		cmp	r5, r2
+ 368 0104 CAD1     		bne	.L5
+  45:src/pm_sha256.c ****     }
+  46:src/pm_sha256.c ****     state[0] += a; state[1] += b; state[2] += c; state[3] += d;
+ 369              		.loc 1 46 14 view .LVU134
+ 370 0106 DDE90912 		ldrd	r1, r2, [sp, #36]
+ 371              	.LVL25:
+ 372              		.loc 1 46 59 view .LVU135
+ 373 010a 059D     		ldr	r5, [sp, #20]
+ 374              		.loc 1 46 14 view .LVU136
+ 375 010c 1944     		add	r1, r1, r3
+ 376              		.loc 1 46 44 view .LVU137
+ 377 010e 049B     		ldr	r3, [sp, #16]
+ 378              	.LVL26:
+ 379              		.loc 1 46 29 view .LVU138
+ 380 0110 6244     		add	r2, r2, ip
+ 381              		.loc 1 46 14 view .LVU139
+ 382 0112 DDF82CB0 		ldr	fp, [sp, #44]
+ 383              	.LVL27:
+ 384              		.loc 1 46 5 is_stmt 1 view .LVU140
+ 385              		.loc 1 46 44 is_stmt 0 view .LVU141
+ 386 0116 2344     		add	r3, r3, r4
+ 387              		.loc 1 46 59 view .LVU142
+ 388 0118 7544     		add	r5, r5, lr
+ 389              		.loc 1 46 44 view .LVU143
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 10
+
+
+ 390 011a 1C46     		mov	r4, r3
+ 391              	.LVL28:
+  47:src/pm_sha256.c ****     state[4] += e; state[5] += f; state[6] += g; state[7] += h;
+ 392              		.loc 1 47 14 view .LVU144
+ 393 011c 069B     		ldr	r3, [sp, #24]
+ 394 011e 4344     		add	r3, r3, r8
+ 395 0120 9C46     		mov	ip, r3
+ 396              	.LVL29:
+ 397              		.loc 1 47 29 view .LVU145
+ 398 0122 079B     		ldr	r3, [sp, #28]
+ 399 0124 0344     		add	r3, r3, r0
+ 400 0126 1846     		mov	r0, r3
+ 401              	.LVL30:
+ 402              		.loc 1 47 44 view .LVU146
+ 403 0128 089B     		ldr	r3, [sp, #32]
+ 404 012a 3B44     		add	r3, r3, r7
+ 405 012c 1F46     		mov	r7, r3
+ 406              	.LVL31:
+ 407              		.loc 1 47 59 view .LVU147
+ 408 012e 039B     		ldr	r3, [sp, #12]
+ 409 0130 3344     		add	r3, r3, r6
+  46:src/pm_sha256.c ****     state[4] += e; state[5] += f; state[6] += g; state[7] += h;
+ 410              		.loc 1 46 29 view .LVU148
+ 411 0132 CBE90012 		strd	r1, r2, [fp]
+  46:src/pm_sha256.c ****     state[4] += e; state[5] += f; state[6] += g; state[7] += h;
+ 412              		.loc 1 46 35 is_stmt 1 view .LVU149
+  46:src/pm_sha256.c ****     state[4] += e; state[5] += f; state[6] += g; state[7] += h;
+ 413              		.loc 1 46 59 is_stmt 0 view .LVU150
+ 414 0136 CBE90245 		strd	r4, r5, [fp, #8]
+ 415              		.loc 1 47 5 is_stmt 1 view .LVU151
+ 416              		.loc 1 47 29 is_stmt 0 view .LVU152
+ 417 013a CBE904C0 		strd	ip, r0, [fp, #16]
+ 418              		.loc 1 47 35 is_stmt 1 view .LVU153
+ 419              		.loc 1 47 59 is_stmt 0 view .LVU154
+ 420 013e CBE90673 		strd	r7, r3, [fp, #24]
+  48:src/pm_sha256.c **** }
+ 421              		.loc 1 48 1 view .LVU155
+ 422 0142 4DB0     		add	sp, sp, #308
+ 423              		.cfi_def_cfa_offset 36
+ 424              		@ sp needed
+ 425 0144 BDE8F08F 		pop	{r4, r5, r6, r7, r8, r9, r10, fp, pc}
+ 426              	.LVL32:
+ 427              	.L11:
+ 428              		.loc 1 48 1 view .LVU156
+ 429              		.align	2
+ 430              	.L10:
+ 431 0148 FCFFFFFF 		.word	kRound-4
+ 432 014c FC000000 		.word	kRound+252
+ 433              		.cfi_endproc
+ 434              	.LFE340:
+ 436              		.section	.text.pm_sha256_init,"ax",%progbits
+ 437              		.align	1
+ 438              		.p2align 2,,3
+ 439              		.global	pm_sha256_init
+ 440              		.syntax unified
+ 441              		.thumb
+ 442              		.thumb_func
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 11
+
+
+ 444              	pm_sha256_init:
+ 445              	.LVL33:
+ 446              	.LFB341:
+  49:src/pm_sha256.c **** 
+  50:src/pm_sha256.c **** void pm_sha256_init(pm_sha256* ctx) {
+ 447              		.loc 1 50 37 is_stmt 1 view -0
+ 448              		.cfi_startproc
+ 449              		@ args = 0, pretend = 0, frame = 0
+ 450              		@ frame_needed = 0, uses_anonymous_args = 0
+ 451              		@ link register save eliminated.
+  51:src/pm_sha256.c ****     static const uint32_t kInit[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+ 452              		.loc 1 51 5 view .LVU158
+  52:src/pm_sha256.c ****                                       0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+  53:src/pm_sha256.c ****     memcpy(ctx->state, kInit, sizeof(kInit));
+ 453              		.loc 1 53 5 view .LVU159
+  50:src/pm_sha256.c ****     static const uint32_t kInit[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+ 454              		.loc 1 50 37 is_stmt 0 view .LVU160
+ 455 0000 10B4     		push	{r4}
+ 456              		.cfi_def_cfa_offset 4
+ 457              		.cfi_offset 4, -4
+ 458              		.loc 1 53 5 view .LVU161
+ 459 0002 0F4C     		ldr	r4, .L14
+  50:src/pm_sha256.c ****     static const uint32_t kInit[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+ 460              		.loc 1 50 37 view .LVU162
+ 461 0004 8446     		mov	ip, r0
+ 462              		.loc 1 53 5 view .LVU163
+ 463 0006 0FCC     		ldmia	r4!, {r0, r1, r2, r3}
+ 464              	.LVL34:
+ 465              		.loc 1 53 5 view .LVU164
+ 466 0008 CCF80000 		str	r0, [ip]	@ unaligned
+ 467 000c CCF80410 		str	r1, [ip, #4]	@ unaligned
+ 468 0010 CCF80820 		str	r2, [ip, #8]	@ unaligned
+ 469 0014 CCF80C30 		str	r3, [ip, #12]	@ unaligned
+ 470 0018 0FCC     		ldmia	r4!, {r0, r1, r2, r3}
+  54:src/pm_sha256.c ****     ctx->length = 0;
+  55:src/pm_sha256.c ****     ctx->fill = 0;
+ 471              		.loc 1 55 15 view .LVU165
+ 472 001a 0024     		movs	r4, #0
+  53:src/pm_sha256.c ****     ctx->length = 0;
+ 473              		.loc 1 53 5 view .LVU166
+ 474 001c CCF81000 		str	r0, [ip, #16]	@ unaligned
+ 475 0020 CCF81410 		str	r1, [ip, #20]	@ unaligned
+  54:src/pm_sha256.c ****     ctx->length = 0;
+ 476              		.loc 1 54 17 view .LVU167
+ 477 0024 0020     		movs	r0, #0
+ 478 0026 0021     		movs	r1, #0
+  53:src/pm_sha256.c ****     ctx->length = 0;
+ 479              		.loc 1 53 5 view .LVU168
+ 480 0028 CCF81820 		str	r2, [ip, #24]	@ unaligned
+ 481 002c CCF81C30 		str	r3, [ip, #28]	@ unaligned
+  54:src/pm_sha256.c ****     ctx->length = 0;
+ 482              		.loc 1 54 5 is_stmt 1 view .LVU169
+ 483              		.loc 1 55 15 is_stmt 0 view .LVU170
+ 484 0030 CCF86840 		str	r4, [ip, #104]
+  56:src/pm_sha256.c **** }
+ 485              		.loc 1 56 1 view .LVU171
+ 486 0034 5DF8044B 		ldr	r4, [sp], #4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 12
+
+
+ 487              		.cfi_restore 4
+ 488              		.cfi_def_cfa_offset 0
+  54:src/pm_sha256.c ****     ctx->length = 0;
+ 489              		.loc 1 54 17 view .LVU172
+ 490 0038 CCE90801 		strd	r0, [ip, #32]
+  55:src/pm_sha256.c **** }
+ 491              		.loc 1 55 5 is_stmt 1 view .LVU173
+ 492              		.loc 1 56 1 is_stmt 0 view .LVU174
+ 493 003c 7047     		bx	lr
+ 494              	.L15:
+ 495 003e 00BF     		.align	2
+ 496              	.L14:
+ 497 0040 00000000 		.word	kInit.0
+ 498              		.cfi_endproc
+ 499              	.LFE341:
+ 501              		.section	.text.pm_sha256_update,"ax",%progbits
+ 502              		.align	1
+ 503              		.p2align 2,,3
+ 504              		.global	pm_sha256_update
+ 505              		.syntax unified
+ 506              		.thumb
+ 507              		.thumb_func
+ 509              	pm_sha256_update:
+ 510              	.LVL35:
+ 511              	.LFB342:
+  57:src/pm_sha256.c **** 
+  58:src/pm_sha256.c **** void pm_sha256_update(pm_sha256* ctx, const void* data, size_t len) {
+ 512              		.loc 1 58 69 is_stmt 1 view -0
+ 513              		.cfi_startproc
+ 514              		@ args = 0, pretend = 0, frame = 0
+ 515              		@ frame_needed = 0, uses_anonymous_args = 0
+  59:src/pm_sha256.c ****     const uint8_t* p = (const uint8_t*)data;
+ 516              		.loc 1 59 5 view .LVU176
+  58:src/pm_sha256.c ****     const uint8_t* p = (const uint8_t*)data;
+ 517              		.loc 1 58 69 is_stmt 0 view .LVU177
+ 518 0000 2DE9F843 		push	{r3, r4, r5, r6, r7, r8, r9, lr}
+ 519              		.cfi_def_cfa_offset 32
+ 520              		.cfi_offset 3, -32
+ 521              		.cfi_offset 4, -28
+ 522              		.cfi_offset 5, -24
+ 523              		.cfi_offset 6, -20
+ 524              		.cfi_offset 7, -16
+ 525              		.cfi_offset 8, -12
+ 526              		.cfi_offset 9, -8
+ 527              		.cfi_offset 14, -4
+  58:src/pm_sha256.c ****     const uint8_t* p = (const uint8_t*)data;
+ 528              		.loc 1 58 69 view .LVU178
+ 529 0004 1546     		mov	r5, r2
+ 530              	.LVL36:
+  60:src/pm_sha256.c ****     ctx->length += len;
+ 531              		.loc 1 60 5 is_stmt 1 view .LVU179
+ 532              		.loc 1 60 17 is_stmt 0 view .LVU180
+ 533 0006 D0E90832 		ldrd	r3, r2, [r0, #32]
+ 534              	.LVL37:
+ 535              		.loc 1 60 17 view .LVU181
+ 536 000a 5B19     		adds	r3, r3, r5
+ 537 000c 42F10002 		adc	r2, r2, #0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 13
+
+
+ 538 0010 C0E90832 		strd	r3, r2, [r0, #32]
+  61:src/pm_sha256.c ****     while(len) {
+ 539              		.loc 1 61 5 is_stmt 1 view .LVU182
+ 540              		.loc 1 61 11 view .LVU183
+ 541 0014 CDB1     		cbz	r5, .L16
+ 542 0016 0646     		mov	r6, r0
+ 543 0018 0F46     		mov	r7, r1
+ 544 001a 00F12808 		add	r8, r0, #40
+ 545              	.LBB59:
+  62:src/pm_sha256.c ****         const size_t take = len < 64 - ctx->fill ? len : 64 - ctx->fill;
+  63:src/pm_sha256.c ****         memcpy(ctx->block + ctx->fill, p, take);
+  64:src/pm_sha256.c ****         ctx->fill += take;
+  65:src/pm_sha256.c ****         p += take;
+  66:src/pm_sha256.c ****         len -= take;
+  67:src/pm_sha256.c ****         if(ctx->fill == 64) {
+  68:src/pm_sha256.c ****             Compress(ctx->state, ctx->block);
+  69:src/pm_sha256.c ****             ctx->fill = 0;
+ 546              		.loc 1 69 23 is_stmt 0 view .LVU184
+ 547 001e 4FF00009 		mov	r9, #0
+ 548              	.LVL38:
+ 549              	.L19:
+  62:src/pm_sha256.c ****         const size_t take = len < 64 - ctx->fill ? len : 64 - ctx->fill;
+ 550              		.loc 1 62 9 is_stmt 1 view .LVU185
+  62:src/pm_sha256.c ****         const size_t take = len < 64 - ctx->fill ? len : 64 - ctx->fill;
+ 551              		.loc 1 62 43 is_stmt 0 view .LVU186
+ 552 0022 B06E     		ldr	r0, [r6, #104]
+  63:src/pm_sha256.c ****         ctx->fill += take;
+ 553              		.loc 1 63 9 view .LVU187
+ 554 0024 3946     		mov	r1, r7
+  62:src/pm_sha256.c ****         const size_t take = len < 64 - ctx->fill ? len : 64 - ctx->fill;
+ 555              		.loc 1 62 38 view .LVU188
+ 556 0026 C0F14004 		rsb	r4, r0, #64
+  63:src/pm_sha256.c ****         ctx->fill += take;
+ 557              		.loc 1 63 9 view .LVU189
+ 558 002a 4044     		add	r0, r0, r8
+  62:src/pm_sha256.c ****         const size_t take = len < 64 - ctx->fill ? len : 64 - ctx->fill;
+ 559              		.loc 1 62 22 view .LVU190
+ 560 002c AC42     		cmp	r4, r5
+ 561 002e 28BF     		it	cs
+ 562 0030 2C46     		movcs	r4, r5
+ 563              	.LVL39:
+  63:src/pm_sha256.c ****         ctx->fill += take;
+ 564              		.loc 1 63 9 is_stmt 1 view .LVU191
+ 565 0032 2246     		mov	r2, r4
+  66:src/pm_sha256.c ****         if(ctx->fill == 64) {
+ 566              		.loc 1 66 13 is_stmt 0 view .LVU192
+ 567 0034 2D1B     		subs	r5, r5, r4
+ 568              	.LVL40:
+  63:src/pm_sha256.c ****         ctx->fill += take;
+ 569              		.loc 1 63 9 view .LVU193
+ 570 0036 FFF7FEFF 		bl	memcpy
+ 571              	.LVL41:
+  64:src/pm_sha256.c ****         p += take;
+ 572              		.loc 1 64 9 is_stmt 1 view .LVU194
+  64:src/pm_sha256.c ****         p += take;
+ 573              		.loc 1 64 19 is_stmt 0 view .LVU195
+ 574 003a B36E     		ldr	r3, [r6, #104]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 14
+
+
+  65:src/pm_sha256.c ****         len -= take;
+ 575              		.loc 1 65 11 view .LVU196
+ 576 003c 2744     		add	r7, r7, r4
+ 577              	.LVL42:
+  64:src/pm_sha256.c ****         p += take;
+ 578              		.loc 1 64 19 view .LVU197
+ 579 003e 1C44     		add	r4, r4, r3
+ 580              	.LVL43:
+  67:src/pm_sha256.c ****             Compress(ctx->state, ctx->block);
+ 581              		.loc 1 67 11 view .LVU198
+ 582 0040 402C     		cmp	r4, #64
+  64:src/pm_sha256.c ****         p += take;
+ 583              		.loc 1 64 19 view .LVU199
+ 584 0042 B466     		str	r4, [r6, #104]
+  65:src/pm_sha256.c ****         len -= take;
+ 585              		.loc 1 65 9 is_stmt 1 view .LVU200
+ 586              	.LVL44:
+  66:src/pm_sha256.c ****         if(ctx->fill == 64) {
+ 587              		.loc 1 66 9 view .LVU201
+  67:src/pm_sha256.c ****             Compress(ctx->state, ctx->block);
+ 588              		.loc 1 67 9 view .LVU202
+  67:src/pm_sha256.c ****             Compress(ctx->state, ctx->block);
+ 589              		.loc 1 67 11 is_stmt 0 view .LVU203
+ 590 0044 03D0     		beq	.L25
+  67:src/pm_sha256.c ****             Compress(ctx->state, ctx->block);
+ 591              		.loc 1 67 11 view .LVU204
+ 592              	.LBE59:
+  61:src/pm_sha256.c ****         const size_t take = len < 64 - ctx->fill ? len : 64 - ctx->fill;
+ 593              		.loc 1 61 11 is_stmt 1 view .LVU205
+ 594 0046 002D     		cmp	r5, #0
+ 595 0048 EBD1     		bne	.L19
+ 596              	.LVL45:
+ 597              	.L16:
+  70:src/pm_sha256.c ****         }
+  71:src/pm_sha256.c ****     }
+  72:src/pm_sha256.c **** }
+ 598              		.loc 1 72 1 is_stmt 0 view .LVU206
+ 599 004a BDE8F883 		pop	{r3, r4, r5, r6, r7, r8, r9, pc}
+ 600              	.LVL46:
+ 601              	.L25:
+ 602              	.LBB60:
+  68:src/pm_sha256.c ****             ctx->fill = 0;
+ 603              		.loc 1 68 13 is_stmt 1 view .LVU207
+ 604 004e 4146     		mov	r1, r8
+ 605 0050 3046     		mov	r0, r6
+ 606 0052 FFF7FEFF 		bl	Compress
+ 607              	.LVL47:
+  69:src/pm_sha256.c ****         }
+ 608              		.loc 1 69 13 view .LVU208
+  69:src/pm_sha256.c ****         }
+ 609              		.loc 1 69 23 is_stmt 0 view .LVU209
+ 610 0056 C6F86890 		str	r9, [r6, #104]
+  69:src/pm_sha256.c ****         }
+ 611              		.loc 1 69 23 view .LVU210
+ 612              	.LBE60:
+  61:src/pm_sha256.c ****         const size_t take = len < 64 - ctx->fill ? len : 64 - ctx->fill;
+ 613              		.loc 1 61 11 is_stmt 1 view .LVU211
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 15
+
+
+ 614 005a 002D     		cmp	r5, #0
+ 615 005c E1D1     		bne	.L19
+ 616 005e F4E7     		b	.L16
+ 617              		.cfi_endproc
+ 618              	.LFE342:
+ 620              		.section	.text.pm_sha256_final,"ax",%progbits
+ 621              		.align	1
+ 622              		.p2align 2,,3
+ 623              		.global	pm_sha256_final
+ 624              		.syntax unified
+ 625              		.thumb
+ 626              		.thumb_func
+ 628              	pm_sha256_final:
+ 629              	.LVL48:
+ 630              	.LFB343:
+  73:src/pm_sha256.c **** 
+  74:src/pm_sha256.c **** void pm_sha256_final(pm_sha256* ctx, uint8_t digest[PM_SHA256_DIGEST_SIZE]) {
+ 631              		.loc 1 74 77 view -0
+ 632              		.cfi_startproc
+ 633              		@ args = 0, pretend = 0, frame = 0
+ 634              		@ frame_needed = 0, uses_anonymous_args = 0
+  75:src/pm_sha256.c ****     const uint64_t bits = ctx->length * 8u;
+  76:src/pm_sha256.c ****     int i;
+  77:src/pm_sha256.c ****     ctx->block[ctx->fill++] = 0x80;
+ 635              		.loc 1 77 19 is_stmt 0 view .LVU213
+ 636 0000 836E     		ldr	r3, [r0, #104]
+ 637              		.loc 1 77 29 view .LVU214
+ 638 0002 8022     		movs	r2, #128
+  74:src/pm_sha256.c ****     const uint64_t bits = ctx->length * 8u;
+ 639              		.loc 1 74 77 view .LVU215
+ 640 0004 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 641              		.cfi_def_cfa_offset 24
+ 642              		.cfi_offset 4, -24
+ 643              		.cfi_offset 5, -20
+ 644              		.cfi_offset 6, -16
+ 645              		.cfi_offset 7, -12
+ 646              		.cfi_offset 8, -8
+ 647              		.cfi_offset 14, -4
+  75:src/pm_sha256.c ****     const uint64_t bits = ctx->length * 8u;
+ 648              		.loc 1 75 20 view .LVU216
+ 649 0008 076A     		ldr	r7, [r0, #32]
+  74:src/pm_sha256.c ****     const uint64_t bits = ctx->length * 8u;
+ 650              		.loc 1 74 77 view .LVU217
+ 651 000a 0546     		mov	r5, r0
+  75:src/pm_sha256.c ****     const uint64_t bits = ctx->length * 8u;
+ 652              		.loc 1 75 5 is_stmt 1 view .LVU218
+  75:src/pm_sha256.c ****     const uint64_t bits = ctx->length * 8u;
+ 653              		.loc 1 75 20 is_stmt 0 view .LVU219
+ 654 000c 446A     		ldr	r4, [r0, #36]
+ 655              		.loc 1 77 25 view .LVU220
+ 656 000e 581C     		adds	r0, r3, #1
+ 657              	.LVL49:
+ 658              		.loc 1 77 29 view .LVU221
+ 659 0010 2B44     		add	r3, r3, r5
+  74:src/pm_sha256.c ****     const uint64_t bits = ctx->length * 8u;
+ 660              		.loc 1 74 77 view .LVU222
+ 661 0012 0E46     		mov	r6, r1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 16
+
+
+  75:src/pm_sha256.c ****     const uint64_t bits = ctx->length * 8u;
+ 662              		.loc 1 75 20 view .LVU223
+ 663 0014 E400     		lsls	r4, r4, #3
+  78:src/pm_sha256.c ****     if(ctx->fill > 56) {
+ 664              		.loc 1 78 7 view .LVU224
+ 665 0016 3828     		cmp	r0, #56
+  77:src/pm_sha256.c ****     if(ctx->fill > 56) {
+ 666              		.loc 1 77 25 view .LVU225
+ 667 0018 A866     		str	r0, [r5, #104]
+  75:src/pm_sha256.c ****     int i;
+ 668              		.loc 1 75 20 view .LVU226
+ 669 001a 44EA5774 		orr	r4, r4, r7, lsr #29
+  77:src/pm_sha256.c ****     if(ctx->fill > 56) {
+ 670              		.loc 1 77 29 view .LVU227
+ 671 001e 83F82820 		strb	r2, [r3, #40]
+  75:src/pm_sha256.c ****     int i;
+ 672              		.loc 1 75 20 view .LVU228
+ 673 0022 4FEAC707 		lsl	r7, r7, #3
+ 674              	.LVL50:
+  76:src/pm_sha256.c ****     ctx->block[ctx->fill++] = 0x80;
+ 675              		.loc 1 76 5 is_stmt 1 view .LVU229
+  77:src/pm_sha256.c ****     if(ctx->fill > 56) {
+ 676              		.loc 1 77 5 view .LVU230
+ 677              		.loc 1 78 5 view .LVU231
+ 678              		.loc 1 78 7 is_stmt 0 view .LVU232
+ 679 0026 34D8     		bhi	.L27
+  79:src/pm_sha256.c ****         memset(ctx->block + ctx->fill, 0, 64 - ctx->fill);
+  80:src/pm_sha256.c ****         Compress(ctx->state, ctx->block);
+  81:src/pm_sha256.c ****         ctx->fill = 0;
+  82:src/pm_sha256.c ****     }
+  83:src/pm_sha256.c ****     memset(ctx->block + ctx->fill, 0, 56 - ctx->fill);
+ 680              		.loc 1 83 5 view .LVU233
+ 681 0028 C0F13802 		rsb	r2, r0, #56
+ 682 002c 05F12808 		add	r8, r5, #40
+ 683              	.LVL51:
+ 684              	.L28:
+ 685              		.loc 1 83 5 is_stmt 1 view .LVU234
+ 686 0030 0021     		movs	r1, #0
+ 687 0032 4044     		add	r0, r0, r8
+ 688 0034 FFF7FEFF 		bl	memset
+ 689              	.LVL52:
+  84:src/pm_sha256.c ****     for(i = 0; i < 8; ++i)
+ 690              		.loc 1 84 5 view .LVU235
+ 691              		.loc 1 84 18 discriminator 1 view .LVU236
+  83:src/pm_sha256.c ****     for(i = 0; i < 8; ++i)
+ 692              		.loc 1 83 5 is_stmt 0 view .LVU237
+ 693 0038 3823     		movs	r3, #56
+ 694 003a 05F15F01 		add	r1, r5, #95
+ 695              	.LVL53:
+ 696              	.L29:
+  85:src/pm_sha256.c ****         ctx->block[56 + i] = (uint8_t)(bits >> (56 - 8 * i));
+ 697              		.loc 1 85 9 is_stmt 1 view .LVU238
+ 698              		.loc 1 85 45 is_stmt 0 view .LVU239
+ 699 003e C3F1200E 		rsb	lr, r3, #32
+ 700 0042 A3F1200C 		sub	ip, r3, #32
+ 701 0046 27FA03F2 		lsr	r2, r7, r3
+  84:src/pm_sha256.c ****     for(i = 0; i < 8; ++i)
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 17
+
+
+ 702              		.loc 1 84 18 discriminator 1 view .LVU240
+ 703 004a 083B     		subs	r3, r3, #8
+ 704              		.loc 1 85 45 view .LVU241
+ 705 004c 04FA0EFE 		lsl	lr, r4, lr
+ 706 0050 24FA0CFC 		lsr	ip, r4, ip
+  84:src/pm_sha256.c ****     for(i = 0; i < 8; ++i)
+ 707              		.loc 1 84 18 discriminator 1 view .LVU242
+ 708 0054 13F1080F 		cmn	r3, #8
+ 709              		.loc 1 85 45 view .LVU243
+ 710 0058 42EA0E02 		orr	r2, r2, lr
+ 711 005c 42EA0C02 		orr	r2, r2, ip
+ 712              		.loc 1 85 30 view .LVU244
+ 713 0060 01F8012F 		strb	r2, [r1, #1]!
+  84:src/pm_sha256.c ****     for(i = 0; i < 8; ++i)
+ 714              		.loc 1 84 23 is_stmt 1 discriminator 3 view .LVU245
+  84:src/pm_sha256.c ****     for(i = 0; i < 8; ++i)
+ 715              		.loc 1 84 18 discriminator 1 view .LVU246
+ 716 0064 EBD1     		bne	.L29
+  86:src/pm_sha256.c ****     Compress(ctx->state, ctx->block);
+ 717              		.loc 1 86 5 view .LVU247
+ 718 0066 4146     		mov	r1, r8
+ 719 0068 2846     		mov	r0, r5
+ 720 006a FFF7FEFF 		bl	Compress
+ 721              	.LVL54:
+  87:src/pm_sha256.c ****     for(i = 0; i < 8; ++i)
+ 722              		.loc 1 87 5 view .LVU248
+ 723              		.loc 1 87 18 discriminator 1 view .LVU249
+ 724 006e 2A1F     		subs	r2, r5, #4
+ 725 0070 3146     		mov	r1, r6
+ 726 0072 05F11C00 		add	r0, r5, #28
+ 727              	.LVL55:
+ 728              	.L30:
+  88:src/pm_sha256.c ****         Store32(digest + 4 * i, ctx->state[i]);
+ 729              		.loc 1 88 9 view .LVU250
+ 730              	.LBB61:
+ 731              	.LBI61:
+  19:src/pm_sha256.c ****     p[0] = (uint8_t)(v >> 24); p[1] = (uint8_t)(v >> 16); p[2] = (uint8_t)(v >> 8); p[3] = (uint8_t
+ 732              		.loc 1 19 13 view .LVU251
+ 733              	.LBB62:
+  20:src/pm_sha256.c **** }
+ 734              		.loc 1 20 5 view .LVU252
+  20:src/pm_sha256.c **** }
+ 735              		.loc 1 20 32 view .LVU253
+  20:src/pm_sha256.c **** }
+ 736              		.loc 1 20 59 view .LVU254
+  20:src/pm_sha256.c **** }
+ 737              		.loc 1 20 85 view .LVU255
+ 738 0076 52F8043F 		ldr	r3, [r2, #4]!
+ 739              	.LVL56:
+  20:src/pm_sha256.c **** }
+ 740              		.loc 1 20 85 is_stmt 0 view .LVU256
+ 741 007a 1BBA     		rev	r3, r3
+ 742              	.LBE62:
+ 743              	.LBE61:
+  87:src/pm_sha256.c ****         Store32(digest + 4 * i, ctx->state[i]);
+ 744              		.loc 1 87 18 discriminator 1 view .LVU257
+ 745 007c 9042     		cmp	r0, r2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 18
+
+
+ 746              	.LBB64:
+ 747              	.LBB63:
+  20:src/pm_sha256.c **** }
+ 748              		.loc 1 20 10 view .LVU258
+ 749 007e 41F8043B 		str	r3, [r1], #4	@ unaligned
+ 750              	.LVL57:
+  20:src/pm_sha256.c **** }
+ 751              		.loc 1 20 10 view .LVU259
+ 752              	.LBE63:
+ 753              	.LBE64:
+  87:src/pm_sha256.c ****         Store32(digest + 4 * i, ctx->state[i]);
+ 754              		.loc 1 87 23 is_stmt 1 discriminator 3 view .LVU260
+  87:src/pm_sha256.c ****         Store32(digest + 4 * i, ctx->state[i]);
+ 755              		.loc 1 87 18 discriminator 1 view .LVU261
+ 756 0082 F8D1     		bne	.L30
+  89:src/pm_sha256.c ****     memset(ctx, 0, sizeof(*ctx));
+ 757              		.loc 1 89 5 view .LVU262
+ 758 0084 2846     		mov	r0, r5
+ 759 0086 7022     		movs	r2, #112
+ 760 0088 0021     		movs	r1, #0
+  90:src/pm_sha256.c **** }
+ 761              		.loc 1 90 1 is_stmt 0 view .LVU263
+ 762 008a BDE8F041 		pop	{r4, r5, r6, r7, r8, lr}
+ 763              		.cfi_remember_state
+ 764              		.cfi_restore 14
+ 765              		.cfi_restore 8
+ 766              		.cfi_restore 7
+ 767              		.cfi_restore 6
+ 768              		.cfi_restore 5
+ 769              		.cfi_restore 4
+ 770              		.cfi_def_cfa_offset 0
+ 771              	.LVL58:
+  89:src/pm_sha256.c ****     memset(ctx, 0, sizeof(*ctx));
+ 772              		.loc 1 89 5 view .LVU264
+ 773 008e FFF7FEBF 		b	memset
+ 774              	.LVL59:
+ 775              	.L27:
+ 776              		.cfi_restore_state
+  79:src/pm_sha256.c ****         Compress(ctx->state, ctx->block);
+ 777              		.loc 1 79 9 is_stmt 1 view .LVU265
+  79:src/pm_sha256.c ****         Compress(ctx->state, ctx->block);
+ 778              		.loc 1 79 16 is_stmt 0 view .LVU266
+ 779 0092 05F12808 		add	r8, r5, #40
+  79:src/pm_sha256.c ****         Compress(ctx->state, ctx->block);
+ 780              		.loc 1 79 9 view .LVU267
+ 781 0096 C0F14002 		rsb	r2, r0, #64
+ 782 009a 0021     		movs	r1, #0
+ 783              	.LVL60:
+  79:src/pm_sha256.c ****         Compress(ctx->state, ctx->block);
+ 784              		.loc 1 79 9 view .LVU268
+ 785 009c 4044     		add	r0, r0, r8
+ 786 009e FFF7FEFF 		bl	memset
+ 787              	.LVL61:
+  80:src/pm_sha256.c ****         ctx->fill = 0;
+ 788              		.loc 1 80 9 is_stmt 1 view .LVU269
+ 789 00a2 2846     		mov	r0, r5
+ 790 00a4 4146     		mov	r1, r8
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 19
+
+
+ 791 00a6 FFF7FEFF 		bl	Compress
+ 792              	.LVL62:
+  81:src/pm_sha256.c ****     }
+ 793              		.loc 1 81 9 view .LVU270
+  81:src/pm_sha256.c ****     }
+ 794              		.loc 1 81 19 is_stmt 0 view .LVU271
+ 795 00aa 0020     		movs	r0, #0
+ 796 00ac 3822     		movs	r2, #56
+ 797 00ae A866     		str	r0, [r5, #104]
+ 798 00b0 BEE7     		b	.L28
+ 799              		.cfi_endproc
+ 800              	.LFE343:
+ 802 00b2 00BF     		.section	.text.pm_sha256_digest,"ax",%progbits
+ 803              		.align	1
+ 804              		.p2align 2,,3
+ 805              		.global	pm_sha256_digest
+ 806              		.syntax unified
+ 807              		.thumb
+ 808              		.thumb_func
+ 810              	pm_sha256_digest:
+ 811              	.LVL63:
+ 812              	.LFB344:
+  91:src/pm_sha256.c **** 
+  92:src/pm_sha256.c **** void pm_sha256_digest(const void* data, size_t len, uint8_t digest[PM_SHA256_DIGEST_SIZE]) {
+ 813              		.loc 1 92 92 is_stmt 1 view -0
+ 814              		.cfi_startproc
+ 815              		@ args = 0, pretend = 0, frame = 112
+ 816              		@ frame_needed = 0, uses_anonymous_args = 0
+  93:src/pm_sha256.c ****     pm_sha256 ctx;
+ 817              		.loc 1 93 5 view .LVU273
+  94:src/pm_sha256.c ****     pm_sha256_init(&ctx);
+ 818              		.loc 1 94 5 view .LVU274
+  92:src/pm_sha256.c ****     pm_sha256 ctx;
+ 819              		.loc 1 92 92 is_stmt 0 view .LVU275
+ 820 0000 70B5     		push	{r4, r5, r6, lr}
+ 821              		.cfi_def_cfa_offset 16
+ 822              		.cfi_offset 4, -16
+ 823              		.cfi_offset 5, -12
+ 824              		.cfi_offset 6, -8
+ 825              		.cfi_offset 14, -4
+ 826              	.LBB67:
+ 827              	.LBB68:
+  55:src/pm_sha256.c **** }
+ 828              		.loc 1 55 15 view .LVU276
+ 829 0002 0023     		movs	r3, #0
+ 830              	.LBE68:
+ 831              	.LBE67:
+  92:src/pm_sha256.c ****     pm_sha256 ctx;
+ 832              		.loc 1 92 92 view .LVU277
+ 833 0004 9CB0     		sub	sp, sp, #112
+ 834              		.cfi_def_cfa_offset 128
+ 835              	.LVL64:
+ 836              	.LBB72:
+ 837              	.LBI67:
+  50:src/pm_sha256.c ****     static const uint32_t kInit[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+ 838              		.loc 1 50 6 is_stmt 1 view .LVU278
+ 839              	.LBB69:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 20
+
+
+  51:src/pm_sha256.c ****                                       0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+ 840              		.loc 1 51 5 view .LVU279
+  53:src/pm_sha256.c ****     ctx->length = 0;
+ 841              		.loc 1 53 5 view .LVU280
+ 842 0006 104C     		ldr	r4, .L36+8
+ 843              	.LBE69:
+ 844              	.LBE72:
+  92:src/pm_sha256.c ****     pm_sha256 ctx;
+ 845              		.loc 1 92 92 is_stmt 0 view .LVU281
+ 846 0008 8646     		mov	lr, r0
+ 847 000a 0E46     		mov	r6, r1
+ 848 000c 1546     		mov	r5, r2
+ 849              	.LBB73:
+ 850              	.LBB70:
+  55:src/pm_sha256.c **** }
+ 851              		.loc 1 55 15 view .LVU282
+ 852 000e 1A93     		str	r3, [sp, #104]
+  53:src/pm_sha256.c ****     ctx->length = 0;
+ 853              		.loc 1 53 5 view .LVU283
+ 854 0010 EC46     		mov	ip, sp
+ 855 0012 0FCC     		ldmia	r4!, {r0, r1, r2, r3}
+ 856              	.LVL65:
+  54:src/pm_sha256.c ****     ctx->fill = 0;
+ 857              		.loc 1 54 17 view .LVU284
+ 858 0014 9FED0A7B 		vldr.64	d7, .L36	@ int
+  53:src/pm_sha256.c ****     ctx->length = 0;
+ 859              		.loc 1 53 5 view .LVU285
+ 860 0018 ACE80F00 		stmia	ip!, {r0, r1, r2, r3}
+ 861 001c 94E80F00 		ldm	r4, {r0, r1, r2, r3}
+ 862 0020 8CE80F00 		stm	ip, {r0, r1, r2, r3}
+  54:src/pm_sha256.c ****     ctx->fill = 0;
+ 863              		.loc 1 54 5 is_stmt 1 view .LVU286
+ 864              	.LBE70:
+ 865              	.LBE73:
+  95:src/pm_sha256.c ****     pm_sha256_update(&ctx, data, len);
+ 866              		.loc 1 95 5 is_stmt 0 view .LVU287
+ 867 0024 7146     		mov	r1, lr
+ 868 0026 3246     		mov	r2, r6
+ 869 0028 6846     		mov	r0, sp
+ 870              	.LBB74:
+ 871              	.LBB71:
+  54:src/pm_sha256.c ****     ctx->fill = 0;
+ 872              		.loc 1 54 17 view .LVU288
+ 873 002a 8DED087B 		vstr.64	d7, [sp, #32]	@ int
+  55:src/pm_sha256.c **** }
+ 874              		.loc 1 55 5 is_stmt 1 view .LVU289
+ 875              	.LVL66:
+  55:src/pm_sha256.c **** }
+ 876              		.loc 1 55 5 is_stmt 0 view .LVU290
+ 877              	.LBE71:
+ 878              	.LBE74:
+ 879              		.loc 1 95 5 is_stmt 1 view .LVU291
+ 880 002e FFF7FEFF 		bl	pm_sha256_update
+ 881              	.LVL67:
+  96:src/pm_sha256.c ****     pm_sha256_final(&ctx, digest);
+ 882              		.loc 1 96 5 view .LVU292
+ 883 0032 2946     		mov	r1, r5
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 21
+
+
+ 884 0034 6846     		mov	r0, sp
+ 885 0036 FFF7FEFF 		bl	pm_sha256_final
+ 886              	.LVL68:
+  97:src/pm_sha256.c **** }
+ 887              		.loc 1 97 1 is_stmt 0 view .LVU293
+ 888 003a 1CB0     		add	sp, sp, #112
+ 889              		.cfi_def_cfa_offset 16
+ 890              		@ sp needed
+ 891 003c 70BD     		pop	{r4, r5, r6, pc}
+ 892              	.LVL69:
+ 893              	.L37:
+ 894              		.loc 1 97 1 view .LVU294
+ 895 003e 00BF     		.align	3
+ 896              	.L36:
+ 897 0040 00000000 		.word	0
+ 898 0044 00000000 		.word	0
+ 899 0048 00000000 		.word	kInit.0
+ 900              		.cfi_endproc
+ 901              	.LFE344:
+ 903              		.section	.rodata.kInit.0,"a"
+ 904              		.align	2
+ 907              	kInit.0:
+ 908 0000 67E6096A 		.word	1779033703
+ 909 0004 85AE67BB 		.word	-1150833019
+ 910 0008 72F36E3C 		.word	1013904242
+ 911 000c 3AF54FA5 		.word	-1521486534
+ 912 0010 7F520E51 		.word	1359893119
+ 913 0014 8C68059B 		.word	-1694144372
+ 914 0018 ABD9831F 		.word	528734635
+ 915 001c 19CDE05B 		.word	1541459225
+ 916              		.section	.rodata.kRound,"a"
+ 917              		.align	2
+ 920              	kRound:
+ 921 0000 982F8A42 		.word	1116352408
+ 922 0004 91443771 		.word	1899447441
+ 923 0008 CFFBC0B5 		.word	-1245643825
+ 924 000c A5DBB5E9 		.word	-373957723
+ 925 0010 5BC25639 		.word	961987163
+ 926 0014 F111F159 		.word	1508970993
+ 927 0018 A4823F92 		.word	-1841331548
+ 928 001c D55E1CAB 		.word	-1424204075
+ 929 0020 98AA07D8 		.word	-670586216
+ 930 0024 015B8312 		.word	310598401
+ 931 0028 BE853124 		.word	607225278
+ 932 002c C37D0C55 		.word	1426881987
+ 933 0030 745DBE72 		.word	1925078388
+ 934 0034 FEB1DE80 		.word	-2132889090
+ 935 0038 A706DC9B 		.word	-1680079193
+ 936 003c 74F19BC1 		.word	-1046744716
+ 937 0040 C1699BE4 		.word	-459576895
+ 938 0044 8647BEEF 		.word	-272742522
+ 939 0048 C69DC10F 		.word	264347078
+ 940 004c CCA10C24 		.word	604807628
+ 941 0050 6F2CE92D 		.word	770255983
+ 942 0054 AA84744A 		.word	1249150122
+ 943 0058 DCA9B05C 		.word	1555081692
+ 944 005c DA88F976 		.word	1996064986
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 22
+
+
+ 945 0060 52513E98 		.word	-1740746414
+ 946 0064 6DC631A8 		.word	-1473132947
+ 947 0068 C82703B0 		.word	-1341970488
+ 948 006c C77F59BF 		.word	-1084653625
+ 949 0070 F30BE0C6 		.word	-958395405
+ 950 0074 4791A7D5 		.word	-710438585
+ 951 0078 5163CA06 		.word	113926993
+ 952 007c 67292914 		.word	338241895
+ 953 0080 850AB727 		.word	666307205
+ 954 0084 38211B2E 		.word	773529912
+ 955 0088 FC6D2C4D 		.word	1294757372
+ 956 008c 130D3853 		.word	1396182291
+ 957 0090 54730A65 		.word	1695183700
+ 958 0094 BB0A6A76 		.word	1986661051
+ 959 0098 2EC9C281 		.word	-2117940946
+ 960 009c 852C7292 		.word	-1838011259
+ 961 00a0 A1E8BFA2 		.word	-1564481375
+ 962 00a4 4B661AA8 		.word	-1474664885
+ 963 00a8 708B4BC2 		.word	-1035236496
+ 964 00ac A3516CC7 		.word	-949202525
+ 965 00b0 19E892D1 		.word	-778901479
+ 966 00b4 240699D6 		.word	-694614492
+ 967 00b8 85350EF4 		.word	-200395387
+ 968 00bc 70A06A10 		.word	275423344
+ 969 00c0 16C1A419 		.word	430227734
+ 970 00c4 086C371E 		.word	506948616
+ 971 00c8 4C774827 		.word	659060556
+ 972 00cc B5BCB034 		.word	883997877
+ 973 00d0 B30C1C39 		.word	958139571
+ 974 00d4 4AAAD84E 		.word	1322822218
+ 975 00d8 4FCA9C5B 		.word	1537002063
+ 976 00dc F36F2E68 		.word	1747873779
+ 977 00e0 EE828F74 		.word	1955562222
+ 978 00e4 6F63A578 		.word	2024104815
+ 979 00e8 1478C884 		.word	-2067236844
+ 980 00ec 0802C78C 		.word	-1933114872
+ 981 00f0 FAFFBE90 		.word	-1866530822
+ 982 00f4 EB6C50A4 		.word	-1538233109
+ 983 00f8 F7A3F9BE 		.word	-1090935817
+ 984 00fc F27871C6 		.word	-965641998
+ 985              		.text
+ 986              	.Letext0:
+ 987              		.file 2 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 988              		.file 3 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 989              		.file 4 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 990              		.file 5 "src/pm_sha256.h"
+ 991              		.file 6 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 992              		.file 7 "<built-in>"
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s 			page 23
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 pm_sha256.c
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:20     .text.Compress:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:26     .text.Compress:00000000 Compress
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:431    .text.Compress:00000148 $d
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:920    .rodata.kRound:00000000 kRound
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:437    .text.pm_sha256_init:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:444    .text.pm_sha256_init:00000000 pm_sha256_init
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:497    .text.pm_sha256_init:00000040 $d
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:907    .rodata.kInit.0:00000000 kInit.0
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:502    .text.pm_sha256_update:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:509    .text.pm_sha256_update:00000000 pm_sha256_update
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:621    .text.pm_sha256_final:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:628    .text.pm_sha256_final:00000000 pm_sha256_final
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:803    .text.pm_sha256_digest:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:810    .text.pm_sha256_digest:00000000 pm_sha256_digest
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:897    .text.pm_sha256_digest:00000040 $d
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:904    .rodata.kInit.0:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\ccpy6vsw.s:917    .rodata.kRound:00000000 $d
+
+UNDEFINED SYMBOLS
+memcpy
+memset

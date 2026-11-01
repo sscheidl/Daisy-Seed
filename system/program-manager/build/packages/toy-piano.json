@@ -1,0 +1,90 @@
+{
+  "sections": [
+    {
+      "name": ".isr_vector",
+      "vma": "0x24000000",
+      "lma": "0x24000000",
+      "size": 664,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".text",
+      "vma": "0x240002a0",
+      "lma": "0x240002a0",
+      "size": 147712,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".exidx",
+      "vma": "0x240243a0",
+      "lma": "0x240243a0",
+      "size": 8,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".init_array",
+      "vma": "0x240243a8",
+      "lma": "0x240243a8",
+      "size": 64,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".fini_array",
+      "vma": "0x240243e8",
+      "lma": "0x240243e8",
+      "size": 4,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".sram1_bss",
+      "vma": "0x30000000",
+      "lma": "0x30000000",
+      "size": 18084,
+      "noload": true,
+      "region": "D2"
+    },
+    {
+      "name": ".data",
+      "vma": "0x20000000",
+      "lma": "0x240243ec",
+      "size": 12712,
+      "noload": false,
+      "region": "DTCM"
+    },
+    {
+      "name": ".bss",
+      "vma": "0x200031a8",
+      "lma": "0x200031a8",
+      "size": 106720,
+      "noload": true,
+      "region": "DTCM"
+    },
+    {
+      "name": ".backup_sram",
+      "vma": "0x38800000",
+      "lma": "0x38800000",
+      "size": 12,
+      "noload": true,
+      "region": "BACKUP"
+    }
+  ],
+  "noload_in_target": [],
+  "warnings": [],
+  "marker_version": "0.4",
+  "image_bytes": 161172,
+  "stack": "0x20020000",
+  "reset": "0x24000749",
+  "payload_sha256": "d61c84c2338239d43c769159d38616396457c9e0a664cd89a4821fc057df45e1",
+  "product": "toy-piano",
+  "version": "0.4",
+  "package": "system\\program-manager\\build\\packages\\ToyPiano-v0.4.dsy",
+  "package_bytes": 161332,
+  "file_sha256": "874fd00cfd862ea5276150612b851f274ec4ed577494971505391690c1acfd0b",
+  "elf": "instruments\\toy-piano\\build\\ToyPiano-v0.4.elf",
+  "bin": "instruments\\toy-piano\\build\\ToyPiano-v0.4.bin"
+}

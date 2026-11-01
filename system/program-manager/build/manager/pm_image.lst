@@ -1,0 +1,2533 @@
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.arch armv7e-m
+   3              		.fpu fpv5-d16
+   4              		.eabi_attribute 28, 1
+   5              		.eabi_attribute 20, 1
+   6              		.eabi_attribute 21, 1
+   7              		.eabi_attribute 23, 3
+   8              		.eabi_attribute 24, 1
+   9              		.eabi_attribute 25, 1
+  10              		.eabi_attribute 26, 1
+  11              		.eabi_attribute 30, 2
+  12              		.eabi_attribute 34, 1
+  13              		.eabi_attribute 18, 4
+  14              		.file	"pm_image.cpp"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.file 1 "src/pm_image.cpp"
+  19              		.section	.text._ZN2pm12_GLOBAL__N_117IsIdOrVersionCharEc,"ax",%progbits
+  20              		.align	1
+  21              		.p2align 2,,3
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	_ZN2pm12_GLOBAL__N_117IsIdOrVersionCharEc:
+  27              	.LVL0:
+  28              	.LFB1305:
+   1:src/pm_image.cpp **** #include "pm_image.h"
+   2:src/pm_image.cpp **** #include "pm_crc32.h"
+   3:src/pm_image.cpp **** #include <cstring>
+   4:src/pm_image.cpp **** 
+   5:src/pm_image.cpp **** namespace pm {
+   6:src/pm_image.cpp **** namespace {
+   7:src/pm_image.cpp **** 
+   8:src/pm_image.cpp **** uint16_t Load16(const uint8_t* p) { return static_cast<uint16_t>(p[0] | (p[1] << 8)); }
+   9:src/pm_image.cpp **** uint32_t Load32(const uint8_t* p) {
+  10:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+  11:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+  12:src/pm_image.cpp **** }
+  13:src/pm_image.cpp **** void Store16(uint8_t* p, uint16_t v) { p[0] = static_cast<uint8_t>(v); p[1] = static_cast<uint8_t>(
+  14:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+  15:src/pm_image.cpp ****     p[0] = static_cast<uint8_t>(v); p[1] = static_cast<uint8_t>(v >> 8);
+  16:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+  17:src/pm_image.cpp **** }
+  18:src/pm_image.cpp **** 
+  19:src/pm_image.cpp **** // A fixed field holds a non-empty string, NUL terminated inside the field, with only
+  20:src/pm_image.cpp **** // zero bytes after the terminator and only characters accepted by `ok`.
+  21:src/pm_image.cpp **** bool CopyField(const uint8_t* field, size_t size, char* out, bool (*ok)(char)) {
+  22:src/pm_image.cpp ****     size_t n = 0;
+  23:src/pm_image.cpp ****     while(n < size && field[n] != 0) {
+  24:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+  25:src/pm_image.cpp ****             return false;
+  26:src/pm_image.cpp ****         out[n] = static_cast<char>(field[n]);
+  27:src/pm_image.cpp ****         ++n;
+  28:src/pm_image.cpp ****     }
+  29:src/pm_image.cpp ****     if(n == 0 || n == size)  // empty, or no terminator inside the field
+  30:src/pm_image.cpp ****         return false;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 2
+
+
+  31:src/pm_image.cpp ****     out[n] = 0;
+  32:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+  33:src/pm_image.cpp ****         if(field[i] != 0)
+  34:src/pm_image.cpp ****             return false;
+  35:src/pm_image.cpp ****     return true;
+  36:src/pm_image.cpp **** }
+  37:src/pm_image.cpp **** 
+  38:src/pm_image.cpp **** bool IsIdOrVersionChar(char c) { return IsProductIdChar(c) || IsVersionChar(c); }
+  29              		.loc 1 38 32 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		@ link register save eliminated.
+  34              		.loc 1 38 34 view .LVU1
+  35              	.LBB54:
+  36              	.LBI54:
+  39:src/pm_image.cpp **** 
+  40:src/pm_image.cpp **** // Copies at most `size` bytes of a string into a zeroed fixed field (no terminator needed).
+  41:src/pm_image.cpp **** void PutField(uint8_t* field, size_t size, const char* text) {
+  42:src/pm_image.cpp ****     size_t n = 0;
+  43:src/pm_image.cpp ****     while(n < size && text[n] != 0)
+  44:src/pm_image.cpp ****         ++n;
+  45:src/pm_image.cpp ****     std::memcpy(field, text, n);
+  46:src/pm_image.cpp **** }
+  47:src/pm_image.cpp **** 
+  48:src/pm_image.cpp **** } // namespace
+  49:src/pm_image.cpp **** 
+  50:src/pm_image.cpp **** bool IsProductIdChar(char c) {
+  37              		.loc 1 50 6 view .LVU2
+  38              	.LBB55:
+  51:src/pm_image.cpp ****     return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-';
+  39              		.loc 1 51 5 view .LVU3
+  40              		.loc 1 51 5 is_stmt 0 view .LVU4
+  41              	.LBE55:
+  42              	.LBE54:
+  43              	.LBB59:
+  44              	.LBI59:
+  38:src/pm_image.cpp **** 
+  45              		.loc 1 38 6 is_stmt 1 view .LVU5
+  38:src/pm_image.cpp **** 
+  46              		.loc 1 38 6 is_stmt 0 view .LVU6
+  47              	.LBE59:
+  48              	.LBB62:
+  49              	.LBB56:
+  50              		.loc 1 51 48 view .LVU7
+  51 0000 A0F13002 		sub	r2, r0, #48
+  52              	.LBE56:
+  53              	.LBE62:
+  54              	.LBB63:
+  55              	.LBB60:
+  56              	.LBB61:
+  57              		.loc 1 51 61 discriminator 2 view .LVU8
+  58 0004 A0F12D01 		sub	r1, r0, #45
+  59              	.LBE61:
+  60              	.LBE60:
+  61              	.LBE63:
+  62              	.LBB64:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 3
+
+
+  63              	.LBB57:
+  64              		.loc 1 51 22 view .LVU9
+  65 0008 20F02003 		bic	r3, r0, #32
+  66              	.LBE57:
+  67              	.LBE64:
+  38:src/pm_image.cpp **** 
+  68              		.loc 1 38 78 discriminator 7 view .LVU10
+  69 000c 0129     		cmp	r1, #1
+  70 000e 88BF     		it	hi
+  71 0010 092A     		cmphi	r2, #9
+  72              	.LBB65:
+  73              	.LBB58:
+  74              		.loc 1 51 22 view .LVU11
+  75 0012 A3F14103 		sub	r3, r3, #65
+  76              	.LBE58:
+  77              	.LBE65:
+  38:src/pm_image.cpp **** 
+  78              		.loc 1 38 78 discriminator 7 view .LVU12
+  79 0016 94BF     		ite	ls
+  80 0018 0120     		movls	r0, #1
+  81              	.LVL1:
+  38:src/pm_image.cpp **** 
+  82              		.loc 1 38 78 discriminator 7 view .LVU13
+  83 001a 0020     		movhi	r0, #0
+  38:src/pm_image.cpp **** 
+  84              		.loc 1 38 81 view .LVU14
+  85 001c 192B     		cmp	r3, #25
+  86 001e 98BF     		it	ls
+  87 0020 40F00100 		orrls	r0, r0, #1
+  88 0024 7047     		bx	lr
+  89              		.cfi_endproc
+  90              	.LFE1305:
+  92 0026 00BF     		.section	.text._ZN2pm15IsProductIdCharEc,"ax",%progbits
+  93              		.align	1
+  94              		.p2align 2,,3
+  95              		.global	_ZN2pm15IsProductIdCharEc
+  96              		.syntax unified
+  97              		.thumb
+  98              		.thumb_func
+ 100              	_ZN2pm15IsProductIdCharEc:
+ 101              	.LVL2:
+ 102              	.LFB1307:
+  50:src/pm_image.cpp ****     return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-';
+ 103              		.loc 1 50 30 is_stmt 1 view -0
+ 104              		.cfi_startproc
+ 105              		@ args = 0, pretend = 0, frame = 0
+ 106              		@ frame_needed = 0, uses_anonymous_args = 0
+ 107              		@ link register save eliminated.
+ 108              		.loc 1 51 5 view .LVU16
+  50:src/pm_image.cpp ****     return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-';
+ 109              		.loc 1 50 30 is_stmt 0 view .LVU17
+ 110 0000 0346     		mov	r3, r0
+ 111              		.loc 1 51 22 view .LVU18
+ 112 0002 6138     		subs	r0, r0, #97
+ 113              	.LVL3:
+ 114              		.loc 1 51 48 view .LVU19
+ 115 0004 A3F13002 		sub	r2, r3, #48
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 4
+
+
+ 116              		.loc 1 51 35 view .LVU20
+ 117 0008 092A     		cmp	r2, #9
+ 118 000a 88BF     		it	hi
+ 119 000c 1928     		cmphi	r0, #25
+ 120 000e 94BF     		ite	ls
+ 121 0010 0120     		movls	r0, #1
+ 122 0012 0020     		movhi	r0, #0
+  52:src/pm_image.cpp **** }
+ 123              		.loc 1 52 1 view .LVU21
+ 124 0014 2D2B     		cmp	r3, #45
+ 125 0016 08BF     		it	eq
+ 126 0018 40F00100 		orreq	r0, r0, #1
+ 127 001c 7047     		bx	lr
+ 128              		.cfi_endproc
+ 129              	.LFE1307:
+ 131 001e 00BF     		.section	.text._ZN2pm13IsVersionCharEc,"ax",%progbits
+ 132              		.align	1
+ 133              		.p2align 2,,3
+ 134              		.global	_ZN2pm13IsVersionCharEc
+ 135              		.syntax unified
+ 136              		.thumb
+ 137              		.thumb_func
+ 139              	_ZN2pm13IsVersionCharEc:
+ 140              	.LVL4:
+ 141              	.LFB1308:
+  53:src/pm_image.cpp **** 
+  54:src/pm_image.cpp **** bool IsVersionChar(char c) {
+ 142              		.loc 1 54 28 is_stmt 1 view -0
+ 143              		.cfi_startproc
+ 144              		@ args = 0, pretend = 0, frame = 0
+ 145              		@ frame_needed = 0, uses_anonymous_args = 0
+ 146              		@ link register save eliminated.
+  55:src/pm_image.cpp ****     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '.'
+ 147              		.loc 1 55 5 view .LVU23
+ 148              		.loc 1 55 48 is_stmt 0 view .LVU24
+ 149 0000 20F02003 		bic	r3, r0, #32
+ 150              		.loc 1 55 22 view .LVU25
+ 151 0004 A0F13001 		sub	r1, r0, #48
+  54:src/pm_image.cpp ****     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '.'
+ 152              		.loc 1 54 28 view .LVU26
+ 153 0008 0246     		mov	r2, r0
+ 154              		.loc 1 55 48 view .LVU27
+ 155 000a 413B     		subs	r3, r3, #65
+  56:src/pm_image.cpp ****            || c == '-';
+ 156              		.loc 1 56 12 view .LVU28
+ 157 000c 0929     		cmp	r1, #9
+ 158 000e 88BF     		it	hi
+ 159 0010 192B     		cmphi	r3, #25
+ 160 0012 94BF     		ite	ls
+ 161 0014 0120     		movls	r0, #1
+ 162              	.LVL5:
+ 163              		.loc 1 56 12 view .LVU29
+ 164 0016 0020     		movhi	r0, #0
+ 165 0018 04D9     		bls	.L5
+ 166              		.loc 1 56 12 discriminator 2 view .LVU30
+ 167 001a 2D3A     		subs	r2, r2, #45
+ 168              	.LVL6:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 5
+
+
+ 169              		.loc 1 56 12 discriminator 2 view .LVU31
+ 170 001c 012A     		cmp	r2, #1
+ 171 001e 8CBF     		ite	hi
+ 172 0020 0020     		movhi	r0, #0
+ 173 0022 0120     		movls	r0, #1
+ 174              	.LVL7:
+ 175              	.L5:
+  57:src/pm_image.cpp **** }
+ 176              		.loc 1 57 1 view .LVU32
+ 177 0024 7047     		bx	lr
+ 178              		.cfi_endproc
+ 179              	.LFE1308:
+ 181 0026 00BF     		.section	.rodata._ZN2pm14ImageErrorNameENS_10ImageErrorE.str1.4,"aMS",%progbits,1
+ 182              		.align	2
+ 183              	.LC0:
+ 184 0000 3F00     		.ascii	"?\000"
+ 185              		.section	.text._ZN2pm14ImageErrorNameENS_10ImageErrorE,"ax",%progbits
+ 186              		.align	1
+ 187              		.p2align 2,,3
+ 188              		.global	_ZN2pm14ImageErrorNameENS_10ImageErrorE
+ 189              		.syntax unified
+ 190              		.thumb
+ 191              		.thumb_func
+ 193              	_ZN2pm14ImageErrorNameENS_10ImageErrorE:
+ 194              	.LVL8:
+ 195              	.LFB1309:
+  58:src/pm_image.cpp **** 
+  59:src/pm_image.cpp **** const char* ImageErrorName(ImageError error) {
+ 196              		.loc 1 59 46 is_stmt 1 view -0
+ 197              		.cfi_startproc
+ 198              		@ args = 0, pretend = 0, frame = 0
+ 199              		@ frame_needed = 0, uses_anonymous_args = 0
+ 200              		@ link register save eliminated.
+  60:src/pm_image.cpp ****     switch(error) {
+ 201              		.loc 1 60 5 view .LVU34
+ 202 0000 0E28     		cmp	r0, #14
+ 203 0002 03D8     		bhi	.L8
+ 204 0004 024B     		ldr	r3, .L9
+ 205 0006 53F82000 		ldr	r0, [r3, r0, lsl #2]
+ 206              	.LVL9:
+ 207              		.loc 1 60 5 is_stmt 0 view .LVU35
+ 208 000a 7047     		bx	lr
+ 209              	.LVL10:
+ 210              	.L8:
+  59:src/pm_image.cpp ****     switch(error) {
+ 211              		.loc 1 59 46 view .LVU36
+ 212 000c 0148     		ldr	r0, .L9+4
+ 213              	.LVL11:
+  61:src/pm_image.cpp ****         case ImageError::None: return "OK";
+  62:src/pm_image.cpp ****         case ImageError::Short: return "SHORT";
+  63:src/pm_image.cpp ****         case ImageError::Magic: return "MAGIC";
+  64:src/pm_image.cpp ****         case ImageError::Version: return "HDRVER";
+  65:src/pm_image.cpp ****         case ImageError::HeaderSize: return "HDRSIZE";
+  66:src/pm_image.cpp ****         case ImageError::Crc: return "HDRCRC";
+  67:src/pm_image.cpp ****         case ImageError::Flags: return "FLAGS";
+  68:src/pm_image.cpp ****         case ImageError::Hardware: return "HARDWARE";
+  69:src/pm_image.cpp ****         case ImageError::Profile: return "PROFILE";
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 6
+
+
+  70:src/pm_image.cpp ****         case ImageError::Product: return "PRODUCT";
+  71:src/pm_image.cpp ****         case ImageError::ProductVersion: return "VERSION";
+  72:src/pm_image.cpp ****         case ImageError::LoadAddress: return "LOADADDR";
+  73:src/pm_image.cpp ****         case ImageError::PayloadOffset: return "OFFSET";
+  74:src/pm_image.cpp ****         case ImageError::PayloadLength: return "LENGTH";
+  75:src/pm_image.cpp ****         case ImageError::Reserved: return "RESERVED";
+  76:src/pm_image.cpp ****     }
+  77:src/pm_image.cpp ****     return "?";
+  78:src/pm_image.cpp **** }
+ 214              		.loc 1 78 1 view .LVU37
+ 215 000e 7047     		bx	lr
+ 216              	.L10:
+ 217              		.align	2
+ 218              	.L9:
+ 219 0010 00000000 		.word	CSWTCH.27
+ 220 0014 00000000 		.word	.LC0
+ 221              		.cfi_endproc
+ 222              	.LFE1309:
+ 224              		.section	.text._ZN2pm15VectorErrorNameENS_11VectorErrorE,"ax",%progbits
+ 225              		.align	1
+ 226              		.p2align 2,,3
+ 227              		.global	_ZN2pm15VectorErrorNameENS_11VectorErrorE
+ 228              		.syntax unified
+ 229              		.thumb
+ 230              		.thumb_func
+ 232              	_ZN2pm15VectorErrorNameENS_11VectorErrorE:
+ 233              	.LVL12:
+ 234              	.LFB1310:
+  79:src/pm_image.cpp **** 
+  80:src/pm_image.cpp **** const char* VectorErrorName(VectorError error) {
+ 235              		.loc 1 80 48 is_stmt 1 view -0
+ 236              		.cfi_startproc
+ 237              		@ args = 0, pretend = 0, frame = 0
+ 238              		@ frame_needed = 0, uses_anonymous_args = 0
+ 239              		@ link register save eliminated.
+  81:src/pm_image.cpp ****     switch(error) {
+ 240              		.loc 1 81 5 view .LVU39
+ 241 0000 0228     		cmp	r0, #2
+ 242 0002 03D8     		bhi	.L13
+ 243 0004 024B     		ldr	r3, .L14
+ 244 0006 53F82000 		ldr	r0, [r3, r0, lsl #2]
+ 245              	.LVL13:
+ 246              		.loc 1 81 5 is_stmt 0 view .LVU40
+ 247 000a 7047     		bx	lr
+ 248              	.LVL14:
+ 249              	.L13:
+  80:src/pm_image.cpp ****     switch(error) {
+ 250              		.loc 1 80 48 view .LVU41
+ 251 000c 0148     		ldr	r0, .L14+4
+ 252              	.LVL15:
+  82:src/pm_image.cpp ****         case VectorError::None: return "OK";
+  83:src/pm_image.cpp ****         case VectorError::Stack: return "VECSP";
+  84:src/pm_image.cpp ****         case VectorError::Reset: return "VECPC";
+  85:src/pm_image.cpp ****     }
+  86:src/pm_image.cpp ****     return "?";
+  87:src/pm_image.cpp **** }
+ 253              		.loc 1 87 1 view .LVU42
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 7
+
+
+ 254 000e 7047     		bx	lr
+ 255              	.L15:
+ 256              		.align	2
+ 257              	.L14:
+ 258 0010 00000000 		.word	CSWTCH.29
+ 259 0014 00000000 		.word	.LC0
+ 260              		.cfi_endproc
+ 261              	.LFE1310:
+ 263              		.section	.rodata._ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE.str1.4,"aMS",%progbits,1
+ 264              		.align	2
+ 265              	.LC1:
+ 266 0000 73656564 		.ascii	"seed3-desktop\000"
+ 266      332D6465 
+ 266      736B746F 
+ 266      7000
+ 267 000e 0000     		.align	2
+ 268              	.LC2:
+ 269 0010 6178692D 		.ascii	"axi-sram-480k-v1\000"
+ 269      7372616D 
+ 269      2D343830 
+ 269      6B2D7631 
+ 269      00
+ 270              		.section	.text._ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE,"ax",%progbits
+ 271              		.align	1
+ 272              		.p2align 2,,3
+ 273              		.global	_ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE
+ 274              		.syntax unified
+ 275              		.thumb
+ 276              		.thumb_func
+ 278              	_ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE:
+ 279              	.LVL16:
+ 280              	.LFB1311:
+  88:src/pm_image.cpp **** 
+  89:src/pm_image.cpp **** ImageError ParseHeader(const uint8_t* bytes, size_t len, ImageHeader& out) {
+ 281              		.loc 1 89 76 is_stmt 1 view -0
+ 282              		.cfi_startproc
+ 283              		@ args = 0, pretend = 0, frame = 144
+ 284              		@ frame_needed = 0, uses_anonymous_args = 0
+  90:src/pm_image.cpp ****     out = ImageHeader();
+ 285              		.loc 1 90 5 view .LVU44
+  89:src/pm_image.cpp ****     out = ImageHeader();
+ 286              		.loc 1 89 76 is_stmt 0 view .LVU45
+ 287 0000 2DE9F047 		push	{r4, r5, r6, r7, r8, r9, r10, lr}
+ 288              		.cfi_def_cfa_offset 32
+ 289              		.cfi_offset 4, -32
+ 290              		.cfi_offset 5, -28
+ 291              		.cfi_offset 6, -24
+ 292              		.cfi_offset 7, -20
+ 293              		.cfi_offset 8, -16
+ 294              		.cfi_offset 9, -12
+ 295              		.cfi_offset 10, -8
+ 296              		.cfi_offset 14, -4
+ 297 0004 A4B0     		sub	sp, sp, #144
+ 298              		.cfi_def_cfa_offset 176
+  89:src/pm_image.cpp ****     out = ImageHeader();
+ 299              		.loc 1 89 76 view .LVU46
+ 300 0006 1646     		mov	r6, r2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 8
+
+
+ 301 0008 0546     		mov	r5, r0
+ 302              		.loc 1 90 23 view .LVU47
+ 303 000a 7022     		movs	r2, #112
+ 304              	.LVL17:
+  89:src/pm_image.cpp ****     out = ImageHeader();
+ 305              		.loc 1 89 76 view .LVU48
+ 306 000c 0C46     		mov	r4, r1
+ 307              		.loc 1 90 23 view .LVU49
+ 308 000e 6846     		mov	r0, sp
+ 309              	.LVL18:
+ 310              		.loc 1 90 23 view .LVU50
+ 311 0010 0021     		movs	r1, #0
+ 312              	.LVL19:
+ 313              		.loc 1 90 23 view .LVU51
+ 314 0012 FFF7FEFF 		bl	memset
+ 315              	.LVL20:
+ 316              	.LBB110:
+ 317              	.LBI110:
+ 318              		.file 2 "src/pm_image.h"
+   1:src/pm_image.h **** // .dsy package header (format 1) and the BOOT_SRAM image profile "axi-sram-480k-v1".
+   2:src/pm_image.h **** // Portable: no libDaisy, no allocation. The wire format is documented in
+   3:src/pm_image.h **** // docs/PACKAGE.md; tools/dsy_pack.py writes it, this code reads it on the device.
+   4:src/pm_image.h **** //
+   5:src/pm_image.h **** // Layout, little-endian, 160 bytes:
+   6:src/pm_image.h **** //   0   char[8]  magic           "DSYIMAGE"
+   7:src/pm_image.h **** //   8   u16      header_version  1
+   8:src/pm_image.h **** //   10  u16      header_size     160
+   9:src/pm_image.h **** //   12  u32      flags           0 (any set bit is rejected: unknown feature)
+  10:src/pm_image.h **** //   16  char[16] hardware        "seed3-desktop", NUL padded
+  11:src/pm_image.h **** //   32  char[24] profile         "axi-sram-480k-v1", NUL padded
+  12:src/pm_image.h **** //   56  char[32] product         product id, e.g. "toy-piano"
+  13:src/pm_image.h **** //   88  char[16] version         product version, e.g. "0.4.0"
+  14:src/pm_image.h **** //   104 u32      load_address    0x24000000
+  15:src/pm_image.h **** //   108 u32      payload_offset  160
+  16:src/pm_image.h **** //   112 u32      payload_length  8 .. 491520
+  17:src/pm_image.h **** //   116 u8[32]   payload_sha256  SHA-256 over exactly payload_length payload bytes
+  18:src/pm_image.h **** //   148 u32[2]   reserved        0
+  19:src/pm_image.h **** //   156 u32      header_crc32    CRC-32 over bytes 0..155
+  20:src/pm_image.h **** //   160 payload (one contiguous BOOT_SRAM image for 0x24000000)
+  21:src/pm_image.h **** #pragma once
+  22:src/pm_image.h **** #include <cstddef>
+  23:src/pm_image.h **** #include <cstdint>
+  24:src/pm_image.h **** 
+  25:src/pm_image.h **** namespace pm {
+  26:src/pm_image.h **** 
+  27:src/pm_image.h **** constexpr uint32_t kHeaderSize = 160;
+  28:src/pm_image.h **** constexpr uint16_t kHeaderVersion = 1;
+  29:src/pm_image.h **** constexpr uint32_t kTargetBase = 0x24000000u;      // AXI SRAM image target
+  30:src/pm_image.h **** constexpr uint32_t kTargetSize = 480u * 1024u;      // exclusive end 0x24078000
+  31:src/pm_image.h **** constexpr uint32_t kMinPayload = 8;                 // at least the first two vectors
+  32:src/pm_image.h **** constexpr uint32_t kDtcmBase = 0x20000000u;
+  33:src/pm_image.h **** constexpr uint32_t kDtcmEnd = 0x20020000u;          // _estack of the official linkers
+  34:src/pm_image.h **** constexpr char kMagic[8] = {'D', 'S', 'Y', 'I', 'M', 'A', 'G', 'E'};
+  35:src/pm_image.h **** constexpr const char* kHardwareId = "seed3-desktop";
+  36:src/pm_image.h **** constexpr const char* kProfileId = "axi-sram-480k-v1";
+  37:src/pm_image.h **** 
+  38:src/pm_image.h **** constexpr size_t kHardwareField = 16, kProfileField = 24, kProductField = 32, kVersionField = 16;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 9
+
+
+  39:src/pm_image.h **** 
+  40:src/pm_image.h **** struct ImageHeader {
+ 319              		.loc 2 40 8 is_stmt 1 view .LVU52
+ 320              	.LBB111:
+ 321 0016 0021     		movs	r1, #0
+ 322 0018 2022     		movs	r2, #32
+ 323 001a 1CA8     		add	r0, sp, #112
+ 324 001c 8DF86310 		strb	r1, [sp, #99]
+ 325 0020 CDF85310 		str	r1, [sp, #83]	@ unaligned
+ 326 0024 CDF85710 		str	r1, [sp, #87]	@ unaligned
+ 327 0028 CDF85B10 		str	r1, [sp, #91]	@ unaligned
+ 328 002c CDF85F10 		str	r1, [sp, #95]	@ unaligned
+ 329 0030 FFF7FEFF 		bl	memset
+ 330              	.LVL21:
+ 331              		.loc 2 40 8 is_stmt 0 view .LVU53
+ 332              	.LBE111:
+ 333              	.LBE110:
+ 334              		.loc 1 90 9 discriminator 1 view .LVU54
+ 335 0034 9022     		movs	r2, #144
+ 336 0036 6946     		mov	r1, sp
+ 337 0038 3046     		mov	r0, r6
+ 338 003a FFF7FEFF 		bl	memcpy
+ 339              	.LVL22:
+  91:src/pm_image.cpp ****     if(bytes == nullptr || len < kHeaderSize)
+ 340              		.loc 1 91 5 is_stmt 1 view .LVU55
+ 341 003e 002D     		cmp	r5, #0
+ 342 0040 56D0     		beq	.L48
+ 343 0042 9F2C     		cmp	r4, #159
+ 344 0044 54D9     		bls	.L48
+  92:src/pm_image.cpp ****         return ImageError::Short;
+  93:src/pm_image.cpp ****     if(std::memcmp(bytes, kMagic, sizeof(kMagic)) != 0)
+ 345              		.loc 1 93 5 view .LVU56
+ 346              		.loc 1 93 19 is_stmt 0 view .LVU57
+ 347 0046 0822     		movs	r2, #8
+ 348 0048 9549     		ldr	r1, .L86
+ 349 004a 2846     		mov	r0, r5
+ 350 004c FFF7FEFF 		bl	memcmp
+ 351              	.LVL23:
+ 352              		.loc 1 93 5 discriminator 1 view .LVU58
+ 353 0050 0028     		cmp	r0, #0
+ 354 0052 57D1     		bne	.L49
+  94:src/pm_image.cpp ****         return ImageError::Magic;
+  95:src/pm_image.cpp ****     // The CRC is checked before any field is interpreted, so a damaged header is
+  96:src/pm_image.cpp ****     // reported as such rather than as a wrong value.
+  97:src/pm_image.cpp ****     if(Load32(bytes + 156) != Crc32(bytes, 156))
+ 355              		.loc 1 97 5 is_stmt 1 view .LVU59
+ 356              	.LVL24:
+ 357              	.LBB112:
+ 358              	.LBI112:
+   9:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+ 359              		.loc 1 9 10 view .LVU60
+ 360              	.LBB113:
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ 361              		.loc 1 10 5 view .LVU61
+  11:src/pm_image.cpp **** }
+ 362              		.loc 1 11 86 is_stmt 0 view .LVU62
+ 363 0054 D5F89C70 		ldr	r7, [r5, #156]	@ unaligned
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 10
+
+
+ 364              	.LVL25:
+  11:src/pm_image.cpp **** }
+ 365              		.loc 1 11 86 view .LVU63
+ 366              	.LBE113:
+ 367              	.LBE112:
+ 368              	.LBB115:
+ 369              	.LBI115:
+ 370              		.file 3 "src/pm_crc32.h"
+   1:src/pm_crc32.h **** // CRC-32/ISO-HDLC (IEEE 802.3, reflected polynomial 0xEDB88320, init and final XOR
+   2:src/pm_crc32.h **** // 0xFFFFFFFF; check value of "123456789" is 0xCBF43926). Bitwise, no table.
+   3:src/pm_crc32.h **** // Guards the .dsy header against truncation and bit errors; the payload is
+   4:src/pm_crc32.h **** // protected by SHA-256 (pm_sha256.h).
+   5:src/pm_crc32.h **** #pragma once
+   6:src/pm_crc32.h **** #include <stddef.h>
+   7:src/pm_crc32.h **** #include <stdint.h>
+   8:src/pm_crc32.h **** 
+   9:src/pm_crc32.h **** namespace pm {
+  10:src/pm_crc32.h **** 
+  11:src/pm_crc32.h **** inline uint32_t Crc32Update(uint32_t crc, const uint8_t* data, size_t len) {
+  12:src/pm_crc32.h ****     for(size_t i = 0; i < len; ++i) {
+  13:src/pm_crc32.h ****         crc ^= data[i];
+  14:src/pm_crc32.h ****         for(int bit = 0; bit < 8; ++bit)
+  15:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+  16:src/pm_crc32.h ****     }
+  17:src/pm_crc32.h ****     return crc;
+  18:src/pm_crc32.h **** }
+  19:src/pm_crc32.h **** 
+  20:src/pm_crc32.h **** inline uint32_t Crc32(const uint8_t* data, size_t len) {
+ 371              		.loc 3 20 17 is_stmt 1 view .LVU64
+ 372              	.LBB116:
+  21:src/pm_crc32.h ****     return Crc32Update(0xFFFFFFFFu, data, len) ^ 0xFFFFFFFFu;
+ 373              		.loc 3 21 5 view .LVU65
+ 374              	.LBB117:
+ 375              	.LBI117:
+  11:src/pm_crc32.h ****     for(size_t i = 0; i < len; ++i) {
+ 376              		.loc 3 11 17 view .LVU66
+  12:src/pm_crc32.h ****         crc ^= data[i];
+ 377              		.loc 3 12 5 view .LVU67
+ 378              	.LBB118:
+  12:src/pm_crc32.h ****         crc ^= data[i];
+ 379              		.loc 3 12 25 discriminator 1 view .LVU68
+ 380 0058 6A1E     		subs	r2, r5, #1
+ 381 005a 05F19B00 		add	r0, r5, #155
+ 382              	.LBE118:
+ 383              	.LBE117:
+ 384              	.LBE116:
+ 385              	.LBE115:
+ 386              	.LBB124:
+ 387              	.LBB114:
+  11:src/pm_image.cpp **** }
+ 388              		.loc 1 11 86 is_stmt 0 view .LVU69
+ 389 005e 4FF0FF31 		mov	r1, #-1
+ 390              	.LVL26:
+ 391              	.L19:
+  11:src/pm_image.cpp **** }
+ 392              		.loc 1 11 86 view .LVU70
+ 393              	.LBE114:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 11
+
+
+ 394              	.LBE124:
+ 395              	.LBB125:
+ 396              	.LBB123:
+ 397              	.LBB122:
+ 398              	.LBB121:
+ 399              	.LBB119:
+  13:src/pm_crc32.h ****         for(int bit = 0; bit < 8; ++bit)
+ 400              		.loc 3 13 9 is_stmt 1 view .LVU71
+  13:src/pm_crc32.h ****         for(int bit = 0; bit < 8; ++bit)
+ 401              		.loc 3 13 22 is_stmt 0 view .LVU72
+ 402 0062 12F8013F 		ldrb	r3, [r2, #1]!	@ zero_extendqisi2
+  13:src/pm_crc32.h ****         for(int bit = 0; bit < 8; ++bit)
+ 403              		.loc 3 13 13 view .LVU73
+ 404 0066 4FF0080C 		mov	ip, #8
+ 405 006a 5940     		eors	r1, r1, r3
+ 406              	.LVL27:
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 407              		.loc 3 14 9 is_stmt 1 view .LVU74
+ 408              	.LBB120:
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 409              		.loc 3 14 30 discriminator 1 view .LVU75
+ 410              	.L18:
+  15:src/pm_crc32.h ****     }
+ 411              		.loc 3 15 13 view .LVU76
+  15:src/pm_crc32.h ****     }
+ 412              		.loc 3 15 51 is_stmt 0 view .LVU77
+ 413 006c 41F30004 		sbfx	r4, r1, #0, #1
+  15:src/pm_crc32.h ****     }
+ 414              		.loc 3 15 45 view .LVU78
+ 415 0070 8C4B     		ldr	r3, .L86+4
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 416              		.loc 3 14 30 discriminator 1 view .LVU79
+ 417 0072 BCF1010C 		subs	ip, ip, #1
+  15:src/pm_crc32.h ****     }
+ 418              		.loc 3 15 45 view .LVU80
+ 419 0076 03EA0403 		and	r3, r3, r4
+  15:src/pm_crc32.h ****     }
+ 420              		.loc 3 15 17 view .LVU81
+ 421 007a 83EA5101 		eor	r1, r3, r1, lsr #1
+ 422              	.LVL28:
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 423              		.loc 3 14 9 is_stmt 1 discriminator 3 view .LVU82
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 424              		.loc 3 14 30 discriminator 1 view .LVU83
+ 425 007e F5D1     		bne	.L18
+ 426              	.LBE120:
+ 427              	.LBE119:
+  12:src/pm_crc32.h ****         crc ^= data[i];
+ 428              		.loc 3 12 5 discriminator 2 view .LVU84
+  12:src/pm_crc32.h ****         crc ^= data[i];
+ 429              		.loc 3 12 25 discriminator 1 view .LVU85
+ 430 0080 8242     		cmp	r2, r0
+ 431 0082 EED1     		bne	.L19
+ 432              	.LBE121:
+  17:src/pm_crc32.h **** }
+ 433              		.loc 3 17 5 view .LVU86
+ 434              	.LVL29:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 12
+
+
+  17:src/pm_crc32.h **** }
+ 435              		.loc 3 17 5 is_stmt 0 view .LVU87
+ 436              	.LBE122:
+ 437              		.loc 3 21 50 discriminator 1 view .LVU88
+ 438 0084 C943     		mvns	r1, r1
+ 439              	.LBE123:
+ 440              	.LBE125:
+ 441              		.loc 1 97 5 discriminator 2 view .LVU89
+ 442 0086 B942     		cmp	r1, r7
+ 443 0088 36D1     		bne	.L50
+  98:src/pm_image.cpp ****         return ImageError::Crc;
+  99:src/pm_image.cpp ****     out.header_version = Load16(bytes + 8);
+ 444              		.loc 1 99 5 is_stmt 1 view .LVU90
+ 445              	.LVL30:
+ 446              		.loc 1 99 5 is_stmt 0 view .LVU91
+ 447 008a 2B89     		ldrh	r3, [r5, #8]	@ unaligned
+ 448              	.LVL31:
+ 100:src/pm_image.cpp ****     if(out.header_version != kHeaderVersion)
+ 449              		.loc 1 100 5 view .LVU92
+ 450 008c 012B     		cmp	r3, #1
+  99:src/pm_image.cpp ****     if(out.header_version != kHeaderVersion)
+ 451              		.loc 1 99 24 discriminator 1 view .LVU93
+ 452 008e 3380     		strh	r3, [r6]	@ movhi
+ 453              		.loc 1 100 5 is_stmt 1 view .LVU94
+ 454 0090 3CD1     		bne	.L51
+ 101:src/pm_image.cpp ****         return ImageError::Version;
+ 102:src/pm_image.cpp ****     if(Load16(bytes + 10) != kHeaderSize)
+ 455              		.loc 1 102 5 view .LVU95
+ 456              		.loc 1 102 5 is_stmt 0 discriminator 1 view .LVU96
+ 457 0092 6B89     		ldrh	r3, [r5, #10]	@ unaligned
+ 458 0094 A02B     		cmp	r3, #160
+ 459 0096 33D1     		bne	.L52
+ 103:src/pm_image.cpp ****         return ImageError::HeaderSize;
+ 104:src/pm_image.cpp ****     out.flags = Load32(bytes + 12);
+ 460              		.loc 1 104 5 is_stmt 1 view .LVU97
+ 461              	.LVL32:
+ 462              	.LBB126:
+ 463              	.LBI126:
+   9:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+ 464              		.loc 1 9 10 view .LVU98
+ 465              	.LBB127:
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ 466              		.loc 1 10 5 view .LVU99
+  11:src/pm_image.cpp **** }
+ 467              		.loc 1 11 86 is_stmt 0 view .LVU100
+ 468 0098 D5F80C80 		ldr	r8, [r5, #12]	@ unaligned
+ 469              	.LVL33:
+  11:src/pm_image.cpp **** }
+ 470              		.loc 1 11 86 view .LVU101
+ 471              	.LBE127:
+ 472              	.LBE126:
+ 473              		.loc 1 104 15 discriminator 1 view .LVU102
+ 474 009c C6F80480 		str	r8, [r6, #4]
+ 105:src/pm_image.cpp ****     if(out.flags != 0)
+ 475              		.loc 1 105 5 is_stmt 1 view .LVU103
+ 476 00a0 B8F1000F 		cmp	r8, #0
+ 477 00a4 36D1     		bne	.L53
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 13
+
+
+ 106:src/pm_image.cpp ****         return ImageError::Flags;
+ 107:src/pm_image.cpp ****     if(!CopyField(bytes + 16, kHardwareField, out.hardware, IsIdOrVersionChar)
+ 478              		.loc 1 107 5 view .LVU104
+ 479              	.LVL34:
+ 480              	.LBB128:
+ 481              	.LBI128:
+  21:src/pm_image.cpp ****     size_t n = 0;
+ 482              		.loc 1 21 6 view .LVU105
+ 483              	.LBB129:
+  22:src/pm_image.cpp ****     while(n < size && field[n] != 0) {
+ 484              		.loc 1 22 5 view .LVU106
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 485              		.loc 1 23 5 view .LVU107
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 486              		.loc 1 23 20 view .LVU108
+ 487 00a6 05F10F09 		add	r9, r5, #15
+  22:src/pm_image.cpp ****     while(n < size && field[n] != 0) {
+ 488              		.loc 1 22 12 is_stmt 0 view .LVU109
+ 489 00aa 6446     		mov	r4, ip
+ 490 00ac 06F1070A 		add	r10, r6, #7
+ 491 00b0 07E0     		b	.L20
+ 492              	.LVL35:
+ 493              	.L23:
+  27:src/pm_image.cpp ****     }
+ 494              		.loc 1 27 9 view .LVU110
+ 495 00b2 0134     		adds	r4, r4, #1
+ 496              	.LVL36:
+  24:src/pm_image.cpp ****             return false;
+ 497              		.loc 1 24 15 view .LVU111
+ 498 00b4 FFF7FEFF 		bl	_ZN2pm12_GLOBAL__N_117IsIdOrVersionCharEc
+ 499              	.LVL37:
+  26:src/pm_image.cpp ****         ++n;
+ 500              		.loc 1 26 9 is_stmt 1 view .LVU112
+  24:src/pm_image.cpp ****             return false;
+ 501              		.loc 1 24 9 is_stmt 0 discriminator 1 view .LVU113
+ 502 00b8 C0B1     		cbz	r0, .L22
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 503              		.loc 1 23 20 view .LVU114
+ 504 00ba 102C     		cmp	r4, #16
+  26:src/pm_image.cpp ****         ++n;
+ 505              		.loc 1 26 16 view .LVU115
+ 506 00bc 0AF8017F 		strb	r7, [r10, #1]!
+  27:src/pm_image.cpp ****     }
+ 507              		.loc 1 27 9 is_stmt 1 view .LVU116
+ 508              	.LVL38:
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 509              		.loc 1 23 20 view .LVU117
+ 510 00c0 14D0     		beq	.L22
+ 511              	.LVL39:
+ 512              	.L20:
+  24:src/pm_image.cpp ****             return false;
+ 513              		.loc 1 24 9 view .LVU118
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 514              		.loc 1 23 30 is_stmt 0 discriminator 1 view .LVU119
+ 515 00c2 19F8017F 		ldrb	r7, [r9, #1]!	@ zero_extendqisi2
+  24:src/pm_image.cpp ****             return false;
+ 516              		.loc 1 24 15 view .LVU120
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 14
+
+
+ 517 00c6 3846     		mov	r0, r7
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 518              		.loc 1 23 20 discriminator 1 view .LVU121
+ 519 00c8 002F     		cmp	r7, #0
+ 520 00ca F2D1     		bne	.L23
+  29:src/pm_image.cpp ****         return false;
+ 521              		.loc 1 29 5 is_stmt 1 view .LVU122
+ 522 00cc 74B1     		cbz	r4, .L22
+ 523 00ce 04F10F09 		add	r9, r4, #15
+ 524              	.LBE129:
+ 525              	.LBE128:
+ 526              		.loc 1 107 51 is_stmt 0 view .LVU123
+ 527 00d2 06F10800 		add	r0, r6, #8
+ 528              	.LBB132:
+ 529              	.LBB131:
+  31:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+ 530              		.loc 1 31 5 is_stmt 1 view .LVU124
+ 531 00d6 05F11F02 		add	r2, r5, #31
+ 532 00da A944     		add	r9, r9, r5
+  31:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+ 533              		.loc 1 31 12 is_stmt 0 view .LVU125
+ 534 00dc 0755     		strb	r7, [r0, r4]
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 535              		.loc 1 32 5 is_stmt 1 view .LVU126
+ 536              	.LVL40:
+ 537              	.LBB130:
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 538              		.loc 1 32 25 discriminator 1 view .LVU127
+ 539 00de 01E0     		b	.L26
+ 540              	.LVL41:
+ 541              	.L81:
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 542              		.loc 1 32 25 is_stmt 0 discriminator 1 view .LVU128
+ 543 00e0 9145     		cmp	r9, r2
+ 544 00e2 19D0     		beq	.L80
+ 545              	.L26:
+  33:src/pm_image.cpp ****             return false;
+ 546              		.loc 1 33 9 is_stmt 1 view .LVU129
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 547              		.loc 1 32 5 discriminator 2 view .LVU130
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 548              		.loc 1 32 25 discriminator 1 view .LVU131
+  33:src/pm_image.cpp ****             return false;
+ 549              		.loc 1 33 9 is_stmt 0 view .LVU132
+ 550 00e4 19F8013F 		ldrb	r3, [r9, #1]!	@ zero_extendqisi2
+ 551 00e8 002B     		cmp	r3, #0
+ 552 00ea F9D0     		beq	.L81
+ 553              	.LVL42:
+ 554              	.L22:
+  33:src/pm_image.cpp ****             return false;
+ 555              		.loc 1 33 9 view .LVU133
+ 556              	.LBE130:
+ 557              	.LBE131:
+ 558              	.LBE132:
+ 108:src/pm_image.cpp ****        || std::strcmp(out.hardware, kHardwareId) != 0)
+ 109:src/pm_image.cpp ****         return ImageError::Hardware;
+ 559              		.loc 1 109 28 view .LVU134
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 15
+
+
+ 560 00ec 0720     		movs	r0, #7
+ 561 00ee 00E0     		b	.L17
+ 562              	.LVL43:
+ 563              	.L48:
+  92:src/pm_image.cpp ****     if(std::memcmp(bytes, kMagic, sizeof(kMagic)) != 0)
+ 564              		.loc 1 92 28 view .LVU135
+ 565 00f0 0120     		movs	r0, #1
+ 566              	.LVL44:
+ 567              	.L17:
+ 110:src/pm_image.cpp ****     if(!CopyField(bytes + 32, kProfileField, out.profile, IsIdOrVersionChar)
+ 111:src/pm_image.cpp ****        || std::strcmp(out.profile, kProfileId) != 0)
+ 112:src/pm_image.cpp ****         return ImageError::Profile;
+ 113:src/pm_image.cpp ****     if(!CopyField(bytes + 56, kProductField, out.product, IsProductIdChar))
+ 114:src/pm_image.cpp ****         return ImageError::Product;
+ 115:src/pm_image.cpp ****     if(!CopyField(bytes + 88, kVersionField, out.version, IsVersionChar))
+ 116:src/pm_image.cpp ****         return ImageError::ProductVersion;
+ 117:src/pm_image.cpp ****     out.load_address = Load32(bytes + 104);
+ 118:src/pm_image.cpp ****     if(out.load_address != kTargetBase)
+ 119:src/pm_image.cpp ****         return ImageError::LoadAddress;
+ 120:src/pm_image.cpp ****     out.payload_offset = Load32(bytes + 108);
+ 121:src/pm_image.cpp ****     if(out.payload_offset != kHeaderSize)
+ 122:src/pm_image.cpp ****         return ImageError::PayloadOffset;
+ 123:src/pm_image.cpp ****     out.payload_length = Load32(bytes + 112);
+ 124:src/pm_image.cpp ****     if(out.payload_length < kMinPayload || out.payload_length > kTargetSize)
+ 125:src/pm_image.cpp ****         return ImageError::PayloadLength;
+ 126:src/pm_image.cpp ****     std::memcpy(out.payload_sha256, bytes + 116, 32);
+ 127:src/pm_image.cpp ****     if(Load32(bytes + 148) != 0 || Load32(bytes + 152) != 0)
+ 128:src/pm_image.cpp ****         return ImageError::Reserved;
+ 129:src/pm_image.cpp ****     return ImageError::None;
+ 130:src/pm_image.cpp **** }
+ 568              		.loc 1 130 1 view .LVU136
+ 569 00f2 24B0     		add	sp, sp, #144
+ 570              		.cfi_remember_state
+ 571              		.cfi_def_cfa_offset 32
+ 572              		@ sp needed
+ 573 00f4 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 574              	.LVL45:
+ 575              	.L50:
+ 576              		.cfi_restore_state
+  98:src/pm_image.cpp ****     out.header_version = Load16(bytes + 8);
+ 577              		.loc 1 98 28 view .LVU137
+ 578 00f8 0520     		movs	r0, #5
+ 579              		.loc 1 130 1 view .LVU138
+ 580 00fa 24B0     		add	sp, sp, #144
+ 581              		.cfi_remember_state
+ 582              		.cfi_def_cfa_offset 32
+ 583              		@ sp needed
+ 584 00fc BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 585              	.LVL46:
+ 586              	.L52:
+ 587              		.cfi_restore_state
+ 103:src/pm_image.cpp ****     out.flags = Load32(bytes + 12);
+ 588              		.loc 1 103 28 view .LVU139
+ 589 0100 0420     		movs	r0, #4
+ 590 0102 F6E7     		b	.L17
+ 591              	.LVL47:
+ 592              	.L49:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 16
+
+
+  94:src/pm_image.cpp ****     // The CRC is checked before any field is interpreted, so a damaged header is
+ 593              		.loc 1 94 28 view .LVU140
+ 594 0104 0220     		movs	r0, #2
+ 595              		.loc 1 130 1 view .LVU141
+ 596 0106 24B0     		add	sp, sp, #144
+ 597              		.cfi_remember_state
+ 598              		.cfi_def_cfa_offset 32
+ 599              		@ sp needed
+ 600 0108 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 601              	.LVL48:
+ 602              	.L51:
+ 603              		.cfi_restore_state
+ 101:src/pm_image.cpp ****     if(Load16(bytes + 10) != kHeaderSize)
+ 604              		.loc 1 101 28 view .LVU142
+ 605 010c 0320     		movs	r0, #3
+ 606              		.loc 1 130 1 view .LVU143
+ 607 010e 24B0     		add	sp, sp, #144
+ 608              		.cfi_remember_state
+ 609              		.cfi_def_cfa_offset 32
+ 610              		@ sp needed
+ 611 0110 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 612              	.LVL49:
+ 613              	.L53:
+ 614              		.cfi_restore_state
+ 106:src/pm_image.cpp ****     if(!CopyField(bytes + 16, kHardwareField, out.hardware, IsIdOrVersionChar)
+ 615              		.loc 1 106 28 view .LVU144
+ 616 0114 0620     		movs	r0, #6
+ 617 0116 ECE7     		b	.L17
+ 618              	.LVL50:
+ 619              	.L80:
+ 108:src/pm_image.cpp ****         return ImageError::Hardware;
+ 620              		.loc 1 108 22 discriminator 2 view .LVU145
+ 621 0118 6349     		ldr	r1, .L86+8
+ 622 011a FFF7FEFF 		bl	strcmp
+ 623              	.LVL51:
+ 108:src/pm_image.cpp ****         return ImageError::Hardware;
+ 624              		.loc 1 108 8 discriminator 1 view .LVU146
+ 625 011e 0028     		cmp	r0, #0
+ 626 0120 E4D1     		bne	.L22
+ 110:src/pm_image.cpp ****        || std::strcmp(out.profile, kProfileId) != 0)
+ 627              		.loc 1 110 5 is_stmt 1 view .LVU147
+ 628              	.LVL52:
+ 629              	.LBB133:
+ 630              	.LBI133:
+  21:src/pm_image.cpp ****     size_t n = 0;
+ 631              		.loc 1 21 6 view .LVU148
+ 632              	.LBB134:
+  22:src/pm_image.cpp ****     while(n < size && field[n] != 0) {
+ 633              		.loc 1 22 5 view .LVU149
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 634              		.loc 1 23 5 view .LVU150
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 635              		.loc 1 23 20 view .LVU151
+ 636 0122 06F11807 		add	r7, r6, #24
+ 637 0126 09E0     		b	.L27
+ 638              	.LVL53:
+ 639              	.L30:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 17
+
+
+  27:src/pm_image.cpp ****     }
+ 640              		.loc 1 27 9 is_stmt 0 view .LVU152
+ 641 0128 08F10108 		add	r8, r8, #1
+ 642              	.LVL54:
+  24:src/pm_image.cpp ****             return false;
+ 643              		.loc 1 24 15 view .LVU153
+ 644 012c FFF7FEFF 		bl	_ZN2pm12_GLOBAL__N_117IsIdOrVersionCharEc
+ 645              	.LVL55:
+  26:src/pm_image.cpp ****         ++n;
+ 646              		.loc 1 26 9 is_stmt 1 view .LVU154
+  24:src/pm_image.cpp ****             return false;
+ 647              		.loc 1 24 9 is_stmt 0 discriminator 1 view .LVU155
+ 648 0130 F8B1     		cbz	r0, .L29
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 649              		.loc 1 23 20 view .LVU156
+ 650 0132 B8F1180F 		cmp	r8, #24
+  26:src/pm_image.cpp ****         ++n;
+ 651              		.loc 1 26 16 view .LVU157
+ 652 0136 07F8014F 		strb	r4, [r7, #1]!
+  27:src/pm_image.cpp ****     }
+ 653              		.loc 1 27 9 is_stmt 1 view .LVU158
+ 654              	.LVL56:
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 655              		.loc 1 23 20 view .LVU159
+ 656 013a 1AD0     		beq	.L29
+ 657              	.LVL57:
+ 658              	.L27:
+  24:src/pm_image.cpp ****             return false;
+ 659              		.loc 1 24 9 view .LVU160
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 660              		.loc 1 23 30 is_stmt 0 discriminator 1 view .LVU161
+ 661 013c 19F8014F 		ldrb	r4, [r9, #1]!	@ zero_extendqisi2
+  24:src/pm_image.cpp ****             return false;
+ 662              		.loc 1 24 15 view .LVU162
+ 663 0140 2046     		mov	r0, r4
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 664              		.loc 1 23 20 discriminator 1 view .LVU163
+ 665 0142 002C     		cmp	r4, #0
+ 666 0144 F0D1     		bne	.L30
+  29:src/pm_image.cpp ****         return false;
+ 667              		.loc 1 29 5 is_stmt 1 view .LVU164
+  29:src/pm_image.cpp ****         return false;
+ 668              		.loc 1 29 10 is_stmt 0 view .LVU165
+ 669 0146 594F     		ldr	r7, .L86+12
+ 670 0148 27FA08F7 		lsr	r7, r7, r8
+  29:src/pm_image.cpp ****         return false;
+ 671              		.loc 1 29 5 view .LVU166
+ 672 014c 17F00107 		ands	r7, r7, #1
+ 673 0150 0FD1     		bne	.L29
+ 674              	.LBE134:
+ 675              	.LBE133:
+ 110:src/pm_image.cpp ****        || std::strcmp(out.profile, kProfileId) != 0)
+ 676              		.loc 1 110 50 view .LVU167
+ 677 0152 06F11900 		add	r0, r6, #25
+ 678              	.LBB137:
+ 679              	.LBB136:
+  31:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 18
+
+
+ 680              		.loc 1 31 5 is_stmt 1 view .LVU168
+ 681 0156 08F11F04 		add	r4, r8, #31
+ 682 015a 05F13702 		add	r2, r5, #55
+ 683 015e 2C44     		add	r4, r4, r5
+  31:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+ 684              		.loc 1 31 12 is_stmt 0 view .LVU169
+ 685 0160 00F80870 		strb	r7, [r0, r8]
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 686              		.loc 1 32 5 is_stmt 1 view .LVU170
+ 687              	.LVL58:
+ 688              	.LBB135:
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 689              		.loc 1 32 25 discriminator 1 view .LVU171
+ 690 0164 01E0     		b	.L33
+ 691              	.LVL59:
+ 692              	.L83:
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 693              		.loc 1 32 25 is_stmt 0 discriminator 1 view .LVU172
+ 694 0166 9442     		cmp	r4, r2
+ 695 0168 05D0     		beq	.L82
+ 696              	.L33:
+  33:src/pm_image.cpp ****             return false;
+ 697              		.loc 1 33 9 is_stmt 1 view .LVU173
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 698              		.loc 1 32 5 discriminator 2 view .LVU174
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 699              		.loc 1 32 25 discriminator 1 view .LVU175
+  33:src/pm_image.cpp ****             return false;
+ 700              		.loc 1 33 9 is_stmt 0 view .LVU176
+ 701 016a 14F8013F 		ldrb	r3, [r4, #1]!	@ zero_extendqisi2
+ 702 016e 002B     		cmp	r3, #0
+ 703 0170 F9D0     		beq	.L83
+ 704              	.LVL60:
+ 705              	.L29:
+  33:src/pm_image.cpp ****             return false;
+ 706              		.loc 1 33 9 view .LVU177
+ 707              	.LBE135:
+ 708              	.LBE136:
+ 709              	.LBE137:
+ 112:src/pm_image.cpp ****     if(!CopyField(bytes + 56, kProductField, out.product, IsProductIdChar))
+ 710              		.loc 1 112 28 view .LVU178
+ 711 0172 0820     		movs	r0, #8
+ 712 0174 BDE7     		b	.L17
+ 713              	.LVL61:
+ 714              	.L82:
+ 111:src/pm_image.cpp ****         return ImageError::Profile;
+ 715              		.loc 1 111 22 discriminator 2 view .LVU179
+ 716 0176 4E49     		ldr	r1, .L86+16
+ 717 0178 FFF7FEFF 		bl	strcmp
+ 718              	.LVL62:
+ 111:src/pm_image.cpp ****         return ImageError::Profile;
+ 719              		.loc 1 111 8 discriminator 1 view .LVU180
+ 720 017c 0246     		mov	r2, r0
+ 721 017e 0028     		cmp	r0, #0
+ 722 0180 F7D1     		bne	.L29
+ 113:src/pm_image.cpp ****         return ImageError::Product;
+ 723              		.loc 1 113 5 is_stmt 1 view .LVU181
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 19
+
+
+ 724              	.LVL63:
+ 725              	.LBB138:
+ 726              	.LBI138:
+  21:src/pm_image.cpp ****     size_t n = 0;
+ 727              		.loc 1 21 6 view .LVU182
+ 728              	.LBB139:
+  22:src/pm_image.cpp ****     while(n < size && field[n] != 0) {
+ 729              		.loc 1 22 5 view .LVU183
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 730              		.loc 1 23 5 view .LVU184
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 731              		.loc 1 23 20 view .LVU185
+ 732 0182 06F13101 		add	r1, r6, #49
+ 733              	.LVL64:
+ 734              	.L34:
+  24:src/pm_image.cpp ****             return false;
+ 735              		.loc 1 24 9 view .LVU186
+  26:src/pm_image.cpp ****         ++n;
+ 736              		.loc 1 26 9 view .LVU187
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 737              		.loc 1 23 30 is_stmt 0 discriminator 1 view .LVU188
+ 738 0186 14F8013F 		ldrb	r3, [r4, #1]!	@ zero_extendqisi2
+ 739              	.LVL65:
+ 740              	.LBB140:
+ 741              	.LBI140:
+  50:src/pm_image.cpp ****     return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-';
+ 742              		.loc 1 50 6 is_stmt 1 view .LVU189
+ 743              	.LBB141:
+  51:src/pm_image.cpp **** }
+ 744              		.loc 1 51 5 view .LVU190
+  51:src/pm_image.cpp **** }
+ 745              		.loc 1 51 22 is_stmt 0 view .LVU191
+ 746 018a A3F1610C 		sub	ip, r3, #97
+  51:src/pm_image.cpp **** }
+ 747              		.loc 1 51 48 view .LVU192
+ 748 018e A3F13000 		sub	r0, r3, #48
+ 749              	.LBE141:
+ 750              	.LBE140:
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 751              		.loc 1 23 20 discriminator 1 view .LVU193
+ 752 0192 7BB1     		cbz	r3, .L84
+ 753              	.LBB144:
+ 754              	.LBB142:
+  51:src/pm_image.cpp **** }
+ 755              		.loc 1 51 61 discriminator 2 view .LVU194
+ 756 0194 0928     		cmp	r0, #9
+ 757 0196 88BF     		it	hi
+ 758 0198 BCF1190F 		cmphi	ip, #25
+ 759              	.LBE142:
+ 760              	.LBE144:
+  27:src/pm_image.cpp ****     }
+ 761              		.loc 1 27 9 view .LVU195
+ 762 019c 02F10102 		add	r2, r2, #1
+ 763              	.LVL66:
+ 764              	.LBB145:
+ 765              	.LBB143:
+  51:src/pm_image.cpp **** }
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 20
+
+
+ 766              		.loc 1 51 61 discriminator 2 view .LVU196
+ 767 01a0 03D9     		bls	.L35
+ 768 01a2 2D2B     		cmp	r3, #45
+ 769 01a4 01D0     		beq	.L35
+ 770              	.LVL67:
+ 771              	.L36:
+  51:src/pm_image.cpp **** }
+ 772              		.loc 1 51 61 discriminator 2 view .LVU197
+ 773              	.LBE143:
+ 774              	.LBE145:
+ 775              	.LBE139:
+ 776              	.LBE138:
+ 114:src/pm_image.cpp ****     if(!CopyField(bytes + 88, kVersionField, out.version, IsVersionChar))
+ 777              		.loc 1 114 28 view .LVU198
+ 778 01a6 0920     		movs	r0, #9
+ 779              	.LVL68:
+ 114:src/pm_image.cpp ****     if(!CopyField(bytes + 88, kVersionField, out.version, IsVersionChar))
+ 780              		.loc 1 114 28 view .LVU199
+ 781 01a8 A3E7     		b	.L17
+ 782              	.LVL69:
+ 783              	.L35:
+ 784              	.LBB148:
+ 785              	.LBB147:
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 786              		.loc 1 23 20 view .LVU200
+ 787 01aa 202A     		cmp	r2, #32
+  26:src/pm_image.cpp ****         ++n;
+ 788              		.loc 1 26 16 view .LVU201
+ 789 01ac 01F8013F 		strb	r3, [r1, #1]!
+  27:src/pm_image.cpp ****     }
+ 790              		.loc 1 27 9 is_stmt 1 view .LVU202
+ 791              	.LVL70:
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 792              		.loc 1 23 20 view .LVU203
+ 793 01b0 E9D1     		bne	.L34
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 794              		.loc 1 23 20 is_stmt 0 view .LVU204
+ 795 01b2 F8E7     		b	.L36
+ 796              	.L84:
+  29:src/pm_image.cpp ****         return false;
+ 797              		.loc 1 29 5 is_stmt 1 view .LVU205
+ 798 01b4 002A     		cmp	r2, #0
+ 799 01b6 F6D0     		beq	.L36
+  31:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+ 800              		.loc 1 31 5 view .LVU206
+ 801 01b8 02F13701 		add	r1, r2, #55
+  31:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+ 802              		.loc 1 31 12 is_stmt 0 view .LVU207
+ 803 01bc 3244     		add	r2, r2, r6
+ 804              	.LVL71:
+  31:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+ 805              		.loc 1 31 12 view .LVU208
+ 806 01be 82F83230 		strb	r3, [r2, #50]
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 807              		.loc 1 32 5 is_stmt 1 view .LVU209
+ 808              	.LVL72:
+ 809              	.LBB146:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 21
+
+
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 810              		.loc 1 32 25 discriminator 1 view .LVU210
+ 811 01c2 6B18     		adds	r3, r5, r1
+ 812              	.LVL73:
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 813              		.loc 1 32 25 is_stmt 0 discriminator 1 view .LVU211
+ 814 01c4 05F15701 		add	r1, r5, #87
+ 815              	.LVL74:
+ 816              	.L40:
+  33:src/pm_image.cpp ****             return false;
+ 817              		.loc 1 33 9 is_stmt 1 view .LVU212
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 818              		.loc 1 32 5 discriminator 2 view .LVU213
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 819              		.loc 1 32 25 discriminator 1 view .LVU214
+  33:src/pm_image.cpp ****             return false;
+ 820              		.loc 1 33 9 is_stmt 0 view .LVU215
+ 821 01c8 13F8012F 		ldrb	r2, [r3, #1]!	@ zero_extendqisi2
+ 822 01cc 002A     		cmp	r2, #0
+ 823 01ce EAD1     		bne	.L36
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 824              		.loc 1 32 25 discriminator 1 view .LVU216
+ 825 01d0 8B42     		cmp	r3, r1
+ 826 01d2 F9D1     		bne	.L40
+ 827              	.LVL75:
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 828              		.loc 1 32 25 discriminator 1 view .LVU217
+ 829              	.LBE146:
+ 830              	.LBE147:
+ 831              	.LBE148:
+ 115:src/pm_image.cpp ****         return ImageError::ProductVersion;
+ 832              		.loc 1 115 5 is_stmt 1 view .LVU218
+ 833              	.LBB149:
+ 834              	.LBI149:
+  21:src/pm_image.cpp ****     size_t n = 0;
+ 835              		.loc 1 21 6 view .LVU219
+ 836              	.LBB150:
+  22:src/pm_image.cpp ****     while(n < size && field[n] != 0) {
+ 837              		.loc 1 22 5 view .LVU220
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 838              		.loc 1 23 5 view .LVU221
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 839              		.loc 1 23 20 view .LVU222
+ 840 01d4 06F15200 		add	r0, r6, #82
+ 841              	.LVL76:
+ 842              	.L41:
+  24:src/pm_image.cpp ****             return false;
+ 843              		.loc 1 24 9 view .LVU223
+  26:src/pm_image.cpp ****         ++n;
+ 844              		.loc 1 26 9 view .LVU224
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 845              		.loc 1 23 30 is_stmt 0 discriminator 1 view .LVU225
+ 846 01d8 13F8012F 		ldrb	r2, [r3, #1]!	@ zero_extendqisi2
+ 847              	.LVL77:
+ 848              	.LBB151:
+ 849              	.LBI151:
+  54:src/pm_image.cpp ****     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '.'
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 22
+
+
+ 850              		.loc 1 54 6 is_stmt 1 view .LVU226
+ 851              	.LBB152:
+  55:src/pm_image.cpp ****            || c == '-';
+ 852              		.loc 1 55 5 view .LVU227
+  55:src/pm_image.cpp ****            || c == '-';
+ 853              		.loc 1 55 48 is_stmt 0 view .LVU228
+ 854 01dc 22F02001 		bic	r1, r2, #32
+  55:src/pm_image.cpp ****            || c == '-';
+ 855              		.loc 1 55 22 view .LVU229
+ 856 01e0 A2F13004 		sub	r4, r2, #48
+  56:src/pm_image.cpp **** }
+ 857              		.loc 1 56 12 discriminator 2 view .LVU230
+ 858 01e4 A2F12D0C 		sub	ip, r2, #45
+ 859              	.LBE152:
+ 860              	.LBE151:
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 861              		.loc 1 23 20 discriminator 1 view .LVU231
+ 862 01e8 7AB1     		cbz	r2, .L85
+ 863              	.LBB155:
+ 864              	.LBB153:
+  55:src/pm_image.cpp ****            || c == '-';
+ 865              		.loc 1 55 48 view .LVU232
+ 866 01ea 4139     		subs	r1, r1, #65
+ 867              	.LBE153:
+ 868              	.LBE155:
+  27:src/pm_image.cpp ****     }
+ 869              		.loc 1 27 9 view .LVU233
+ 870 01ec 0137     		adds	r7, r7, #1
+ 871              	.LVL78:
+ 872              	.LBB156:
+ 873              	.LBB154:
+  56:src/pm_image.cpp **** }
+ 874              		.loc 1 56 12 view .LVU234
+ 875 01ee 1929     		cmp	r1, #25
+ 876 01f0 06D9     		bls	.L42
+ 877 01f2 092C     		cmp	r4, #9
+ 878 01f4 04D9     		bls	.L42
+  56:src/pm_image.cpp **** }
+ 879              		.loc 1 56 12 discriminator 2 view .LVU235
+ 880 01f6 BCF1010F 		cmp	ip, #1
+ 881 01fa 01D9     		bls	.L42
+ 882              	.LVL79:
+ 883              	.L43:
+  56:src/pm_image.cpp **** }
+ 884              		.loc 1 56 12 discriminator 2 view .LVU236
+ 885              	.LBE154:
+ 886              	.LBE156:
+ 887              	.LBE150:
+ 888              	.LBE149:
+ 116:src/pm_image.cpp ****     out.load_address = Load32(bytes + 104);
+ 889              		.loc 1 116 28 view .LVU237
+ 890 01fc 0A20     		movs	r0, #10
+ 891 01fe 78E7     		b	.L17
+ 892              	.LVL80:
+ 893              	.L42:
+ 894              	.LBB159:
+ 895              	.LBB158:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 23
+
+
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 896              		.loc 1 23 20 view .LVU238
+ 897 0200 102F     		cmp	r7, #16
+  26:src/pm_image.cpp ****         ++n;
+ 898              		.loc 1 26 16 view .LVU239
+ 899 0202 00F8012F 		strb	r2, [r0, #1]!
+  27:src/pm_image.cpp ****     }
+ 900              		.loc 1 27 9 is_stmt 1 view .LVU240
+ 901              	.LVL81:
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 902              		.loc 1 23 20 view .LVU241
+ 903 0206 E7D1     		bne	.L41
+  23:src/pm_image.cpp ****         if(!ok(static_cast<char>(field[n])))
+ 904              		.loc 1 23 20 is_stmt 0 view .LVU242
+ 905 0208 F8E7     		b	.L43
+ 906              	.L85:
+  29:src/pm_image.cpp ****         return false;
+ 907              		.loc 1 29 5 is_stmt 1 view .LVU243
+ 908 020a 002F     		cmp	r7, #0
+ 909 020c F6D0     		beq	.L43
+  31:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+ 910              		.loc 1 31 5 view .LVU244
+  31:src/pm_image.cpp ****     for(size_t i = n; i < size; ++i)
+ 911              		.loc 1 31 12 is_stmt 0 view .LVU245
+ 912 020e F119     		adds	r1, r6, r7
+ 913 0210 07F15703 		add	r3, r7, #87
+ 914 0214 81F85320 		strb	r2, [r1, #83]
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 915              		.loc 1 32 5 is_stmt 1 view .LVU246
+ 916              	.LVL82:
+ 917              	.LBB157:
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 918              		.loc 1 32 25 discriminator 1 view .LVU247
+ 919 0218 2B44     		add	r3, r3, r5
+ 920 021a 05F16702 		add	r2, r5, #103
+ 921              	.LVL83:
+ 922              	.L47:
+  33:src/pm_image.cpp ****             return false;
+ 923              		.loc 1 33 9 view .LVU248
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 924              		.loc 1 32 5 discriminator 2 view .LVU249
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 925              		.loc 1 32 25 discriminator 1 view .LVU250
+  33:src/pm_image.cpp ****             return false;
+ 926              		.loc 1 33 19 is_stmt 0 view .LVU251
+ 927 021e 13F8010F 		ldrb	r0, [r3, #1]!	@ zero_extendqisi2
+  33:src/pm_image.cpp ****             return false;
+ 928              		.loc 1 33 9 view .LVU252
+ 929 0222 0028     		cmp	r0, #0
+ 930 0224 EAD1     		bne	.L43
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 931              		.loc 1 32 25 discriminator 1 view .LVU253
+ 932 0226 9A42     		cmp	r2, r3
+ 933 0228 F9D1     		bne	.L47
+ 934              	.LVL84:
+  32:src/pm_image.cpp ****         if(field[i] != 0)
+ 935              		.loc 1 32 25 discriminator 1 view .LVU254
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 24
+
+
+ 936              	.LBE157:
+ 937              	.LBE158:
+ 938              	.LBE159:
+ 117:src/pm_image.cpp ****     if(out.load_address != kTargetBase)
+ 939              		.loc 1 117 5 is_stmt 1 view .LVU255
+ 940              	.LBB160:
+ 941              	.LBI160:
+   9:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+ 942              		.loc 1 9 10 view .LVU256
+ 943              	.LBB161:
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ 944              		.loc 1 10 5 view .LVU257
+  11:src/pm_image.cpp **** }
+ 945              		.loc 1 11 86 is_stmt 0 view .LVU258
+ 946 022a AB6E     		ldr	r3, [r5, #104]	@ unaligned
+ 947              	.LVL85:
+  11:src/pm_image.cpp **** }
+ 948              		.loc 1 11 86 view .LVU259
+ 949              	.LBE161:
+ 950              	.LBE160:
+ 118:src/pm_image.cpp ****         return ImageError::LoadAddress;
+ 951              		.loc 1 118 5 view .LVU260
+ 952 022c B3F1105F 		cmp	r3, #603979776
+ 117:src/pm_image.cpp ****     if(out.load_address != kTargetBase)
+ 953              		.loc 1 117 22 discriminator 1 view .LVU261
+ 954 0230 7366     		str	r3, [r6, #100]
+ 118:src/pm_image.cpp ****         return ImageError::LoadAddress;
+ 955              		.loc 1 118 5 is_stmt 1 view .LVU262
+ 956 0232 2CD1     		bne	.L54
+ 120:src/pm_image.cpp ****     if(out.payload_offset != kHeaderSize)
+ 957              		.loc 1 120 5 view .LVU263
+ 958              	.LVL86:
+ 959              	.LBB162:
+ 960              	.LBI162:
+   9:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+ 961              		.loc 1 9 10 view .LVU264
+ 962              	.LBB163:
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ 963              		.loc 1 10 5 view .LVU265
+  11:src/pm_image.cpp **** }
+ 964              		.loc 1 11 86 is_stmt 0 view .LVU266
+ 965 0234 EB6E     		ldr	r3, [r5, #108]	@ unaligned
+ 966              	.LVL87:
+  11:src/pm_image.cpp **** }
+ 967              		.loc 1 11 86 view .LVU267
+ 968              	.LBE163:
+ 969              	.LBE162:
+ 121:src/pm_image.cpp ****         return ImageError::PayloadOffset;
+ 970              		.loc 1 121 5 view .LVU268
+ 971 0236 A02B     		cmp	r3, #160
+ 120:src/pm_image.cpp ****     if(out.payload_offset != kHeaderSize)
+ 972              		.loc 1 120 24 discriminator 1 view .LVU269
+ 973 0238 B366     		str	r3, [r6, #104]
+ 121:src/pm_image.cpp ****         return ImageError::PayloadOffset;
+ 974              		.loc 1 121 5 is_stmt 1 view .LVU270
+ 975 023a 2AD1     		bne	.L55
+ 123:src/pm_image.cpp ****     if(out.payload_length < kMinPayload || out.payload_length > kTargetSize)
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 25
+
+
+ 976              		.loc 1 123 5 view .LVU271
+ 977              	.LVL88:
+ 978              	.LBB164:
+ 979              	.LBI164:
+   9:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+ 980              		.loc 1 9 10 view .LVU272
+ 981              	.LBB165:
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ 982              		.loc 1 10 5 view .LVU273
+  11:src/pm_image.cpp **** }
+ 983              		.loc 1 11 86 is_stmt 0 view .LVU274
+ 984 023c 2B6F     		ldr	r3, [r5, #112]	@ unaligned
+ 985              	.LVL89:
+  11:src/pm_image.cpp **** }
+ 986              		.loc 1 11 86 view .LVU275
+ 987              	.LBE165:
+ 988              	.LBE164:
+ 124:src/pm_image.cpp ****         return ImageError::PayloadLength;
+ 989              		.loc 1 124 41 view .LVU276
+ 990 023e A3F10802 		sub	r2, r3, #8
+ 123:src/pm_image.cpp ****     if(out.payload_length < kMinPayload || out.payload_length > kTargetSize)
+ 991              		.loc 1 123 24 discriminator 1 view .LVU277
+ 992 0242 F366     		str	r3, [r6, #108]
+ 124:src/pm_image.cpp ****         return ImageError::PayloadLength;
+ 993              		.loc 1 124 5 is_stmt 1 view .LVU278
+ 994 0244 1B4B     		ldr	r3, .L86+20
+ 995 0246 9A42     		cmp	r2, r3
+ 996 0248 27D8     		bhi	.L56
+ 126:src/pm_image.cpp ****     if(Load32(bytes + 148) != 0 || Load32(bytes + 152) != 0)
+ 997              		.loc 1 126 5 view .LVU279
+ 126:src/pm_image.cpp ****     if(Load32(bytes + 148) != 0 || Load32(bytes + 152) != 0)
+ 998              		.loc 1 126 16 is_stmt 0 view .LVU280
+ 999 024a 6C6F     		ldr	r4, [r5, #116]	@ unaligned
+ 1000 024c A96F     		ldr	r1, [r5, #120]	@ unaligned
+ 1001 024e EA6F     		ldr	r2, [r5, #124]	@ unaligned
+ 1002 0250 D5F88030 		ldr	r3, [r5, #128]	@ unaligned
+ 1003 0254 3467     		str	r4, [r6, #112]	@ unaligned
+ 1004 0256 7167     		str	r1, [r6, #116]	@ unaligned
+ 1005 0258 B267     		str	r2, [r6, #120]	@ unaligned
+ 1006 025a F367     		str	r3, [r6, #124]	@ unaligned
+ 1007 025c D5F89030 		ldr	r3, [r5, #144]	@ unaligned
+ 1008 0260 D5F88440 		ldr	r4, [r5, #132]	@ unaligned
+ 1009 0264 D5F88810 		ldr	r1, [r5, #136]	@ unaligned
+ 1010 0268 D5F88C20 		ldr	r2, [r5, #140]	@ unaligned
+ 1011 026c C6F88040 		str	r4, [r6, #128]	@ unaligned
+ 1012 0270 C6F88410 		str	r1, [r6, #132]	@ unaligned
+ 1013 0274 C6F88820 		str	r2, [r6, #136]	@ unaligned
+ 1014 0278 C6F88C30 		str	r3, [r6, #140]	@ unaligned
+ 127:src/pm_image.cpp ****         return ImageError::Reserved;
+ 1015              		.loc 1 127 5 is_stmt 1 view .LVU281
+ 1016              	.LVL90:
+ 1017              	.LBB166:
+ 1018              	.LBI166:
+   9:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+ 1019              		.loc 1 9 10 view .LVU282
+ 1020              	.LBB167:
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 26
+
+
+ 1021              		.loc 1 10 5 view .LVU283
+  11:src/pm_image.cpp **** }
+ 1022              		.loc 1 11 86 is_stmt 0 view .LVU284
+ 1023 027c D5F89430 		ldr	r3, [r5, #148]	@ unaligned
+ 1024              	.LBE167:
+ 1025              	.LBE166:
+ 127:src/pm_image.cpp ****         return ImageError::Reserved;
+ 1026              		.loc 1 127 33 discriminator 1 view .LVU285
+ 1027 0280 4BB9     		cbnz	r3, .L57
+ 1028              	.LVL91:
+ 1029              	.LBB168:
+ 1030              	.LBI168:
+   9:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+ 1031              		.loc 1 9 10 is_stmt 1 view .LVU286
+ 1032              	.LBB169:
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ 1033              		.loc 1 10 5 view .LVU287
+  11:src/pm_image.cpp **** }
+ 1034              		.loc 1 11 86 is_stmt 0 view .LVU288
+ 1035 0282 D5F89830 		ldr	r3, [r5, #152]	@ unaligned
+ 1036              	.LBE169:
+ 1037              	.LBE168:
+ 128:src/pm_image.cpp ****     return ImageError::None;
+ 1038              		.loc 1 128 28 view .LVU289
+ 1039 0286 002B     		cmp	r3, #0
+ 1040 0288 18BF     		it	ne
+ 1041 028a 0E20     		movne	r0, #14
+ 1042 028c 31E7     		b	.L17
+ 1043              	.L54:
+ 119:src/pm_image.cpp ****     out.payload_offset = Load32(bytes + 108);
+ 1044              		.loc 1 119 28 view .LVU290
+ 1045 028e 0B20     		movs	r0, #11
+ 1046 0290 2FE7     		b	.L17
+ 1047              	.L55:
+ 122:src/pm_image.cpp ****     out.payload_length = Load32(bytes + 112);
+ 1048              		.loc 1 122 28 view .LVU291
+ 1049 0292 0C20     		movs	r0, #12
+ 1050 0294 2DE7     		b	.L17
+ 1051              	.L57:
+ 128:src/pm_image.cpp ****     return ImageError::None;
+ 1052              		.loc 1 128 28 view .LVU292
+ 1053 0296 0E20     		movs	r0, #14
+ 1054 0298 2BE7     		b	.L17
+ 1055              	.L56:
+ 125:src/pm_image.cpp ****     std::memcpy(out.payload_sha256, bytes + 116, 32);
+ 1056              		.loc 1 125 28 view .LVU293
+ 1057 029a 0D20     		movs	r0, #13
+ 1058 029c 29E7     		b	.L17
+ 1059              	.L87:
+ 1060 029e 00BF     		.align	2
+ 1061              	.L86:
+ 1062 02a0 00000000 		.word	_ZN2pmL6kMagicE
+ 1063 02a4 2083B8ED 		.word	-306674912
+ 1064 02a8 00000000 		.word	.LC1
+ 1065 02ac 01000001 		.word	16777217
+ 1066 02b0 10000000 		.word	.LC2
+ 1067 02b4 F87F0700 		.word	491512
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 27
+
+
+ 1068              		.cfi_endproc
+ 1069              	.LFE1311:
+ 1071              		.section	.rodata._ZN2pm11BuildHeaderERKNS_11ImageHeaderEPh.str1.4,"aMS",%progbits,1
+ 1072              		.align	2
+ 1073              	.LC3:
+ 1074 0000 44535949 		.ascii	"DSYIMAGE\000"
+ 1074      4D414745 
+ 1074      00
+ 1075              		.section	.text._ZN2pm11BuildHeaderERKNS_11ImageHeaderEPh,"ax",%progbits
+ 1076              		.align	1
+ 1077              		.p2align 2,,3
+ 1078              		.global	_ZN2pm11BuildHeaderERKNS_11ImageHeaderEPh
+ 1079              		.syntax unified
+ 1080              		.thumb
+ 1081              		.thumb_func
+ 1083              	_ZN2pm11BuildHeaderERKNS_11ImageHeaderEPh:
+ 1084              	.LVL92:
+ 1085              	.LFB1315:
+ 131:src/pm_image.cpp **** 
+ 132:src/pm_image.cpp **** void BuildHeader(const ImageHeader& header, uint8_t out[kHeaderSize]) {
+ 1086              		.loc 1 132 71 is_stmt 1 view -0
+ 1087              		.cfi_startproc
+ 1088              		@ args = 0, pretend = 0, frame = 0
+ 1089              		@ frame_needed = 0, uses_anonymous_args = 0
+ 133:src/pm_image.cpp ****     std::memset(out, 0, kHeaderSize);
+ 1090              		.loc 1 133 5 view .LVU295
+ 132:src/pm_image.cpp ****     std::memset(out, 0, kHeaderSize);
+ 1091              		.loc 1 132 71 is_stmt 0 view .LVU296
+ 1092 0000 70B5     		push	{r4, r5, r6, lr}
+ 1093              		.cfi_def_cfa_offset 16
+ 1094              		.cfi_offset 4, -16
+ 1095              		.cfi_offset 5, -12
+ 1096              		.cfi_offset 6, -8
+ 1097              		.cfi_offset 14, -4
+ 132:src/pm_image.cpp ****     std::memset(out, 0, kHeaderSize);
+ 1098              		.loc 1 132 71 view .LVU297
+ 1099 0002 0C46     		mov	r4, r1
+ 1100 0004 0546     		mov	r5, r0
+ 1101              		.loc 1 133 16 view .LVU298
+ 1102 0006 9822     		movs	r2, #152
+ 1103 0008 0021     		movs	r1, #0
+ 1104              	.LVL93:
+ 1105              		.loc 1 133 16 view .LVU299
+ 1106 000a 04F10800 		add	r0, r4, #8
+ 1107              	.LVL94:
+ 134:src/pm_image.cpp ****     std::memcpy(out, kMagic, sizeof(kMagic));
+ 135:src/pm_image.cpp ****     Store16(out + 8, header.header_version);
+ 136:src/pm_image.cpp ****     Store16(out + 10, static_cast<uint16_t>(kHeaderSize));
+ 137:src/pm_image.cpp ****     Store32(out + 12, header.flags);
+ 138:src/pm_image.cpp ****     PutField(out + 16, kHardwareField, header.hardware);
+ 1108              		.loc 1 138 13 view .LVU300
+ 1109 000e 04F11006 		add	r6, r4, #16
+ 133:src/pm_image.cpp ****     std::memcpy(out, kMagic, sizeof(kMagic));
+ 1110              		.loc 1 133 16 view .LVU301
+ 1111 0012 FFF7FEFF 		bl	memset
+ 1112              	.LVL95:
+ 134:src/pm_image.cpp ****     std::memcpy(out, kMagic, sizeof(kMagic));
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 28
+
+
+ 1113              		.loc 1 134 5 is_stmt 1 view .LVU302
+ 134:src/pm_image.cpp ****     std::memcpy(out, kMagic, sizeof(kMagic));
+ 1114              		.loc 1 134 16 is_stmt 0 view .LVU303
+ 1115 0016 514B     		ldr	r3, .L122
+ 1116              	.LBB199:
+ 1117              	.LBB200:
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1118              		.loc 1 13 45 view .LVU304
+ 1119 0018 A022     		movs	r2, #160
+ 1120              	.LBE200:
+ 1121              	.LBE199:
+ 134:src/pm_image.cpp ****     std::memcpy(out, kMagic, sizeof(kMagic));
+ 1122              		.loc 1 134 16 view .LVU305
+ 1123 001a 03CB     		ldmia	r3!, {r0, r1}
+ 1124 001c 6160     		str	r1, [r4, #4]	@ unaligned
+ 135:src/pm_image.cpp ****     Store16(out + 10, static_cast<uint16_t>(kHeaderSize));
+ 1125              		.loc 1 135 5 is_stmt 1 view .LVU306
+ 1126              		.loc 1 138 47 is_stmt 0 view .LVU307
+ 1127 001e 05F10801 		add	r1, r5, #8
+ 134:src/pm_image.cpp ****     Store16(out + 8, header.header_version);
+ 1128              		.loc 1 134 16 view .LVU308
+ 1129 0022 2060     		str	r0, [r4]	@ unaligned
+ 135:src/pm_image.cpp ****     Store16(out + 10, static_cast<uint16_t>(kHeaderSize));
+ 1130              		.loc 1 135 29 view .LVU309
+ 1131 0024 2B88     		ldrh	r3, [r5]
+ 1132              	.LVL96:
+ 1133              	.LBB203:
+ 1134              	.LBI203:
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1135              		.loc 1 13 6 is_stmt 1 view .LVU310
+ 1136              	.LBB204:
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1137              		.loc 1 13 40 view .LVU311
+ 1138              	.LBE204:
+ 1139              	.LBE203:
+ 1140              	.LBB206:
+ 1141              	.LBB201:
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1142              		.loc 1 13 45 is_stmt 0 view .LVU312
+ 1143 0026 A272     		strb	r2, [r4, #10]
+ 1144              	.LBE201:
+ 1145              	.LBE206:
+ 1146              	.LBB207:
+ 1147              	.LBB208:
+  42:src/pm_image.cpp ****     while(n < size && text[n] != 0)
+ 1148              		.loc 1 42 12 view .LVU313
+ 1149 0028 0022     		movs	r2, #0
+ 1150              	.LBE208:
+ 1151              	.LBE207:
+ 1152              	.LBB210:
+ 1153              	.LBB205:
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1154              		.loc 1 13 45 view .LVU314
+ 1155 002a 2372     		strb	r3, [r4, #8]
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1156              		.loc 1 13 72 is_stmt 1 view .LVU315
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 29
+
+
+ 1157              		.loc 1 13 102 is_stmt 0 view .LVU316
+ 1158 002c 1B0A     		lsrs	r3, r3, #8
+ 1159              	.LVL97:
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1160              		.loc 1 13 77 view .LVU317
+ 1161 002e 6372     		strb	r3, [r4, #9]
+ 1162              	.LVL98:
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1163              		.loc 1 13 77 view .LVU318
+ 1164              	.LBE205:
+ 1165              	.LBE210:
+ 136:src/pm_image.cpp ****     Store32(out + 12, header.flags);
+ 1166              		.loc 1 136 5 is_stmt 1 view .LVU319
+ 1167              	.LBB211:
+ 1168              	.LBI199:
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1169              		.loc 1 13 6 view .LVU320
+ 1170              	.LBB202:
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1171              		.loc 1 13 40 view .LVU321
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1172              		.loc 1 13 72 view .LVU322
+  13:src/pm_image.cpp **** void Store32(uint8_t* p, uint32_t v) {
+ 1173              		.loc 1 13 72 is_stmt 0 view .LVU323
+ 1174              	.LBE202:
+ 1175              	.LBE211:
+ 137:src/pm_image.cpp ****     PutField(out + 16, kHardwareField, header.hardware);
+ 1176              		.loc 1 137 5 is_stmt 1 view .LVU324
+ 1177              	.LBB212:
+ 1178              	.LBI212:
+  14:src/pm_image.cpp ****     p[0] = static_cast<uint8_t>(v); p[1] = static_cast<uint8_t>(v >> 8);
+ 1179              		.loc 1 14 6 view .LVU325
+ 1180              	.LBB213:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1181              		.loc 1 15 5 view .LVU326
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1182              		.loc 1 15 37 view .LVU327
+  16:src/pm_image.cpp **** }
+ 1183              		.loc 1 16 5 view .LVU328
+  16:src/pm_image.cpp **** }
+ 1184              		.loc 1 16 43 view .LVU329
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1185              		.loc 1 15 10 is_stmt 0 view .LVU330
+ 1186 0030 6B68     		ldr	r3, [r5, #4]
+ 1187 0032 E360     		str	r3, [r4, #12]	@ unaligned
+ 1188              	.LVL99:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1189              		.loc 1 15 10 view .LVU331
+ 1190              	.LBE213:
+ 1191              	.LBE212:
+ 1192              		.loc 1 138 5 is_stmt 1 view .LVU332
+ 1193              	.LBB214:
+ 1194              	.LBI207:
+  41:src/pm_image.cpp ****     size_t n = 0;
+ 1195              		.loc 1 41 6 view .LVU333
+ 1196              	.LBB209:
+  42:src/pm_image.cpp ****     while(n < size && text[n] != 0)
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 30
+
+
+ 1197              		.loc 1 42 5 view .LVU334
+  43:src/pm_image.cpp ****         ++n;
+ 1198              		.loc 1 43 5 view .LVU335
+  43:src/pm_image.cpp ****         ++n;
+ 1199              		.loc 1 43 20 view .LVU336
+ 1200 0034 EB1D     		adds	r3, r5, #7
+ 1201 0036 02E0     		b	.L89
+ 1202              	.LVL100:
+ 1203              	.L91:
+  44:src/pm_image.cpp ****     std::memcpy(field, text, n);
+ 1204              		.loc 1 44 9 is_stmt 0 view .LVU337
+ 1205 0038 0132     		adds	r2, r2, #1
+ 1206              	.LVL101:
+  43:src/pm_image.cpp ****         ++n;
+ 1207              		.loc 1 43 20 is_stmt 1 view .LVU338
+ 1208 003a 102A     		cmp	r2, #16
+ 1209 003c 03D0     		beq	.L90
+ 1210              	.LVL102:
+ 1211              	.L89:
+  44:src/pm_image.cpp ****     std::memcpy(field, text, n);
+ 1212              		.loc 1 44 9 view .LVU339
+  43:src/pm_image.cpp ****         ++n;
+ 1213              		.loc 1 43 20 is_stmt 0 discriminator 1 view .LVU340
+ 1214 003e 13F8010F 		ldrb	r0, [r3, #1]!	@ zero_extendqisi2
+ 1215 0042 0028     		cmp	r0, #0
+ 1216 0044 F8D1     		bne	.L91
+ 1217              	.L90:
+  45:src/pm_image.cpp **** }
+ 1218              		.loc 1 45 5 is_stmt 1 view .LVU341
+  45:src/pm_image.cpp **** }
+ 1219              		.loc 1 45 16 is_stmt 0 view .LVU342
+ 1220 0046 3046     		mov	r0, r6
+ 1221 0048 FFF7FEFF 		bl	memcpy
+ 1222              	.LVL103:
+  45:src/pm_image.cpp **** }
+ 1223              		.loc 1 45 16 view .LVU343
+ 1224              	.LBE209:
+ 1225              	.LBE214:
+ 139:src/pm_image.cpp ****     PutField(out + 32, kProfileField, header.profile);
+ 1226              		.loc 1 139 5 is_stmt 1 view .LVU344
+ 1227              		.loc 1 139 13 is_stmt 0 view .LVU345
+ 1228 004c 04F12000 		add	r0, r4, #32
+ 1229              		.loc 1 139 46 view .LVU346
+ 1230 0050 05F11901 		add	r1, r5, #25
+ 1231              	.LVL104:
+ 1232              	.LBB215:
+ 1233              	.LBI215:
+  41:src/pm_image.cpp ****     size_t n = 0;
+ 1234              		.loc 1 41 6 is_stmt 1 view .LVU347
+ 1235              	.LBB216:
+  42:src/pm_image.cpp ****     while(n < size && text[n] != 0)
+ 1236              		.loc 1 42 5 view .LVU348
+  43:src/pm_image.cpp ****         ++n;
+ 1237              		.loc 1 43 5 view .LVU349
+  43:src/pm_image.cpp ****         ++n;
+ 1238              		.loc 1 43 20 view .LVU350
+ 1239 0054 05F11803 		add	r3, r5, #24
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 31
+
+
+  42:src/pm_image.cpp ****     while(n < size && text[n] != 0)
+ 1240              		.loc 1 42 12 is_stmt 0 view .LVU351
+ 1241 0058 0022     		movs	r2, #0
+ 1242 005a 02E0     		b	.L92
+ 1243              	.LVL105:
+ 1244              	.L94:
+  44:src/pm_image.cpp ****     std::memcpy(field, text, n);
+ 1245              		.loc 1 44 9 view .LVU352
+ 1246 005c 0132     		adds	r2, r2, #1
+ 1247              	.LVL106:
+  43:src/pm_image.cpp ****         ++n;
+ 1248              		.loc 1 43 20 is_stmt 1 view .LVU353
+ 1249 005e 182A     		cmp	r2, #24
+ 1250 0060 03D0     		beq	.L93
+ 1251              	.LVL107:
+ 1252              	.L92:
+  44:src/pm_image.cpp ****     std::memcpy(field, text, n);
+ 1253              		.loc 1 44 9 view .LVU354
+  43:src/pm_image.cpp ****         ++n;
+ 1254              		.loc 1 43 20 is_stmt 0 discriminator 1 view .LVU355
+ 1255 0062 13F8016F 		ldrb	r6, [r3, #1]!	@ zero_extendqisi2
+ 1256 0066 002E     		cmp	r6, #0
+ 1257 0068 F8D1     		bne	.L94
+ 1258              	.L93:
+  45:src/pm_image.cpp **** }
+ 1259              		.loc 1 45 5 is_stmt 1 view .LVU356
+  45:src/pm_image.cpp **** }
+ 1260              		.loc 1 45 16 is_stmt 0 view .LVU357
+ 1261 006a FFF7FEFF 		bl	memcpy
+ 1262              	.LVL108:
+  45:src/pm_image.cpp **** }
+ 1263              		.loc 1 45 16 view .LVU358
+ 1264              	.LBE216:
+ 1265              	.LBE215:
+ 140:src/pm_image.cpp ****     PutField(out + 56, kProductField, header.product);
+ 1266              		.loc 1 140 5 is_stmt 1 view .LVU359
+ 1267              		.loc 1 140 13 is_stmt 0 view .LVU360
+ 1268 006e 04F13800 		add	r0, r4, #56
+ 1269              		.loc 1 140 46 view .LVU361
+ 1270 0072 05F13201 		add	r1, r5, #50
+ 1271              	.LVL109:
+ 1272              	.LBB217:
+ 1273              	.LBI217:
+  41:src/pm_image.cpp ****     size_t n = 0;
+ 1274              		.loc 1 41 6 is_stmt 1 view .LVU362
+ 1275              	.LBB218:
+  42:src/pm_image.cpp ****     while(n < size && text[n] != 0)
+ 1276              		.loc 1 42 5 view .LVU363
+  43:src/pm_image.cpp ****         ++n;
+ 1277              		.loc 1 43 5 view .LVU364
+  43:src/pm_image.cpp ****         ++n;
+ 1278              		.loc 1 43 20 view .LVU365
+ 1279 0076 05F13103 		add	r3, r5, #49
+  42:src/pm_image.cpp ****     while(n < size && text[n] != 0)
+ 1280              		.loc 1 42 12 is_stmt 0 view .LVU366
+ 1281 007a 0022     		movs	r2, #0
+ 1282 007c 02E0     		b	.L95
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 32
+
+
+ 1283              	.LVL110:
+ 1284              	.L97:
+  44:src/pm_image.cpp ****     std::memcpy(field, text, n);
+ 1285              		.loc 1 44 9 view .LVU367
+ 1286 007e 0132     		adds	r2, r2, #1
+ 1287              	.LVL111:
+  43:src/pm_image.cpp ****         ++n;
+ 1288              		.loc 1 43 20 is_stmt 1 view .LVU368
+ 1289 0080 202A     		cmp	r2, #32
+ 1290 0082 03D0     		beq	.L96
+ 1291              	.LVL112:
+ 1292              	.L95:
+  44:src/pm_image.cpp ****     std::memcpy(field, text, n);
+ 1293              		.loc 1 44 9 view .LVU369
+  43:src/pm_image.cpp ****         ++n;
+ 1294              		.loc 1 43 20 is_stmt 0 discriminator 1 view .LVU370
+ 1295 0084 13F8016F 		ldrb	r6, [r3, #1]!	@ zero_extendqisi2
+ 1296 0088 002E     		cmp	r6, #0
+ 1297 008a F8D1     		bne	.L97
+ 1298              	.L96:
+  45:src/pm_image.cpp **** }
+ 1299              		.loc 1 45 5 is_stmt 1 view .LVU371
+  45:src/pm_image.cpp **** }
+ 1300              		.loc 1 45 16 is_stmt 0 view .LVU372
+ 1301 008c FFF7FEFF 		bl	memcpy
+ 1302              	.LVL113:
+  45:src/pm_image.cpp **** }
+ 1303              		.loc 1 45 16 view .LVU373
+ 1304              	.LBE218:
+ 1305              	.LBE217:
+ 141:src/pm_image.cpp ****     PutField(out + 88, kVersionField, header.version);
+ 1306              		.loc 1 141 5 is_stmt 1 view .LVU374
+ 1307              		.loc 1 141 13 is_stmt 0 view .LVU375
+ 1308 0090 04F15800 		add	r0, r4, #88
+ 1309              		.loc 1 141 46 view .LVU376
+ 1310 0094 05F15301 		add	r1, r5, #83
+ 1311              	.LVL114:
+ 1312              	.LBB219:
+ 1313              	.LBI219:
+  41:src/pm_image.cpp ****     size_t n = 0;
+ 1314              		.loc 1 41 6 is_stmt 1 view .LVU377
+ 1315              	.LBB220:
+  42:src/pm_image.cpp ****     while(n < size && text[n] != 0)
+ 1316              		.loc 1 42 5 view .LVU378
+  43:src/pm_image.cpp ****         ++n;
+ 1317              		.loc 1 43 5 view .LVU379
+  43:src/pm_image.cpp ****         ++n;
+ 1318              		.loc 1 43 20 view .LVU380
+ 1319 0098 05F15203 		add	r3, r5, #82
+  42:src/pm_image.cpp ****     while(n < size && text[n] != 0)
+ 1320              		.loc 1 42 12 is_stmt 0 view .LVU381
+ 1321 009c 0022     		movs	r2, #0
+ 1322 009e 02E0     		b	.L98
+ 1323              	.LVL115:
+ 1324              	.L100:
+  44:src/pm_image.cpp ****     std::memcpy(field, text, n);
+ 1325              		.loc 1 44 9 view .LVU382
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 33
+
+
+ 1326 00a0 0132     		adds	r2, r2, #1
+ 1327              	.LVL116:
+  43:src/pm_image.cpp ****         ++n;
+ 1328              		.loc 1 43 20 is_stmt 1 view .LVU383
+ 1329 00a2 102A     		cmp	r2, #16
+ 1330 00a4 03D0     		beq	.L99
+ 1331              	.LVL117:
+ 1332              	.L98:
+  44:src/pm_image.cpp ****     std::memcpy(field, text, n);
+ 1333              		.loc 1 44 9 view .LVU384
+  43:src/pm_image.cpp ****         ++n;
+ 1334              		.loc 1 43 20 is_stmt 0 discriminator 1 view .LVU385
+ 1335 00a6 13F8016F 		ldrb	r6, [r3, #1]!	@ zero_extendqisi2
+ 1336 00aa 002E     		cmp	r6, #0
+ 1337 00ac F8D1     		bne	.L100
+ 1338              	.L99:
+  45:src/pm_image.cpp **** }
+ 1339              		.loc 1 45 5 is_stmt 1 view .LVU386
+  45:src/pm_image.cpp **** }
+ 1340              		.loc 1 45 16 is_stmt 0 view .LVU387
+ 1341 00ae FFF7FEFF 		bl	memcpy
+ 1342              	.LVL118:
+  45:src/pm_image.cpp **** }
+ 1343              		.loc 1 45 16 view .LVU388
+ 1344              	.LBE220:
+ 1345              	.LBE219:
+ 142:src/pm_image.cpp ****     Store32(out + 104, header.load_address);
+ 1346              		.loc 1 142 5 is_stmt 1 view .LVU389
+ 1347              		.loc 1 142 31 is_stmt 0 view .LVU390
+ 1348 00b2 6B6E     		ldr	r3, [r5, #100]
+ 1349              	.LVL119:
+ 1350              	.LBB221:
+ 1351              	.LBI221:
+  14:src/pm_image.cpp ****     p[0] = static_cast<uint8_t>(v); p[1] = static_cast<uint8_t>(v >> 8);
+ 1352              		.loc 1 14 6 is_stmt 1 view .LVU391
+ 1353              	.LBB222:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1354              		.loc 1 15 5 view .LVU392
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1355              		.loc 1 15 10 is_stmt 0 view .LVU393
+ 1356 00b4 84F86830 		strb	r3, [r4, #104]
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1357              		.loc 1 15 37 is_stmt 1 view .LVU394
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1358              		.loc 1 15 67 is_stmt 0 view .LVU395
+ 1359 00b8 190A     		lsrs	r1, r3, #8
+  16:src/pm_image.cpp **** }
+ 1360              		.loc 1 16 35 view .LVU396
+ 1361 00ba 1A0C     		lsrs	r2, r3, #16
+  16:src/pm_image.cpp **** }
+ 1362              		.loc 1 16 73 view .LVU397
+ 1363 00bc 1B0E     		lsrs	r3, r3, #24
+ 1364              	.LVL120:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1365              		.loc 1 15 42 view .LVU398
+ 1366 00be 84F86910 		strb	r1, [r4, #105]
+  16:src/pm_image.cpp **** }
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 34
+
+
+ 1367              		.loc 1 16 5 is_stmt 1 view .LVU399
+  16:src/pm_image.cpp **** }
+ 1368              		.loc 1 16 10 is_stmt 0 view .LVU400
+ 1369 00c2 84F86A20 		strb	r2, [r4, #106]
+  16:src/pm_image.cpp **** }
+ 1370              		.loc 1 16 43 is_stmt 1 view .LVU401
+  16:src/pm_image.cpp **** }
+ 1371              		.loc 1 16 48 is_stmt 0 view .LVU402
+ 1372 00c6 84F86B30 		strb	r3, [r4, #107]
+ 1373              	.LVL121:
+  16:src/pm_image.cpp **** }
+ 1374              		.loc 1 16 48 view .LVU403
+ 1375              	.LBE222:
+ 1376              	.LBE221:
+ 143:src/pm_image.cpp ****     Store32(out + 108, header.payload_offset);
+ 1377              		.loc 1 143 5 is_stmt 1 view .LVU404
+ 1378              		.loc 1 143 31 is_stmt 0 view .LVU405
+ 1379 00ca AB6E     		ldr	r3, [r5, #104]
+ 1380              	.LVL122:
+ 1381              	.LBB223:
+ 1382              	.LBI223:
+  14:src/pm_image.cpp ****     p[0] = static_cast<uint8_t>(v); p[1] = static_cast<uint8_t>(v >> 8);
+ 1383              		.loc 1 14 6 is_stmt 1 view .LVU406
+ 1384              	.LBB224:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1385              		.loc 1 15 5 view .LVU407
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1386              		.loc 1 15 10 is_stmt 0 view .LVU408
+ 1387 00cc 84F86C30 		strb	r3, [r4, #108]
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1388              		.loc 1 15 37 is_stmt 1 view .LVU409
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1389              		.loc 1 15 67 is_stmt 0 view .LVU410
+ 1390 00d0 190A     		lsrs	r1, r3, #8
+  16:src/pm_image.cpp **** }
+ 1391              		.loc 1 16 35 view .LVU411
+ 1392 00d2 1A0C     		lsrs	r2, r3, #16
+  16:src/pm_image.cpp **** }
+ 1393              		.loc 1 16 73 view .LVU412
+ 1394 00d4 1B0E     		lsrs	r3, r3, #24
+ 1395              	.LVL123:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1396              		.loc 1 15 42 view .LVU413
+ 1397 00d6 84F86D10 		strb	r1, [r4, #109]
+  16:src/pm_image.cpp **** }
+ 1398              		.loc 1 16 5 is_stmt 1 view .LVU414
+  16:src/pm_image.cpp **** }
+ 1399              		.loc 1 16 10 is_stmt 0 view .LVU415
+ 1400 00da 84F86E20 		strb	r2, [r4, #110]
+  16:src/pm_image.cpp **** }
+ 1401              		.loc 1 16 43 is_stmt 1 view .LVU416
+  16:src/pm_image.cpp **** }
+ 1402              		.loc 1 16 48 is_stmt 0 view .LVU417
+ 1403 00de 84F86F30 		strb	r3, [r4, #111]
+ 1404              	.LVL124:
+  16:src/pm_image.cpp **** }
+ 1405              		.loc 1 16 48 view .LVU418
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 35
+
+
+ 1406              	.LBE224:
+ 1407              	.LBE223:
+ 144:src/pm_image.cpp ****     Store32(out + 112, header.payload_length);
+ 1408              		.loc 1 144 5 is_stmt 1 view .LVU419
+ 1409              		.loc 1 144 31 is_stmt 0 view .LVU420
+ 1410 00e2 EB6E     		ldr	r3, [r5, #108]
+ 1411              	.LVL125:
+ 1412              	.LBB225:
+ 1413              	.LBI225:
+  14:src/pm_image.cpp ****     p[0] = static_cast<uint8_t>(v); p[1] = static_cast<uint8_t>(v >> 8);
+ 1414              		.loc 1 14 6 is_stmt 1 view .LVU421
+ 1415              	.LBB226:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1416              		.loc 1 15 5 view .LVU422
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1417              		.loc 1 15 10 is_stmt 0 view .LVU423
+ 1418 00e4 84F87030 		strb	r3, [r4, #112]
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1419              		.loc 1 15 37 is_stmt 1 view .LVU424
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1420              		.loc 1 15 67 is_stmt 0 view .LVU425
+ 1421 00e8 190A     		lsrs	r1, r3, #8
+  16:src/pm_image.cpp **** }
+ 1422              		.loc 1 16 35 view .LVU426
+ 1423 00ea 1A0C     		lsrs	r2, r3, #16
+  16:src/pm_image.cpp **** }
+ 1424              		.loc 1 16 73 view .LVU427
+ 1425 00ec 1B0E     		lsrs	r3, r3, #24
+ 1426              	.LVL126:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1427              		.loc 1 15 42 view .LVU428
+ 1428 00ee 84F87110 		strb	r1, [r4, #113]
+  16:src/pm_image.cpp **** }
+ 1429              		.loc 1 16 5 is_stmt 1 view .LVU429
+  16:src/pm_image.cpp **** }
+ 1430              		.loc 1 16 10 is_stmt 0 view .LVU430
+ 1431 00f2 84F87220 		strb	r2, [r4, #114]
+  16:src/pm_image.cpp **** }
+ 1432              		.loc 1 16 43 is_stmt 1 view .LVU431
+  16:src/pm_image.cpp **** }
+ 1433              		.loc 1 16 48 is_stmt 0 view .LVU432
+ 1434 00f6 84F87330 		strb	r3, [r4, #115]
+ 1435              	.LVL127:
+  16:src/pm_image.cpp **** }
+ 1436              		.loc 1 16 48 view .LVU433
+ 1437              	.LBE226:
+ 1438              	.LBE225:
+ 145:src/pm_image.cpp ****     std::memcpy(out + 116, header.payload_sha256, 32);
+ 1439              		.loc 1 145 5 is_stmt 1 view .LVU434
+ 1440              		.loc 1 145 16 is_stmt 0 view .LVU435
+ 1441 00fa 296F     		ldr	r1, [r5, #112]	@ unaligned
+ 1442 00fc 686F     		ldr	r0, [r5, #116]	@ unaligned
+ 1443 00fe AA6F     		ldr	r2, [r5, #120]	@ unaligned
+ 1444 0100 EB6F     		ldr	r3, [r5, #124]	@ unaligned
+ 1445 0102 6167     		str	r1, [r4, #116]	@ unaligned
+ 1446 0104 A067     		str	r0, [r4, #120]	@ unaligned
+ 1447 0106 E267     		str	r2, [r4, #124]	@ unaligned
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 36
+
+
+ 1448 0108 C4F88030 		str	r3, [r4, #128]	@ unaligned
+ 1449 010c D5F88010 		ldr	r1, [r5, #128]	@ unaligned
+ 1450 0110 D5F88820 		ldr	r2, [r5, #136]	@ unaligned
+ 1451 0114 D5F88400 		ldr	r0, [r5, #132]	@ unaligned
+ 1452 0118 D5F88C30 		ldr	r3, [r5, #140]	@ unaligned
+ 1453 011c 04F19B05 		add	r5, r4, #155
+ 1454              	.LVL128:
+ 1455              		.loc 1 145 16 view .LVU436
+ 1456 0120 C4F88410 		str	r1, [r4, #132]	@ unaligned
+ 1457 0124 611E     		subs	r1, r4, #1
+ 1458 0126 C4F88C20 		str	r2, [r4, #140]	@ unaligned
+ 1459 012a 4FF0FF32 		mov	r2, #-1
+ 1460 012e C4F88800 		str	r0, [r4, #136]	@ unaligned
+ 1461 0132 C4F89030 		str	r3, [r4, #144]	@ unaligned
+ 146:src/pm_image.cpp ****     Store32(out + 156, Crc32(out, 156));
+ 1462              		.loc 1 146 5 is_stmt 1 view .LVU437
+ 1463              	.LVL129:
+ 1464              	.LBB227:
+ 1465              	.LBI227:
+  20:src/pm_crc32.h ****     return Crc32Update(0xFFFFFFFFu, data, len) ^ 0xFFFFFFFFu;
+ 1466              		.loc 3 20 17 view .LVU438
+ 1467              	.LBB228:
+ 1468              		.loc 3 21 5 view .LVU439
+ 1469              	.LBB229:
+ 1470              	.LBI229:
+  11:src/pm_crc32.h ****     for(size_t i = 0; i < len; ++i) {
+ 1471              		.loc 3 11 17 view .LVU440
+  12:src/pm_crc32.h ****         crc ^= data[i];
+ 1472              		.loc 3 12 5 view .LVU441
+ 1473              	.LBB230:
+  12:src/pm_crc32.h ****         crc ^= data[i];
+ 1474              		.loc 3 12 25 discriminator 1 view .LVU442
+ 1475              	.L102:
+ 1476              	.LBB231:
+  13:src/pm_crc32.h ****         for(int bit = 0; bit < 8; ++bit)
+ 1477              		.loc 3 13 9 view .LVU443
+  13:src/pm_crc32.h ****         for(int bit = 0; bit < 8; ++bit)
+ 1478              		.loc 3 13 22 is_stmt 0 view .LVU444
+ 1479 0136 11F8013F 		ldrb	r3, [r1, #1]!	@ zero_extendqisi2
+  13:src/pm_crc32.h ****         for(int bit = 0; bit < 8; ++bit)
+ 1480              		.loc 3 13 13 view .LVU445
+ 1481 013a 0820     		movs	r0, #8
+ 1482 013c 5A40     		eors	r2, r2, r3
+ 1483              	.LVL130:
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 1484              		.loc 3 14 9 is_stmt 1 view .LVU446
+ 1485              	.LBB232:
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 1486              		.loc 3 14 30 discriminator 1 view .LVU447
+ 1487              	.L101:
+  15:src/pm_crc32.h ****     }
+ 1488              		.loc 3 15 13 view .LVU448
+  15:src/pm_crc32.h ****     }
+ 1489              		.loc 3 15 51 is_stmt 0 view .LVU449
+ 1490 013e 42F3000C 		sbfx	ip, r2, #0, #1
+  15:src/pm_crc32.h ****     }
+ 1491              		.loc 3 15 45 view .LVU450
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 37
+
+
+ 1492 0142 074B     		ldr	r3, .L122+4
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 1493              		.loc 3 14 30 discriminator 1 view .LVU451
+ 1494 0144 0138     		subs	r0, r0, #1
+  15:src/pm_crc32.h ****     }
+ 1495              		.loc 3 15 45 view .LVU452
+ 1496 0146 0CEA0303 		and	r3, ip, r3
+  15:src/pm_crc32.h ****     }
+ 1497              		.loc 3 15 17 view .LVU453
+ 1498 014a 83EA5202 		eor	r2, r3, r2, lsr #1
+ 1499              	.LVL131:
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 1500              		.loc 3 14 9 is_stmt 1 discriminator 3 view .LVU454
+  14:src/pm_crc32.h ****             crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+ 1501              		.loc 3 14 30 discriminator 1 view .LVU455
+ 1502 014e F6D1     		bne	.L101
+ 1503              	.LBE232:
+ 1504              	.LBE231:
+  12:src/pm_crc32.h ****         crc ^= data[i];
+ 1505              		.loc 3 12 5 discriminator 2 view .LVU456
+  12:src/pm_crc32.h ****         crc ^= data[i];
+ 1506              		.loc 3 12 25 discriminator 1 view .LVU457
+ 1507 0150 A942     		cmp	r1, r5
+ 1508 0152 F0D1     		bne	.L102
+ 1509              	.LBE230:
+  17:src/pm_crc32.h **** }
+ 1510              		.loc 3 17 5 view .LVU458
+ 1511              	.LVL132:
+  17:src/pm_crc32.h **** }
+ 1512              		.loc 3 17 5 is_stmt 0 view .LVU459
+ 1513              	.LBE229:
+ 1514              	.LBE228:
+ 1515              	.LBE227:
+ 1516              	.LBB234:
+ 1517              	.LBI234:
+  14:src/pm_image.cpp ****     p[0] = static_cast<uint8_t>(v); p[1] = static_cast<uint8_t>(v >> 8);
+ 1518              		.loc 1 14 6 is_stmt 1 view .LVU460
+ 1519              	.LBB235:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1520              		.loc 1 15 5 view .LVU461
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1521              		.loc 1 15 37 view .LVU462
+  16:src/pm_image.cpp **** }
+ 1522              		.loc 1 16 5 view .LVU463
+  16:src/pm_image.cpp **** }
+ 1523              		.loc 1 16 43 view .LVU464
+ 1524              	.LBE235:
+ 1525              	.LBE234:
+ 1526              	.LBB237:
+ 1527              	.LBB233:
+ 1528              		.loc 3 21 50 is_stmt 0 discriminator 1 view .LVU465
+ 1529 0154 D243     		mvns	r2, r2
+ 1530              	.LVL133:
+ 1531              		.loc 3 21 50 discriminator 1 view .LVU466
+ 1532              	.LBE233:
+ 1533              	.LBE237:
+ 1534              	.LBB238:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 38
+
+
+ 1535              	.LBB236:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1536              		.loc 1 15 10 view .LVU467
+ 1537 0156 C4F89C20 		str	r2, [r4, #156]	@ unaligned
+ 1538              	.LVL134:
+  15:src/pm_image.cpp ****     p[2] = static_cast<uint8_t>(v >> 16); p[3] = static_cast<uint8_t>(v >> 24);
+ 1539              		.loc 1 15 10 view .LVU468
+ 1540              	.LBE236:
+ 1541              	.LBE238:
+ 147:src/pm_image.cpp **** }
+ 1542              		.loc 1 147 1 view .LVU469
+ 1543 015a 70BD     		pop	{r4, r5, r6, pc}
+ 1544              	.LVL135:
+ 1545              	.L123:
+ 1546              		.loc 1 147 1 view .LVU470
+ 1547              		.align	2
+ 1548              	.L122:
+ 1549 015c 00000000 		.word	.LC3
+ 1550 0160 2083B8ED 		.word	-306674912
+ 1551              		.cfi_endproc
+ 1552              	.LFE1315:
+ 1554              		.section	.text._ZN2pm12CheckVectorsEPKhm,"ax",%progbits
+ 1555              		.align	1
+ 1556              		.p2align 2,,3
+ 1557              		.global	_ZN2pm12CheckVectorsEPKhm
+ 1558              		.syntax unified
+ 1559              		.thumb
+ 1560              		.thumb_func
+ 1562              	_ZN2pm12CheckVectorsEPKhm:
+ 1563              	.LVL136:
+ 1564              	.LFB1316:
+ 148:src/pm_image.cpp **** 
+ 149:src/pm_image.cpp **** VectorError CheckVectors(const uint8_t payload[8], uint32_t payload_length) {
+ 1565              		.loc 1 149 77 is_stmt 1 view -0
+ 1566              		.cfi_startproc
+ 1567              		@ args = 0, pretend = 0, frame = 0
+ 1568              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1569              		@ link register save eliminated.
+ 150:src/pm_image.cpp ****     const uint32_t sp = Load32(payload);
+ 1570              		.loc 1 150 5 view .LVU472
+ 151:src/pm_image.cpp ****     const uint32_t pc = Load32(payload + 4);
+ 152:src/pm_image.cpp ****     if(!(sp > kDtcmBase && sp <= kDtcmEnd) || (sp & 7u) != 0)
+ 1571              		.loc 1 152 8 is_stmt 0 view .LVU473
+ 1572 0000 6FF00053 		mvn	r3, #536870912
+ 1573              	.LVL137:
+ 1574              	.LBB239:
+ 1575              	.LBI239:
+   9:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+ 1576              		.loc 1 9 10 is_stmt 1 view .LVU474
+ 1577              	.LBB240:
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ 1578              		.loc 1 10 5 view .LVU475
+  11:src/pm_image.cpp **** }
+ 1579              		.loc 1 11 86 is_stmt 0 view .LVU476
+ 1580 0004 0268     		ldr	r2, [r0]	@ unaligned
+ 1581              	.LVL138:
+  11:src/pm_image.cpp **** }
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 39
+
+
+ 1582              		.loc 1 11 86 view .LVU477
+ 1583              	.LBE240:
+ 1584              	.LBE239:
+ 151:src/pm_image.cpp ****     if(!(sp > kDtcmBase && sp <= kDtcmEnd) || (sp & 7u) != 0)
+ 1585              		.loc 1 151 5 is_stmt 1 view .LVU478
+ 1586              	.LBB241:
+ 1587              	.LBI241:
+   9:src/pm_image.cpp ****     return static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8)
+ 1588              		.loc 1 9 10 view .LVU479
+ 1589              	.LBB242:
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ 1590              		.loc 1 10 5 view .LVU480
+  10:src/pm_image.cpp ****            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
+ 1591              		.loc 1 10 5 is_stmt 0 view .LVU481
+ 1592              	.LBE242:
+ 1593              	.LBE241:
+ 1594              		.loc 1 152 5 is_stmt 1 view .LVU482
+ 1595              		.loc 1 152 8 is_stmt 0 view .LVU483
+ 1596 0006 1344     		add	r3, r3, r2
+ 1597              		.loc 1 152 5 view .LVU484
+ 1598 0008 B3F5003F 		cmp	r3, #131072
+ 1599 000c 11D2     		bcs	.L127
+ 1600              		.loc 1 152 44 discriminator 1 view .LVU485
+ 1601 000e 5307     		lsls	r3, r2, #29
+ 1602 0010 0FD1     		bne	.L127
+ 1603              	.LBB244:
+ 1604              	.LBB243:
+  11:src/pm_image.cpp **** }
+ 1605              		.loc 1 11 86 view .LVU486
+ 1606 0012 4368     		ldr	r3, [r0, #4]	@ unaligned
+ 1607              	.LBE243:
+ 1608              	.LBE244:
+ 153:src/pm_image.cpp ****         return VectorError::Stack;
+ 154:src/pm_image.cpp ****     if((pc & 1u) == 0)
+ 1609              		.loc 1 154 5 is_stmt 1 view .LVU487
+ 1610 0014 DA07     		lsls	r2, r3, #31
+ 1611 0016 0ED5     		bpl	.L129
+ 155:src/pm_image.cpp ****         return VectorError::Reset;
+ 156:src/pm_image.cpp ****     const uint32_t entry = pc & ~1u;
+ 1612              		.loc 1 156 5 view .LVU488
+ 1613              		.loc 1 156 20 is_stmt 0 view .LVU489
+ 1614 0018 23F00103 		bic	r3, r3, #1
+ 1615              	.LVL139:
+ 157:src/pm_image.cpp ****     if(entry < kTargetBase || entry >= kTargetBase + payload_length)
+ 1616              		.loc 1 157 5 is_stmt 1 view .LVU490
+ 1617 001c B3F1105F 		cmp	r3, #603979776
+ 1618 0020 09D3     		bcc	.L129
+ 1619              		.loc 1 157 52 is_stmt 0 discriminator 1 view .LVU491
+ 1620 0022 01F11051 		add	r1, r1, #603979776
+ 1621              	.LVL140:
+ 1622              		.loc 1 157 28 discriminator 1 view .LVU492
+ 1623 0026 9942     		cmp	r1, r3
+ 1624 0028 8CBF     		ite	hi
+ 1625 002a 0020     		movhi	r0, #0
+ 1626              	.LVL141:
+ 1627              		.loc 1 157 28 discriminator 1 view .LVU493
+ 1628 002c 0120     		movls	r0, #1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 40
+
+
+ 1629 002e 4000     		lsls	r0, r0, #1
+ 1630 0030 7047     		bx	lr
+ 1631              	.LVL142:
+ 1632              	.L127:
+ 153:src/pm_image.cpp ****         return VectorError::Stack;
+ 1633              		.loc 1 153 29 view .LVU494
+ 1634 0032 0120     		movs	r0, #1
+ 1635              	.LVL143:
+ 153:src/pm_image.cpp ****         return VectorError::Stack;
+ 1636              		.loc 1 153 29 view .LVU495
+ 1637 0034 7047     		bx	lr
+ 1638              	.LVL144:
+ 1639              	.L129:
+ 155:src/pm_image.cpp ****         return VectorError::Reset;
+ 1640              		.loc 1 155 29 view .LVU496
+ 1641 0036 0220     		movs	r0, #2
+ 1642              	.LVL145:
+ 158:src/pm_image.cpp ****         return VectorError::Reset;
+ 159:src/pm_image.cpp ****     return VectorError::None;
+ 160:src/pm_image.cpp **** }
+ 1643              		.loc 1 160 1 view .LVU497
+ 1644 0038 7047     		bx	lr
+ 1645              		.cfi_endproc
+ 1646              	.LFE1316:
+ 1648 003a 00BF     		.section	.rodata.str1.4,"aMS",%progbits,1
+ 1649              		.align	2
+ 1650              	.LC4:
+ 1651 0000 4F4B00   		.ascii	"OK\000"
+ 1652 0003 00       		.align	2
+ 1653              	.LC5:
+ 1654 0004 56454353 		.ascii	"VECSP\000"
+ 1654      5000
+ 1655 000a 0000     		.align	2
+ 1656              	.LC6:
+ 1657 000c 56454350 		.ascii	"VECPC\000"
+ 1657      4300
+ 1658              		.section	.rodata.CSWTCH.29,"a"
+ 1659              		.align	2
+ 1662              	CSWTCH.29:
+ 1663 0000 00000000 		.word	.LC4
+ 1664 0004 04000000 		.word	.LC5
+ 1665 0008 0C000000 		.word	.LC6
+ 1666              		.section	.rodata.str1.4
+ 1667 0012 0000     		.align	2
+ 1668              	.LC7:
+ 1669 0014 53484F52 		.ascii	"SHORT\000"
+ 1669      5400
+ 1670 001a 0000     		.align	2
+ 1671              	.LC8:
+ 1672 001c 4D414749 		.ascii	"MAGIC\000"
+ 1672      4300
+ 1673 0022 0000     		.align	2
+ 1674              	.LC9:
+ 1675 0024 48445256 		.ascii	"HDRVER\000"
+ 1675      455200
+ 1676 002b 00       		.align	2
+ 1677              	.LC10:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 41
+
+
+ 1678 002c 48445253 		.ascii	"HDRSIZE\000"
+ 1678      495A4500 
+ 1679              		.align	2
+ 1680              	.LC11:
+ 1681 0034 48445243 		.ascii	"HDRCRC\000"
+ 1681      524300
+ 1682 003b 00       		.align	2
+ 1683              	.LC12:
+ 1684 003c 464C4147 		.ascii	"FLAGS\000"
+ 1684      5300
+ 1685 0042 0000     		.align	2
+ 1686              	.LC13:
+ 1687 0044 48415244 		.ascii	"HARDWARE\000"
+ 1687      57415245 
+ 1687      00
+ 1688 004d 000000   		.align	2
+ 1689              	.LC14:
+ 1690 0050 50524F46 		.ascii	"PROFILE\000"
+ 1690      494C4500 
+ 1691              		.align	2
+ 1692              	.LC15:
+ 1693 0058 50524F44 		.ascii	"PRODUCT\000"
+ 1693      55435400 
+ 1694              		.align	2
+ 1695              	.LC16:
+ 1696 0060 56455253 		.ascii	"VERSION\000"
+ 1696      494F4E00 
+ 1697              		.align	2
+ 1698              	.LC17:
+ 1699 0068 4C4F4144 		.ascii	"LOADADDR\000"
+ 1699      41444452 
+ 1699      00
+ 1700 0071 000000   		.align	2
+ 1701              	.LC18:
+ 1702 0074 4F464653 		.ascii	"OFFSET\000"
+ 1702      455400
+ 1703 007b 00       		.align	2
+ 1704              	.LC19:
+ 1705 007c 4C454E47 		.ascii	"LENGTH\000"
+ 1705      544800
+ 1706 0083 00       		.align	2
+ 1707              	.LC20:
+ 1708 0084 52455345 		.ascii	"RESERVED\000"
+ 1708      52564544 
+ 1708      00
+ 1709              		.section	.rodata.CSWTCH.27,"a"
+ 1710              		.align	2
+ 1713              	CSWTCH.27:
+ 1714 0000 00000000 		.word	.LC4
+ 1715 0004 14000000 		.word	.LC7
+ 1716 0008 1C000000 		.word	.LC8
+ 1717 000c 24000000 		.word	.LC9
+ 1718 0010 2C000000 		.word	.LC10
+ 1719 0014 34000000 		.word	.LC11
+ 1720 0018 3C000000 		.word	.LC12
+ 1721 001c 44000000 		.word	.LC13
+ 1722 0020 50000000 		.word	.LC14
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 42
+
+
+ 1723 0024 58000000 		.word	.LC15
+ 1724 0028 60000000 		.word	.LC16
+ 1725 002c 68000000 		.word	.LC17
+ 1726 0030 74000000 		.word	.LC18
+ 1727 0034 7C000000 		.word	.LC19
+ 1728 0038 84000000 		.word	.LC20
+ 1729              		.section	.rodata._ZN2pmL6kMagicE,"a"
+ 1730              		.align	2
+ 1733              	_ZN2pmL6kMagicE:
+ 1734 0000 44535949 		.ascii	"DSYIMAGE"
+ 1734      4D414745 
+ 1735              		.text
+ 1736              	.Letext0:
+ 1737              		.file 4 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1738              		.file 5 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1739              		.file 6 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1740              		.file 7 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1741              		.file 8 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1742              		.file 9 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 1743              		.file 10 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1744              		.file 11 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1745              		.file 12 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1746              		.file 13 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1747              		.file 14 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1748              		.file 15 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1749              		.file 16 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1750              		.file 17 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1751              		.file 18 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 1752              		.file 19 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s 			page 43
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 pm_image.cpp
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:20     .text._ZN2pm12_GLOBAL__N_117IsIdOrVersionCharEc:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:26     .text._ZN2pm12_GLOBAL__N_117IsIdOrVersionCharEc:00000000 _ZN2pm12_GLOBAL__N_117IsIdOrVersionCharEc
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:93     .text._ZN2pm15IsProductIdCharEc:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:100    .text._ZN2pm15IsProductIdCharEc:00000000 _ZN2pm15IsProductIdCharEc
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:132    .text._ZN2pm13IsVersionCharEc:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:139    .text._ZN2pm13IsVersionCharEc:00000000 _ZN2pm13IsVersionCharEc
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:182    .rodata._ZN2pm14ImageErrorNameENS_10ImageErrorE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:186    .text._ZN2pm14ImageErrorNameENS_10ImageErrorE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:193    .text._ZN2pm14ImageErrorNameENS_10ImageErrorE:00000000 _ZN2pm14ImageErrorNameENS_10ImageErrorE
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:219    .text._ZN2pm14ImageErrorNameENS_10ImageErrorE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1713   .rodata.CSWTCH.27:00000000 CSWTCH.27
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:225    .text._ZN2pm15VectorErrorNameENS_11VectorErrorE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:232    .text._ZN2pm15VectorErrorNameENS_11VectorErrorE:00000000 _ZN2pm15VectorErrorNameENS_11VectorErrorE
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:258    .text._ZN2pm15VectorErrorNameENS_11VectorErrorE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1662   .rodata.CSWTCH.29:00000000 CSWTCH.29
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:264    .rodata._ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:271    .text._ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:278    .text._ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE:00000000 _ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1062   .text._ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE:000002a0 $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1733   .rodata._ZN2pmL6kMagicE:00000000 _ZN2pmL6kMagicE
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1072   .rodata._ZN2pm11BuildHeaderERKNS_11ImageHeaderEPh.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1076   .text._ZN2pm11BuildHeaderERKNS_11ImageHeaderEPh:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1083   .text._ZN2pm11BuildHeaderERKNS_11ImageHeaderEPh:00000000 _ZN2pm11BuildHeaderERKNS_11ImageHeaderEPh
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1549   .text._ZN2pm11BuildHeaderERKNS_11ImageHeaderEPh:0000015c $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1555   .text._ZN2pm12CheckVectorsEPKhm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1562   .text._ZN2pm12CheckVectorsEPKhm:00000000 _ZN2pm12CheckVectorsEPKhm
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1649   .rodata.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1659   .rodata.CSWTCH.29:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1710   .rodata.CSWTCH.27:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cct0Zi3A.s:1730   .rodata._ZN2pmL6kMagicE:00000000 $d
+
+UNDEFINED SYMBOLS
+memset
+memcpy
+memcmp
+strcmp

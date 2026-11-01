@@ -135,6 +135,10 @@ the product/component versions, Git revision and checksum in `COMPONENTS.json`.
 
 * **[Handover](HANDOVER.md)** (state, local setup, hardware test run sheet, open decisions)
   and the [agent rules](AGENTS.md).
+* **[SD-to-RAM boot concept](docs/SD_RAM_BOOT_CONCEPT_V2.md)** (German): existing Daisy
+  bootloader, QSPI program manager with diagnostics and SD program selection; the
+  [first draft](docs/SD_RAM_BOOT_CONCEPT.md), the [independent review](docs/SD_RAM_BOOT_REVIEW_CLAUDE.md)
+  and the [development order](docs/SD_RAM_BOOT_CLAUDE_AUFTRAG.md) are kept as sources.
 * [Build and toolchain](docs/BUILD.md), [hardware](docs/HARDWARE.md), and [flashing](docs/FLASHING.md);
   updates without BOOT/RESET: hold S9+S16 for 5 s or use the editor ([common/bootloader](common/bootloader/README.md)).
 * [Toy Piano controls and hardware test](instruments/toy-piano/README.md),

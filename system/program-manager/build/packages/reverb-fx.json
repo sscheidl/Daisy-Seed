@@ -1,0 +1,98 @@
+{
+  "sections": [
+    {
+      "name": ".isr_vector",
+      "vma": "0x24000000",
+      "lma": "0x24000000",
+      "size": 664,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".text",
+      "vma": "0x240002a0",
+      "lma": "0x240002a0",
+      "size": 129952,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".exidx",
+      "vma": "0x2401fe40",
+      "lma": "0x2401fe40",
+      "size": 8,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".init_array",
+      "vma": "0x2401fe48",
+      "lma": "0x2401fe48",
+      "size": 64,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".fini_array",
+      "vma": "0x2401fe88",
+      "lma": "0x2401fe88",
+      "size": 4,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".sram1_bss",
+      "vma": "0x30000000",
+      "lma": "0x30000000",
+      "size": 18084,
+      "noload": true,
+      "region": "D2"
+    },
+    {
+      "name": ".data",
+      "vma": "0x20000000",
+      "lma": "0x2401fe8c",
+      "size": 16760,
+      "noload": false,
+      "region": "DTCM"
+    },
+    {
+      "name": ".bss",
+      "vma": "0x20004178",
+      "lma": "0x20004178",
+      "size": 103904,
+      "noload": true,
+      "region": "DTCM"
+    },
+    {
+      "name": ".sdram_bss",
+      "vma": "0xc0000000",
+      "lma": "0xc0000000",
+      "size": 1114112,
+      "noload": true,
+      "region": "SDRAM"
+    },
+    {
+      "name": ".backup_sram",
+      "vma": "0x38800000",
+      "lma": "0x38800000",
+      "size": 12,
+      "noload": true,
+      "region": "BACKUP"
+    }
+  ],
+  "noload_in_target": [],
+  "warnings": [],
+  "marker_version": "0.4.0",
+  "image_bytes": 147460,
+  "stack": "0x20020000",
+  "reset": "0x24000749",
+  "payload_sha256": "fe37f066aeb3a0741a759bf8abef72dd3659f5b78a9fc26c1eb9a26ce0ae9e86",
+  "product": "reverb-fx",
+  "version": "0.4.0",
+  "package": "system\\program-manager\\build\\packages\\AmbientReverb-v0.4.0.dsy",
+  "package_bytes": 147620,
+  "file_sha256": "6d6baba7907aab7667663de7e3f9ea82506322612b93e3542c8113e6214106dc",
+  "elf": "effects\\reverb\\build\\AmbientReverb-v0.4.0.elf",
+  "bin": "effects\\reverb\\build\\AmbientReverb-v0.4.0.bin"
+}

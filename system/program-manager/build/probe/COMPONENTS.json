@@ -1,0 +1,32 @@
+{
+  "manifest_version": 1,
+  "product": {
+    "id": "program-manager-probe",
+    "version": "0.1.0",
+    "legacy_device_version": false
+  },
+  "components": [
+    {
+      "id": "program-manager",
+      "kind": "control",
+      "version": "0.1.0",
+      "version_source": "system/program-manager/src/version.h",
+      "depends": []
+    },
+    {
+      "id": "bootloader-entry",
+      "kind": "control",
+      "version": "1.0.0",
+      "version_source": "common/bootloader/bootloader_entry.h",
+      "depends": []
+    }
+  ],
+  "compatible_control_panels": [],
+  "repository_commit": "bbfbe120b9e5b88c93d098d61c0f4a9cd6c18391",
+  "working_tree_dirty": true,
+  "image": {
+    "name": "DaisyProgramManagerProbe-v0.1.0.bin",
+    "bytes": 141128,
+    "sha256": "5478c449dd6acb072e3f880451cdbf72a1bb00323406c613b2818ca8d9e07cbe"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "format": 1,
+  "generation": 5,
+  "hardware": "seed3-desktop",
+  "programs": [
+    {
+      "slot": 1,
+      "id": "reverb-fx",
+      "name": "reverb-fx",
+      "category": "other",
+      "version": "0.4.0",
+      "path": "PROGRAMS/reverb-fx/AmbientReverb-v0.4.0.dsy",
+      "payload_sha256": "fe37f066aeb3a0741a759bf8abef72dd3659f5b78a9fc26c1eb9a26ce0ae9e86",
+      "file_sha256": "6d6baba7907aab7667663de7e3f9ea82506322612b93e3542c8113e6214106dc"
+    },
+    {
+      "slot": 2,
+      "id": "looper",
+      "name": "looper",
+      "category": "other",
+      "version": "0.4.0",
+      "path": "PROGRAMS/looper/Looper-v0.4.0.dsy",
+      "payload_sha256": "060834287e89f08a61229d1610d336c472fcfe01b6a341ffc97ba7dff48d8d16",
+      "file_sha256": "6eac446609ebad2bb5a655fd3d9a71f265c2fc30e8d6e0bdb40031f56ca74000"
+    },
+    {
+      "slot": 3,
+      "id": "step-seq",
+      "name": "step-seq",
+      "category": "other",
+      "version": "0.1.0",
+      "path": "PROGRAMS/step-seq/StepSeq-v0.1.0.dsy",
+      "payload_sha256": "07e259c5f1b247890f44d0a06170b1486d807cce6fdb41d0bbe49d6727492b8f",
+      "file_sha256": "271cd2773540411d0b4127dbb60d9c849eada37004c73e86d2f572223b661076"
+    },
+    {
+      "slot": 4,
+      "id": "toy-piano",
+      "name": "Toy Piano",
+      "category": "instrument",
+      "version": "0.4",
+      "path": "PROGRAMS/toy-piano/ToyPiano-v0.4.dsy",
+      "payload_sha256": "d61c84c2338239d43c769159d38616396457c9e0a664cd89a4821fc057df45e1",
+      "file_sha256": "874fd00cfd862ea5276150612b851f274ec4ed577494971505391690c1acfd0b"
+    }
+  ]
+}

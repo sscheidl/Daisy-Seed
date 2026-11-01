@@ -1,0 +1,98 @@
+{
+  "sections": [
+    {
+      "name": ".isr_vector",
+      "vma": "0x24000000",
+      "lma": "0x24000000",
+      "size": 664,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".text",
+      "vma": "0x240002a0",
+      "lma": "0x240002a0",
+      "size": 159864,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".exidx",
+      "vma": "0x24027318",
+      "lma": "0x24027318",
+      "size": 8,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".init_array",
+      "vma": "0x24027320",
+      "lma": "0x24027320",
+      "size": 68,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".fini_array",
+      "vma": "0x24027364",
+      "lma": "0x24027364",
+      "size": 4,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".sram1_bss",
+      "vma": "0x30000000",
+      "lma": "0x30000000",
+      "size": 18596,
+      "noload": true,
+      "region": "D2"
+    },
+    {
+      "name": ".data",
+      "vma": "0x20000000",
+      "lma": "0x24027368",
+      "size": 6096,
+      "noload": false,
+      "region": "DTCM"
+    },
+    {
+      "name": ".bss",
+      "vma": "0x200017d0",
+      "lma": "0x200017d0",
+      "size": 109896,
+      "noload": true,
+      "region": "DTCM"
+    },
+    {
+      "name": ".sdram_bss",
+      "vma": "0xc0000000",
+      "lma": "0xc0000000",
+      "size": 66891456,
+      "noload": true,
+      "region": "SDRAM"
+    },
+    {
+      "name": ".backup_sram",
+      "vma": "0x38800000",
+      "lma": "0x38800000",
+      "size": 12,
+      "noload": true,
+      "region": "BACKUP"
+    }
+  ],
+  "noload_in_target": [],
+  "warnings": [],
+  "marker_version": "0.4.0",
+  "image_bytes": 166712,
+  "stack": "0x20020000",
+  "reset": "0x240003d1",
+  "payload_sha256": "060834287e89f08a61229d1610d336c472fcfe01b6a341ffc97ba7dff48d8d16",
+  "product": "looper",
+  "version": "0.4.0",
+  "package": "system\\program-manager\\build\\packages\\Looper-v0.4.0.dsy",
+  "package_bytes": 166872,
+  "file_sha256": "6eac446609ebad2bb5a655fd3d9a71f265c2fc30e8d6e0bdb40031f56ca74000",
+  "elf": "instruments\\looper\\build\\Looper-v0.4.0.elf",
+  "bin": "instruments\\looper\\build\\Looper-v0.4.0.bin"
+}

@@ -1,0 +1,3135 @@
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.arch armv7e-m
+   3              		.fpu fpv5-d16
+   4              		.eabi_attribute 28, 1
+   5              		.eabi_attribute 20, 1
+   6              		.eabi_attribute 21, 1
+   7              		.eabi_attribute 23, 3
+   8              		.eabi_attribute 24, 1
+   9              		.eabi_attribute 25, 1
+  10              		.eabi_attribute 26, 1
+  11              		.eabi_attribute 30, 2
+  12              		.eabi_attribute 34, 1
+  13              		.eabi_attribute 18, 4
+  14              		.file	"pm_loader.cpp"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.file 1 "src/pm_loader.cpp"
+  19              		.section	.rodata._ZN2pm13LoadStateNameENS_9LoadStateE.str1.4,"aMS",%progbits,1
+  20              		.align	2
+  21              	.LC0:
+  22 0000 3F00     		.ascii	"?\000"
+  23              		.section	.text._ZN2pm13LoadStateNameENS_9LoadStateE,"ax",%progbits
+  24              		.align	1
+  25              		.p2align 2,,3
+  26              		.global	_ZN2pm13LoadStateNameENS_9LoadStateE
+  27              		.syntax unified
+  28              		.thumb
+  29              		.thumb_func
+  31              	_ZN2pm13LoadStateNameENS_9LoadStateE:
+  32              	.LVL0:
+  33              	.LFB1299:
+   1:src/pm_loader.cpp **** #include "pm_loader.h"
+   2:src/pm_loader.cpp **** #include <cstring>
+   3:src/pm_loader.cpp **** 
+   4:src/pm_loader.cpp **** namespace pm {
+   5:src/pm_loader.cpp **** 
+   6:src/pm_loader.cpp **** const char* LoadStateName(LoadState state) {
+  34              		.loc 1 6 44 view -0
+  35              		.cfi_startproc
+  36              		@ args = 0, pretend = 0, frame = 0
+  37              		@ frame_needed = 0, uses_anonymous_args = 0
+  38              		@ link register save eliminated.
+   7:src/pm_loader.cpp ****     switch(state) {
+  39              		.loc 1 7 5 view .LVU1
+  40 0000 0728     		cmp	r0, #7
+  41 0002 03D8     		bhi	.L3
+  42 0004 024B     		ldr	r3, .L5
+  43 0006 53F82000 		ldr	r0, [r3, r0, lsl #2]
+  44              	.LVL1:
+  45              		.loc 1 7 5 is_stmt 0 view .LVU2
+  46 000a 7047     		bx	lr
+  47              	.LVL2:
+  48              	.L3:
+   6:src/pm_loader.cpp ****     switch(state) {
+  49              		.loc 1 6 44 view .LVU3
+  50 000c 0148     		ldr	r0, .L5+4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 2
+
+
+  51              	.LVL3:
+   8:src/pm_loader.cpp ****         case LoadState::Idle: return "IDLE";
+   9:src/pm_loader.cpp ****         case LoadState::Opening: return "OPENING";
+  10:src/pm_loader.cpp ****         case LoadState::Header: return "HEADER";
+  11:src/pm_loader.cpp ****         case LoadState::Payload: return "LOADING";
+  12:src/pm_loader.cpp ****         case LoadState::Verify: return "VERIFY";
+  13:src/pm_loader.cpp ****         case LoadState::Finalize: return "FINALIZE";
+  14:src/pm_loader.cpp ****         case LoadState::Committed: return "RESTARTING";
+  15:src/pm_loader.cpp ****         case LoadState::Failed: return "ERROR";
+  16:src/pm_loader.cpp ****     }
+  17:src/pm_loader.cpp ****     return "?";
+  18:src/pm_loader.cpp **** }
+  52              		.loc 1 18 1 view .LVU4
+  53 000e 7047     		bx	lr
+  54              	.L6:
+  55              		.align	2
+  56              	.L5:
+  57 0010 00000000 		.word	CSWTCH.16
+  58 0014 00000000 		.word	.LC0
+  59              		.cfi_endproc
+  60              	.LFE1299:
+  62              		.section	.text._ZN2pm13LoadErrorNameENS_9LoadErrorE,"ax",%progbits
+  63              		.align	1
+  64              		.p2align 2,,3
+  65              		.global	_ZN2pm13LoadErrorNameENS_9LoadErrorE
+  66              		.syntax unified
+  67              		.thumb
+  68              		.thumb_func
+  70              	_ZN2pm13LoadErrorNameENS_9LoadErrorE:
+  71              	.LVL4:
+  72              	.LFB1300:
+  19:src/pm_loader.cpp **** 
+  20:src/pm_loader.cpp **** const char* LoadErrorName(LoadError error) {
+  73              		.loc 1 20 44 is_stmt 1 view -0
+  74              		.cfi_startproc
+  75              		@ args = 0, pretend = 0, frame = 0
+  76              		@ frame_needed = 0, uses_anonymous_args = 0
+  77              		@ link register save eliminated.
+  21:src/pm_loader.cpp ****     switch(error) {
+  78              		.loc 1 21 5 view .LVU6
+  79 0000 1028     		cmp	r0, #16
+  80 0002 03D8     		bhi	.L9
+  81 0004 024B     		ldr	r3, .L10
+  82 0006 53F82000 		ldr	r0, [r3, r0, lsl #2]
+  83              	.LVL5:
+  84              		.loc 1 21 5 is_stmt 0 view .LVU7
+  85 000a 7047     		bx	lr
+  86              	.LVL6:
+  87              	.L9:
+  20:src/pm_loader.cpp ****     switch(error) {
+  88              		.loc 1 20 44 view .LVU8
+  89 000c 0148     		ldr	r0, .L10+4
+  90              	.LVL7:
+  22:src/pm_loader.cpp ****         case LoadError::None: return "OK";
+  23:src/pm_loader.cpp ****         case LoadError::Busy: return "BUSY";
+  24:src/pm_loader.cpp ****         case LoadError::NoEntry: return "NOENTRY";
+  25:src/pm_loader.cpp ****         case LoadError::CardAbsent: return "NOCARD";
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 3
+
+
+  26:src/pm_loader.cpp ****         case LoadError::Open: return "OPEN";
+  27:src/pm_loader.cpp ****         case LoadError::FileSize: return "FILESIZE";
+  28:src/pm_loader.cpp ****         case LoadError::HeaderRead: return "HDRREAD";
+  29:src/pm_loader.cpp ****         case LoadError::Header: return "HEADER";
+  30:src/pm_loader.cpp ****         case LoadError::Product: return "PRODUCT";
+  31:src/pm_loader.cpp ****         case LoadError::HashMismatch: return "CATHASH";
+  32:src/pm_loader.cpp ****         case LoadError::Read: return "READ";
+  33:src/pm_loader.cpp ****         case LoadError::Short: return "SHORT";
+  34:src/pm_loader.cpp ****         case LoadError::Long: return "LONG";
+  35:src/pm_loader.cpp ****         case LoadError::Hash: return "HASH";
+  36:src/pm_loader.cpp ****         case LoadError::Vector: return "VECTOR";
+  37:src/pm_loader.cpp ****         case LoadError::Budget: return "BUDGET";
+  38:src/pm_loader.cpp ****         case LoadError::Cancelled: return "CANCELLED";
+  39:src/pm_loader.cpp ****     }
+  40:src/pm_loader.cpp ****     return "?";
+  41:src/pm_loader.cpp **** }
+  91              		.loc 1 41 1 view .LVU9
+  92 000e 7047     		bx	lr
+  93              	.L11:
+  94              		.align	2
+  95              	.L10:
+  96 0010 00000000 		.word	CSWTCH.18
+  97 0014 00000000 		.word	.LC0
+  98              		.cfi_endproc
+  99              	.LFE1300:
+ 101              		.section	.text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE,"ax",%progbits
+ 102              		.align	1
+ 103              		.p2align 2,,3
+ 104              		.global	_ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
+ 105              		.syntax unified
+ 106              		.thumb
+ 107              		.thumb_func
+ 109              	_ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:
+ 110              	.LVL8:
+ 111              	.LFB1311:
+  42:src/pm_loader.cpp **** 
+  43:src/pm_loader.cpp **** Loader::Loader(ImageSource& source, LoadTarget& target, BootCommit& commit)
+ 112              		.loc 1 43 1 is_stmt 1 view -0
+ 113              		.cfi_startproc
+ 114              		@ args = 0, pretend = 0, frame = 0
+ 115              		@ frame_needed = 0, uses_anonymous_args = 0
+ 116              		.loc 1 43 1 is_stmt 0 view .LVU11
+ 117 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 118              		.cfi_def_cfa_offset 24
+ 119              		.cfi_offset 3, -24
+ 120              		.cfi_offset 4, -20
+ 121              		.cfi_offset 5, -16
+ 122              		.cfi_offset 6, -12
+ 123              		.cfi_offset 7, -8
+ 124              		.cfi_offset 14, -4
+ 125              	.LBB35:
+ 126              	.LBB36:
+ 127              	.LBB37:
+ 128              		.file 2 "src/pm_loader.h"
+   1:src/pm_loader.h **** // Loads one .dsy package from the card into the SRAM target and commits the start.
+   2:src/pm_loader.h **** // Portable state machine, driven from the main loop in small steps; the hardware
+   3:src/pm_loader.h **** // (SD/FatFs, cache, BootInfo, reset) is reached only through the interfaces below,
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 4
+
+
+   4:src/pm_loader.h **** // so the complete order of checks and the commit sequence are host-tested.
+   5:src/pm_loader.h **** //
+   6:src/pm_loader.h **** // Contract (docs/CONTRACT.md, section 7): nothing is committed before the whole
+   7:src/pm_loader.h **** // payload has been read, hashed and checked; on any error the target may contain a
+   8:src/pm_loader.h **** // partial image but BootInfo is never written. The commit order is fixed:
+   9:src/pm_loader.h **** // Quiesce() -> Clean() -> Commit().
+  10:src/pm_loader.h **** #pragma once
+  11:src/pm_loader.h **** #include "pm_catalog.h"
+  12:src/pm_loader.h **** #include "pm_image.h"
+  13:src/pm_loader.h **** #include "pm_sha256.h"
+  14:src/pm_loader.h **** 
+  15:src/pm_loader.h **** namespace pm {
+  16:src/pm_loader.h **** 
+  17:src/pm_loader.h **** // Program file access (one open file at a time). Main loop only.
+  18:src/pm_loader.h **** class ImageSource {
+  19:src/pm_loader.h ****   public:
+  20:src/pm_loader.h ****     // Opens a catalog path ("PROGRAMS/..." below /DAISY). `file_size` is the exact length.
+  21:src/pm_loader.h ****     virtual bool Open(const char* path, uint32_t& file_size) = 0;
+  22:src/pm_loader.h ****     // Reads up to `len` bytes; returns the count (0 at end of file), negative on error.
+  23:src/pm_loader.h ****     virtual int32_t Read(uint8_t* dst, uint32_t len) = 0;
+  24:src/pm_loader.h ****     virtual void Close() = 0;
+  25:src/pm_loader.h ****     virtual bool CardPresent() = 0;
+  26:src/pm_loader.h **** 
+  27:src/pm_loader.h ****   protected:
+  28:src/pm_loader.h ****     ~ImageSource() = default;
+  29:src/pm_loader.h **** };
+  30:src/pm_loader.h **** 
+  31:src/pm_loader.h **** // The 480 KiB image target (0x24000000 on the board, a buffer on the host).
+  32:src/pm_loader.h **** class LoadTarget {
+  33:src/pm_loader.h ****   public:
+  34:src/pm_loader.h ****     virtual uint8_t* Base() = 0;
+  35:src/pm_loader.h ****     virtual uint32_t Capacity() = 0;  // kTargetSize on the board
+  36:src/pm_loader.h ****     // Writes back dirty data-cache lines of [Base, Base+len) and orders the writes.
+  37:src/pm_loader.h ****     // Called once, after Quiesce(), before Commit().
+  38:src/pm_loader.h ****     virtual void Clean(uint32_t len) = 0;
+  39:src/pm_loader.h **** 
+  40:src/pm_loader.h ****   protected:
+  41:src/pm_loader.h ****     ~LoadTarget() = default;
+  42:src/pm_loader.h **** };
+  43:src/pm_loader.h **** 
+  44:src/pm_loader.h **** class BootCommit {
+  45:src/pm_loader.h ****   public:
+  46:src/pm_loader.h ****     // Stops everything that could still write memory or needs an orderly end:
+  47:src/pm_loader.h ****     // audio, SD, LED/USB transfers. Called before Clean().
+  48:src/pm_loader.h ****     virtual void Quiesce() = 0;
+  49:src/pm_loader.h ****     // Writes the bootloader's JUMP order for `address` and resets. On the board this
+  50:src/pm_loader.h ****     // does not return; the host fake records the call.
+  51:src/pm_loader.h ****     virtual void Commit(uint32_t address) = 0;
+  52:src/pm_loader.h **** 
+  53:src/pm_loader.h ****   protected:
+  54:src/pm_loader.h ****     ~BootCommit() = default;
+  55:src/pm_loader.h **** };
+  56:src/pm_loader.h **** 
+  57:src/pm_loader.h **** enum class LoadState : uint8_t { Idle, Opening, Header, Payload, Verify, Finalize, Committed, Faile
+  58:src/pm_loader.h **** 
+  59:src/pm_loader.h **** enum class LoadError : uint8_t {
+  60:src/pm_loader.h ****     None = 0,
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 5
+
+
+  61:src/pm_loader.h ****     Busy,          // Start() while a load is active
+  62:src/pm_loader.h ****     NoEntry,
+  63:src/pm_loader.h ****     CardAbsent,    // card-detect low before/while loading
+  64:src/pm_loader.h ****     Open,          // file not found or not readable
+  65:src/pm_loader.h ****     FileSize,      // file length is not header + declared payload
+  66:src/pm_loader.h ****     HeaderRead,    // fewer than 160 bytes readable
+  67:src/pm_loader.h ****     Header,        // see LoadStatus::image_error
+  68:src/pm_loader.h ****     Product,       // header product id differs from the catalog id
+  69:src/pm_loader.h ****     HashMismatch,  // header payload hash differs from the catalog hash
+  70:src/pm_loader.h ****     Read,          // read error from the card
+  71:src/pm_loader.h ****     Short,         // end of file before payload_length bytes
+  72:src/pm_loader.h ****     Long,          // more bytes than payload_length
+  73:src/pm_loader.h ****     Hash,          // computed SHA-256 differs from the header
+  74:src/pm_loader.h ****     Vector,        // see LoadStatus::vector_error
+  75:src/pm_loader.h ****     Budget,        // overall time budget exceeded
+  76:src/pm_loader.h ****     Cancelled,
+  77:src/pm_loader.h **** };
+  78:src/pm_loader.h **** 
+  79:src/pm_loader.h **** const char* LoadStateName(LoadState state);
+  80:src/pm_loader.h **** const char* LoadErrorName(LoadError error);
+  81:src/pm_loader.h **** 
+  82:src/pm_loader.h **** struct LoadStatus {
+ 129              		.loc 2 82 8 view .LVU12
+ 130 0002 0025     		movs	r5, #0
+ 131              	.LBE37:
+ 132              	.LBE36:
+ 133              	.LBB41:
+ 134              	.LBB42:
+ 135              		.file 3 "src/pm_catalog.h"
+   1:src/pm_catalog.h **** // /DAISY/catalog.json: strict, allocation-free parser for the program catalog.
+   2:src/pm_catalog.h **** // Format documented in docs/PACKAGE.md. Limits (docs/CONTRACT.md, section 6):
+   3:src/pm_catalog.h **** // file <= 16 KiB, <= 15 programs, slots 1..15 unique, ids unique, display names
+   4:src/pm_catalog.h **** // <= 64 UTF-8 bytes, relative paths <= 160 bytes below PROGRAMS/.
+   5:src/pm_catalog.h **** #pragma once
+   6:src/pm_catalog.h **** #include <cstddef>
+   7:src/pm_catalog.h **** #include <cstdint>
+   8:src/pm_catalog.h **** 
+   9:src/pm_catalog.h **** namespace pm {
+  10:src/pm_catalog.h **** 
+  11:src/pm_catalog.h **** constexpr size_t kCatalogMaxBytes = 16 * 1024;
+  12:src/pm_catalog.h **** constexpr uint8_t kCatalogMaxPrograms = 15;  // slot 16 is the resident diagnostics
+  13:src/pm_catalog.h **** constexpr uint32_t kCatalogFormat = 1;
+  14:src/pm_catalog.h **** constexpr size_t kIdMax = 32, kNameMax = 64, kCategoryMax = 16, kVersionMax = 16, kPathMax = 160;
+  15:src/pm_catalog.h **** 
+  16:src/pm_catalog.h **** struct CatalogEntry {
+ 136              		.loc 3 16 8 view .LVU13
+ 137 0004 2127     		movs	r7, #33
+ 138              	.LBE42:
+ 139              	.LBE41:
+ 140              	.LBE35:
+ 141              		.loc 1 43 1 view .LVU14
+ 142 0006 0446     		mov	r4, r0
+ 143              	.LBB54:
+ 144              	.LBB46:
+ 145              	.LBB43:
+ 146              		.loc 3 16 8 view .LVU15
+ 147 0008 2026     		movs	r6, #32
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 6
+
+
+ 148              	.LBE43:
+ 149              	.LBE46:
+ 150              	.LBB47:
+ 151              	.LBB38:
+ 152              		.loc 2 82 8 view .LVU16
+ 153 000a 0561     		str	r5, [r0, #16]
+ 154 000c 4561     		str	r5, [r0, #20]
+ 155 000e 0576     		strb	r5, [r0, #24]
+ 156              	.LBE38:
+ 157              	.LBE47:
+ 158              	.LBB48:
+ 159              	.LBB44:
+ 160              		.loc 3 16 8 view .LVU17
+ 161 0010 80F82450 		strb	r5, [r0, #36]
+ 162              	.LBE44:
+ 163              	.LBE48:
+ 164              	.LBB49:
+ 165              	.LBB39:
+ 166              		.loc 2 82 8 view .LVU18
+ 167 0014 C0E90235 		strd	r3, r5, [r0, #8]
+ 168              	.LBE39:
+ 169              	.LBE49:
+  44:src/pm_loader.cpp ****     : source_(source), target_(target), commit_(commit) {
+ 170              		.loc 1 44 24 view .LVU19
+ 171 0018 C0E90012 		strd	r1, r2, [r0]
+ 172              	.LBB50:
+ 173              	.LBB40:
+ 174              		.loc 2 82 8 view .LVU20
+ 175 001c C0E90755 		strd	r5, r5, [r0, #28]
+ 176              	.LVL9:
+ 177              		.loc 2 82 8 view .LVU21
+ 178              	.LBE40:
+ 179              	.LBE50:
+ 180              	.LBB51:
+ 181              	.LBI41:
+ 182              		.loc 3 16 8 is_stmt 1 view .LVU22
+ 183              	.LBB45:
+ 184 0020 3A46     		mov	r2, r7
+ 185              	.LVL10:
+ 186              		.loc 3 16 8 is_stmt 0 view .LVU23
+ 187 0022 2946     		mov	r1, r5
+ 188              	.LVL11:
+ 189              		.loc 3 16 8 view .LVU24
+ 190 0024 2530     		adds	r0, r0, #37
+ 191              	.LVL12:
+ 192              		.loc 3 16 8 view .LVU25
+ 193 0026 FFF7FEFF 		bl	memset
+ 194              	.LVL13:
+ 195              		.loc 3 16 8 view .LVU26
+ 196 002a 2946     		mov	r1, r5
+ 197 002c 4122     		movs	r2, #65
+ 198 002e 04F14600 		add	r0, r4, #70
+ 199 0032 FFF7FEFF 		bl	memset
+ 200              	.LVL14:
+ 201 0036 2946     		mov	r1, r5
+ 202 0038 A122     		movs	r2, #161
+ 203 003a 04F1A900 		add	r0, r4, #169
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 7
+
+
+ 204 003e C4F88750 		str	r5, [r4, #135]	@ unaligned
+ 205 0042 C4F88B50 		str	r5, [r4, #139]	@ unaligned
+ 206 0046 C4F88F50 		str	r5, [r4, #143]	@ unaligned
+ 207 004a C4F89350 		str	r5, [r4, #147]	@ unaligned
+ 208 004e 84F89750 		strb	r5, [r4, #151]
+ 209 0052 C4F89850 		str	r5, [r4, #152]	@ unaligned
+ 210 0056 C4F89C50 		str	r5, [r4, #156]	@ unaligned
+ 211 005a C4F8A050 		str	r5, [r4, #160]	@ unaligned
+ 212 005e C4F8A450 		str	r5, [r4, #164]	@ unaligned
+ 213 0062 84F8A850 		strb	r5, [r4, #168]
+ 214 0066 FFF7FEFF 		bl	memset
+ 215              	.LVL15:
+ 216 006a 3246     		mov	r2, r6
+ 217 006c 2946     		mov	r1, r5
+ 218 006e 04F5A570 		add	r0, r4, #330
+ 219 0072 FFF7FEFF 		bl	memset
+ 220              	.LVL16:
+ 221              		.loc 3 16 8 view .LVU27
+ 222              	.LBE45:
+ 223              	.LBE51:
+ 224              	.LBB52:
+ 225              	.LBI52:
+ 226              		.file 4 "src/pm_image.h"
+   1:src/pm_image.h **** // .dsy package header (format 1) and the BOOT_SRAM image profile "axi-sram-480k-v1".
+   2:src/pm_image.h **** // Portable: no libDaisy, no allocation. The wire format is documented in
+   3:src/pm_image.h **** // docs/PACKAGE.md; tools/dsy_pack.py writes it, this code reads it on the device.
+   4:src/pm_image.h **** //
+   5:src/pm_image.h **** // Layout, little-endian, 160 bytes:
+   6:src/pm_image.h **** //   0   char[8]  magic           "DSYIMAGE"
+   7:src/pm_image.h **** //   8   u16      header_version  1
+   8:src/pm_image.h **** //   10  u16      header_size     160
+   9:src/pm_image.h **** //   12  u32      flags           0 (any set bit is rejected: unknown feature)
+  10:src/pm_image.h **** //   16  char[16] hardware        "seed3-desktop", NUL padded
+  11:src/pm_image.h **** //   32  char[24] profile         "axi-sram-480k-v1", NUL padded
+  12:src/pm_image.h **** //   56  char[32] product         product id, e.g. "toy-piano"
+  13:src/pm_image.h **** //   88  char[16] version         product version, e.g. "0.4.0"
+  14:src/pm_image.h **** //   104 u32      load_address    0x24000000
+  15:src/pm_image.h **** //   108 u32      payload_offset  160
+  16:src/pm_image.h **** //   112 u32      payload_length  8 .. 491520
+  17:src/pm_image.h **** //   116 u8[32]   payload_sha256  SHA-256 over exactly payload_length payload bytes
+  18:src/pm_image.h **** //   148 u32[2]   reserved        0
+  19:src/pm_image.h **** //   156 u32      header_crc32    CRC-32 over bytes 0..155
+  20:src/pm_image.h **** //   160 payload (one contiguous BOOT_SRAM image for 0x24000000)
+  21:src/pm_image.h **** #pragma once
+  22:src/pm_image.h **** #include <cstddef>
+  23:src/pm_image.h **** #include <cstdint>
+  24:src/pm_image.h **** 
+  25:src/pm_image.h **** namespace pm {
+  26:src/pm_image.h **** 
+  27:src/pm_image.h **** constexpr uint32_t kHeaderSize = 160;
+  28:src/pm_image.h **** constexpr uint16_t kHeaderVersion = 1;
+  29:src/pm_image.h **** constexpr uint32_t kTargetBase = 0x24000000u;      // AXI SRAM image target
+  30:src/pm_image.h **** constexpr uint32_t kTargetSize = 480u * 1024u;      // exclusive end 0x24078000
+  31:src/pm_image.h **** constexpr uint32_t kMinPayload = 8;                 // at least the first two vectors
+  32:src/pm_image.h **** constexpr uint32_t kDtcmBase = 0x20000000u;
+  33:src/pm_image.h **** constexpr uint32_t kDtcmEnd = 0x20020000u;          // _estack of the official linkers
+  34:src/pm_image.h **** constexpr char kMagic[8] = {'D', 'S', 'Y', 'I', 'M', 'A', 'G', 'E'};
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 8
+
+
+  35:src/pm_image.h **** constexpr const char* kHardwareId = "seed3-desktop";
+  36:src/pm_image.h **** constexpr const char* kProfileId = "axi-sram-480k-v1";
+  37:src/pm_image.h **** 
+  38:src/pm_image.h **** constexpr size_t kHardwareField = 16, kProfileField = 24, kProductField = 32, kVersionField = 16;
+  39:src/pm_image.h **** 
+  40:src/pm_image.h **** struct ImageHeader {
+ 227              		.loc 4 40 8 is_stmt 1 view .LVU28
+ 228              	.LBB53:
+ 229 0076 3A46     		mov	r2, r7
+ 230 0078 2946     		mov	r1, r5
+ 231 007a 04F5CF70 		add	r0, r4, #414
+ 232 007e A4F86C51 		strh	r5, [r4, #364]	@ movhi
+ 233 0082 C4F88051 		str	r5, [r4, #384]
+ 234 0086 84F88451 		strb	r5, [r4, #388]
+ 235 008a C4F88551 		str	r5, [r4, #389]	@ unaligned
+ 236 008e C4F88951 		str	r5, [r4, #393]	@ unaligned
+ 237 0092 C4F88D51 		str	r5, [r4, #397]	@ unaligned
+ 238 0096 C4F89151 		str	r5, [r4, #401]	@ unaligned
+ 239 009a C4F89551 		str	r5, [r4, #405]	@ unaligned
+ 240 009e C4F89951 		str	r5, [r4, #409]	@ unaligned
+ 241 00a2 84F89D51 		strb	r5, [r4, #413]
+ 242 00a6 C4E95C55 		strd	r5, r5, [r4, #368]
+ 243 00aa C4E95E55 		strd	r5, r5, [r4, #376]
+ 244 00ae FFF7FEFF 		bl	memset
+ 245              	.LVL17:
+ 246 00b2 3246     		mov	r2, r6
+ 247 00b4 2946     		mov	r1, r5
+ 248 00b6 04F5EE70 		add	r0, r4, #476
+ 249 00ba C4F8BF51 		str	r5, [r4, #447]	@ unaligned
+ 250 00be C4F8C351 		str	r5, [r4, #451]	@ unaligned
+ 251 00c2 C4F8C751 		str	r5, [r4, #455]	@ unaligned
+ 252 00c6 C4F8CB51 		str	r5, [r4, #459]	@ unaligned
+ 253 00ca 84F8CF51 		strb	r5, [r4, #463]
+ 254 00ce C4F8D851 		str	r5, [r4, #472]
+ 255 00d2 C4E97455 		strd	r5, r5, [r4, #464]
+ 256 00d6 FFF7FEFF 		bl	memset
+ 257              	.LVL18:
+ 258              		.loc 4 40 8 is_stmt 0 view .LVU29
+ 259              	.LBE53:
+ 260              	.LBE52:
+  45:src/pm_loader.cpp ****     std::memset(&sha_, 0, sizeof(sha_));
+ 261              		.loc 1 45 16 view .LVU30
+ 262 00da 2946     		mov	r1, r5
+ 263 00dc 7022     		movs	r2, #112
+ 264 00de 04F50270 		add	r0, r4, #520
+  44:src/pm_loader.cpp ****     : source_(source), target_(target), commit_(commit) {
+ 265              		.loc 1 44 55 discriminator 3 view .LVU31
+ 266 00e2 C4F8FC51 		str	r5, [r4, #508]
+ 267 00e6 84F80052 		strb	r5, [r4, #512]
+ 268              		.loc 1 45 5 is_stmt 1 view .LVU32
+ 269              		.loc 1 45 16 is_stmt 0 view .LVU33
+ 270 00ea FFF7FEFF 		bl	memset
+ 271              	.LVL19:
+  46:src/pm_loader.cpp ****     std::memset(header_bytes_, 0, sizeof(header_bytes_));
+ 272              		.loc 1 46 5 is_stmt 1 view .LVU34
+ 273              		.loc 1 46 16 is_stmt 0 view .LVU35
+ 274 00ee A022     		movs	r2, #160
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 9
+
+
+ 275 00f0 2946     		mov	r1, r5
+ 276 00f2 04F51E70 		add	r0, r4, #632
+ 277 00f6 FFF7FEFF 		bl	memset
+ 278              	.LVL20:
+ 279              	.LBE54:
+  47:src/pm_loader.cpp **** }
+ 280              		.loc 1 47 1 view .LVU36
+ 281 00fa 2046     		mov	r0, r4
+ 282 00fc F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 283              		.loc 1 47 1 view .LVU37
+ 284              		.cfi_endproc
+ 285              	.LFE1311:
+ 287              		.global	_ZN2pm6LoaderC1ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
+ 288              		.thumb_set _ZN2pm6LoaderC1ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE,_ZN2pm6LoaderC2ERN
+ 289 00fe 00BF     		.section	.text._ZNK2pm6Loader6ActiveEv,"ax",%progbits
+ 290              		.align	1
+ 291              		.p2align 2,,3
+ 292              		.global	_ZNK2pm6Loader6ActiveEv
+ 293              		.syntax unified
+ 294              		.thumb
+ 295              		.thumb_func
+ 297              	_ZNK2pm6Loader6ActiveEv:
+ 298              	.LVL21:
+ 299              	.LFB1313:
+  48:src/pm_loader.cpp **** 
+  49:src/pm_loader.cpp **** bool Loader::Active() const {
+ 300              		.loc 1 49 29 is_stmt 1 view -0
+ 301              		.cfi_startproc
+ 302              		@ args = 0, pretend = 0, frame = 0
+ 303              		@ frame_needed = 0, uses_anonymous_args = 0
+ 304              		@ link register save eliminated.
+  50:src/pm_loader.cpp ****     switch(status_.state) {
+ 305              		.loc 1 50 5 view .LVU39
+ 306 0000 007B     		ldrb	r0, [r0, #12]	@ zero_extendqisi2
+ 307              	.LVL22:
+ 308              		.loc 1 50 5 is_stmt 0 view .LVU40
+ 309 0002 0138     		subs	r0, r0, #1
+  51:src/pm_loader.cpp ****         case LoadState::Opening:
+  52:src/pm_loader.cpp ****         case LoadState::Header:
+  53:src/pm_loader.cpp ****         case LoadState::Payload:
+  54:src/pm_loader.cpp ****         case LoadState::Verify:
+  55:src/pm_loader.cpp ****         case LoadState::Finalize: return true;
+  56:src/pm_loader.cpp ****         default: return false;
+  57:src/pm_loader.cpp ****     }
+  58:src/pm_loader.cpp **** }
+ 310              		.loc 1 58 1 view .LVU41
+ 311 0004 0428     		cmp	r0, #4
+ 312 0006 8CBF     		ite	hi
+ 313 0008 0020     		movhi	r0, #0
+ 314 000a 0120     		movls	r0, #1
+ 315 000c 7047     		bx	lr
+ 316              		.cfi_endproc
+ 317              	.LFE1313:
+ 319              		.global	__aeabi_uldivmod
+ 320              		.global	__aeabi_ldivmod
+ 321 000e 00BF     		.section	.text._ZNK2pm6Loader7PercentEv,"ax",%progbits
+ 322              		.align	1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 10
+
+
+ 323              		.p2align 2,,3
+ 324              		.global	_ZNK2pm6Loader7PercentEv
+ 325              		.syntax unified
+ 326              		.thumb
+ 327              		.thumb_func
+ 329              	_ZNK2pm6Loader7PercentEv:
+ 330              	.LVL23:
+ 331              	.LFB1314:
+  59:src/pm_loader.cpp **** 
+  60:src/pm_loader.cpp **** uint8_t Loader::Percent() const {
+ 332              		.loc 1 60 33 is_stmt 1 view -0
+ 333              		.cfi_startproc
+ 334              		@ args = 0, pretend = 0, frame = 0
+ 335              		@ frame_needed = 0, uses_anonymous_args = 0
+  61:src/pm_loader.cpp ****     switch(status_.state) {
+ 336              		.loc 1 61 5 view .LVU43
+  60:src/pm_loader.cpp ****     switch(status_.state) {
+ 337              		.loc 1 60 33 is_stmt 0 view .LVU44
+ 338 0000 08B5     		push	{r3, lr}
+ 339              		.cfi_def_cfa_offset 8
+ 340              		.cfi_offset 3, -8
+ 341              		.cfi_offset 14, -4
+ 342              		.loc 1 61 5 view .LVU45
+ 343 0002 037B     		ldrb	r3, [r0, #12]	@ zero_extendqisi2
+ 344 0004 033B     		subs	r3, r3, #3
+ 345 0006 042B     		cmp	r3, #4
+ 346 0008 18D8     		bhi	.L16
+ 347 000a DFE803F0 		tbb	[pc, r3]
+ 348              	.L18:
+ 349 000e 05       		.byte	(.L21-.L18)/2
+ 350 000f 03       		.byte	(.L20-.L18)/2
+ 351 0010 03       		.byte	(.L20-.L18)/2
+ 352 0011 15       		.byte	(.L22-.L18)/2
+ 353 0012 10       		.byte	(.L17-.L18)/2
+ 354 0013 00       		.p2align 1
+ 355              	.L20:
+  62:src/pm_loader.cpp ****         case LoadState::Idle:
+  63:src/pm_loader.cpp ****         case LoadState::Opening:
+  64:src/pm_loader.cpp ****         case LoadState::Header: return 0;
+  65:src/pm_loader.cpp ****         case LoadState::Payload:
+  66:src/pm_loader.cpp ****             return status_.bytes_total
+  67:src/pm_loader.cpp ****                        ? static_cast<uint8_t>(static_cast<uint64_t>(status_.bytes_done) * 99u / sta
+  68:src/pm_loader.cpp ****                        : 0;
+  69:src/pm_loader.cpp ****         case LoadState::Verify:
+  70:src/pm_loader.cpp ****         case LoadState::Finalize: return 99;
+ 356              		.loc 1 70 42 view .LVU46
+ 357 0014 6320     		movs	r0, #99
+ 358              	.LVL24:
+  71:src/pm_loader.cpp ****         case LoadState::Committed: return 100;
+  72:src/pm_loader.cpp ****         case LoadState::Failed:
+  73:src/pm_loader.cpp ****             return status_.bytes_total
+  74:src/pm_loader.cpp ****                        ? static_cast<uint8_t>(static_cast<uint64_t>(status_.bytes_done) * 99u / sta
+  75:src/pm_loader.cpp ****                        : 0;
+  76:src/pm_loader.cpp ****     }
+  77:src/pm_loader.cpp ****     return 0;
+  78:src/pm_loader.cpp **** }
+ 359              		.loc 1 78 1 view .LVU47
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 11
+
+
+ 360 0016 08BD     		pop	{r3, pc}
+ 361              	.LVL25:
+ 362              	.L21:
+  65:src/pm_loader.cpp ****             return status_.bytes_total
+ 363              		.loc 1 65 9 is_stmt 1 view .LVU48
+  66:src/pm_loader.cpp ****                        ? static_cast<uint8_t>(static_cast<uint64_t>(status_.bytes_done) * 99u / sta
+ 364              		.loc 1 66 13 view .LVU49
+  66:src/pm_loader.cpp ****                        ? static_cast<uint8_t>(static_cast<uint64_t>(status_.bytes_done) * 99u / sta
+ 365              		.loc 1 66 28 is_stmt 0 view .LVU50
+ 366 0018 4269     		ldr	r2, [r0, #20]
+  68:src/pm_loader.cpp ****         case LoadState::Verify:
+ 367              		.loc 1 68 26 view .LVU51
+ 368 001a 7AB1     		cbz	r2, .L16
+ 369              	.L26:
+  74:src/pm_loader.cpp ****                        : 0;
+ 370              		.loc 1 74 89 view .LVU52
+ 371 001c 0169     		ldr	r1, [r0, #16]
+ 372 001e 6320     		movs	r0, #99
+ 373              	.LVL26:
+  74:src/pm_loader.cpp ****                        : 0;
+ 374              		.loc 1 74 95 view .LVU53
+ 375 0020 0023     		movs	r3, #0
+ 376 0022 A1FB0001 		umull	r0, r1, r1, r0
+ 377 0026 FFF7FEFF 		bl	__aeabi_uldivmod
+ 378              	.LVL27:
+  75:src/pm_loader.cpp ****     }
+ 379              		.loc 1 75 26 discriminator 1 view .LVU54
+ 380 002a C0B2     		uxtb	r0, r0
+ 381              		.loc 1 78 1 view .LVU55
+ 382 002c 08BD     		pop	{r3, pc}
+ 383              	.LVL28:
+ 384              	.L17:
+  72:src/pm_loader.cpp ****             return status_.bytes_total
+ 385              		.loc 1 72 9 is_stmt 1 view .LVU56
+  73:src/pm_loader.cpp ****                        ? static_cast<uint8_t>(static_cast<uint64_t>(status_.bytes_done) * 99u / sta
+ 386              		.loc 1 73 13 view .LVU57
+  73:src/pm_loader.cpp ****                        ? static_cast<uint8_t>(static_cast<uint64_t>(status_.bytes_done) * 99u / sta
+ 387              		.loc 1 73 28 is_stmt 0 view .LVU58
+ 388 002e 4269     		ldr	r2, [r0, #20]
+  75:src/pm_loader.cpp ****     }
+ 389              		.loc 1 75 26 view .LVU59
+ 390 0030 002A     		cmp	r2, #0
+ 391 0032 F3D1     		bne	.L26
+  64:src/pm_loader.cpp ****         case LoadState::Payload:
+ 392              		.loc 1 64 40 view .LVU60
+ 393 0034 1046     		mov	r0, r2
+ 394              	.LVL29:
+ 395              		.loc 1 78 1 view .LVU61
+ 396 0036 08BD     		pop	{r3, pc}
+ 397              	.LVL30:
+ 398              	.L22:
+  61:src/pm_loader.cpp ****         case LoadState::Idle:
+ 399              		.loc 1 61 5 view .LVU62
+ 400 0038 6420     		movs	r0, #100
+ 401              	.LVL31:
+ 402              		.loc 1 78 1 view .LVU63
+ 403 003a 08BD     		pop	{r3, pc}
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 12
+
+
+ 404              	.LVL32:
+ 405              	.L16:
+  64:src/pm_loader.cpp ****         case LoadState::Payload:
+ 406              		.loc 1 64 40 view .LVU64
+ 407 003c 0020     		movs	r0, #0
+ 408              	.LVL33:
+ 409              		.loc 1 78 1 view .LVU65
+ 410 003e 08BD     		pop	{r3, pc}
+ 411              		.cfi_endproc
+ 412              	.LFE1314:
+ 414              		.section	.text._ZN2pm6Loader5StartERKNS_12CatalogEntryEmm,"ax",%progbits
+ 415              		.align	1
+ 416              		.p2align 2,,3
+ 417              		.global	_ZN2pm6Loader5StartERKNS_12CatalogEntryEmm
+ 418              		.syntax unified
+ 419              		.thumb
+ 420              		.thumb_func
+ 422              	_ZN2pm6Loader5StartERKNS_12CatalogEntryEmm:
+ 423              	.LVL34:
+ 424              	.LFB1315:
+  79:src/pm_loader.cpp **** 
+  80:src/pm_loader.cpp **** bool Loader::Start(const CatalogEntry& entry, uint32_t now_ms, uint32_t request_id) {
+ 425              		.loc 1 80 85 is_stmt 1 view -0
+ 426              		.cfi_startproc
+ 427              		@ args = 0, pretend = 0, frame = 144
+ 428              		@ frame_needed = 0, uses_anonymous_args = 0
+  81:src/pm_loader.cpp ****     if(Active()) {
+ 429              		.loc 1 81 5 view .LVU67
+  80:src/pm_loader.cpp ****     if(Active()) {
+ 430              		.loc 1 80 85 is_stmt 0 view .LVU68
+ 431 0000 70B5     		push	{r4, r5, r6, lr}
+ 432              		.cfi_def_cfa_offset 16
+ 433              		.cfi_offset 4, -16
+ 434              		.cfi_offset 5, -12
+ 435              		.cfi_offset 6, -8
+ 436              		.cfi_offset 14, -4
+ 437 0002 0446     		mov	r4, r0
+ 438              	.LVL35:
+ 439              	.LBB61:
+ 440              	.LBI61:
+  49:src/pm_loader.cpp ****     switch(status_.state) {
+ 441              		.loc 1 49 6 is_stmt 1 view .LVU69
+ 442              	.LBB62:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 443              		.loc 1 50 5 view .LVU70
+ 444 0004 007B     		ldrb	r0, [r0, #12]	@ zero_extendqisi2
+ 445              	.LVL36:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 446              		.loc 1 50 5 is_stmt 0 view .LVU71
+ 447              	.LBE62:
+ 448              	.LBE61:
+  80:src/pm_loader.cpp ****     if(Active()) {
+ 449              		.loc 1 80 85 view .LVU72
+ 450 0006 A4B0     		sub	sp, sp, #144
+ 451              		.cfi_def_cfa_offset 160
+ 452              	.LBB65:
+ 453              	.LBB63:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 13
+
+
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 454              		.loc 1 50 5 view .LVU73
+ 455 0008 0138     		subs	r0, r0, #1
+ 456 000a 0428     		cmp	r0, #4
+ 457 000c 04D8     		bhi	.L28
+ 458              	.LVL37:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 459              		.loc 1 50 5 view .LVU74
+ 460              	.LBE63:
+ 461              	.LBE65:
+  82:src/pm_loader.cpp ****         status_.error = LoadError::Busy;
+ 462              		.loc 1 82 9 is_stmt 1 view .LVU75
+ 463              		.loc 1 82 23 is_stmt 0 view .LVU76
+ 464 000e 0123     		movs	r3, #1
+ 465              	.LVL38:
+  83:src/pm_loader.cpp ****         return false;
+ 466              		.loc 1 83 16 view .LVU77
+ 467 0010 0020     		movs	r0, #0
+  82:src/pm_loader.cpp ****         status_.error = LoadError::Busy;
+ 468              		.loc 1 82 23 view .LVU78
+ 469 0012 6373     		strb	r3, [r4, #13]
+ 470              		.loc 1 83 9 is_stmt 1 view .LVU79
+  84:src/pm_loader.cpp ****     }
+  85:src/pm_loader.cpp ****     status_ = LoadStatus();
+  86:src/pm_loader.cpp ****     status_.state = LoadState::Opening;
+  87:src/pm_loader.cpp ****     status_.slot = entry.slot;
+  88:src/pm_loader.cpp ****     status_.request_id = request_id;
+  89:src/pm_loader.cpp ****     status_.started_ms = now_ms;
+  90:src/pm_loader.cpp ****     entry_ = entry;
+  91:src/pm_loader.cpp ****     header_ = ImageHeader();
+  92:src/pm_loader.cpp ****     file_size_ = 0;
+  93:src/pm_loader.cpp ****     return true;
+  94:src/pm_loader.cpp **** }
+ 471              		.loc 1 94 1 is_stmt 0 view .LVU80
+ 472 0014 24B0     		add	sp, sp, #144
+ 473              		.cfi_remember_state
+ 474              		.cfi_def_cfa_offset 16
+ 475              		@ sp needed
+ 476 0016 70BD     		pop	{r4, r5, r6, pc}
+ 477              	.LVL39:
+ 478              	.L28:
+ 479              		.cfi_restore_state
+ 480              	.LBB66:
+ 481              	.LBB64:
+  56:src/pm_loader.cpp ****     }
+ 482              		.loc 1 56 9 is_stmt 1 view .LVU81
+  56:src/pm_loader.cpp ****     }
+ 483              		.loc 1 56 18 view .LVU82
+  56:src/pm_loader.cpp ****     }
+ 484              		.loc 1 56 18 is_stmt 0 view .LVU83
+ 485              	.LBE64:
+ 486              	.LBE66:
+  85:src/pm_loader.cpp ****     status_.state = LoadState::Opening;
+ 487              		.loc 1 85 5 is_stmt 1 view .LVU84
+ 488              	.LBB67:
+ 489              	.LBI67:
+ 490              		.loc 2 82 8 view .LVU85
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 14
+
+
+ 491              		.loc 2 82 8 is_stmt 0 view .LVU86
+ 492              	.LBE67:
+  85:src/pm_loader.cpp ****     status_.state = LoadState::Opening;
+ 493              		.loc 1 85 13 discriminator 1 view .LVU87
+ 494 0018 0025     		movs	r5, #0
+  86:src/pm_loader.cpp ****     status_.slot = entry.slot;
+ 495              		.loc 1 86 19 view .LVU88
+ 496 001a 0126     		movs	r6, #1
+  85:src/pm_loader.cpp ****     status_.state = LoadState::Opening;
+ 497              		.loc 1 85 13 discriminator 1 view .LVU89
+ 498 001c C4E90355 		strd	r5, r5, [r4, #12]
+ 499 0020 C4E90555 		strd	r5, r5, [r4, #20]
+ 500 0024 C4E90755 		strd	r5, r5, [r4, #28]
+  86:src/pm_loader.cpp ****     status_.slot = entry.slot;
+ 501              		.loc 1 86 5 is_stmt 1 view .LVU90
+  86:src/pm_loader.cpp ****     status_.slot = entry.slot;
+ 502              		.loc 1 86 19 is_stmt 0 view .LVU91
+ 503 0028 2673     		strb	r6, [r4, #12]
+  87:src/pm_loader.cpp ****     status_.request_id = request_id;
+ 504              		.loc 1 87 5 is_stmt 1 view .LVU92
+  87:src/pm_loader.cpp ****     status_.request_id = request_id;
+ 505              		.loc 1 87 26 is_stmt 0 view .LVU93
+ 506 002a 0878     		ldrb	r0, [r1]	@ zero_extendqisi2
+  89:src/pm_loader.cpp ****     entry_ = entry;
+ 507              		.loc 1 89 24 view .LVU94
+ 508 002c C4E90732 		strd	r3, r2, [r4, #28]
+  87:src/pm_loader.cpp ****     status_.request_id = request_id;
+ 509              		.loc 1 87 18 view .LVU95
+ 510 0030 2076     		strb	r0, [r4, #24]
+  88:src/pm_loader.cpp ****     status_.started_ms = now_ms;
+ 511              		.loc 1 88 5 is_stmt 1 view .LVU96
+  89:src/pm_loader.cpp ****     entry_ = entry;
+ 512              		.loc 1 89 5 view .LVU97
+  90:src/pm_loader.cpp ****     header_ = ImageHeader();
+ 513              		.loc 1 90 5 view .LVU98
+  90:src/pm_loader.cpp ****     header_ = ImageHeader();
+ 514              		.loc 1 90 12 is_stmt 0 view .LVU99
+ 515 0032 4FF4A372 		mov	r2, #326
+ 516              	.LVL40:
+  90:src/pm_loader.cpp ****     header_ = ImageHeader();
+ 517              		.loc 1 90 12 view .LVU100
+ 518 0036 04F12400 		add	r0, r4, #36
+ 519 003a FFF7FEFF 		bl	memcpy
+ 520              	.LVL41:
+  91:src/pm_loader.cpp ****     file_size_ = 0;
+ 521              		.loc 1 91 5 is_stmt 1 view .LVU101
+  91:src/pm_loader.cpp ****     file_size_ = 0;
+ 522              		.loc 1 91 27 is_stmt 0 view .LVU102
+ 523 003e 2946     		mov	r1, r5
+ 524 0040 7022     		movs	r2, #112
+ 525 0042 6846     		mov	r0, sp
+ 526 0044 FFF7FEFF 		bl	memset
+ 527              	.LVL42:
+ 528              	.LBB68:
+ 529              	.LBI68:
+ 530              		.loc 4 40 8 is_stmt 1 view .LVU103
+ 531              	.LBB69:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 15
+
+
+ 532 0048 2946     		mov	r1, r5
+ 533 004a 2022     		movs	r2, #32
+ 534 004c 1CA8     		add	r0, sp, #112
+ 535 004e 8DF86350 		strb	r5, [sp, #99]
+ 536 0052 CDF85350 		str	r5, [sp, #83]	@ unaligned
+ 537 0056 CDF85750 		str	r5, [sp, #87]	@ unaligned
+ 538 005a CDF85B50 		str	r5, [sp, #91]	@ unaligned
+ 539 005e CDF85F50 		str	r5, [sp, #95]	@ unaligned
+ 540 0062 FFF7FEFF 		bl	memset
+ 541              	.LVL43:
+ 542              		.loc 4 40 8 is_stmt 0 view .LVU104
+ 543              	.LBE69:
+ 544              	.LBE68:
+  91:src/pm_loader.cpp ****     file_size_ = 0;
+ 545              		.loc 1 91 13 discriminator 1 view .LVU105
+ 546 0066 6946     		mov	r1, sp
+ 547 0068 9022     		movs	r2, #144
+ 548 006a 04F5B670 		add	r0, r4, #364
+ 549 006e FFF7FEFF 		bl	memcpy
+ 550              	.LVL44:
+  92:src/pm_loader.cpp ****     return true;
+ 551              		.loc 1 92 5 is_stmt 1 view .LVU106
+  93:src/pm_loader.cpp **** }
+ 552              		.loc 1 93 12 is_stmt 0 view .LVU107
+ 553 0072 3046     		mov	r0, r6
+  92:src/pm_loader.cpp ****     return true;
+ 554              		.loc 1 92 16 view .LVU108
+ 555 0074 C4F8FC51 		str	r5, [r4, #508]
+  93:src/pm_loader.cpp **** }
+ 556              		.loc 1 93 5 is_stmt 1 view .LVU109
+ 557              		.loc 1 94 1 is_stmt 0 view .LVU110
+ 558 0078 24B0     		add	sp, sp, #144
+ 559              		.cfi_def_cfa_offset 16
+ 560              		@ sp needed
+ 561 007a 70BD     		pop	{r4, r5, r6, pc}
+ 562              		.loc 1 94 1 view .LVU111
+ 563              		.cfi_endproc
+ 564              	.LFE1315:
+ 566              		.section	.text._ZN2pm6Loader4FailENS_9LoadErrorE,"ax",%progbits
+ 567              		.align	1
+ 568              		.p2align 2,,3
+ 569              		.global	_ZN2pm6Loader4FailENS_9LoadErrorE
+ 570              		.syntax unified
+ 571              		.thumb
+ 572              		.thumb_func
+ 574              	_ZN2pm6Loader4FailENS_9LoadErrorE:
+ 575              	.LVL45:
+ 576              	.LFB1316:
+  95:src/pm_loader.cpp **** 
+  96:src/pm_loader.cpp **** void Loader::Fail(LoadError error) {
+ 577              		.loc 1 96 36 is_stmt 1 view -0
+ 578              		.cfi_startproc
+ 579              		@ args = 0, pretend = 0, frame = 0
+ 580              		@ frame_needed = 0, uses_anonymous_args = 0
+  97:src/pm_loader.cpp ****     if(open_) {
+ 581              		.loc 1 97 5 view .LVU113
+  96:src/pm_loader.cpp ****     if(open_) {
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 16
+
+
+ 582              		.loc 1 96 36 is_stmt 0 view .LVU114
+ 583 0000 38B5     		push	{r3, r4, r5, lr}
+ 584              		.cfi_def_cfa_offset 16
+ 585              		.cfi_offset 3, -16
+ 586              		.cfi_offset 4, -12
+ 587              		.cfi_offset 5, -8
+ 588              		.cfi_offset 14, -4
+ 589              		.loc 1 97 5 view .LVU115
+ 590 0002 90F80032 		ldrb	r3, [r0, #512]	@ zero_extendqisi2
+  96:src/pm_loader.cpp ****     if(open_) {
+ 591              		.loc 1 96 36 view .LVU116
+ 592 0006 0446     		mov	r4, r0
+ 593 0008 0D46     		mov	r5, r1
+ 594              		.loc 1 97 5 view .LVU117
+ 595 000a 33B1     		cbz	r3, .L32
+  98:src/pm_loader.cpp ****         source_.Close();
+ 596              		.loc 1 98 9 is_stmt 1 view .LVU118
+ 597 000c 0068     		ldr	r0, [r0]
+ 598              	.LVL46:
+ 599              		.loc 1 98 22 is_stmt 0 view .LVU119
+ 600 000e 0368     		ldr	r3, [r0]
+ 601 0010 9B68     		ldr	r3, [r3, #8]
+ 602 0012 9847     		blx	r3
+ 603              	.LVL47:
+  99:src/pm_loader.cpp ****         open_ = false;
+ 604              		.loc 1 99 9 is_stmt 1 view .LVU120
+ 605              		.loc 1 99 15 is_stmt 0 view .LVU121
+ 606 0014 0023     		movs	r3, #0
+ 607 0016 84F80032 		strb	r3, [r4, #512]
+ 608              	.L32:
+ 100:src/pm_loader.cpp ****     }
+ 101:src/pm_loader.cpp ****     status_.state = LoadState::Failed;
+ 609              		.loc 1 101 5 is_stmt 1 view .LVU122
+ 610              		.loc 1 101 19 is_stmt 0 view .LVU123
+ 611 001a 0723     		movs	r3, #7
+ 102:src/pm_loader.cpp ****     status_.error = error;
+ 612              		.loc 1 102 19 view .LVU124
+ 613 001c 6573     		strb	r5, [r4, #13]
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 614              		.loc 1 101 19 view .LVU125
+ 615 001e 2373     		strb	r3, [r4, #12]
+ 616              		.loc 1 102 5 is_stmt 1 view .LVU126
+ 103:src/pm_loader.cpp **** }
+ 617              		.loc 1 103 1 is_stmt 0 view .LVU127
+ 618 0020 38BD     		pop	{r3, r4, r5, pc}
+ 619              		.loc 1 103 1 view .LVU128
+ 620              		.cfi_endproc
+ 621              	.LFE1316:
+ 623 0022 00BF     		.section	.text._ZN2pm6Loader6CancelEv,"ax",%progbits
+ 624              		.align	1
+ 625              		.p2align 2,,3
+ 626              		.global	_ZN2pm6Loader6CancelEv
+ 627              		.syntax unified
+ 628              		.thumb
+ 629              		.thumb_func
+ 631              	_ZN2pm6Loader6CancelEv:
+ 632              	.LVL48:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 17
+
+
+ 633              	.LFB1317:
+ 104:src/pm_loader.cpp **** 
+ 105:src/pm_loader.cpp **** void Loader::Cancel() {
+ 634              		.loc 1 105 23 is_stmt 1 view -0
+ 635              		.cfi_startproc
+ 636              		@ args = 0, pretend = 0, frame = 0
+ 637              		@ frame_needed = 0, uses_anonymous_args = 0
+ 106:src/pm_loader.cpp ****     if(Active())
+ 638              		.loc 1 106 5 view .LVU130
+ 639              	.LBB74:
+ 640              	.LBI74:
+  49:src/pm_loader.cpp ****     switch(status_.state) {
+ 641              		.loc 1 49 6 view .LVU131
+ 642              	.LBB75:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 643              		.loc 1 50 5 view .LVU132
+ 644 0000 037B     		ldrb	r3, [r0, #12]	@ zero_extendqisi2
+ 645 0002 013B     		subs	r3, r3, #1
+ 646 0004 042B     		cmp	r3, #4
+ 647 0006 0FD8     		bhi	.L44
+ 648              	.LVL49:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 649              		.loc 1 50 5 is_stmt 0 view .LVU133
+ 650              	.LBE75:
+ 651              	.LBE74:
+ 107:src/pm_loader.cpp ****         Fail(LoadError::Cancelled);
+ 652              		.loc 1 107 9 is_stmt 1 view .LVU134
+ 653              	.LBB76:
+ 654              	.LBI76:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 655              		.loc 1 96 6 view .LVU135
+ 656              	.LBB77:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 657              		.loc 1 97 5 view .LVU136
+ 658 0008 90F80032 		ldrb	r3, [r0, #512]	@ zero_extendqisi2
+ 659              	.LBE77:
+ 660              	.LBE76:
+ 105:src/pm_loader.cpp ****     if(Active())
+ 661              		.loc 1 105 23 is_stmt 0 view .LVU137
+ 662 000c 10B5     		push	{r4, lr}
+ 663              		.cfi_def_cfa_offset 8
+ 664              		.cfi_offset 4, -8
+ 665              		.cfi_offset 14, -4
+ 666 000e 0446     		mov	r4, r0
+ 667              	.LBB79:
+ 668              	.LBB78:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 669              		.loc 1 97 5 view .LVU138
+ 670 0010 33B1     		cbz	r3, .L39
+  98:src/pm_loader.cpp ****         open_ = false;
+ 671              		.loc 1 98 9 is_stmt 1 view .LVU139
+ 672 0012 0068     		ldr	r0, [r0]
+ 673              	.LVL50:
+  98:src/pm_loader.cpp ****         open_ = false;
+ 674              		.loc 1 98 22 is_stmt 0 view .LVU140
+ 675 0014 0368     		ldr	r3, [r0]
+ 676 0016 9B68     		ldr	r3, [r3, #8]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 18
+
+
+ 677 0018 9847     		blx	r3
+ 678              	.LVL51:
+  99:src/pm_loader.cpp ****     }
+ 679              		.loc 1 99 9 is_stmt 1 view .LVU141
+  99:src/pm_loader.cpp ****     }
+ 680              		.loc 1 99 15 is_stmt 0 view .LVU142
+ 681 001a 0023     		movs	r3, #0
+ 682 001c 84F80032 		strb	r3, [r4, #512]
+ 683              	.L39:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 684              		.loc 1 101 5 is_stmt 1 view .LVU143
+ 102:src/pm_loader.cpp **** }
+ 685              		.loc 1 102 5 view .LVU144
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 686              		.loc 1 101 19 is_stmt 0 view .LVU145
+ 687 0020 41F20703 		movw	r3, #4103
+ 688 0024 A381     		strh	r3, [r4, #12]	@ movhi
+ 689              	.LVL52:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 690              		.loc 1 101 19 view .LVU146
+ 691              	.LBE78:
+ 692              	.LBE79:
+ 108:src/pm_loader.cpp **** }
+ 693              		.loc 1 108 1 view .LVU147
+ 694 0026 10BD     		pop	{r4, pc}
+ 695              	.LVL53:
+ 696              	.L44:
+ 697              		.cfi_def_cfa_offset 0
+ 698              		.cfi_restore 4
+ 699              		.cfi_restore 14
+ 700              		.loc 1 108 1 view .LVU148
+ 701 0028 7047     		bx	lr
+ 702              		.cfi_endproc
+ 703              	.LFE1317:
+ 705 002a 00BF     		.section	.text._ZN2pm6Loader5ResetEv,"ax",%progbits
+ 706              		.align	1
+ 707              		.p2align 2,,3
+ 708              		.global	_ZN2pm6Loader5ResetEv
+ 709              		.syntax unified
+ 710              		.thumb
+ 711              		.thumb_func
+ 713              	_ZN2pm6Loader5ResetEv:
+ 714              	.LVL54:
+ 715              	.LFB1318:
+ 109:src/pm_loader.cpp **** 
+ 110:src/pm_loader.cpp **** void Loader::Reset() {
+ 716              		.loc 1 110 22 is_stmt 1 view -0
+ 717              		.cfi_startproc
+ 718              		@ args = 0, pretend = 0, frame = 0
+ 719              		@ frame_needed = 0, uses_anonymous_args = 0
+ 111:src/pm_loader.cpp ****     if(Active())
+ 720              		.loc 1 111 5 view .LVU150
+ 721              	.LBB85:
+ 722              	.LBB86:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 723              		.loc 1 50 5 is_stmt 0 view .LVU151
+ 724 0000 037B     		ldrb	r3, [r0, #12]	@ zero_extendqisi2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 19
+
+
+ 725 0002 013B     		subs	r3, r3, #1
+ 726 0004 042B     		cmp	r3, #4
+ 727              	.LBE86:
+ 728              	.LBE85:
+ 110:src/pm_loader.cpp ****     if(Active())
+ 729              		.loc 1 110 22 view .LVU152
+ 730 0006 10B5     		push	{r4, lr}
+ 731              		.cfi_def_cfa_offset 8
+ 732              		.cfi_offset 4, -8
+ 733              		.cfi_offset 14, -4
+ 110:src/pm_loader.cpp ****     if(Active())
+ 734              		.loc 1 110 22 view .LVU153
+ 735 0008 0446     		mov	r4, r0
+ 736              	.LVL55:
+ 737              	.LBB88:
+ 738              	.LBI85:
+  49:src/pm_loader.cpp ****     switch(status_.state) {
+ 739              		.loc 1 49 6 is_stmt 1 view .LVU154
+ 740              	.LBB87:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 741              		.loc 1 50 5 view .LVU155
+ 742 000a 09D8     		bhi	.L48
+ 743              	.LVL56:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 744              		.loc 1 50 5 is_stmt 0 view .LVU156
+ 745              	.LBE87:
+ 746              	.LBE88:
+ 112:src/pm_loader.cpp ****         Fail(LoadError::Cancelled);
+ 747              		.loc 1 112 9 is_stmt 1 view .LVU157
+ 748              	.LBB89:
+ 749              	.LBI89:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 750              		.loc 1 96 6 view .LVU158
+ 751              	.LBB90:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 752              		.loc 1 97 5 view .LVU159
+ 753 000c 90F80032 		ldrb	r3, [r0, #512]	@ zero_extendqisi2
+ 754 0010 33B1     		cbz	r3, .L48
+  98:src/pm_loader.cpp ****         open_ = false;
+ 755              		.loc 1 98 9 view .LVU160
+ 756 0012 0068     		ldr	r0, [r0]
+ 757              	.LVL57:
+  98:src/pm_loader.cpp ****         open_ = false;
+ 758              		.loc 1 98 22 is_stmt 0 view .LVU161
+ 759 0014 0368     		ldr	r3, [r0]
+ 760 0016 9B68     		ldr	r3, [r3, #8]
+ 761 0018 9847     		blx	r3
+ 762              	.LVL58:
+  99:src/pm_loader.cpp ****     }
+ 763              		.loc 1 99 9 is_stmt 1 view .LVU162
+  99:src/pm_loader.cpp ****     }
+ 764              		.loc 1 99 15 is_stmt 0 view .LVU163
+ 765 001a 0023     		movs	r3, #0
+ 766 001c 84F80032 		strb	r3, [r4, #512]
+ 767              	.LVL59:
+ 768              	.L48:
+  99:src/pm_loader.cpp ****     }
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 20
+
+
+ 769              		.loc 1 99 15 view .LVU164
+ 770              	.LBE90:
+ 771              	.LBE89:
+ 113:src/pm_loader.cpp ****     status_ = LoadStatus();
+ 772              		.loc 1 113 5 is_stmt 1 view .LVU165
+ 773              	.LBB91:
+ 774              	.LBI91:
+ 775              		.loc 2 82 8 view .LVU166
+ 776              		.loc 2 82 8 is_stmt 0 view .LVU167
+ 777              	.LBE91:
+ 778              		.loc 1 113 13 discriminator 1 view .LVU168
+ 779 0020 0023     		movs	r3, #0
+ 780 0022 C4E90333 		strd	r3, r3, [r4, #12]
+ 781 0026 C4E90533 		strd	r3, r3, [r4, #20]
+ 782 002a C4E90733 		strd	r3, r3, [r4, #28]
+ 114:src/pm_loader.cpp **** }
+ 783              		.loc 1 114 1 view .LVU169
+ 784 002e 10BD     		pop	{r4, pc}
+ 785              		.loc 1 114 1 view .LVU170
+ 786              		.cfi_endproc
+ 787              	.LFE1318:
+ 789              		.section	.text._ZN2pm6Loader9ReadExactEPhm,"ax",%progbits
+ 790              		.align	1
+ 791              		.p2align 2,,3
+ 792              		.global	_ZN2pm6Loader9ReadExactEPhm
+ 793              		.syntax unified
+ 794              		.thumb
+ 795              		.thumb_func
+ 797              	_ZN2pm6Loader9ReadExactEPhm:
+ 798              	.LVL60:
+ 799              	.LFB1319:
+ 115:src/pm_loader.cpp **** 
+ 116:src/pm_loader.cpp **** bool Loader::ReadExact(uint8_t* dst, uint32_t len) {
+ 800              		.loc 1 116 52 is_stmt 1 view -0
+ 801              		.cfi_startproc
+ 802              		@ args = 0, pretend = 0, frame = 0
+ 803              		@ frame_needed = 0, uses_anonymous_args = 0
+ 117:src/pm_loader.cpp ****     uint32_t got = 0;
+ 804              		.loc 1 117 5 view .LVU172
+ 118:src/pm_loader.cpp ****     while(got < len) {
+ 805              		.loc 1 118 5 view .LVU173
+ 806              		.loc 1 118 15 view .LVU174
+ 807 0000 A2B1     		cbz	r2, .L63
+ 116:src/pm_loader.cpp ****     uint32_t got = 0;
+ 808              		.loc 1 116 52 is_stmt 0 view .LVU175
+ 809 0002 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 810              		.cfi_def_cfa_offset 24
+ 811              		.cfi_offset 3, -24
+ 812              		.cfi_offset 4, -20
+ 813              		.cfi_offset 5, -16
+ 814              		.cfi_offset 6, -12
+ 815              		.cfi_offset 7, -8
+ 816              		.cfi_offset 14, -4
+ 817 0004 0746     		mov	r7, r0
+ 818 0006 0E46     		mov	r6, r1
+ 819 0008 1546     		mov	r5, r2
+ 117:src/pm_loader.cpp ****     uint32_t got = 0;
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 21
+
+
+ 820              		.loc 1 117 14 view .LVU176
+ 821 000a 0024     		movs	r4, #0
+ 822 000c 01E0     		b	.L56
+ 823              	.LVL61:
+ 824              	.L67:
+ 825              		.loc 1 118 15 view .LVU177
+ 826 000e A542     		cmp	r5, r4
+ 827 0010 0AD9     		bls	.L66
+ 828              	.LVL62:
+ 829              	.L56:
+ 830              	.LBB93:
+ 119:src/pm_loader.cpp ****         const int32_t n = source_.Read(dst + got, len - got);
+ 831              		.loc 1 119 9 is_stmt 1 view .LVU178
+ 832              		.loc 1 119 27 is_stmt 0 view .LVU179
+ 833 0012 3868     		ldr	r0, [r7]
+ 834              		.loc 1 119 39 view .LVU180
+ 835 0014 2A1B     		subs	r2, r5, r4
+ 836 0016 3119     		adds	r1, r6, r4
+ 837 0018 0368     		ldr	r3, [r0]
+ 838 001a 5B68     		ldr	r3, [r3, #4]
+ 839 001c 9847     		blx	r3
+ 840              	.LVL63:
+ 120:src/pm_loader.cpp ****         if(n <= 0)
+ 121:src/pm_loader.cpp ****             return false;
+ 122:src/pm_loader.cpp ****         got += static_cast<uint32_t>(n);
+ 841              		.loc 1 122 9 is_stmt 1 view .LVU181
+ 120:src/pm_loader.cpp ****         if(n <= 0)
+ 842              		.loc 1 120 9 view .LVU182
+ 843 001e 0028     		cmp	r0, #0
+ 844              		.loc 1 122 13 is_stmt 0 view .LVU183
+ 845 0020 0444     		add	r4, r4, r0
+ 846              	.LVL64:
+ 847              		.loc 1 122 13 view .LVU184
+ 848              	.LBE93:
+ 118:src/pm_loader.cpp ****         const int32_t n = source_.Read(dst + got, len - got);
+ 849              		.loc 1 118 15 is_stmt 1 view .LVU185
+ 850              	.LBB94:
+ 120:src/pm_loader.cpp ****         if(n <= 0)
+ 851              		.loc 1 120 9 is_stmt 0 view .LVU186
+ 852 0022 F4DC     		bgt	.L67
+ 121:src/pm_loader.cpp ****         got += static_cast<uint32_t>(n);
+ 853              		.loc 1 121 20 view .LVU187
+ 854 0024 0020     		movs	r0, #0
+ 855              	.LVL65:
+ 121:src/pm_loader.cpp ****         got += static_cast<uint32_t>(n);
+ 856              		.loc 1 121 20 view .LVU188
+ 857              	.LBE94:
+ 123:src/pm_loader.cpp ****     }
+ 124:src/pm_loader.cpp ****     return true;
+ 125:src/pm_loader.cpp **** }
+ 858              		.loc 1 125 1 view .LVU189
+ 859 0026 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 860              	.LVL66:
+ 861              	.L66:
+ 124:src/pm_loader.cpp **** }
+ 862              		.loc 1 124 12 view .LVU190
+ 863 0028 0120     		movs	r0, #1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 22
+
+
+ 864              	.LVL67:
+ 865              		.loc 1 125 1 view .LVU191
+ 866 002a F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 867              	.LVL68:
+ 868              	.L63:
+ 869              		.cfi_def_cfa_offset 0
+ 870              		.cfi_restore 3
+ 871              		.cfi_restore 4
+ 872              		.cfi_restore 5
+ 873              		.cfi_restore 6
+ 874              		.cfi_restore 7
+ 875              		.cfi_restore 14
+ 124:src/pm_loader.cpp **** }
+ 876              		.loc 1 124 12 view .LVU192
+ 877 002c 0120     		movs	r0, #1
+ 878              	.LVL69:
+ 879              		.loc 1 125 1 view .LVU193
+ 880 002e 7047     		bx	lr
+ 881              		.cfi_endproc
+ 882              	.LFE1319:
+ 884              		.section	.text._ZN2pm6Loader4StepEm,"ax",%progbits
+ 885              		.align	1
+ 886              		.p2align 2,,3
+ 887              		.global	_ZN2pm6Loader4StepEm
+ 888              		.syntax unified
+ 889              		.thumb
+ 890              		.thumb_func
+ 892              	_ZN2pm6Loader4StepEm:
+ 893              	.LVL70:
+ 894              	.LFB1320:
+ 126:src/pm_loader.cpp **** 
+ 127:src/pm_loader.cpp **** bool Loader::Step(uint32_t now_ms) {
+ 895              		.loc 1 127 36 is_stmt 1 view -0
+ 896              		.cfi_startproc
+ 897              		@ args = 0, pretend = 0, frame = 32
+ 898              		@ frame_needed = 0, uses_anonymous_args = 0
+ 128:src/pm_loader.cpp ****     if(!Active())
+ 899              		.loc 1 128 5 view .LVU195
+ 900              	.LBB138:
+ 901              	.LBI138:
+  49:src/pm_loader.cpp ****     switch(status_.state) {
+ 902              		.loc 1 49 6 view .LVU196
+ 903              	.LBB139:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 904              		.loc 1 50 5 view .LVU197
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 905              		.loc 1 50 20 is_stmt 0 view .LVU198
+ 906 0000 037B     		ldrb	r3, [r0, #12]	@ zero_extendqisi2
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 907              		.loc 1 50 5 view .LVU199
+ 908 0002 5A1E     		subs	r2, r3, #1
+ 909 0004 042A     		cmp	r2, #4
+ 910              	.LBE139:
+ 911              	.LBE138:
+ 127:src/pm_loader.cpp ****     if(!Active())
+ 912              		.loc 1 127 36 view .LVU200
+ 913 0006 F0B5     		push	{r4, r5, r6, r7, lr}
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 23
+
+
+ 914              		.cfi_def_cfa_offset 20
+ 915              		.cfi_offset 4, -20
+ 916              		.cfi_offset 5, -16
+ 917              		.cfi_offset 6, -12
+ 918              		.cfi_offset 7, -8
+ 919              		.cfi_offset 14, -4
+ 920 0008 89B0     		sub	sp, sp, #36
+ 921              		.cfi_def_cfa_offset 56
+ 922              	.LBB141:
+ 923              	.LBB140:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 924              		.loc 1 50 5 view .LVU201
+ 925 000a 03D9     		bls	.L173
+ 926              	.LVL71:
+ 927              	.L69:
+  50:src/pm_loader.cpp ****         case LoadState::Opening:
+ 928              		.loc 1 50 5 view .LVU202
+ 929              	.LBE140:
+ 930              	.LBE141:
+ 129:src/pm_loader.cpp ****         return false;
+ 931              		.loc 1 129 16 view .LVU203
+ 932 000c 0026     		movs	r6, #0
+ 933              	.L161:
+ 130:src/pm_loader.cpp ****     if(now_ms - status_.started_ms > kBudgetMs) {
+ 131:src/pm_loader.cpp ****         Fail(LoadError::Budget);
+ 132:src/pm_loader.cpp ****         return false;
+ 133:src/pm_loader.cpp ****     }
+ 134:src/pm_loader.cpp ****     if(status_.state != LoadState::Finalize && !source_.CardPresent()) {
+ 135:src/pm_loader.cpp ****         Fail(LoadError::CardAbsent);
+ 136:src/pm_loader.cpp ****         return false;
+ 137:src/pm_loader.cpp ****     }
+ 138:src/pm_loader.cpp ****     switch(status_.state) {
+ 139:src/pm_loader.cpp ****         case LoadState::Opening: {
+ 140:src/pm_loader.cpp ****             if(!source_.Open(entry_.path, file_size_)) {
+ 141:src/pm_loader.cpp ****                 Fail(LoadError::Open);
+ 142:src/pm_loader.cpp ****                 return false;
+ 143:src/pm_loader.cpp ****             }
+ 144:src/pm_loader.cpp ****             open_ = true;
+ 145:src/pm_loader.cpp ****             if(file_size_ < kHeaderSize + kMinPayload || file_size_ > kHeaderSize + kTargetSize) {
+ 146:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 147:src/pm_loader.cpp ****                 return false;
+ 148:src/pm_loader.cpp ****             }
+ 149:src/pm_loader.cpp ****             status_.state = LoadState::Header;
+ 150:src/pm_loader.cpp ****             return true;
+ 151:src/pm_loader.cpp ****         }
+ 152:src/pm_loader.cpp ****         case LoadState::Header: {
+ 153:src/pm_loader.cpp ****             if(!ReadExact(header_bytes_, kHeaderSize)) {
+ 154:src/pm_loader.cpp ****                 Fail(LoadError::HeaderRead);
+ 155:src/pm_loader.cpp ****                 return false;
+ 156:src/pm_loader.cpp ****             }
+ 157:src/pm_loader.cpp ****             status_.image_error = ParseHeader(header_bytes_, kHeaderSize, header_);
+ 158:src/pm_loader.cpp ****             if(status_.image_error != ImageError::None) {
+ 159:src/pm_loader.cpp ****                 Fail(LoadError::Header);
+ 160:src/pm_loader.cpp ****                 return false;
+ 161:src/pm_loader.cpp ****             }
+ 162:src/pm_loader.cpp ****             if(std::strcmp(header_.product, entry_.id) != 0) {
+ 163:src/pm_loader.cpp ****                 Fail(LoadError::Product);
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 24
+
+
+ 164:src/pm_loader.cpp ****                 return false;
+ 165:src/pm_loader.cpp ****             }
+ 166:src/pm_loader.cpp ****             if(std::memcmp(header_.payload_sha256, entry_.payload_sha256, 32) != 0) {
+ 167:src/pm_loader.cpp ****                 Fail(LoadError::HashMismatch);
+ 168:src/pm_loader.cpp ****                 return false;
+ 169:src/pm_loader.cpp ****             }
+ 170:src/pm_loader.cpp ****             if(file_size_ != kHeaderSize + header_.payload_length) {
+ 171:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 172:src/pm_loader.cpp ****                 return false;
+ 173:src/pm_loader.cpp ****             }
+ 174:src/pm_loader.cpp ****             if(header_.payload_length > target_.Capacity()) {
+ 175:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 176:src/pm_loader.cpp ****                 return false;
+ 177:src/pm_loader.cpp ****             }
+ 178:src/pm_loader.cpp ****             // Whole target zeroed first: no remains of a previous program become the
+ 179:src/pm_loader.cpp ****             // start state of this one (CONTRACT.md 7.3). Cleaned together with the image.
+ 180:src/pm_loader.cpp ****             std::memset(target_.Base(), 0, target_.Capacity());
+ 181:src/pm_loader.cpp ****             status_.bytes_total = header_.payload_length;
+ 182:src/pm_loader.cpp ****             status_.bytes_done = 0;
+ 183:src/pm_loader.cpp ****             pm_sha256_init(&sha_);
+ 184:src/pm_loader.cpp ****             status_.state = LoadState::Payload;
+ 185:src/pm_loader.cpp ****             return true;
+ 186:src/pm_loader.cpp ****         }
+ 187:src/pm_loader.cpp ****         case LoadState::Payload: {
+ 188:src/pm_loader.cpp ****             uint8_t* base = target_.Base();
+ 189:src/pm_loader.cpp ****             if(status_.bytes_done < status_.bytes_total) {
+ 190:src/pm_loader.cpp ****                 const uint32_t want = status_.bytes_total - status_.bytes_done;
+ 191:src/pm_loader.cpp ****                 const uint32_t len = want < kChunk ? want : kChunk;
+ 192:src/pm_loader.cpp ****                 const int32_t n = source_.Read(base + status_.bytes_done, len);
+ 193:src/pm_loader.cpp ****                 if(n < 0) {
+ 194:src/pm_loader.cpp ****                     Fail(LoadError::Read);
+ 195:src/pm_loader.cpp ****                     return false;
+ 196:src/pm_loader.cpp ****                 }
+ 197:src/pm_loader.cpp ****                 if(n == 0) {
+ 198:src/pm_loader.cpp ****                     Fail(LoadError::Short);
+ 199:src/pm_loader.cpp ****                     return false;
+ 200:src/pm_loader.cpp ****                 }
+ 201:src/pm_loader.cpp ****                 pm_sha256_update(&sha_, base + status_.bytes_done, static_cast<size_t>(n));
+ 202:src/pm_loader.cpp ****                 status_.bytes_done += static_cast<uint32_t>(n);
+ 203:src/pm_loader.cpp ****                 return true;
+ 204:src/pm_loader.cpp ****             }
+ 205:src/pm_loader.cpp ****             // Exactly payload_length bytes consumed: the file must end here.
+ 206:src/pm_loader.cpp ****             uint8_t extra;
+ 207:src/pm_loader.cpp ****             const int32_t n = source_.Read(&extra, 1);
+ 208:src/pm_loader.cpp ****             if(n < 0) {
+ 209:src/pm_loader.cpp ****                 Fail(LoadError::Read);
+ 210:src/pm_loader.cpp ****                 return false;
+ 211:src/pm_loader.cpp ****             }
+ 212:src/pm_loader.cpp ****             if(n > 0) {
+ 213:src/pm_loader.cpp ****                 Fail(LoadError::Long);
+ 214:src/pm_loader.cpp ****                 return false;
+ 215:src/pm_loader.cpp ****             }
+ 216:src/pm_loader.cpp ****             status_.state = LoadState::Verify;
+ 217:src/pm_loader.cpp ****             return true;
+ 218:src/pm_loader.cpp ****         }
+ 219:src/pm_loader.cpp ****         case LoadState::Verify: {
+ 220:src/pm_loader.cpp ****             uint8_t digest[PM_SHA256_DIGEST_SIZE];
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 25
+
+
+ 221:src/pm_loader.cpp ****             pm_sha256_final(&sha_, digest);
+ 222:src/pm_loader.cpp ****             if(std::memcmp(digest, header_.payload_sha256, sizeof(digest)) != 0) {
+ 223:src/pm_loader.cpp ****                 Fail(LoadError::Hash);
+ 224:src/pm_loader.cpp ****                 return false;
+ 225:src/pm_loader.cpp ****             }
+ 226:src/pm_loader.cpp ****             status_.vector_error = CheckVectors(target_.Base(), status_.bytes_total);
+ 227:src/pm_loader.cpp ****             if(status_.vector_error != VectorError::None) {
+ 228:src/pm_loader.cpp ****                 Fail(LoadError::Vector);
+ 229:src/pm_loader.cpp ****                 return false;
+ 230:src/pm_loader.cpp ****             }
+ 231:src/pm_loader.cpp ****             source_.Close();
+ 232:src/pm_loader.cpp ****             open_ = false;
+ 233:src/pm_loader.cpp ****             status_.state = LoadState::Finalize;
+ 234:src/pm_loader.cpp ****             return true;
+ 235:src/pm_loader.cpp ****         }
+ 236:src/pm_loader.cpp ****         case LoadState::Finalize: {
+ 237:src/pm_loader.cpp ****             // Fixed order: nothing may write memory after Quiesce; dirty lines of the
+ 238:src/pm_loader.cpp ****             // whole (zeroed + loaded) target reach RAM before the bootloader's jump.
+ 239:src/pm_loader.cpp ****             commit_.Quiesce();
+ 240:src/pm_loader.cpp ****             target_.Clean(target_.Capacity());
+ 241:src/pm_loader.cpp ****             status_.state = LoadState::Committed;
+ 242:src/pm_loader.cpp ****             commit_.Commit(kTargetBase);  // no return on hardware
+ 243:src/pm_loader.cpp ****             return false;
+ 244:src/pm_loader.cpp ****         }
+ 245:src/pm_loader.cpp ****         default: return false;
+ 246:src/pm_loader.cpp ****     }
+ 247:src/pm_loader.cpp **** }
+ 934              		.loc 1 247 1 view .LVU204
+ 935 000e 3046     		mov	r0, r6
+ 936 0010 09B0     		add	sp, sp, #36
+ 937              		.cfi_remember_state
+ 938              		.cfi_def_cfa_offset 20
+ 939              		@ sp needed
+ 940 0012 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 941              	.LVL72:
+ 942              	.L173:
+ 943              		.cfi_restore_state
+ 944              		.loc 1 247 1 view .LVU205
+ 945 0014 0446     		mov	r4, r0
+ 946              	.LVL73:
+ 130:src/pm_loader.cpp ****     if(now_ms - status_.started_ms > kBudgetMs) {
+ 947              		.loc 1 130 5 is_stmt 1 view .LVU206
+ 130:src/pm_loader.cpp ****     if(now_ms - status_.started_ms > kBudgetMs) {
+ 948              		.loc 1 130 15 is_stmt 0 view .LVU207
+ 949 0016 006A     		ldr	r0, [r0, #32]
+ 950              	.LVL74:
+ 130:src/pm_loader.cpp ****     if(now_ms - status_.started_ms > kBudgetMs) {
+ 951              		.loc 1 130 5 view .LVU208
+ 952 0018 4EF66022 		movw	r2, #60000
+ 130:src/pm_loader.cpp ****     if(now_ms - status_.started_ms > kBudgetMs) {
+ 953              		.loc 1 130 15 view .LVU209
+ 954 001c 091A     		subs	r1, r1, r0
+ 955              	.LVL75:
+ 130:src/pm_loader.cpp ****     if(now_ms - status_.started_ms > kBudgetMs) {
+ 956              		.loc 1 130 5 view .LVU210
+ 957 001e 9142     		cmp	r1, r2
+ 958 0020 13D8     		bhi	.L174
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 26
+
+
+ 134:src/pm_loader.cpp ****         Fail(LoadError::CardAbsent);
+ 959              		.loc 1 134 5 is_stmt 1 view .LVU211
+ 134:src/pm_loader.cpp ****         Fail(LoadError::CardAbsent);
+ 960              		.loc 1 134 45 is_stmt 0 view .LVU212
+ 961 0022 052B     		cmp	r3, #5
+ 962 0024 00F0A080 		beq	.L73
+ 134:src/pm_loader.cpp ****         Fail(LoadError::CardAbsent);
+ 963              		.loc 1 134 49 discriminator 1 view .LVU213
+ 964 0028 2068     		ldr	r0, [r4]
+ 134:src/pm_loader.cpp ****         Fail(LoadError::CardAbsent);
+ 965              		.loc 1 134 68 discriminator 1 view .LVU214
+ 966 002a 0368     		ldr	r3, [r0]
+ 967 002c DB68     		ldr	r3, [r3, #12]
+ 968 002e 9847     		blx	r3
+ 969              	.LVL76:
+ 134:src/pm_loader.cpp ****         Fail(LoadError::CardAbsent);
+ 970              		.loc 1 134 45 discriminator 1 view .LVU215
+ 971 0030 0646     		mov	r6, r0
+ 972 0032 0028     		cmp	r0, #0
+ 973 0034 00F0AE80 		beq	.L74
+ 138:src/pm_loader.cpp ****         case LoadState::Opening: {
+ 974              		.loc 1 138 5 is_stmt 1 view .LVU216
+ 975              	.LBB142:
+ 976 0038 237B     		ldrb	r3, [r4, #12]	@ zero_extendqisi2
+ 977 003a 013B     		subs	r3, r3, #1
+ 978 003c 042B     		cmp	r3, #4
+ 979 003e E5D8     		bhi	.L69
+ 980 0040 DFE803F0 		tbb	[pc, r3]
+ 981              	.L75:
+ 982 0044 7A       		.byte	(.L79-.L75)/2
+ 983 0045 5C       		.byte	(.L78-.L75)/2
+ 984 0046 35       		.byte	(.L77-.L75)/2
+ 985 0047 11       		.byte	(.L76-.L75)/2
+ 986 0048 92       		.byte	(.L73-.L75)/2
+ 987 0049 00       		.p2align 1
+ 988              	.L174:
+ 989              	.LBE142:
+ 131:src/pm_loader.cpp ****         return false;
+ 990              		.loc 1 131 9 view .LVU217
+ 991              	.LVL77:
+ 992              	.LBB214:
+ 993              	.LBI214:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 994              		.loc 1 96 6 view .LVU218
+ 995              	.LBB215:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 996              		.loc 1 97 5 view .LVU219
+ 997 004a 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 998 004e 33B1     		cbz	r3, .L71
+  98:src/pm_loader.cpp ****         open_ = false;
+ 999              		.loc 1 98 9 view .LVU220
+ 1000 0050 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1001              		.loc 1 98 22 is_stmt 0 view .LVU221
+ 1002 0052 0368     		ldr	r3, [r0]
+ 1003 0054 9B68     		ldr	r3, [r3, #8]
+ 1004 0056 9847     		blx	r3
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 27
+
+
+ 1005              	.LVL78:
+  99:src/pm_loader.cpp ****     }
+ 1006              		.loc 1 99 9 is_stmt 1 view .LVU222
+  99:src/pm_loader.cpp ****     }
+ 1007              		.loc 1 99 15 is_stmt 0 view .LVU223
+ 1008 0058 0023     		movs	r3, #0
+ 1009 005a 84F80032 		strb	r3, [r4, #512]
+ 1010              	.L71:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1011              		.loc 1 101 5 is_stmt 1 view .LVU224
+ 102:src/pm_loader.cpp **** }
+ 1012              		.loc 1 102 5 view .LVU225
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1013              		.loc 1 101 19 is_stmt 0 view .LVU226
+ 1014 005e 40F60773 		movw	r3, #3847
+ 1015 0062 A381     		strh	r3, [r4, #12]	@ movhi
+ 1016              	.LVL79:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1017              		.loc 1 101 19 view .LVU227
+ 1018              	.LBE215:
+ 1019              	.LBE214:
+ 132:src/pm_loader.cpp ****     }
+ 1020              		.loc 1 132 9 is_stmt 1 view .LVU228
+ 1021              	.LBB217:
+ 1022              	.LBB216:
+ 103:src/pm_loader.cpp **** 
+ 1023              		.loc 1 103 1 is_stmt 0 view .LVU229
+ 1024 0064 D2E7     		b	.L69
+ 1025              	.L76:
+ 103:src/pm_loader.cpp **** 
+ 1026              		.loc 1 103 1 view .LVU230
+ 1027              	.LBE216:
+ 1028              	.LBE217:
+ 1029              	.LBB218:
+ 1030              	.LBB143:
+ 219:src/pm_loader.cpp ****             uint8_t digest[PM_SHA256_DIGEST_SIZE];
+ 1031              		.loc 1 219 9 is_stmt 1 view .LVU231
+ 219:src/pm_loader.cpp ****             uint8_t digest[PM_SHA256_DIGEST_SIZE];
+ 1032              		.loc 1 219 33 view .LVU232
+ 1033              	.LBB144:
+ 220:src/pm_loader.cpp ****             pm_sha256_final(&sha_, digest);
+ 1034              		.loc 1 220 13 view .LVU233
+ 221:src/pm_loader.cpp ****             if(std::memcmp(digest, header_.payload_sha256, sizeof(digest)) != 0) {
+ 1035              		.loc 1 221 13 view .LVU234
+ 221:src/pm_loader.cpp ****             if(std::memcmp(digest, header_.payload_sha256, sizeof(digest)) != 0) {
+ 1036              		.loc 1 221 28 is_stmt 0 view .LVU235
+ 1037 0066 04F50270 		add	r0, r4, #520
+ 1038 006a 6946     		mov	r1, sp
+ 1039 006c FFF7FEFF 		bl	pm_sha256_final
+ 1040              	.LVL80:
+ 222:src/pm_loader.cpp ****                 Fail(LoadError::Hash);
+ 1041              		.loc 1 222 13 is_stmt 1 view .LVU236
+ 222:src/pm_loader.cpp ****                 Fail(LoadError::Hash);
+ 1042              		.loc 1 222 27 is_stmt 0 view .LVU237
+ 1043 0070 2022     		movs	r2, #32
+ 1044 0072 04F5EE71 		add	r1, r4, #476
+ 1045 0076 6846     		mov	r0, sp
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 28
+
+
+ 1046 0078 FFF7FEFF 		bl	memcmp
+ 1047              	.LVL81:
+ 222:src/pm_loader.cpp ****                 Fail(LoadError::Hash);
+ 1048              		.loc 1 222 13 discriminator 1 view .LVU238
+ 1049 007c 0746     		mov	r7, r0
+ 1050 007e 0028     		cmp	r0, #0
+ 1051 0080 40F0A380 		bne	.L175
+ 226:src/pm_loader.cpp ****             if(status_.vector_error != VectorError::None) {
+ 1052              		.loc 1 226 13 is_stmt 1 view .LVU239
+ 226:src/pm_loader.cpp ****             if(status_.vector_error != VectorError::None) {
+ 1053              		.loc 1 226 49 is_stmt 0 view .LVU240
+ 1054 0084 6068     		ldr	r0, [r4, #4]
+ 226:src/pm_loader.cpp ****             if(status_.vector_error != VectorError::None) {
+ 1055              		.loc 1 226 61 view .LVU241
+ 1056 0086 0368     		ldr	r3, [r0]
+ 1057 0088 1B68     		ldr	r3, [r3]
+ 1058 008a 9847     		blx	r3
+ 1059              	.LVL82:
+ 226:src/pm_loader.cpp ****             if(status_.vector_error != VectorError::None) {
+ 1060              		.loc 1 226 48 discriminator 1 view .LVU242
+ 1061 008c 6169     		ldr	r1, [r4, #20]
+ 1062 008e FFF7FEFF 		bl	_ZN2pm12CheckVectorsEPKhm
+ 1063              	.LVL83:
+ 1064 0092 0546     		mov	r5, r0
+ 226:src/pm_loader.cpp ****             if(status_.vector_error != VectorError::None) {
+ 1065              		.loc 1 226 34 discriminator 2 view .LVU243
+ 1066 0094 E073     		strb	r0, [r4, #15]
+ 227:src/pm_loader.cpp ****                 Fail(LoadError::Vector);
+ 1067              		.loc 1 227 13 is_stmt 1 view .LVU244
+ 1068 0096 0028     		cmp	r0, #0
+ 1069 0098 40F00C81 		bne	.L176
+ 231:src/pm_loader.cpp ****             open_ = false;
+ 1070              		.loc 1 231 13 view .LVU245
+ 1071 009c 2068     		ldr	r0, [r4]
+ 231:src/pm_loader.cpp ****             open_ = false;
+ 1072              		.loc 1 231 26 is_stmt 0 view .LVU246
+ 1073 009e 0368     		ldr	r3, [r0]
+ 1074 00a0 9B68     		ldr	r3, [r3, #8]
+ 1075 00a2 9847     		blx	r3
+ 1076              	.LVL84:
+ 232:src/pm_loader.cpp ****             status_.state = LoadState::Finalize;
+ 1077              		.loc 1 232 13 is_stmt 1 view .LVU247
+ 233:src/pm_loader.cpp ****             return true;
+ 1078              		.loc 1 233 27 is_stmt 0 view .LVU248
+ 1079 00a4 0523     		movs	r3, #5
+ 232:src/pm_loader.cpp ****             status_.state = LoadState::Finalize;
+ 1080              		.loc 1 232 19 view .LVU249
+ 1081 00a6 84F80052 		strb	r5, [r4, #512]
+ 233:src/pm_loader.cpp ****             return true;
+ 1082              		.loc 1 233 13 is_stmt 1 view .LVU250
+ 233:src/pm_loader.cpp ****             return true;
+ 1083              		.loc 1 233 27 is_stmt 0 view .LVU251
+ 1084 00aa 2373     		strb	r3, [r4, #12]
+ 234:src/pm_loader.cpp ****         }
+ 1085              		.loc 1 234 13 is_stmt 1 view .LVU252
+ 234:src/pm_loader.cpp ****         }
+ 1086              		.loc 1 234 20 is_stmt 0 view .LVU253
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 29
+
+
+ 1087 00ac AFE7     		b	.L161
+ 1088              	.L77:
+ 234:src/pm_loader.cpp ****         }
+ 1089              		.loc 1 234 20 view .LVU254
+ 1090              	.LBE144:
+ 187:src/pm_loader.cpp ****             uint8_t* base = target_.Base();
+ 1091              		.loc 1 187 9 is_stmt 1 view .LVU255
+ 187:src/pm_loader.cpp ****             uint8_t* base = target_.Base();
+ 1092              		.loc 1 187 34 view .LVU256
+ 1093              	.LBB155:
+ 188:src/pm_loader.cpp ****             if(status_.bytes_done < status_.bytes_total) {
+ 1094              		.loc 1 188 13 view .LVU257
+ 188:src/pm_loader.cpp ****             if(status_.bytes_done < status_.bytes_total) {
+ 1095              		.loc 1 188 29 is_stmt 0 view .LVU258
+ 1096 00ae 6068     		ldr	r0, [r4, #4]
+ 188:src/pm_loader.cpp ****             if(status_.bytes_done < status_.bytes_total) {
+ 1097              		.loc 1 188 41 view .LVU259
+ 1098 00b0 0368     		ldr	r3, [r0]
+ 1099 00b2 1B68     		ldr	r3, [r3]
+ 1100 00b4 9847     		blx	r3
+ 1101              	.LVL85:
+ 1102 00b6 0746     		mov	r7, r0
+ 1103              	.LVL86:
+ 189:src/pm_loader.cpp ****                 const uint32_t want = status_.bytes_total - status_.bytes_done;
+ 1104              		.loc 1 189 13 is_stmt 1 view .LVU260
+ 1105              	.LBB156:
+ 189:src/pm_loader.cpp ****                 const uint32_t want = status_.bytes_total - status_.bytes_done;
+ 1106              		.loc 1 189 45 is_stmt 0 view .LVU261
+ 1107 00b8 D4E90412 		ldrd	r1, r2, [r4, #16]
+ 189:src/pm_loader.cpp ****                 const uint32_t want = status_.bytes_total - status_.bytes_done;
+ 1108              		.loc 1 189 13 view .LVU262
+ 1109 00bc 9142     		cmp	r1, r2
+ 1110 00be 76D2     		bcs	.L97
+ 1111              	.LBB157:
+ 190:src/pm_loader.cpp ****                 const uint32_t len = want < kChunk ? want : kChunk;
+ 1112              		.loc 1 190 17 is_stmt 1 view .LVU263
+ 1113              	.LVL87:
+ 191:src/pm_loader.cpp ****                 const int32_t n = source_.Read(base + status_.bytes_done, len);
+ 1114              		.loc 1 191 17 view .LVU264
+ 192:src/pm_loader.cpp ****                 if(n < 0) {
+ 1115              		.loc 1 192 17 view .LVU265
+ 190:src/pm_loader.cpp ****                 const uint32_t len = want < kChunk ? want : kChunk;
+ 1116              		.loc 1 190 32 is_stmt 0 view .LVU266
+ 1117 00c0 521A     		subs	r2, r2, r1
+ 1118              	.LVL88:
+ 192:src/pm_loader.cpp ****                 if(n < 0) {
+ 1119              		.loc 1 192 47 view .LVU267
+ 1120 00c2 0144     		add	r1, r1, r0
+ 1121              	.LVL89:
+ 192:src/pm_loader.cpp ****                 if(n < 0) {
+ 1122              		.loc 1 192 35 view .LVU268
+ 1123 00c4 2068     		ldr	r0, [r4]
+ 1124              	.LVL90:
+ 192:src/pm_loader.cpp ****                 if(n < 0) {
+ 1125              		.loc 1 192 47 view .LVU269
+ 1126 00c6 B2F5805F 		cmp	r2, #4096
+ 1127 00ca 0368     		ldr	r3, [r0]
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 30
+
+
+ 1128 00cc 28BF     		it	cs
+ 1129 00ce 4FF48052 		movcs	r2, #4096
+ 1130              	.LVL91:
+ 192:src/pm_loader.cpp ****                 if(n < 0) {
+ 1131              		.loc 1 192 47 view .LVU270
+ 1132 00d2 5B68     		ldr	r3, [r3, #4]
+ 1133 00d4 9847     		blx	r3
+ 1134              	.LVL92:
+ 193:src/pm_loader.cpp ****                     Fail(LoadError::Read);
+ 1135              		.loc 1 193 17 is_stmt 1 view .LVU271
+ 1136 00d6 051E     		subs	r5, r0, #0
+ 1137 00d8 C0F20581 		blt	.L172
+ 197:src/pm_loader.cpp ****                     Fail(LoadError::Short);
+ 1138              		.loc 1 197 17 view .LVU272
+ 1139 00dc 40F0D480 		bne	.L102
+ 198:src/pm_loader.cpp ****                     return false;
+ 1140              		.loc 1 198 21 view .LVU273
+ 1141              	.LVL93:
+ 1142              	.LBB158:
+ 1143              	.LBI158:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1144              		.loc 1 96 6 view .LVU274
+ 1145              	.LBB159:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1146              		.loc 1 97 5 view .LVU275
+ 1147 00e0 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1148 00e4 2BB1     		cbz	r3, .L103
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1149              		.loc 1 98 9 view .LVU276
+ 1150 00e6 2068     		ldr	r0, [r4]
+ 1151              	.LVL94:
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1152              		.loc 1 98 22 is_stmt 0 view .LVU277
+ 1153 00e8 0368     		ldr	r3, [r0]
+ 1154 00ea 9B68     		ldr	r3, [r3, #8]
+ 1155 00ec 9847     		blx	r3
+ 1156              	.LVL95:
+  99:src/pm_loader.cpp ****     }
+ 1157              		.loc 1 99 9 is_stmt 1 view .LVU278
+  99:src/pm_loader.cpp ****     }
+ 1158              		.loc 1 99 15 is_stmt 0 view .LVU279
+ 1159 00ee 84F80052 		strb	r5, [r4, #512]
+ 1160              	.L103:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1161              		.loc 1 101 5 is_stmt 1 view .LVU280
+ 102:src/pm_loader.cpp **** }
+ 1162              		.loc 1 102 5 view .LVU281
+ 1163              	.LVL96:
+ 102:src/pm_loader.cpp **** }
+ 1164              		.loc 1 102 5 is_stmt 0 view .LVU282
+ 1165              	.LBE159:
+ 1166              	.LBE158:
+ 199:src/pm_loader.cpp ****                 }
+ 1167              		.loc 1 199 21 is_stmt 1 view .LVU283
+ 1168              	.LBB161:
+ 1169              	.LBB160:
+ 103:src/pm_loader.cpp **** 
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 31
+
+
+ 1170              		.loc 1 103 1 is_stmt 0 view .LVU284
+ 1171 00f2 40F60733 		movw	r3, 2823	@ movhi
+ 1172              	.LVL97:
+ 1173              	.L112:
+ 103:src/pm_loader.cpp **** 
+ 1174              		.loc 1 103 1 view .LVU285
+ 1175              	.LBE160:
+ 1176              	.LBE161:
+ 1177              	.LBE157:
+ 1178              	.LBE156:
+ 1179              	.LBE155:
+ 1180              	.LBB174:
+ 224:src/pm_loader.cpp ****             }
+ 1181              		.loc 1 224 24 view .LVU286
+ 1182 00f6 0026     		movs	r6, #0
+ 1183              	.LBB145:
+ 1184              	.LBB146:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1185              		.loc 1 101 19 view .LVU287
+ 1186 00f8 A381     		strh	r3, [r4, #12]	@ movhi
+ 1187 00fa 88E7     		b	.L161
+ 1188              	.L78:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1189              		.loc 1 101 19 view .LVU288
+ 1190              	.LBE146:
+ 1191              	.LBE145:
+ 1192              	.LBE174:
+ 152:src/pm_loader.cpp ****             if(!ReadExact(header_bytes_, kHeaderSize)) {
+ 1193              		.loc 1 152 9 is_stmt 1 view .LVU289
+ 152:src/pm_loader.cpp ****             if(!ReadExact(header_bytes_, kHeaderSize)) {
+ 1194              		.loc 1 152 33 view .LVU290
+ 153:src/pm_loader.cpp ****                 Fail(LoadError::HeaderRead);
+ 1195              		.loc 1 153 13 view .LVU291
+ 153:src/pm_loader.cpp ****                 Fail(LoadError::HeaderRead);
+ 1196              		.loc 1 153 27 is_stmt 0 view .LVU292
+ 1197 00fc 04F51E77 		add	r7, r4, #632
+ 1198              	.LVL98:
+ 1199              	.LBB175:
+ 1200              	.LBI175:
+ 116:src/pm_loader.cpp ****     uint32_t got = 0;
+ 1201              		.loc 1 116 6 is_stmt 1 view .LVU293
+ 1202              	.LBB176:
+ 117:src/pm_loader.cpp ****     while(got < len) {
+ 1203              		.loc 1 117 5 view .LVU294
+ 118:src/pm_loader.cpp ****         const int32_t n = source_.Read(dst + got, len - got);
+ 1204              		.loc 1 118 5 view .LVU295
+ 118:src/pm_loader.cpp ****         const int32_t n = source_.Read(dst + got, len - got);
+ 1205              		.loc 1 118 15 view .LVU296
+ 117:src/pm_loader.cpp ****     while(got < len) {
+ 1206              		.loc 1 117 14 is_stmt 0 view .LVU297
+ 1207 0100 0025     		movs	r5, #0
+ 1208 0102 01E0     		b	.L85
+ 1209              	.LVL99:
+ 1210              	.L178:
+ 118:src/pm_loader.cpp ****         const int32_t n = source_.Read(dst + got, len - got);
+ 1211              		.loc 1 118 15 view .LVU298
+ 1212 0104 9F2D     		cmp	r5, #159
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 32
+
+
+ 1213 0106 7AD8     		bhi	.L177
+ 1214              	.LVL100:
+ 1215              	.L85:
+ 1216              	.LBB177:
+ 119:src/pm_loader.cpp ****         if(n <= 0)
+ 1217              		.loc 1 119 9 is_stmt 1 view .LVU299
+ 119:src/pm_loader.cpp ****         if(n <= 0)
+ 1218              		.loc 1 119 27 is_stmt 0 view .LVU300
+ 1219 0108 2068     		ldr	r0, [r4]
+ 119:src/pm_loader.cpp ****         if(n <= 0)
+ 1220              		.loc 1 119 39 view .LVU301
+ 1221 010a C5F1A002 		rsb	r2, r5, #160
+ 1222 010e 7919     		adds	r1, r7, r5
+ 1223 0110 0368     		ldr	r3, [r0]
+ 1224 0112 5B68     		ldr	r3, [r3, #4]
+ 1225 0114 9847     		blx	r3
+ 1226              	.LVL101:
+ 122:src/pm_loader.cpp ****     }
+ 1227              		.loc 1 122 9 is_stmt 1 view .LVU302
+ 120:src/pm_loader.cpp ****             return false;
+ 1228              		.loc 1 120 9 view .LVU303
+ 1229 0116 031E     		subs	r3, r0, #0
+ 122:src/pm_loader.cpp ****     }
+ 1230              		.loc 1 122 13 is_stmt 0 view .LVU304
+ 1231 0118 1D44     		add	r5, r5, r3
+ 1232              	.LVL102:
+ 122:src/pm_loader.cpp ****     }
+ 1233              		.loc 1 122 13 view .LVU305
+ 1234              	.LBE177:
+ 118:src/pm_loader.cpp ****         const int32_t n = source_.Read(dst + got, len - got);
+ 1235              		.loc 1 118 15 is_stmt 1 view .LVU306
+ 1236              	.LBB178:
+ 120:src/pm_loader.cpp ****             return false;
+ 1237              		.loc 1 120 9 is_stmt 0 view .LVU307
+ 1238 011a F3DC     		bgt	.L178
+ 1239              	.LVL103:
+ 120:src/pm_loader.cpp ****             return false;
+ 1240              		.loc 1 120 9 view .LVU308
+ 1241              	.LBE178:
+ 1242              	.LBE176:
+ 1243              	.LBE175:
+ 154:src/pm_loader.cpp ****                 return false;
+ 1244              		.loc 1 154 17 is_stmt 1 view .LVU309
+ 1245              	.LBB179:
+ 1246              	.LBI179:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1247              		.loc 1 96 6 view .LVU310
+ 1248              	.LBB180:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1249              		.loc 1 97 5 view .LVU311
+ 1250 011c 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1251 0120 33B1     		cbz	r3, .L119
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1252              		.loc 1 98 9 view .LVU312
+ 1253 0122 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1254              		.loc 1 98 22 is_stmt 0 view .LVU313
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 33
+
+
+ 1255 0124 0368     		ldr	r3, [r0]
+ 1256 0126 9B68     		ldr	r3, [r3, #8]
+ 1257 0128 9847     		blx	r3
+ 1258              	.LVL104:
+  99:src/pm_loader.cpp ****     }
+ 1259              		.loc 1 99 9 is_stmt 1 view .LVU314
+  99:src/pm_loader.cpp ****     }
+ 1260              		.loc 1 99 15 is_stmt 0 view .LVU315
+ 1261 012a 0023     		movs	r3, #0
+ 1262 012c 84F80032 		strb	r3, [r4, #512]
+ 1263              	.L119:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1264              		.loc 1 101 5 is_stmt 1 view .LVU316
+ 102:src/pm_loader.cpp **** }
+ 1265              		.loc 1 102 5 view .LVU317
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1266              		.loc 1 101 19 is_stmt 0 view .LVU318
+ 1267 0130 40F20763 		movw	r3, #1543
+ 1268 0134 A381     		strh	r3, [r4, #12]	@ movhi
+ 1269              	.LVL105:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1270              		.loc 1 101 19 view .LVU319
+ 1271              	.LBE180:
+ 1272              	.LBE179:
+ 155:src/pm_loader.cpp ****             }
+ 1273              		.loc 1 155 17 is_stmt 1 view .LVU320
+ 1274              	.LBB182:
+ 1275              	.LBB181:
+ 103:src/pm_loader.cpp **** 
+ 1276              		.loc 1 103 1 is_stmt 0 view .LVU321
+ 1277 0136 69E7     		b	.L69
+ 1278              	.L79:
+ 103:src/pm_loader.cpp **** 
+ 1279              		.loc 1 103 1 view .LVU322
+ 1280              	.LBE181:
+ 1281              	.LBE182:
+ 139:src/pm_loader.cpp ****             if(!source_.Open(entry_.path, file_size_)) {
+ 1282              		.loc 1 139 9 is_stmt 1 view .LVU323
+ 139:src/pm_loader.cpp ****             if(!source_.Open(entry_.path, file_size_)) {
+ 1283              		.loc 1 139 34 view .LVU324
+ 140:src/pm_loader.cpp ****                 Fail(LoadError::Open);
+ 1284              		.loc 1 140 13 view .LVU325
+ 140:src/pm_loader.cpp ****                 Fail(LoadError::Open);
+ 1285              		.loc 1 140 17 is_stmt 0 view .LVU326
+ 1286 0138 2068     		ldr	r0, [r4]
+ 140:src/pm_loader.cpp ****                 Fail(LoadError::Open);
+ 1287              		.loc 1 140 29 view .LVU327
+ 1288 013a 04F5FE72 		add	r2, r4, #508
+ 1289 013e 04F1A901 		add	r1, r4, #169
+ 1290 0142 0368     		ldr	r3, [r0]
+ 1291 0144 1B68     		ldr	r3, [r3]
+ 1292 0146 9847     		blx	r3
+ 1293              	.LVL106:
+ 140:src/pm_loader.cpp ****                 Fail(LoadError::Open);
+ 1294              		.loc 1 140 13 discriminator 1 view .LVU328
+ 1295 0148 0546     		mov	r5, r0
+ 1296 014a 0028     		cmp	r0, #0
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 34
+
+
+ 1297 014c 4AD0     		beq	.L179
+ 144:src/pm_loader.cpp ****             if(file_size_ < kHeaderSize + kMinPayload || file_size_ > kHeaderSize + kTargetSize) {
+ 1298              		.loc 1 144 13 is_stmt 1 view .LVU329
+ 145:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1299              		.loc 1 145 55 is_stmt 0 view .LVU330
+ 1300 014e D4F8FC31 		ldr	r3, [r4, #508]
+ 144:src/pm_loader.cpp ****             if(file_size_ < kHeaderSize + kMinPayload || file_size_ > kHeaderSize + kTargetSize) {
+ 1301              		.loc 1 144 19 view .LVU331
+ 1302 0152 0121     		movs	r1, #1
+ 145:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1303              		.loc 1 145 13 view .LVU332
+ 1304 0154 854A     		ldr	r2, .L185
+ 145:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1305              		.loc 1 145 55 view .LVU333
+ 1306 0156 A83B     		subs	r3, r3, #168
+ 144:src/pm_loader.cpp ****             if(file_size_ < kHeaderSize + kMinPayload || file_size_ > kHeaderSize + kTargetSize) {
+ 1307              		.loc 1 144 19 view .LVU334
+ 1308 0158 84F80012 		strb	r1, [r4, #512]
+ 145:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1309              		.loc 1 145 13 is_stmt 1 view .LVU335
+ 1310 015c 9342     		cmp	r3, r2
+ 1311 015e 00F29E80 		bhi	.L180
+ 1312 0162 0223     		movs	r3, #2
+ 184:src/pm_loader.cpp ****             return true;
+ 1313              		.loc 1 184 27 is_stmt 0 view .LVU336
+ 1314 0164 2373     		strb	r3, [r4, #12]
+ 1315 0166 52E7     		b	.L161
+ 1316              	.L73:
+ 236:src/pm_loader.cpp ****             // Fixed order: nothing may write memory after Quiesce; dirty lines of the
+ 1317              		.loc 1 236 9 is_stmt 1 view .LVU337
+ 236:src/pm_loader.cpp ****             // Fixed order: nothing may write memory after Quiesce; dirty lines of the
+ 1318              		.loc 1 236 35 view .LVU338
+ 239:src/pm_loader.cpp ****             target_.Clean(target_.Capacity());
+ 1319              		.loc 1 239 13 view .LVU339
+ 1320 0168 A068     		ldr	r0, [r4, #8]
+ 239:src/pm_loader.cpp ****             target_.Clean(target_.Capacity());
+ 1321              		.loc 1 239 28 is_stmt 0 view .LVU340
+ 1322 016a 0368     		ldr	r3, [r0]
+ 1323 016c 1B68     		ldr	r3, [r3]
+ 1324 016e 9847     		blx	r3
+ 1325              	.LVL107:
+ 240:src/pm_loader.cpp ****             status_.state = LoadState::Committed;
+ 1326              		.loc 1 240 13 is_stmt 1 view .LVU341
+ 1327 0170 6568     		ldr	r5, [r4, #4]
+ 240:src/pm_loader.cpp ****             status_.state = LoadState::Committed;
+ 1328              		.loc 1 240 26 is_stmt 0 view .LVU342
+ 1329 0172 2B68     		ldr	r3, [r5]
+ 1330 0174 2846     		mov	r0, r5
+ 1331 0176 5A68     		ldr	r2, [r3, #4]
+ 1332 0178 9E68     		ldr	r6, [r3, #8]
+ 1333 017a 9047     		blx	r2
+ 1334              	.LVL108:
+ 1335 017c 0146     		mov	r1, r0
+ 240:src/pm_loader.cpp ****             status_.state = LoadState::Committed;
+ 1336              		.loc 1 240 26 discriminator 1 view .LVU343
+ 1337 017e 2846     		mov	r0, r5
+ 1338 0180 B047     		blx	r6
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 35
+
+
+ 1339              	.LVL109:
+ 241:src/pm_loader.cpp ****             commit_.Commit(kTargetBase);  // no return on hardware
+ 1340              		.loc 1 241 13 is_stmt 1 view .LVU344
+ 242:src/pm_loader.cpp ****             return false;
+ 1341              		.loc 1 242 13 is_stmt 0 view .LVU345
+ 1342 0182 A068     		ldr	r0, [r4, #8]
+ 241:src/pm_loader.cpp ****             commit_.Commit(kTargetBase);  // no return on hardware
+ 1343              		.loc 1 241 27 view .LVU346
+ 1344 0184 0622     		movs	r2, #6
+ 242:src/pm_loader.cpp ****             return false;
+ 1345              		.loc 1 242 27 view .LVU347
+ 1346 0186 4FF01051 		mov	r1, #603979776
+ 1347 018a 0368     		ldr	r3, [r0]
+ 241:src/pm_loader.cpp ****             commit_.Commit(kTargetBase);  // no return on hardware
+ 1348              		.loc 1 241 27 view .LVU348
+ 1349 018c 2273     		strb	r2, [r4, #12]
+ 242:src/pm_loader.cpp ****             return false;
+ 1350              		.loc 1 242 13 is_stmt 1 view .LVU349
+ 242:src/pm_loader.cpp ****             return false;
+ 1351              		.loc 1 242 27 is_stmt 0 view .LVU350
+ 1352 018e 5B68     		ldr	r3, [r3, #4]
+ 1353 0190 9847     		blx	r3
+ 1354              	.LVL110:
+ 243:src/pm_loader.cpp ****         }
+ 1355              		.loc 1 243 13 is_stmt 1 view .LVU351
+ 243:src/pm_loader.cpp ****         }
+ 1356              		.loc 1 243 20 is_stmt 0 view .LVU352
+ 1357 0192 3BE7     		b	.L69
+ 1358              	.L74:
+ 243:src/pm_loader.cpp ****         }
+ 1359              		.loc 1 243 20 view .LVU353
+ 1360              	.LBE143:
+ 1361              	.LBE218:
+ 135:src/pm_loader.cpp ****         return false;
+ 1362              		.loc 1 135 9 is_stmt 1 view .LVU354
+ 1363              	.LVL111:
+ 1364              	.LBB219:
+ 1365              	.LBI219:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1366              		.loc 1 96 6 view .LVU355
+ 1367              	.LBB220:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1368              		.loc 1 97 5 view .LVU356
+ 1369 0194 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1370 0198 2BB1     		cbz	r3, .L80
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1371              		.loc 1 98 9 view .LVU357
+ 1372 019a 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1373              		.loc 1 98 22 is_stmt 0 view .LVU358
+ 1374 019c 0368     		ldr	r3, [r0]
+ 1375 019e 9B68     		ldr	r3, [r3, #8]
+ 1376 01a0 9847     		blx	r3
+ 1377              	.LVL112:
+  99:src/pm_loader.cpp ****     }
+ 1378              		.loc 1 99 9 is_stmt 1 view .LVU359
+  99:src/pm_loader.cpp ****     }
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 36
+
+
+ 1379              		.loc 1 99 15 is_stmt 0 view .LVU360
+ 1380 01a2 84F80062 		strb	r6, [r4, #512]
+ 1381              	.L80:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1382              		.loc 1 101 5 is_stmt 1 view .LVU361
+ 102:src/pm_loader.cpp **** }
+ 1383              		.loc 1 102 5 view .LVU362
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1384              		.loc 1 101 19 is_stmt 0 view .LVU363
+ 1385 01a6 40F20733 		movw	r3, #775
+ 1386 01aa A381     		strh	r3, [r4, #12]	@ movhi
+ 1387              	.LVL113:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1388              		.loc 1 101 19 view .LVU364
+ 1389              	.LBE220:
+ 1390              	.LBE219:
+ 136:src/pm_loader.cpp ****     }
+ 1391              		.loc 1 136 9 is_stmt 1 view .LVU365
+ 1392              	.LBB222:
+ 1393              	.LBB221:
+ 103:src/pm_loader.cpp **** 
+ 1394              		.loc 1 103 1 is_stmt 0 view .LVU366
+ 1395 01ac 2EE7     		b	.L69
+ 1396              	.LVL114:
+ 1397              	.L97:
+ 103:src/pm_loader.cpp **** 
+ 1398              		.loc 1 103 1 view .LVU367
+ 1399              	.LBE221:
+ 1400              	.LBE222:
+ 1401              	.LBB223:
+ 1402              	.LBB213:
+ 1403              	.LBB183:
+ 206:src/pm_loader.cpp ****             const int32_t n = source_.Read(&extra, 1);
+ 1404              		.loc 1 206 13 is_stmt 1 view .LVU368
+ 207:src/pm_loader.cpp ****             if(n < 0) {
+ 1405              		.loc 1 207 13 view .LVU369
+ 207:src/pm_loader.cpp ****             if(n < 0) {
+ 1406              		.loc 1 207 31 is_stmt 0 view .LVU370
+ 1407 01ae 2068     		ldr	r0, [r4]
+ 1408              	.LVL115:
+ 207:src/pm_loader.cpp ****             if(n < 0) {
+ 1409              		.loc 1 207 43 view .LVU371
+ 1410 01b0 0122     		movs	r2, #1
+ 1411 01b2 6946     		mov	r1, sp
+ 1412 01b4 0368     		ldr	r3, [r0]
+ 1413 01b6 5B68     		ldr	r3, [r3, #4]
+ 1414 01b8 9847     		blx	r3
+ 1415              	.LVL116:
+ 208:src/pm_loader.cpp ****                 Fail(LoadError::Read);
+ 1416              		.loc 1 208 13 is_stmt 1 view .LVU372
+ 1417 01ba 0028     		cmp	r0, #0
+ 1418 01bc C0F29380 		blt	.L172
+ 212:src/pm_loader.cpp ****                 Fail(LoadError::Long);
+ 1419              		.loc 1 212 13 view .LVU373
+ 1420 01c0 40F0B980 		bne	.L181
+ 216:src/pm_loader.cpp ****             return true;
+ 1421              		.loc 1 216 13 view .LVU374
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 37
+
+
+ 216:src/pm_loader.cpp ****             return true;
+ 1422              		.loc 1 216 27 is_stmt 0 view .LVU375
+ 1423 01c4 0423     		movs	r3, #4
+ 1424 01c6 2373     		strb	r3, [r4, #12]
+ 217:src/pm_loader.cpp ****         }
+ 1425              		.loc 1 217 13 is_stmt 1 view .LVU376
+ 217:src/pm_loader.cpp ****         }
+ 1426              		.loc 1 217 20 is_stmt 0 view .LVU377
+ 1427 01c8 21E7     		b	.L161
+ 1428              	.LVL117:
+ 1429              	.L175:
+ 217:src/pm_loader.cpp ****         }
+ 1430              		.loc 1 217 20 view .LVU378
+ 1431              	.LBE183:
+ 1432              	.LBB184:
+ 223:src/pm_loader.cpp ****                 return false;
+ 1433              		.loc 1 223 17 is_stmt 1 view .LVU379
+ 1434              	.LBB149:
+ 1435              	.LBI149:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1436              		.loc 1 96 6 view .LVU380
+ 1437              	.LBB150:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1438              		.loc 1 97 5 view .LVU381
+ 1439 01ca 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1440 01ce 33B1     		cbz	r3, .L111
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1441              		.loc 1 98 9 view .LVU382
+ 1442 01d0 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1443              		.loc 1 98 22 is_stmt 0 view .LVU383
+ 1444 01d2 0368     		ldr	r3, [r0]
+ 1445 01d4 9B68     		ldr	r3, [r3, #8]
+ 1446 01d6 9847     		blx	r3
+ 1447              	.LVL118:
+  99:src/pm_loader.cpp ****     }
+ 1448              		.loc 1 99 9 is_stmt 1 view .LVU384
+  99:src/pm_loader.cpp ****     }
+ 1449              		.loc 1 99 15 is_stmt 0 view .LVU385
+ 1450 01d8 0023     		movs	r3, #0
+ 1451 01da 84F80032 		strb	r3, [r4, #512]
+ 1452              	.L111:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1453              		.loc 1 101 5 is_stmt 1 view .LVU386
+ 102:src/pm_loader.cpp **** }
+ 1454              		.loc 1 102 5 view .LVU387
+ 1455              	.LVL119:
+ 102:src/pm_loader.cpp **** }
+ 1456              		.loc 1 102 5 is_stmt 0 view .LVU388
+ 1457              	.LBE150:
+ 1458              	.LBE149:
+ 224:src/pm_loader.cpp ****             }
+ 1459              		.loc 1 224 17 is_stmt 1 view .LVU389
+ 1460              	.LBB152:
+ 1461              	.LBB151:
+ 103:src/pm_loader.cpp **** 
+ 1462              		.loc 1 103 1 is_stmt 0 view .LVU390
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 38
+
+
+ 1463 01de 40F60753 		movw	r3, 3335	@ movhi
+ 1464 01e2 88E7     		b	.L112
+ 1465              	.L179:
+ 103:src/pm_loader.cpp **** 
+ 1466              		.loc 1 103 1 view .LVU391
+ 1467              	.LBE151:
+ 1468              	.LBE152:
+ 1469              	.LBE184:
+ 141:src/pm_loader.cpp ****                 return false;
+ 1470              		.loc 1 141 17 is_stmt 1 view .LVU392
+ 1471              	.LVL120:
+ 1472              	.LBB185:
+ 1473              	.LBI185:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1474              		.loc 1 96 6 view .LVU393
+ 1475              	.LBB186:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1476              		.loc 1 97 5 view .LVU394
+ 1477 01e4 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1478 01e8 2BB1     		cbz	r3, .L82
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1479              		.loc 1 98 9 view .LVU395
+ 1480 01ea 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1481              		.loc 1 98 22 is_stmt 0 view .LVU396
+ 1482 01ec 0368     		ldr	r3, [r0]
+ 1483 01ee 9B68     		ldr	r3, [r3, #8]
+ 1484 01f0 9847     		blx	r3
+ 1485              	.LVL121:
+  99:src/pm_loader.cpp ****     }
+ 1486              		.loc 1 99 9 is_stmt 1 view .LVU397
+  99:src/pm_loader.cpp ****     }
+ 1487              		.loc 1 99 15 is_stmt 0 view .LVU398
+ 1488 01f2 84F80052 		strb	r5, [r4, #512]
+ 1489              	.L82:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1490              		.loc 1 101 5 is_stmt 1 view .LVU399
+ 102:src/pm_loader.cpp **** }
+ 1491              		.loc 1 102 5 view .LVU400
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1492              		.loc 1 101 19 is_stmt 0 view .LVU401
+ 1493 01f6 40F20743 		movw	r3, #1031
+ 1494 01fa A381     		strh	r3, [r4, #12]	@ movhi
+ 1495              	.LVL122:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1496              		.loc 1 101 19 view .LVU402
+ 1497              	.LBE186:
+ 1498              	.LBE185:
+ 142:src/pm_loader.cpp ****             }
+ 1499              		.loc 1 142 17 is_stmt 1 view .LVU403
+ 1500              	.LBB188:
+ 1501              	.LBB187:
+ 103:src/pm_loader.cpp **** 
+ 1502              		.loc 1 103 1 is_stmt 0 view .LVU404
+ 1503 01fc 06E7     		b	.L69
+ 1504              	.LVL123:
+ 1505              	.L177:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 39
+
+
+ 103:src/pm_loader.cpp **** 
+ 1506              		.loc 1 103 1 view .LVU405
+ 1507              	.LBE187:
+ 1508              	.LBE188:
+ 157:src/pm_loader.cpp ****             if(status_.image_error != ImageError::None) {
+ 1509              		.loc 1 157 13 is_stmt 1 view .LVU406
+ 157:src/pm_loader.cpp ****             if(status_.image_error != ImageError::None) {
+ 1510              		.loc 1 157 46 is_stmt 0 view .LVU407
+ 1511 01fe 04F5B672 		add	r2, r4, #364
+ 1512 0202 A021     		movs	r1, #160
+ 1513 0204 3846     		mov	r0, r7
+ 1514 0206 FFF7FEFF 		bl	_ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE
+ 1515              	.LVL124:
+ 1516 020a 0546     		mov	r5, r0
+ 157:src/pm_loader.cpp ****             if(status_.image_error != ImageError::None) {
+ 1517              		.loc 1 157 33 discriminator 1 view .LVU408
+ 1518 020c A073     		strb	r0, [r4, #14]
+ 158:src/pm_loader.cpp ****                 Fail(LoadError::Header);
+ 1519              		.loc 1 158 13 is_stmt 1 view .LVU409
+ 1520 020e 0028     		cmp	r0, #0
+ 1521 0210 76D1     		bne	.L182
+ 162:src/pm_loader.cpp ****                 Fail(LoadError::Product);
+ 1522              		.loc 1 162 13 view .LVU410
+ 162:src/pm_loader.cpp ****                 Fail(LoadError::Product);
+ 1523              		.loc 1 162 27 is_stmt 0 view .LVU411
+ 1524 0212 04F12501 		add	r1, r4, #37
+ 1525 0216 04F5CF70 		add	r0, r4, #414
+ 1526 021a FFF7FEFF 		bl	strcmp
+ 1527              	.LVL125:
+ 162:src/pm_loader.cpp ****                 Fail(LoadError::Product);
+ 1528              		.loc 1 162 13 discriminator 1 view .LVU412
+ 1529 021e 0746     		mov	r7, r0
+ 1530 0220 0028     		cmp	r0, #0
+ 1531 0222 7BD1     		bne	.L183
+ 166:src/pm_loader.cpp ****                 Fail(LoadError::HashMismatch);
+ 1532              		.loc 1 166 13 is_stmt 1 view .LVU413
+ 166:src/pm_loader.cpp ****                 Fail(LoadError::HashMismatch);
+ 1533              		.loc 1 166 27 is_stmt 0 view .LVU414
+ 1534 0224 2022     		movs	r2, #32
+ 1535 0226 04F5A571 		add	r1, r4, #330
+ 1536 022a 04F5EE70 		add	r0, r4, #476
+ 1537 022e FFF7FEFF 		bl	memcmp
+ 1538              	.LVL126:
+ 166:src/pm_loader.cpp ****                 Fail(LoadError::HashMismatch);
+ 1539              		.loc 1 166 13 discriminator 1 view .LVU415
+ 1540 0232 0546     		mov	r5, r0
+ 1541 0234 0028     		cmp	r0, #0
+ 1542 0236 40F08B80 		bne	.L184
+ 170:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1543              		.loc 1 170 13 is_stmt 1 view .LVU416
+ 170:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1544              		.loc 1 170 52 is_stmt 0 view .LVU417
+ 1545 023a D4F8D871 		ldr	r7, [r4, #472]
+ 170:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1546              		.loc 1 170 13 view .LVU418
+ 1547 023e D4F8FC21 		ldr	r2, [r4, #508]
+ 170:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 40
+
+
+ 1548              		.loc 1 170 42 view .LVU419
+ 1549 0242 07F1A003 		add	r3, r7, #160
+ 170:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1550              		.loc 1 170 13 view .LVU420
+ 1551 0246 9A42     		cmp	r2, r3
+ 1552 0248 40D1     		bne	.L170
+ 174:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1553              		.loc 1 174 13 is_stmt 1 view .LVU421
+ 174:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1554              		.loc 1 174 41 is_stmt 0 view .LVU422
+ 1555 024a 6068     		ldr	r0, [r4, #4]
+ 174:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1556              		.loc 1 174 57 view .LVU423
+ 1557 024c 0368     		ldr	r3, [r0]
+ 1558 024e 5B68     		ldr	r3, [r3, #4]
+ 1559 0250 9847     		blx	r3
+ 1560              	.LVL127:
+ 174:src/pm_loader.cpp ****                 Fail(LoadError::FileSize);
+ 1561              		.loc 1 174 13 discriminator 1 view .LVU424
+ 1562 0252 8742     		cmp	r7, r0
+ 1563 0254 3AD8     		bhi	.L170
+ 180:src/pm_loader.cpp ****             status_.bytes_total = header_.payload_length;
+ 1564              		.loc 1 180 13 is_stmt 1 view .LVU425
+ 180:src/pm_loader.cpp ****             status_.bytes_total = header_.payload_length;
+ 1565              		.loc 1 180 25 is_stmt 0 view .LVU426
+ 1566 0256 6068     		ldr	r0, [r4, #4]
+ 180:src/pm_loader.cpp ****             status_.bytes_total = header_.payload_length;
+ 1567              		.loc 1 180 37 view .LVU427
+ 1568 0258 0368     		ldr	r3, [r0]
+ 1569 025a 1B68     		ldr	r3, [r3]
+ 1570 025c 9847     		blx	r3
+ 1571              	.LVL128:
+ 1572 025e 0746     		mov	r7, r0
+ 180:src/pm_loader.cpp ****             status_.bytes_total = header_.payload_length;
+ 1573              		.loc 1 180 44 discriminator 1 view .LVU428
+ 1574 0260 6068     		ldr	r0, [r4, #4]
+ 180:src/pm_loader.cpp ****             status_.bytes_total = header_.payload_length;
+ 1575              		.loc 1 180 60 discriminator 1 view .LVU429
+ 1576 0262 0368     		ldr	r3, [r0]
+ 1577 0264 5B68     		ldr	r3, [r3, #4]
+ 1578 0266 9847     		blx	r3
+ 1579              	.LVL129:
+ 180:src/pm_loader.cpp ****             status_.bytes_total = header_.payload_length;
+ 1580              		.loc 1 180 24 discriminator 2 view .LVU430
+ 1581 0268 2946     		mov	r1, r5
+ 180:src/pm_loader.cpp ****             status_.bytes_total = header_.payload_length;
+ 1582              		.loc 1 180 60 discriminator 1 view .LVU431
+ 1583 026a 0246     		mov	r2, r0
+ 180:src/pm_loader.cpp ****             status_.bytes_total = header_.payload_length;
+ 1584              		.loc 1 180 24 discriminator 2 view .LVU432
+ 1585 026c 3846     		mov	r0, r7
+ 1586 026e FFF7FEFF 		bl	memset
+ 1587              	.LVL130:
+ 181:src/pm_loader.cpp ****             status_.bytes_done = 0;
+ 1588              		.loc 1 181 13 is_stmt 1 view .LVU433
+ 181:src/pm_loader.cpp ****             status_.bytes_done = 0;
+ 1589              		.loc 1 181 33 is_stmt 0 view .LVU434
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 41
+
+
+ 1590 0272 D4F8D831 		ldr	r3, [r4, #472]
+ 183:src/pm_loader.cpp ****             status_.state = LoadState::Payload;
+ 1591              		.loc 1 183 27 view .LVU435
+ 1592 0276 04F50270 		add	r0, r4, #520
+ 181:src/pm_loader.cpp ****             status_.bytes_done = 0;
+ 1593              		.loc 1 181 33 view .LVU436
+ 1594 027a C4E90453 		strd	r5, r3, [r4, #16]
+ 182:src/pm_loader.cpp ****             pm_sha256_init(&sha_);
+ 1595              		.loc 1 182 13 is_stmt 1 view .LVU437
+ 183:src/pm_loader.cpp ****             status_.state = LoadState::Payload;
+ 1596              		.loc 1 183 13 view .LVU438
+ 183:src/pm_loader.cpp ****             status_.state = LoadState::Payload;
+ 1597              		.loc 1 183 27 is_stmt 0 view .LVU439
+ 1598 027e FFF7FEFF 		bl	pm_sha256_init
+ 1599              	.LVL131:
+ 184:src/pm_loader.cpp ****             return true;
+ 1600              		.loc 1 184 13 is_stmt 1 view .LVU440
+ 185:src/pm_loader.cpp ****         }
+ 1601              		.loc 1 185 13 view .LVU441
+ 185:src/pm_loader.cpp ****         }
+ 1602              		.loc 1 185 20 is_stmt 0 view .LVU442
+ 1603 0282 0323     		movs	r3, #3
+ 184:src/pm_loader.cpp ****             return true;
+ 1604              		.loc 1 184 27 view .LVU443
+ 1605 0284 2373     		strb	r3, [r4, #12]
+ 1606 0286 C2E6     		b	.L161
+ 1607              	.LVL132:
+ 1608              	.L102:
+ 1609              	.LBB189:
+ 1610              	.LBB168:
+ 1611              	.LBB166:
+ 201:src/pm_loader.cpp ****                 status_.bytes_done += static_cast<uint32_t>(n);
+ 1612              		.loc 1 201 17 is_stmt 1 view .LVU444
+ 201:src/pm_loader.cpp ****                 status_.bytes_done += static_cast<uint32_t>(n);
+ 1613              		.loc 1 201 46 is_stmt 0 view .LVU445
+ 1614 0288 2169     		ldr	r1, [r4, #16]
+ 201:src/pm_loader.cpp ****                 status_.bytes_done += static_cast<uint32_t>(n);
+ 1615              		.loc 1 201 33 view .LVU446
+ 1616 028a 04F50270 		add	r0, r4, #520
+ 1617              	.LVL133:
+ 201:src/pm_loader.cpp ****                 status_.bytes_done += static_cast<uint32_t>(n);
+ 1618              		.loc 1 201 33 view .LVU447
+ 1619 028e 2A46     		mov	r2, r5
+ 1620 0290 3944     		add	r1, r1, r7
+ 1621 0292 FFF7FEFF 		bl	pm_sha256_update
+ 1622              	.LVL134:
+ 202:src/pm_loader.cpp ****                 return true;
+ 1623              		.loc 1 202 17 is_stmt 1 view .LVU448
+ 202:src/pm_loader.cpp ****                 return true;
+ 1624              		.loc 1 202 36 is_stmt 0 view .LVU449
+ 1625 0296 2369     		ldr	r3, [r4, #16]
+ 1626 0298 2B44     		add	r3, r3, r5
+ 1627 029a 2361     		str	r3, [r4, #16]
+ 203:src/pm_loader.cpp ****             }
+ 1628              		.loc 1 203 17 is_stmt 1 view .LVU450
+ 203:src/pm_loader.cpp ****             }
+ 1629              		.loc 1 203 24 is_stmt 0 view .LVU451
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 42
+
+
+ 1630 029c B7E6     		b	.L161
+ 1631              	.LVL135:
+ 1632              	.L180:
+ 203:src/pm_loader.cpp ****             }
+ 1633              		.loc 1 203 24 view .LVU452
+ 1634              	.LBE166:
+ 1635              	.LBE168:
+ 1636              	.LBE189:
+ 146:src/pm_loader.cpp ****                 return false;
+ 1637              		.loc 1 146 17 is_stmt 1 view .LVU453
+ 1638              	.LBB190:
+ 1639              	.LBI190:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1640              		.loc 1 96 6 view .LVU454
+ 1641              	.LBB191:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1642              		.loc 1 97 5 view .LVU455
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1643              		.loc 1 98 9 view .LVU456
+ 1644 029e 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1645              		.loc 1 98 22 is_stmt 0 view .LVU457
+ 1646 02a0 0368     		ldr	r3, [r0]
+ 1647 02a2 9B68     		ldr	r3, [r3, #8]
+ 1648 02a4 9847     		blx	r3
+ 1649              	.LVL136:
+  99:src/pm_loader.cpp ****     }
+ 1650              		.loc 1 99 9 is_stmt 1 view .LVU458
+  99:src/pm_loader.cpp ****     }
+ 1651              		.loc 1 99 15 is_stmt 0 view .LVU459
+ 1652 02a6 0022     		movs	r2, #0
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1653              		.loc 1 101 19 view .LVU460
+ 1654 02a8 40F20753 		movw	r3, #1287
+  99:src/pm_loader.cpp ****     }
+ 1655              		.loc 1 99 15 view .LVU461
+ 1656 02ac 84F80022 		strb	r2, [r4, #512]
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1657              		.loc 1 101 5 is_stmt 1 view .LVU462
+ 102:src/pm_loader.cpp **** }
+ 1658              		.loc 1 102 5 view .LVU463
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1659              		.loc 1 101 19 is_stmt 0 view .LVU464
+ 1660 02b0 A381     		strh	r3, [r4, #12]	@ movhi
+ 1661              	.LVL137:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1662              		.loc 1 101 19 view .LVU465
+ 1663              	.LBE191:
+ 1664              	.LBE190:
+ 147:src/pm_loader.cpp ****             }
+ 1665              		.loc 1 147 17 is_stmt 1 view .LVU466
+ 1666              	.LBB193:
+ 1667              	.LBB192:
+ 103:src/pm_loader.cpp **** 
+ 1668              		.loc 1 103 1 is_stmt 0 view .LVU467
+ 1669 02b2 ABE6     		b	.L69
+ 1670              	.L176:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 43
+
+
+ 103:src/pm_loader.cpp **** 
+ 1671              		.loc 1 103 1 view .LVU468
+ 1672              	.LBE192:
+ 1673              	.LBE193:
+ 1674              	.LBB194:
+ 228:src/pm_loader.cpp ****                 return false;
+ 1675              		.loc 1 228 17 is_stmt 1 view .LVU469
+ 1676              	.LVL138:
+ 1677              	.LBB153:
+ 1678              	.LBI145:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1679              		.loc 1 96 6 view .LVU470
+ 1680              	.LBB147:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1681              		.loc 1 97 5 view .LVU471
+ 1682 02b4 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1683 02b8 2BB1     		cbz	r3, .L114
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1684              		.loc 1 98 9 view .LVU472
+ 1685 02ba 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1686              		.loc 1 98 22 is_stmt 0 view .LVU473
+ 1687 02bc 0368     		ldr	r3, [r0]
+ 1688 02be 9B68     		ldr	r3, [r3, #8]
+ 1689 02c0 9847     		blx	r3
+ 1690              	.LVL139:
+  99:src/pm_loader.cpp ****     }
+ 1691              		.loc 1 99 9 is_stmt 1 view .LVU474
+  99:src/pm_loader.cpp ****     }
+ 1692              		.loc 1 99 15 is_stmt 0 view .LVU475
+ 1693 02c2 84F80072 		strb	r7, [r4, #512]
+ 1694              	.L114:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1695              		.loc 1 101 5 is_stmt 1 view .LVU476
+ 102:src/pm_loader.cpp **** }
+ 1696              		.loc 1 102 5 view .LVU477
+ 1697              	.LVL140:
+ 102:src/pm_loader.cpp **** }
+ 1698              		.loc 1 102 5 is_stmt 0 view .LVU478
+ 1699              	.LBE147:
+ 1700              	.LBE153:
+ 229:src/pm_loader.cpp ****             }
+ 1701              		.loc 1 229 17 is_stmt 1 view .LVU479
+ 1702              	.LBB154:
+ 1703              	.LBB148:
+ 103:src/pm_loader.cpp **** 
+ 1704              		.loc 1 103 1 is_stmt 0 view .LVU480
+ 1705 02c6 40F60763 		movw	r3, 3591	@ movhi
+ 1706 02ca 14E7     		b	.L112
+ 1707              	.L170:
+ 103:src/pm_loader.cpp **** 
+ 1708              		.loc 1 103 1 view .LVU481
+ 1709              	.LBE148:
+ 1710              	.LBE154:
+ 1711              	.LBE194:
+ 171:src/pm_loader.cpp ****                 return false;
+ 1712              		.loc 1 171 17 is_stmt 1 view .LVU482
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 44
+
+
+ 1713              	.LVL141:
+ 1714              	.LBB195:
+ 1715              	.LBI195:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1716              		.loc 1 96 6 view .LVU483
+ 1717              	.LBB196:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1718              		.loc 1 97 5 view .LVU484
+ 1719 02cc 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1720 02d0 2BB1     		cbz	r3, .L94
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1721              		.loc 1 98 9 view .LVU485
+ 1722 02d2 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1723              		.loc 1 98 22 is_stmt 0 view .LVU486
+ 1724 02d4 0368     		ldr	r3, [r0]
+ 1725 02d6 9B68     		ldr	r3, [r3, #8]
+ 1726 02d8 9847     		blx	r3
+ 1727              	.LVL142:
+  99:src/pm_loader.cpp ****     }
+ 1728              		.loc 1 99 9 is_stmt 1 view .LVU487
+  99:src/pm_loader.cpp ****     }
+ 1729              		.loc 1 99 15 is_stmt 0 view .LVU488
+ 1730 02da 84F80052 		strb	r5, [r4, #512]
+ 1731              	.L94:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1732              		.loc 1 101 5 is_stmt 1 view .LVU489
+ 102:src/pm_loader.cpp **** }
+ 1733              		.loc 1 102 5 view .LVU490
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1734              		.loc 1 101 19 is_stmt 0 view .LVU491
+ 1735 02de 40F20753 		movw	r3, #1287
+ 1736 02e2 A381     		strh	r3, [r4, #12]	@ movhi
+ 1737              	.LVL143:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1738              		.loc 1 101 19 view .LVU492
+ 1739              	.LBE196:
+ 1740              	.LBE195:
+ 172:src/pm_loader.cpp ****             }
+ 1741              		.loc 1 172 17 is_stmt 1 view .LVU493
+ 1742              	.LBB198:
+ 1743              	.LBB197:
+ 103:src/pm_loader.cpp **** 
+ 1744              		.loc 1 103 1 is_stmt 0 view .LVU494
+ 1745 02e4 92E6     		b	.L69
+ 1746              	.LVL144:
+ 1747              	.L172:
+ 103:src/pm_loader.cpp **** 
+ 1748              		.loc 1 103 1 view .LVU495
+ 1749              	.LBE197:
+ 1750              	.LBE198:
+ 1751              	.LBB199:
+ 1752              	.LBB169:
+ 1753              	.LBB167:
+ 194:src/pm_loader.cpp ****                     return false;
+ 1754              		.loc 1 194 21 is_stmt 1 view .LVU496
+ 1755              	.LBB162:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 45
+
+
+ 1756              	.LBI162:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1757              		.loc 1 96 6 view .LVU497
+ 1758              	.LBB163:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1759              		.loc 1 97 5 view .LVU498
+ 1760 02e6 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1761 02ea 33B1     		cbz	r3, .L100
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1762              		.loc 1 98 9 view .LVU499
+ 1763 02ec 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1764              		.loc 1 98 22 is_stmt 0 view .LVU500
+ 1765 02ee 0368     		ldr	r3, [r0]
+ 1766 02f0 9B68     		ldr	r3, [r3, #8]
+ 1767 02f2 9847     		blx	r3
+ 1768              	.LVL145:
+  99:src/pm_loader.cpp ****     }
+ 1769              		.loc 1 99 9 is_stmt 1 view .LVU501
+  99:src/pm_loader.cpp ****     }
+ 1770              		.loc 1 99 15 is_stmt 0 view .LVU502
+ 1771 02f4 0023     		movs	r3, #0
+ 1772 02f6 84F80032 		strb	r3, [r4, #512]
+ 1773              	.L100:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1774              		.loc 1 101 5 is_stmt 1 view .LVU503
+ 102:src/pm_loader.cpp **** }
+ 1775              		.loc 1 102 5 view .LVU504
+ 1776              	.LVL146:
+ 102:src/pm_loader.cpp **** }
+ 1777              		.loc 1 102 5 is_stmt 0 view .LVU505
+ 1778              	.LBE163:
+ 1779              	.LBE162:
+ 195:src/pm_loader.cpp ****                 }
+ 1780              		.loc 1 195 21 is_stmt 1 view .LVU506
+ 1781              	.LBB165:
+ 1782              	.LBB164:
+ 103:src/pm_loader.cpp **** 
+ 1783              		.loc 1 103 1 is_stmt 0 view .LVU507
+ 1784 02fa 40F60723 		movw	r3, 2567	@ movhi
+ 1785 02fe FAE6     		b	.L112
+ 1786              	.LVL147:
+ 1787              	.L182:
+ 103:src/pm_loader.cpp **** 
+ 1788              		.loc 1 103 1 view .LVU508
+ 1789              	.LBE164:
+ 1790              	.LBE165:
+ 1791              	.LBE167:
+ 1792              	.LBE169:
+ 1793              	.LBE199:
+ 159:src/pm_loader.cpp ****                 return false;
+ 1794              		.loc 1 159 17 is_stmt 1 view .LVU509
+ 1795              	.LBB200:
+ 1796              	.LBI200:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1797              		.loc 1 96 6 view .LVU510
+ 1798              	.LBB201:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 46
+
+
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1799              		.loc 1 97 5 view .LVU511
+ 1800 0300 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1801 0304 33B1     		cbz	r3, .L87
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1802              		.loc 1 98 9 view .LVU512
+ 1803 0306 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1804              		.loc 1 98 22 is_stmt 0 view .LVU513
+ 1805 0308 0368     		ldr	r3, [r0]
+ 1806 030a 9B68     		ldr	r3, [r3, #8]
+ 1807 030c 9847     		blx	r3
+ 1808              	.LVL148:
+  99:src/pm_loader.cpp ****     }
+ 1809              		.loc 1 99 9 is_stmt 1 view .LVU514
+  99:src/pm_loader.cpp ****     }
+ 1810              		.loc 1 99 15 is_stmt 0 view .LVU515
+ 1811 030e 0023     		movs	r3, #0
+ 1812 0310 84F80032 		strb	r3, [r4, #512]
+ 1813              	.L87:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1814              		.loc 1 101 5 is_stmt 1 view .LVU516
+ 102:src/pm_loader.cpp **** }
+ 1815              		.loc 1 102 5 view .LVU517
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1816              		.loc 1 101 19 is_stmt 0 view .LVU518
+ 1817 0314 40F20773 		movw	r3, #1799
+ 1818 0318 A381     		strh	r3, [r4, #12]	@ movhi
+ 1819              	.LVL149:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1820              		.loc 1 101 19 view .LVU519
+ 1821              	.LBE201:
+ 1822              	.LBE200:
+ 160:src/pm_loader.cpp ****             }
+ 1823              		.loc 1 160 17 is_stmt 1 view .LVU520
+ 1824              	.LBB203:
+ 1825              	.LBB202:
+ 103:src/pm_loader.cpp **** 
+ 1826              		.loc 1 103 1 is_stmt 0 view .LVU521
+ 1827 031a 77E6     		b	.L69
+ 1828              	.L183:
+ 103:src/pm_loader.cpp **** 
+ 1829              		.loc 1 103 1 view .LVU522
+ 1830              	.LBE202:
+ 1831              	.LBE203:
+ 163:src/pm_loader.cpp ****                 return false;
+ 1832              		.loc 1 163 17 is_stmt 1 view .LVU523
+ 1833              	.LVL150:
+ 1834              	.LBB204:
+ 1835              	.LBI204:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1836              		.loc 1 96 6 view .LVU524
+ 1837              	.LBB205:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1838              		.loc 1 97 5 view .LVU525
+ 1839 031c 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1840 0320 2BB1     		cbz	r3, .L89
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 47
+
+
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1841              		.loc 1 98 9 view .LVU526
+ 1842 0322 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1843              		.loc 1 98 22 is_stmt 0 view .LVU527
+ 1844 0324 0368     		ldr	r3, [r0]
+ 1845 0326 9B68     		ldr	r3, [r3, #8]
+ 1846 0328 9847     		blx	r3
+ 1847              	.LVL151:
+  99:src/pm_loader.cpp ****     }
+ 1848              		.loc 1 99 9 is_stmt 1 view .LVU528
+  99:src/pm_loader.cpp ****     }
+ 1849              		.loc 1 99 15 is_stmt 0 view .LVU529
+ 1850 032a 84F80052 		strb	r5, [r4, #512]
+ 1851              	.L89:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1852              		.loc 1 101 5 is_stmt 1 view .LVU530
+ 102:src/pm_loader.cpp **** }
+ 1853              		.loc 1 102 5 view .LVU531
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1854              		.loc 1 101 19 is_stmt 0 view .LVU532
+ 1855 032e 40F60703 		movw	r3, #2055
+ 1856 0332 A381     		strh	r3, [r4, #12]	@ movhi
+ 1857              	.LVL152:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1858              		.loc 1 101 19 view .LVU533
+ 1859              	.LBE205:
+ 1860              	.LBE204:
+ 164:src/pm_loader.cpp ****             }
+ 1861              		.loc 1 164 17 is_stmt 1 view .LVU534
+ 1862              	.LBB207:
+ 1863              	.LBB206:
+ 103:src/pm_loader.cpp **** 
+ 1864              		.loc 1 103 1 is_stmt 0 view .LVU535
+ 1865 0334 6AE6     		b	.L69
+ 1866              	.LVL153:
+ 1867              	.L181:
+ 103:src/pm_loader.cpp **** 
+ 1868              		.loc 1 103 1 view .LVU536
+ 1869              	.LBE206:
+ 1870              	.LBE207:
+ 1871              	.LBB208:
+ 213:src/pm_loader.cpp ****                 return false;
+ 1872              		.loc 1 213 17 is_stmt 1 view .LVU537
+ 1873              	.LBB170:
+ 1874              	.LBI170:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1875              		.loc 1 96 6 view .LVU538
+ 1876              	.LBB171:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1877              		.loc 1 97 5 view .LVU539
+ 1878 0336 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1879 033a 33B1     		cbz	r3, .L109
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1880              		.loc 1 98 9 view .LVU540
+ 1881 033c 2068     		ldr	r0, [r4]
+ 1882              	.LVL154:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 48
+
+
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1883              		.loc 1 98 22 is_stmt 0 view .LVU541
+ 1884 033e 0368     		ldr	r3, [r0]
+ 1885 0340 9B68     		ldr	r3, [r3, #8]
+ 1886 0342 9847     		blx	r3
+ 1887              	.LVL155:
+  99:src/pm_loader.cpp ****     }
+ 1888              		.loc 1 99 9 is_stmt 1 view .LVU542
+  99:src/pm_loader.cpp ****     }
+ 1889              		.loc 1 99 15 is_stmt 0 view .LVU543
+ 1890 0344 0023     		movs	r3, #0
+ 1891 0346 84F80032 		strb	r3, [r4, #512]
+ 1892              	.L109:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1893              		.loc 1 101 5 is_stmt 1 view .LVU544
+ 102:src/pm_loader.cpp **** }
+ 1894              		.loc 1 102 5 view .LVU545
+ 1895              	.LVL156:
+ 102:src/pm_loader.cpp **** }
+ 1896              		.loc 1 102 5 is_stmt 0 view .LVU546
+ 1897              	.LBE171:
+ 1898              	.LBE170:
+ 214:src/pm_loader.cpp ****             }
+ 1899              		.loc 1 214 17 is_stmt 1 view .LVU547
+ 1900              	.LBB173:
+ 1901              	.LBB172:
+ 103:src/pm_loader.cpp **** 
+ 1902              		.loc 1 103 1 is_stmt 0 view .LVU548
+ 1903 034a 40F60743 		movw	r3, 3079	@ movhi
+ 1904 034e D2E6     		b	.L112
+ 1905              	.LVL157:
+ 1906              	.L184:
+ 103:src/pm_loader.cpp **** 
+ 1907              		.loc 1 103 1 view .LVU549
+ 1908              	.LBE172:
+ 1909              	.LBE173:
+ 1910              	.LBE208:
+ 167:src/pm_loader.cpp ****                 return false;
+ 1911              		.loc 1 167 17 is_stmt 1 view .LVU550
+ 1912              	.LBB209:
+ 1913              	.LBI209:
+  96:src/pm_loader.cpp ****     if(open_) {
+ 1914              		.loc 1 96 6 view .LVU551
+ 1915              	.LBB210:
+  97:src/pm_loader.cpp ****         source_.Close();
+ 1916              		.loc 1 97 5 view .LVU552
+ 1917 0350 94F80032 		ldrb	r3, [r4, #512]	@ zero_extendqisi2
+ 1918 0354 2BB1     		cbz	r3, .L91
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1919              		.loc 1 98 9 view .LVU553
+ 1920 0356 2068     		ldr	r0, [r4]
+  98:src/pm_loader.cpp ****         open_ = false;
+ 1921              		.loc 1 98 22 is_stmt 0 view .LVU554
+ 1922 0358 0368     		ldr	r3, [r0]
+ 1923 035a 9B68     		ldr	r3, [r3, #8]
+ 1924 035c 9847     		blx	r3
+ 1925              	.LVL158:
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 49
+
+
+  99:src/pm_loader.cpp ****     }
+ 1926              		.loc 1 99 9 is_stmt 1 view .LVU555
+  99:src/pm_loader.cpp ****     }
+ 1927              		.loc 1 99 15 is_stmt 0 view .LVU556
+ 1928 035e 84F80072 		strb	r7, [r4, #512]
+ 1929              	.L91:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1930              		.loc 1 101 5 is_stmt 1 view .LVU557
+ 102:src/pm_loader.cpp **** }
+ 1931              		.loc 1 102 5 view .LVU558
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1932              		.loc 1 101 19 is_stmt 0 view .LVU559
+ 1933 0362 40F60713 		movw	r3, #2311
+ 1934 0366 A381     		strh	r3, [r4, #12]	@ movhi
+ 1935              	.LVL159:
+ 101:src/pm_loader.cpp ****     status_.error = error;
+ 1936              		.loc 1 101 19 view .LVU560
+ 1937              	.LBE210:
+ 1938              	.LBE209:
+ 168:src/pm_loader.cpp ****             }
+ 1939              		.loc 1 168 17 is_stmt 1 view .LVU561
+ 1940              	.LBB212:
+ 1941              	.LBB211:
+ 103:src/pm_loader.cpp **** 
+ 1942              		.loc 1 103 1 is_stmt 0 view .LVU562
+ 1943 0368 50E6     		b	.L69
+ 1944              	.L186:
+ 1945 036a 00BF     		.align	2
+ 1946              	.L185:
+ 1947 036c F87F0700 		.word	491512
+ 1948              	.LBE211:
+ 1949              	.LBE212:
+ 1950              	.LBE213:
+ 1951              	.LBE223:
+ 1952              		.cfi_endproc
+ 1953              	.LFE1320:
+ 1955              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 1956              		.align	2
+ 1957              	.LC1:
+ 1958 0000 4F4B00   		.ascii	"OK\000"
+ 1959 0003 00       		.align	2
+ 1960              	.LC2:
+ 1961 0004 42555359 		.ascii	"BUSY\000"
+ 1961      00
+ 1962 0009 000000   		.align	2
+ 1963              	.LC3:
+ 1964 000c 4E4F454E 		.ascii	"NOENTRY\000"
+ 1964      54525900 
+ 1965              		.align	2
+ 1966              	.LC4:
+ 1967 0014 4E4F4341 		.ascii	"NOCARD\000"
+ 1967      524400
+ 1968 001b 00       		.align	2
+ 1969              	.LC5:
+ 1970 001c 4F50454E 		.ascii	"OPEN\000"
+ 1970      00
+ 1971 0021 000000   		.align	2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 50
+
+
+ 1972              	.LC6:
+ 1973 0024 46494C45 		.ascii	"FILESIZE\000"
+ 1973      53495A45 
+ 1973      00
+ 1974 002d 000000   		.align	2
+ 1975              	.LC7:
+ 1976 0030 48445252 		.ascii	"HDRREAD\000"
+ 1976      45414400 
+ 1977              		.align	2
+ 1978              	.LC8:
+ 1979 0038 48454144 		.ascii	"HEADER\000"
+ 1979      455200
+ 1980 003f 00       		.align	2
+ 1981              	.LC9:
+ 1982 0040 50524F44 		.ascii	"PRODUCT\000"
+ 1982      55435400 
+ 1983              		.align	2
+ 1984              	.LC10:
+ 1985 0048 43415448 		.ascii	"CATHASH\000"
+ 1985      41534800 
+ 1986              		.align	2
+ 1987              	.LC11:
+ 1988 0050 52454144 		.ascii	"READ\000"
+ 1988      00
+ 1989 0055 000000   		.align	2
+ 1990              	.LC12:
+ 1991 0058 53484F52 		.ascii	"SHORT\000"
+ 1991      5400
+ 1992 005e 0000     		.align	2
+ 1993              	.LC13:
+ 1994 0060 4C4F4E47 		.ascii	"LONG\000"
+ 1994      00
+ 1995 0065 000000   		.align	2
+ 1996              	.LC14:
+ 1997 0068 48415348 		.ascii	"HASH\000"
+ 1997      00
+ 1998 006d 000000   		.align	2
+ 1999              	.LC15:
+ 2000 0070 56454354 		.ascii	"VECTOR\000"
+ 2000      4F5200
+ 2001 0077 00       		.align	2
+ 2002              	.LC16:
+ 2003 0078 42554447 		.ascii	"BUDGET\000"
+ 2003      455400
+ 2004 007f 00       		.align	2
+ 2005              	.LC17:
+ 2006 0080 43414E43 		.ascii	"CANCELLED\000"
+ 2006      454C4C45 
+ 2006      4400
+ 2007              		.section	.rodata.CSWTCH.18,"a"
+ 2008              		.align	2
+ 2011              	CSWTCH.18:
+ 2012 0000 00000000 		.word	.LC1
+ 2013 0004 04000000 		.word	.LC2
+ 2014 0008 0C000000 		.word	.LC3
+ 2015 000c 14000000 		.word	.LC4
+ 2016 0010 1C000000 		.word	.LC5
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 51
+
+
+ 2017 0014 24000000 		.word	.LC6
+ 2018 0018 30000000 		.word	.LC7
+ 2019 001c 38000000 		.word	.LC8
+ 2020 0020 40000000 		.word	.LC9
+ 2021 0024 48000000 		.word	.LC10
+ 2022 0028 50000000 		.word	.LC11
+ 2023 002c 58000000 		.word	.LC12
+ 2024 0030 60000000 		.word	.LC13
+ 2025 0034 68000000 		.word	.LC14
+ 2026 0038 70000000 		.word	.LC15
+ 2027 003c 78000000 		.word	.LC16
+ 2028 0040 80000000 		.word	.LC17
+ 2029              		.section	.rodata.str1.4
+ 2030 008a 0000     		.align	2
+ 2031              	.LC18:
+ 2032 008c 49444C45 		.ascii	"IDLE\000"
+ 2032      00
+ 2033 0091 000000   		.align	2
+ 2034              	.LC19:
+ 2035 0094 4F50454E 		.ascii	"OPENING\000"
+ 2035      494E4700 
+ 2036              		.align	2
+ 2037              	.LC20:
+ 2038 009c 4C4F4144 		.ascii	"LOADING\000"
+ 2038      494E4700 
+ 2039              		.align	2
+ 2040              	.LC21:
+ 2041 00a4 56455249 		.ascii	"VERIFY\000"
+ 2041      465900
+ 2042 00ab 00       		.align	2
+ 2043              	.LC22:
+ 2044 00ac 46494E41 		.ascii	"FINALIZE\000"
+ 2044      4C495A45 
+ 2044      00
+ 2045 00b5 000000   		.align	2
+ 2046              	.LC23:
+ 2047 00b8 52455354 		.ascii	"RESTARTING\000"
+ 2047      41525449 
+ 2047      4E4700
+ 2048 00c3 00       		.align	2
+ 2049              	.LC24:
+ 2050 00c4 4552524F 		.ascii	"ERROR\000"
+ 2050      5200
+ 2051              		.section	.rodata.CSWTCH.16,"a"
+ 2052              		.align	2
+ 2055              	CSWTCH.16:
+ 2056 0000 8C000000 		.word	.LC18
+ 2057 0004 94000000 		.word	.LC19
+ 2058 0008 38000000 		.word	.LC8
+ 2059 000c 9C000000 		.word	.LC20
+ 2060 0010 A4000000 		.word	.LC21
+ 2061 0014 AC000000 		.word	.LC22
+ 2062 0018 B8000000 		.word	.LC23
+ 2063 001c C4000000 		.word	.LC24
+ 2064              		.text
+ 2065              	.Letext0:
+ 2066              		.file 5 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 52
+
+
+ 2067              		.file 6 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2068              		.file 7 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2069              		.file 8 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2070              		.file 9 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
+ 2071              		.file 10 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2072              		.file 11 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2073              		.file 12 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2074              		.file 13 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2075              		.file 14 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2076              		.file 15 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2077              		.file 16 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2078              		.file 17 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2079              		.file 18 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2080              		.file 19 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ 2081              		.file 20 "src/pm_sha256.h"
+ 2082              		.file 21 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s 			page 53
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 pm_loader.cpp
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:20     .rodata._ZN2pm13LoadStateNameENS_9LoadStateE.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:24     .text._ZN2pm13LoadStateNameENS_9LoadStateE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:31     .text._ZN2pm13LoadStateNameENS_9LoadStateE:00000000 _ZN2pm13LoadStateNameENS_9LoadStateE
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:57     .text._ZN2pm13LoadStateNameENS_9LoadStateE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:2055   .rodata.CSWTCH.16:00000000 CSWTCH.16
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:63     .text._ZN2pm13LoadErrorNameENS_9LoadErrorE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:70     .text._ZN2pm13LoadErrorNameENS_9LoadErrorE:00000000 _ZN2pm13LoadErrorNameENS_9LoadErrorE
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:96     .text._ZN2pm13LoadErrorNameENS_9LoadErrorE:00000010 $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:2011   .rodata.CSWTCH.18:00000000 CSWTCH.18
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:102    .text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:109    .text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:00000000 _ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:109    .text._ZN2pm6LoaderC2ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE:00000000 _ZN2pm6LoaderC1ERNS_11ImageSourceERNS_10LoadTargetERNS_10BootCommitE
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:290    .text._ZNK2pm6Loader6ActiveEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:297    .text._ZNK2pm6Loader6ActiveEv:00000000 _ZNK2pm6Loader6ActiveEv
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:322    .text._ZNK2pm6Loader7PercentEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:329    .text._ZNK2pm6Loader7PercentEv:00000000 _ZNK2pm6Loader7PercentEv
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:349    .text._ZNK2pm6Loader7PercentEv:0000000e $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:415    .text._ZN2pm6Loader5StartERKNS_12CatalogEntryEmm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:422    .text._ZN2pm6Loader5StartERKNS_12CatalogEntryEmm:00000000 _ZN2pm6Loader5StartERKNS_12CatalogEntryEmm
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:567    .text._ZN2pm6Loader4FailENS_9LoadErrorE:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:574    .text._ZN2pm6Loader4FailENS_9LoadErrorE:00000000 _ZN2pm6Loader4FailENS_9LoadErrorE
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:624    .text._ZN2pm6Loader6CancelEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:631    .text._ZN2pm6Loader6CancelEv:00000000 _ZN2pm6Loader6CancelEv
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:706    .text._ZN2pm6Loader5ResetEv:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:713    .text._ZN2pm6Loader5ResetEv:00000000 _ZN2pm6Loader5ResetEv
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:790    .text._ZN2pm6Loader9ReadExactEPhm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:797    .text._ZN2pm6Loader9ReadExactEPhm:00000000 _ZN2pm6Loader9ReadExactEPhm
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:885    .text._ZN2pm6Loader4StepEm:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:892    .text._ZN2pm6Loader4StepEm:00000000 _ZN2pm6Loader4StepEm
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:982    .text._ZN2pm6Loader4StepEm:00000044 $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:1947   .text._ZN2pm6Loader4StepEm:0000036c $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:1956   .rodata.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:2008   .rodata.CSWTCH.18:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:2052   .rodata.CSWTCH.16:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:354    .text._ZNK2pm6Loader7PercentEv:00000013 $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:354    .text._ZNK2pm6Loader7PercentEv:00000014 $t
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:987    .text._ZN2pm6Loader4StepEm:00000049 $d
+C:\Users\ssche\AppData\Local\Temp\cc8yc5sn.s:987    .text._ZN2pm6Loader4StepEm:0000004a $t
+
+UNDEFINED SYMBOLS
+memset
+__aeabi_uldivmod
+__aeabi_ldivmod
+memcpy
+pm_sha256_final
+memcmp
+_ZN2pm12CheckVectorsEPKhm
+_ZN2pm11ParseHeaderEPKhjRNS_11ImageHeaderE
+strcmp
+pm_sha256_init
+pm_sha256_update
