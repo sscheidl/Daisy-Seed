@@ -1,6 +1,7 @@
 """Main window: board view on the left, categorised control panel on the right."""
 from __future__ import annotations
 
+import math
 import time
 import json
 from pathlib import Path
@@ -21,29 +22,39 @@ from ..session import ConnState, DeviceSession, SerialLink, list_serial_ports
 from ..simulator import SimulatedCable
 from . import theme
 from .board import BoardWidget, SdDisplay
+from .scope import CvTraceWidget, LevelBar, ScopeWidget
 
 # Firmware LED modes offered by the GUI. FOLLOW is the firmware default: every LED
-# D1–D16 lights while its button S1–S16 is held. The other three are test patterns.
+# D1–D16 lights while its button S1–S16 is held. The others are test patterns;
+# POTDIM (firmware 0.4.0) lights all LEDs with VR1 as brightness control.
 LED_MODE_BUTTONS = (
     ("FOLLOW", 'Buttons → LEDs'),
     ("OFF", 'All off'),
     ("ON", 'All on'),
     ("CHASE", 'Chase'),
+    ("POTDIM", 'VR1 dims'),
 )
 
 CV_OUT_BUTTONS = (("OFF", "Off"), ("FIX", "Fixed"), ("RAMP", "Ramp"), ("SAW", "Saw"))
+TONE_LEVELS_DBFS = (-6, -12, -20, -30, -40)  # amplitude presets; -6 dBFS is the firmware cap
+SCOPE_FRAME_CHOICES = (256, 512, 1024, 2048)
 
 # Control-panel categories, in tab order, with short labels so all tabs fit in the
 # 480 px panel without scroll buttons. The simulation tab is appended in simulation mode.
-TABS = ("USB", "Buttons", "Pots", "CV / Gate", "SD card", "Log")
+TABS = ("USB", "Buttons", "Pots", "CV / Gate", "Audio", "SD card", "Log")
 TAB_TOOLTIPS = {
     "USB": "USB connection, firmware and protocol versions, transport statistics",
     "Buttons": "Buttons S1–S16 (press counts) and LEDs D1–D16 (test patterns, brightness)",
     "Pots": "Potentiometers VR1–VR8, toggle switches, plug and card detection",
-    "CV / Gate": "CV inputs, gate inputs and the CV OUT test signal",
+    "CV / Gate": "CV inputs with rolling trace, gate inputs and the CV OUT test signal",
+    "Audio": "Audio peak meters, test tone generator and input snapshot (firmware 0.4.0)",
     "SD card": "microSD read test and Windows card-reader ownership",
     "Log": "Event log",
 }
+
+
+def _amplitude_for_dbfs(db: int) -> int:
+    return min(p.TONE_MAX_AMPLITUDE, int(round(10 ** (db / 20.0) * 10000)))
 SIM_TAB = "Simulation"
 
 STATE_COLORS = {
@@ -165,6 +176,7 @@ class MainWindow(QMainWindow):
             "Buttons": [self._build_counter_group(), self._build_led_group()],
             "Pots": [self._build_pot_group(), self._build_inputs_group()],
             "CV / Gate": [self._build_cvgate_group()],
+            "Audio": [self._build_audio_group()],
             "SD card": [self._build_sd_group()],
             "Log": [self._build_log_group()],
         }
@@ -330,7 +342,15 @@ class MainWindow(QMainWindow):
                                      'CV IN 0.0–+1.0. The real scaling is not measured.')
         self.sim_cv_patch.toggled.connect(
             lambda on: self._sim_device() and setattr(self._sim_device(), "cv_patched", on))
-        for w in (self.sim_sd_card, self.sim_sd_fs, self.sim_jl, self.sim_jr, self.sim_cv_patch):
+        self.sim_audio_patch = QCheckBox('Patch cables AUDIO OUT → AUDIO IN (test tone loopback)')
+        self.sim_audio_patch.toggled.connect(
+            lambda on: self._sim_device() and setattr(self._sim_device(), "audio_patched", on))
+        self.sim_audio_noise = QCheckBox('Noise on the audio inputs (−10 dBFS)')
+        self.sim_audio_noise.toggled.connect(
+            lambda on: self._sim_device() and setattr(self._sim_device(), "input_noise",
+                                                      0.316 if on else 0.0))
+        for w in (self.sim_sd_card, self.sim_sd_fs, self.sim_jl, self.sim_jr, self.sim_cv_patch,
+                  self.sim_audio_patch, self.sim_audio_noise):
             layout.addWidget(w)
         self.sim_reader_eject = QPushButton("Simulate Windows eject")
         self.sim_reader_eject.clicked.connect(
@@ -347,7 +367,9 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(box)
         layout.addWidget(_hint('Default: each LED lights while its button is held '
                                '(firmware mode Buttons → LEDs). The test patterns below '
-                               'override that until Buttons → LEDs is selected again.'))
+                               'override that until Buttons → LEDs is selected again. '
+                               '"VR1 dims" lights all LEDs and takes the brightness from VR1 '
+                               '(hands-on pot and PWM check, firmware 0.4.0).'))
         row = QHBoxLayout()
         self.led_buttons: dict[str, QPushButton] = {}
         self.led_group = QButtonGroup(self)
@@ -413,6 +435,86 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.reader_return)
         return box
 
+    def _build_audio_group(self) -> QGroupBox:
+        box = QGroupBox('Audio (firmware 0.4.0)')
+        layout = QVBoxLayout(box)
+        self.audio_status = _hint("")
+        layout.addWidget(self.audio_status)
+        self.level_bars = {key: LevelBar(label) for key, label in
+                           (("il", "IN L"), ("ir", "IN R"), ("ol", "OUT L"), ("or", "OUT R"))}
+        for bar in self.level_bars.values():
+            layout.addWidget(bar)
+        layout.addWidget(_hint('Peak levels per 100 ms in dBFS (digital full scale), not volts. '
+                               'OUT is the commanded test tone, IN what the codec receives.'))
+
+        tone_label = QLabel('Test tone')
+        tone_label.setObjectName("sectionLabel")
+        layout.addWidget(tone_label)
+        self.tone_status = _value_label()
+        layout.addWidget(self.tone_status)
+        row = QHBoxLayout()
+        self.tone_group = QButtonGroup(self)
+        self.tone_buttons: dict[str, QPushButton] = {}
+        for mode, text in (("OFF", "Off"), ("SINE", "Sine")):
+            b = QPushButton(text)
+            b.setCheckable(True)
+            b.setObjectName("segment")
+            b.clicked.connect(lambda _c=False, m=mode: self._send_tone(m))
+            self.tone_group.addButton(b)
+            self.tone_buttons[mode] = b
+            row.addWidget(b)
+        layout.addLayout(row)
+        form = QFormLayout()
+        self.tone_freq = QSpinBox()
+        self.tone_freq.setRange(p.TONE_MIN_HZ, p.TONE_MAX_HZ)
+        self.tone_freq.setValue(1000)
+        self.tone_freq.setSuffix(" Hz")
+        form.addRow("Frequency:", self.tone_freq)
+        self.tone_level = QComboBox()
+        for db in TONE_LEVELS_DBFS:
+            self.tone_level.addItem(f"{db} dBFS", _amplitude_for_dbfs(db))
+        self.tone_level.setCurrentIndex(TONE_LEVELS_DBFS.index(-20))
+        form.addRow("Level:", self.tone_level)
+        self.tone_channels = QComboBox()
+        for ch, text in (("LR", "Left + right"), ("L", "Left only"), ("R", "Right only")):
+            self.tone_channels.addItem(text, ch)
+        form.addRow("Channels:", self.tone_channels)
+        layout.addLayout(form)
+        self.tone_apply = QPushButton('Apply tone settings')
+        self.tone_apply.clicked.connect(lambda: self._send_tone(self._current_tone_mode()))
+        layout.addWidget(self.tone_apply)
+        layout.addWidget(_hint('Sine on AUDIO OUT, capped at −6 dBFS by the firmware. It stops '
+                               'with the session (BYE, timeout, closed app), before a blocking '
+                               'SD test, and whenever the firmware main loop stalls (1 s '
+                               'watchdog in the audio callback). Check the input range of '
+                               'connected equipment first.'))
+
+        scope_label = QLabel('Input snapshot (oscilloscope)')
+        scope_label.setObjectName("sectionLabel")
+        layout.addWidget(scope_label)
+        self.scope_widget = ScopeWidget()
+        layout.addWidget(self.scope_widget)
+        self.scope_summary = _value_label("No snapshot yet.")
+        layout.addWidget(self.scope_summary)
+        scope_row = QHBoxLayout()
+        self.scope_frames = QComboBox()
+        for n in SCOPE_FRAME_CHOICES:
+            self.scope_frames.addItem(f"{n} frames ({1000.0 * n / p.AUDIO_SAMPLE_RATE:.1f} ms)", n)
+        self.scope_frames.setCurrentIndex(SCOPE_FRAME_CHOICES.index(1024))
+        scope_row.addWidget(self.scope_frames, 1)
+        self.scope_trigger = QCheckBox("Trigger on rising edge")
+        self.scope_trigger.setChecked(True)
+        scope_row.addWidget(self.scope_trigger)
+        layout.addLayout(scope_row)
+        self.scope_button = QPushButton('Capture snapshot')
+        self.scope_button.clicked.connect(self._capture_scope)
+        layout.addWidget(self.scope_button)
+        layout.addWidget(_hint('One window of 5–43 ms from the audio inputs, transferred as '
+                               'frames; frequency from rising zero crossings, peak in dBFS. '
+                               'With a cable from AUDIO OUT to AUDIO IN and the tone on, this '
+                               'is the audio loopback check.'))
+        return box
+
     def _build_log_group(self) -> QGroupBox:
         box = QGroupBox('Event log')
         layout = QVBoxLayout(box)
@@ -471,8 +573,12 @@ class MainWindow(QMainWindow):
             gates.addWidget(label)
             self.gate_labels.append(label)
         layout.addLayout(gates)
-        layout.addWidget(_hint('Min/Max cover every received frame since the last reset '
-                               '(Pots → Reset min/max). Gate edges count rising edges '
+        self.cv_trace = CvTraceWidget()
+        layout.addWidget(self.cv_trace)
+        layout.addWidget(_hint('Rolling trace of the last 10 s of received frames (50–100 Hz, '
+                               'ADC scan 6–13 ms): CV IN 1/2 solid, CV OUT 1 echo dashed, gates '
+                               'as bands. Min/Max cover every received frame since the last '
+                               'reset (Pots → Reset min/max). Gate edges count rising edges '
                                'modulo 256.'))
 
         out_label = QLabel('CV OUT test signal')
@@ -643,6 +749,12 @@ class MainWindow(QMainWindow):
                 self.sd_result = None
                 if payload is not None:
                     self._log(f"Card reader: {payload.state}")
+            elif kind == "audio":
+                self._apply_audio(payload)
+            elif kind == "scope":
+                self.scope_widget.set_capture(payload)
+                self.scope_summary.setText(self.scope_widget.summary())
+                self._log(f"Audio snapshot: {self.scope_widget.summary()}")
             elif kind == "bootloader":
                 # ACK c=BOOT confirms the accepted request, not the DFU entry itself.
                 self._log("Request accepted: the kit restarts into the Daisy bootloader. Once it "
@@ -663,6 +775,20 @@ class MainWindow(QMainWindow):
                 lo, hi = self.cv_min[i], self.cv_max[i]
                 self.cv_min[i] = v if lo is None else min(lo, v)
                 self.cv_max[i] = v if hi is None else max(hi, v)
+            self.cv_trace.push(st.time_ms, st.cvgate.cv, st.cvgate.gates, st.cvgate.cv_out)
+
+    def _apply_audio(self, levels: p.AudioLevels) -> None:
+        for key, value in zip(("il", "ir", "ol", "or"), (*levels.inputs, *levels.outputs)):
+            self.level_bars[key].set_level(value)
+        amplitude = levels.tone_amplitude / 10000.0
+        db = "−∞" if amplitude <= 0 else f"{20 * math.log10(amplitude):+.1f}"
+        self.tone_status.setText(
+            "Firmware tone: off" if levels.tone_mode == "OFF" else
+            f"Firmware tone: {levels.tone_mode} {levels.tone_freq_hz} Hz, {db} dBFS, "
+            f"{levels.tone_channels}")
+        button = self.tone_buttons.get(levels.tone_mode)
+        if button is not None and not button.isChecked():
+            button.setChecked(True)
 
     def _apply_board(self) -> None:
         st = self.session.board if self.session else None
@@ -850,6 +976,25 @@ class MainWindow(QMainWindow):
                 label.setStyleSheet(f"color: {theme.TEXT.name()}; font-weight: 700;"
                                     f"background: #3a3d41;" if st.buttons[i] else "")
 
+        audio = s.audio_supported and st is not None
+        for w in (*self.tone_buttons.values(), self.tone_freq, self.tone_level,
+                  self.tone_channels, self.tone_apply, self.scope_frames, self.scope_trigger):
+            w.setEnabled(audio)
+        self.scope_button.setEnabled(audio and not s.scope_pending)
+        if not s.connected:
+            self.audio_status.setText("")
+            for bar in self.level_bars.values():
+                bar.set_level(0.0, active=False)
+            self._uncheck_all(self.tone_group, self.tone_buttons.values())
+            self.tone_status.setText("–")
+        elif not s.audio_supported:
+            self.audio_status.setText('The connected firmware has no audio extension '
+                                      '(firmware 0.4.0 or later required).')
+            for bar in self.level_bars.values():
+                bar.set_level(0.0, active=False)
+        else:
+            self.audio_status.setText("Live peak meters, test tone and input snapshot.")
+
         if self.cable is not None:
             self.sim_plug.setText('Plug in USB cable' if not self.cable.plugged
                                   else 'Unplug USB cable')
@@ -936,7 +1081,30 @@ class MainWindow(QMainWindow):
         self.board.pot_max = [None] * p.NUM_POTS
         self.cv_min = [None] * p.NUM_CV
         self.cv_max = [None] * p.NUM_CV
+        if hasattr(self, "cv_trace"):
+            self.cv_trace.clear()
         self.board.update()
+
+    # ---- audio --------------------------------------------------------------------------
+    def _current_tone_mode(self) -> str:
+        a = self.session.audio if self.session else None
+        return a.tone_mode if a is not None else "OFF"
+
+    def _send_tone(self, mode: str) -> None:
+        s = self.session
+        if s is None:
+            return
+        if s.request_tone(mode, self.tone_freq.value(), self.tone_level.currentData(),
+                          self.tone_channels.currentData()):
+            self._log(f"Test tone requested: {mode} {self.tone_freq.value()} Hz "
+                      f"{self.tone_level.currentText()} {self.tone_channels.currentData()}")
+
+    def _capture_scope(self) -> None:
+        s = self.session
+        if s is None:
+            return
+        if s.request_scope(self.scope_frames.currentData(), self.scope_trigger.isChecked()):
+            self._log(f"Audio snapshot requested: {self.scope_frames.currentText()}")
 
     # ---- CV / gate ----------------------------------------------------------------------
     def _current_cv_mode(self) -> str:
@@ -970,6 +1138,7 @@ class MainWindow(QMainWindow):
                                        '(firmware 0.3.0 or later required).')
         else:
             self.cvgate_status.setText("Live CV inputs and gate counters. Values are normalized, not volts.")
+        self.cv_trace.update()
         for i in range(p.NUM_CV):
             lo, hi = self.cv_min[i], self.cv_max[i]
             cells = ("–", "–", "–", "–") if cg is None else (

@@ -28,6 +28,7 @@ ERROR_DISPLAY_S = 3.0
 SD_TEST_TIMEOUT_S = 20.0
 READER_COMMAND_TIMEOUT_S = 20.0  # SD initialization may block; never implies eject
 READER_IO_RX_TIMEOUT_S = 5.0  # one polling write + programming wait can take 2 s
+SCOPE_TIMEOUT_S = 2.0  # capture <= 85 ms + 200 ms trigger wait + chunked transfer
 
 
 @dataclass(frozen=True)
@@ -122,6 +123,11 @@ class DeviceSession:
         self.reader: p.ReaderInfo | None = None
         self._reader_deadline: float | None = None
         self._reader_action: str | None = None
+        # Audio extension (firmware 0.4.0): peak levels at 10 Hz and the last snapshot.
+        self.audio: p.AudioLevels | None = None
+        self.scope: list[tuple[int, int]] | None = None
+        self._scope = p.ScopeAssembler()
+        self._scope_deadline: float | None = None
 
         self.frames_ok = 0
         self.frame_errors = 0
@@ -164,7 +170,10 @@ class DeviceSession:
             "port": self.port if self.connected else None,
             **{key: asdict(value) if value is not None else None for key, value in
                (("device", self.device), ("reader", self.reader), ("board", self.board),
-                ("sd", self.sd), ("system", self.sys))},
+                ("sd", self.sd), ("system", self.sys), ("audio", self.audio))},
+            "scope": None if self.scope is None else {
+                "frames": len(self.scope), "sample_rate": p.AUDIO_SAMPLE_RATE,
+                "samples": [list(frame) for frame in self.scope]},
             "counters": dict(frames=self.frames_ok, frame_errors=self.frame_errors,
                              content_errors=self.content_errors, lost_frames=self.lost_frames,
                              reconnects=self.reconnects),
@@ -191,6 +200,30 @@ class DeviceSession:
         if not self.send("SDTEST"):
             return False
         self._sd_deadline = self._clock() + SD_TEST_TIMEOUT_S
+        return True
+
+    @property
+    def audio_supported(self) -> bool:
+        return bool(self.connected and self.device and "audio" in self.device.capabilities)
+
+    @property
+    def scope_pending(self) -> bool:
+        return self._scope_deadline is not None
+
+    def request_tone(self, mode: str, freq_hz: int | None = None, amplitude: int | None = None,
+                     channels: str | None = None) -> bool:
+        if not self.audio_supported:
+            return False
+        return self.send(p.cmd_tone(mode, freq_hz, amplitude, channels))
+
+    def request_scope(self, frames: int | None = None, trigger: bool | None = None) -> bool:
+        """Asks for an audio snapshot; the capture arrives as a "scope" event."""
+        if not self.audio_supported or self.scope_pending:
+            return False
+        if not self.send(p.cmd_scope(frames, trigger)):
+            return False
+        self._scope.reset()
+        self._scope_deadline = self._clock() + SCOPE_TIMEOUT_S
         return True
 
     @property
@@ -280,6 +313,10 @@ class DeviceSession:
             if self._sd_deadline is not None and now > self._sd_deadline:
                 self._sd_deadline = None
                 self._event("log", 'microSD test: no response from firmware')
+            if self._scope_deadline is not None and now > self._scope_deadline:
+                self._scope_deadline = None
+                self._scope.reset()
+                self._event("log", "Audio snapshot: incomplete or no data from firmware")
             rx_timeout = (READER_IO_RX_TIMEOUT_S if self.reader_supported and self.reader
                           and self.reader.state == "SHARED" else RX_TIMEOUT_S)
             if (now - self._last_rx > rx_timeout and self._sd_deadline is None
@@ -386,6 +423,10 @@ class DeviceSession:
         self.sys = None
         self.sd = None  # a read-test result belongs to the connection that produced it
         self._sd_deadline = None
+        self.audio = None
+        self.scope = None
+        self._scope.reset()
+        self._scope_deadline = None
         self._reader_deadline = None
         self._reader_action = None
         self.reader = None
@@ -434,6 +475,19 @@ class DeviceSession:
                 self._event("board", state)
             elif msg.type == "SYS":
                 self.sys = p.parse_sys(msg)
+            elif msg.type == "AU":
+                if not self.audio_supported:
+                    raise p.ProtocolError("AU without advertised audio capability")
+                self.audio = p.parse_audio(msg)
+                self._event("audio", self.audio)
+            elif msg.type == "SC":
+                if not self.audio_supported:
+                    raise p.ProtocolError("SC without advertised audio capability")
+                capture = self._scope.add(p.parse_scope_chunk(msg))
+                if capture is not None:
+                    self.scope = capture
+                    self._scope_deadline = None
+                    self._event("scope", capture)
             elif msg.type == "SD":
                 self.sd = p.parse_sd(msg)
                 self._sd_deadline = None
@@ -476,6 +530,9 @@ class DeviceSession:
                     self._sd_deadline = None
                     self.sd = None
                     self._event("sd", None)
+                elif msg.get("c") == "SCOPE":
+                    self._scope_deadline = None
+                    self._scope.reset()
                 if self.state == ConnState.HANDSHAKE and msg.get("e") == "PROTO":
                     self._failed_ports[self.port or ""] = now + FAILED_PORT_BACKOFF_S
                     self._drop_link("Firmware does not support protocol "

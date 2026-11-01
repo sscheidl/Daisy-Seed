@@ -55,7 +55,7 @@ def test_starts_in_simulation_and_is_marked(sim):
     assert window.sim_banner.isVisible() and "SIMULATION" in window.sim_banner.text()
     assert "SIMULATION" in window.windowTitle()
     assert window.status_pill.text() == "Connected (Simulation)"
-    assert window.info["fw"].text() == "DaisyDiagnostic 0.3.2-sim"
+    assert window.info["fw"].text() == "DaisyDiagnostic 0.4.0-sim"
     assert window.info["proto"].text().startswith("DDP v1")
     assert window.board.simulated and window.board.interactive
 
@@ -158,7 +158,7 @@ def test_leds_follow_buttons_by_default_and_test_patterns_are_explicit(sim):
     window, step = sim
     assert window.board.state.led_mode == "FOLLOW"
     assert window.led_buttons["FOLLOW"].isChecked()
-    assert set(window.led_buttons) == {"FOLLOW", "OFF", "ON", "CHASE"}  # no per-LED mask
+    assert set(window.led_buttons) == {"FOLLOW", "OFF", "ON", "CHASE", "POTDIM"}  # no per-LED mask
     window.led_buttons["ON"].click()
     step(0.05)
     assert window.board.state.led_mode == "ON" and all(window.board.state.leds)
@@ -404,12 +404,13 @@ def test_control_tabs_are_categories_with_report_always_reachable(sim):
     window, step = sim
     tabs = [window.control_tabs.tabText(i) for i in range(window.control_tabs.count())]
     assert tabs == list(mw.TABS) + [mw.SIM_TAB]
-    assert tabs == ["USB", "Buttons", "Pots", "CV / Gate", "SD card", "Log", "Simulation"]
+    assert tabs == ["USB", "Buttons", "Pots", "CV / Gate", "Audio", "SD card", "Log", "Simulation"]
     expectations = {
         "USB": [window.port_combo, window.boot_button],
         "Buttons": [window.counter_labels[15], window.led_buttons["FOLLOW"]],
         "Pots": [window.pot_table, window.in_labels["sw18"]],
         "CV / Gate": [window.cv_table, window.cv_apply, window.gate_labels[1]],
+        "Audio": [window.level_bars["il"], window.tone_buttons["SINE"], window.scope_button],
         "SD card": [window.sd_button, window.reader_share],
         "Log": [window.log],
         "Simulation": [window.sim_plug, window.sim_cv_patch],

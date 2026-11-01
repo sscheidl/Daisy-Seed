@@ -7,7 +7,7 @@
 
 namespace diag {
 
-constexpr const char* kFirmwareVersion = "0.3.2";
+constexpr const char* kFirmwareVersion = "0.4.0";
 constexpr const char* kAppName = "DaisyDiagnostic";
 constexpr const char* kLibDaisyCommit = "f715e48";
 constexpr size_t kNumButtons = 16;
@@ -15,20 +15,37 @@ constexpr size_t kNumLeds = 16;
 constexpr size_t kNumPots = 8;
 constexpr size_t kNumCv = 2;     // CV IN 1/2 (and CV OUT 1/2)
 constexpr size_t kNumGates = 2;  // GATE IN 1/2
+constexpr size_t kNumAudio = 2;  // audio channels left/right
 constexpr uint16_t kDacMax = 4095;  // 12-bit DAC code
 constexpr uint32_t kHostTimeoutMs = 3000;
 constexpr uint32_t kMinFrameSpacingMs = 10;
+// Test tone: amplitude in 1/10000 of full scale, capped at 0.5 FS (about -6 dBFS)
+// so a patched input never sees a full-scale signal; default 0.1 FS (-20 dBFS).
+constexpr uint16_t kToneMaxAmplitude = 5000;
+constexpr uint16_t kToneDefaultAmplitude = 1000;
+constexpr uint16_t kToneMinHz = 20, kToneMaxHz = 20000;
+// Audio snapshot (oscilloscope): stereo frames captured in the audio callback.
+constexpr uint16_t kScopeMinFrames = 256, kScopeMaxFrames = 2048, kScopeDefaultFrames = 1024;
+constexpr uint16_t kScopeChunkFrames = 40;  // 40 stereo frames = 320 hex digits per SC body
+constexpr uint32_t kScopeTriggerTimeoutMs = 200;  // free-run when no rising edge arrives
 
 enum class Sw18 : uint8_t { Center, Up, Down };
-enum class LedMode : uint8_t { Off, On, Mask, Chase, Follow };
+// PotDim: all LEDs on, brightness from VR1 (hands-on pot + PWM check).
+enum class LedMode : uint8_t { Off, On, Mask, Chase, Follow, PotDim };
 // CV OUT test signals. RAMP is a triangle (no jumps), SAW a rising sawtooth.
 // For RAMP and SAW, CV OUT 2 carries the inverse of CV OUT 1.
 enum class CvOutMode : uint8_t { Off, Fix, Ramp, Saw };
+enum class ToneMode : uint8_t { Off, Sine };
+enum class ToneChannels : uint8_t { Left, Right, Both };
 
 const char* LedModeName(LedMode mode);
 bool ParseLedMode(const char* name, LedMode& mode);
 const char* CvOutModeName(CvOutMode mode);
 bool ParseCvOutMode(const char* name, CvOutMode& mode);
+const char* ToneModeName(ToneMode mode);
+bool ParseToneMode(const char* name, ToneMode& mode);
+const char* ToneChannelsName(ToneChannels channels);
+bool ParseToneChannels(const char* name, ToneChannels& channels);
 
 // Gate inputs sampled once per 1 kHz control tick. Rising edges are counted
 // (modulo 256) so pulses between two state frames stay visible; pulses shorter
@@ -73,6 +90,13 @@ class Switch3Debouncer {
     bool initialised_ = false;
 };
 
+struct ToneSettings {
+    ToneMode mode = ToneMode::Off;  // power-up and end of every host session
+    uint16_t freq_hz = 1000;
+    uint16_t amplitude = kToneDefaultAmplitude;  // 0..kToneMaxAmplitude (1/10000 FS)
+    ToneChannels channels = ToneChannels::Both;
+};
+
 struct Settings {
     LedMode led_mode = LedMode::Follow;
     uint16_t led_mask = 0;
@@ -82,13 +106,13 @@ struct Settings {
     CvOutMode cv_mode = CvOutMode::Off;  // power-up and end of every host session
     uint16_t cv_code[kNumCv] = {};       // FIX codes 0..kDacMax
     uint16_t cv_period_ms = 1000;        // RAMP/SAW period
+    ToneSettings tone;
+    uint16_t scope_frames = kScopeDefaultFrames;  // last SCOPE request
+    bool scope_trigger = true;
 };
 
 // CV OUT codes for the current mode and time.
 void ComputeCvOut(const Settings& settings, uint32_t now_ms, uint16_t out[kNumCv]);
-
-// Commanded LED target state. There is no electrical LED feedback on the board.
-uint16_t ComputeLeds(const Settings& settings, uint32_t now_ms, uint16_t buttons);
 
 struct Inputs {
     uint16_t buttons = 0;
@@ -106,11 +130,22 @@ struct Inputs {
     uint8_t gate_count[kNumGates] = {};
 };
 
+// Commanded LED target state. There is no electrical LED feedback on the board.
+uint16_t ComputeLeds(const Settings& settings, uint32_t now_ms, uint16_t buttons);
+// Effective brightness in percent: the setting, or VR1 in PotDim mode.
+uint8_t LedBrightness(const Settings& settings, const Inputs& in);
+
 // True when a digital input differs; pots are sent with the periodic frames.
 bool DigitalChanged(const Inputs& a, const Inputs& b);
 
 uint16_t NormalizePot(float value);
 int16_t NormalizeCv(float value);
+
+// Peak levels since the previous read, 0..10000 == 0.0..1.0 of full scale.
+struct AudioLevels {
+    uint16_t in[kNumAudio] = {};
+    uint16_t out[kNumAudio] = {};
+};
 
 struct Stats {
     uint32_t uptime_s = 0;
@@ -133,6 +168,8 @@ enum Request : uint32_t {
     kRequestReaderReturn = 1u << 6,
     kRequestBootloader = 1u << 7,  // BOOT: restart into the Daisy bootloader after the reply
     kRequestCvOut = 1u << 8,       // CV OUT settings changed
+    kRequestTone = 1u << 9,        // TONE settings changed
+    kRequestScope = 1u << 10,      // SCOPE: capture an audio snapshot (App answers)
 };
 
 // Command handling and host liveness. Streaming starts with HELLO and stops after
@@ -166,6 +203,15 @@ void WriteState(const Inputs& in, const Settings& settings, uint16_t leds,
                 uint32_t seq, uint32_t now_ms, ddp::Writer& out,
                 const uint16_t* cv_out = nullptr);
 void WriteSys(const Stats& stats, bool host, uint8_t rate_hz, ddp::Writer& out);
+// AU: peak levels since the last frame and the active tone.
+void WriteAudio(const AudioLevels& levels, const ToneSettings& tone, ddp::Writer& out);
+// SC: one chunk of an audio snapshot. `samples` is interleaved L/R int16 for the
+// whole capture of `frames` stereo frames; chunk `index` of `chunks`.
+void WriteScopeChunk(const int16_t* samples, uint16_t frames, uint16_t index,
+                     uint16_t chunks, ddp::Writer& out);
+inline uint16_t ScopeChunks(uint16_t frames) {
+    return static_cast<uint16_t>((frames + kScopeChunkFrames - 1) / kScopeChunkFrames);
+}
 
 enum class SdStatus : uint8_t { None, Mounted, Error };
 struct SdResult {

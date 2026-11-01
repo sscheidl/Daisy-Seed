@@ -42,6 +42,18 @@ class Board {
     // Resets into the Daisy bootloader (common/bootloader); does not return on hardware.
     virtual void EnterBootloader() = 0;
 
+    // ---- audio (firmware 0.4.0): all optional; the default board has no audio ----
+    virtual bool AudioSupported() { return false; }
+    // Hands the tone to the audio callback. The callback mutes itself once its clock
+    // passes `keep_until_ms`, so a blocked or dead main loop cannot leave a tone on.
+    virtual void ApplyTone(const ToneSettings&, uint32_t /*keep_until_ms*/) {}
+    // Peak levels since the previous call (the call resets them).
+    virtual AudioLevels ReadAudioLevels() { return AudioLevels(); }
+    // Arms a snapshot of `frames` stereo input frames; false when unsupported/busy.
+    virtual bool StartScope(uint16_t /*frames*/, bool /*trigger*/) { return false; }
+    // Interleaved L/R int16 samples once the capture is complete, else nullptr.
+    virtual const int16_t* ScopeData(uint16_t& frames) { frames = 0; return nullptr; }
+
   protected:
     ~Board() = default;
 };
@@ -56,6 +68,7 @@ class TxQueue {
     void Pump(UsbSink& usb, Stats& stats);
     void Discard(Stats& stats);
     size_t Pending() const { return fill_; }
+    size_t Room() const { return kSize - fill_; }
 
   private:
     uint8_t buf_[2][kSize] = {};
@@ -69,6 +82,9 @@ class App {
     static constexpr uint32_t kLedMinIntervalMs = 10;
     // BOOT waits at most this long for the ACK to leave before the reset.
     static constexpr uint32_t kBootFlushMs = 50;
+    static constexpr uint32_t kAudioFrameMs = 100;   // AU frames at 10 Hz
+    static constexpr uint32_t kToneKeepAliveMs = 1000;  // callback mutes after this silence
+    static constexpr uint32_t kToneRefreshMs = 200;
 
     App(Board& board, UsbSink& usb, const char* bootloader_name, uint32_t now_ms);
 
@@ -84,6 +100,8 @@ class App {
 
   private:
     void Send(const ddp::Writer& body);
+    void SilenceOutputs(uint32_t now_ms);  // CV OUT 0/0 and tone off, applied at once
+    void PumpScope();
 
     Board& board_;
     UsbSink& usb_;
@@ -99,15 +117,21 @@ class App {
     uint32_t last_sys_ms_;
     uint32_t last_led_ms_;
     uint32_t last_stat_ms_;
+    uint32_t last_audio_ms_;
+    uint32_t last_tone_ms_ = 0;
     uint32_t last_ticks_ = 0;
     uint16_t last_leds_ = 0;
     uint8_t last_brightness_ = 0;
     bool leds_dirty_ = true;
     uint16_t last_cv_[kNumCv] = {};
     bool cv_applied_ = false;
+    bool tone_applied_ = false;
+    ToneSettings last_tone_;  // what the callback currently has
     bool keepalive_after_block_ = false;
     bool boot_pending_ = false;
     uint32_t boot_since_ = 0;
+    bool scope_active_ = false;   // capture armed or chunks still to send
+    uint16_t scope_next_chunk_ = 0;
     bootloader::KeyCombo boot_keys_;  // S9+S16 for 5 s, as in every app
 };
 

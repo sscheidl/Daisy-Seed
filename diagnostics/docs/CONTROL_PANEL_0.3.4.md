@@ -1,8 +1,38 @@
-# Diagnostic App 0.3.4/0.3.5: Control Panel in Kategorien, Review-Korrekturen
+# Diagnostic App 0.3.4–0.4.0: Control Panel in Kategorien, Review-Korrekturen, Audio
 
-Die Firmware bleibt bei 0.3.2; die DDP-Version ist unverändert. App 0.3.4 löst den
-Reviewkandidaten 0.3.3 ab und setzt die Host-/GUI-Befunde des unabhängigen
-Meilenstein-Reviews ([Auftrag](CLAUDE_MILESTONE_REVIEW.md)) um.
+App 0.3.4 löst den Reviewkandidaten 0.3.3 ab und setzt die Host-/GUI-Befunde des
+unabhängigen Meilenstein-Reviews ([Auftrag](CLAUDE_MILESTONE_REVIEW.md)) um; 0.3.5
+ergänzt die Buchsenringe, 0.4.0 den Reiter **Audio** zur gleichnamigen
+Firmware-Erweiterung.
+
+## 0.4.0: Audio-Reiter, CV-Verlauf, POTDIM (01.11.2026)
+
+Gehört zu Firmware 0.4.0 ([FIRMWARE.md](FIRMWARE.md), [PROTOCOL.md](../protocol/PROTOCOL.md)):
+
+- **Audio-Reiter:** vier Spitzenwertanzeigen (IN L/R, OUT L/R) in dBFS mit
+  Peak-Hold, Testtongenerator (Sinus, Frequenz, Pegel −40…−6 dBFS, Kanalwahl; die
+  Firmware deckelt bei −6 dBFS), Eingangs-Schnappschuss mit 256–2048 Frames,
+  Flankentrigger, Zeitbild beider Kanäle und Messwerten (Frequenz aus
+  Nulldurchgängen, Spitzenpegel). Mit Kabel AUDIO OUT → AUDIO IN ist das der
+  Audio-Loopback-Test. Ohne `audio` in den Fähigkeiten (Firmware < 0.4.0) bleiben
+  die Bedienelemente gesperrt und der Grund steht im Reiter.
+- **CV / Gate:** laufender Verlauf der letzten 10 s (CV IN 1/2, CV-OUT-1-Echo
+  gestrichelt, Gates als Bänder) aus den Stream-Rahmen; Abtastung 50–100 Hz,
+  kein Audio-Oszilloskop.
+- **Buttons:** LED-Modus „VR1 dims" (POTDIM) als Handtest für Poti und LED-PWM.
+- **Simulation:** Schalter „Patch cables AUDIO OUT → AUDIO IN" und „Noise on the
+  audio inputs" für den Loopback ohne Hardware; der simulierte Eingang ist eine
+  Annahme, kein Codec-Modell.
+- **Sicherheit:** Der Ton braucht eine Sitzung, endet mit ihr, wird vor einem
+  blockierenden SD-Test ausgeschaltet und verstummt im Audio-Callback von selbst,
+  wenn die Hauptschleife ihn 1 s lang nicht mehr bestätigt. Pegel sind digitale
+  Vollaussteuerung, keine Volt; Codec-, Buchsen- und Kopfhörerpegel sind
+  **NICHT GEMESSEN**.
+- Kein Spektrum (bewusst weggelassen).
+
+Prüfung 0.4.0: Host-Tests C++ (MSVC und clang) und Python gegen den Simulator,
+ARM-Build beider Varianten; keine Hardware. Das 0.4.0-Image muss der Mensch
+flashen und abnehmen.
 
 ## 0.3.5: Buchsenringe für CV und Gate (01.11.2026)
 

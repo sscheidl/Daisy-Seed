@@ -1,5 +1,38 @@
 # Diagnostic firmware — configuration, dependencies, architecture
 
+## Version 0.4.0
+
+Audio extension and two review fixes; both image variants, DDP stays `proto=1`
+with the new capability `audio` ([PROTOCOL.md](../protocol/PROTOCOL.md)).
+
+* **Test tone** (`TONE`): sine 20–20000 Hz on AUDIO OUT left/right/both, amplitude
+  capped at 0.5 FS (≈ −6 dBFS), default 0.1 FS. Generated in the audio callback with
+  a phase accumulator (`sinf`, no allocation, no blocking). The tone needs a host
+  session and ends with it; additionally the callback mutes it when the main loop
+  has not refreshed its deadline for 1 s (`App::kToneKeepAliveMs`), so a blocked
+  main loop or a dead host cannot leave a tone on.
+* **Peak meters** (`AU`, 10 Hz): per-channel peak |sample| of the inputs and of the
+  written outputs since the previous frame, collected in the callback with
+  single-writer atomics and reset by the main loop.
+* **Input snapshot** (`SCOPE`/`SC`): 256–2048 stereo input frames captured by the
+  callback into a DTCM buffer (no DMA), optionally starting at a rising zero
+  crossing of the left input (200 ms timeout), then sent as 40-frame hex chunks,
+  at most three per main-loop step and only when the TX queue has room, so ST/SYS
+  keep flowing. One capture at a time; dropped when the session ends.
+* **LED mode `POTDIM`**: all LEDs on, brightness from VR1; `ST br` reports the
+  effective value.
+* **Review fixes:** CV OUT and the tone are switched off *before* a blocking SD test
+  or card-reader initialisation (`App::SilenceOutputs`), and the post-block
+  keep-alive is granted only when host bytes actually arrived during the block
+  (review F3b). `RoStatus` answers from the HAL handle state when the controller is
+  not READY, so FatFs' status query after a reset abort no longer sends CMD13 to
+  the unpowered SDMMC (review F1).
+
+Not changed: the unbounded `HAL_SD_Init` wait (review F2) and the host-side
+PONG liveness gap (review H1) remain open. Audio levels are digital full-scale
+values; codec, jack and headphone-amplifier levels are **NICHT GEMESSEN** until a
+hardware run with the 0.4.0 image.
+
 ## Version 0.3.2
 
 Software correction following the independent PR #70 review. `reader_abort.h`

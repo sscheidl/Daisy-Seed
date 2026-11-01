@@ -103,8 +103,9 @@ Use `--help` for the English command-line reference.
 
 The right-hand panel is split into categories: **USB** (connection, versions,
 transport statistics, firmware update mode), **Buttons** (S1–S16 and LEDs D1–D16),
-**Pots** (VR1–VR8, toggles, plug and card detection), **CV / Gate**, **SD card**
-and **Log** (plus **Simulation** in simulation mode). Tab tooltips list the
+**Pots** (VR1–VR8, toggles, plug and card detection), **CV / Gate** (with a rolling
+10 s trace), **Audio** (peak meters, test tone, input snapshot; firmware 0.4.0),
+**SD card** and **Log** (plus **Simulation** in simulation mode). Tab tooltips list the
 contents; **Save diagnostic report …** is reachable from every tab.
 
 ### Buttons and LEDs

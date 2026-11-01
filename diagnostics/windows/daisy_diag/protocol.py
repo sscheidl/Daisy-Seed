@@ -4,6 +4,7 @@ Specification: protocol/PROTOCOL.md. Mirrors protocol/ddp.cpp.
 """
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass, field
 
@@ -12,11 +13,21 @@ MAX_BODY = 400
 NUM_BUTTONS = 16
 NUM_LEDS = 16
 NUM_POTS = 8
-LED_MODES = ("OFF", "ON", "MASK", "CHASE", "FOLLOW")
+LED_MODES = ("OFF", "ON", "MASK", "CHASE", "FOLLOW", "POTDIM")
 CV_OUT_MODES = ("OFF", "FIX", "RAMP", "SAW")
 NUM_CV = 2
 NUM_GATES = 2
+NUM_AUDIO = 2
 DAC_MAX = 4095
+# Audio extension (firmware 0.4.0, capability "audio").
+TONE_MODES = ("OFF", "SINE")
+TONE_CHANNELS = ("L", "R", "LR")
+TONE_MIN_HZ, TONE_MAX_HZ = 20, 20000
+TONE_MAX_AMPLITUDE = 5000  # 1/10000 of full scale, about -6 dBFS
+TONE_DEFAULT_AMPLITUDE = 1000
+SCOPE_MIN_FRAMES, SCOPE_MAX_FRAMES, SCOPE_DEFAULT_FRAMES = 256, 2048, 1024
+SCOPE_CHUNK_FRAMES = 40
+AUDIO_SAMPLE_RATE = 48000
 USB_VID = 0x0483
 USB_PID = 0x5740
 
@@ -523,3 +534,119 @@ def cmd_cvout(mode: str, code1: int | None = None, code2: int | None = None,
 
 def cmd_rate(hz: int) -> str:
     return f"RATE hz={max(10, min(100, int(hz)))}"
+
+
+def cmd_tone(mode: str, freq_hz: int | None = None, amplitude: int | None = None,
+             channels: str | None = None) -> str:
+    if mode not in TONE_MODES:
+        raise ValueError(f"unknown tone mode {mode!r}")
+    if channels is not None and channels not in TONE_CHANNELS:
+        raise ValueError(f"unknown tone channels {channels!r}")
+    body = f"TONE m={mode}"
+    if freq_hz is not None:
+        body += f" f={max(TONE_MIN_HZ, min(TONE_MAX_HZ, int(freq_hz)))}"
+    if amplitude is not None:
+        body += f" a={max(0, min(TONE_MAX_AMPLITUDE, int(amplitude)))}"
+    if channels is not None:
+        body += f" ch={channels}"
+    return body
+
+
+def cmd_scope(frames: int | None = None, trigger: bool | None = None) -> str:
+    body = "SCOPE"
+    if frames is not None:
+        body += f" n={max(SCOPE_MIN_FRAMES, min(SCOPE_MAX_FRAMES, int(frames)))}"
+    if trigger is not None:
+        body += f" t={1 if trigger else 0}"
+    return body
+
+
+# ---- Audio extension: AU levels and SC snapshot chunks -----------------------------
+
+@dataclass
+class AudioLevels:
+    """Peak levels since the previous AU frame, 0.0..1.0 of digital full scale."""
+    inputs: list[float]
+    outputs: list[float]
+    tone_mode: str
+    tone_freq_hz: int
+    tone_amplitude: int  # 1/10000 FS
+    tone_channels: str
+
+    @staticmethod
+    def dbfs(level: float) -> float | None:
+        """Peak in dBFS, or None for digital silence."""
+        if level <= 0.0:
+            return None
+        return 20.0 * math.log10(level)
+
+
+def parse_audio(msg: Message) -> AudioLevels:
+    if msg.type != "AU":
+        raise ProtocolError(f"expected AU, got {msg.type}")
+    levels = [msg.int(key, 0, 10000) / 10000.0 for key in ("il", "ir", "ol", "or")]
+    tone = msg.get("tone", "").split(",")
+    if (len(tone) != 4 or tone[0] not in TONE_MODES or not _DEC.fullmatch(tone[1])
+            or not _DEC.fullmatch(tone[2]) or tone[3] not in TONE_CHANNELS):
+        raise ProtocolError("AU: field 'tone' invalid")
+    freq, amplitude = int(tone[1]), int(tone[2])
+    if not TONE_MIN_HZ <= freq <= TONE_MAX_HZ or amplitude > TONE_MAX_AMPLITUDE:
+        raise ProtocolError("AU: tone frequency or amplitude out of range")
+    return AudioLevels(inputs=levels[:2], outputs=levels[2:], tone_mode=tone[0],
+                       tone_freq_hz=freq, tone_amplitude=amplitude, tone_channels=tone[3])
+
+
+@dataclass
+class ScopeChunk:
+    index: int
+    chunks: int
+    frames: int
+    samples: list[tuple[int, int]]  # (left, right) int16 per stereo frame
+
+
+_HEX_RUN = re.compile(r"(?:[0-9A-Fa-f]{8})*")
+
+
+def parse_scope_chunk(msg: Message) -> ScopeChunk:
+    if msg.type != "SC":
+        raise ProtocolError(f"expected SC, got {msg.type}")
+    index = msg.int("i", 0, 65535)
+    chunks = msg.int("k", 1, 65535)
+    frames = msg.int("n", SCOPE_MIN_FRAMES, SCOPE_MAX_FRAMES)
+    data = msg.get("d", "")
+    if index >= chunks or not _HEX_RUN.fullmatch(data):
+        raise ProtocolError("SC: invalid chunk index or sample data")
+    first = index * SCOPE_CHUNK_FRAMES
+    expected = max(0, min(SCOPE_CHUNK_FRAMES, frames - first))
+    if len(data) != expected * 8 or (chunks - 1) * SCOPE_CHUNK_FRAMES >= frames:
+        raise ProtocolError("SC: sample count does not match n/i/k")
+
+    def s16(text: str) -> int:
+        value = int(text, 16)
+        return value - 65536 if value >= 32768 else value
+
+    samples = [(s16(data[k:k + 4]), s16(data[k + 4:k + 8])) for k in range(0, len(data), 8)]
+    return ScopeChunk(index=index, chunks=chunks, frames=frames, samples=samples)
+
+
+class ScopeAssembler:
+    """Collects SC chunks of one capture; complete() returns the full stereo capture."""
+
+    def __init__(self) -> None:
+        self.reset()
+
+    def reset(self) -> None:
+        self.frames = 0
+        self.chunks = 0
+        self._parts: dict[int, list[tuple[int, int]]] = {}
+
+    def add(self, chunk: ScopeChunk) -> list[tuple[int, int]] | None:
+        if chunk.index == 0 or chunk.frames != self.frames or chunk.chunks != self.chunks:
+            self.reset()
+            self.frames, self.chunks = chunk.frames, chunk.chunks
+        self._parts[chunk.index] = chunk.samples
+        if len(self._parts) < self.chunks:
+            return None
+        capture = [sample for i in range(self.chunks) for sample in self._parts[i]]
+        self.reset()
+        return capture if len(capture) == chunk.frames else None

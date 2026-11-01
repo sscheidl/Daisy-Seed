@@ -47,9 +47,11 @@ class SimulatedInputs:
 class SimulatedDevice:
     """Device side of DDP v1, modelled after firmware/src."""
 
-    def __init__(self, protocol_version: int = p.PROTOCOL_VERSION, reader_supported: bool = True) -> None:
+    def __init__(self, protocol_version: int = p.PROTOCOL_VERSION, reader_supported: bool = True,
+                 audio_supported: bool = True) -> None:
         self.protocol_version = protocol_version
         self.reader_supported = reader_supported
+        self.audio_supported = audio_supported  # False models firmware before 0.4.0
         self.reader_state = "LOCAL"
         self.in_bootloader = False  # BOOT accepted: the firmware has reset into the bootloader
         self.bootloader_entries = 0
@@ -70,6 +72,16 @@ class SimulatedDevice:
         # Simulated patch cables CV OUT n -> CV IN n. Code 0..4095 is shown as CV IN
         # 0.0..+1.0; this is a simulation assumption, not the hardware's scaling.
         self.cv_patched = False
+        # Audio extension (0.4.0): test tone, peak meters, snapshot capture. With
+        # `audio_patched` the tone is fed back to both inputs (simulation assumption).
+        self.tone_mode = "OFF"
+        self.tone_freq_hz = 1000
+        self.tone_amplitude = p.TONE_DEFAULT_AMPLITUDE
+        self.tone_channels = "LR"
+        self.audio_patched = False
+        self.input_noise = 0.0  # peak of a pseudo-random input signal, 0.0..1.0
+        self._last_audio = -1e9
+        self._scope_pending: tuple[int, bool] | None = None  # (frames, trigger)
         self.rate_hz = 50
         self.responsive = True  # False: behaves like a hung firmware (no output)
         self.corrupt_next_frame = False
@@ -199,11 +211,13 @@ class SimulatedDevice:
         if self._streaming and now - self._last_rx >= HOST_TIMEOUT_S:
             self._streaming = False  # only a new HELLO restarts the stream
             self.cv_mode = "OFF"  # as in the firmware: no voltage without a session
+            self.tone_mode = "OFF"
+            self._scope_pending = None
 
     def computed_leds(self, now: float) -> int:
         if self.led_mode == "OFF":
             return 0
-        if self.led_mode == "ON":
+        if self.led_mode in ("ON", "POTDIM"):
             return 0xFFFF
         if self.led_mode == "MASK":
             return self.led_mask
@@ -211,6 +225,105 @@ class SimulatedDevice:
             elapsed_ms = int(self._uptime(now) * 1000)
             return 1 << (elapsed_ms // self.chase_ms % p.NUM_LEDS)
         return sum(1 << i for i, b in enumerate(self.inputs.buttons) if b)
+
+    def effective_brightness(self) -> int:
+        """LED brightness in percent: the setting, or VR1 in POTDIM (diag::LedBrightness)."""
+        if self.led_mode != "POTDIM":
+            return self.led_brightness
+        return min(100, (p.pot_to_int(self.inputs.pots[0]) + 50) // 100)
+
+    # ---- audio extension --------------------------------------------------------
+    def tone_sample(self, index: int) -> float:
+        import math
+        if self.tone_mode != "SINE":
+            return 0.0
+        return (self.tone_amplitude / 10000.0) * math.sin(
+            2.0 * math.pi * self.tone_freq_hz * index / p.AUDIO_SAMPLE_RATE)
+
+    def input_sample(self, channel: int, index: int) -> float:
+        """Simulated input: the patched-back tone plus deterministic pseudo noise."""
+        value = self.tone_sample(index) if self.audio_patched and (
+            self.tone_channels == "LR" or self.tone_channels == ("L", "R")[channel]) else 0.0
+        if self.input_noise > 0.0:
+            # Deterministic, cheap pseudo-random sequence (no RNG state to keep).
+            h = (index * 2654435761 + channel * 40503) & 0xFFFFFFFF
+            value += self.input_noise * ((h >> 8) / float(1 << 24) * 2.0 - 1.0)
+        return max(-1.0, min(1.0, value))
+
+    def audio_levels(self) -> p.AudioLevels:
+        out = (self.tone_amplitude / 10000.0) if self.tone_mode == "SINE" else 0.0
+        outs = [out if self.tone_channels in ("L", "LR") else 0.0,
+                out if self.tone_channels in ("R", "LR") else 0.0]
+        ins = [min(1.0, max(abs(self.input_sample(ch, i)) for i in range(0, 480, 7)))
+               for ch in range(p.NUM_AUDIO)]
+        return p.AudioLevels(inputs=ins, outputs=outs, tone_mode=self.tone_mode,
+                             tone_freq_hz=self.tone_freq_hz, tone_amplitude=self.tone_amplitude,
+                             tone_channels=self.tone_channels)
+
+    def _send_audio(self) -> None:
+        a = self.audio_levels()
+        self._send(f"AU il={p.pot_to_int(a.inputs[0])} ir={p.pot_to_int(a.inputs[1])} "
+                   f"ol={p.pot_to_int(a.outputs[0])} or={p.pot_to_int(a.outputs[1])} "
+                   f"tone={a.tone_mode},{a.tone_freq_hz},{a.tone_amplitude},{a.tone_channels}")
+
+    def _send_scope(self, frames: int, trigger: bool) -> None:
+        """The whole capture at once; the firmware spreads the chunks over a few steps."""
+        start = 0
+        if trigger:  # rising zero crossing of the left input, like the firmware
+            prev = self.input_sample(0, 0)
+            for i in range(1, 480):
+                cur = self.input_sample(0, i)
+                if prev < 0.0 <= cur:
+                    start = i
+                    break
+                prev = cur
+        chunks = (frames + p.SCOPE_CHUNK_FRAMES - 1) // p.SCOPE_CHUNK_FRAMES
+        for k in range(chunks):
+            parts = []
+            for f in range(k * p.SCOPE_CHUNK_FRAMES, min(frames, (k + 1) * p.SCOPE_CHUNK_FRAMES)):
+                for ch in range(p.NUM_AUDIO):
+                    v = int(round(self.input_sample(ch, start + f) * 32767.0))
+                    parts.append(f"{max(-32768, min(32767, v)) & 0xFFFF:04X}")
+            self._send(f"SC i={k} k={chunks} n={frames} d={''.join(parts)}")
+
+    def _handle_tone(self, msg: p.Message) -> None:
+        mode = msg.get("m")
+        try:
+            if mode not in p.TONE_MODES:
+                raise ValueError
+            f = self._opt_int(msg, "f", self.tone_freq_hz, p.TONE_MIN_HZ, p.TONE_MAX_HZ)
+            a = self._opt_int(msg, "a", self.tone_amplitude, 0, p.TONE_MAX_AMPLITUDE)
+            ch = msg.get("ch", self.tone_channels)
+            if ch not in p.TONE_CHANNELS:
+                raise ValueError
+        except ValueError:
+            self._send("ERR c=TONE e=ARG")
+            return
+        self.tone_mode, self.tone_freq_hz, self.tone_amplitude, self.tone_channels = mode, f, a, ch
+        self._send(f"ACK c=TONE m={mode} f={f} a={a} ch={ch}")
+
+    def _handle_scope(self, msg: p.Message) -> None:
+        try:
+            n = self._opt_int(msg, "n", p.SCOPE_DEFAULT_FRAMES, p.SCOPE_MIN_FRAMES, p.SCOPE_MAX_FRAMES)
+            t = self._opt_int(msg, "t", 1, 0, 1)
+        except ValueError:
+            self._send("ERR c=SCOPE e=ARG")
+            return
+        if self._scope_pending is not None:
+            self._send("ERR c=SCOPE e=BUSY")
+            return
+        chunks = (n + p.SCOPE_CHUNK_FRAMES - 1) // p.SCOPE_CHUNK_FRAMES
+        self._scope_pending = (n, t == 1)
+        self._send(f"ACK c=SCOPE n={n} t={t} k={chunks}")
+
+    @staticmethod
+    def _opt_int(msg: p.Message, key: str, default: int, low: int, high: int) -> int:
+        raw = msg.get(key)
+        if raw is None:
+            return default
+        if not raw.isdigit() or not low <= int(raw) <= high:  # firmware: digits only
+            raise ValueError
+        return int(raw)
 
     def _handle(self, body: str, now: float) -> None:
         self._expire(now)
@@ -227,11 +340,16 @@ class SimulatedDevice:
                 self._streaming = True
                 self._last_sent = None
                 self._send(
-                    f"HELLO proto={self.protocol_version} fw=0.3.2-sim app=DaisyDiagnostic "
+                    f"HELLO proto={self.protocol_version} "
+                    f"fw={'0.4.0' if self.audio_supported else '0.3.2'}-sim app=DaisyDiagnostic "
                     "dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 "
                     "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout"
+                    + (",audio" if self.audio_supported else "")
                     + (",sdmsc" if self.reader_supported else "") + " sim=1")
                 self._send_state(now)
+                if self.audio_supported:
+                    self._send_audio()
+                    self._last_audio = now
         elif t == "PING":
             n = msg.get("n")
             self._send(f"PONG n={n}" if n and n.isdigit() else f"ERR c={t} e=ARG")
@@ -248,6 +366,18 @@ class SimulatedDevice:
             self._handle_led(msg)
         elif t == "CVOUT":
             self._handle_cvout(msg)
+        elif t in ("TONE", "SCOPE") and not self.audio_supported:
+            self._send(f"ERR c={t} e=UNKNOWN")  # older firmware has no such command
+        elif t == "TONE":
+            if not self._streaming:
+                self._send("ERR c=TONE e=SESSION")
+            else:
+                self._handle_tone(msg)
+        elif t == "SCOPE":
+            if not self._streaming:
+                self._send("ERR c=SCOPE e=SESSION")
+            else:
+                self._handle_scope(msg)
         elif t == "SDTEST":
             if self.reader_state != "LOCAL":
                 self._send("ERR c=SDTEST e=BUSY")
@@ -255,6 +385,8 @@ class SimulatedDevice:
             if self.inputs.sd_card:
                 self._busy_until = now + self.sd_test_duration
                 self._keepalive_after_block = True
+            self.cv_mode = "OFF"  # firmware 0.4.0 silences outputs before it blocks
+            self.tone_mode = "OFF"
             self._send(self._sd_result())
         elif t == "READER":
             action = msg.get("a")
@@ -294,6 +426,8 @@ class SimulatedDevice:
         elif t == "BYE":
             self._streaming = False
             self.cv_mode = "OFF"
+            self.tone_mode = "OFF"
+            self._scope_pending = None
             self._send("ACK c=BYE")
         else:
             self._send(f"ERR c={t[:12]} e=UNKNOWN")
@@ -380,7 +514,7 @@ class SimulatedDevice:
             jack_right=self.inputs.jack_right,
             led_mode=self.led_mode,
             leds=[bool(leds >> i & 1) for i in range(p.NUM_LEDS)],
-            led_brightness=self.led_brightness,
+            led_brightness=self.effective_brightness(),
             cvgate=self._cvgate(now),
         )
 
@@ -427,6 +561,13 @@ class SimulatedDevice:
         if now - self._last_sys >= 1.0 - 1e-6:
             self._send_sys(now)
             self._send_reader()
+        if self.audio_supported and now - self._last_audio >= 0.1 - 1e-6:
+            self._send_audio()
+            self._last_audio = now
+        if self._scope_pending is not None:
+            frames, trigger = self._scope_pending
+            self._scope_pending = None
+            self._send_scope(frames, trigger)
 
 
 class SimulatedLink:
