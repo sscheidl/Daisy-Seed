@@ -17,6 +17,19 @@
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
 extern "C" PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
+// USB identity of the composite. Defaults are the Diagnostics card reader's values;
+// another firmware (Nebulae SD management) overrides them with -D so that Windows
+// keeps a separate device instance per firmware.
+#ifndef READER_USB_PRODUCT
+#define READER_USB_PRODUCT "Daisy diagnostics + SD reader"
+#endif
+#ifndef READER_USB_BCD_MAJOR
+#define READER_USB_BCD_MAJOR 3
+#endif
+#ifndef READER_USB_SERIAL_SUFFIX
+#define READER_USB_SERIAL_SUFFIX 'A'
+#endif
+
 namespace {
 constexpr uint8_t kOut = 3, kIn = 0x83;
 struct UsbGuard {
@@ -61,19 +74,19 @@ uint8_t* Device(USBD_SpeedTypeDef speed, uint16_t* n) {
     uint8_t* original = HS_Desc.GetDeviceDescriptor(speed, n);
     std::memcpy(device, original, sizeof(device));
     device[4] = 0xef; device[5] = 2; device[6] = 1;  // IAD composite device
-    device[12] = 0; device[13] = 3;  // bcdDevice 3.00, separate Windows instance
+    device[12] = 0; device[13] = READER_USB_BCD_MAJOR;  // bcdDevice x.00, separate Windows instance
     return device;
 }
 uint8_t* Serial(USBD_SpeedTypeDef speed, uint16_t* n) {
     uint8_t* original = HS_Desc.GetSerialStrDescriptor(speed, n);
     std::memcpy(serial, original, 26);
-    serial[0] = sizeof(serial); serial[26] = 'A'; serial[27] = 0;
+    serial[0] = sizeof(serial); serial[26] = READER_USB_SERIAL_SUFFIX; serial[27] = 0;
     serial[28] = '1'; serial[29] = 0; *n = sizeof(serial); // MSC serial stays hexadecimal
     return serial;
 }
 uint8_t* Product(USBD_SpeedTypeDef, uint16_t* n) {
     static uint8_t text[100];
-    USBD_GetString(reinterpret_cast<uint8_t*>(const_cast<char*>("Daisy diagnostics + SD reader")), text, n);
+    USBD_GetString(reinterpret_cast<uint8_t*>(const_cast<char*>(READER_USB_PRODUCT)), text, n);
     return text;
 }
 bool CanSubmit() {
