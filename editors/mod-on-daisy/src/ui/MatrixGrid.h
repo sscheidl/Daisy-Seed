@@ -70,7 +70,7 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         if(painted_stale_) {
             g.setColour(colour::warn);
             g.setFont(juce::FontOptions(11.5f));
-            g.drawFittedText(U(session_.LinkHealth() == Health::NoReplies ? "keine Antwort vom Gerät" : "keine Live-Daten"),
+            g.drawFittedText(U(session_.LinkHealth() == Health::NoReplies ? "no answer from the device" : "no live data"),
                              corner, juce::Justification::bottomLeft, 2);
         } else if(session_.Connected()) {
             PaintAftertouch(g, corner);
@@ -157,16 +157,16 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
             const int s = juce::jlimit(0, int(mod::kSources) - 1, (p.y - kColHeader) * int(mod::kSources)
                                                                      / std::max(1, getHeight() - kColHeader));
             switch(SourceMeter(s)) {
-                case Meter::Idle: return U("Keine aktive Verbindung: die Quelle wird nicht berechnet, die Anzeige ruht.");
-                case Meter::Fast: return U("Schneller als die Live-Anzeige (20 Bilder/s): Band statt Wert. Diese "
-                                           "Firmware meldet den durchlaufenen Bereich nicht.");
-                case Meter::Stale: return U("Keine Live-Daten vom Gerät. Ist der Port von einer anderen Anwendung belegt?");
+                case Meter::Idle: return U("No active connection: the source is not computed, the display rests.");
+                case Meter::Fast: return U("Faster than the live display (20 frames/s): band instead of value. This "
+                                           "firmware does not report the range it passed through.");
+                case Meter::Stale: return U("No live data from the device. Is the port held by another application?");
                 case Meter::Live: break;
             }
             juce::String tip = U(kSourceNames[s]) + ": " + juce::String(monitor_.source[s], 2);
             if(monitor_.has_range)
-                tip << U(" (Bereich der letzten 50 ms ") << juce::String(monitor_.min[s], 2) << U(" … ")
-                    << juce::String(monitor_.max[s], 2) << U(": Band; Strich: aktueller Wert)");
+                tip << U(" (range of the last 50 ms ") << juce::String(monitor_.min[s], 2) << U(" … ")
+                    << juce::String(monitor_.max[s], 2) << U(": band; line: current value)");
             if(s <= mod::Random && model_.SourceParam(s, mod::ParamSync) != mod::Free)
                 tip << "\n" << U(ClockText(s));
             return tip;
@@ -178,26 +178,26 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
                                                                      / std::max(1, getWidth() - kRowHeader));
             const Column& col = model_.columns[std::size_t(t)];
             if(!col.present)
-                return U("Das Instrument hat hier kein Ziel.");
-            juce::String tip = U(col.name) + U(": Tiefe 100 = ") + U(col.SpanLabel());
+                return U("The instrument has no target here.");
+            juce::String tip = U(col.name) + U(": depth 100 = ") + U(col.SpanLabel());
             const GoalSpan span = GoalSpanOf(model_, monitor_, std::size_t(t));
             if(has_monitor_ && span.has_base) {
-                tip << U("\nGrundwert ") << juce::String(monitor_.base[t], 2)
-                    << U(" (weißer Strich: Poti, CC oder fester Wert des Instruments, vor der Modulation)")
-                    << U("\nSollwert jetzt ") << juce::String(monitor_.Result(std::size_t(t)), 2) << U(", Bereich ")
+                tip << U("\nBase value ") << juce::String(monitor_.base[t], 2)
+                    << U(" (white line: pot, CC or fixed value of the instrument, before modulation)")
+                    << U("\nTarget value now ") << juce::String(monitor_.Result(std::size_t(t)), 2) << U(", range ")
                     << juce::String(span.lo, 2) << U(" … ") << juce::String(span.hi, 2)
-                    << (span.clipped_low || span.clipped_high ? U(" (rote Enden: bei 0 bzw. 1 begrenzt)") : U(""));
+                    << (span.clipped_low || span.clipped_high ? U(" (red ends: limited at 0 or 1)") : U(""));
             } else if(has_monitor_) {
-                tip << U("\nGlobaler Offset ") << juce::String(monitor_.offset[t], 2)
-                    << U(" (das Instrument meldet keinen Grundwert)");
+                tip << U("\nGlobal offset ") << juce::String(monitor_.offset[t], 2)
+                    << U(" (the instrument reports no base value)");
             }
             if(has_monitor_)
-                tip << U("\nSollwert vor der Glättung im Instrument, nur der globale Anteil.");
+                tip << U("\nTarget value before the smoothing in the instrument, global part only.");
             if(span.voice_part)
-                tip << U(" Poly AT wirkt hier zusätzlich pro Stimme und ist nicht enthalten.");
+                tip << U(" Poly AT also acts per voice here and is not included.");
             if(col.latched)
-                tip << U("\nWird beim Anschlag übernommen: Änderungen wirken ab der nächsten Note, klingende Noten "
-                         "bleiben, wie sie angeschlagen wurden.");
+                tip << U("\nTaken over at note-on: changes act from the next note on, sounding notes "
+                         "stay as they were played.");
             return tip;
         }
         if(cell == kNoCell)
@@ -206,9 +206,9 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
             return U(model_.BlockedReason(cell));
         const Column& col = model_.columns[std::size_t(TargetOf(cell))];
         juce::String tip = U(kSourceNames[SourceOf(cell)]) + U(" → ") + U(col.name) + ": "
-            + juce::String(model_.Depth(cell)) + (model_.Enabled(cell) ? "" : " (aus)");
+            + juce::String(model_.Depth(cell)) + (model_.Enabled(cell) ? "" : " (off)");
         if(SourceOf(cell) == mod::PolyAt)
-            tip << U(col.per_voice ? " · Poly AT pro Stimme" : " · Poly AT der zuletzt gespielten Note");
+            tip << U(col.per_voice ? " · Poly AT per voice" : " · Poly AT of the last played note");
         return tip;
     }
 
@@ -225,9 +225,9 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         // With a reported base value the header shows where the pot/CC stands; the span
         // (what depth 100 means) moves to the tooltip.
         const bool live = col.present && has_monitor_ && monitor_.HasBase(std::size_t(t));
-        const juce::String span = !col.present ? U("nicht vorhanden")
+        const juce::String span = !col.present ? U("not present")
                                                : (live ? U(col.ValueLabel(monitor_.base[t])) : U(col.SpanLabel()))
-                                                     + (col.latched ? U(" · Anschlag") : U(""));
+                                                     + (col.latched ? U(" · note-on") : U(""));
         g.drawText(span, r.removeFromTop(16), juce::Justification::centred);
         if(col.present && has_monitor_ && monitor_.HasBase(std::size_t(t)) && monitor_.has_range) {
             const GoalSpan goal = GoalSpanOf(model_, monitor_, std::size_t(t));
@@ -264,7 +264,7 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
            && model_.SourceParam(s, mod::ParamSync) != mod::Free && !ClockRunning(s)) {
             g.setColour(colour::warn);
             g.setFont(juce::FontOptions(10.5f));
-            g.drawText(U("kein Takt"), juce::Rectangle<int>(0, int(bar.getBottom()), kRowHeader - 10, 12),
+            g.drawText(U("no clock"), juce::Rectangle<int>(0, int(bar.getBottom()), kRowHeader - 10, 12),
                        juce::Justification::centredLeft);
         }
     }
@@ -283,8 +283,8 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         g.setColour(colour::muted);
         const bool known = has_monitor_ && monitor_.has_range;
         const int kind = ShownAftertouch();
-        juce::String detail = !known ? U("Kanal/Poly getrennt") : kind == 0 ? U("—")
-            : kind == 1 ? U("Kanal")
+        juce::String detail = !known ? U("channel/poly separate") : kind == 0 ? U("—")
+            : kind == 1 ? U("Channel")
                         : U("Poly · ") + NoteName(monitor_.at_note);
         g.drawText(detail, line.withTrimmedLeft(66), juce::Justification::centredLeft);
         const bool fresh = known && kind != 0 && monitor_.at_age < 127;
@@ -299,15 +299,15 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
 
     std::string AftertouchTip() const {
         if(!has_monitor_ || !monitor_.has_range)
-            return "Aftertouch: Diese Firmware meldet nicht, welche Art zuletzt kam. Kanal-AT und Poly AT stehen "
-                   "getrennt in ihren Zeilen (eingeschränkte Anzeige).";
-        std::string tip = "Aftertouch folgt automatisch der zuletzt empfangenen Art (auch bei Wert 0). Kanal-AT und "
-                          "Poly AT bleiben technisch getrennte Zeilen; der Punkt markiert die angezeigte.";
+            return "Aftertouch: this firmware does not report which kind came last. Channel AT and Poly AT are "
+                   "shown separately in their rows (limited display).";
+        std::string tip = "Aftertouch follows the kind received last automatically (also at value 0). Channel AT and "
+                          "Poly AT stay technically separate rows; the dot marks the one shown.";
         if(monitor_.at_kind == 2)
-            tip += "\nPoly: zuletzt adressierte Note, solange sie gehalten wird. Globale Ziele nutzen weiter die "
-                   "zuletzt gespielte Note (Zeile Poly AT).";
+            tip += "\nPoly: the note addressed last, as long as it is held. Global targets keep using the "
+                   "last played note (row Poly AT).";
         if(monitor_.at_age == 127)
-            tip += "\nSeit über 2,5 s keine neue Aftertouch-Nachricht.";
+            tip += "\nNo new aftertouch message for more than 2.5 s.";
         return tip;
     }
 
@@ -317,10 +317,10 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
     }
     std::string ClockText(int s) const {
         if(!has_monitor_ || !monitor_.has_range)
-            return "Taktzustand unbekannt (Firmware ohne erweiterten Monitor).";
+            return "Clock state unknown (firmware without the extended monitor).";
         const bool midi = model_.SourceParam(s, mod::ParamSync) == mod::MidiClock;
-        return ClockRunning(s) ? (midi ? "MIDI-Clock läuft." : "Gate-Impulse kommen an.")
-                               : (midi ? "Kein MIDI-Clock: der LFO steht." : "Keine Gate-Impulse: der LFO steht.");
+        return ClockRunning(s) ? (midi ? "MIDI clock running." : "Gate pulses arriving.")
+                               : (midi ? "No MIDI clock: the LFO is stopped." : "No gate pulses: the LFO is stopped.");
     }
 
     Meter SourceMeter(int s) const {
@@ -391,9 +391,9 @@ class MatrixGrid : public juce::Component, public juce::TooltipClient {
         if(!model_.Allowed(cell))
             return;
         juce::PopupMenu m;
-        m.addItem(1, "Auf 0 setzen");
-        m.addItem(2, "Invertieren", model_.Depth(cell) != 0);
-        m.addItem(3, model_.Enabled(cell) ? "Ausschalten" : "Einschalten", model_.Depth(cell) != 0);
+        m.addItem(1, "Set to 0");
+        m.addItem(2, "Invert", model_.Depth(cell) != 0);
+        m.addItem(3, model_.Enabled(cell) ? "Switch off" : "Switch on", model_.Depth(cell) != 0);
         m.setLookAndFeel(&getLookAndFeel()); // the app's colours, not the platform default
         // At the mouse pointer, as context menus open everywhere else.
         m.showMenuAsync(juce::PopupMenu::Options().withMousePosition(),

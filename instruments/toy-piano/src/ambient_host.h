@@ -42,6 +42,9 @@ class AmbientHost {
     void SetModulated(float decay, float mix, float texture) {
         decay_ = decay; mix_ = mix; texture_ = texture;
     }
+    void SetReverbRate(float hz) {
+        if(rate_hz_ != hz) { rate_hz_ = hz; count_ = 0; }
+    }
     bool Process(const float* mono, float* left, float* right, std::size_t frames) {
         if(frames != kBlockSize || !mono || !left || !right || left == right) return false;
         if(count_ == 0) {
@@ -51,11 +54,12 @@ class AmbientHost {
             p.mode = modes[selected_];
             p.decaySeconds = std::pow(45.f, decay_);
             p.toneHz = 400.f * std::pow(35.f, knobs_[3]);
-            p.modDepthMs = 3.f * knobs_[4];
+            p.modDepthMs = ambient::ModDepthFromControl(knobs_[4]);
+            p.modRateHz = rate_hz_;
             // Without a Sustain button, Cloud X scales its vibrato contribution.
-            if(selected_ == 0) p.modDepthMs *= .5f + .5f * texture_;
-            p.texture = texture_;
-            p.riseSeconds = .05f * std::pow(80.f, texture_);
+            if(selected_ == 0) p.modDepthMs *= ambient::CloudDepthScaleFromControl(texture_);
+            p.texture = ambient::TextureFromControl(texture_);
+            p.riseSeconds = ambient::RiseFromControl(texture_);
             p.stretch = knobs_[7];
             effect_.SetParameters(p);
             count_ = 20;
@@ -93,6 +97,7 @@ class AmbientHost {
     std::array<float, kBlockSize> send_buffer_{};
     ambient::Ramp dry_{1.f, 1.f, 0.f, 0}, wet_{}, send_{1.f, 1.f, 0.f, 0};
     float pitch_ = .5f, decay_ = .5f, mix_ = 0, texture_ = .5f;
+    float rate_hz_ = .18f;
     unsigned count_ = 0, selected_ = 0, candidate_ = 0, stable_ = 0;
 };
 } // namespace toy_piano

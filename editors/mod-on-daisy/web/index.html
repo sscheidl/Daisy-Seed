@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -98,42 +98,42 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
 <body>
 <header>
   <h1>Mod on <span>Daisy</span></h1>
-  <label>Ausgang <select id="outPort"><option value="">–</option></select></label>
-  <label>Eingang <select id="inPort"><option value="">–</option></select></label>
-  <button id="connect" class="primary">Verbinden</button>
-  <button id="updateBtn" title="Startet das Kit im Daisy-Bootloader neu, ohne BOOT und RESET. Danach die Firmware mit dem Daisy Web Programmer oder make program-dfu laden.">Firmware-Update …</button>
+  <label>Output <select id="outPort"><option value="">–</option></select></label>
+  <label>Input <select id="inPort"><option value="">–</option></select></label>
+  <button id="connect" class="primary">Connect</button>
+  <button id="updateBtn" title="Restarts the kit into the Daisy bootloader, without BOOT and RESET. Then load the firmware with the Daisy Web Programmer or make program-dfu.">Firmware update …</button>
   <span id="status" class="pill">offline</span>
-  <button id="swViewBtn" hidden title="Streichwurst: Klangparameter (SQ) und Modulationsmatrix (Mod on Daisy) desselben Geräts">Matrix</button>
+  <button id="swViewBtn" hidden title="Streichwurst: sound parameters (SQ) and modulation matrix (Mod on Daisy) of the same device">Matrix</button>
   <span id="mode" class="pill" hidden></span>
 </header>
 <main id="mdMain">
   <section class="card">
-    <h2>Modulationsmatrix</h2>
-    <div class="gridwrap"><table class="grid" id="grid" tabindex="0" aria-label="Modulationsmatrix 8 × 8"></table></div>
-    <div class="count">Aktive Verbindungen: <b id="active">0</b> / <span id="maxActive">8</span></div>
-    <p class="hint">Zelle wählen · senkrecht ziehen ändert die Tiefe (mit <kbd>Shift</kbd> fein) · Mausrad ±1 (<kbd>Shift</kbd> ±10) · Doppelklick ein/aus · Tastatur: Pfeile, <kbd>+</kbd>/<kbd>−</kbd>, <kbd>Bild↑</kbd>/<kbd>Bild↓</kbd> ±10, <kbd>0</kbd>, <kbd>Leertaste</kbd></p>
+    <h2>Modulation matrix</h2>
+    <div class="gridwrap"><table class="grid" id="grid" tabindex="0" aria-label="Modulation matrix 8 × 8"></table></div>
+    <div class="count">Active connections: <b id="active">0</b> / <span id="maxActive">8</span></div>
+    <p class="hint">Select a cell · drag vertically to change the depth (<kbd>Shift</kbd> fine) · mouse wheel ±1 (<kbd>Shift</kbd> ±10) · double-click on/off · keyboard: arrows, <kbd>+</kbd>/<kbd>−</kbd>, <kbd>Page↑</kbd>/<kbd>Page↓</kbd> ±10, <kbd>0</kbd>, <kbd>Space</kbd></p>
   </section>
   <aside class="card editor">
-    <h2>Verbindung</h2>
+    <h2>Connection</h2>
     <div class="route" id="route">–</div>
     <div class="row"><input type="range" id="depthRange" min="-100" max="100" step="1" value="0" disabled>
       <input type="number" id="depthNum" min="-100" max="100" step="1" value="0" style="width:70px" disabled></div>
-    <label class="row"><input type="checkbox" id="enabledBox" disabled> eingeschaltet</label>
-    <div class="row"><button id="zeroBtn" disabled>Auf 0</button><button id="invertBtn" disabled>Invertieren</button></div>
+    <label class="row"><input type="checkbox" id="enabledBox" disabled> enabled</label>
+    <div class="row"><button id="zeroBtn" disabled>Set to 0</button><button id="invertBtn" disabled>Invert</button></div>
     <div class="hint" id="cellInfo"></div>
-    <h2 style="margin-top:12px">Gerät</h2>
-    <div class="hint" id="deviceInfo">Nicht verbunden. Der Editor arbeitet offline; Änderungen lassen sich als Datei speichern.</div>
+    <h2 style="margin-top:12px">Device</h2>
+    <div class="hint" id="deviceInfo">Not connected. The editor works offline; changes can be saved as a file.</div>
   </aside>
   <section class="sources" id="sources"></section>
   <section class="card footer">
     <label>Patch <input type="text" id="patchName" maxlength="16" placeholder="Name" style="width:160px"></label>
-    <button id="loadBtn">Datei öffnen …</button><input type="file" id="fileInput" accept=".modpatch,.json" hidden>
-    <button id="saveBtn">Datei speichern …</button>
-    <button id="clearBtn" title="Setzt alle Tiefen auf 0 und schaltet alle Verbindungen aus. LFOs, Random und Name bleiben.">Matrix leeren</button>
-    <button id="pullBtn" disabled>Vom Gerät neu laden</button>
-    <button id="demoBtn" title="Spalten von Toy Piano v0.3 und ein Beispiel-Patch, ohne Gerät">Demo (offline)</button>
-    <button id="sqDemoBtn" title="Die Seiten von Acid Seq mit den Parametern aus dem Vertrag, ohne Gerät (auch zum Bearbeiten und Speichern von Patches)">Acid Seq offline</button>
-    <button id="swDemoBtn" title="Die Seiten von Streichwurst mit den Parametern aus dem Vertrag, ohne Gerät (auch zum Bearbeiten und Speichern von Patches)">Streichwurst offline</button>
+    <button id="loadBtn">Open file …</button><input type="file" id="fileInput" accept=".modpatch,.json" hidden>
+    <button id="saveBtn">Save file …</button>
+    <button id="clearBtn" title="Sets every depth to 0 and switches every connection off. LFOs, Random and name stay.">Clear matrix</button>
+    <button id="pullBtn" disabled>Load from device</button>
+    <button id="demoBtn" title="Columns of Toy Piano v0.3 and an example patch, without a device">Demo (offline)</button>
+    <button id="sqDemoBtn" title="The Acid Seq pages with the parameters from the contract, without a device (also for editing and saving patches)">Acid Seq offline</button>
+    <button id="swDemoBtn" title="The Streichwurst pages with the parameters from the contract, without a device (also for editing and saving patches)">Streichwurst offline</button>
     <span id="log" role="status"></span>
     <span class="hint" id="panelBuild"></span>
   </section>
@@ -141,13 +141,13 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
 <main id="sqMain" hidden style="display:block"></main>
 <dialog id="compatDialog">
   <form method="dialog">
-    <h3>Patch passt nicht genau zu diesem Gerät</h3>
+    <h3>The patch does not exactly fit this device</h3>
     <ul id="compatNotes"></ul>
-    <p class="hint">„Ohne betroffene laden“ schaltet die betroffenen Verbindungen aus (die Tiefe bleibt erhalten) und lädt alles andere.</p>
+    <p class="hint">“Load without affected” switches the affected connections off (their depth is kept) and loads everything else.</p>
     <div class="row">
-      <button value="safe" class="primary" autofocus>Ohne betroffene laden</button>
-      <button value="force">Trotzdem vollständig</button>
-      <button value="cancel">Abbrechen</button>
+      <button value="safe" class="primary" autofocus>Load without affected</button>
+      <button value="force">Load everything anyway</button>
+      <button value="cancel">Cancel</button>
     </div>
   </form>
 </dialog>
@@ -166,7 +166,7 @@ const $ = (id) => document.getElementById(id);
 const state = {
   patch: P.defaultPatch(2), // offline: format 2, so LFO cross modulation can be edited and saved
   // Placeholder columns until a device or the demo says what they are; not written to files.
-  targets: Array.from({ length: 8 }, (_, t) => ({ present: true, perVoice: false, latched: false, name: `Ziel ${t + 1}`, spanText: '', span: 1, placeholder: true })),
+  targets: Array.from({ length: 8 }, (_, t) => ({ present: true, perVoice: false, latched: false, name: `Target ${t + 1}`, spanText: '', span: 1, placeholder: true })),
   origin: null,          // instrument key, schema and columns of a file loaded offline
   allowed: (1n << 64n) - 1n,
   maxActive: 8,
@@ -196,10 +196,10 @@ class DeviceLink {
     const pending = this.current ? [this.current, ...this.queue] : this.queue;
     if (this.current) clearTimeout(this.current.timer); // no more retries on the closed port
     this.current = null; this.queue = [];
-    pending.forEach((q) => q.reject(new Error('getrennt')));
+    pending.forEach((q) => q.reject(new Error('disconnected')));
   }
   request(command, payload = [], device) {
-    if (this.closed) return Promise.reject(new Error('getrennt'));
+    if (this.closed) return Promise.reject(new Error('disconnected'));
     return new Promise((resolve, reject) => {
       this.queue.push({ command, payload, device, resolve, reject });
       this.pump();
@@ -223,7 +223,7 @@ class DeviceLink {
       if (this.closed || this.current !== q) return;
       if (q.tries <= 3) return this.send();
       this.onTimeout(); // it may have been applied without its reply arriving
-      this.finish(null, new Error('keine Antwort vom Gerät – ist der MIDI-Eingang von einer anderen Anwendung belegt (z. B. Studio One)?'));
+      this.finish(null, new Error('no answer from the device – is the MIDI input held by another application (e.g. Studio One)?'));
     }, 250);
   }
   finish(reply, error) {
@@ -245,7 +245,7 @@ class DeviceLink {
     const q = this.current;
     if (!q || f.seq !== q.seq) return;
     if (f.command === P.NAK) {
-      const err = new Error(`Gerät lehnt ab: ${P.ERRORS[f.payload[1]] || 'Fehler ' + f.payload[1]}`);
+      const err = new Error(`Device refuses: ${P.ERRORS[f.payload[1]] || 'error ' + f.payload[1]}`);
       err.code = f.payload[1];
       this.finish(null, err);
     } else if (f.command === (q.command | P.REPLY_BIT)) {
@@ -285,13 +285,13 @@ function buildGrid() {
     th.className = t.present ? '' : 'absent';
     th.innerHTML = `<span class="name"></span><span class="span"></span><div class="meter center"><i></i><b></b><u></u><span class="clo"></span><span class="chi"></span></div>`;
     th.querySelector('.name').textContent = t.present ? t.name : '—';
-    th.querySelector('.span').textContent = t.present ? `${t.spanText.replace('+-', '±')}${t.latched ? ' · Anschlag' : ''}` : 'nicht vorhanden';
-    th.title = t.present ? `${t.name}: Tiefe 100 = ${t.spanText.replace('+-', '±')}${t.perVoice ? ', pro Stimme' : ''}`
-      + (t.latched ? '\nWird beim Anschlag übernommen: Änderungen wirken ab der nächsten Note, klingende Noten bleiben.' : '')
-      + '\nWeißer Strich: Grundwert (Poti, CC oder fester Wert des Instruments) vor der Modulation. Band: Bereich des '
-      + 'Sollwerts vor der Glättung im Instrument, nur globaler Anteil; Strich in Akzentfarbe: jetzt; rote Enden: bei 0 bzw. 1 begrenzt.'
-      + (t.perVoice ? ' Poly AT wirkt hier zusätzlich pro Stimme und ist nicht enthalten.' : '')
-      : 'Das Instrument hat hier kein Ziel';
+    th.querySelector('.span').textContent = t.present ? `${t.spanText.replace('+-', '±')}${t.latched ? ' · note-on' : ''}` : 'not present';
+    th.title = t.present ? `${t.name}: depth 100 = ${t.spanText.replace('+-', '±')}${t.perVoice ? ', per voice' : ''}`
+      + (t.latched ? '\nTaken over at note-on: changes act from the next note on, sounding notes stay.' : '')
+      + '\nWhite line: base value (pot, CC or fixed value of the instrument) before modulation. Band: range of the '
+      + 'target value before the smoothing in the instrument, global part only; line in accent colour: now; red ends: limited at 0 or 1.'
+      + (t.perVoice ? ' Poly AT also acts per voice here and is not included.' : '')
+      : 'The instrument has no target here';
     th.dataset.target = i;
     head.appendChild(th);
   });
@@ -318,10 +318,10 @@ function buildGrid() {
 
 function blockedReason(cell) {
   const s = Math.floor(cell / 8), t = cell % 8, target = state.targets[t];
-  if (!target.present) return 'Das Instrument hat hier kein Ziel.';
+  if (!target.present) return 'The instrument has no target here.';
   if ((state.allowed & P.bit(cell)) !== 0n) return '';
-  if (s === 7 && target.latched) return 'Poly AT wirkt hier nicht: der Wert wird beim Anschlag übernommen.';
-  return 'Diese Quelle ist im Instrument belegt.';
+  if (s === 7 && target.latched) return 'Poly AT does not act here: the value is taken over at note-on.';
+  return 'This source is used by the instrument.';
 }
 const allowedCell = (cell) => (state.allowed & P.bit(cell)) !== 0n && state.targets[cell % 8].present;
 
@@ -339,7 +339,7 @@ function renderCell(cell) {
   td.classList.toggle('pos', colored && d > 0);
   td.classList.toggle('neg', colored && d < 0);
   td.style.setProperty('--a', (0.15 + 0.6 * Math.abs(d) / 100).toFixed(3)); // opacity follows |depth|
-  td.title = ok ? `${P.SOURCES[Math.floor(cell / 8)]} → ${state.targets[cell % 8].name}: ${d}${on ? '' : ' (aus)'}` : blockedReason(cell);
+  td.title = ok ? `${P.SOURCES[Math.floor(cell / 8)]} → ${state.targets[cell % 8].name}: ${d}${on ? '' : ' (off)'}` : blockedReason(cell);
 }
 function renderGrid() {
   for (let c = 0; c < 64; ++c) renderCell(c);
@@ -357,9 +357,9 @@ function renderEditor() {
   $('enabledBox').checked = P.isEnabled(state.patch, cell);
   const target = state.targets[t];
   $('cellInfo').textContent = !ok ? blockedReason(cell)
-    : `Tiefe 100 = ${target.spanText.replace('+-', '±') || 'voller Bereich'}`
-      + (s === 7 ? (target.perVoice ? ' · Poly AT pro Stimme' : ' · Poly AT der zuletzt gespielten Note') : '')
-      + (target.latched ? ' · wirkt beim nächsten Anschlag' : '');
+    : `Depth 100 = ${target.spanText.replace('+-', '±') || 'full range'}`
+      + (s === 7 ? (target.perVoice ? ' · Poly AT per voice' : ' · Poly AT of the last played note') : '')
+      + (target.latched ? ' · takes effect on the next note' : '');
 }
 
 // ------------------------------------------------------------------ editing
@@ -367,7 +367,7 @@ const pendingCells = new Set();
 let inFlightCell = -1, changesInFlight = 0;
 // Every state change goes through here, so the CRC check knows what is still open.
 function change(command, payload) {
-  if (!state.link) return Promise.reject(new Error('nicht verbunden'));
+  if (!state.link) return Promise.reject(new Error('not connected'));
   changesInFlight++;
   return state.link.request(command, payload).finally(() => { changesInFlight--; });
 }
@@ -384,7 +384,7 @@ function setDepth(cell, depth, { enable } = {}) {
   const others = P.activeCount(p) - (P.isActive(p, cell) ? 1 : 0); // without this cell
   if (on && depth !== 0 && !wasActive && others >= state.maxActive) {
     on = false;
-    log(`Höchstens ${state.maxActive} aktive Verbindungen – diese Zelle bleibt ausgeschaltet.`, 'warn');
+    log(`At most ${state.maxActive} active connections – this cell stays switched off.`, 'warn');
   }
   p.enabled = on ? p.enabled | P.bit(cell) : p.enabled & ~P.bit(cell);
   pendingCells.add(cell);
@@ -417,10 +417,10 @@ function confirmCrc(payload) {
   const crc = r.u32();
   if (pendingCells.size || pendingSources.size || changesInFlight > 1) return; // more is on its way
   if (crc !== P.patchCrc(state.patch)) {
-    log('Editor und Gerät waren nicht gleich – Zustand neu vom Gerät geladen.', 'warn');
+    log('Editor and device differed – state reloaded from the device.', 'warn');
     return pull();
   }
-  log('Gerät bestätigt (Patch-CRC ' + crc.toString(16).toUpperCase().padStart(8, '0') + ').', 'ok');
+  log('Device confirmed (patch CRC ' + crc.toString(16).toUpperCase().padStart(8, '0') + ').', 'ok');
 }
 
 function attachCellEvents(td, cell) {
@@ -521,14 +521,14 @@ function buildSources() {
     card.dataset.src = src;
     card.innerHTML = `
       <h3>${P.SOURCES[src]}</h3>
-      <label>${src === 2 ? 'Modus' : 'Form'} <select class="shape"></select></label>
+      <label>${src === 2 ? 'Mode' : 'Shape'} <select class="shape"></select></label>
       <label>Sync <span class="seg sync"></span></label>
       <label class="rateRow">Rate <span class="row"><input type="range" class="rate" min="0" max="${P.RATE_MAX}" step="1"><span class="hz"></span></span></label>
-      <label class="divRow">Teilung <select class="division"></select></label>
-      <label class="gateRow">Eingang <select class="gate"><option value="0">Gate 1</option><option value="1">Gate 2</option></select></label>
-      ${src < 2 ? '<label class="retrigRow">Retrigger <span><input type="checkbox" class="retrigger"> bei Note On</span></label>' : ''}
-      ${src < 2 ? `<label class="fmRow" title="Quermodulation: ${P.SOURCES[1 - src]} verändert die Rate dieses LFOs, ±100 = ±2 Oktaven. Nur im freien Lauf; mit Clock oder Gate bestimmt der Takt die Rate.">FM ← L${2 - src} <span class="row"><input type="range" class="fm" min="-100" max="100" step="1"><span class="hz fmv"></span></span></label>` : ''}
-      <label class="clockRow">Takt <span></span></label>`;
+      <label class="divRow">Division <select class="division"></select></label>
+      <label class="gateRow">Input <select class="gate"><option value="0">Gate 1</option><option value="1">Gate 2</option></select></label>
+      ${src < 2 ? '<label class="retrigRow">Retrigger <span><input type="checkbox" class="retrigger"> on note-on</span></label>' : ''}
+      ${src < 2 ? `<label class="fmRow" title="Cross modulation: ${P.SOURCES[1 - src]} changes the rate of this LFO, ±100 = ±2 octaves. Free-running only; with clock or gate the clock sets the rate.">FM ← L${2 - src} <span class="row"><input type="range" class="fm" min="-100" max="100" step="1"><span class="hz fmv"></span></span></label>` : ''}
+      <label class="clockRow">Clock <span></span></label>`;
     const shape = card.querySelector('.shape');
     (src === 2 ? P.RANDOM_MODES : P.SHAPES).forEach((n, i) => shape.add(new Option(n, i)));
     shape.addEventListener('change', () => setSourceParam(src, P.PARAM.shape, +shape.value));
@@ -603,9 +603,9 @@ function renderMode() {
   const el = $('mode'), d = state.link ? state.device : null, m = state.monitor;
   const mode = d && m && d.modes && m.mode >= 0 ? d.modes[m.mode] : null;
   el.hidden = !(d && d.caps2 & P.CAP2.modes);
-  el.textContent = mode ? `Modell: ${mode.name}${m.modeOrigin === 1 ? ' (MIDI)' : ''}` : 'Modell: …';
-  el.title = (mode ? `${mode.name} – am Gerät: ${mode.hint}` + (m.modeOrigin === 1 ? '\nZuletzt per MIDI (CC28) gewählt; die Schalter stehen evtl. anders.' : '') : '')
-    + (d && d.modes ? '\nAlle Modelle:' + d.modes.map((x) => `\n  ${x.name} – ${x.hint}`).join('') : '');
+  el.textContent = mode ? `Model: ${mode.name}${m.modeOrigin === 1 ? ' (MIDI)' : ''}` : 'Model: …';
+  el.title = (mode ? `${mode.name} – on the device: ${mode.hint}` + (m.modeOrigin === 1 ? '\nLast selected over MIDI (CC28); the switches may be set differently.' : '') : '')
+    + (d && d.modes ? '\nAll models:' + d.modes.map((x) => `\n  ${x.name} – ${x.hint}`).join('') : '');
 }
 const setPos = (el, from, to) => { el.style.left = from * 100 + '%'; el.style.width = Math.max(0, to - from) * 100 + '%'; };
 function sourceUsed(s) { for (let t = 0; t < 8; ++t) if (P.isActive(state.patch, s * 8 + t)) return true; return false; }
@@ -628,7 +628,7 @@ function renderMonitor() {
       meter.querySelector('u').style.left = x(v) * 100 + '%';
     } else if (bip) setPos(meter.querySelector('i'), Math.min(0.5, x(v)), Math.max(0.5, x(v)));
     else setPos(meter.querySelector('i'), 0, x(v));
-    th.title = `${P.SOURCES[s]}: ${v.toFixed(2)}` + (m.hasRange ? ` (Bereich der letzten 50 ms ${m.min[s].toFixed(2)} … ${m.max[s].toFixed(2)})` : '');
+    th.title = `${P.SOURCES[s]}: ${v.toFixed(2)}` + (m.hasRange ? ` (range of the last 50 ms ${m.min[s].toFixed(2)} … ${m.max[s].toFixed(2)})` : '');
   });
   document.querySelectorAll('#grid thead th[data-target]').forEach((th) => {
     const t = +th.dataset.target, meter = th.querySelector('.meter');
@@ -654,16 +654,16 @@ function renderMonitor() {
   const corner = document.querySelector('#grid th.corner');
   if (corner) {
     const known = !!m && m.hasRange, kind = known ? m.atKind : 0;
-    corner.querySelector('.stale').textContent = stale ? (state.health === 'noreply' ? 'keine Antwort vom Gerät' : 'keine Live-Daten') : '';
-    corner.querySelector('.atKind').textContent = !state.link || !m ? '' : !known ? 'Kanal/Poly getrennt'
-      : kind === 0 ? '—' : kind === 1 ? 'Kanal' : `Poly · ${noteName(m.atNote)}`;
+    corner.querySelector('.stale').textContent = stale ? (state.health === 'noreply' ? 'no answer from the device' : 'no live data') : '';
+    corner.querySelector('.atKind').textContent = !state.link || !m ? '' : !known ? 'channel/poly separate'
+      : kind === 0 ? '—' : kind === 1 ? 'Channel' : `Poly · ${noteName(m.atNote)}`;
     const meter = corner.querySelector('.meter');
     meter.classList.toggle('idle', !known || kind === 0 || m.atAge >= 127 || stale);
     setPos(meter.querySelector('i'), 0, known ? m.atValue / 127 : 0);
     corner.title = !known
-      ? 'Aftertouch: Diese Firmware meldet nicht, welche Art zuletzt kam. Kanal-AT und Poly AT stehen getrennt in ihren Zeilen (eingeschränkte Anzeige).'
-      : 'Aftertouch folgt automatisch der zuletzt empfangenen Art (auch bei Wert 0). Kanal-AT und Poly AT bleiben technisch getrennte Zeilen; der Punkt markiert die angezeigte.'
-        + (kind === 2 ? '\nPoly: zuletzt adressierte Note, solange sie gehalten wird. Globale Ziele nutzen weiter die zuletzt gespielte Note (Zeile Poly AT).' : '');
+      ? 'Aftertouch: this firmware does not report which kind came last. Channel AT and Poly AT are shown separately in their rows (limited display).'
+      : 'Aftertouch follows the kind received last automatically (also at value 0). Channel AT and Poly AT stay technically separate rows; the dot marks the one shown.'
+        + (kind === 2 ? '\nPoly: the note addressed last, as long as it is held. Global targets keep using the last played note (row Poly AT).' : '');
   }
 }
 const noteName = (n) => ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][n % 12] + (Math.floor(n / 12) - 1);
@@ -679,8 +679,8 @@ function renderClocks() {
     const row = card.querySelector('.clockRow'), out = row.querySelector('span');
     row.hidden = p.sync === 0 || !state.link;
     const c = P.clockState(state.monitor, p.sync, p.gate);
-    out.textContent = c < 0 ? 'unbekannt' : c ? (p.sync === 1 ? 'MIDI-Clock läuft' : 'Gate-Impulse kommen an')
-      : (p.sync === 1 ? 'Kein MIDI-Clock – LFO steht' : 'Keine Gate-Impulse – LFO steht');
+    out.textContent = c < 0 ? 'unknown' : c ? (p.sync === 1 ? 'MIDI clock running' : 'Gate pulses arriving')
+      : (p.sync === 1 ? 'No MIDI clock – LFO stopped' : 'No gate pulses – LFO stopped');
     out.className = c === 0 ? 'warn' : '';
   });
 }
@@ -701,14 +701,14 @@ function closePorts(...ports) {
 }
 async function initMidi() {
   if (!navigator.requestMIDIAccess) {
-    log('Dieser Browser kennt kein Web MIDI. Bitte Chrome oder Edge verwenden.', 'err');
+    log('This browser has no Web MIDI. Please use Chrome or Edge.', 'err');
     $('connect').disabled = true;
     return;
   }
   try {
     midiAccess = await navigator.requestMIDIAccess({ sysex: true });
   } catch (e) {
-    log('Kein MIDI-Zugriff mit SysEx erlaubt (Browser-Freigabe nötig): ' + e.message, 'err');
+    log('No MIDI access with SysEx allowed (browser permission needed): ' + e.message, 'err');
     return;
   }
   const fill = (sel, ports) => {
@@ -725,12 +725,12 @@ async function initMidi() {
     const present = (map, port) => [...map.values()].some((p) => p === port && p.state === 'connected');
     const sq = state.sq;
     if (sq && (!present(midiAccess.outputs, sq.out) || !present(midiAccess.inputs, sq.inp))) {
-      disconnectSq('Gerät getrennt');
-      log('Die Verbindung zum Acid-Seq-Gerät ist abgerissen.', 'err');
+      disconnectSq('device disconnected');
+      log('The connection to the SQ device was lost.', 'err');
     }
     if (link && (!present(midiAccess.outputs, link.output) || !present(midiAccess.inputs, link.input))) {
-      disconnect('Gerät getrennt');
-      log('Die Verbindung zum Daisy ist abgerissen. Bearbeitung geht offline weiter.', 'err');
+      disconnect('device disconnected');
+      log('The connection to the Daisy was lost. Editing continues offline.', 'err');
     }
   };
   midiAccess.onstatechange = refresh;
@@ -752,7 +752,7 @@ function disconnect(reason) {
   clearMonitor(); // no old values after the device is gone
   renderMode();
   setStatus(reason || 'offline', reason ? 'err' : '');
-  $('connect').textContent = 'Verbinden';
+  $('connect').textContent = 'Connect';
   $('pullBtn').disabled = true;
   renderGrid();
 }
@@ -768,11 +768,11 @@ function checkHealth() {
   state.health = next;
   if (next === 'noreply') {
     state.unconfirmed = true;
-    log('Keine Antwort vom Gerät seit 5 s – Port von einer anderen Anwendung belegt (z. B. Studio One) oder Kabel getrennt? Änderungen bleiben unbestätigt.', 'err');
+    log('No answer from the device for 5 s – port held by another application (e.g. Studio One) or cable unplugged? Changes stay unconfirmed.', 'err');
   } else if (before === 'noreply') {
-    log('Das Gerät antwortet wieder – Zustand wird neu geladen.', 'warn');
+    log('The device answers again – reloading its state.', 'warn');
   }
-  setStatus(state.statusBase + (next === 'noreply' ? ' · keine Antwort' : next === 'nolive' ? ' · keine Live-Daten' : ''),
+  setStatus(state.statusBase + (next === 'noreply' ? ' · no answer' : next === 'nolive' ? ' · no live data' : ''),
     next === 'ok' ? 'ok' : next === 'nolive' ? 'warn' : 'err');
   renderMonitor();
 }
@@ -784,7 +784,7 @@ async function connect() {
   if (!midiAccess) await initMidi();
   if (!midiAccess) return;
   const out = midiAccess.outputs.get($('outPort').value), inp = midiAccess.inputs.get($('inPort').value);
-  if (!out || !inp) return log('Bitte Ein- und Ausgang wählen.', 'warn');
+  if (!out || !inp) return log('Please choose an input and an output.', 'warn');
   connecting = true;
   try {
     await closing; // a close of the previous connection must finish first
@@ -794,7 +794,7 @@ async function connect() {
       await inp.open();
     } catch (e) {
       closePorts(opened); // output open, input taken: release the output again
-      return log('Port kann nicht geöffnet werden – ist er von einer anderen Anwendung belegt (z. B. Studio One)? ' + e.message, 'err');
+      return log('Cannot open the port – is it held by another application (e.g. Studio One)? ' + e.message, 'err');
     }
     if (!(await connectSq(out, inp))) await connectLink(out, inp);
   } finally {
@@ -815,7 +815,7 @@ const sqPanel = window.SqPanel.mount(document.getElementById('sqMain'), {
 function showMatrixView(on) {
   $('mdMain').hidden = !on;
   $('sqMain').hidden = on;
-  $('swViewBtn').textContent = on ? 'Klangparameter' : 'Matrix';
+  $('swViewBtn').textContent = on ? 'Sound parameters' : 'Matrix';
 }
 let sqTimer = null;
 function showSq(client) {
@@ -832,7 +832,7 @@ function hideSq() {
 async function connectSq(out, inp) {
   const client = new window.SqProtocol.Client((frame) => out.send(frame), { retries: 1 });
   inp.onmidimessage = (e) => client.onMessage(Array.from(e.data));
-  setStatus('verbinde …');
+  setStatus('connecting …');
   try {
     await client.request(window.SqProtocol.TYPE.identify);
   } catch (e) {
@@ -845,17 +845,17 @@ async function connectSq(out, inp) {
   } catch (e) {
     inp.onmidimessage = null;
     closePorts(out, inp);
-    setStatus('Fehler', 'err');
+    setStatus('error', 'err');
     log('Acid Seq: ' + e.message, 'err');
     return true;
   }
   state.sq = { client, out, inp };
   state.statusBase = `${client.identity.product} ${client.identity.version} · SQ`;
   setStatus(state.statusBase, 'ok');
-  $('connect').textContent = 'Trennen';
+  $('connect').textContent = 'Disconnect';
   showSq(client);
   sqTimer = setInterval(() => client.request(window.SqProtocol.TYPE.monitor, [1]).catch(() => {}), 1000);
-  log('Verbunden. Der Zustand des Geräts wurde geladen.', 'ok');
+  log('Connected. The device state has been loaded.', 'ok');
   if (client.identity.hasModMatrix) { // SQ 1.1: Mod on Daisy on the same port (Streichwurst)
     await connectLink(out, inp, client);
     if (state.sq && state.link) {
@@ -878,7 +878,7 @@ function disconnectSq(reason) {
   }
   hideSq();
   setStatus(reason || 'offline', reason ? 'err' : '');
-  $('connect').textContent = 'Verbinden';
+  $('connect').textContent = 'Connect';
 }
 
 // sqClient: the SQ client of an SQ 1.1 device that shares this port; its frames keep going
@@ -901,14 +901,14 @@ async function connectLink(out, inp, sqClient = null) {
     }
     if (state.health !== 'ok') checkHealth();
   };
-  setStatus('verbinde …');
+  setStatus('connecting …');
   try {
     const f = await link.request(P.CMD.identify, [], P.BROADCAST);
     const r = new P.Reader(f.payload);
     const info = { protocol: `${r.u7()}.${r.u7()}`, module: `${r.u7()}.${r.u7()}.${r.u7()}`, key: r.str(), version: r.str(),
       maxActive: r.u7(), tickHz: r.u14(), slots: r.u7(), schema: r.u32(), caps: r.u7(),
       caps2: r.pos < f.payload.length ? r.u7() : 0, device: f.device, modes: [] }; // caps2: newer firmware
-    if (!info.protocol.startsWith('1.')) throw new Error('Protokollversion ' + info.protocol + ' wird nicht unterstützt');
+    if (!info.protocol.startsWith('1.')) throw new Error('Protocol version ' + info.protocol + ' is not supported');
     state.device = info;
     state.maxActive = info.maxActive;
     state.origin = null;
@@ -923,8 +923,8 @@ async function connectLink(out, inp, sqClient = null) {
     }
     state.statusBase = `${info.key} ${info.version} · ID ${info.device}`;
     setStatus(state.statusBase, 'ok');
-    $('deviceInfo').textContent = `${info.key} ${info.version}, Mod on Daisy ${info.module}, Protokoll ${info.protocol}, Tick ${info.tickHz} Hz, Schema ${info.schema.toString(16).toUpperCase().padStart(8, '0')}. Speicherplätze im Gerät: ${info.slots ? info.slots : 'noch keine (Patches als Datei sichern)'}.`;
-    $('connect').textContent = 'Trennen';
+    $('deviceInfo').textContent = `${info.key} ${info.version}, Mod on Daisy ${info.module}, protocol ${info.protocol}, tick ${info.tickHz} Hz, schema ${info.schema.toString(16).toUpperCase().padStart(8, '0')}. Memory slots on the device: ${info.slots ? info.slots : 'none yet (save patches as files)'}.`;
+    $('connect').textContent = 'Disconnect';
     $('pullBtn').disabled = false;
     // A lost renewal is not logged on its own: the health state reports silence.
     const renew = () => state.link === link && link.request(P.CMD.monitor, [20]).catch(() => {});
@@ -932,9 +932,9 @@ async function connectLink(out, inp, sqClient = null) {
     monitorTimer = setInterval(renew, 1000);
     link.lastFrame = link.lastLive = Date.now(); // grace until the first monitor frame
     healthTimer = setInterval(checkHealth, 250);
-    log('Verbunden. Der Zustand des Geräts wurde geladen.', 'ok');
+    log('Connected. The device state has been loaded.', 'ok');
   } catch (e) {
-    if (state.link === link) disconnect('Fehler'); // closes both ports, no retries remain
+    if (state.link === link) disconnect('error'); // closes both ports, no retries remain
     log(e.message, 'err');
   }
 }
@@ -1025,19 +1025,19 @@ function askCompat(compat) {
 
 async function loadPatch(text) {
   const doc = JSON.parse(text);
-  if (doc.format !== 'mod-on-daisy-patch' || doc.version !== 1) throw new Error('Keine Mod-on-Daisy-Patchdatei (Version 1).');
-  if (!Array.isArray(doc.depth) || !Array.isArray(doc.enabled) || !Array.isArray(doc.lfo) || !doc.random) throw new Error('Die Datei ist unvollständig.');
+  if (doc.format !== 'mod-on-daisy-patch' || doc.version !== 1) throw new Error('Not a Mod on Daisy patch file (version 1).');
+  if (!Array.isArray(doc.depth) || !Array.isArray(doc.enabled) || !Array.isArray(doc.lfo) || !doc.random) throw new Error('The file is incomplete.');
   const p = P.defaultPatch(2);
   doc.depth.forEach((row, s) => row.forEach((d, t) => { p.depth[s * 8 + t] = Math.max(-100, Math.min(100, d | 0)); }));
   doc.enabled.forEach((row, s) => row.forEach((on, t) => { if (on) p.enabled |= P.bit(s * 8 + t); }));
   p.lfo = doc.lfo.map((l) => ({ ...P.defaultPatch().lfo[0], ...l }));
   for (const l of p.lfo) {
-    if (!Number.isInteger(l.fm) || l.fm < -P.MAX_FM || l.fm > P.MAX_FM) throw new Error('Die Datei hat eine ungültige LFO-Quermodulation.');
+    if (!Number.isInteger(l.fm) || l.fm < -P.MAX_FM || l.fm > P.MAX_FM) throw new Error('The file has an invalid LFO cross modulation.');
   }
   p.random = { ...P.defaultPatch().random, ...doc.random };
   p.name = String(doc.name || '').slice(0, 16);
   for (let c = 0; c < 64; ++c) if (P.isActive(p, c) && !allowedCell(c)) { p.enabled &= ~P.bit(c); }
-  if (P.activeCount(p) > state.maxActive) throw new Error(`Die Datei hat mehr als ${state.maxActive} aktive Verbindungen.`);
+  if (P.activeCount(p) > state.maxActive) throw new Error(`The file has more than ${state.maxActive} active connections.`);
   const file = { instrument_key: doc.instrument_key || null, schema_hash: doc.schema_hash || null,
     columns: Array.isArray(doc.columns) ? doc.columns.slice(0, 8) : new Array(8).fill(null),
     patch: p, hasFm: p.lfo.some((l) => l.fm !== 0) };
@@ -1045,18 +1045,18 @@ async function loadPatch(text) {
     state.patch = p;
     state.origin = { instrument_key: file.instrument_key, schema_hash: file.schema_hash, columns: file.columns };
     renderGrid(); renderSources();
-    return log('Patch geladen (offline).', 'ok');
+    return log('Patch loaded (offline).', 'ok');
   }
   let patch = p;
   const compat = P.checkCompatibility(file, state.targets, state.device);
   if (compat.needsDecision) {
     const choice = await askCompat(compat);
-    if (choice === 'cancel') return log('Laden abgebrochen, das Gerät bleibt unverändert.', '');
+    if (choice === 'cancel') return log('Loading cancelled; the device is unchanged.', '');
     if (choice === 'safe') {
       patch = P.safePart(p, compat);
       let off = 0;
       for (let c = 0; c < 64; ++c) if (compat.affected & P.bit(c)) off++;
-      log(`Geladen ohne ${off} betroffene Verbindung(en).`, 'warn');
+      log(`Loaded without ${off} affected connection(s).`, 'warn');
     }
   }
   await upload(patch);
@@ -1086,7 +1086,7 @@ async function upload(patch) {
   } catch (e) {
     // Part of the file is already on the device: show what it really has.
     await pull().catch(() => {});
-    throw new Error(`Datei nur teilweise übertragen (${e.message}) – Zustand neu vom Gerät geladen.`);
+    throw new Error(`File only partly sent (${e.message}) – state reloaded from the device.`);
   }
   confirmCrc(f.payload);
 }
@@ -1094,7 +1094,7 @@ async function upload(patch) {
 // ------------------------------------------------------------------ demo (offline preview)
 // Toy Piano v0.3 columns as the firmware reports them, plus an example patch.
 function loadDemo() {
-  if (state.link) return log('Demo nur ohne verbundenes Gerät.', 'warn');
+  if (state.link) return log('Demo only without a connected device.', 'warn');
   const col = (name, spanText, perVoice, latched) => ({ present: true, perVoice, latched, name, spanText });
   state.targets = [col('Pitch', '+-2 st', true, false), col('Level', '+-100%', true, false),
     col('Harmonic', '+-0.5', true, false), col('Attack', '100%', false, true), col('Decay', '100%', false, true),
@@ -1121,8 +1121,8 @@ function loadDemo() {
   state.selected = 7 * 8 + 1;
   buildGrid();
   renderSources();
-  $('deviceInfo').textContent = 'Demo: Spalten von Toy Piano v0.3, offline. Mit einem Daisy „Verbinden“ klicken.';
-  log('Demo geladen – ohne Gerät, Änderungen bleiben im Browser.', 'ok');
+  $('deviceInfo').textContent = 'Demo: columns of Toy Piano v0.3, offline. With a Daisy, click “Connect”.';
+  log('Demo loaded – without a device, changes stay in the browser.', 'ok');
 }
 
 // ------------------------------------------------------------------ firmware update
@@ -1138,10 +1138,10 @@ async function firmwareUpdate() {
   const link = state.link;
   const out = link ? link.output : midiAccess.outputs.get($('outPort').value);
   const inp = link ? link.input : midiAccess.inputs.get($('inPort').value);
-  if (!out || !inp) return log('Bitte Ein- und Ausgang wählen.', 'warn');
-  if (!confirm('Kit in den Update-Modus schalten?\n\nDas Kit startet in den Daisy-Bootloader neu: Das Programm hält an, '
-    + 'die MIDI-Verbindung endet und alle 16 LEDs leuchten. Danach die neue Firmware mit dem Daisy Web Programmer '
-    + 'oder „make program-dfu“ laden; das Kit wartet ohne Zeitlimit.')) return;
+  if (!out || !inp) return log('Please choose an input and an output.', 'warn');
+  if (!confirm('Switch the kit to update mode?\n\nThe kit restarts into the Daisy bootloader: the program stops, '
+    + 'the MIDI connection ends and all 16 LEDs light up. Then load the new firmware with the Daisy Web Programmer '
+    + 'or “make program-dfu”; the kit waits without a time limit.')) return;
   updating = true;
   $('updateBtn').disabled = true;
   try {
@@ -1149,7 +1149,7 @@ async function firmwareUpdate() {
       await closing;
       try { await out.open(); await inp.open(); } catch (e) {
         closePorts(out, inp);
-        return log('Port kann nicht geöffnet werden – ist er von einer anderen Anwendung belegt (z. B. Studio One)? ' + e.message, 'err');
+        return log('Cannot open the port – is it held by another application (e.g. Studio One)? ' + e.message, 'err');
       }
     }
     const acked = await new Promise((resolve) => {
@@ -1162,8 +1162,8 @@ async function firmwareUpdate() {
     if (acked && state.link) disconnect(); // the port disappears with the reset
     else if (!link) closePorts(out, inp);
     // The reply confirms that the request was accepted, not the DFU entry itself.
-    if (acked) log('Anfrage angenommen: Das Kit startet in den Update-Modus (alle LEDs an, der Looper erst nach laufender Kartenarbeit). Sobald es als DFU-Gerät erscheint, Firmware mit dem Daisy Web Programmer oder „make program-dfu“ laden.', 'ok');
-    else log('Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S9 und S16 fünf Sekunden halten oder RESET und BOOT verwenden (docs/FLASHING.md).', 'warn');
+    if (acked) log('Request accepted: the kit restarts into update mode (all LEDs on; the Looper only after running card work). As soon as it appears as a DFU device, load the firmware with the Daisy Web Programmer or “make program-dfu”.', 'ok');
+    else log('No answer from the kit. Older firmware does not know the command: then hold S9 and S16 for five seconds or use RESET and BOOT (docs/FLASHING.md).', 'warn');
   } finally {
     updating = false;
     $('updateBtn').disabled = false;
@@ -1176,18 +1176,18 @@ $('demoBtn').addEventListener('click', loadDemo);
 // Acid Seq pages without a device: the contract's parameters, patches edit and save offline.
 $('swViewBtn').addEventListener('click', () => showMatrixView($('mdMain').hidden));
 $('swDemoBtn').addEventListener('click', () => {
-  if (state.sq) return log('Erst trennen, dann offline bearbeiten.', 'warn');
+  if (state.sq) return log('Disconnect first, then edit offline.', 'warn');
   if (!$('sqMain').hidden && sqPanel.client() && sqPanel.client().identity.product === 'streichwurst') return hideSq();
   showSq(new window.SqPanel.OfflineClient('streichwurst'));
 });
 $('sqDemoBtn').addEventListener('click', () => {
-  if (state.sq) return log('Erst trennen, dann offline bearbeiten.', 'warn');
+  if (state.sq) return log('Disconnect first, then edit offline.', 'warn');
   if (!$('sqMain').hidden) return hideSq();
   showSq(new window.SqPanel.OfflineClient());
-  log('Acid Seq offline: Werte und Pattern lassen sich bearbeiten und als Patch speichern.', 'ok');
+  log('Acid Seq offline: values and pattern can be edited and saved as a patch.', 'ok');
 });
 $('connect').addEventListener('click', connect);
-$('pullBtn').addEventListener('click', () => pull().then(() => log('Vom Gerät geladen.', 'ok')).catch((e) => log(e.message, 'err')));
+$('pullBtn').addEventListener('click', () => pull().then(() => log('Loaded from the device.', 'ok')).catch((e) => log(e.message, 'err')));
 $('saveBtn').addEventListener('click', savePatch);
 $('loadBtn').addEventListener('click', () => $('fileInput').click());
 $('fileInput').addEventListener('change', async (e) => {

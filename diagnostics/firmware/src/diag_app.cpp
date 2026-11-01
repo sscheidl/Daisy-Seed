@@ -71,15 +71,17 @@ static bool SameTone(const ToneSettings& a, const ToneSettings& b) {
 }
 
 void App::PumpScope() {
+    // Keep at most one snapshot chunk waiting behind the in-flight USB buffer.
+    // Filling the queue with bulk data can otherwise crowd out the next ST frame
+    // or command reply while the endpoint is briefly busy.
+    if(tx_.Pending() != 0)
+        return;
     uint16_t frames = 0;
     const int16_t* samples = board_.ScopeData(frames);
     if(samples == nullptr || frames == 0)
         return;  // still capturing
     const uint16_t chunks = ScopeChunks(frames);
-    // A few chunks per step keep ST/SYS frames flowing between them.
-    for(int sent = 0; sent < 3 && scope_next_chunk_ < chunks; ++sent) {
-        if(tx_.Room() < ddp::kMaxFrame)
-            return;
+    if(scope_next_chunk_ < chunks) {
         char body[ddp::kMaxBody + 1];
         ddp::Writer out(body, sizeof(body));
         WriteScopeChunk(samples, frames, scope_next_chunk_, chunks, out);

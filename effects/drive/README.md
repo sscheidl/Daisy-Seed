@@ -1,70 +1,70 @@
 # Drive
 
-Sättigung mit den Kurven Soft, Hard, Tape und Fold aus Tape FX (gemeinsam in
-[`common/dsp/saturation.h`](../../common/dsp/saturation.h), Herkunft MixForge), Tone und
-automatischer Pegelanpassung um den Drive. Kern nach FX-Vertrag 1.0 (wet-only), eigene
-Firmware `drive-fx` für die Stereo-Line-Eingänge.
+Saturation with the Soft, Hard, Tape and Fold curves from Tape FX (shared in
+[`common/dsp/saturation.h`](../../common/dsp/saturation.h), origin MixForge), tone and
+automatic level compensation around the drive. Core per FX contract 1.0 (wet-only), its own
+firmware `drive-fx` for the stereo line inputs.
 
-| Stand | |
+| Status | |
 | --- | --- |
-| Version | Kern und Firmware 0.1.0 (`src/version.h`) |
-| Software | Host-, Sanitizer- und ARM-Prüfungen bestanden (siehe CHANGELOG) |
-| Hardware | NICHT GEMESSEN, [Hardwaretest](docs/HARDWARE_TEST.md) |
+| Version | Core and firmware 0.1.0 (`src/version.h`) |
+| Software | Host, sanitizer and ARM checks passed (see CHANGELOG) |
+| Hardware | NOT MEASURED, [hardware test](docs/HARDWARE_TEST.md) |
 
-## Bedienung (Firmware `drive-fx`)
+## Controls (firmware `drive-fx`)
 
-| Element | Funktion |
+| Element | Function |
 | --- | --- |
-| VR1 | Drive 0–100 % (bis +30 dB in die Kurve) |
-| VR2 | Tone: Tiefpass 1–20 kHz |
+| VR1 | Drive 0–100 % (up to +30 dB into the curve) |
+| VR2 | Tone: low-pass 1–20 kHz |
 | VR3 | Level −24 … +12 dB |
-| VR4 | Ausgleich 0–100 % (Auto-Level) |
-| VR5 | Zielversatz −3 … 0 dB |
-| S1–S4 | Kurve Soft, Hard, Tape, Fold (LED D1–D4) |
-| S5 | Auto-Level an/aus (LED D5) |
-| SW17 | Drive an/aus, 10 ms überblendet (LED D8). Aus = exakt das trockene Signal |
+| VR4 | Compensation 0–100 % (auto level) |
+| VR5 | Target offset −3 … 0 dB |
+| S1–S4 | Curve Soft, Hard, Tape, Fold (LED D1–D4) |
+| S5 | Auto level on/off (LED D5) |
+| SW17 | Drive on/off, 10 ms crossfade (LED D8). Off = exactly the dry signal |
 | S9 + S16 (5 s) | Bootloader |
 
-Eingang: Stereo. Ein Mono-Signal im linken Eingang speist beide Kanäle. MIDI-CC 20–27
-(omni, USB und DIN) und SQ-Parameter über USB nach dem
-[Parametervertrag](../../sequencers/step-seq/docs/PARAMETERS.md). Potis und SW17 wirken,
-wenn sie bewegt werden. Bis dahin gilt der zuletzt per CC oder Panel gesetzte Wert.
-D16 zeigt eine Überschreitung der Callback-Frist an.
+Input: stereo. A mono signal in the left input feeds both channels. MIDI CC 20–27
+(omni, USB and DIN) and SQ parameters over USB per the
+[parameter contract](../../sequencers/step-seq/docs/PARAMETERS.md). Pots and SW17 take effect
+when they are moved. Until then the value last set via CC or panel applies.
+D16 indicates an overrun of the callback deadline.
 
-## Auto-Level
+## Auto level
 
-Gemessen nur um den Drive, zwischen Eingang und Ausgang von Kurve und Tone, vor Level.
-Delay, Dry/Wet und Limiter liegen außerhalb.
+Measured only around the drive, between the input and output of curve and tone, before Level.
+Delay, Dry/Wet and limiter lie outside.
 
-1. **Feste Kompensation** je Kurve über den Pegel in die Kurve, also Eingangs-RMS des
-   letzten 300-ms-Fensters plus Drive-Verstärkung. Die Tabelle
-   [`include/drive/autolevel_table.h`](include/drive/autolevel_table.h) entsteht aus den
-   Referenz-Fixtures von Phase 0 (`make -C effects/drive autolevel-table`, Median über die
-   Fixtures).
-2. **Langsame Nachregelung** aus 300-ms-RMS-Fenstern, begrenzt auf ±3 dB, gehalten unter
+1. **Fixed compensation** per curve based on the level into the curve, i.e. the input RMS of the
+   last 300 ms window plus the drive gain. The table
+   [`include/drive/autolevel_table.h`](include/drive/autolevel_table.h) is generated from the
+   phase 0 reference fixtures (`make -C effects/drive autolevel-table`, median over the
+   fixtures).
+2. **Slow correction** from 300 ms RMS windows, limited to ±3 dB, held below
    −60 dBFS.
-3. **Zielpegel** = Eingangs-RMS + Zielversatz. Der Ausgleich skaliert die Korrektur linear
-   in dB (0 % = keine).
+3. **Target level** = input RMS + target offset. Compensation scales the correction linearly
+   in dB (0 % = none).
 
-Abnahme im Host-Test: Ausgangs-RMS innerhalb ±1 dB um den Zielpegel für alle Kurven,
-Drive 0–100 %, Zielversatz 0 und −1,5 dB, mit den Phase-0-Fixtures und der 303-Fixture
-(größte Abweichung 0,41 dB). **Grenze:** Fold auf Rechtecksignalen. Die flachen Dächer
-falten auf einen nahezu konstanten Wert, das Ergebnis wird bis zu 17 dB leiser, aber nie
-lauter als das Ziel.
+Acceptance in the host test: output RMS within ±1 dB of the target level for all curves,
+drive 0–100 %, target offset 0 and −1.5 dB, with the phase 0 fixtures and the 303 fixture
+(largest deviation 0.41 dB). **Limit:** Fold on square-wave signals. The flat tops
+fold to an almost constant value; the result gets up to 17 dB quieter, but never
+louder than the target.
 
-Kein Oversampling (D5). Aliasing von Hard und Fold wird im Hörtest bewertet.
+No oversampling (D5). Aliasing of Hard and Fold is assessed in the listening test.
 
-## Bauen und testen
+## Build and test
 
 ```bash
 make PROJECT=drive-fx -j4                 # build/DriveFx-v0.1.0.bin
-make PROJECT=drive-fx test                # Kern und Firmware auf Fakes
+make PROJECT=drive-fx test                # core and firmware on fakes
 make PROJECT=drive-fx test-sanitize
-make test-fx                              # gemeinsamer FX-Vertragstest (mit Drive)
+make test-fx                              # shared FX contract test (with Drive)
 python3 scripts/check-firmware.py effects/drive/build/DriveFx-v0.1.0.bin
 python3 scripts/check-elf-placement.py effects/drive/build/DriveFx-v0.1.0.elf
 ```
 
-`include/drive/drive.h` enthält den Kern, `host.h` die 10-ms-Überblendung des Hosts und
-`params.h` die Parameter. Im Audiopfad gibt es keine libm-Aufrufe
+`include/drive/drive.h` contains the core, `host.h` the host's 10 ms crossfade and
+`params.h` the parameters. There are no libm calls in the audio path
 (`common/dsp/fastmath.h`).

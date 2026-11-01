@@ -1,259 +1,256 @@
-# Mod on Daisy — Architekturentscheidungen v0.1 und technische Einwände
+# Mod on Daisy — Architecture decisions v0.1 and technical objections
 
-**Stand:** 23. Oktober 2026 · **Phase:** 1 abgeschlossen, Phase 2 als Software umgesetzt
+**As of:** 23 October 2026 · **Phase:** 1 completed, phase 2 implemented in software
 
-Dieses Dokument hält die Entscheidungen des Projektinhabers fest. Darauf folgen die
-technischen Einwände, die sich bei der Prüfung gegen den tatsächlichen Code des
-Repositories ergeben haben, sowie die daraus vorgeschlagenen Änderungen. Die
-Spezifikation selbst steht in:
+This document records the decisions of the project owner. They are followed by the
+technical objections that came up when checking against the actual code of the
+repository, and by the changes proposed as a result. The specification itself is in:
 
-| Dokument | Inhalt |
+| Document | Content |
 | --- | --- |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Modularchitektur, Datenstrukturen, Verarbeitung, globale und stimmenbezogene Modulation, Instrumentenschnittstelle, Speicher- und CPU-Abschätzung |
-| [PROTOCOL.md](PROTOCOL.md) | MIDI-Protokoll v1 (Live-Ebene und SysEx-Konfiguration) |
-| [STORAGE.md](STORAGE.md) | QSPI-Aufteilung, Lösch- und Schreibverfahren, Datenintegrität (nur Spezifikation) |
-| [TEST_PLAN_PHASE2.md](TEST_PLAN_PHASE2.md) | Host-Tests, Messfirmware, Messszenarien und Abnahme für Phase 2 |
-| [VALIDATION.md](VALIDATION.md) | Ergebnisse von Phase 2 (Host gemessen, Hardware ausstehend) |
-| [../../../editors/mod-on-daisy/docs/GUI.md](../../../editors/mod-on-daisy/docs/GUI.md) | Raster-GUI und Editor-Architektur (JUCE) |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | module architecture, data structures, processing, global and per-voice modulation, instrument interface, memory and CPU estimate |
+| [PROTOCOL.md](PROTOCOL.md) | MIDI protocol v1 (live layer and SysEx configuration) |
+| [STORAGE.md](STORAGE.md) | QSPI layout, erase and write procedure, data integrity (specification only) |
+| [TEST_PLAN_PHASE2.md](TEST_PLAN_PHASE2.md) | host tests, measurement firmware, measurement scenarios and acceptance for phase 2 |
+| [VALIDATION.md](VALIDATION.md) | results of phase 2 (host measured, hardware pending) |
+| [../../../editors/mod-on-daisy/docs/GUI.md](../../../editors/mod-on-daisy/docs/GUI.md) | grid GUI and editor architecture (JUCE) |
 
-**Evidenzklassen:** `BELEGT` = im Repository oder im gepinnten libDaisy nachgelesen;
-`SCHÄTZUNG` = gerechnet, nicht gemessen; `VORSCHLAG` = noch zu bestätigen;
-`OFFEN` = erst durch Hardwaretest zu klären.
+**Evidence classes:** `VERIFIED` = checked in the repository or in the pinned libDaisy;
+`ESTIMATE` = calculated, not measured; `PROPOSAL` = still to be confirmed;
+`OPEN` = can only be settled by a hardware test.
 
-## 1. Entscheidungen v0.1
+## 1. Decisions v0.1
 
-| Nr. | Thema | Entscheidung |
+| No. | Topic | Decision |
 | --- | --- | --- |
-| D1 | Struktur | Modul unter `modules/mod-on-daisy/`, Editor unter `editors/mod-on-daisy/`. Vorhandene Instrumente bleiben vorerst unverändert. |
-| D2 | Matrix | Grafische **8×8-Rastermatrix** nach dem Vorbild von MatrixBrute/MiniFreak. Keine Zuweisung über Menüs. **Höchstens 8 aktive Verbindungen** (vorläufiger Richtwert). Tiefe **−100 … +100** pro Kreuzungspunkt. |
-| D3 | Quellen | 1 LFO 1 · 2 LFO 2 · 3 Random/S&H · 4 CV 1 · 5 CV 2 · 6 Modwheel (CC1) · 7 Channel AT · 8 Poly AT. Modwheel, Channel AT und Poly AT sind Pflicht. Poly AT wird stimmenbezogen verarbeitet. |
-| D4 | Ziele | 8 Spalten, instrumentspezifisch. Nicht unterstützte Ziele und Verbindungen werden ausgegraut. Die Engine bleibt universell. |
-| D5 | Rate | **Keine Audio-Rate in v0.1**, keine Infrastruktur dafür auf Vorrat. Control-Rate 1 kHz. Später allenfalls Audio-Rate für die CV-Eingänge, nach eigener Prüfung. |
-| D6 | Editor | JUCE, zunächst Standalone für Windows. VST3 für Studio One soll später möglich bleiben. Kommunikation über USB-MIDI. |
-| D7 | Pilot | Toy Piano für technische Integrationstests, danach Rings (Physical Modeling) mit Poly AT, später Nebulae. |
-| D8 | Speicherung | Langfristig QSPI. Zuerst Aufteilung, Verfahren und Integrität spezifizieren; **noch keine Flash-Schreibfunktionen**. |
-| D9 | Protokoll | SysEx-ID `0x7D` vorläufig. Eigene Projektkennung, Version, Geräte-ID, zuverlässige Übertragung der Matrix. libDaisy-Puffergrenzen beachten. |
-| D10 | Performance | Erste Messung in Phase 2: inaktive Matrix, wenige Verbindungen, Maximum. Callback-Zeiten, Spitzen und Speicher nachvollziehbar dokumentieren. |
-| D11 | Nächster Schritt | Nur Phase 1: Architektur und Spezifikation. |
+| D1 | Structure | Module under `modules/mod-on-daisy/`, editor under `editors/mod-on-daisy/`. Existing instruments stay unchanged for now. |
+| D2 | Matrix | Graphical **8×8 grid matrix** modelled on MatrixBrute/MiniFreak. No assignment via menus. **At most 8 active connections** (provisional guideline). Depth **−100 … +100** per cross point. |
+| D3 | Sources | 1 LFO 1 · 2 LFO 2 · 3 Random/S&H · 4 CV 1 · 5 CV 2 · 6 Modwheel (CC1) · 7 Channel AT · 8 Poly AT. Modwheel, Channel AT and Poly AT are mandatory. Poly AT is processed per voice. |
+| D4 | Targets | 8 columns, instrument-specific. Unsupported targets and connections are greyed out. The engine stays universal. |
+| D5 | Rate | **No audio rate in v0.1**, no infrastructure for it in advance. Control rate 1 kHz. Later possibly audio rate for the CV inputs, after a separate review. |
+| D6 | Editor | JUCE, initially standalone for Windows. VST3 for Studio One should remain possible later. Communication via USB MIDI. |
+| D7 | Pilot | Toy Piano for technical integration tests, then Rings (Physical Modeling) with poly AT, later Nebulae. |
+| D8 | Storage | QSPI in the long term. First specify layout, procedure and integrity; **no flash write functions yet**. |
+| D9 | Protocol | SysEx ID `0x7D` provisionally. Own project identifier, version, device ID, reliable transfer of the matrix. Respect the libDaisy buffer limits. |
+| D10 | Performance | First measurement in phase 2: inactive matrix, few connections, maximum. Document callback times, peaks and memory in a traceable way. |
+| D11 | Next step | Phase 1 only: architecture and specification. |
 
-Gegenüber dem ersten Konzept vom 22.10. entfallen damit: 32 Slots, Via-Modulation,
-Hüllkurven als Quellen, frei zuweisbare CCs, der Audio-Rate-Pfad, Transaktionen über
-viele Einzelbefehle, die selbstbeschreibenden Quellen und das Triple-Buffering
-eines großen Programms. Das Konzept wird dadurch deutlich schlanker (siehe § 3).
+Compared with the first concept of 22.10., this drops: 32 slots, via modulation,
+envelopes as sources, freely assignable CCs, the audio-rate path, transactions over
+many individual commands, the self-describing sources and the triple buffering of a
+large program. This makes the concept considerably leaner (see § 3).
 
-**Ergänzungen zu D3 (24.10.2026, Entscheidung Betreiber):**
+**Additions to D3 (24.10.2026, owner decision):**
 
-* **Aftertouch-Anzeige:** „Normalerweise ist entweder Channel AT oder Poly AT aktiv. Der
-  Editor soll die empfangenen Daten automatisch unter ‚Aftertouch‘ anzeigen. Unter der
-  Haube bleiben die Wege getrennt.“ Die Editoren zeigen deshalb eine gemeinsame Anzeige
-  „Aftertouch“ mit dem Zusatz „Kanal“ bzw. „Poly · Note“. Sie folgt der zuletzt
-  empfangenen Nachrichtenart, die das Gerät im erweiterten Monitor meldet (PROTOCOL
-  § 3.6). Die Zeilen 7 (Channel AT) und 8 (Poly AT) bleiben in der Matrix, in Patches
-  und im Audio-Weg unverändert getrennt und bearbeitbar; ein Punkt markiert die gerade
-  angezeigte Zeile. Firmware ohne diese Meldung bekommt keine erratene Automatik,
-  sondern den Hinweis „Kanal/Poly getrennt“.
-* **LFO-Quermodulation:** LFO 1 und LFO 2 können sich gegenseitig in der Rate modulieren
-  (Parameter `fm`, ±2 Oktaven, nur frei laufend). Das ist ein Quellparameter, keine
-  neue Zeile oder Spalte; die 8×8-Matrix bleibt unverändert (PROTOCOL § 3.6).
+* **Aftertouch display:** "Normally either Channel AT or Poly AT is active. The editor
+  should automatically show the received data under 'Aftertouch'. Under the hood the
+  paths stay separate." The editors therefore show one common display "Aftertouch"
+  with the suffix "Channel" or "Poly · Note". It follows the most recently received
+  message type, which the device reports in the extended monitor (PROTOCOL § 3.6).
+  Rows 7 (Channel AT) and 8 (Poly AT) stay separate and editable, unchanged, in the
+  matrix, in patches and in the audio path; a dot marks the row currently shown.
+  Firmware without this report gets no guessed automatic mode, but the hint
+  "Channel/Poly separate".
+* **LFO cross-modulation:** LFO 1 and LFO 2 can modulate each other's rate
+  (parameter `fm`, ±2 octaves, free-running only). This is a source parameter, not a
+  new row or column; the 8×8 matrix stays unchanged (PROTOCOL § 3.6).
 
-## 2. Technische Einwände
+## 2. Technical objections
 
-Kein Einwand stellt eine Entscheidung grundsätzlich in Frage. Mehrere betreffen
-jedoch Annahmen, die im vorhandenen Code nicht erfüllt sind und vor der Integration
-bekannt sein sollten.
+No objection fundamentally calls a decision into question. Several, however, concern
+assumptions that the existing code does not meet and that should be known before
+integration.
 
-### E1 — Poly AT bei Rings verlangt einen Eingriff in die Torus-DSP (`BELEGT`)
+### E1 — Poly AT on Rings requires a change to the Torus DSP (`VERIFIED`)
 
-`torus::Part::Process()` erhält **einen einzigen `Patch`** (Structure, Brightness,
-Damping, Position) für alle Stimmen. `RenderModalVoice`, `RenderFMVoice` und
-`RenderStringVoice` setzen daraus für jede Stimme dieselben Werte
-(`instruments/physical-modeling/torus/dsp/part.cpp`). Unabhängige Stimmenmodulation
-ist deshalb ohne Änderung der Torus-Schicht **nicht möglich**.
+`torus::Part::Process()` receives **a single `Patch`** (Structure, Brightness,
+Damping, Position) for all voices. `RenderModalVoice`, `RenderFMVoice` and
+`RenderStringVoice` derive the same values from it for every voice
+(`instruments/physical-modeling/torus/dsp/part.cpp`). Independent voice modulation
+is therefore **not possible** without changing the Torus layer.
 
-* **Aufwand**: klein. `Part::Process` bekommt ein Array mit 4 Stimmen-Patches und
-  einen Pitch-Offset pro Stimme. Die Resonatoren berechnen ihre Filter ohnehin bei
-  jedem Aufruf neu (`Resonator::Process` → `ComputeFilters()`). Unterschiedliche Werte
-  pro Stimme kosten daher **keine zusätzliche Rechenzeit** (`SCHÄTZUNG`).
-* **Folge**: Das ist eine Änderung an Upstream-DSP. Sie gehört in Phase 5 und muss in
-  `torus/UPSTREAM.md` dokumentiert werden.
-* **Sinnvolle Poly-AT-Ziele bei Rings**: Pitch, Structure, Brightness, Damping und
-  Position. **Excitation** wird beim Anschlag übernommen (`velocity * excitation` pro
-  Slot); Druck entsteht aber erst nach dem Anschlag, Poly AT wirkt dort also nicht.
-  Reverb und Dry/Wet sind global (siehe E2).
+* **Effort**: small. `Part::Process` gets an array of 4 voice patches and a pitch
+  offset per voice. The resonators recompute their filters on every call anyway
+  (`Resonator::Process` → `ComputeFilters()`). Different values per voice therefore
+  cost **no additional computing time** (`ESTIMATE`).
+* **Consequence**: this is a change to upstream DSP. It belongs in phase 5 and must be
+  documented in `torus/UPSTREAM.md`.
+* **Useful poly AT targets on Rings**: Pitch, Structure, Brightness, Damping and
+  Position. **Excitation** is taken over at the strike (`velocity * excitation` per
+  slot); pressure only arises after the strike, so poly AT has no effect there.
+  Reverb and Dry/Wet are global (see E2).
 
-### E2 — Poly AT auf globalen Zielen braucht eine Regel
+### E2 — Poly AT on global targets needs a rule
 
-Ein globales Ziel wie Reverb, Dry/Wet oder alle Ziele von Nebulae hat keine Stimme,
-deren Druck es übernehmen könnte. `VORSCHLAG`: Auf globalen Zielen gilt der
-**Druck der zuletzt angeschlagenen, noch gehaltenen Note** (Last-Note). Das entspricht
-der Notenpriorität von Nebulae (`Notes::Current()`) und macht Poly AT auch bei
-monophonen Instrumenten nutzbar. Die Alternative wäre, diese Zellen auszugrauen.
-→ **Entscheidung nötig** (§ 4, Frage 1).
+A global target such as Reverb, Dry/Wet or all targets of Nebulae has no voice whose
+pressure it could take over. `PROPOSAL`: on global targets the **pressure of the most
+recently struck note that is still held** applies (last note). This matches the note
+priority of Nebulae (`Notes::Current()`) and makes poly AT usable on monophonic
+instruments too. The alternative would be to grey out these cells.
+→ **Decision needed** (§ 4, question 1).
 
-### E3 — MIDI 1.0 adressiert Noten, nicht Stimmen
+### E3 — MIDI 1.0 addresses notes, not voices
 
-Poly AT kommt als *(Kanal, Note, Druck)*. Die Zuordnung zur Stimme kennt nur das
-Instrument. Die Engine führt deshalb eine **Drucktabelle pro Note**, und das
-Instrument fragt für jede Stimme den Druck ihrer Note ab (ARCHITECTURE § 5).
-Daraus folgen zwei Grenzen, die sich nicht vermeiden lassen:
+Poly AT arrives as *(channel, note, pressure)*. Only the instrument knows the mapping to
+the voice. The engine therefore keeps a **pressure table per note**, and the instrument
+queries the pressure of its note for each voice (ARCHITECTURE § 5). Two limits follow
+from this that cannot be avoided:
 
-* Zwei Stimmen auf derselben Note teilen sich den Druck. Das kommt vor: Bei Toy Piano
-  liegt C5 auf zwei Tasten, und Rings verteilt wiederholte Unisono-Noten auf
-  verschiedene Stimmen.
-* v0.1 ist omni: Gleiche Notennummern auf verschiedenen Kanälen teilen sich die Tabelle.
-  Echte Unabhängigkeit gleicher Noten gäbe es nur mit MPE (später möglich).
+* Two voices on the same note share the pressure. This does happen: on Toy Piano C5 is
+  on two keys, and Rings distributes repeated unison notes to different voices.
+* v0.1 is omni: equal note numbers on different channels share the table. True
+  independence of equal notes would only be possible with MPE (possible later).
 
-### E4 — Toy Piano hat keine dauerhaft modulierbaren Parameter (`BELEGT`)
+### E4 — Toy Piano has no continuously modulatable parameters (`VERIFIED`)
 
-Toy Piano besitzt nur **Attack und Decay**, und beide werden beim Anschlag übernommen
-(`ToyPiano::Trigger/NoteOn(…, attack, decay)`). Außer Note On verarbeitet es keine
-MIDI-Nachrichten. Für einen aussagekräftigen Integrationstest braucht es mindestens
-2–3 neue kontinuierliche Ziele, zum Beispiel **Level pro Stimme** (Tremolo, Poly AT),
-**Pitch pro Stimme** (Vibrato) und **Harmonic** (2. Oberton). Das ändert Toy Piano
-v0.2, eine vom Betreiber abgenommene Release-Version.
+Toy Piano has only **Attack and Decay**, and both are taken over at the strike
+(`ToyPiano::Trigger/NoteOn(…, attack, decay)`). Apart from Note On it processes no MIDI
+messages. A meaningful integration test needs at least 2–3 new continuous targets, for
+example **Level per voice** (tremolo, poly AT), **Pitch per voice** (vibrato) and
+**Harmonic** (2nd overtone). This changes Toy Piano v0.2, a release version accepted by
+the owner.
 
-`VORSCHLAG`:
+`PROPOSAL`:
 
-* Die Messungen in Phase 2 laufen mit einer **eigenen Messfirmware** im Modul. Sie
-  ändert kein Instrument (TEST_PLAN § 3).
-* Die Toy-Piano-Integration wird ein eigener Schritt als Version v0.3. Ohne aktive
-  Verbindung klingt sie bitgenau wie v0.2, was ein Test nachweist.
-* Toy Piano bleibt ein guter Poly-AT-Prüfstand: 16 MIDI-Stimmen mit Notenzuordnung
-  (`MidiVoiceNote()`) und Voice-Stealing.
+* The measurements in phase 2 run with a **separate measurement firmware** in the
+  module. It changes no instrument (TEST_PLAN § 3).
+* The Toy Piano integration becomes a separate step as version v0.3. Without an active
+  connection it sounds bit-exactly like v0.2, which a test proves.
+* Toy Piano remains a good poly AT test bench: 16 MIDI voices with note mapping
+  (`MidiVoiceNote()`) and voice stealing.
 
-### E5 — Die Tiefenauflösung ±100 reicht für Pitch nur mit zielbezogenem Bereich
+### E5 — The depth resolution ±100 is sufficient for pitch only with a per-target range
 
-Bei Rings bildet `Frequency` den normierten Bereich 0…1 auf **48 Halbtöne** ab
-(`Transpose()` in `config.h`). Bezöge sich ±100 auf diesen vollen Bereich, wäre ein
-Tiefenschritt **0,48 Halbtöne**. Für Vibrato ist das zu grob.
+On Rings, `Frequency` maps the normalized range 0…1 to **48 semitones**
+(`Transpose()` in `config.h`). If ±100 referred to this full range, one depth step
+would be **0.48 semitones**. That is too coarse for vibrato.
 
-`VORSCHLAG`: Jedes Ziel legt einen **Modulationsumfang** (`span`) fest, also den
-Wert, dem Tiefe 100 entspricht. Für Rings-Pitch wären das ±12 Halbtöne, ein Schritt
-damit 0,12 Halbtöne, für Cutoff-artige Ziele der volle Bereich. Der Editor zeigt den
-Umfang an, die Rasterwerte bleiben −100…+100. Kommt man damit nicht aus, wäre eine
-quadratische Tiefenkurve die nächste Stufe; sie ist für v0.1 nicht vorgesehen.
+`PROPOSAL`: each target defines a **modulation range** (`span`), i.e. the value that
+depth 100 corresponds to. For Rings pitch that would be ±12 semitones, one step thus
+0.12 semitones; for cutoff-like targets the full range. The editor shows the range; the
+grid values stay −100…+100. If that is not enough, a quadratic depth curve would be the
+next stage; it is not planned for v0.1.
 
-### E6 — Die Grenze von 8 aktiven Verbindungen ist keine CPU-Frage
+### E6 — The limit of 8 active connections is not a CPU question
 
-Auch alle 64 Zellen aktiv kosten geschätzt nur etwa 0,1 % CPU bei 1 kHz (ARCHITECTURE
-§ 8). Die Grenze ist als **Bedien- und Klangrichtwert** sinnvoll, nicht als technische
-Notwendigkeit. `VORSCHLAG`: Patch, Protokoll und Speicherformat bilden immer **das
-volle 8×8-Raster** ab, und die Grenze ist eine einzige Konstante (`kMaxActive = 8`) in
-der Validierung. Sie lässt sich später ohne Formatänderung anheben. Die Messung in
-Phase 2 prüft zusätzlich 64 aktive Zellen als Lasttest.
+Even all 64 cells active are estimated to cost only about 0.1 % CPU at 1 kHz
+(ARCHITECTURE § 8). The limit makes sense as an **operating and sound guideline**, not
+as a technical necessity. `PROPOSAL`: patch, protocol and storage format always
+represent **the full 8×8 grid**, and the limit is a single constant (`kMaxActive = 8`)
+in the validation. It can be raised later without a format change. The measurement in
+phase 2 additionally checks 64 active cells as a load test.
 
-### E7 — Die effektive Control-Rate hängt von der Blockgröße ab (`BELEGT`)
+### E7 — The effective control rate depends on the block size (`VERIFIED`)
 
-Die Engine rechnet mit der tatsächlichen Sampleanzahl pro Tick, die LFO-Frequenzen
-stimmen deshalb immer. Ein Instrument liest seine Parameter aber nur einmal pro
-eigenem Block. Bei Toy Piano, Looper und Physical Modeling (Block 48) sind das
-1 kHz, bei Ambient Reverb (Block 32) 1,5 kHz, bei **Nebulae (Block 256) nur
-187,5 Hz**. Ein 20-Hz-LFO hätte dort etwa 9 Stufen pro Periode. `VORSCHLAG`:
-LFO-Bereich in v0.1 **0,02–20 Hz**. Nebulae misst und bewertet das gesondert, wenn
-es integriert wird.
+The engine computes with the actual sample count per tick, so the LFO frequencies are
+always correct. An instrument, however, reads its parameters only once per own block.
+For Toy Piano, Looper and Physical Modeling (block 48) that is 1 kHz, for Ambient
+Reverb (block 32) 1.5 kHz, for **Nebulae (block 256) only 187.5 Hz**. A 20 Hz LFO would
+have about 9 steps per period there. `PROPOSAL`: LFO range in v0.1 **0.02–20 Hz**.
+Nebulae measures and assesses this separately when it is integrated.
 
-### E8 — CV-Eingänge: Abtastung, Rauschen und Kalibrierung (`BELEGT` / `OFFEN`)
+### E8 — CV inputs: sampling, noise and calibration (`VERIFIED` / `OPEN`)
 
-* `AnalogControl::Process()` für CV läuft nur in `UpdateAllControls()`, also einmal pro
-  Audio-Block. Die Bandbreite ist dadurch auf die halbe Blockrate begrenzt. Das stützt
-  D5: Audio-Rate über CV bräuchte einen eigenen ADC-Pfad.
-* Offene CV-Buchsen und ADC-Rauschen erzeugen ohne Gegenmaßnahme ständiges
-  **Parameterzittern**. Daher eine Totzone um 0 und eine Glättung von etwa 2 ms
+* `AnalogControl::Process()` for CV runs only in `UpdateAllControls()`, i.e. once per
+  audio block. The bandwidth is therefore limited to half the block rate. This supports
+  D5: audio rate via CV would need its own ADC path.
+* Open CV jacks and ADC noise produce constant **parameter jitter** without a
+  countermeasure. Hence a dead zone around 0 and smoothing of about 2 ms
   (ARCHITECTURE § 4.3).
-* `OFFEN`: Spannungsbereich, Nullpunkt und Pegel der offenen Desktop-Buchsen. Sie
-  werden in Phase 2 gemessen und als **Gerätekalibrierung** gespeichert, getrennt vom
-  Patch (STORAGE § 3).
+* `OPEN`: voltage range, zero point and level of the open Desktop jacks. They are
+  measured in phase 2 and stored as **device calibration**, separate from the patch
+  (STORAGE § 3).
 
-### E9 — MIDI-Grenzen der gepinnten libDaisy (`BELEGT`)
+### E9 — MIDI limits of the pinned libDaisy (`VERIFIED`)
 
-* **SysEx-Empfang**: Puffer 128 Byte. Längere Nachrichten werden abgeschnitten und
-  trotzdem als vollständig gemeldet. → Rahmen ≤ 120 Byte mit Längenfeld und Prüfsumme.
-  Das ganze 8×8-Raster passt in **einen** Rahmen (99 Byte, PROTOCOL § 3.3).
-* **SysEx-Senden**: `MidiToUsb` trennt vor `F7`. Laut Code-Lesung nicht
-  spezifikationskonform, `OFFEN` unter Windows. Das wird als **erster Hardwaretest in
-  Phase 2** geprüft. Falls nötig, folgt ein eigenes USB-Framing im Adapter, ohne
-  Änderung am libDaisy-Submodul.
-* **Ereignis-FIFO**: 256 Einträge, bei voller FIFO werden neue Ereignisse verworfen
-  (`FIFO::PushBack`). Ein Poly-AT-Strom kann leicht über 1 000 Nachrichten pro Sekunde
-  erreichen. Der Main-Loop muss deshalb jede Iteration vollständig leeren und darf nie
-  lange blockieren. Das betrifft vor allem einen späteren QSPI-Löschvorgang mit bis zu
-  400 ms, in denen MIDI verloren gehen kann (STORAGE § 5).
+* **SysEx receive**: buffer 128 bytes. Longer messages are truncated and still reported
+  as complete. → frames ≤ 120 bytes with a length field and checksum. The whole 8×8 grid
+  fits into **one** frame (99 bytes, PROTOCOL § 3.3).
+* **SysEx send**: `MidiToUsb` splits before `F7`. According to a code reading this is
+  not compliant with the specification, `OPEN` under Windows. This is checked as the
+  **first hardware test in phase 2**. If necessary, a separate USB framing in the
+  adapter follows, without changing the libDaisy submodule.
+* **Event FIFO**: 256 entries; when the FIFO is full, new events are discarded
+  (`FIFO::PushBack`). A poly AT stream can easily exceed 1 000 messages per second.
+  The main loop must therefore drain it completely in every iteration and must never
+  block for long. This mainly concerns a later QSPI erase of up to 400 ms, during which
+  MIDI can be lost (STORAGE § 5).
 
-### E10 — Windows: Editor und Studio One teilen sich den MIDI-Port nicht ohne Weiteres
+### E10 — Windows: the editor and Studio One cannot simply share the MIDI port
 
-Klassische Windows-MIDI-Ports (WinMM) sind **nur von einer Anwendung gleichzeitig**
-nutzbar. Hat Studio One „Daisy Seed External“ geöffnet, kann der Standalone-Editor den
-Port nicht öffnen, und umgekehrt. Die Toy-Piano-Dokumentation beschreibt bereits
-konkurrierende Anwendungen. Mögliche Wege:
+Classic Windows MIDI ports (WinMM) can be used **by only one application at a time**.
+If Studio One has "Daisy Seed External" open, the standalone editor cannot open the
+port, and vice versa. The Toy Piano documentation already describes competing
+applications. Possible ways:
 
-* den Port in Studio One beim Editieren deaktivieren;
-* Windows MIDI Services mit Mehrfachzugriff, falls auf dem System verfügbar
-  (`OFFEN`, prüfen);
-* später der VST3-Weg, bei dem das Plugin den Port statt Studio One hält.
+* disable the port in Studio One while editing;
+* Windows MIDI Services with multi-client access, if available on the system
+  (`OPEN`, to be checked);
+* later the VST3 path, in which the plug-in holds the port instead of Studio One.
 
-Das gehört als Test an den Anfang von Phase 3, ist aber schon jetzt bekannt.
+This belongs as a test at the start of phase 3, but is already known now.
 
-### E11 — QSPI-Speicherung: Bootloader, Cache und Blockierung (`BELEGT` / `OFFEN`)
+### E11 — QSPI storage: bootloader, cache and blocking (`VERIFIED` / `OPEN`)
 
-* Der Daisy-Bootloader lässt die **ersten vier 64-KiB-Sektoren unberührt** und
-  reserviert sie für künftige Funktionen. Programme liegen ab `0x90040000` und werden
-  in **64-KiB-Blöcken** gelöscht. BOOT_SRAM-Programme sind höchstens 480 KiB groß
+* The Daisy bootloader leaves the **first four 64 KiB sectors untouched** and reserves
+  them for future functions. Programs start at `0x90040000` and are erased in
+  **64 KiB blocks**. BOOT_SRAM programs are at most 480 KiB in size
   (`libDaisy/doc/md/_a7_Getting-Started-Daisy-Bootloader.md`, `STM32H750IB_sram.lds`).
-* libDaisys `PersistentStorage` löscht und schreibt ohne CRC und ohne Doppelablage.
-  Bei Stromausfall kann der Inhalt verloren gehen. → eigenes Verfahren (STORAGE § 4).
-* libDaisy richtet für `0x90000000` **keine MPU-Region** ein. Nach der
-  ARMv7-M-Standardkarte ist der Bereich cachebar. Nach Lösch- oder Schreibvorgängen
-  muss der D-Cache des Bereichs invalidiert werden, sonst liest man veraltete Daten.
-  `OFFEN`: Die STM32H7-Problematik spekulativer Zugriffe auf QSPI im indirekten Modus
-  ist vor der Implementierung zu prüfen.
-* Ein Sektor-Löschvorgang dauert laut libDaisy-Konstante **bis zu 400 ms**
-  (`IS25LP064A_SECTOR_ERASE_MAX_TIME`). Audio läuft weiter, weil der Code bei
-  BOOT_SRAM aus dem SRAM ausgeführt wird. Der Main-Loop und damit der USB-Dienst steht
-  in dieser Zeit.
+* libDaisy's `PersistentStorage` erases and writes without CRC and without a double
+  copy. On power loss the content can be lost. → own procedure (STORAGE § 4).
+* libDaisy sets up **no MPU region** for `0x90000000`. According to the ARMv7-M default
+  map the region is cacheable. After erase or write operations the D-cache of the
+  region must be invalidated, otherwise stale data is read. `OPEN`: the STM32H7 issue of
+  speculative accesses to QSPI in indirect mode must be checked before implementation.
+* A sector erase takes **up to 400 ms** according to the libDaisy constant
+  (`IS25LP064A_SECTOR_ERASE_MAX_TIME`). Audio keeps running because with BOOT_SRAM the
+  code executes from SRAM. The main loop, and with it the USB service, stalls during
+  this time.
 
-### E12 — DTCM-Belegung (`BELEGT`)
+### E12 — DTCM usage (`VERIFIED`)
 
-Bei BOOT_SRAM liegen `.data` und `.bss` standardmäßig im **DTCM** (128 KiB). Toy Piano
-belegt bereits 88,6 %, es bleiben etwa 14,9 KiB, auch für den Stack. Der Zustand der
-Engine ist mit ≤ 1 KiB im Audiopfad klein genug (ARCHITECTURE § 8.1). Er wird trotzdem
-pro Instrument im ELF-Check mitgeführt.
+With BOOT_SRAM, `.data` and `.bss` live in **DTCM** (128 KiB) by default. Toy Piano
+already uses 88.6 %, leaving about 14.9 KiB, including for the stack. The engine state,
+at ≤ 1 KiB in the audio path, is small enough (ARCHITECTURE § 8.1). It is nevertheless
+tracked per instrument in the ELF check.
 
-## 3. Daraus folgende Architekturänderungen
+## 3. Resulting architecture changes
 
-| Nr. | Änderung gegenüber dem Konzept vom 22.10. | Grund |
+| No. | Change compared with the concept of 22.10. | Reason |
 | --- | --- | --- |
-| A1 | Festes Raster `depth[8][8]` + Aktiv-Maske statt Slot-Liste | D2, E6 |
-| A2 | Feste Quellenliste ohne Quellen-Beschreibungsprotokoll; Ziele bleiben selbstbeschreibend | D3, D4 |
-| A3 | Zwei Modulationswege: globale Offsets und ein **stimmenbezogener Poly-AT-Weg** mit Drucktabelle pro Note | D3, E1–E3 |
-| A4 | `span` pro Ziel | E5 |
-| A5 | Kein Audio-Rate-Code, kein Via, keine Hüllkurven, keine Polaritätsoptionen | D5, „schlank“ |
-| A6 | Ganzes Raster in einem SysEx-Rahmen; jede Antwort bestätigt mit der CRC-32 des Patches | D9, E9 |
-| A7 | Eigenes, stromausfallsicheres QSPI-Verfahren statt `PersistentStorage`; Gerätekalibrierung getrennt vom Patch | D8, E8, E11 |
-| A8 | Messfirmware `modules/mod-on-daisy/bench/` in Phase 2; Toy-Piano-Integration als eigener Schritt v0.3 | D1, D10, E4 |
+| A1 | Fixed grid `depth[8][8]` + active mask instead of a slot list | D2, E6 |
+| A2 | Fixed source list without a source description protocol; targets stay self-describing | D3, D4 |
+| A3 | Two modulation paths: global offsets and a **per-voice poly AT path** with a pressure table per note | D3, E1–E3 |
+| A4 | `span` per target | E5 |
+| A5 | No audio-rate code, no via, no envelopes, no polarity options | D5, "lean" |
+| A6 | Whole grid in one SysEx frame; every reply confirms with the CRC-32 of the patch | D9, E9 |
+| A7 | Own power-loss-safe QSPI procedure instead of `PersistentStorage`; device calibration separate from the patch | D8, E8, E11 |
+| A8 | Measurement firmware `modules/mod-on-daisy/bench/` in phase 2; Toy Piano integration as a separate step v0.3 | D1, D10, E4 |
 
-## 4. Nachtrag: Entscheidungen vom 23.10.2026
+## 4. Addendum: decisions of 23.10.2026
 
-Die offenen Punkte aus der ersten Fassung dieses Dokuments sind entschieden:
+The open points from the first version of this document have been decided:
 
-| Nr. | Thema | Entscheidung | Umsetzung |
+| No. | Topic | Decision | Implementation |
 | --- | --- | --- | --- |
-| N1 | Poly AT auf globalen Zielen | **Druck der zuletzt angeschlagenen, gehaltenen Note** (Last-Note) | `LiveState`, `AllowedCells`; nur `latched`-Ziele bleiben für Poly AT gesperrt |
-| N2 | Bedeutung von Tiefe 100 | **pro Ziel festgelegt** (`span`), weil jeder Parameter eine andere musikalische Bedeutung hat | `TargetInfo::span`, `span_text`; Editor zeigt den Umfang im Spaltenkopf |
-| N3 | Toy Piano | darf neue Ziele bekommen. Es ist **Entwicklungsumgebung**, kein eigentliches Instrument; hier wird ausprobiert | Toy Piano v0.3 als nächster Integrationsschritt (ARCHITECTURE § 6.3) |
-| N4 | LFO-Parameter | Wellenformen **Sinus, Dreieck, Sägezahn steigend und fallend, Rechteck, Sample & Hold**; **Synchronisation schaltbar**: frei laufend, MIDI-Clock oder einer der Gate-Eingänge | Parameter Rate, Form, Sync, Gate, Teilung, Retrigger (ARCHITECTURE § 3.3, § 4.2) |
-| N5 | Random/S&H | gleiche Sync-Möglichkeiten wie die LFOs (frei, MIDI-Clock, Gate); Modus Stufe oder geglättet | Ergänzung von mir für ein einheitliches Bedienkonzept, mit wenig Aufwand, weil dieselbe Clock-Logik genutzt wird. Lässt sich wieder entfernen |
-| N6 | Messfirmware drei Ebenen tief | `common/desktop.mk` setzt `DAISY_ROOT ?= ../..` statt `:=` (rückwärtskompatibel) | umgesetzt; alle Instrumente bauen unverändert |
+| N1 | Poly AT on global targets | **Pressure of the most recently struck, held note** (last note) | `LiveState`, `AllowedCells`; only `latched` targets stay locked for poly AT |
+| N2 | Meaning of depth 100 | **defined per target** (`span`), because each parameter has a different musical meaning | `TargetInfo::span`, `span_text`; the editor shows the range in the column header |
+| N3 | Toy Piano | may get new targets. It is a **development environment**, not an actual instrument; this is where things are tried out | Toy Piano v0.3 as the next integration step (ARCHITECTURE § 6.3) |
+| N4 | LFO parameters | Waveforms **sine, triangle, saw rising and falling, square, sample & hold**; **switchable synchronization**: free-running, MIDI clock or one of the gate inputs | parameters Rate, Shape, Sync, Gate, Division, Retrigger (ARCHITECTURE § 3.3, § 4.2) |
+| N5 | Random/S&H | same sync options as the LFOs (free, MIDI clock, gate); mode stepped or smooth | an addition of mine for a uniform operating concept, with little effort because the same clock logic is used. Can be removed again |
+| N6 | Measurement firmware three levels deep | `common/desktop.mk` sets `DAISY_ROOT ?= ../..` instead of `:=` (backwards compatible) | implemented; all instruments build unchanged |
 
-Damit ist Phase 2 freigegeben und als Software umgesetzt. Der Stand steht in
+Phase 2 is thereby approved and implemented in software. The status is in
 [VALIDATION.md](VALIDATION.md).
 
-**Präzisierungen meinerseits** (ohne Einfluss auf die Entscheidungen, bei Bedarf änderbar):
+**Clarifications on my part** (without influence on the decisions, can be changed if
+needed):
 
-* **Teilungen bei MIDI-Clock**: 4 Takte bis 1/32 einschließlich Triolen 1/4T, 1/8T,
+* **Divisions with MIDI clock**: 4 bars to 1/32 including the triplets 1/4T, 1/8T,
   1/16T.
-* **Teilungen bei Gate**: 1 Zyklus pro 4, pro 2 oder pro 1 Impuls; 2 oder 4 Zyklen pro
-  Impuls. Zwischen den Impulsen interpoliert die gemessene Periode.
-* **MIDI Start** setzt synchronisierte LFOs auf den Taktanfang.
-* **Clock-Stopp**: Bleibt der Takt aus, halten synchronisierte LFOs an, statt frei
-  weiterzulaufen.
-* **Retrigger** wirkt nur bei frei laufenden LFOs.
+* **Divisions with gate**: 1 cycle per 4, per 2 or per 1 pulse; 2 or 4 cycles per
+  pulse. Between the pulses the measured period interpolates.
+* **MIDI Start** sets synchronized LFOs to the start of the bar.
+* **Clock stop**: if the clock stops, synchronized LFOs halt instead of continuing to
+  run freely.
+* **Retrigger** only affects free-running LFOs.

@@ -1,188 +1,187 @@
-# Mod on Daisy — Speicherung im QSPI-Flash (Spezifikation)
+# Mod on Daisy — Storage in the QSPI flash (specification)
 
-**Stand:** 23. Oktober 2026 · **Status:** reine Spezifikation (D8). **Es werden keine
-Flash-Schreibfunktionen implementiert**, bis Aufteilung und Verfahren freigegeben sind.
-Bis dahin antwortet die Firmware auf `STORE`/`RECALL` mit `NAK 9` (PROTOCOL § 3.4).
+**As of:** 23 October 2026 · **Status:** specification only (D8). **No flash write
+functions are implemented** until the layout and procedure are approved.
+Until then the firmware answers `STORE`/`RECALL` with `NAK 9` (PROTOCOL § 3.4).
 
-## 1. Ausgangslage (`BELEGT`)
+## 1. Starting point (`VERIFIED`)
 
-| Fakt | Quelle |
+| Fact | Source |
 | --- | --- |
-| libDaisy konfiguriert für **alle** Seed-Versionen, also auch Seed3, den Baustein **IS25LP064A** (8 MiB) im Memory-Mapped-Modus ab `0x90000000` | `libDaisy/src/daisy_seed.cpp` `ConfigureQspi()`, `system.cpp` `QSPI_SIZE 0x800000` |
-| Bei BOOT_SRAM initialisiert die Anwendung QSPI selbst (`qspi.Init`, weil das Programm nicht aus QSPI läuft) | `daisy_seed.cpp` |
-| Der Bootloader lässt die **ersten vier 64-KiB-Sektoren** (`0x90000000–0x9003FFFF`) unberührt und behält sie künftigen Funktionen vor | `libDaisy/doc/md/_a7_Getting-Started-Daisy-Bootloader.md` |
-| Programme liegen ab `0x90040000`. Beim Flashen löscht der Bootloader in **64-KiB-Blöcken**. Daten hinter dem Programm müssen auf einer 64-KiB-Grenze jenseits des Programmcodes beginnen | ebd. |
-| BOOT_SRAM-Programme sind höchstens **480 KiB** groß (SRAM 512 KiB − 32 KiB für den Bootloader) | ebd., `STM32H750IB_sram.lds` |
-| Lösch-Höchstzeiten: 4-KiB-Sektor **400 ms**, 64-KiB-Block **1000 ms** | `flash_IS25LP064A.h` |
-| `QSPIHandle::Erase()` nimmt 64-KiB-Blöcke, wenn ausgerichtet und groß genug, sonst 4-KiB-Sektoren; `EraseSector()` löscht genau 4 KiB | `qspi.cpp` |
-| `PersistentStorage` löscht und schreibt ohne CRC und ohne Doppelablage | `util/PersistentStorage.h` |
-| libDaisy legt **keine MPU-Region** für `0x90000000` an | `sys/system.cpp` |
+| For **all** Seed versions, including Seed3, libDaisy configures the chip **IS25LP064A** (8 MiB) in memory-mapped mode from `0x90000000` | `libDaisy/src/daisy_seed.cpp` `ConfigureQspi()`, `system.cpp` `QSPI_SIZE 0x800000` |
+| With BOOT_SRAM the application initializes QSPI itself (`qspi.Init`, because the program does not run from QSPI) | `daisy_seed.cpp` |
+| The bootloader leaves the **first four 64 KiB sectors** (`0x90000000–0x9003FFFF`) untouched and reserves them for future functions | `libDaisy/doc/md/_a7_Getting-Started-Daisy-Bootloader.md` |
+| Programs start at `0x90040000`. When flashing, the bootloader erases in **64 KiB blocks**. Data behind the program must start on a 64 KiB boundary beyond the program code | ibid. |
+| BOOT_SRAM programs are at most **480 KiB** in size (SRAM 512 KiB − 32 KiB for the bootloader) | ibid., `STM32H750IB_sram.lds` |
+| Maximum erase times: 4 KiB sector **400 ms**, 64 KiB block **1000 ms** | `flash_IS25LP064A.h` |
+| `QSPIHandle::Erase()` uses 64 KiB blocks when aligned and large enough, otherwise 4 KiB sectors; `EraseSector()` erases exactly 4 KiB | `qspi.cpp` |
+| `PersistentStorage` erases and writes without CRC and without a double copy | `util/PersistentStorage.h` |
+| libDaisy creates **no MPU region** for `0x90000000` | `sys/system.cpp` |
 
-`OFFEN`: Ob jeder Seed3 tatsächlich einen IS25LP064A trägt, wird in Phase 2 über die
-JEDEC-ID geprüft. Das ist ein Lesekommando, kein Schreibzugriff.
+`OPEN`: whether every Seed3 actually carries an IS25LP064A is checked in phase 2 via the
+JEDEC ID. That is a read command, not a write access.
 
-## 2. Speicheraufteilung
+## 2. Memory layout
 
 ```text
 0x90000000 ┌───────────────────────────────┐
-           │ Bootloader-Reserve (256 KiB)  │  nie benutzen
+           │ bootloader reserve (256 KiB)  │  never use
 0x90040000 ├───────────────────────────────┤
-           │ Firmware-Image (BOOT_SRAM)    │  ≤ 480 KiB → belegt höchstens bis 0x900BFFFF
-0x900C0000 ├───────────────────────────────┤  (in 64-KiB-Blöcken gelöscht)
-           │ frei, ≈ 7,1 MiB               │  nicht von Mod on Daisy benutzt
+           │ firmware image (BOOT_SRAM)    │  ≤ 480 KiB → occupies at most up to 0x900BFFFF
+0x900C0000 ├───────────────────────────────┤  (erased in 64 KiB blocks)
+           │ free, ≈ 7.1 MiB               │  not used by Mod on Daisy
 0x907E0000 ├───────────────────────────────┤
-           │ MOD-Block P: 8 Patch-Slots    │  64 KiB = 16 × 4-KiB-Sektor (je Slot A/B)
+           │ MOD block P: 8 patch slots    │  64 KiB = 16 × 4 KiB sector (slot A/B each)
 0x907F0000 ├───────────────────────────────┤
-           │ MOD-Block S: Einstellungen    │  2 × 4 KiB (A/B) + 56 KiB Reserve
+           │ MOD block S: settings         │  2 × 4 KiB (A/B) + 56 KiB reserve
 0x90800000 └───────────────────────────────┘
 ```
 
-| Bereich | Adresse | Inhalt |
+| Area | Address | Content |
 | --- | --- | --- |
-| Slot k, Sektor A | `0x907E0000 + k · 0x2000` | Patch-Datensatz |
-| Slot k, Sektor B | `0x907E1000 + k · 0x2000` | Patch-Datensatz |
-| Einstellungen A | `0x907F0000` | Geräte-ID, CV-Kalibrierung, Einschalt-Slot |
-| Einstellungen B | `0x907F1000` | wie A |
-| Reserve | `0x907F2000–0x907FFFFF` | künftige Erweiterungen, z. B. mehr Slots |
+| Slot k, sector A | `0x907E0000 + k · 0x2000` | patch record |
+| Slot k, sector B | `0x907E1000 + k · 0x2000` | patch record |
+| Settings A | `0x907F0000` | device ID, CV calibration, power-on slot |
+| Settings B | `0x907F1000` | like A |
+| Reserve | `0x907F2000–0x907FFFFF` | future extensions, e.g. more slots |
 
-**Begründung**: Die beiden obersten 64-KiB-Blöcke haben den größten Abstand zu jedem
-Image, liegen auf 64-KiB-Grenzen und werden beim Flashen einer BOOT_SRAM-Firmware nie
-berührt. Die Bootloader-Reserve bleibt frei.
+**Rationale**: the two topmost 64 KiB blocks are furthest from any image, lie on 64 KiB
+boundaries and are never touched when a BOOT_SRAM firmware is flashed. The bootloader
+reserve stays free.
 
-**Absicherung beim Bau** (Teil der späteren Implementierung): Das ELF-Prüfskript bricht
-ab, wenn
+**Safeguard at build time** (part of the later implementation): the ELF check script
+aborts if
 
-* das Ende des Images im QSPI-Adressraum ≥ `0x907E0000` liegt (für BOOT_SRAM durch die
-  480-KiB-Grenze ausgeschlossen, für künftige BOOT_QSPI-Images relevant), oder
-* eine `.qspiflash_text`/`.qspiflash_data`-Sektion nicht leer ist. Während einer
-  Lösch- oder Schreiboperation ist QSPI nicht lesbar; Code oder Daten dort würden
-  einfrieren.
+* the end of the image in the QSPI address space is ≥ `0x907E0000` (ruled out for
+  BOOT_SRAM by the 480 KiB limit, relevant for future BOOT_QSPI images), or
+* a `.qspiflash_text`/`.qspiflash_data` section is not empty. During an erase or write
+  operation QSPI cannot be read; code or data there would freeze.
 
-**Gemeinsamer Bereich aller Instrumente**: Jede Firmware sieht dieselben 8 Slots. Jeder
-Datensatz trägt deshalb Instrument-Key-CRC und Schema-Hash. Ein fremder Datensatz wird
-nie geladen (`RECALL` → Status 3). `STORE` auf einen Slot mit fremdem Datensatz
-verlangt ein Bestätigungsbit, das der Editor erst nach Rückfrage setzt. Vor dem Wechsel
-auf ein anderes Instrument kann der Editor alle Slots als Dateien sichern.
+**Area shared by all instruments**: every firmware sees the same 8 slots. Each record
+therefore carries the instrument key CRC and the schema hash. A foreign record is never
+loaded (`RECALL` → status 3). `STORE` to a slot with a foreign record requires a
+confirmation bit, which the editor sets only after asking. Before switching to another
+instrument, the editor can back up all slots as files.
 
-## 3. Datensätze
+## 3. Records
 
-Jeder 4-KiB-Sektor enthält **genau einen** Datensatz am Sektoranfang. Der Rest bleibt
-gelöscht (`0xFF`).
+Each 4 KiB sector contains **exactly one** record at the start of the sector. The rest
+stays erased (`0xFF`).
 
-| Offset | Größe | Feld |
+| Offset | Size | Field |
 | ---: | ---: | --- |
-| 0 | 4 | Magic `'M','O','D','R'` |
-| 4 | 1 | Typ: 1 = Patch, 2 = Einstellungen |
-| 5 | 1 | Formatversion des Datensatzes (1) |
-| 6 | 2 | Länge der Nutzdaten n |
-| 8 | 4 | Sequenznummer (u32, je Slot fortlaufend) |
-| 12 | 4 | CRC-32 des Instrument-Keys (Einstellungen: 0) |
-| 16 | 4 | Schema-Hash (Einstellungen: 0) |
-| 20 | 4 | CRC-32 der Nutzdaten |
-| 24 | 4 | CRC-32 der Bytes 0–23 (Kopf) |
-| 28 | n | Nutzdaten: serialisierter `Patch` (109 B; Format 2 mit LFO-Quermodulation 111 B, ARCHITECTURE § 3.3) bzw. Einstellungen |
-| 252 | 4 | **Commit-Wort** `0x434F4D54` („COMT“), wird zuletzt geschrieben |
+| 0 | 4 | magic `'M','O','D','R'` |
+| 4 | 1 | type: 1 = patch, 2 = settings |
+| 5 | 1 | format version of the record (1) |
+| 6 | 2 | payload length n |
+| 8 | 4 | sequence number (u32, consecutive per slot) |
+| 12 | 4 | CRC-32 of the instrument key (settings: 0) |
+| 16 | 4 | schema hash (settings: 0) |
+| 20 | 4 | CRC-32 of the payload |
+| 24 | 4 | CRC-32 of bytes 0–23 (header) |
+| 28 | n | payload: serialized `Patch` (109 B; format 2 with LFO cross-modulation 111 B, ARCHITECTURE § 3.3) or settings |
+| 252 | 4 | **commit word** `0x434F4D54` ("COMT"), written last |
 
-Der Datensatz passt in eine 256-Byte-Programmierseite; das Commit-Wort steht am Ende
-dieser Seite. **Einstellungen (Nutzdaten 16 B)**: `u8` Geräte-ID, `u8` Einschalt-Slot
-(0xFF = Standardpatch), `u16` reserviert, `float` CV-Offset 1 und 2, `u32` reserviert.
+The record fits into one 256-byte program page; the commit word is at the end of this
+page. **Settings (payload 16 B)**: `u8` device ID, `u8` power-on slot
+(0xFF = default patch), `u16` reserved, `float` CV offset 1 and 2, `u32` reserved.
 
-**Gültig** ist ein Datensatz nur, wenn **alle** Bedingungen zutreffen:
+A record is **valid** only if **all** conditions hold:
 
-* Magic stimmt,
-* Kopf-CRC stimmt,
-* Länge ≤ 224,
-* Nutzdaten-CRC stimmt,
-* Commit-Wort stimmt,
-* Typ und Formatversion sind bekannt.
+* magic matches,
+* header CRC matches,
+* length ≤ 224,
+* payload CRC matches,
+* commit word matches,
+* type and format version are known.
 
-## 4. Verfahren
+## 4. Procedure
 
-### 4.1 Lesen (beim Start und bei `RECALL`)
+### 4.1 Reading (at start-up and on `RECALL`)
 
-1. Beide Sektoren des Slots prüfen.
-2. Gültig ist der Datensatz mit der **höheren** Sequenznummer. Der Vergleich ist
-   überlaufsicher: `int32_t(a − b) > 0`.
-3. Sind beide ungültig, ist der Slot leer.
-4. Bei einem Patch zusätzlich prüfen: Instrument-Key-CRC und Schema-Hash müssen
-   passen, und `Validate(patch, info)` muss bestehen. Sonst wird nicht geladen.
+1. Check both sectors of the slot.
+2. The valid record with the **higher** sequence number applies. The comparison is
+   overflow-safe: `int32_t(a − b) > 0`.
+3. If both are invalid, the slot is empty.
+4. For a patch additionally check: instrument key CRC and schema hash must match, and
+   `Validate(patch, info)` must pass. Otherwise it is not loaded.
 
-Gelesen wird über den Memory-Mapped-Zeiger (`qspi.GetData`), nur im Main-Loop. Nach
-eigenen Schreibvorgängen wird vorher der D-Cache des Sektors invalidiert (§ 5).
+Reading uses the memory-mapped pointer (`qspi.GetData`), only in the main loop. After own
+write operations the D-cache of the sector is invalidated first (§ 5).
 
-### 4.2 Schreiben (`STORE`)
+### 4.2 Writing (`STORE`)
 
 ```text
-Vorbedingung: Main-Loop, ausdrücklicher Befehl, Patch validiert.
-1. Zielsektor = der Sektor des Slots, der NICHT den aktuell gültigen Datensatz enthält
-   (sind beide ungültig: A). seq = höchste gültige Sequenz + 1 (sonst 1).
-2. EraseSector(Ziel)                            ≤ 400 ms; löscht nur den veralteten Datensatz
-3. D-Cache des Sektors invalidieren; prüfen, dass die ersten 256 Byte = 0xFF sind.
-4. Kopf + Nutzdaten programmieren (Bytes 0 … 27+n), Commit-Wort noch NICHT.
-5. Cache invalidieren; Kopf-CRC und Nutzdaten-CRC zurücklesen und prüfen.
-6. Commit-Wort programmieren (eine 4-Byte-Programmierung, 1→0-Übergänge).
-7. Cache invalidieren; Datensatz vollständig nach § 3 prüfen.
-8. Antwort STORE|0x40 mit Status 0 und CRC; bei einem Fehler in 2–7: NAK 10.
-   Der alte Datensatz ist dann weiterhin gültig.
+Precondition: main loop, explicit command, patch validated.
+1. Target sector = the sector of the slot that does NOT contain the currently valid record
+   (if both are invalid: A). seq = highest valid sequence + 1 (otherwise 1).
+2. EraseSector(target)                          ≤ 400 ms; erases only the outdated record
+3. Invalidate the D-cache of the sector; check that the first 256 bytes = 0xFF.
+4. Program header + payload (bytes 0 … 27+n), commit word NOT yet.
+5. Invalidate the cache; read back and check the header CRC and payload CRC.
+6. Program the commit word (one 4-byte programming, 1→0 transitions).
+7. Invalidate the cache; check the record completely according to § 3.
+8. Reply STORE|0x40 with status 0 and CRC; on an error in 2–7: NAK 10.
+   The old record then remains valid.
 ```
 
-**Stromausfallsicherheit**: Der jeweils gültige Datensatz wird **nie** im selben Vorgang
-gelöscht oder überschrieben. Bricht der Strom in Schritt 2–6 ab, ist der neue Datensatz
-unvollständig (CRC oder Commit fehlt) und wird ignoriert; der alte bleibt gültig. Nach
-Schritt 6 ist der neue Datensatz gültig und hat die höhere Sequenz. Zu keinem Zeitpunkt
-sind beide Sektoren gleichzeitig ungültig, es sei denn, der Slot war schon vorher leer.
+**Power-loss safety**: the currently valid record is **never** erased or overwritten in
+the same operation. If power fails in steps 2–6, the new record is incomplete (CRC or
+commit missing) and is ignored; the old one stays valid. After step 6 the new record is
+valid and has the higher sequence. At no point are both sectors invalid at the same
+time, unless the slot was already empty before.
 
-### 4.3 Abnutzung
+### 4.3 Wear
 
-Jedes Speichern löscht einen Sektor, abwechselnd A und B. Bei der typischen
-Lebensdauer von NOR-Flash (≥ 100 000 Löschzyklen pro Sektor; Datenblattwert `OFFEN`,
-prüfen) ergibt das ≥ 200 000 Speichervorgänge pro Slot. Weil nur auf ausdrücklichen
-Befehl gespeichert wird (**kein Autosave**), ist das unkritisch.
+Every save erases one sector, alternating A and B. With the typical endurance of NOR
+flash (≥ 100 000 erase cycles per sector; data sheet value `OPEN`, to be checked) this
+gives ≥ 200 000 save operations per slot. Because saving happens only on an explicit
+command (**no autosave**), this is not critical.
 
-### 4.4 Einschalten
+### 4.4 Power-on
 
-1. Einstellungen lesen (A/B). Ungültig → Standard: Geräte-ID 0, Kalibrierung 0, kein
-   Einschalt-Patch.
-2. Ist ein Einschalt-Slot gesetzt und nach § 4.1 gültig und passend → laden, sonst den
-   leeren Standardpatch (keine aktive Verbindung). Damit klingt das Instrument wie ohne
-   Mod on Daisy.
-3. Der Ladezustand (geladen, leer, fremd, ungültig) wird für `IDENTIFY` und den Editor
-   festgehalten. Nichts wird stillschweigend umgedeutet.
+1. Read the settings (A/B). Invalid → default: device ID 0, calibration 0, no power-on
+   patch.
+2. If a power-on slot is set and valid and matching according to § 4.1 → load it,
+   otherwise the empty default patch (no active connection). The instrument then sounds
+   as without Mod on Daisy.
+3. The load state (loaded, empty, foreign, invalid) is recorded for `IDENTIFY` and the
+   editor. Nothing is silently reinterpreted.
 
-## 5. Laufzeitbedingungen und Risiken
+## 5. Run-time conditions and risks
 
-| Thema | Festlegung |
+| Topic | Specification |
 | --- | --- |
-| Kontext | Nur im Main-Loop, nie im Audio-IRQ |
-| Audio während des Löschens | läuft weiter, weil Code und Daten bei BOOT_SRAM in SRAM/DTCM liegen. Die Messfirmware prüft den Überlaufzähler während `STORE` (Abnahme) |
-| QSPI während des Vorgangs | libDaisy schaltet für Erase/Write vom Memory-Mapped- in den indirekten Modus und danach zurück. In dieser Zeit darf **nichts** den Bereich `0x90000000` lesen, auch kein Interrupt (ELF-Prüfung § 2) |
-| D-Cache | Keine MPU-Region für QSPI; nach der ARMv7-M-Standardkarte ist der Bereich cachebar (Write-Through). Deshalb `SCB_InvalidateDCache_by_Addr` über den Sektor nach dem Löschen und nach dem Programmieren, vor jedem Zurücklesen |
-| Spekulative Zugriffe | `OFFEN`: Beim STM32H7 können spekulative Lesezugriffe auf den QSPI-Adressraum im indirekten Modus Probleme verursachen. Vor der Implementierung prüfen; mögliche Abhilfe ist eine MPU-Region, die den Bereich während des Vorgangs sperrt |
-| Blockierter Main-Loop | bis zu ~400 ms (Höchstwert, typisch weniger). USB-MIDI wird so lange nicht abgeholt; die libDaisy-FIFO (256 Ereignisse) kann überlaufen und **verwirft dann neue Ereignisse**. LED-Dienst und USB-Senden pausieren. → Speichern nur auf Befehl; der Editor zeigt „Speichere … keine MIDI-Daten senden“ und wartet bis zu 2 s auf die Antwort |
-| Firmware-Wechsel | Flashen per DFU, Web-Programmer oder SD löscht nur die Blöcke des neuen Images (`OFFEN`, im Hardwaretest bestätigen: Patch speichern, andere Firmware flashen, Patch noch vorhanden) |
+| Context | main loop only, never in the audio IRQ |
+| Audio during erasing | keeps running, because with BOOT_SRAM code and data live in SRAM/DTCM. The measurement firmware checks the overrun counter during `STORE` (acceptance) |
+| QSPI during the operation | for erase/write, libDaisy switches from memory-mapped to indirect mode and back afterwards. During this time **nothing** may read the `0x90000000` area, not even an interrupt (ELF check § 2) |
+| D-cache | no MPU region for QSPI; according to the ARMv7-M default map the area is cacheable (write-through). Therefore `SCB_InvalidateDCache_by_Addr` over the sector after erasing and after programming, before every read-back |
+| Speculative accesses | `OPEN`: on the STM32H7, speculative read accesses to the QSPI address space in indirect mode can cause problems. Check before implementation; a possible remedy is an MPU region that locks the area during the operation |
+| Blocked main loop | up to ~400 ms (maximum, typically less). USB MIDI is not collected during this time; the libDaisy FIFO (256 events) can overflow and **then discards new events**. LED service and USB send pause. → save only on command; the editor shows "Saving … do not send MIDI data" and waits up to 2 s for the reply |
+| Firmware change | flashing via DFU, Web Programmer or SD erases only the blocks of the new image (`OPEN`, confirm in the hardware test: save a patch, flash another firmware, patch still present) |
 
-## 6. Verworfene Alternativen
+## 6. Rejected alternatives
 
-| Alternative | Grund |
+| Alternative | Reason |
 | --- | --- |
-| `daisy::PersistentStorage` | keine CRC, löscht vor dem Schreiben den einzigen Datensatz (nicht stromausfallsicher), Größe an eine Struktur gebunden |
-| Bootloader-Reserve `0x90000000–0x9003FFFF` | vom Bootloader für künftige Funktionen reserviert |
-| Bereich direkt hinter dem Image | hängt von der Image-Größe ab und verschiebt sich zwischen Instrumenten |
-| Backup-SRAM (4 KiB) | ohne Batterie nicht dauerhaft |
-| Interner Flash (128 KiB) | enthält den Bootloader |
-| microSD | nicht bei jedem Instrument genutzt und nicht immer eingesteckt; später als zusätzliches Backend hinter derselben Schnittstelle möglich |
+| `daisy::PersistentStorage` | no CRC, erases the only record before writing (not power-loss safe), size bound to one structure |
+| Bootloader reserve `0x90000000–0x9003FFFF` | reserved by the bootloader for future functions |
+| Area directly behind the image | depends on the image size and shifts between instruments |
+| Backup SRAM (4 KiB) | not persistent without a battery |
+| Internal flash (128 KiB) | contains the bootloader |
+| microSD | not used by every instrument and not always inserted; possible later as an additional backend behind the same interface |
 
-## 7. Prüfplan für die spätere Umsetzung
+## 7. Test plan for the later implementation
 
-1. **Host, ohne Hardware**: Ein NOR-Modell erzwingt die Löschgranularität und erlaubt
-   beim Programmieren nur 1→0. Bei jedem einzelnen Lösch- und Programmierschritt wird
-   ein Stromausfall eingespeist. Nach jedem simulierten Neustart muss **genau der alte
-   oder der neue** Datensatz gültig sein. Dazu Bit-Kippen in jedem Feld (Erkennung durch
-   CRC) und Überlauf der Sequenz.
+1. **Host, without hardware**: a NOR model enforces the erase granularity and allows only
+   1→0 when programming. A power failure is injected at every single erase and program
+   step. After every simulated restart **exactly the old or the new** record must be
+   valid. In addition, bit flips in every field (detection by CRC) and sequence
+   overflow.
 2. **Hardware**:
-   * 1000 × Speichern und Laden;
-   * Strom während `STORE` trennen (20 Versuche);
-   * Überlaufzähler und Callback-Spitzen während `STORE`;
-   * andere Firmware per DFU flashen, Slots müssen erhalten bleiben;
-   * JEDEC-ID lesen.
-3. Erst danach wird `STORE` im Protokoll freigeschaltet (IDENTIFY, Bit 0).
+   * 1000 × save and load;
+   * cut power during `STORE` (20 attempts);
+   * overrun counter and callback peaks during `STORE`;
+   * flash another firmware via DFU; the slots must be preserved;
+   * read the JEDEC ID.
+3. Only then is `STORE` enabled in the protocol (IDENTIFY, bit 0).

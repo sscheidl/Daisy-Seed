@@ -1,46 +1,46 @@
-# Abtastrate: 40-kHz-Kern mit Resampler gegen direkte 48 kHz
+# Sample rate: 40 kHz core with resampler versus direct 48 kHz
 
-Stand 01.11.2026. Das Original rechnet intern mit 40 kHz und 16er-Schritten und
-resampelt anschließend auf die Hostrate (SF-A05 BESTÄTIGT; Resamplingfilter OFFEN).
-Das Seed3-Desktop-Kit läuft mit 48 kHz. Der Auftrag verlangt beide Wege zu trennen
-und, soweit lokal sinnvoll, zu vergleichen.
+As of 01.11.2026. The original computes internally at 40 kHz in steps of 16 and
+then resamples to the host rate (SF-A05 CONFIRMED; resampling filter OPEN).
+The Seed3 Desktop Kit runs at 48 kHz. The assignment requires keeping both paths separate
+and, as far as locally sensible, comparing them.
 
-## Versuch
+## Experiment
 
 `make -C instruments/streichwurst compare-rates` ([tools/compare_rates.cpp](../tools/compare_rates.cpp)):
-derselbe eigene Stringkern einmal mit `Prepare(40000)` und eigenem Kaiser-Sinc-
-Resampler (48 Taps, Grenzfrequenz 0,45 · 40 kHz) auf 48 kHz, einmal direkt mit
-`Prepare(48000)` (alle Zeitgrößen in Sekunden umgerechnet). Gemessen wird der Anteil
-der Energie bis 20 kHz außerhalb der Harmonischen der tiefsten Fußlage (±3 FFT-Bins,
-16384 Punkte, Hann). Eigene Testsignale, kein Originalrender.
+the same own string core once with `Prepare(40000)` and an own Kaiser sinc
+resampler (48 taps, cutoff frequency 0.45 · 40 kHz) to 48 kHz, once directly with
+`Prepare(48000)` (all time quantities converted to seconds). Measured is the share
+of the energy up to 20 kHz outside the harmonics of the lowest footage (±3 FFT bins,
+16384 points, Hann). Own test signals, no original render.
 
-**GEMESSEN 01.11.2026** (Windows, LLVM-MinGW Clang 23.1.3, `-O2`, Host-PC):
+**MEASURED 01.11.2026** (Windows, LLVM-MinGW Clang 23.1.3, `-O2`, host PC):
 
-| Note / Registrierung / Oktaven | 40 kHz → 48 kHz | direkt 48 kHz | Hostzeit t40/t48 |
+| Note / Registration / Octaves | 40 kHz → 48 kHz | direct 48 kHz | Host time t40/t48 |
 | --- | --- | --- | --- |
-| 57 / 0,50 / Grundlage | −37,1 dB | −39,6 dB | 0,90 |
-| 69 / 0,50 / Grundlage | −34,4 dB | −37,5 dB | 0,86 |
-| 81 / 0,50 / Beide | −31,2 dB | −36,0 dB | 1,01 |
-| 93 / 1,00 / Grundlage | −33,7 dB | −39,0 dB | 0,95 |
-| 100 / 1,00 / Beide | −36,5 dB | −27,0 dB | 0,92 |
-| 108 / 1,00 / Grundlage | −24,1 dB | −36,6 dB | 0,86 |
+| 57 / 0.50 / Base | −37.1 dB | −39.6 dB | 0.90 |
+| 69 / 0.50 / Base | −34.4 dB | −37.5 dB | 0.86 |
+| 81 / 0.50 / Both | −31.2 dB | −36.0 dB | 1.01 |
+| 93 / 1.00 / Base | −33.7 dB | −39.0 dB | 0.95 |
+| 100 / 1.00 / Both | −36.5 dB | −27.0 dB | 0.92 |
+| 108 / 1.00 / Base | −24.1 dB | −36.6 dB | 0.86 |
 
-Die Hostzeit enthält den Resampler nicht; er käme auf dem Board hinzu
-(48 Multiplikationen je Ausgangssample und Kanal).
+The host time does not include the resampler; it would be added on the board
+(48 multiplications per output sample and channel).
 
-## Entscheidung
+## Decision
 
-Das Produkt rechnet **direkt mit 48 kHz**:
+The product computes **directly at 48 kHz**:
 
-* In fünf von sechs Fällen liegt der unharmonische Anteil direkt bei 48 kHz niedriger,
-  weil der höhere Nyquist mehr Abstand zu den Rechteckobertönen lässt.
-* Ein 40-kHz-Kern spart auf dem M7 nur rund ein Sechstel der Kernlast, kostet aber den
-  Resampler und Latenz. Die CPU-Last beider Wege auf dem Seed3 ist **NICHT GEMESSEN**.
-* Ausnahme Note 100 mit beiden Oktaven: Hier fällt ein Oberton direkt bei 48 kHz
-  ungünstiger. Das bleibt eine dokumentierte Klangabweichung.
+* In five of six cases the inharmonic share is lower directly at 48 kHz,
+  because the higher Nyquist frequency leaves more distance to the square-wave overtones.
+* A 40 kHz core saves only about one sixth of the core load on the M7, but costs the
+  resampler and latency. The CPU load of both paths on the Seed3 is **NOT MEASURED**.
+* Exception note 100 with both octaves: here an overtone falls less favourably directly at
+  48 kHz. This remains a documented sonic deviation.
 
-Folgen: Die Aliasingmuster entsprechen nicht denen des Originalkerns mit seinem
-unbekannten Resamplingfilter. Hüllkurven, Ensemble-LFOs und Delays haben durch die
-Zeitskalierung dieselben Zeitkonstanten wie bei 40 kHz. Der Kern bleibt
-abtastratenunabhängig (`Prepare(fs)`); ein späterer 40-kHz-Betrieb mit belegtem
-Resampler ist ohne Änderung der Modulgrenzen möglich.
+Consequences: the aliasing patterns do not match those of the original core with its
+unknown resampling filter. Thanks to the time scaling, envelopes, ensemble LFOs and delays have the
+same time constants as at 40 kHz. The core remains
+sample-rate independent (`Prepare(fs)`); later 40 kHz operation with a documented
+resampler is possible without changing the module boundaries.

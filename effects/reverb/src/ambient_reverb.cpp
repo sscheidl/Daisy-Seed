@@ -64,12 +64,12 @@ void AmbientReverb::SetParameters(const Parameters &input, bool immediate) {
     p.lowCutHz = Bounded(p.lowCutHz, 20, 350, 65);
     p.preDelayMs = Bounded(p.preDelayMs, 0, 150, 25);
     p.modRateHz = Bounded(p.modRateHz, .03f, 1.5f, .18f);
-    p.modDepthMs = Bounded(p.modDepthMs, 0, 3, .8f);
+    p.modDepthMs = Bounded(p.modDepthMs, 0, kMaximumEffectiveModDepthMs, .8f);
     p.width = Bounded(p.width, 0, 1, 1);
     p.mix = Bounded(p.mix, 0, 1, .45f);
     p.diffusion = Bounded(p.diffusion, 0, 1, .85f);
-    p.texture = Bounded(p.texture, 0, 1, .4f);
-    p.riseSeconds = Bounded(p.riseSeconds, .05f, 4, 1);
+    p.texture = Bounded(p.texture, 0, kMaximumTexture, .4f);
+    p.riseSeconds = Bounded(p.riseSeconds, .05f, kMaximumRiseSeconds, 1);
     p.outputGain = Bounded(p.outputGain, 0, 1, .8f);
     parameters_ = p;
     if (!ready_)
@@ -184,7 +184,7 @@ Stereo AmbientReverb::Process(Stereo in) {
         l = inputAp_[i].Allpass(l, inputLength_[i], .6f);
         r = inputAp_[i + 4].Allpass(r, inputLength_[i + 4], .6f);
     }
-    const float diffuse = diffusion * (1 - .8f * mode[4] * (1 - texture));
+    const float diffuse = std::min(1.f, diffusion * (1 - .8f * mode[4] * (1 - texture)));
     x.left += (l - x.left) * diffuse;
     x.right += (r - x.right) * diffuse;
     std::array<float, 8> y{};

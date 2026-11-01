@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Daisy Seed3 Desktop Dev Kit, libDaisy commit in README. No GUI or storage writes.
-// USB-MIDI on J7 so far only for the bootloader request.
+// USB-MIDI on J7: shared SQ rate control and the bootloader request.
 #include "wet_path.hpp"
 #include "version.h"
+#include "rate_control.h"
 const char ambient_reverb_firmware_version[] =
     "AMBIENT-REVERB-VERSION=" AMBIENT_REVERB_VERSION;
 #include "desktop_devkit.h"
@@ -34,8 +35,13 @@ static manager_return::KeyCombo returnKeys; // audio callback only
 static manager_return::Request returnRequest;
 // libDaisy's USB device state for the external port (J7 on the carrier).
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
-// USB-MIDI on J7. Parameter control and presets are not implemented yet.
+// USB-MIDI on J7; rate changes are handed to audio through the shared adapter.
 static MidiUsbHandler usbMidi;
+static void SendControl(const uint8_t* bytes, std::size_t size) {
+    if(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
+        usbMidi.SendMessage(const_cast<uint8_t*>(bytes), size);
+}
+static ambient::RateControl rateControl("ambient-reverb", AMBIENT_REVERB_VERSION, false, SendControl);
 static int widthPosition = Switch3::POS_CENTER, widthCandidate = Switch3::POS_CENTER;
 static unsigned widthStable = 0;
 static bool legacyMono = false;
@@ -47,6 +53,7 @@ static constexpr ambient::Mode kModeButtons[6] = {
 static void Controls() {
     hw.UpdateAllControls();
     bool changed = false;
+    int32_t physicalRate = -1;
     uint32_t newPresses = 0;
     for (unsigned i = 0; i < 16; ++i) {
         const uint32_t bit = 1u << i;
@@ -115,22 +122,26 @@ static void Controls() {
             const float value = hw.pot[i].Value();
             if (std::abs(value - knobs[i]) > .002f) {
                 knobs[i] = value;
+                if(i == 6) physicalRate = int32_t(std::lround(30.f * std::pow(50.f, value)));
                 changed = true;
             }
         }
         reverb.ServiceFilter();
     }
     --controlCountdown;
+    const float previousRate = rateControl.RateHz();
+    rateControl.AudioTick(physicalRate);
+    changed |= previousRate != rateControl.RateHz();
     if (changed) {
         // Fixed physical pot positions always win; only selected mode/switch states persist.
         parameters.decaySeconds = std::pow(45.f, knobs[0]);
         parameters.toneHz = 400.f * std::pow(35.f, knobs[1]);
-        parameters.modDepthMs = 3.f * knobs[2];
+        parameters.modDepthMs = ambient::ModDepthFromControl(knobs[2]);
         parameters.mix = knobs[3];
         parameters.pan = 2.f * knobs[4] - 1.f;
-        parameters.texture = knobs[5];
-        parameters.riseSeconds = .05f * std::pow(80.f, knobs[5]);
-        parameters.modRateHz = .03f * std::pow(50.f, knobs[6]);
+        parameters.texture = ambient::TextureFromControl(knobs[5]);
+        parameters.riseSeconds = ambient::RiseFromControl(knobs[5]);
+        parameters.modRateHz = rateControl.RateHz();
         parameters.stretch = knobs[7];
         parameters.width = widthPosition == Switch3::POS_UP
                                ? 1.f
@@ -176,16 +187,19 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
     if (elapsed > budgetCycles)
         overruns.fetch_add(1, std::memory_order_relaxed);
 }
-// Main loop only: the bootloader request; other messages are ignored for now.
+// Main loop only: shared SQ control and bootloader requests.
 static void ServiceUsbMidi() {
     usbMidi.Listen(); // restarts reception after an overflow
-    while (usbMidi.HasEvents()) {
-        const MidiEvent event = usbMidi.PopEvent();
+    for(unsigned batch = 0; batch < 32 && usbMidi.HasEvents(); ++batch) {
+        const auto event = usbMidi.PopEvent();
         if (bootloader::IsRequest(event))
             bootRequest.Set(bootloader::Request::kSysEx);
         else if (manager_return::IsRequest(event))
             returnRequest.Set(manager_return::Request::kSysEx);
+        else if(event.type == SystemCommon && event.sc_type == SystemExclusive)
+            rateControl.HandleBody(event.sysex_data, event.sysex_message_len, System::GetNow());
     }
+    rateControl.Service(System::GetNow(), hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED);
 }
 static void ServiceBootloader() {
     bootloader::Service(bootRequest, hw, [](uint8_t *bytes, size_t size) {

@@ -76,15 +76,15 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
 
     // ------------------------------------------------------------------ for the VST3 plugin
     // Connects on its own to the first Daisy port whenever one appears while offline,
-    // unless the user pressed "Trennen" (GUI.md § 3).
+    // unless the user pressed "Disconnect" (GUI.md § 3).
     bool auto_connect = false;
     // Called on the message thread whenever the patch text changes (plugin state).
     std::function<void(const std::string&)> patch_changed;
-    // The patch as a .modpatch text, as "Datei speichern" writes it.
+    // The patch as a .modpatch text, as "Save file" writes it.
     std::string PatchText() const;
     // The patch stored in the project: shown at once, sent to the device when connected
     // (now or at the next connection). Columns that mean something else on the device are
-    // left out without asking, as "Ohne betroffene laden" does.
+    // left out without asking, as "Load without affected" does.
     void LoadProjectPatch(const std::string& text);
 
   private:
@@ -134,7 +134,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     SqPanel sq_panel_{sq_session_};
     bool md_pending_ = false;        // real port: Mod on Daisy is tried once SQ did not answer
     bool sq_was_ready_ = false;
-    bool sq_always_upload_ = false;  // VST3: "immer" chosen for this plugin instance
+    bool sq_always_upload_ = false;  // VST3: "Always send" chosen for this plugin instance
     std::optional<AcidPatch> sq_project_; // Acid Seq song state waiting for a device and a decision
     std::unique_ptr<MidiPort> midi_;
     BootRequest boot_;
@@ -142,7 +142,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     std::vector<Port> ports_;
     bool with_simulators_ = false;
     bool manual_clock_ = false;
-    bool user_disconnected_ = false;              // "Trennen" pressed: no automatic reconnection
+    bool user_disconnected_ = false;              // "Disconnect" pressed: no automatic reconnection
     bool was_connected_ = false;                  // to notice the moment a connection is ready
     std::optional<LoadedPatch> pending_project_;  // project patch waiting for a connection
     std::string last_patch_text_;
@@ -154,11 +154,11 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
 
     // header
     juce::ComboBox port_;
-    juce::TextButton connect_{"Verbinden"};
+    juce::TextButton connect_{"Connect"};
     juce::TextButton update_;
-    juce::TextButton view_; // Streichwurst: "Matrix" / "Klangparameter"
+    juce::TextButton view_; // Streichwurst: "Matrix" / "Sound parameters"
     juce::Label status_;
-    juce::Label mode_; // active instrument mode, e.g. "Modell: Western Chords"
+    juce::Label mode_; // active instrument mode, e.g. "Model: Western Chords"
     int mode_index_ = -1, mode_origin_ = -1; // from the last monitor frame
     // grid card
     MatrixGrid grid_;
@@ -166,14 +166,14 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     // cell editor card
     juce::Label route_, cell_info_, device_heading_, device_info_;
     juce::Slider depth_;
-    juce::ToggleButton enabled_{"eingeschaltet"};
-    juce::TextButton zero_{"Auf 0"}, invert_{"Invertieren"};
+    juce::ToggleButton enabled_{"enabled"};
+    juce::TextButton zero_{"Set to 0"}, invert_{"Invert"};
     // sources
     std::array<std::unique_ptr<SourcePanel>, 3> sources_;
     // footer
     juce::Label name_label_;
     juce::TextEditor name_;
-    juce::TextButton open_, save_, clear_{"Matrix leeren"}, pull_;
+    juce::TextButton open_, save_, clear_{"Clear matrix"}, pull_;
     juce::Label log_;
 
     juce::Rectangle<int> header_area_, grid_card_, cell_card_, footer_card_;

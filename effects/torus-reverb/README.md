@@ -1,23 +1,23 @@
-# Torus Reverb als FX-Komponente
+# Torus Reverb as an FX component
 
-Die versionierte Komponente `torus-reverb` stellt den vorhandenen MIT-lizenzierten
-Torus-Reverb über den [gemeinsamen Audiovertrag](../../common/audio/fx_contract.h)
-bereit. Die DSP-Quelle bleibt einmalig am
-[bisherigen Provenienzpfad](../../instruments/physical-modeling/torus/UPSTREAM.md).
-Es wurden keine Herstellerbinaries oder weiteren DSP-Kopien übernommen.
+The versioned component `torus-reverb` provides the existing MIT-licensed
+Torus reverb through the [shared audio contract](../../common/audio/fx_contract.h).
+The DSP source stays in one place at the
+[existing provenance path](../../instruments/physical-modeling/torus/UPSTREAM.md).
+No manufacturer binaries or further DSP copies were taken over.
 
-`seed::fx::TorusReverb` besitzt keinen Board-, MIDI- oder Editor-Code.
-`Prepare({48000, max_block}, storage)` bindet den vom Host bereitgestellten
-Speicher (32.768 uint16-Wörter, 65.536 Byte). `SetParameters` übernimmt die
-normalisierten Torus-Regler Decay, Damping, Diffusion und Input Gain.
-`Process(StereoBlock)` liefert nur Wet; der Host mischt Dry/Wet und begrenzt den
-Ausgang. Exakte kanalweise In-place-Verarbeitung ist möglich.
+`seed::fx::TorusReverb` owns no board, MIDI or editor code.
+`Prepare({48000, max_block}, storage)` binds the memory provided by the host
+(32,768 uint16 words, 65,536 bytes). `SetParameters` takes the
+normalized Torus controls Decay, Damping, Diffusion and Input Gain.
+`Process(StereoBlock)` returns wet only; the host mixes Dry/Wet and limits the
+output. Exact per-channel in-place processing is possible.
 
-Die ursprüngliche 48-kHz-Abstimmung und alle Setter-Ausdrücke bleiben erhalten.
-Die Hosttests vergleichen das Ergebnis samplegenau mit der ursprünglichen
-`amount=1`-Verarbeitung und prüfen ungültige Blöcke, Ausklänge und den Audiopfad
-ohne Heap-Allokationen. In der neuen Torus-Komposition muss zusätzlich der
-bestehende Golden-Hash passen.
+The original 48 kHz tuning and all setter expressions are preserved.
+The host tests compare the result sample-exactly with the original
+`amount=1` processing and check invalid blocks, tails and the audio path
+for the absence of heap allocations. In the new Torus composition the
+existing golden hash must also match.
 
 ```bash
 make test-fx
@@ -25,6 +25,6 @@ make PROJECT=physical-modeling-fx-torus test
 make PROJECT=physical-modeling-fx-torus -j4
 ```
 
-Dies ist ein wiederverwendbarer FX-Kern. Eine eigene Board-Firmware nur für
-Torus-Reverb mit externen Eingängen ist noch kein Buildziel; die vorhandene
-Standalone-Ambient-Firmware bleibt das externe FX-Testgerät.
+This is a reusable FX core. A dedicated board firmware only for
+Torus Reverb with external inputs is not yet a build target; the existing
+standalone Ambient firmware remains the external FX test device.

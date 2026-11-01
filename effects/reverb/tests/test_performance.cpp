@@ -134,7 +134,42 @@ static void RestartHasNoOldAudio() {
     std::puts("PASS: constant-time pitch restart, no stale audio, sound resumes");
 }
 
+static void ExpandedControlHeadroom() {
+    auto memory = std::make_unique<Memory>();
+    for (Mode mode : {Mode::Cloud, Mode::Halo, Mode::Scatter,
+                      Mode::Abyss, Mode::Bloom, Mode::Shimmer}) {
+        AmbientReverb fx;
+        assert(fx.Prepare(32000, *memory));
+        Parameters p;
+        p.mode = mode;
+        p.modDepthMs = ModDepthFromControl(1) * CloudDepthScaleFromControl(1);
+        p.texture = TextureFromControl(1);
+        p.riseSeconds = RiseFromControl(1);
+        p.decaySeconds = 45;
+        p.diffusion = p.mix = p.outputGain = 1;
+        fx.SetParameters(p, true);
+        assert(std::abs(fx.GetParameters().modDepthMs - 4.9875f) < .0001f);
+        assert(fx.GetParameters().texture == 1.25f);
+        assert(std::abs(fx.GetParameters().riseSeconds - 5.f) < .0001f);
+        double energy = 0;
+        for (unsigned n = 0; n < 32000 * 8; ++n) {
+            const float input = n < 32000 ? .1f * std::sin(.037f * n) : 0;
+            const auto y = fx.Process({input, -.7f * input});
+            assert(std::isfinite(y.left) && std::isfinite(y.right));
+            energy += y.left * y.left + y.right * y.right;
+        }
+        assert(energy > 1.e-8 && fx.GetDiagnostics().guardEvents == 0);
+        p.modDepthMs = p.texture = p.riseSeconds = 100;
+        fx.SetParameters(p);
+        assert(fx.GetParameters().modDepthMs == kMaximumEffectiveModDepthMs);
+        assert(fx.GetParameters().texture == kMaximumTexture);
+        assert(fx.GetParameters().riseSeconds == kMaximumRiseSeconds);
+    }
+    std::puts("PASS: expanded control headroom reaches DSP; six maximum-setting tails without guards");
+}
+
 int main() {
+    ExpandedControlHeadroom();
     ClockBounds();
     PitchWork();
     AdapterUsesSharedClock();

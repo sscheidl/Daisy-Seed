@@ -255,6 +255,15 @@
       },
       "provenance": "instruments/streichwurst/docs/PROVENANCE.md"
     },
+    "ambient-reverb-control": {
+      "kind": "control",
+      "source": "effects/reverb/src/rate_control.h",
+      "version": {
+        "type": "macro",
+        "path": "effects/reverb/src/control_version.h",
+        "name": "AMBIENT_CONTROL_VERSION"
+      }
+    },
     "program-manager": {
       "kind": "control",
       "source": "system/program-manager",
@@ -417,9 +426,14 @@
       "components": [
         "ambient-reverb",
         "bootloader-entry",
+        "ambient-reverb-control",
         "manager-return"
       ],
-      "panels": []
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
     },
     "mod-bench": {
       "version": {
@@ -456,6 +470,7 @@
         "callback-diagnostics",
         "fx-contract",
         "bootloader-entry",
+        "ambient-reverb-control",
         "manager-return"
       ],
       "panels": [

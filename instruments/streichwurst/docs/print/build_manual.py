@@ -12,7 +12,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 CONTRACT = json.loads((HERE.parent.parent / 'contracts' / 'parameters.json').read_text(encoding='utf-8'))
 
-# English names of the contract's parameters (the contract labels are German).
+# Parameter names in the manual's wording (the panel labels come from the contract).
 NAMES = {
     'registration': 'Registration', 'octave': 'Octaves', 'crescendo': 'Crescendo', 'release': 'Release (strings)',
     'solo_tone': 'Solo Tone', 'solo_attack': 'Solo Attack', 'solo_release': 'Solo Release',

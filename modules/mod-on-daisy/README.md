@@ -1,69 +1,69 @@
 # Mod on Daisy
 
-Schlanke, universell einsetzbare **Modulationsmatrix** für Instrumente und Effekte auf
-dem Seed3 Desktop Development Kit. Das Modul ist eigenständig, wird in vorhandene
-Projekte eingebunden und ist nicht fest in eine Firmware eingebaut. Der grafische
-Editor entsteht getrennt unter [`editors/mod-on-daisy/`](../../editors/mod-on-daisy/).
+Lean, universally usable **modulation matrix** for instruments and effects on
+the Seed3 Desktop Development Kit. The module is standalone, is integrated into existing
+projects and is not hard-wired into any firmware. The graphical
+editor is developed separately under [`editors/mod-on-daisy/`](../../editors/mod-on-daisy/).
 
-**Status: Phase 2 als Software umgesetzt.**
+**Status: phase 2 implemented in software.**
 
-* Der header-only Kern, die Host-Tests (ASan/UBSan/TSan, Fuzzing) und die Messfirmware
-  `ModBench` sind fertig, ebenso das Testskript `tools/mod_probe.py` und CI.
-* Messungen und Funktionstests auf dem Desktop-Kit stehen aus
+* The header-only core, the host tests (ASan/UBSan/TSan, fuzzing) and the measurement firmware
+  `ModBench` are done, as are the test script `tools/mod_probe.py` and CI.
+* Measurements and functional tests on the Desktop Kit are pending
   ([docs/VALIDATION.md](docs/VALIDATION.md), [bench/README.md](bench/README.md)).
-* **Integriert:**
-  * [Toy Piano v0.3](../../instruments/toy-piano/README.md#modulation-v03) als
-    Entwicklungsumgebung;
-  * eine getrennte Fassung von
+* **Integrated:**
+  * [Toy Piano v0.3](../../instruments/toy-piano/README.md#modulation-v03) as the
+    development environment;
+  * a separate build of
     [Physical Modeling (Rings/Torus)](../../instruments/physical-modeling/docs/MODULATION.md)
-    mit Poly AT pro Stimme;
-  * eine getrennte Fassung des [Loopers](../../instruments/looper/docs/MODULATION.md)
-    (`make PROJECT=looper MOD=1`) mit acht globalen Spalten: Speed, Start, Size, Slice,
-    Skip, Inertia, Frippertronics-Decay und Mix.
-* Alle sind mit leerer Matrix bitgleich zum vorherigen Klang (Golden-Tests). Die
-  regulären Physical-Modeling- und Looper-Firmwares sind bytegleich geblieben.
+    with Poly AT per voice;
+  * a separate build of the [Looper](../../instruments/looper/docs/MODULATION.md)
+    (`make PROJECT=looper MOD=1`) with eight global columns: Speed, Start, Size, Slice,
+    Skip, Inertia, Frippertronics decay and Mix.
+* With an empty matrix, all of them are bit-identical to the previous sound (golden tests). The
+  regular Physical Modeling and Looper firmwares have stayed byte-identical.
 
-## v0.1 auf einen Blick
+## v0.1 at a glance
 
 | | |
 | --- | --- |
-| Matrix | 8×8-Raster, Tiefe −100…+100 je Kreuzungspunkt, höchstens 8 aktive Verbindungen |
-| Quellen | LFO 1, LFO 2, Random/S&H, CV 1, CV 2, Modwheel (CC1), Channel AT, Poly AT (pro Stimme; auf globalen Zielen die zuletzt gespielte Note) |
-| LFO | Sinus, Dreieck, Sägezahn steigend/fallend, Rechteck, S&H; Sync frei / MIDI-Clock / Gate 1 oder 2 |
-| Ziele | 8 instrumentspezifische Spalten; nicht unterstützte Zellen ausgegraut |
-| Rate | Control-Rate 1 kHz (bzw. einmal pro Audio-Block), **keine Audio-Rate** |
-| Bedienung | Editor (JUCE, Windows) über USB-MIDI/SysEx `0x7D` |
-| Ressourcen | 1 936 B RAM (gemessen, ARM-Build), CPU < 0,3 % (Schätzung, Messung ausstehend) |
-| Speicherung | QSPI spezifiziert, noch nicht implementiert |
-| Pilot | Toy Piano (technisch), dann Rings mit Poly AT, später Nebulae |
+| Matrix | 8×8 grid, depth −100…+100 per crosspoint, at most 8 active connections |
+| Sources | LFO 1, LFO 2, Random/S&H, CV 1, CV 2, mod wheel (CC1), Channel AT, Poly AT (per voice; on global targets the most recently played note) |
+| LFO | Sine, triangle, saw rising/falling, square, S&H; sync free / MIDI clock / Gate 1 or 2 |
+| Targets | 8 instrument-specific columns; unsupported cells grayed out |
+| Rate | Control rate 1 kHz (or once per audio block), **no audio rate** |
+| Operation | Editor (JUCE, Windows) via USB MIDI/SysEx `0x7D` |
+| Resources | 1 936 B RAM (measured, ARM build), CPU < 0.3 % (estimate, measurement pending) |
+| Storage | QSPI specified, not yet implemented |
+| Pilot | Toy Piano (technical), then Rings with Poly AT, later Nebulae |
 
-## Dokumente
+## Documents
 
-| Dokument | Inhalt |
+| Document | Content |
 | --- | --- |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | Entscheidungen v0.1, **technische Einwände**, Architekturänderungen, offene Punkte |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modulstruktur, Datenstrukturen, Verarbeitung, globale und stimmenbezogene Modulation, Instrumentenschnittstelle, Abschätzung |
-| [docs/PROTOCOL.md](docs/PROTOCOL.md) | MIDI-Protokoll v1 |
-| [docs/STORAGE.md](docs/STORAGE.md) | QSPI-Aufteilung, Schreib- und Löschverfahren, Datenintegrität |
-| [docs/TEST_PLAN_PHASE2.md](docs/TEST_PLAN_PHASE2.md) | Host-Tests, Messfirmware, Szenarien, Hardwaretests, Abnahme |
-| [docs/VALIDATION.md](docs/VALIDATION.md) | Ergebnisse Phase 2 |
-| [docs/HARDWARE_TEST_RUN.md](docs/HARDWARE_TEST_RUN.md) | Laufzettel Hardwaretest (Messfirmware, Toy Piano, Physical Modeling, Editoren) mit Rollen Agent/Mensch |
-| [bench/README.md](bench/README.md) | Messfirmware: Bauen, Bedienung, Messablauf |
-| [../../editors/mod-on-daisy/docs/GUI.md](../../editors/mod-on-daisy/docs/GUI.md) | Raster-GUI und Editor-Architektur |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Decisions v0.1, **technical objections**, architecture changes, open points |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module structure, data structures, processing, global and per-voice modulation, instrument interface, estimate |
+| [docs/PROTOCOL.md](docs/PROTOCOL.md) | MIDI protocol v1 |
+| [docs/STORAGE.md](docs/STORAGE.md) | QSPI layout, write and erase procedure, data integrity |
+| [docs/TEST_PLAN_PHASE2.md](docs/TEST_PLAN_PHASE2.md) | Host tests, measurement firmware, scenarios, hardware tests, acceptance |
+| [docs/VALIDATION.md](docs/VALIDATION.md) | Phase 2 results |
+| [docs/HARDWARE_TEST_RUN.md](docs/HARDWARE_TEST_RUN.md) | Hardware test run sheet (measurement firmware, Toy Piano, Physical Modeling, editors) with agent/human roles |
+| [bench/README.md](bench/README.md) | Measurement firmware: building, operation, measurement procedure |
+| [../../editors/mod-on-daisy/docs/GUI.md](../../editors/mod-on-daisy/docs/GUI.md) | Grid GUI and editor architecture |
 
-## Bauen und testen
+## Build and test
 
 ```bash
-make -C modules/mod-on-daisy test          # Host-Tests (auch: test-sanitize, test-thread)
-make PROJECT=mod-bench -j4                 # Messfirmware (Toolchain wie in docs/BUILD.md)
+make -C modules/mod-on-daisy test          # host tests (also: test-sanitize, test-thread)
+make PROJECT=mod-bench -j4                 # measurement firmware (toolchain as in docs/BUILD.md)
 python3 modules/mod-on-daisy/tools/mod_probe.py selftest
-# Spaltentabelle eines Instruments ohne Hardware, über den Simulator aus `make test`:
+# column table of an instrument without hardware, via the simulator from `make test`:
 python3 modules/mod-on-daisy/tools/mod_probe.py --sim modules/mod-on-daisy/build/host/mod_sim --instrument looper targets
 ```
 
-Einbindung in ein Instrument: [docs/ARCHITECTURE.md § 6](docs/ARCHITECTURE.md#6-instrumentenschnittstelle).
+Integration into an instrument: [docs/ARCHITECTURE.md § 6](docs/ARCHITECTURE.md#6-instrument-interface).
 
-## Leitgedanke
+## Guiding principle
 
-Die Hardware bleibt unmittelbar spielbar. Modulationszuordnungen gehören in die
-grafische Oberfläche, nicht in Hardware-Menüs.
+The hardware stays immediately playable. Modulation assignments belong in the
+graphical interface, not in hardware menus.

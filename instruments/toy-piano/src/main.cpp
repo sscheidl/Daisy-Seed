@@ -12,6 +12,7 @@
 #include <atomic>
 #if TOY_PIANO_FX
 #include "ambient_host.h"
+#include "../../../effects/reverb/src/rate_control.h"
 #include "callback_diagnostics.h"
 #include <new>
 #elif TOY_PIANO_TAPE
@@ -95,6 +96,13 @@ toy_piano::PotFilter attack_pot, decay_pot;
 #endif
 std::atomic<uint32_t> led_mask{0};
 daisy::MidiUsbHandler usb_midi;
+#if TOY_PIANO_FX
+void SendFxControl(const uint8_t* bytes, std::size_t size) {
+    if(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
+        usb_midi.SendMessage(const_cast<uint8_t*>(bytes), size);
+}
+ambient::RateControl fx_rate("toy-piano-amb", TOY_PIANO_AMBIENT_VERSION, true, SendFxControl);
+#endif
 struct NoteIn { uint8_t note, velocity; };
 // Main loop -> audio callback: notes received over USB.
 toy_piano::SpscQueue<NoteIn, toy_piano::kMidiQueueSize> midi_in;
@@ -189,6 +197,8 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     modulation.engine.Tick(size);
     // Attack and decay are latched at the strike; the matrix shifts the pot value.
 #if TOY_PIANO_FX
+    fx_rate.AudioTick();
+    fx->SetReverbRate(fx_rate.RateHz());
     std::array<float, 8> raw{};
     for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
     fx->ReadControls(raw, hw.tog_sw17.Pressed(), hw.tog_sw18.Read());
@@ -336,7 +346,12 @@ void ServiceUsbMidi() {
             return_request.Set(manager_return::Request::kSysEx);
             continue;
         }
-        mod::MidiMessage message; // Mod on Daisy sees every event first (SysEx, CC1, AT)
+#if TOY_PIANO_FX
+        if(event.type == daisy::SystemCommon && event.sc_type == daisy::SystemExclusive &&
+           fx_rate.HandleBody(event.sysex_data, event.sysex_message_len, daisy::System::GetNow()))
+            continue;
+#endif
+        mod::MidiMessage message; // Mod on Daisy sees its SysEx, CC1 and aftertouch.
         if(mod::adapter::ToMessage(event, message) && modulation.controller.HandleMidi(message))
             continue;
         if(event.type == daisy::NoteOn) {
@@ -358,6 +373,9 @@ void ServiceUsbMidi() {
     const bool connected = hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED;
     SendKeyChanges(led_mask.load(std::memory_order_relaxed), connected);
     modulation.controller.Service(daisy::System::GetNow(), mod_sender); // at most one reply per ms
+#if TOY_PIANO_FX
+    fx_rate.Service(daisy::System::GetNow(), connected);
+#endif
 }
 
 // Main loop only: replies over USB if a host asked, then resets into the bootloader.
