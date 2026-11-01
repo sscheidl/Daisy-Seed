@@ -42,7 +42,7 @@ static int failures = 0;
 
 static float out_l[48], out_r[48];
 static double energy = 0;
-static bool finite = true;
+static bool all_finite = true;
 
 static void Tick(unsigned count = 1) {
     for(unsigned b = 0; b < count; ++b) {
@@ -53,7 +53,7 @@ static void Tick(unsigned count = 1) {
         in_audio = false;
         for(unsigned i = 0; i < 48; ++i) {
             energy += double(out_l[i]) * out_l[i] + double(out_r[i]) * out_r[i];
-            finite = finite && std::isfinite(out_l[i]) && std::isfinite(out_r[i]);
+            all_finite = all_finite && std::isfinite(out_l[i]) && std::isfinite(out_r[i]);
         }
         ++daisy::System::now;
         ServiceMain();
@@ -338,7 +338,7 @@ int main() {
     Tick(5); // on the board the audio interrupt runs during the main loop's wait
     CHECK(product.Stats().panics >= 1);
 
-    CHECK(finite);
+    CHECK(all_finite);
     CHECK(allocations == 0);
     CHECK(product.Stats().non_finite == 0);
     if(failures) {
