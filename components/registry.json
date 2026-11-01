@@ -228,6 +228,29 @@
         "path": "common/dsp/fastmath.h",
         "name": "SEED_FAST_MATH_VERSION"
       }
+    },
+    "streichwurst-instrument": {
+      "kind": "instrument",
+      "source": "instruments/streichwurst/include/streichwurst",
+      "version": {
+        "type": "macro",
+        "path": "instruments/streichwurst/include/streichwurst/version.h",
+        "name": "STREICHWURST_INSTRUMENT_VERSION"
+      },
+      "provenance": "instruments/streichwurst/docs/PROVENANCE.md"
+    },
+    "streichwurst-fx": {
+      "kind": "effect",
+      "source": "effects/streichwurst-fx/include/streichwurst_fx",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/streichwurst-fx/include/streichwurst_fx/version.h",
+        "name": "STREICHWURST_FX_VERSION"
+      },
+      "provenance": "instruments/streichwurst/docs/PROVENANCE.md"
     }
   },
   "products": {
@@ -548,6 +571,30 @@
         "stereo-delay",
         "saturation",
         "fast-math",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "streichwurst": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/streichwurst/src/version.h",
+        "name": "STREICHWURST_VERSION"
+      },
+      "directory": "instruments/streichwurst/build",
+      "image": "Streichwurst",
+      "marker": "STREICHWURST-FW-VERSION=",
+      "device_id": "streichwurst",
+      "components": [
+        "streichwurst-instrument",
+        "streichwurst-fx",
+        "mod-on-daisy",
+        "step-seq",
         "fx-contract",
         "bootloader-entry"
       ],

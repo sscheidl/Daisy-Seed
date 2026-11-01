@@ -1,4 +1,4 @@
-"""scripts/check-firmware.py for the Acid Seq images: positive and negative cases (R12)."""
+"""scripts/check-firmware.py for the Acid Seq and Streichwurst images: positive and negative cases."""
 from pathlib import Path
 import re
 import struct
@@ -16,6 +16,7 @@ IMAGES = [
     ('DriveFx-v', 'effects/drive/src/version.h', 'DRIVE_FIRMWARE_VERSION', 'DRIVE-FX-VERSION='),
     ('DelayFx-v', 'effects/stereo-delay/src/version.h', 'STEREO_DELAY_FIRMWARE_VERSION', 'DELAY-FX-VERSION='),
     ('AcidSeq-v', 'sequencers/acid-seq/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
+    ('Streichwurst-v', 'instruments/streichwurst/src/version.h', 'STREICHWURST_VERSION', 'STREICHWURST-FW-VERSION='),
 ]
 
 
