@@ -107,7 +107,7 @@ class SelfTest {
         // Firmware update: a simulator has no bootloader; nothing is sent, the session stays.
         e_.StartFirmwareUpdate(PortIndex("Simulator: Toy Piano"));
         SELFTEST_CHECK(!e_.FirmwareUpdateWaiting() && e_.GetSession().Connected());
-        SELFTEST_CHECK(e_.LogText().contains("keinen Bootloader"));
+        SELFTEST_CHECK(e_.LogText().contains("has no bootloader"));
 
         // Keyboard: LFO 1 → Pitch +30.
         e_.Grid().Select(0);
@@ -161,7 +161,7 @@ class SelfTest {
         grid.Select(3 * 8 + 3);
         Key(juce::KeyPress::pageUpKey);
         SELFTEST_CHECK(Settle() && m.ActiveCount() == 8 && !m.Enabled(3 * 8 + 3) && InSync());
-        SELFTEST_CHECK(e_.LogText().contains(ui::U("Höchstens 8")));
+        SELFTEST_CHECK(e_.LogText().contains(ui::U("At most 8")));
         grid.Select(18); // back to fewer than 8 for the screenshot
         Key('0', '0');
         grid.Select(19);
@@ -231,7 +231,7 @@ class SelfTest {
         lfo1.Sync(mod::MidiClock).onClick();
         SELFTEST_CHECK(Settle() && !lfo1.Fm().isEnabled() && m.patch.lfo[0].fm == 35);
         e_.Step(200);
-        SELFTEST_CHECK(lfo1.ClockText().contains(ui::U("Kein MIDI-Clock")));
+        SELFTEST_CHECK(lfo1.ClockText().contains(ui::U("No MIDI clock")));
         lfo1.Sync(mod::Free).onClick();
         SELFTEST_CHECK(Settle() && lfo1.Fm().isEnabled());
         Say("PASS corrections: LFO FM slider, ranges, aftertouch kind, clock state");
@@ -240,10 +240,10 @@ class SelfTest {
         sim.drop_replies = 1;
         e_.Step(1700);
         e_.RefreshNow();
-        SELFTEST_CHECK(e_.GetSession().StatusText().find("keine Live-Daten") != std::string::npos);
+        SELFTEST_CHECK(e_.GetSession().StatusText().find("no live data") != std::string::npos);
         e_.Step(3600);
         e_.RefreshNow();
-        SELFTEST_CHECK(e_.GetSession().StatusText().find("keine Antwort") != std::string::npos);
+        SELFTEST_CHECK(e_.GetSession().StatusText().find("no answer") != std::string::npos);
         Shot("juce-editor-no-replies.png");
         sim.drop_replies = 0;
         SELFTEST_CHECK(Settle() && e_.GetSession().LinkHealth() == Health::Ok && InSync());
@@ -343,14 +343,14 @@ class SelfTest {
         int asked = 0;
         e_.sq_upload_decision = [&](const AcidCompat& c) {
             ++asked;
-            return c.Clean() ? 0 : 0; // "Nicht übertragen": the device keeps its state
+            return c.Clean() ? 0 : 0; // "Don't send": the device keeps its state
         };
         e_.LoadProjectPatch(project);
         e_.Step(50);
         SELFTEST_CHECK(asked == 1 && e_.GetSqSimulator()->Value(1, 4) == 500000);
         e_.sq_upload_decision = [&](const AcidCompat&) {
             ++asked;
-            return 2; // "Immer übertragen"
+            return 2; // "Always send"
         };
         e_.LoadProjectPatch(project);
         for(int i = 0; i < 400; ++i)
@@ -414,7 +414,7 @@ class SelfTest {
         e_.LoadProjectPatch(project);
         for(int i = 0; i < 1500; ++i)
             e_.Step(1);
-        // "Immer übertragen" from the Acid Seq part still holds for this instance: no question.
+        // "Always send" from the Acid Seq part still holds for this instance: no question.
         SELFTEST_CHECK(asked <= 1 && e_.GetStreichwurstSimulator()->Value(1, 7) == 60000);
         SELFTEST_CHECK(e_.GetStreichwurstSimulator()->Matrix().CurrentPatch().depth[0][0] == 50);
         e_.sq_upload_decision = nullptr;

@@ -1,134 +1,134 @@
-# Verbindliche Modulstruktur: Streichwurst
+# Binding module structure: Streichwurst
 
-2026-11-01. Nutzerpräzisierung nach der ersten Vorbereitung. Diese Struktur
-ergänzt den historischen Forschungsentwurf und ist für Claude maßgeblich.
-Die **bestehende Mod-on-Daisy-Control-App** wird erweitert: JUCE-Standalone,
-Browser und die gemeinsame VST3-Oberfläche. Die App läuft auf dem Rechner und
-steuert die zusammengesetzte Daisy-Firmware über deren MIDI-/Control-Anbindung.
+2026-11-01. User clarification after the first preparation. This structure
+supplements the historical research draft and is authoritative for Claude.
+The **existing Mod on Daisy control app** is extended: JUCE standalone,
+browser and the shared VST3 interface. The app runs on the computer and
+controls the composed Daisy firmware through its MIDI/control connection.
 
-## Komponenten und Besitz
+## Components and ownership
 
-| Baustein | Ort / geplante ID | Verantwortung |
+| Building block | Location / planned ID | Responsibility |
 | --- | --- | --- |
-| Instrument | `instruments/streichwurst/include/streichwurst/`, `streichwurst-instrument` | Stringsection und Soli, eigene Ton-/Notenzustände, Hüllkurven, Registrierung, Oktaven, Solo-Timbre/Tremolo, Layer/Split |
-| FX | `effects/streichwurst-fx/`, `streichwurst-fx` | Streichfett-FX-Funktionen: Animate, Ensemble/Chorus, Phaser, Reverb; unabhängige Zustände und Tests |
-| MIDI-/Control-Engine | vorhandene gemeinsame MIDI-/Protokollbausteine mit gezieltem Adapter | Transport, Parsing, Zeitstempel, begrenzte Queues, Note-/Controller-/SysEx-Verteilung und konsistente Parameterübergabe |
-| Firmwareprodukt | `instruments/streichwurst/src/`, Build-ID `streichwurst` | Zusammensetzung, Board, Speicher, Routing, Balance, endgültiger Gain/Outputschutz, Bootloader und Diagnose |
-| Control App | `editors/mod-on-daisy/` | Komponenten-/Parameterseiten, Status, Patchverwaltung und vorhandene Matrixoberfläche; gemeinsame Firmwareparameter bedienen |
+| Instrument | `instruments/streichwurst/include/streichwurst/`, `streichwurst-instrument` | String section and solos, own tone/note states, envelopes, registration, octaves, solo timbre/tremolo, layer/split |
+| FX | `effects/streichwurst-fx/`, `streichwurst-fx` | Streichfett FX functions: Animate, Ensemble/Chorus, Phaser, Reverb; independent states and tests |
+| MIDI/control engine | existing shared MIDI/protocol building blocks with a targeted adapter | Transport, parsing, timestamps, bounded queues, note/controller/SysEx distribution and consistent parameter hand-over |
+| Firmware product | `instruments/streichwurst/src/`, build ID `streichwurst` | Composition, board, memory, routing, balance, final gain/output protection, bootloader and diagnostics |
+| Control App | `editors/mod-on-daisy/` | Component/parameter pages, status, patch management and the existing matrix interface; operate the shared firmware parameters |
 
-Das sind geplante Komponenten. Registereinträge mit eigenen Versionsquellen
-entstehen erst mit den entsprechenden Implementierungen. Produktversion,
-Instrumentversion, FX-Version und Appversion bleiben getrennt. Das Produkt-
-manifest nennt die eingebetteten Komponenten und kompatiblen Panels.
+These are planned components. Register entries with their own version sources
+are only created with the corresponding implementations. Product version,
+instrument version, FX version and app version remain separate. The product
+manifest names the embedded components and compatible panels.
 
-Instrument und FX sind ohne Board, MIDItransport oder Editor auf dem Host
-testbar. Die Firmware besitzt den Speicher und reserviert ihn vor Audiostart.
-Keine GUI-, HAL- oder Protokollabhängigkeit im DSP-Kern. Die App kennt Parameter
-und Zustandsverträge statt DSP-Speicheradressen.
+Instrument and FX are testable on the host without board, MIDI transport or editor.
+The firmware owns the memory and reserves it before audio start.
+No GUI, HAL or protocol dependency in the DSP core. The app knows parameter
+and state contracts instead of DSP memory addresses.
 
-## Audio- und Kontrollfluss
+## Audio and control flow
 
 ```text
 USB/DIN MIDI ─┐
-Kit-Bedienung ├─> MIDI-/Control-Engine ─> NoteEvents + Parameterupdates
+Kit controls  ├─> MIDI/control engine ─> NoteEvents + parameter updates
 Control App ─┘                          │
                            ┌───────────┴───────────┐
                            v                       v
-                    Instrumentparameter       FX-Parameter
+                    Instrument parameters     FX parameters
                            │                       │
-Instrument:   Stringsection dry             Soli dry
+Instrument:   String section dry            Solos dry
                     │                         │
-FX:          Animate/Formung                   │
+FX:          Animate/shaping                   │
                     │                         │
                 Ensemble                      │
-             gemeinsame Summe                  │
+               shared sum                     │
                -> Phaser                      │
-             -> Stereo-Tapkorrektur            │
+             -> stereo tap correction          │
                     └──────────┬──────────────┘
 Firmware:                Balance/Mix
                                │
-FX:                     globaler Reverb
+FX:                     global Reverb
                                │
-Firmware:               Gain -> Outputschutz -> Stereo
+Firmware:               Gain -> output protection -> Stereo
 ```
 
-Der FX-Baustein hat deshalb getrennt aufrufbare String- und Globalstufen.
-Die Firmware orchestriert sie um die Mischung herum. Der trockene Soli-Bus
-umgeht String-Ensemble und String-Phaser. Die Stereo-Tapkorrektur bleibt Teil
-der Ensemble-/Phaser-Routingbeziehung, einschließlich der dafür nötigen
-Tapzustände. Eine flache Stereo-FX-Kette hinter der bereits gemischten
-Instrumentausgabe würde diese Beziehung verändern.
+The FX building block therefore has separately callable string and global stages.
+The firmware orchestrates them around the mix. The dry solo bus
+bypasses the string ensemble and string phaser. The stereo tap correction remains part
+of the ensemble/phaser routing relationship, including the tap states it
+requires. A flat stereo FX chain behind the already mixed
+instrument output would change this relationship.
 
-Animate ist als FX-Funktion besessen. Soweit seine Wirkung einen
-Registrierungs-/Klangformungssteuerwert benötigt, veröffentlicht das FX-Modul
-einen typisierten Modulationswert für die Instrument-Stringquelle; die Firmware
-übergibt ihn mit definierter Kontrollkadenz. Die statische Klangfarbenbasis und
-Notenverwaltung bleiben im Instrument. Gemeinsame Zeitbasis und Reihenfolge
-definieren, keine direkten gegenseitigen Schreibzugriffe auf private Zustände.
-Die genaue Original-Formungsrekurrenz ist weiterhin teilweise offen.
+Animate is owned as an FX function. Where its effect needs a
+registration/timbre-shaping control value, the FX module publishes
+a typed modulation value for the instrument's string source; the firmware
+passes it on at a defined control cadence. The static timbre basis and
+note management remain in the instrument. Define a shared time base and order;
+no direct mutual write access to private states.
+The exact original shaping recurrence is still partly open.
 
-## Zu implementierende Verträge
+## Contracts to implement
 
 * Instrument: `Prepare`, `Reset`, `ApplyEvent`, `SetParameters`,
-  `RenderSections`. Ausgabe getrennte String-/Soli-Busse mit gleicher
-  Framezahl und Zeitbasis. Physisches Kanalformat, Maximalblock, Pufferaliasing
-  und Nullblocksemantik vor Implementierung festlegen und testen.
-* FX: `Prepare`, `Reset`, `SetParameters`, Stringstufe und Global-Reverbstufe,
-  abgegrenzte Animate-Steuerschnittstelle. Kein Besitz des Instruments,
-  kein MIDIparser und keine eingebettete Bedienlogik.
-* Gemeinsamer Host: definierte Queue-/Snapshotübergabe von Main/USB zu Audio,
-  gleiche Zeitbasis für Events und DSP. ACK unterscheidet angenommene von
-  tatsächlich angewandten Parametern; angewandene Revision aus Audio melden.
-* Die vorhandene [FX-Schnittstelle](../../../common/audio/fx_contract.h)
-  bleibt für vorhandene Verbraucher unverändert. Wiederverwendbare
-  Streichwurst-Teilstufen können passende Adapter anbieten. Der zusätzliche
-  Mehrbus-Vertrag wird explizit versioniert, ohne Strings und Soli vorzeitig
-  zusammenzufassen. Die Hostmischung verhindert doppeltes Dry-Signal und hält
-  Original-Modusgain nach Solo/Reverb von eigenen Headroomregeln getrennt.
-* Gleicher Parameterbestand für Potis, MIDI CC und App: stabile Komponenten-
-  und Parameter-IDs, Typ/Einheit/Range/Default/Enum, Glättung, Speicher- und
-  Modulierbarkeitseigenschaften. Anwendung, Readback und Reset eindeutig.
-  Die acht Matrixziele sind eine eigene Auswahl, keine Begrenzung der gesamten
-  Instrument-/FX-Parameterseiten.
+  `RenderSections`. Output separate string/solo buses with the same
+  frame count and time base. Define and test the physical channel format, maximum block,
+  buffer aliasing and zero-block semantics before implementation.
+* FX: `Prepare`, `Reset`, `SetParameters`, string stage and global reverb stage,
+  a delimited Animate control interface. No ownership of the instrument,
+  no MIDI parser and no embedded control logic.
+* Shared host: defined queue/snapshot hand-over from main/USB to audio,
+  the same time base for events and DSP. ACK distinguishes accepted from
+  actually applied parameters; report the applied revision from audio.
+* The existing [FX interface](../../../common/audio/fx_contract.h)
+  remains unchanged for existing consumers. Reusable
+  Streichwurst sub-stages can offer suitable adapters. The additional
+  multi-bus contract is explicitly versioned, without merging strings and solos
+  prematurely. The host mix prevents a doubled dry signal and keeps the
+  original mode gain after solo/reverb separate from own headroom rules.
+* The same parameter set for pots, MIDI CC and app: stable component
+  and parameter IDs, type/unit/range/default/enum, smoothing, storage and
+  modulatability properties. Application, readback and reset are unambiguous.
+  The eight matrix targets are an own selection, not a limitation of the complete
+  instrument/FX parameter pages.
 
-## MIDI und bestehende Control App
+## MIDI and the existing control app
 
-Claude prüft zuerst die tatsächlich vorhandenen Mod-on-Daisy- und SQ-
-Parameter-/Deskriptor-/Sessionbausteine im Repository. Ein gemeinsamer MIDI-
-Dispatcher muss musikalische Events, Geräteparameter, Matrixnachrichten und
-Bootloaderbefehle kollisionsfrei zuordnen. Vorhandene Nachrichtencodes und
-Komponenten-IDs dürfen nicht umgedeutet werden. Kein zweiter Transportstack
-im Instrument oder im FX; gemeinsame Helfer gezielt wiederverwenden.
+Claude first checks the Mod on Daisy and SQ parameter/descriptor/session
+building blocks that actually exist in the repository. A shared MIDI
+dispatcher must assign musical events, device parameters, matrix messages and
+bootloader commands without collisions. Existing message codes and
+component IDs must not be reinterpreted. No second transport stack
+in the instrument or the FX; reuse shared helpers in a targeted way.
 
-Die aktuelle Matrixschnittstelle allein deckt die vollständige Klangbedienung
-nicht ab. Instrument- und FX-Seiten sowie Produkt-/Komponentenidentität sind
-Teil dieses Auftrags. Benötigte Protokollerweiterung zuerst dokumentieren,
-versionieren und zusammen in Firmware, CLI-Probe, JUCE/Browser sowie den
-gemeinsamen VST3-Sessionpfaden implementieren und testen. Bestehende Geräte und
-deren Patches müssen weiterhin korrekt erkannt und bedient werden.
+The current matrix interface alone does not cover full sound control.
+Instrument and FX pages as well as product/component identity are
+part of this assignment. Document a required protocol extension first,
+version it and implement and test it together in firmware, CLI probe, JUCE/browser and the
+shared VST3 session paths. Existing devices and
+their patches must still be recognised and operated correctly.
 
-Beim Verbinden zunächst Zustand lesen. Kein ungefragtes Überschreiben mit
-Appdefaults. Poti-/MIDIänderungen werden in der App sichtbar; Appänderungen
-kommen über denselben Parametervertrag bei der Firmware an. Rückkopplungen,
-veraltete Antworten, fehlende ACKs und Verbindungsabbrüche begrenzt behandeln.
-Eigene Produktpatches enthalten Instrument- und FX-Parameter, Komponentenschema
-und gegebenenfalls Matrixzustand. Bestehende `.modpatch`-/`.acidpatch`-Formate
-bleiben kompatibel. Der Editor führt keinen Streichwurst-Audio-DSP aus.
+On connecting, read the state first. No unrequested overwriting with
+app defaults. Pot/MIDI changes become visible in the app; app changes
+reach the firmware through the same parameter contract. Handle feedback loops,
+stale responses, missing ACKs and connection drops in a bounded way.
+Own product patches contain instrument and FX parameters, the component schema
+and, where applicable, the matrix state. The existing `.modpatch`/`.acidpatch` formats
+remain compatible. The editor does not run any Streichwurst audio DSP.
 
-Die vorhandene Mod-Matrix wird als eigenes gemeinsames Modul angebunden;
-Streichwurst-Ziele und angewandte Parameter im Vertrag beschreiben. Leere Matrix
-liefert unveränderten eigenen Basisklang. Neue Modulationsquellen oder ein
-allgemeiner Laufzeit-Instrumentlader sind kein notwendiger Teil dieses Produkts.
+The existing mod matrix is connected as its own shared module;
+describe Streichwurst targets and applied parameters in the contract. An empty matrix
+delivers the unchanged own basic sound. New modulation sources or a
+general runtime instrument loader are not a necessary part of this product.
 
-## Verbindliche Abnahme
+## Binding acceptance
 
-Getrennte Hosttests für Instrument und FX, Tests des MIDI-/Parameter-Routers,
-Protokoll-/Sessiontests der Control App und End-to-End-Tests der Firmware auf
-Host-Fakes. Besonders prüfen: Soli umgehen String-FX; Reverb sieht die spätere
-Mischung; FX-Bypass, Tails und Reset besitzen definierte Regeln; App, Potis
-und MIDI sehen denselben angewandten Parameterstand. Komponentenaustausch
-erfordert keinen Eingriff in den Kern des anderen DSP-Moduls.
+Separate host tests for instrument and FX, tests of the MIDI/parameter router,
+protocol/session tests of the control app and end-to-end tests of the firmware on
+host fakes. Check in particular: solos bypass the string FX; reverb sees the later
+mix; FX bypass, tails and reset have defined rules; app, pots
+and MIDI see the same applied parameter state. Swapping a component
+requires no intervention in the core of the other DSP module.
 
-Danach echter lokaler ARM-Build und Ressourcenprüfung. App-Selbsttests sind
-Softwaretests; MIDI-/Audioverhalten auf dem Board und Klangvergleich zum
-Original bleiben bis zur realen Durchführung **NICHT GEMESSEN**.
+After that, a real local ARM build and resource check. App self-tests are
+software tests; MIDI/audio behaviour on the board and the listening comparison with the
+original remain **NOT MEASURED** until actually carried out.

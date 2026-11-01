@@ -1,135 +1,135 @@
-# Idee: Modularer Firmwarekern („Daisy-Baukasten“)
+# Idea: modular firmware core ("Daisy building-block kit")
 
-**Nutzerentscheidung 01.11.2026:** Die modulare Entwicklung ist durch die
-[verbindliche Richtlinie](MODULAR_DEVELOPMENT_POLICY.md) jetzt allgemeine
-Vorgabe für neue Entwicklungen und wesentliche Erweiterungen. Dieser Text
-bleibt der historische Entwurf; ein allgemeiner Laufzeitloader ist damit
-weiterhin nicht als implementiert ausgewiesen.
+**User decision 01.11.2026:** through the
+[binding policy](MODULAR_DEVELOPMENT_POLICY.md), modular development is now the general
+requirement for new developments and substantial extensions. This text
+remains the historical draft; a general runtime loader is therefore
+still not declared as implemented.
 
-**Umsetzung der ersten Stufe:** [Modulare Komponenten](MODULAR_COMPONENTS.md)
-beschreibt die zusätzlichen Torus-/Ambient-FX-Builds, den gemeinsamen
-Audiovertrag und die Versionsmanifeste. Die folgenden Überlegungen bleiben der
-historische Entwurf für den weitergehenden Baukasten einschließlich Laufzeitwechsel.
+**Implementation of the first stage:** [Modular components](MODULAR_COMPONENTS.md)
+describes the additional Torus/Ambient FX builds, the shared
+audio contract and the version manifests. The following considerations remain the
+historical draft for the further-reaching building-block kit including runtime switching.
 
-Bestandsaufnahme vom 25.10.2026, vor dieser ersten Stufe:
-[Rings/Torus, Mod-Modul, Editoren und Versionierung](MODULARITY_AUDIT_2026-10-25.md).
-Sie trennt die bereits implementierten Bausteine von den noch offenen
-Instrument-/FX-Schnittstellen und enthält erneut ausgeführte Prüfungen.
+Inventory of 25.10.2026, before this first stage:
+[Rings/Torus, Mod module, editors and versioning](MODULARITY_AUDIT_2026-10-25.md).
+It separates the building blocks already implemented from the still open
+instrument/FX interfaces and contains re-run checks.
 
-**Stand:** Idee und erste Überlegungen vom 24.10.2026 (Hardwaretest-Abend mit
-Physical Modeling mod3). **Noch nicht geplant, kein Code.** Nächster Schritt: daraus einen
-ausgearbeiteten Plan machen (Schnittstellen, Speicher- und CPU-Modell, Bedienkonzept,
-Protokoll, Migrationsreihenfolge).
+**As of:** idea and first considerations of 24.10.2026 (hardware test evening with
+Physical Modeling mod3). **Not yet planned, no code.** Next step: turn it into a
+worked-out plan (interfaces, memory and CPU model, control concept,
+protocol, migration order).
 
-## 1. Die Idee
+## 1. The idea
 
-Statt jedes Instrument als eigene Firmware mit eigener Matrix-Einbindung zu bauen, ein
-**Baukasten aus drei Bausteinarten**, die sich gegenseitig ergänzen und austauschen lassen:
+Instead of building every instrument as its own firmware with its own matrix integration, a
+**building-block kit of three kinds of blocks** that complement each other and can be swapped:
 
-1. **Instrument** (z. B. Physical Modeling, Toy Piano, Nebulae, Looper)
-2. **FX** (z. B. Torus-Reverb, Ambient Reverb, Stereo Delay, Granular)
-3. **Mod-Matrix** (Mod on Daisy)
+1. **Instrument** (e.g. Physical Modeling, Toy Piano, Nebulae, Looper)
+2. **FX** (e.g. Torus reverb, Ambient Reverb, Stereo Delay, Granular)
+3. **Mod matrix** (Mod on Daisy)
 
-Solange Speicher und CPU reichen, sollen alle drei in einer **Grundfirmware** beliebig
-kombinierbar sein, auch einzeln:
+As long as memory and CPU suffice, all three shall be freely combinable in one **base firmware**,
+also individually:
 
-| Kombination | Beispiel |
+| Combination | Example |
 | --- | --- |
-| nur Instrument | Physical Modeling wie heute |
-| nur FX | Ambient Reverb am Audio-Eingang |
-| Instrument + Mod | Physical Modeling `MOD=1` wie heute |
-| FX + Mod | Ambient Reverb, dessen Parameter die Matrix moduliert |
-| Instrument + FX + Mod | „Rings into Clouds“ mit Matrix |
+| instrument only | Physical Modeling as today |
+| FX only | Ambient Reverb on the audio input |
+| Instrument + Mod | Physical Modeling `MOD=1` as today |
+| FX + Mod | Ambient Reverb whose parameters the matrix modulates |
+| Instrument + FX + Mod | "Rings into Clouds" with matrix |
 
-Ziel: Neue Instrumente und Effekte werden nur noch als Baustein geschrieben; Kern, Bedienung,
-MIDI, SysEx, Editor-Anbindung und Messung gibt es einmal. Das vereinfacht die weitere
-Entwicklung und erhöht die Flexibilität.
+Goal: new instruments and effects are only written as a building block; core, controls,
+MIDI, SysEx, editor connection and measurement exist once. This simplifies further
+development and increases flexibility.
 
-## 2. Woher die Idee kam
+## 2. Where the idea came from
 
-Am 24.10.2026 wurden Wünsche für Physical Modeling gesammelt:
+On 24.10.2026, wishes for Physical Modeling were collected:
 
-* zwei alternative FX zum mitgelieferten Torus-Reverb, im Sinne von **„Rings into Clouds“**:
-  **Stereo Delay**, unser **Ambient Reverb** (`effects/reverb`, an Slöer angelehnt, Modi
-  Cloud/Halo/Scatter/Abyss/Bloom) oder ein **einfacher Granular-Effekt wie Clouds**;
-* das aktive Modell (SW17/SW18 bzw. CC28) oben im Verbindungsbereich des Editors anzeigen.
+* two alternative FX to the bundled Torus reverb, in the sense of **"Rings into Clouds"**:
+  **Stereo Delay**, our **Ambient Reverb** (`effects/reverb`, modelled on Slöer, modes
+  Cloud/Halo/Scatter/Abyss/Bloom) or a **simple granular effect like Clouds**;
+* show the active model (SW17/SW18 or CC28) at the top of the editor's connection area.
 
-Daraus entstand die allgemeinere Frage, ob Instrument, FX und Matrix nicht grundsätzlich
-austauschbare Bausteine sein sollten.
+This gave rise to the more general question of whether instrument, FX and matrix should not fundamentally
+be interchangeable building blocks.
 
-## 3. Was es schon gibt
+## 3. What already exists
 
-* **Mod on Daisy** ist bereits ein austauschbarer Baustein: Toy Piano und Physical Modeling
-  binden dieselbe Matrix über eine feste Schnittstelle ein (`InstrumentInfo`, Zieltabellen,
+* **Mod on Daisy** is already an interchangeable building block: Toy Piano and Physical Modeling
+  integrate the same matrix via a fixed interface (`InstrumentInfo`, target tables,
   `Engine::Apply`/`ApplyVoice`, [ARCHITECTURE.md](../modules/mod-on-daisy/docs/ARCHITECTURE.md) § 6).
-* Gemeinsamer Build `common/desktop.mk`, gemeinsamer SD-Treiber `common/sd`.
-* SysEx-Protokoll 0x7D mit zwei Editoren (JUCE, Browser) und `mod_probe.py`.
-* FX-Kandidaten:
-  * Torus-Reverb (in Physical Modeling, gemessen als Teil des Instruments);
-  * Ambient Reverb v0.2 (`effects/reverb`, eigener Code, MIT; **am Gerät nie gelaufen**);
-  * Mutable-Quellen im lokalen Archiv `Firmware Hacking/Eurorack/Rings (NanoRings)/DIY/eurorack-master.zip`:
-    `rings/dsp/fx/chorus.h`, `rings/dsp/fx/ensemble.h` (Rings' „Disastrous Peace“ schaltet
-    selbst zwischen Chorus, Ensemble und Reverb um), `clouds/dsp/fx/pitch_shifter.h`,
-    `clouds/dsp/fx/diffuser.h` — alle auf derselben `FxEngine` wie der Torus-Reverb;
-  * Granular: Kern von Nebulae on Daisy (`instruments/granular`); das Live-Projekt
-    `effects/granular` ist nur geplant.
+* Shared build `common/desktop.mk`, shared SD driver `common/sd`.
+* SysEx protocol 0x7D with two editors (JUCE, browser) and `mod_probe.py`.
+* FX candidates:
+  * Torus reverb (in Physical Modeling, measured as part of the instrument);
+  * Ambient Reverb v0.2 (`effects/reverb`, own code, MIT; **never run on the device**);
+  * Mutable sources in the local archive `Firmware Hacking/Eurorack/Rings (NanoRings)/DIY/eurorack-master.zip`:
+    `rings/dsp/fx/chorus.h`, `rings/dsp/fx/ensemble.h` (Rings' "Disastrous Peace" itself switches
+    between chorus, ensemble and reverb), `clouds/dsp/fx/pitch_shifter.h`,
+    `clouds/dsp/fx/diffuser.h` — all on the same `FxEngine` as the Torus reverb;
+  * Granular: core of Nebulae on Daisy (`instruments/granular`); the live project
+    `effects/granular` is only planned.
 
-## 4. Skizze
+## 4. Sketch
 
 ```
-                ┌──────────── Firmwarekern ────────────┐
- Audio-In ─────►│                                      │
- MIDI/USB ─────►│  [Instrument] ──► [FX] ──► Ausgang   │
- Potis/Tasten ─►│        ▲            ▲                │
- CV ───────────►│        └── [Mod-Matrix] ─────────────│
-                │  Bedien-Mapping · Parameter-Register │
-                │  Speicher-Arena · CPU-Budget · SysEx │
+                ┌──────────── Firmware core ───────────┐
+ Audio in ─────►│                                      │
+ MIDI/USB ─────►│  [Instrument] ──► [FX] ──► Output    │
+ Pots/keys ────►│        ▲            ▲                │
+ CV ───────────►│        └── [Mod matrix] ─────────────│
+                │  Control mapping · parameter register│
+                │  Memory arena · CPU budget · SysEx   │
                 └──────────────────────────────────────┘
 ```
 
-| Baustein | Schnittstelle (Entwurf) |
+| Building block | Interface (draft) |
 | --- | --- |
-| Instrument | Noten/MIDI rein, Stereo raus; meldet Parameter (Name, Bereich, „pro Stimme“, „beim Anschlag“) |
-| FX | Stereo rein, Stereo raus; ohne Instrument am Audio-Eingang („nur FX“) |
-| Mod-Matrix | vorhanden; Spalten künftig aus den Parametern **aller** aktiven Bausteine, also Instrument und FX zugleich |
+| Instrument | notes/MIDI in, stereo out; reports parameters (name, range, "per voice", "at note-on") |
+| FX | stereo in, stereo out; without an instrument on the audio input ("FX only") |
+| Mod matrix | exists; in future, columns from the parameters of **all** active building blocks, i.e. instrument and FX at the same time |
 
-Ein leerer Platz ist ein Durchgang; damit ergeben sich alle Kombinationen.
+An empty slot is a pass-through; this yields all combinations.
 
-## 5. Knackpunkte
+## 5. Sticking points
 
-1. **Speicher (härtester Punkt).** Die Images laufen als BOOT_SRAM aus dem SRAM (480 KB).
-   Physical Modeling mit Matrix belegt 170 KB, das DTCM 84 % (`GEMESSEN` beim Build am
-   24.10.2026). Einzel-Images: Toy Piano v0.2 126 KB, Physical Modeling v0.1.0 138 KB,
-   Nebulae v0.1.0 163 KB, Looper v0.3.0 147 KB, Ambient Reverb v0.1 121 KB (jeweils mit
-   eigener libDaisy). Alles zugleich passt so nicht. Möglichkeiten: Code aus dem QSPI
-   ausführen und nur heißen DSP-Code im SRAM/ITCM halten; Arbeitsspeicher aus einer
-   gemeinsamen Arena im SDRAM (64 MB, kaum belegt), da immer nur ein Instrument und ein FX aktiv ist.
-2. **CPU.** Jeder Baustein bringt gemessene Kosten mit; der Kern lehnt Kombinationen ab, die
-   nicht ins 1-ms-Budget passen. Belastbar gemessen ist nur Physical Modeling (Spitze 56,71 %,
-   4 Stimmen, Western Chords, 22.10.2026). Ambient Reverb, Granular und Looper: `NICHT GEMESSEN`.
-3. **Bedienung.** 8 Potis, 16 Tasten und 2 Schalter müssen sich die Bausteine teilen. Nötig ist
-   eine Bedienschicht (z. B. Potis per Schalter/Tastenkombination wahlweise Instrument oder FX),
-   eine feste CC-Belegung pro Baustein und der Editor als vollständige Oberfläche.
-4. **Protokoll und Editor.** IDENTIFY müsste die aktive Zusammenstellung melden; der Editor zeigt
-   oben „Instrument · FX · Matrix“ (dazu das aktive Modell) und kann umschalten. Protokoll-
-   änderungen immer zusammen mit Firmware, `mod_probe.py`, beiden Editoren und Tests (AGENTS.md).
-5. **Klang darf sich nicht versehentlich ändern.** Golden-Test: ein Instrument im Kern klingt
-   bitgleich zu seiner Einzelfassung. Bestehende Images (Toy Piano v0.3, reguläres Physical
-   Modeling, ModBench) bleiben unberührt.
+1. **Memory (the hardest point).** The images run as BOOT_SRAM from the SRAM (480 KB).
+   Physical Modeling with matrix occupies 170 KB, the DTCM 84 % (`MEASURED` at the build on
+   24.10.2026). Individual images: Toy Piano v0.2 126 KB, Physical Modeling v0.1.0 138 KB,
+   Nebulae v0.1.0 163 KB, Looper v0.3.0 147 KB, Ambient Reverb v0.1 121 KB (each with
+   its own libDaisy). Everything at once does not fit like this. Options: execute code from the QSPI
+   and keep only hot DSP code in SRAM/ITCM; working memory from a
+   shared arena in the SDRAM (64 MB, barely used), since only one instrument and one FX are ever active.
+2. **CPU.** Every building block brings measured costs; the core rejects combinations that
+   do not fit into the 1 ms budget. Only Physical Modeling has been measured reliably (peak 56.71 %,
+   4 voices, Western Chords, 22.10.2026). Ambient Reverb, Granular and Looper: `NOT MEASURED`.
+3. **Controls.** 8 pots, 16 buttons and 2 switches must be shared by the building blocks. What is needed is
+   a control layer (e.g. pots assigned to either instrument or FX via a switch/button combination),
+   a fixed CC assignment per building block and the editor as the complete interface.
+4. **Protocol and editor.** IDENTIFY would have to report the active composition; the editor shows
+   "Instrument · FX · Matrix" at the top (plus the active model) and can switch. Protocol
+   changes always together with firmware, `mod_probe.py`, both editors and tests (AGENTS.md).
+5. **Sound must not change by accident.** Golden test: an instrument in the core sounds
+   bit-identical to its standalone version. Existing images (Toy Piano v0.3, regular Physical
+   Modeling, ModBench) remain untouched.
 
-## 6. Vorgeschlagenes Vorgehen
+## 6. Proposed approach
 
-* **Stufe 1 — Baukasten beim Bauen:** gleiche Schnittstellen, Zusammenstellung per
-  `make INSTRUMENT=physical-modeling FX=ambient-reverb MOD=1`. Wenig Risiko, keine Speicherfrage.
-* **Stufe 2 — Umschalten zur Laufzeit** in einer Grundfirmware (QSPI-Code, Arena), sobald
-  Messungen zeigen, was zusammen passt.
-* Migration nacheinander; **Physical Modeling als Pilot** (am besten gemessen).
-* Vorab sinnvoll: Ambient Reverb (`reverb-fx`) allein am Kit messen.
+* **Stage 1 — building-block kit at build time:** the same interfaces, composition via
+  `make INSTRUMENT=physical-modeling FX=ambient-reverb MOD=1`. Little risk, no memory question.
+* **Stage 2 — switching at runtime** in one base firmware (QSPI code, arena), as soon as
+  measurements show what fits together.
+* Migration one after another; **Physical Modeling as the pilot** (best measured).
+* Useful beforehand: measure Ambient Reverb (`reverb-fx`) on its own on the kit.
 
-## 7. Offene Entscheidungen
+## 7. Open decisions
 
-* Laufzeit-Umschaltung als Ziel oder Zusammenstellung beim Bauen ausreichend?
-* Welche FX zuerst (Stereo Delay, Ambient Reverb, Granular à la Clouds; Ensemble/Chorus als Reserve)?
-* Bedienkonzept am Kit: wie Potis zwischen Instrument und FX wechseln?
-* FX-Kette (z. B. Delay → Reverb) oder genau ein FX-Platz?
-* Neuer Produktname/Version für die Grundfirmware; Verhältnis zu den Einzel-Images.
+* Runtime switching as the goal, or is composition at build time sufficient?
+* Which FX first (Stereo Delay, Ambient Reverb, Granular à la Clouds; Ensemble/Chorus as a reserve)?
+* Control concept on the kit: how do pots switch between instrument and FX?
+* FX chain (e.g. Delay → Reverb) or exactly one FX slot?
+* New product name/version for the base firmware; relationship to the individual images.

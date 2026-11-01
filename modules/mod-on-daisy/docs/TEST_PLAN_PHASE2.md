@@ -1,201 +1,201 @@
-# Mod on Daisy — Testplan Phase 2 (Prototyp und erste Messung)
+# Mod on Daisy — Test plan phase 2 (prototype and first measurement)
 
-**Stand:** 23. Oktober 2026 · **Status:** Phase 2 freigegeben (DECISIONS N1–N6). § 2
-ist umgesetzt und grün, § 3 ist gebaut, § 3.2 und § 4 laufen auf der Hardware. Ergebnisse
+**As of:** 23 October 2026 · **Status:** phase 2 approved (DECISIONS N1–N6). § 2
+is implemented and green, § 3 is built, § 3.2 and § 4 run on the hardware. Results
 in [VALIDATION.md](VALIDATION.md).
 
-## 1. Umfang
+## 1. Scope
 
-| In Phase 2 | Nicht in Phase 2 |
+| In phase 2 | Not in phase 2 |
 | --- | --- |
-| `include/mod_on_daisy/` (ARCHITECTURE § 1) | Änderungen an Toy Piano, Physical Modeling, Nebulae |
-| Host-Tests mit ASan/UBSan/TSan, CI-Job | Flash-Schreibfunktionen (D8) |
-| Messfirmware `bench/` für das Desktop-Kit | JUCE-Editor (Phase 3) |
-| `tools/mod_probe.py`: kleines Kommandozeilenskript für SysEx-Tests und Messabläufe unter Windows | Audio-Rate (D5) |
-| Messbericht `docs/VALIDATION.md` | VST3 |
+| `include/mod_on_daisy/` (ARCHITECTURE § 1) | changes to Toy Piano, Physical Modeling, Nebulae |
+| host tests with ASan/UBSan/TSan, CI job | flash write functions (D8) |
+| measurement firmware `bench/` for the Desktop Kit | JUCE editor (phase 3) |
+| `tools/mod_probe.py`: small command-line script for SysEx tests and measurement runs under Windows | audio rate (D5) |
+| measurement report `docs/VALIDATION.md` | VST3 |
 
-Konventionen wie in den vorhandenen Projekten: `make test`, `make test-sanitize`,
-`make test-thread` im Modulverzeichnis; Fakes statt Hardware; feste Startwerte für
-Zufall.
+Conventions as in the existing projects: `make test`, `make test-sanitize`,
+`make test-thread` in the module directory; fakes instead of hardware; fixed seeds for
+randomness.
 
-## 2. Host-Tests
+## 2. Host tests
 
-### 2.1 Quellen
+### 2.1 Sources
 
-| Test | Erwartung |
+| Test | Expectation |
 | --- | --- |
-| LFO-Frequenz bei Tick-Größe 12, 32, 48, 64, 256 Samples, 0,02/1/20 Hz, 600 s simuliert | Phase nach gleicher Sampleanzahl **bitgleich** für alle Tick-Größen; Frequenzfehler < 0,05 % (Quantisierung des 32-Bit-Inkrements, bei 0,02 Hz ≈ 0,024 %) |
-| LFO-Formen | Bereich −1…+1; Sinus-Fehler gegen `std::sin` < 0,1 %; Dreieck und Sägezahn an den Knicken stetig bzw. genau einmal pro Periode springend |
-| Rate-Abbildung | `r = 0` → 0,02 Hz, `r = 16383` → 20 Hz, monoton |
-| Retrigger | Ändert sich der Note-On-Zähler, beginnt die Phase bei 0; ohne Retrigger keine Änderung |
-| Random Stufe | Wert bleibt zwischen zwei Takten konstant, liegt in [−1, 1], Folge bei festem Startwert reproduzierbar |
-| Random geglättet | stetig: Änderung pro Tick ≤ 2 · n · f / fs |
-| Glättung CV/MIDI | Sprungantwort mit Zeitkonstante 2 ms bzw. 10 ms ± 5 % bei n = 48 und n = 256; konvergiert exakt (Snap), keine Denormals |
-| CV-Totzone | \|x\| < 0,02 → 0; stetig am Rand der Totzone; ±1 bleibt ±1 |
+| LFO frequency at tick size 12, 32, 48, 64, 256 samples, 0.02/1/20 Hz, 600 s simulated | phase after the same number of samples **bit-identical** for all tick sizes; frequency error < 0.05 % (quantization of the 32-bit increment, at 0.02 Hz ≈ 0.024 %) |
+| LFO shapes | range −1…+1; sine error against `std::sin` < 0.1 %; triangle and saw continuous at the corners or jumping exactly once per period |
+| Rate mapping | `r = 0` → 0.02 Hz, `r = 16383` → 20 Hz, monotonic |
+| Retrigger | if the note-on counter changes, the phase starts at 0; without retrigger no change |
+| Random stepped | value stays constant between two clocks, lies in [−1, 1], sequence reproducible with a fixed seed |
+| Random smooth | continuous: change per tick ≤ 2 · n · f / fs |
+| CV/MIDI smoothing | step response with time constant 2 ms or 10 ms ± 5 % at n = 48 and n = 256; converges exactly (snap), no denormals |
+| CV dead zone | \|x\| < 0.02 → 0; continuous at the edge of the dead zone; ±1 stays ±1 |
 
-### 2.2 Patch, Validierung, CRC
+### 2.2 Patch, validation, CRC
 
-| Test | Erwartung |
+| Test | Expectation |
 | --- | --- |
-| Serialisierung | feste 109 Byte, Little Endian, Round-Trip identisch |
-| CRC-32 | Prüfwert `CRC32("123456789") = 0xCBF43926`; Patch-CRC gleich auf x86-64-Host und ARM (Testvektor im Repository) |
-| Validierung | Tiefe ±101 → abgelehnt; 9 aktive Zellen → abgelehnt; aktive, nicht erlaubte Zelle → abgelehnt; ausgeschaltete Zelle mit Tiefe → erlaubt; Name mit Byte > 127 → abgelehnt |
-| Erlaubte Zellen | Ziel ohne Namen → ganze Spalte gesperrt; Poly AT auf `latched` → gesperrt; Poly AT global je nach Regel Last-Note oder gesperrt; Quelle in `unavailable_sources` → Zeile gesperrt |
+| Serialization | fixed 109 bytes, little endian, round trip identical |
+| CRC-32 | check value `CRC32("123456789") = 0xCBF43926`; patch CRC the same on the x86-64 host and ARM (test vector in the repository) |
+| Validation | depth ±101 → rejected; 9 active cells → rejected; active, disallowed cell → rejected; disabled cell with depth → allowed; name with byte > 127 → rejected |
+| Allowed cells | target without a name → whole column locked; poly AT on `latched` → locked; poly AT global depending on the rule last note or locked; source in `unavailable_sources` → row locked |
 
-### 2.3 Engine und Matrix
+### 2.3 Engine and matrix
 
-| Test | Erwartung |
+| Test | Expectation |
 | --- | --- |
-| **Bitgenau neutral** | Leerer Patch: `Apply(t, base)` liefert für 10⁵ Werte `base ∈ [0, 1]` dasselbe Bitmuster wie `base`; `ApplyVoice(t, base, p)` ebenso für jedes p |
-| Summe und Begrenzung | +50 % und −50 % derselben Quelle auf ein Ziel ergeben 0; Summe > 1 wird nach der Summe auf 1 begrenzt, nicht pro Verbindung |
-| span | Tiefe 100 mit span 0,25 und Quelle 1 → Offset 0,25; Tiefe 1 → 0,0025 |
-| Nur benutzte Quellen | `source_mask` enthält genau die Quellen aktiver Verbindungen (Zähler im Test-Build) |
-| Program-Wechsel | LFO-Phase läuft beim Wechsel ohne Sprung weiter |
-| Feste Grenzen | Laufzeit von `Tick()` unabhängig vom Inhalt (Operationszählung im Test-Build): höchstens 8 Quellen und `kMaxActive` Verbindungen |
-| Keine Allokation | `operator new`/`malloc` im Test überschrieben und gezählt: 0 Aufrufe in `Tick`, `Apply`, `HandleMidi`, `Service` |
+| **Bit-exactly neutral** | empty patch: `Apply(t, base)` returns the same bit pattern as `base` for 10⁵ values `base ∈ [0, 1]`; `ApplyVoice(t, base, p)` likewise for every p |
+| Sum and clamping | +50 % and −50 % of the same source on one target give 0; a sum > 1 is clamped to 1 after the sum, not per connection |
+| span | depth 100 with span 0.25 and source 1 → offset 0.25; depth 1 → 0.0025 |
+| Only used sources | `source_mask` contains exactly the sources of active connections (counter in the test build) |
+| Program change | LFO phase continues without a jump on the change |
+| Fixed bounds | run time of `Tick()` independent of the content (operation count in the test build): at most 8 sources and `kMaxActive` connections |
+| No allocation | `operator new`/`malloc` overridden and counted in the test: 0 calls in `Tick`, `Apply`, `HandleMidi`, `Service` |
 
-### 2.4 Stimmenweg und Noten
+### 2.4 Voice path and notes
 
-| Test | Erwartung |
+| Test | Expectation |
 | --- | --- |
-| Drucktabelle | Note On setzt 0; Poly Pressure nur bei gehaltener Note; Note Off und Velocity 0 setzen 0; CC123 leert alles |
-| Last-Note | A, B gedrückt → B; B los → A; 17 Noten → Liste läuft über, die älteste fällt heraus, kein Absturz |
-| Voice-Stealing | Simulierte Stimme wechselt von Note 60 (Druck 100) auf 64 (Druck 0): `VoicePressure` gleitet in 10 ms auf 0; mit `Reset()` sofort |
-| Gleiche Note zweimal | zwei Stimmen auf Note 72 bekommen denselben Druck |
-| Poly AT global | Poly AT auf globalem Ziel nutzt den Last-Note-Druck, auf `per_voice`-Ziel nur `voice_gain` |
+| Pressure table | note on sets 0; poly pressure only for a held note; note off and velocity 0 set 0; CC123 clears everything |
+| Last note | A, B pressed → B; B released → A; 17 notes → list overflows, the oldest drops out, no crash |
+| Voice stealing | simulated voice switches from note 60 (pressure 100) to 64 (pressure 0): `VoicePressure` glides to 0 in 10 ms; immediately with `Reset()` |
+| Same note twice | two voices on note 72 get the same pressure |
+| Poly AT global | poly AT on a global target uses the last-note pressure, on a `per_voice` target only `voice_gain` |
 
-### 2.5 Nebenläufigkeit (ThreadSanitizer)
+### 2.5 Concurrency (ThreadSanitizer)
 
-* **Triple-Buffer**: Ein Thread veröffentlicht 10⁶ Programs mit eingebetteter
-  Prüfsumme, ein zweiter liest im Tick-Takt. Gefordert: keine Data Races, nie ein
-  gemischtes Program, letzter Stand wird übernommen.
-* **Atomare Rohwerte und Drucktabelle**: Main-Thread schreibt Noten- und
-  Druckfolgen, Audio-Thread liest. Keine Data Races.
+* **Triple buffer**: one thread publishes 10⁶ Programs with an embedded checksum, a
+  second one reads at tick rate. Required: no data races, never a mixed Program, the
+  latest state is taken over.
+* **Atomic raw values and pressure table**: the main thread writes note and pressure
+  sequences, the audio thread reads. No data races.
 
-### 2.6 Protokoll-Codec
+### 2.6 Protocol codec
 
-| Test | Erwartung |
+| Test | Expectation |
 | --- | --- |
-| Round-Trip aller Kommandos | Kodieren → Dekodieren identisch; alle Rahmen ≤ 120 Byte; `GET_MATRIX` genau 100 Byte, `SET_MATRIX` 95 Byte |
-| `packed`/`mask64` | Grenzwerte (−100, 0, +100, alle Bits) korrekt |
-| Prüfsumme | jedes einzelne gekippte Bit im Rahmen → `NAK 1` oder `NAK 2` |
-| **libDaisy-Kürzung** | Ein 130-Byte-Rahmen, wie ihn der Parser auf 128 Byte kürzt → `NAK 2`, Zustand unverändert |
-| Fremde Rahmen | andere Hersteller-ID oder Projektkennung → `HandleMidi` gibt `false`; andere Geräte-ID → verbraucht, keine Antwort |
-| Fuzzing | 10⁶ zufällige SysEx-Inhalte (Länge 0–140) unter ASan/UBSan: kein Absturz, kein undefiniertes Verhalten, Patch nur bei gültigen Rahmen verändert |
+| Round trip of all commands | encode → decode identical; all frames ≤ 120 bytes; `GET_MATRIX` exactly 100 bytes, `SET_MATRIX` 95 bytes |
+| `packed`/`mask64` | limit values (−100, 0, +100, all bits) correct |
+| Checksum | every single flipped bit in the frame → `NAK 1` or `NAK 2` |
+| **libDaisy truncation** | a 130-byte frame, as the parser truncates it to 128 bytes → `NAK 2`, state unchanged |
+| Foreign frames | different manufacturer ID or project identifier → `HandleMidi` returns `false`; different device ID → consumed, no reply |
+| Fuzzing | 10⁶ random SysEx contents (length 0–140) under ASan/UBSan: no crash, no undefined behavior, patch changed only by valid frames |
 
 ### 2.7 Controller
 
-| Test | Erwartung |
+| Test | Expectation |
 | --- | --- |
-| Wiederholung mit gleicher `seq` | gleiche Antwort, Änderung nur einmal ausgeführt |
-| Grenze 8 | 9. `SET_CELL` aktiv → `NAK 7`, Patch-CRC unverändert |
-| CRC-Bestätigung | Antwort-CRC = CRC des Editor-Modells (Testmodell mit gleichem `patch.h`) |
-| Sendebegrenzung | 100 Anfragen in einem Aufruf → höchstens 1 Antwort pro `Service()` und ms |
-| Monitor | endet 3 s nach der letzten `MONITOR`-Anfrage; Rate ≤ 25 Hz |
-| Nicht implementiert | `STORE`, `RECALL`, `SET_POWER_ON` → `NAK 9` |
+| Repeat with the same `seq` | same reply, change executed only once |
+| Limit 8 | 9th `SET_CELL` active → `NAK 7`, patch CRC unchanged |
+| CRC confirmation | reply CRC = CRC of the editor model (test model with the same `patch.h`) |
+| Send limit | 100 requests in one call → at most 1 reply per `Service()` and ms |
+| Monitor | ends 3 s after the last `MONITOR` request; rate ≤ 25 Hz |
+| Not implemented | `STORE`, `RECALL`, `SET_POWER_ON` → `NAK 9` |
 
-## 3. Messfirmware `bench/` (D10)
+## 3. Measurement firmware `bench/` (D10)
 
-### 3.1 Aufbau
+### 3.1 Structure
 
-* **Ort und Bau**: `modules/mod-on-daisy/bench/`, eigenes Makefile mit
+* **Location and build**: `modules/mod-on-daisy/bench/`, own Makefile with
   `common/desktop.mk`.
-  * `desktop.mk` setzt heute `DAISY_ROOT := ../..` für Projekte zwei Ebenen unter dem
-    Repository. `bench/` liegt drei Ebenen tief. Vorgeschlagen ist eine kleine,
-    rückwärtskompatible Änderung auf `DAISY_ROOT ?= ../..`. Die Alternative wäre ein
-    eigenes Verzeichnis `modules/mod-on-daisy-bench/`.
-  * Eintrag `mod-bench` in `projects.mk` und in der CI-Matrix, also Build, Firmware-Check
-    und Artefakt wie bei den Instrumenten.
-* **Inhalt**:
-  * Desktop-Kit, 48 kHz, Block 48. Eine zweite Build-Variante nutzt Block 256.
-  * Ein **Prüfinstrument**: Sinus-Oszillatorbank mit 4 oder 32 Stimmen und 8 Zielen
-    (5 `per_voice`, 3 global). Es ruft `Apply`/`ApplyVoice` so auf, wie es ein echtes
-    Instrument täte, und gibt einen hörbaren Ton aus.
-  * Eine Variante mit `kMaxActive = 64` für den Lasttest.
-* **Messgrößen**:
+  * Today `desktop.mk` sets `DAISY_ROOT := ../..` for projects two levels below the
+    repository. `bench/` is three levels deep. The proposal is a small,
+    backwards-compatible change to `DAISY_ROOT ?= ../..`. The alternative would be a
+    separate directory `modules/mod-on-daisy-bench/`.
+  * Entry `mod-bench` in `projects.mk` and in the CI matrix, i.e. build, firmware check
+    and artifact as for the instruments.
+* **Content**:
+  * Desktop Kit, 48 kHz, block 48. A second build variant uses block 256.
+  * A **test instrument**: sine oscillator bank with 4 or 32 voices and 8 targets
+    (5 `per_voice`, 3 global). It calls `Apply`/`ApplyVoice` the way a real instrument
+    would, and outputs an audible tone.
+  * A variant with `kMaxActive = 64` for the load test.
+* **Measured quantities**:
 
-| Größe | Methode |
+| Quantity | Method |
 | --- | --- |
-| Zyklen Matrix-Anteil (`Tick` + alle `Apply`/`ApplyVoice`) | DWT `CYCCNT` direkt davor und danach; Minimum, Mittel, Maximum |
-| Callback-Last | `daisy::CpuLoadMeter` (wie Physical Modeling), Mittel und Spitze |
-| Überläufe | Callback-Dauer > Blockbudget, gezählt |
-| Main-Loop | Höchstdauer von `HandleMidi` + `Service`, getrennt von der Sendedauer `SendMessage` (bis zu 3 × 100 µs blockierend) |
-| MIDI-Verluste | Lückenerkennung in einem nummerierten Teststrom aus `mod_probe.py`; libDaisy meldet Überläufe der FIFO nicht selbst |
-| Speicher | `arm-none-eabi-size`, MAP-Datei, `nm -C -S` für das Objekt `modulation` (gesamter Modulzustand) und die Code-Symbole `mod::`; `-fstack-usage` (`.su`) für `Tick`, `HandleMidi`, `Service` |
+| Cycles of the matrix share (`Tick` + all `Apply`/`ApplyVoice`) | DWT `CYCCNT` directly before and after; minimum, mean, maximum |
+| Callback load | `daisy::CpuLoadMeter` (as in Physical Modeling), mean and peak |
+| Overruns | callback duration > block budget, counted |
+| Main loop | maximum duration of `HandleMidi` + `Service`, separate from the send duration `SendMessage` (up to 3 × 100 µs blocking) |
+| MIDI losses | gap detection in a numbered test stream from `mod_probe.py`; libDaisy does not itself report FIFO overflows |
+| Memory | `arm-none-eabi-size`, MAP file, `nm -C -S` for the object `modulation` (whole module state) and the code symbols `mod::`; `-fstack-usage` (`.su`) for `Tick`, `HandleMidi`, `Service` |
 
-* **Steuerung und Auslesen**:
-  * Das Szenario wird per `SET_SCENARIO` gewählt, die Ergebnisse kommen per
-    `GET_STATS`. Damit prüft die Messfirmware gleichzeitig Empfang und Senden von SysEx.
-  * Falls SysEx-Senden auf dem Rechner nicht ankommt, gibt es eine Rückfallebene über
-    gewöhnliche CCs auf Kanal 16, nach dem Muster der Telemetrie von Physical Modeling.
+* **Control and readout**:
+  * The scenario is selected via `SET_SCENARIO`, the results come via `GET_STATS`. The
+    measurement firmware thereby checks SysEx receive and send at the same time.
+  * If SysEx sending does not arrive on the computer, there is a fallback via ordinary
+    CCs on channel 16, following the pattern of the Physical Modeling telemetry.
 
-### 3.2 Szenarien
+### 3.2 Scenarios
 
-| Nr. | Szenario | Zweck |
+| No. | Scenario | Purpose |
 | --- | --- | --- |
-| S0 | Prüfinstrument, Matrix wird nicht aufgerufen (Bypass) | Basis |
-| S1 | Modul eingebunden, **Matrix inaktiv** (leerer Patch) | Grundkosten |
-| S2 | **1 Verbindung**: LFO 1 → globales Ziel | wenige Verbindungen |
-| S3 | **4 Verbindungen**: LFO 1, LFO 2, Random, Modwheel | wenige Verbindungen |
-| S4 | **8 Verbindungen**, jede der 8 Quellen einmal, Poly AT auf einem Stimmenziel (Level), alle Stimmen lesen 5 Stimmenziele, 4 Stimmen | **Maximum v0.1** |
-| S5 | wie S4, 32 Stimmen | Stimmenweg wie Toy Piano |
-| S6 | 64 aktive Zellen, 32 Stimmen (Variante `kMaxActive = 64`) | Lasttest über der Grenze (E6) |
-| S7 | S4 + Editor-Last: `SET_CELL` 50/s und `MONITOR` 25 Hz | Main-Loop und Program-Wechsel |
-| S8 | S4 + MIDI-Flut: Poly AT 16 Noten × 100 Hz, CC1 und Channel AT je 100 Hz | MIDI-Belastung (E9) |
+| S0 | test instrument, matrix not called (bypass) | baseline |
+| S1 | module included, **matrix inactive** (empty patch) | base cost |
+| S2 | **1 connection**: LFO 1 → global target | few connections |
+| S3 | **4 connections**: LFO 1, LFO 2, Random, Modwheel | few connections |
+| S4 | **8 connections**, each of the 8 sources once, poly AT on a voice target (Level), all voices read 5 voice targets, 4 voices | **maximum v0.1** |
+| S5 | like S4, 32 voices | voice path as in Toy Piano |
+| S6 | 64 active cells, 32 voices (variant `kMaxActive = 64`) | load test above the limit (E6) |
+| S7 | S4 + editor load: `SET_CELL` 50/s and `MONITOR` 25 Hz | main loop and Program change |
+| S8 | S4 + MIDI flood: poly AT 16 notes × 100 Hz, CC1 and channel AT 100 Hz each | MIDI load (E9) |
 
-Jedes Szenario läuft bei Block 48 und Block 256 jeweils **60 s nach `RESET_STATS`**,
-dreimal. `mod_probe.py bench` führt die Folge automatisch aus und schreibt eine CSV-Datei.
+Each scenario runs at block 48 and block 256, each time for **60 s after `RESET_STATS`**,
+three times. `mod_probe.py bench` runs the sequence automatically and writes a CSV file.
 
-### 3.3 Dokumentation der Ergebnisse
+### 3.3 Documentation of the results
 
-`docs/VALIDATION.md` nennt Firmware-Commit (SHA), Toolchain, Blockgröße und Szenario.
-Darin stehen:
+`docs/VALIDATION.md` names the firmware commit (SHA), toolchain, block size and scenario.
+It contains:
 
-* je Szenario Matrix-Zyklen (min/mittel/max und µs), Callback-Last (mittel/max in %),
-  Überläufe, Main-Loop-Höchstdauer, verworfene MIDI-Ereignisse;
-* die Speichertabelle (DTCM, SRAM, Code, Stack pro Funktion);
-* der **Vergleich mit der Abschätzung** in ARCHITECTURE § 8. Bei Abweichungen über
-  Faktor 3 wird die Abschätzung korrigiert und begründet.
+* per scenario matrix cycles (min/mean/max and µs), callback load (mean/max in %),
+  overruns, main loop maximum duration, discarded MIDI events;
+* the memory table (DTCM, SRAM, code, stack per function);
+* the **comparison with the estimate** in ARCHITECTURE § 8. For deviations beyond a
+  factor of 3 the estimate is corrected and justified.
 
-Gemessene Werte werden als `GEMESSEN` gekennzeichnet; Werte, die noch fehlen, als
-`NICHT GEMESSEN`, wie in den vorhandenen Validierungsberichten.
+Measured values are marked `MEASURED`; values that are still missing as
+`NOT MEASURED`, as in the existing validation reports.
 
-### 3.4 Zielwerte (Abnahme)
+### 3.4 Target values (acceptance)
 
-| Größe | Zielwert |
+| Quantity | Target value |
 | --- | --- |
-| Matrix-Anteil S4, Maximum | ≤ 2 000 Zyklen (≈ 4,2 µs, 0,4 % des 1-ms-Blocks) |
-| Matrix-Anteil S5, Maximum | ≤ 4 000 Zyklen |
-| Matrix-Anteil S6, Maximum | ≤ 6 000 Zyklen (Information, keine Abnahme) |
-| Überläufe | 0 in S1–S8 |
-| Modul-RAM gesamt | ≤ 2 KiB |
-| DTCM-Belegung durch das Modul (`modulation`) | ≤ 2 KiB |
-| Main-Loop pro `Service` ohne `SendMessage` | ≤ 50 µs |
-| MIDI-Verluste in S8 | 0 |
+| Matrix share S4, maximum | ≤ 2 000 cycles (≈ 4.2 µs, 0.4 % of the 1 ms block) |
+| Matrix share S5, maximum | ≤ 4 000 cycles |
+| Matrix share S6, maximum | ≤ 6 000 cycles (information, not acceptance) |
+| Overruns | 0 in S1–S8 |
+| Module RAM total | ≤ 2 KiB |
+| DTCM usage by the module (`modulation`) | ≤ 2 KiB |
+| Main loop per `Service` without `SendMessage` | ≤ 50 µs |
+| MIDI losses in S8 | 0 |
 
-Werden Zielwerte verfehlt, folgt keine Optimierung auf Verdacht. Zuerst wird die
-Ursache im Messbericht benannt; danach wird entschieden.
+If target values are missed, no speculative optimization follows. First the cause is
+named in the measurement report; then a decision is made.
 
-## 4. Hardware-Funktionstests (Desktop-Kit, Windows)
+## 4. Hardware function tests (Desktop Kit, Windows)
 
-| Nr. | Test | Erwartung / Ergebnis festhalten |
+| No. | Test | Expectation / record the result |
 | --- | --- | --- |
-| H1 | USB-Enumeration | „Daisy Seed External“ unter Windows sichtbar |
-| H2 | SysEx empfangen | `IDENTIFY` aus `mod_probe.py` wird beantwortet; Rahmen 10–120 Byte angenommen; 130-Byte-Rahmen → `NAK 2` |
-| H3 | **SysEx senden (E9)** | Unter Windows kommen Antworten der Längen 10–120 Byte (auch Längen um Vielfache von 3) **bytegenau** als `F0 … F7` an. Prüfung mit `mod_probe.py` und einem MIDI-Monitor. Ergebnis entscheidet über ein eigenes USB-Framing im Adapter |
-| H4 | Portkonflikt (E10) | Studio One mit aktivem Port geöffnet → kann `mod_probe.py` den Port öffnen? Ergebnis geht in Phase 3 ein |
-| H5 | CV-Eingänge (E8) | Werte bei offener Buchse, 0 V und, falls verfügbar, ±5 V: Nullpunkt, Rauschen (Standardabweichung), Skalierung → Totzone und Kalibrierung festlegen |
-| H6 | Live-MIDI | CC1, Channel AT und Poly AT aus Keyboard oder Studio One sichtbar im Monitor; Poly AT pro Note korrekt zugeordnet |
-| H7 | Hörtest | Prüfton mit LFO 0,02–20 Hz, Modwheel-Sweep und Poly AT ohne Zipper-Geräusche bei Block 48; Block 256 gesondert bewerten (E7) |
-| H8 | Synchronisation (N4) | LFO auf MIDI-Clock aus Studio One (1/4, 1/8T, 1 Takt): läuft im Tempo, Start setzt auf den Taktanfang, Stopp hält. LFO auf Gate 1/2 mit Impulsen von 1 ms, 5 ms und 20 ms Länge: zählt Impulse (Monitor) – entscheidet über EXTI für Gates (E8) |
+| H1 | USB enumeration | "Daisy Seed External" visible under Windows |
+| H2 | SysEx receive | `IDENTIFY` from `mod_probe.py` is answered; frames of 10–120 bytes accepted; 130-byte frame → `NAK 2` |
+| H3 | **SysEx send (E9)** | under Windows, replies of lengths 10–120 bytes (including lengths around multiples of 3) arrive **byte-exact** as `F0 … F7`. Check with `mod_probe.py` and a MIDI monitor. The result decides on a separate USB framing in the adapter |
+| H4 | Port conflict (E10) | Studio One open with the port active → can `mod_probe.py` open the port? The result feeds into phase 3 |
+| H5 | CV inputs (E8) | values with an open jack, 0 V and, if available, ±5 V: zero point, noise (standard deviation), scaling → define dead zone and calibration |
+| H6 | Live MIDI | CC1, channel AT and poly AT from a keyboard or Studio One visible in the monitor; poly AT correctly assigned per note |
+| H7 | Listening test | test tone with LFO 0.02–20 Hz, modwheel sweep and poly AT without zipper noise at block 48; assess block 256 separately (E7) |
+| H8 | Synchronization (N4) | LFO on MIDI clock from Studio One (1/4, 1/8T, 1 bar): runs in tempo, start sets it to the start of the bar, stop holds. LFO on gate 1/2 with pulses of 1 ms, 5 ms and 20 ms length: counts pulses (monitor) – decides on EXTI for gates (E8) |
 
-## 5. Abschluss von Phase 2
+## 5. Completion of phase 2
 
-Phase 2 ist abgeschlossen, wenn:
+Phase 2 is complete when:
 
-1. alle Host-Tests in CI grün sind (Release, ASan/UBSan, TSan);
-2. `mod-bench` in CI gebaut und geprüft wird;
-3. `VALIDATION.md` die Szenarien S0–S8 und H1–H7 mit Werten oder begründetem
-   `NICHT GEMESSEN` enthält;
-4. die Ergebnisse zu H3 (SysEx-Senden) und H4 (Portkonflikt) vorliegen, weil sie den
-   Editor in Phase 3 bestimmen.
+1. all host tests are green in CI (release, ASan/UBSan, TSan);
+2. `mod-bench` is built and checked in CI;
+3. `VALIDATION.md` contains the scenarios S0–S8 and H1–H7 with values or a justified
+   `NOT MEASURED`;
+4. the results for H3 (SysEx send) and H4 (port conflict) are available, because they
+   determine the editor in phase 3.
