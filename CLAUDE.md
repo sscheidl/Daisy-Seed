@@ -7,3 +7,6 @@ The working rules for all agents are in AGENTS.md:
 All new Daisy instruments/effects and substantial extensions must follow
 [the modular development policy](docs/MODULAR_DEVELOPMENT_POLICY.md): separate
 versioned/tested modules, replaceable FX, shared MIDI/control and app integration.
+
+English is the primary language for code, GUIs, manuals, READMEs, docs and everything
+on GitHub (AGENTS.md, "Language: English first"); German only as a secondary translation.

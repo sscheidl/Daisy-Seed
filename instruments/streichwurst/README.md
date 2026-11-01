@@ -51,6 +51,12 @@ CC-Plan und alle Parameter: [PARAMETERS.md](docs/PARAMETERS.md). Mod-Matrix: ach
 Ziele, 1 kHz. Control App: Verbinden liest zuerst SQ, dann die Matrix; „Matrix“/
 „Klangparameter“ schaltet die Ansicht.
 
+## User manual (English)
+
+[Streichwurst-Manual.pdf](../../releases/streichwurst-0.1.0-test1/Streichwurst-Manual.pdf),
+generated from [docs/print/](docs/print/) (`python build_manual.py && node render.js`;
+the parameter tables come from `contracts/parameters.json`).
+
 ## Dokumente
 
 [Arbeitsauftrag](docs/CLAUDE_AUFTRAG.md) · [Modulvertrag](docs/MODULAR_ARCHITECTURE.md) ·
