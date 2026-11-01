@@ -32,8 +32,10 @@ UsbHandle usb;
 diag::devkit::AudioDiagnostics audio;
 diag::devkit::CdcSink cdc_sink(usb);
 
-// Embedded version marker, found by tools/check_qspi_image.py in the BIN.
-__attribute__((used)) const char kVersionMarker[] = PROGRAM_MANAGER_MARKER;
+// Embedded version marker, found by tools/check_qspi_image.py in the BIN. The HELLO
+// and PMINFO version strings point into it, so --gc-sections keeps it.
+const char kVersionMarker[] = PROGRAM_MANAGER_MARKER;
+const char* const kFirmwareVersion = kVersionMarker + sizeof("PROGRAM-MANAGER-FW-VERSION=") - 1;
 
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size) {
     audio.Process(hw, in, out, size, System::GetNow());
@@ -359,14 +361,14 @@ int main() {
 
     static const diag::Identity identity = {
 #ifdef PM_PROFILE_MANAGER
-        "DaisyProgramManager", PROGRAM_MANAGER_VERSION, "BOOT_QSPI", ",pm,pmsd",
+        "DaisyProgramManager", kFirmwareVersion, "BOOT_QSPI", ",pm,pmsd",
 #else
-        "DaisyProgramManagerProbe", PROGRAM_MANAGER_VERSION, "BOOT_QSPI", ",pm",
+        "DaisyProgramManagerProbe", kFirmwareVersion, "BOOT_QSPI", ",pm",
 #endif
     };
     pm::ProtocolConfig protocol_config;
     protocol_config.app = identity.app;
-    protocol_config.fw = PROGRAM_MANAGER_VERSION;
+    protocol_config.fw = kFirmwareVersion;
     protocol_config.profile = kSdSupported ? "manager" : "probe";
     protocol_config.build = PM_BUILD_REV;
     static pm::Protocol protocol(manager, protocol_config);

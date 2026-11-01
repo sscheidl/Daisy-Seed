@@ -64,6 +64,16 @@ $(LIBDAISY_DIR)/build/libdaisy.a:
 endif
 
 PYTHON ?= python3
+# Actions the root Makefile forwards to every project.
+.PHONY: version test-thread program-boot
+version:
+	@echo $(VERSION)
+test-thread:
+	@echo "program-manager: no threaded code, nothing to run under TSan"
+# This application runs behind the installed bootloader; installing a bootloader is a
+# separate, human-only step (docs/FLASHING.md) and never part of this project.
+program-boot:
+	$(error program-manager never installs a bootloader; see README.md)
 # Image checks: QSPI placement, free SRAM target, vectors, marker, SD symbol policy.
 .PHONY: check
 check: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin $(BUILD_DIR)/$(TARGET).map

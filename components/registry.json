@@ -254,6 +254,27 @@
         "name": "STREICHWURST_FX_VERSION"
       },
       "provenance": "instruments/streichwurst/docs/PROVENANCE.md"
+    },
+    "program-manager": {
+      "kind": "control",
+      "source": "system/program-manager",
+      "version": {
+        "type": "macro",
+        "path": "system/program-manager/src/version.h",
+        "name": "PROGRAM_MANAGER_VERSION"
+      }
+    },
+    "manager-return": {
+      "kind": "control",
+      "source": "common/bootloader/return_entry.h",
+      "depends": [
+        "bootloader-entry"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "common/bootloader/return_entry.h",
+        "name": "MANAGER_RETURN_VERSION"
+      }
     }
   },
   "products": {
@@ -628,6 +649,36 @@
         "mod-editor-juce",
         "mod-editor-vst3"
       ]
+    },
+    "program-manager": {
+      "version": {
+        "type": "macro",
+        "path": "system/program-manager/src/version.h",
+        "name": "PROGRAM_MANAGER_VERSION"
+      },
+      "directory": "system/program-manager/build/manager",
+      "image": "DaisyProgramManager",
+      "marker": "PROGRAM-MANAGER-FW-VERSION=",
+      "components": [
+        "program-manager",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "program-manager-probe": {
+      "version": {
+        "type": "macro",
+        "path": "system/program-manager/src/version.h",
+        "name": "PROGRAM_MANAGER_VERSION"
+      },
+      "directory": "system/program-manager/build/probe",
+      "image": "DaisyProgramManagerProbe",
+      "marker": "PROGRAM-MANAGER-FW-VERSION=",
+      "components": [
+        "program-manager",
+        "bootloader-entry"
+      ],
+      "panels": []
     }
   }
 }
