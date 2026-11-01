@@ -404,7 +404,8 @@ def test_control_tabs_are_categories_with_report_always_reachable(sim):
     window, step = sim
     tabs = [window.control_tabs.tabText(i) for i in range(window.control_tabs.count())]
     assert tabs == list(mw.TABS) + [mw.SIM_TAB]
-    assert tabs == ["USB", "Buttons", "Pots", "CV / Gate", "Audio", "SD card", "Log", "Simulation"]
+    assert tabs == ["USB", "Buttons", "Pots", "CV / Gate", "Audio", "SD card", "Nebulae", "Log",
+                    "Simulation"]
     expectations = {
         "USB": [window.port_combo, window.boot_button],
         "Buttons": [window.counter_labels[15], window.led_buttons["FOLLOW"]],
@@ -412,6 +413,7 @@ def test_control_tabs_are_categories_with_report_always_reachable(sim):
         "CV / Gate": [window.cv_table, window.cv_apply, window.gate_labels[1]],
         "Audio": [window.level_bars["il"], window.tone_buttons["SINE"], window.scope_button],
         "SD card": [window.sd_button, window.reader_share],
+        "Nebulae": [window.neb_phase, window.neb_share, window.neb_return],
         "Log": [window.log],
         "Simulation": [window.sim_plug, window.sim_cv_patch],
     }

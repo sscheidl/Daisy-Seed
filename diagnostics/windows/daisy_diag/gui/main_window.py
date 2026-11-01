@@ -20,6 +20,8 @@ from .. import __version__
 from .. import protocol as p
 from ..session import ConnState, DeviceSession, SerialLink, list_serial_ports
 from ..simulator import SimulatedCable
+from ..nebulae import NebulaeWorkflow, Phase, RtMidiLink, list_midi_ports
+from ..nebulae_sim import SimulatedNebulae
 from . import theme
 from .board import BoardWidget, SdDisplay
 from .scope import CvTraceWidget, LevelBar, ScopeWidget
@@ -40,8 +42,8 @@ TONE_LEVELS_DBFS = (-6, -12, -20, -30, -40)  # amplitude presets; -6 dBFS is the
 SCOPE_FRAME_CHOICES = (256, 512, 1024, 2048)
 
 # Control-panel categories, in tab order, with short labels so all tabs fit in the
-# 480 px panel without scroll buttons. The simulation tab is appended in simulation mode.
-TABS = ("USB", "Buttons", "Pots", "CV / Gate", "Audio", "SD card", "Log")
+# 580 px panel without scroll buttons. The simulation tab is appended in simulation mode.
+TABS = ("USB", "Buttons", "Pots", "CV / Gate", "Audio", "SD card", "Nebulae", "Log")
 TAB_TOOLTIPS = {
     "USB": "USB connection, firmware and protocol versions, transport statistics",
     "Buttons": "Buttons S1–S16 (press counts) and LEDs D1–D16 (test patterns, brightness)",
@@ -49,6 +51,7 @@ TAB_TOOLTIPS = {
     "CV / Gate": "CV inputs with rolling trace, gate inputs and the CV OUT test signal",
     "Audio": "Audio peak meters, test tone generator and input snapshot (firmware 0.4.0)",
     "SD card": "microSD read test and Windows card-reader ownership",
+    "Nebulae": "Nebulae on Daisy 0.2: share the sample card with Windows and return to performance",
     "Log": "Event log",
 }
 
@@ -112,11 +115,15 @@ def _value_table(row_names: list[str]) -> QTableWidget:
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, simulation: bool = False, port: str | None = None, clock=time.monotonic):
+    def __init__(self, simulation: bool = False, port: str | None = None, clock=time.monotonic,
+                 sim_device: str = "diagnostics"):
         super().__init__()
         self._clock = clock
         self.cable: SimulatedCable | None = None
         self.session: DeviceSession | None = None
+        self.sim_device = sim_device  # "diagnostics" or "nebulae" (simulation only)
+        self.neb_sim: SimulatedNebulae | None = None
+        self.nebulae: NebulaeWorkflow | None = None
         self.paused = False
         self.sd_result: p.SdInfo | None = None
         self._last_sd_card: bool | None = None
@@ -165,7 +172,7 @@ class MainWindow(QMainWindow):
         controls_layout.setContentsMargins(0, 4, 10, 10)
         controls_layout.setSpacing(8)
         self.control_tabs = QTabWidget()
-        self.control_tabs.setMinimumWidth(480)
+        self.control_tabs.setMinimumWidth(580)  # nine tabs incl. Nebulae and Simulation
         self.control_pages: dict[str, QScrollArea] = {}
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
@@ -178,6 +185,7 @@ class MainWindow(QMainWindow):
             "CV / Gate": [self._build_cvgate_group()],
             "Audio": [self._build_audio_group()],
             "SD card": [self._build_sd_group()],
+            "Nebulae": [self._build_nebulae_group()],
             "Log": [self._build_log_group()],
         }
         for title in TABS:
@@ -193,7 +201,7 @@ class MainWindow(QMainWindow):
         controls_layout.addWidget(self.save_report)
         split.addWidget(controls)
         split.setStretchFactor(0, 1)
-        split.setSizes([1040, 520])
+        split.setSizes([960, 600])
         outer.addWidget(split, 1)
         self.setCentralWidget(central)
 
@@ -435,6 +443,141 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.reader_return)
         return box
 
+    def _build_nebulae_group(self) -> QGroupBox:
+        box = QGroupBox("Nebulae on Daisy – sample card")
+        layout = QVBoxLayout(box)
+        self.neb_phase = QLabel("No Nebulae found")
+        self.neb_phase.setWordWrap(True)
+        self.neb_phase.setStyleSheet("font-size: 12pt; font-weight: 700;")
+        layout.addWidget(self.neb_phase)
+        form = QFormLayout()
+        form.setRowWrapPolicy(QFormLayout.WrapLongRows)
+        self.neb_info = {}
+        for key, label in (("fw", "Firmware"), ("link", "Connection"), ("sd", "SD card"),
+                           ("bank", "Bank / sample"), ("cpu", "Audio deadline")):
+            self.neb_info[key] = _value_label()
+            self.neb_info[key].setWordWrap(True)
+            form.addRow(label + ":", self.neb_info[key])
+        layout.addLayout(form)
+        self.neb_message = QLabel("")
+        self.neb_message.setWordWrap(True)
+        layout.addWidget(self.neb_message)
+        self.neb_error = QLabel("")
+        self.neb_error.setWordWrap(True)
+        self.neb_error.setStyleSheet(f"color: {theme.ERROR.name()}; font-weight: 600;")
+        layout.addWidget(self.neb_error)
+        self.neb_warning = QLabel("")
+        self.neb_warning.setWordWrap(True)
+        self.neb_warning.setStyleSheet(f"color: {theme.ERROR.name()}; font-weight: 700;")
+        layout.addWidget(self.neb_warning)
+        self.neb_share = QPushButton("Share SD card with Windows")
+        self.neb_share.setToolTip("Stops audio, restarts Nebulae into SD management and opens the "
+                                  "card as a Windows drive (USB mass storage).")
+        self.neb_share.clicked.connect(self._neb_share)
+        layout.addWidget(self.neb_share)
+        confirm_row = QHBoxLayout()
+        self.neb_confirm = QPushButton("Discard Live loop and share")
+        self.neb_confirm.clicked.connect(self._neb_confirm)
+        self.neb_cancel = QPushButton("Cancel")
+        self.neb_cancel.clicked.connect(self._neb_cancel)
+        confirm_row.addWidget(self.neb_confirm, 1)
+        confirm_row.addWidget(self.neb_cancel)
+        layout.addLayout(confirm_row)
+        self.neb_eject_help = QPushButton("How to eject safely in Windows …")
+        self.neb_eject_help.clicked.connect(self._neb_eject_help)
+        layout.addWidget(self.neb_eject_help)
+        self.neb_return = QPushButton("Return to Nebulae")
+        self.neb_return.setToolTip("Only after Windows ejected the card: the firmware returns it, "
+                                   "restarts into performance and rescans the banks.")
+        self.neb_return.clicked.connect(self._neb_return)
+        layout.addWidget(self.neb_return)
+        self.neb_ack = QPushButton("Acknowledge interrupted access …")
+        self.neb_ack.clicked.connect(self._neb_acknowledge)
+        layout.addWidget(self.neb_ack)
+        layout.addWidget(_hint("Performance mode uses USB-MIDI (no COM port); SD management uses "
+                               "USB CDC + mass storage. The card is never returned by closing this "
+                               "window or unplugging: only a Windows eject or an explicit "
+                               "acknowledgement. Power-cycling the kit always starts in performance."))
+        return box
+
+    def _refresh_nebulae(self) -> None:
+        wf = self.nebulae
+        if wf is None:
+            return
+        st = wf.status if wf.phase in (Phase.PERFORMANCE, Phase.CONFIRM, Phase.REQUESTING) else None
+        mgmt = wf.management_connected
+        dev = self.session.device if mgmt else None
+        neb = self.session.neb if mgmt else None
+        self.neb_phase.setText(wf.phase.value + (" – SIMULATION" if self.neb_sim else ""))
+        self.neb_info["fw"].setText(st.firmware if st else dev.firmware if dev else "–")
+        self.neb_info["link"].setText(
+            f"USB-MIDI {wf.port}" if st else f"USB CDC {self.session.port} + mass storage" if mgmt else "–")
+        reader = wf.reader_state
+        if st:
+            self.neb_info["sd"].setText("card inserted" if st.card else "no card")
+            playing = (f", playing bank {st.playing_bank} slot {st.playing_slot}"
+                       if st.playing_slot else "")
+            self.neb_info["bank"].setText(f"bank {st.bank} of {st.banks}{playing}"
+                                          + (f"; last load: {st.load_error_text}" if st.load_error else ""))
+            self.neb_info["cpu"].setText(
+                f"peak {st.peak_load} % of the block, {st.overruns} overruns (firmware counters, "
+                "not a bench measurement)" + (" – OVERRUN LED latched" if st.overrun else ""))
+        elif mgmt:
+            self.neb_info["sd"].setText(f"card reader: {reader or 'unknown'}")
+            self.neb_info["bank"].setText(
+                f"restores bank {neb.bank} slot {neb.slot}" if neb and neb.bank else "–")
+            self.neb_info["cpu"].setText("audio stopped (SD management)")
+        else:
+            for key in ("sd", "bank", "cpu"):
+                self.neb_info[key].setText("–")
+        self.neb_message.setText(wf.message)
+        self.neb_error.setText(wf.error)
+        live = bool(st and st.live)
+        self.neb_warning.setText(
+            "A Live loop exists only in RAM. Sharing restarts Nebulae and LOSES it; the SD samples "
+            "are reloaded from the card." if live or wf.needs_confirmation else "")
+        self.neb_share.setEnabled(bool((wf.can_share and not wf.needs_confirmation)
+                                       or wf.can_share_in_management))
+        self.neb_confirm.setVisible(wf.needs_confirmation)
+        self.neb_cancel.setVisible(wf.needs_confirmation)
+        self.neb_eject_help.setEnabled(reader == "SHARED")
+        self.neb_return.setEnabled(wf.can_return)
+        self.neb_ack.setEnabled(wf.can_acknowledge)
+
+    def _neb_share(self) -> None:
+        if self.nebulae and self.nebulae.request_share():
+            self._log("Nebulae: SD card sharing requested")
+
+    def _neb_confirm(self) -> None:
+        if self.nebulae and self.nebulae.request_share(confirm=True):
+            self._log("Nebulae: sharing confirmed; the volatile Live loop will be lost")
+
+    def _neb_cancel(self) -> None:
+        if self.nebulae:
+            self.nebulae.cancel_confirmation()
+
+    def _neb_eject_help(self) -> None:
+        QMessageBox.information(self, "Eject the card in Windows",
+            "1. Close every file and program that uses the Nebulae drive.\n"
+            "2. Use \u201eSafely Remove Hardware\u201c in the taskbar, or right-click the drive in "
+            "Explorer and choose \u201eEject\u201c.\n"
+            "3. Wait until this panel shows \u201eWindows ejected the card\u201c. Only the "
+            "firmware's EJECTED state counts; this button does not eject anything.")
+
+    def _neb_return(self) -> None:
+        if self.nebulae and self.nebulae.return_to_performance():
+            self._log("Nebulae: return to performance requested")
+
+    def _neb_acknowledge(self) -> None:
+        if self.nebulae is None or not self.nebulae.can_acknowledge:
+            return
+        answer = QMessageBox.warning(self, "Interrupted SD access",
+            "Windows may have lost pending changes. Close all files using this card. "
+            "Acknowledging does not recover data and is not a clean eject. Continue?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if answer == QMessageBox.Yes and self.nebulae.acknowledge_interruption():
+            self._log("Nebulae: interrupted access acknowledged")
+
     def _build_audio_group(self) -> QGroupBox:
         box = QGroupBox('Audio (firmware 0.4.0)')
         layout = QVBoxLayout(box)
@@ -529,6 +672,8 @@ class MainWindow(QMainWindow):
         if not name:
             return
         report = self.session.snapshot()
+        if self.nebulae is not None:
+            report["nebulae_workflow"] = self.nebulae.snapshot()
         report["captured_at"] = datetime.now().astimezone().isoformat()
         report["app_version"] = __version__
         try:
@@ -647,16 +792,28 @@ class MainWindow(QMainWindow):
         self.connect_button.setText('Disconnect')
         self.sd_result = None
         self._reset_minmax()
-        if simulation:
+        self.neb_sim = None
+        if simulation and self.sim_device == "nebulae":
+            self.neb_sim = SimulatedNebulae(self._clock)
+            neb = self.neb_sim
+            self.cable = neb.cable
+            self.session = DeviceSession(neb.cdc_ports, lambda port: neb.cable.open(port, self._clock),
+                                         self._clock, simulated=True)
+            self.nebulae = NebulaeWorkflow(self.session, neb.midi_ports, neb.open_midi, self._clock)
+            self._sync_sim_controls()
+        elif simulation:
             self.cable = SimulatedCable()
             cable = self.cable
             self.session = DeviceSession(cable.ports, lambda port: cable.open(port, self._clock),
                                          self._clock, simulated=True)
+            self.nebulae = NebulaeWorkflow(self.session, lambda: [], RtMidiLink, self._clock)
             self._sync_sim_controls()
         else:
             self.cable = None
             self.session = DeviceSession(list_serial_ports, SerialLink, self._clock,
                                          port_override=self._port_override)
+            # Performance mode has no COM port: Nebulae is found on USB-MIDI (python-rtmidi).
+            self.nebulae = NebulaeWorkflow(self.session, list_midi_ports, RtMidiLink, self._clock)
         self.mode_sim.setChecked(simulation)
         self.mode_hw.setChecked(not simulation)
         self.sim_banner.setVisible(simulation)
@@ -666,6 +823,8 @@ class MainWindow(QMainWindow):
             self.control_tabs.setTabToolTip(sim_index, "Simulated kit: cable, card, plugs, faults")
         elif not simulation and sim_index >= 0:
             self.control_tabs.removeTab(sim_index)
+        if self.neb_sim is not None:
+            self.control_tabs.setCurrentIndex(TABS.index("Nebulae"))
         self.port_combo.setEnabled(not simulation)
         self.board.interactive = simulation
         self.board.simulated = simulation
@@ -724,6 +883,11 @@ class MainWindow(QMainWindow):
             return
         if not self.paused:
             self.session.poll()
+            if self.nebulae is not None:
+                self.nebulae.poll()
+                for kind, payload in self.nebulae.drain_events():
+                    if kind == "log":
+                        self._log(str(payload))
         board_changed = False
         for kind, payload in self.session.drain_events():
             if kind == "board":
@@ -877,13 +1041,15 @@ class MainWindow(QMainWindow):
 
         st = s.board if s.connected else None
         enabled = st is not None
+        caps = dev.capabilities if dev else []
+        led_ok = enabled and "led" in caps  # Nebulae SD management has no LED test
         for b in self.led_buttons.values():
-            b.setEnabled(enabled)
-        self.br_slider.setEnabled(enabled)
-        self.chase_slider.setEnabled(enabled)
+            b.setEnabled(led_ok)
+        self.br_slider.setEnabled(led_ok)
+        self.chase_slider.setEnabled(led_ok)
         reader = s.reader if s.reader_supported else None
         local = not s.reader_supported or (reader is not None and reader.state == "LOCAL")
-        self.sd_button.setEnabled(enabled and st.sd_card and not s.sd_test_pending
+        self.sd_button.setEnabled(enabled and st.sd_card and "sdread" in caps and not s.sd_test_pending
                                   and not s.reader_pending and local)
         self.boot_button.setEnabled(bool(enabled and s.bootloader_supported and local
                                          and not s.sd_test_pending and not s.reader_pending))
@@ -893,8 +1059,10 @@ class MainWindow(QMainWindow):
         self.reader_return.setEnabled(bool(enabled and reader and not reader.busy and
                                            reader.state in ("EJECTED", "INTERRUPTED", "ERROR")
                                            and not s.reader_pending))
+        nebulae_dev = bool(dev and dev.app == "NebulaeOnDaisy")
         self.reader_return.setText("Acknowledge interrupted access" if reader and
                                   reader.state in ("INTERRUPTED", "ERROR") else
+                                  "Return card (stay in SD management)" if nebulae_dev else
                                   "Return card to diagnostics")
         if not s.connected:
             reader_text = "Card reader: disconnected; card ownership is unknown."
@@ -918,6 +1086,7 @@ class MainWindow(QMainWindow):
         if reader and reader.diagnostic_text and reader.io != "NONE":
             reader_text += "\n" + reader.diagnostic_text
         self.reader_status.setText(reader_text)
+        self._refresh_nebulae()
         self.rate_combo.setEnabled(enabled)
         if st is not None:
             btn = self.led_buttons.get(st.led_mode)

@@ -442,6 +442,30 @@ def parse_reader(msg: Message) -> ReaderInfo:
     return ReaderInfo(state, msg.int("sectors"), bool(msg.int("busy", 0, 1)), **diagnostics)
 
 
+@dataclass(frozen=True)
+class NebInfo:
+    """NEB status of Nebulae on Daisy in its SD management personality (firmware 0.2.0)."""
+    mode: str
+    firmware: str
+    card: bool
+    can_return: bool
+    bank: int
+    slot: int
+    action: str
+
+
+def parse_neb(msg: Message) -> NebInfo:
+    mode = msg.get("mode")
+    if mode != "SDMGMT":
+        raise ProtocolError(f"NEB: unknown mode {mode!r}")
+    action = msg.get("a")
+    if action not in ("STATUS", "PERFORM"):
+        raise ProtocolError("NEB: invalid or missing action")
+    return NebInfo(mode=mode, firmware=msg.get("fw", "?"), card=bool(msg.int("card", 0, 1)),
+                   can_return=bool(msg.int("ret", 0, 1)), bank=msg.int("bank", 0, 16),
+                   slot=msg.int("slot", 0, 16), action=action)
+
+
 FRESULT_TEXT = {
     0: "FR_OK",
     1: 'FR_DISK_ERR (read error)',

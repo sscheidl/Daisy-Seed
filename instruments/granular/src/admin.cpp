@@ -103,7 +103,7 @@ void Admin::Handle(const char* body, uint32_t now) {
         ddp::Writer w(b, sizeof b);
         w.Str("HELLO proto=").U32(ddp::kProtocolVersion).Str(" fw=").Str(firmware_)
             .Str(" app=NebulaeOnDaisy dev=seed3-desktop boot=BOOT_SRAM bl=").Str(bootloader_)
-            .Str(" libdaisy=f715e48 caps=btn,pot,potraw,sw17,sw18,sd,led,boot,sdmsc,nebmgmt");
+            .Str(" libdaisy=f715e48 caps=btn,pot,potraw,sw17,sw18,sd,boot,sdmsc,nebmgmt");
         Queue(w);
         SendState(now); SendSys(now); SendReader("STATUS"); SendNeb("STATUS");
         last_state_ = last_sys_ = now;

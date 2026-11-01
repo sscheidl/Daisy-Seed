@@ -7,5 +7,6 @@ python -m PyInstaller --noconfirm --clean --onefile --windowed --name DaisyDiagn
     --exclude-module tkinter --exclude-module PySide6.QtWebEngineCore ^
     --exclude-module PySide6.QtQml --exclude-module PySide6.QtQuick ^
     --exclude-module PySide6.QtMultimedia --exclude-module PySide6.Qt3DCore ^
+    --hidden-import rtmidi ^
     DaisyDiagnostic.py || exit /b 1
 echo Built: %CD%\dist\DaisyDiagnostic.exe
