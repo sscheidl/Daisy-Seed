@@ -2,8 +2,9 @@
 
 Prepared on 2026-11-01 from `main` commit
 `40b26baad82bb03c0364b2fdf0d5095405bc8bd6` for a user-operated hardware test.
-This is a local development package, not a published GitHub release or hardware
-acceptance. Only minimal software checks were requested.
+This is a local development package, not a published GitHub release. Only minimal
+software checks were requested. The subsequent user-operated hardware test is
+recorded below.
 
 ## Image and composition
 
@@ -67,8 +68,22 @@ identity, SDRAM FX storage and at least 8 KiB static DTCM reserve.
 
 Sanitizer, thread and full release suites were not run, as requested.
 
-**NICHT GEMESSEN:** hardware CPU load/overruns, listening, analog levels,
-switch orientation and stack high-water. No device was flashed. Standalone FX
-acceptance and this composed product's acceptance remain separate.
+At package preparation, hardware testing was **NICHT GEMESSEN**. No device was
+flashed by the agent.
+
+## User-reported hardware result
+
+**GEMESSEN 2026-11-01, reported by the user:** Toy Piano with Ambient Reverb runs
+stably on the kit (referred to as "Ambient / Slöer Reverb"). The user explicitly reports **no distortion, glitches or
+artifacts**. This report follows testing of the package identified above
+(`db784be15a87d5afef8d6834df6f40d618f5ce3f70bb6339fcb7b6353d61f337`),
+with the shared Ambient Reverb 0.4.0 32–12 kHz wet-clock optimization.
+
+This records the observed stability and audible result of this composed product.
+
+**NICHT GEMESSEN:** numerical CPU load and overrun counts, analog levels, switch
+orientation and stack high-water. Test duration, mode-by-mode coverage and the
+exact control/MIDI scenario were not specified. This result does not establish
+standalone FX or Rings/Torus product acceptance, or a long-duration test.
 
 Controls and hardware test guidance: [AMBIENT.md](AMBIENT.md).
