@@ -1,5 +1,10 @@
 # Toy Piano + Ambient Reverb v0.1.2
 
+**Hardware update — GEMESSEN 2026-11-01 (user report):** the local build with
+Ambient Reverb 0.4.0 and its 32–12 kHz wet clock runs stably, with no distortion,
+glitches or artifacts. [Exact image and test record](LOCAL_BUILD_2026-11-01.md#user-reported-hardware-result).
+Numerical CPU load and overrun counts remain **NICHT GEMESSEN**.
+
 **Entwicklungsstand 01.11.2026:** Der gemeinsame FX-Kern ist jetzt 0.4.0,
 Adapter 0.2.0 (32–12 kHz, bedarfsgerechte Pitchshifter). Zuerst wird die
 Standalone-FX-Fassung am Gerät abgenommen, danach dieses Produkt separat neu
