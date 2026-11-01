@@ -444,7 +444,8 @@
         "mod-on-daisy",
         "callback-diagnostics",
         "fx-contract",
-        "bootloader-entry"
+        "bootloader-entry",
+        "ambient-reverb-control"
       ],
       "panels": [
         "mod-editor-web",

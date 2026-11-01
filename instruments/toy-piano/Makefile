@@ -30,6 +30,7 @@ FX_DEFS = -DTOY_PIANO_FX=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DAMBIENT_SDRAM_WRITE_ALL
           -DAMBIENT_COMPACT_48K=$(AMB_COMPACT) -DAMBIENT_CONTIGUOUS_FIR=$(AMB_FIR)
 C_DEFS = $(FX_DEFS)
 FX_SOURCES = ../../effects/reverb/src/ambient_reverb.cpp ../../effects/reverb/src/wet_path.cpp
+C_INCLUDES = -I../../sequencers/step-seq/include
 else
 TARGET = ToyPiano-v$(VERSION)
 # v0.4: all Mod on Daisy extensions as in Physical Modeling MOD (extended monitor with
@@ -39,7 +40,7 @@ C_DEFS = $(MOD_DEFS)
 endif
 CPP_SOURCES = src/main.cpp src/toy_piano.cpp $(FX_SOURCES)
 MOD_ON_DAISY = ../../modules/mod-on-daisy
-C_INCLUDES = -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+C_INCLUDES += -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 include ../../common/desktop.mk
 ifeq ($(AMBIENT)-$(AMB_COMPACT),1-1)
 LDSCRIPT := ld/toy_piano_axi.lds
@@ -57,6 +58,9 @@ version:
 HOST_CXX ?= g++
 HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -pthread
 HOST_INCLUDES = $(MOD_DEFS) -Isrc -I$(BOOTLOADER_DIR) -I$(DAISYSP_DIR)/Source -I$(LIBDAISY_DIR)/src -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+ifeq ($(AMBIENT),1)
+HOST_INCLUDES += -I../../sequencers/step-seq/include
+endif
 ifeq ($(TAPE),1)
 test:
 	mkdir -p build/host/tape

@@ -1,5 +1,17 @@
 # Toy Piano + Ambient Reverb v0.1.2
 
+**v0.1.3 (2026-11-01, local build):** composes Ambient Reverb 0.5.0 (stronger
+depth/X/Bloom ranges from `effects/reverb/src/control_mapping.h`) and the
+`ambient-reverb-control` adapter 0.1.0. The control app's **Ambient FX** page sets
+**Reverb LFO rate** (0.03–1.5 Hz, default 0.18 Hz, RAM only) over SQ 1.1 as
+`toy-piano-amb`; Mod on Daisy stays on the same USB port. Details:
+[CONTROL_APP.md](../../../effects/reverb/docs/CONTROL_APP.md). ARM image
+`ToyPianoAmbient-v0.1.3.bin`, 204,668 bytes, SHA-256
+`3e8efb3e72801bb64125a519031484d8a29167a63ff5cdc26d3d4af735eab8f7`;
+`check-firmware.py` PASS (**MEASURED 2026-11-01**). Host tests were not run for
+this build. Sound, app control on the kit, CPU load and overruns are
+**NOT MEASURED**. The German sections below describe v0.1.2.
+
 **Hardware update — GEMESSEN 2026-11-01 (user report):** the local build with
 Ambient Reverb 0.4.0 and its 32–12 kHz wet clock runs stably, with no distortion,
 glitches or artifacts. [Exact image and test record](LOCAL_BUILD_2026-11-01.md#user-reported-hardware-result).
