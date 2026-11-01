@@ -190,9 +190,13 @@ void LoopStore::Service(EngineView& view, ImportPort& port, uint32_t nowMs) {
         if (importRequested_) {
             importRequested_ = false;
             StartImport(port, nowMs);
-        } else if (s.idle && s.version != savedVersion_ && nowMs - changedAt_ >= kSaveDelayMs &&
+        } else if (s.idle && s.version != savedVersion_ &&
+                   (saveSoon_ || nowMs - changedAt_ >= kSaveDelayMs) &&
                    int32_t(nowMs - retryAt_) >= 0) {
+            saveSoon_ = false;
             StartSave(s, nowMs);
+        } else if (s.version == savedVersion_) {
+            saveSoon_ = false;  // nothing left to save
         }
         break;
     case State::Saving:
@@ -290,6 +294,12 @@ void LoopStore::ContinueSave(EngineView& view, uint32_t nowMs) {
     savedVersion_ = saveVersion_;
     fault_ = Fault::None;
     ++saves_;
+}
+
+void LoopStore::Halt() {
+    if (state_ == State::Saving)
+        AbortSave();
+    saveSoon_ = false;
 }
 
 void LoopStore::AbortSave() {

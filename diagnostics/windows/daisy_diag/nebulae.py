@@ -1,4 +1,5 @@
-"""Nebulae on Daisy (firmware 0.2.0): SD management workflow for the control panel.
+"""SD share workflow of the control panel: Nebulae on Daisy (firmware 0.2.0) and, through
+the profile in ``looper.py``, the Looper (firmware 0.5.0).
 
 Two transports, never at the same time (instruments/granular/docs/V0_2_ARCHITECTURE.md):
 
@@ -10,14 +11,18 @@ Two transports, never at the same time (instruments/granular/docs/V0_2_ARCHITECT
 
 Qt-free and clock-injected, like ``session.py``. The panel never infers an eject: only
 the firmware's ``READER state=EJECTED`` means Windows ejected the card cleanly.
+
+One workflow owns the MIDI port (Windows MIDI ports are usually exclusive) and probes it
+with the STATUS request of every device profile; the profile that answers drives the
+share. In SD management the HELLO ``app`` selects the profile.
 """
 from __future__ import annotations
 
 import os
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from enum import Enum
-from typing import Callable, Iterable, Protocol
+from typing import Callable, Iterable, Protocol, Sequence
 
 from .session import DeviceSession
 
@@ -39,6 +44,8 @@ PROBE_TIMEOUT_S = 1.0       # a MIDI port that does not answer STATUS is not Neb
 SHARE_TIMEOUT_S = 2.0       # SHARE reply
 RESTART_TIMEOUT_S = 20.0    # bootloader skip + USB enumeration on Windows
 SCAN_INTERVAL_S = 1.0
+SAVE_RETRY_S = 0.5          # looper: ask again while the firmware saves the loop
+SAVE_TIMEOUT_S = 180.0      # looper: an 87 s loop is 33 MB; card speed NICHT GEMESSEN
 
 
 class NebulaeError(ValueError):
@@ -78,6 +85,10 @@ class PerfStatus:
     def load_error_text(self) -> str:
         return LOAD_ERRORS.get(self.load_error, f"code {self.load_error}")
 
+    @property
+    def busy(self) -> bool:
+        return self.recording or self.loading
+
 
 def _mask(b: bytes) -> int:
     return b[0] | b[1] << 7 | (b[2] & 0x03) << 14
@@ -114,6 +125,42 @@ def parse_reply(message: bytes) -> tuple[str, object]:
             raise NebulaeError("ERROR reply has the wrong length")
         return "ERROR", (data[0], ERROR_CODES.get(data[1], f"CODE{data[1]}"))
     raise NebulaeError(f"unknown reply command 0x{command:02X}")
+
+
+@dataclass(frozen=True)
+class DeviceProfile:
+    """What differs between instruments that share their card the same way."""
+    name: str                     # shown in messages: "Nebulae", "Looper"
+    app: str                      # HELLO app= in SD management
+    capability: str               # DDP capability of the status message
+    perform_command: str          # DDP command back to performance
+    status_request: Callable[[], bytes]
+    share_request: Callable[[bool, bytes], bytes]
+    parse_reply: Callable[[bytes], tuple[str, object]]
+    texts: dict = field(default_factory=dict)
+
+
+NEBULAE = DeviceProfile(
+    name="Nebulae",
+    app=APP_NAME,
+    capability="nebmgmt",
+    perform_command="NEB a=PERFORM",
+    status_request=status_request,
+    share_request=share_request,
+    parse_reply=parse_reply,
+    texts={
+        "busy": "Nebulae is recording or loading a sample. Stop it and try again.",
+        "confirm": "A recorded Live loop exists only in RAM and will be LOST by the restart. "
+                   "Confirm to continue, or cancel and keep playing.",
+        "back": "Back in performance. Banks were rescanned from the card.",
+        "returning": "Nebulae restarts into performance and rescans the card …",
+        "local": "Card is with Nebulae (not shared). Share it with Windows or return to performance.",
+        "shared": "Windows owns the card. Copy, rename or delete samples, then use "
+                  "„Safely Remove Hardware“ / Eject in Windows.",
+        "ejected": "Windows ejected the card and all writes completed. You can return to Nebulae.",
+        "saving": "Saving before the restart …",
+    },
+)
 
 
 class MidiLink(Protocol):
@@ -199,10 +246,11 @@ class RtMidiLink:
 
 
 class Phase(Enum):
-    NOT_FOUND = "No Nebulae found"
+    NOT_FOUND = "No Nebulae or Looper found"
     PERFORMANCE = "Performance (USB-MIDI)"
     CONFIRM = "Confirmation required"
     REQUESTING = "Requesting SD management …"
+    SAVING = "Saving the loop before sharing …"
     RESTARTING = "Restarting into SD management …"
     MANAGEMENT = "SD management (USB CDC + mass storage)"
     RETURNING = "Returning to performance …"
@@ -219,8 +267,11 @@ class NebulaeWorkflow:
                  scan_midi: Callable[[], Iterable[str]] = list_midi_ports,
                  open_midi: Callable[[str], MidiLink] = RtMidiLink,
                  clock: Callable[[], float] = time.monotonic,
-                 token_source: Callable[[int], bytes] = os.urandom) -> None:
+                 token_source: Callable[[int], bytes] = os.urandom,
+                 profiles: Sequence[DeviceProfile] = (NEBULAE,)) -> None:
         self.session = session
+        self.profiles = tuple(profiles)
+        self.profile = self.profiles[0]  # the instrument found last
         self._scan = scan_midi
         self._open = open_midi
         self._clock = clock
@@ -237,16 +288,28 @@ class NebulaeWorkflow:
         self._last_status_sent = 0.0
         self._deadline: float | None = None
         self._token = b""
+        self._confirm = False
+        self._resend_at: float | None = None
+        self._save_started = 0.0
         self._share_after_restart = False
         self._perform_after_return = False
         self._failed_ports: dict[str, float] = {}
         self._events: list[tuple[str, object]] = []
 
     # ---- queries for the GUI ------------------------------------------------------------
+    def _management_profile(self) -> DeviceProfile | None:
+        s = self.session
+        if not (s.connected and s.device):
+            return None
+        return next((prof for prof in self.profiles if prof.app == s.device.app), None)
+
+    @property
+    def name(self) -> str:
+        return self.profile.name
+
     @property
     def management_connected(self) -> bool:
-        s = self.session
-        return bool(s.connected and s.device and s.device.app == APP_NAME)
+        return self._management_profile() is not None
 
     @property
     def reader_state(self) -> str | None:
@@ -257,8 +320,7 @@ class NebulaeWorkflow:
     @property
     def can_share(self) -> bool:
         return (self.phase in (Phase.PERFORMANCE, Phase.CONFIRM) and self._link is not None
-                and self.status is not None and self.status.card and not self.status.recording
-                and not self.status.loading)
+                and self.status is not None and self.status.card and not self.status.busy)
 
     @property
     def needs_confirmation(self) -> bool:
@@ -290,35 +352,44 @@ class NebulaeWorkflow:
         return events
 
     def snapshot(self) -> dict:
-        return {"phase": self.phase.name, "port": self.port, "message": self.message,
+        return {"phase": self.phase.name, "profile": self.profile.name, "port": self.port,
+                "message": self.message,
                 "error": self.error, "reader": self.reader_state,
                 "status": asdict(self.status) if self.status else None}
 
     # ---- actions ----------------------------------------------------------------------
     def request_share(self, confirm: bool = False) -> bool:
-        """SD für Windows freigeben. With Live audio present the firmware answers
-        CONFIRM_REQUIRED; the GUI must show the warning and call again with confirm."""
+        """SD für Windows freigeben. When data would be lost (Nebulae's Live loop, a
+        looper loop that cannot be saved) the firmware answers CONFIRM_REQUIRED; the GUI
+        must show the warning and call again with confirm."""
         if self.management_connected:
             if not self.can_share_in_management:
                 return False
             return self.session.request_reader("SHARE")
-        if not self.can_share or (self.status.live and not confirm and self.phase != Phase.PERFORMANCE):
+        if not self.can_share or (self.phase == Phase.CONFIRM and not confirm):
             return False
         self._token = _token(self._tokens)
-        try:
-            self._link.send(share_request(confirm, self._token))
-        except OSError as exc:
-            self._lost(f"MIDI send failed ({exc})")
+        self._confirm = confirm
+        if not self._send_share():
             return False
         self.phase = Phase.REQUESTING
         self._deadline = self._clock() + SHARE_TIMEOUT_S
         self.message = "Waiting for the firmware to accept SD management …"
         return True
 
+    def _send_share(self) -> bool:
+        try:
+            self._link.send(self.profile.share_request(self._confirm, self._token))
+        except OSError as exc:
+            self._lost(f"MIDI send failed ({exc})")
+            return False
+        return True
+
     def cancel_confirmation(self) -> None:
-        if self.phase == Phase.CONFIRM:
+        if self.phase in (Phase.CONFIRM, Phase.SAVING):
             self.phase = Phase.PERFORMANCE
-            self.message = "Cancelled: Nebulae keeps playing; nothing was changed."
+            self._deadline = self._resend_at = None
+            self.message = f"Cancelled: {self.name} keeps playing; nothing was shared."
 
     def acknowledge_interruption(self) -> bool:
         """Explicit acknowledgement of an interrupted Windows access (no data recovery)."""
@@ -347,23 +418,25 @@ class NebulaeWorkflow:
             self._timeout()
 
     def _send_perform(self) -> bool:
-        if not self.session.send("NEB a=PERFORM"):
+        if not self.session.send(self.profile.perform_command):
             return False
         self._perform_after_return = False
         self.phase = Phase.RETURNING
         self._deadline = self._clock() + RESTART_TIMEOUT_S
-        self.message = "Nebulae restarts into performance and rescans the card …"
-        self._event("log", "Nebulae: return to performance requested")
+        self.message = self.profile.texts["returning"]
+        self._event("log", f"{self.name}: return to performance requested")
         return True
 
     def _poll_management(self, now: float) -> None:
-        if not self.management_connected:
+        profile = self._management_profile()
+        if profile is None:
             return
         if self.phase in (Phase.NOT_FOUND, Phase.RESTARTING, Phase.PERFORMANCE):
+            self.profile = profile
             if self.phase == Phase.RESTARTING:
-                self._event("log", "Nebulae: SD management connected over USB CDC")
+                self._event("log", f"{self.name}: SD management connected over USB CDC")
             elif self.phase == Phase.NOT_FOUND:
-                self._event("log", "Nebulae found in SD management mode")
+                self._event("log", f"{self.name} found in SD management mode")
             self._close_link()
             self.phase = Phase.MANAGEMENT
             self._deadline = None
@@ -379,13 +452,13 @@ class NebulaeWorkflow:
         if self._perform_after_return and state == "LOCAL" and not self.session.reader_pending:
             self._send_perform()
             return
+        texts = self.profile.texts
         self.message = {
             None: "Waiting for the card-reader status …",
-            "LOCAL": "Card is with Nebulae (not shared). Share it with Windows or return to performance.",
+            "LOCAL": texts["local"],
             "STARTING": "Preparing the card for Windows …",
-            "SHARED": "Windows owns the card. Copy, rename or delete samples, then use "
-                      "„Safely Remove Hardware“ / Eject in Windows.",
-            "EJECTED": "Windows ejected the card and all writes completed. You can return to Nebulae.",
+            "SHARED": texts["shared"],
+            "EJECTED": texts["ejected"],
             "INTERRUPTED": "Access was interrupted (USB reset, card removed or I/O error). Windows may "
                            "have lost pending changes. The card stays quarantined until you acknowledge.",
             "ERROR": "Card I/O failed. Windows may have lost pending changes. The card stays "
@@ -413,10 +486,14 @@ class NebulaeWorkflow:
             self._lost(f"MIDI connection lost ({exc})")
             return
         for message in messages:
-            try:
-                kind, payload = parse_reply(message)
-            except NebulaeError:
+            parsed = self._parse(message)
+            if parsed is None:
                 continue  # other SysEx on the same port
+            profile, kind, payload = parsed
+            if self._probing and kind == "STATUS":
+                self.profile = profile  # the instrument on this port
+            elif profile is not self.profile:
+                continue
             self._last_reply = now
             self._handle(kind, payload, now)
         if self._link is None:
@@ -425,12 +502,26 @@ class NebulaeWorkflow:
             self._failed_ports[self.port or ""] = now + 5.0
             self._close_link()
             return
-        if self.phase in (Phase.PERFORMANCE, Phase.CONFIRM):
+        if self.phase in (Phase.PERFORMANCE, Phase.CONFIRM, Phase.SAVING):
             if now - self._last_reply > STATUS_TIMEOUT_S:
-                self._lost("Nebulae stopped answering on USB-MIDI")
+                self._lost(f"{self.name} stopped answering on USB-MIDI")
                 return
             if now - self._last_status_sent >= STATUS_INTERVAL_S:
                 self._send_status(now)
+        if self.phase == Phase.SAVING and self._resend_at is not None and now >= self._resend_at:
+            # Ask again with the same token until the loop on the card is current.
+            self._resend_at = None
+            if self._send_share():
+                self.phase = Phase.SAVING
+
+    def _parse(self, message: bytes) -> tuple[DeviceProfile, str, object] | None:
+        for profile in self.profiles:
+            try:
+                kind, payload = profile.parse_reply(message)
+            except NebulaeError:
+                continue
+            return profile, kind, payload
+        return None
 
     def _try_open(self, now: float) -> None:
         try:
@@ -456,7 +547,9 @@ class NebulaeWorkflow:
 
     def _send_status(self, now: float) -> None:
         try:
-            self._link.send(status_request())
+            # While probing, every profile asks; each firmware ignores foreign SysEx.
+            for profile in self.profiles if self._probing else (self.profile,):
+                self._link.send(profile.status_request())
             self._last_status_sent = now
         except OSError as exc:
             self._lost(f"MIDI send failed ({exc})")
@@ -468,48 +561,57 @@ class NebulaeWorkflow:
             self.error = ""
             if self.phase in (Phase.NOT_FOUND, Phase.RETURNING, Phase.RESTARTING):
                 if self.phase == Phase.RETURNING:
-                    self._event("log", "Nebulae is back in performance; banks were rescanned")
-                    self.message = "Back in performance. Banks were rescanned from the card."
+                    self.message = self.profile.texts["back"]
+                    self._event("log", f"{self.name} is back in performance")
                 elif self.phase == Phase.RESTARTING:
                     # R1: the device came back in performance instead of SD management.
-                    self.error = ("Nebulae restarted but did not enter SD management "
+                    self.error = (f"{self.name} restarted but did not enter SD management "
                                   "(boot intent not kept). Nothing was shared.")
                     self._share_after_restart = False
                     self._event("log", self.error)
                 else:
-                    self._event("log", f"Nebulae {payload.firmware} found on {self.port}")
+                    self._event("log", f"{self.name} {payload.firmware} found on {self.port}")
                 self.phase = Phase.PERFORMANCE
                 self._deadline = None
         elif kind == "SHARE":
             result, token = payload
-            if self.phase != Phase.REQUESTING or token != self._token:
+            if self.phase not in (Phase.REQUESTING, Phase.SAVING) or token != self._token:
                 return  # stale or foreign reply
-            self._deadline = None
+            saving = self.phase == Phase.SAVING
+            self._deadline = self._resend_at = None
             if result == "ACCEPTED":
                 self.phase = Phase.RESTARTING
                 self._share_after_restart = True
                 self._deadline = now + RESTART_TIMEOUT_S
-                self.message = ("Nebulae stops audio and restarts into SD management; Windows will "
-                                "install/open the drive …")
-                self._event("log", "Nebulae accepted SD management; restarting")
+                self.message = (f"{self.name} stops audio and restarts into SD management; Windows "
+                                "will install/open the drive …")
+                self._event("log", f"{self.name} accepted SD management; restarting")
                 self._close_link()
+            elif result == "SAVING":
+                # The firmware writes the loop now; ask again until the card is current.
+                if not saving:
+                    self._save_started = now
+                    self._event("log", f"{self.name}: saving the loop before sharing")
+                self.phase = Phase.SAVING
+                self._resend_at = now + SAVE_RETRY_S
+                self._deadline = self._save_started + SAVE_TIMEOUT_S
+                self.message = self.profile.texts["saving"]
             elif result == "CONFIRM_REQUIRED":
                 self.phase = Phase.CONFIRM
-                self.message = ("A recorded Live loop exists only in RAM and will be LOST by the "
-                                "restart. Confirm to continue, or cancel and keep playing.")
+                self.message = self.profile.texts["confirm"]
             else:
                 self.phase = Phase.PERFORMANCE
                 self.error = {
-                    "BUSY": "Nebulae is recording or loading a sample. Stop it and try again.",
+                    "BUSY": self.profile.texts["busy"],
                     "NO_CARD": "No microSD card in the slot.",
                 }.get(result, f"Request refused ({result}).")
-                self._event("log", f"Nebulae refused SD management: {result}")
+                self._event("log", f"{self.name} refused SD management: {result}")
         elif kind == "ERROR":
             command, code = payload
             self.error = f"Firmware rejected command 0x{command:02X}: {code}"
-            if self.phase == Phase.REQUESTING:
+            if self.phase in (Phase.REQUESTING, Phase.SAVING):
                 self.phase = Phase.PERFORMANCE
-                self._deadline = None
+                self._deadline = self._resend_at = None
 
     def _timeout(self) -> None:
         phase = self.phase
@@ -517,25 +619,31 @@ class NebulaeWorkflow:
         if phase == Phase.REQUESTING:
             self.phase = Phase.PERFORMANCE
             self.error = "No answer to the share request; nothing was changed."
+        elif phase == Phase.SAVING:
+            self.phase = Phase.PERFORMANCE
+            self._resend_at = None
+            self.error = (f"The loop was not saved within {SAVE_TIMEOUT_S:.0f} s; nothing was "
+                          "shared. Check the card and try again.")
         elif phase == Phase.RESTARTING:
             self.phase = Phase.NOT_FOUND
             self._share_after_restart = False
-            self.error = ("Nebulae did not reappear in SD management within "
+            self.error = (f"{self.name} did not reappear in SD management within "
                           f"{RESTART_TIMEOUT_S:.0f} s. Check the USB cable; power-cycling "
                           "always starts the performance mode.")
         elif phase == Phase.RETURNING:
             self.phase = Phase.NOT_FOUND
-            self.error = ("Nebulae did not reappear on USB-MIDI within "
+            self.error = (f"{self.name} did not reappear on USB-MIDI within "
                           f"{RESTART_TIMEOUT_S:.0f} s.")
-        self._event("log", f"Nebulae: {self.error}")
+        self._event("log", f"{self.name}: {self.error}")
 
     def _lost(self, reason: str) -> None:
         self._close_link()
-        if self.phase in (Phase.PERFORMANCE, Phase.CONFIRM, Phase.REQUESTING):
+        if self.phase in (Phase.PERFORMANCE, Phase.CONFIRM, Phase.REQUESTING, Phase.SAVING):
             self.phase = Phase.NOT_FOUND
             self.status = None
+            self._deadline = self._resend_at = None
             self.message = reason
-            self._event("log", f"Nebulae: {reason}")
+            self._event("log", f"{self.name}: {reason}")
 
     def _close_link(self) -> None:
         if self._link is not None:

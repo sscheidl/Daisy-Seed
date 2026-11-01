@@ -10,5 +10,8 @@ namespace looper {
 // while `present` reports a card in the slot.
 bool InitCard(bool (*present)());
 Volume& CardVolume();
+// Before the restart into SD management: closes any open file, unmounts and resets
+// the SD interface (SDMMC1 RCC reset), so the card reader starts from scratch.
+void ReleaseCard();
 
 }  // namespace looper

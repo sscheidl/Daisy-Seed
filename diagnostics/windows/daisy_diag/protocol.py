@@ -466,6 +466,27 @@ def parse_neb(msg: Message) -> NebInfo:
                    slot=msg.int("slot", 0, 16), action=action)
 
 
+@dataclass(frozen=True)
+class LooperInfo:
+    """LOOPER status of the Looper in its SD management personality (firmware 0.5.0)."""
+    mode: str
+    firmware: str
+    card: bool
+    can_return: bool
+    action: str
+
+
+def parse_looper(msg: Message) -> LooperInfo:
+    mode = msg.get("mode")
+    if mode != "SDMGMT":
+        raise ProtocolError(f"LOOPER: unknown mode {mode!r}")
+    action = msg.get("a")
+    if action not in ("STATUS", "PERFORM"):
+        raise ProtocolError("LOOPER: invalid or missing action")
+    return LooperInfo(mode=mode, firmware=msg.get("fw", "?"), card=bool(msg.int("card", 0, 1)),
+                      can_return=bool(msg.int("ret", 0, 1)), action=action)
+
+
 FRESULT_TEXT = {
     0: "FR_OK",
     1: 'FR_DISK_ERR (read error)',

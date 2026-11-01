@@ -28,7 +28,7 @@ def neb(app):
     for timer in (window.poll_timer, window.panel_timer, window.port_timer):
         timer.stop()
     window.resize(1500, 900)
-    window.control_tabs.setCurrentIndex(mw.TABS.index("Nebulae"))
+    window.control_tabs.setCurrentIndex(mw.TABS.index("SD share"))
     window.show()
     app.processEvents()
 
