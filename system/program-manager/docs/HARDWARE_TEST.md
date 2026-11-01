@@ -1,51 +1,51 @@
-# Hardware-Laufzettel Programmverwaltung
+# Hardware test sheet: program manager
 
-**Alle Punkte: NICHT GEMESSEN (Stand 01.11.2026).** Jeder Schritt braucht die
-Mitwirkung des Menschen (Bootloader-Modus, Flashen, Beobachtung). Ergebnisse als
-`GEMESSEN (Datum, Image-SHA-256, Beobachtung)` eintragen; nichts aus Erwartung ausfüllen.
+**All items: NICHT GEMESSEN (status 2026-11-01).** Every step needs the human (bootloader
+mode, flashing, observation). Record results as `GEMESSEN (date, image SHA-256, observation)`;
+never fill in expectations.
 
-## Voraussetzungen
+## Prerequisites
 
-* Installierter Daisy-Bootloader (Diagnose meldet `bl=v6_1`); **kein** `program-boot`.
-* Images und SHA-256 aus [SOFTWARE_LOG.md](SOFTWARE_LOG.md) (Abschnitt „Artefakte").
-  Flashweg wie bisher: Update-Modus (S9+S16 5 s / Editor / DDP `BOOT`), dann
-  `make PROJECT=program-manager-probe program-dfu` bzw. Web Programmer „Custom" mit
-  dem BIN nach `0x90040000`.
-* **Wiederherstellung:** erneut in den Update-Modus (bei hängender Verwaltung: Reset,
-  dann BOOT innerhalb von ~2 s, `docs/FLASHING.md`) und ein bekanntes Instrument-BIN
-  oder die Verwaltung erneut flashen. Letzter Weg: ROM-DFU am Modulport.
-* Karte nur nach `python tools/pm_card.py check <Vorlage>` einlegen (Wurzel ohne `.bin`).
+* Installed Daisy bootloader (diagnostics report `bl=v6_1`); **no** `program-boot`.
+* Images and SHA-256 from [SOFTWARE_LOG.md](SOFTWARE_LOG.md) / the PR text. Flash path as
+  before: update mode (S9+S16 5 s / editor / DDP `BOOT`), then
+  `make PROJECT=program-manager-probe program-dfu` or the Web Programmer "Custom" with the BIN
+  to `0x90040000`.
+* **Recovery:** update mode again (with a hanging manager: reset, then BOOT within ~2 s,
+  `docs/FLASHING.md`) and flash a known instrument BIN or the manager again. Last resort: ROM
+  DFU on the module port.
+* Insert a card only after `python tools/pm_card.py check <template>` (root without `.bin`).
 
-## P – Probe (`DaisyProgramManagerProbe-v0.1.0.bin`)
+## P – probe (`DaisyProgramManagerProbe-v0.1.0.bin`)
 
-| ID | Schritt | Erwartung (zu beobachten, nicht vorauszusetzen) | Ergebnis |
+| ID | Step | Expectation (to be observed, not assumed) | Result |
 | --- | --- | --- | --- |
-| P1 | Probe nach `0x90040000` flashen, Reset | Nach ~2 s: LED 16 gedimmt, USR-LED blinkt langsam | NICHT GEMESSEN |
+| P1 | Flash the probe to `0x90040000`, reset | after ~2 s: LED 16 dimmed, USR LED blinks slowly | NICHT GEMESSEN |
 | P2 | `python tools/pm_cli.py -p COMx info` | `app=DaisyProgramManagerProbe profile=probe cat=UNSUPPORTED` | NICHT GEMESSEN |
-| P3 | 5 Minuten laufen lassen, `status` wiederholt | stabil, keine Hänger (XIP mit 480 MHz) | NICHT GEMESSEN |
-| P4 | Taste 16 drücken/loslassen; S1+S16 3 s | DIAG (LEDs folgen Tasten), zurück zu SELECT | NICHT GEMESSEN |
-| P5 | `pm_cli.py mode DIAG`, `raw "LED m=ON"`, `raw "CVOUT m=FIX c1=2048"`, `mode SELECT` | LEDs an; CV OUT per Multimeter: Wert notieren; nach SELECT DAC 0 – Spannung messen | NICHT GEMESSEN |
-| P6 | S9+S16 5 s bzw. `pm_cli.py service --yes` | DFU `0483:DF11` erscheint; danach Instrument-BIN flashen (Wiederherstellung geprobt) | NICHT GEMESSEN |
+| P3 | Run for 5 minutes, repeated `status` | stable, no hangs (XIP at 480 MHz) | NICHT GEMESSEN |
+| P4 | Press/release key 16; S1+S16 for 3 s | DIAG (LEDs follow keys), back to SELECT | NICHT GEMESSEN |
+| P5 | `pm_cli.py mode DIAG`, `raw "LED m=ON"`, `raw "CVOUT m=FIX c1=2048"`, `mode SELECT` | LEDs on; CV OUT with a multimeter: note the value; after SELECT DAC 0 – measure the voltage | NICHT GEMESSEN |
+| P6 | S9+S16 5 s or `pm_cli.py service --yes` | DFU `0483:DF11` appears; then flash an instrument BIN (recovery rehearsed) | NICHT GEMESSEN |
 
-## M – Manager (`DaisyProgramManager-v0.1.0.bin`)
+## M – manager (`DaisyProgramManager-v0.1.0.bin`)
 
-| ID | Schritt | Erwartung | Ergebnis |
+| ID | Step | Expectation | Result |
 | --- | --- | --- | --- |
-| M1 | Manager flashen, ohne Karte starten | `info`: `cat=NOCARD sd=0`; nur LED 16 gedimmt | NICHT GEMESSEN |
-| M2 | Karte mit Vorlage (`pm_card.py check` PASS, FAT32) einlegen | nach ~0,3 s `cat=OK`, Plätze gedimmt; `list` zeigt Einträge; `rootbin=0` | NICHT GEMESSEN |
-| M3 | exFAT-Karte | Bootloader startet trotzdem die Verwaltung; `cat=OK` mit `fs=EXFAT` (SDTEST in DIAG) | NICHT GEMESSEN |
-| M4 | Erster Start: Taste 1 (Toy Piano v0.4 Paket) | LED-Balken, dann Reset, kurz DFU, Toy Piano meldet sich (MIDI IDENTIFY); Tastentest | NICHT GEMESSEN |
-| M5 | `pm_cli.py start --slot 1 --id toy-piano --hash <Präfix> --gen <gen>` | `ACK`, `pct` steigt, `RESTARTING`, Port weg | NICHT GEMESSEN |
-| M6 | Rückkehr aus Toy Piano: S1+S16 3 s | Verwaltung startet (nach 100 ms Fenster), `info` antwortet | NICHT GEMESSEN |
-| M7 | Karte während `LOADING` ziehen | `uerr=NOCARD`, Verwaltung bedienbar, kein Start | NICHT GEMESSEN |
-| M8 | Paket mit verändertem Byte (Hashfehler) | `e=HASH`, kein Start; danach gültiges Paket startet | NICHT GEMESSEN |
-| M9 | Fünf Wechsel hintereinander (Toy Piano ↔ Reverb) | jedes Mal Start und Rückkehr | NICHT GEMESSEN |
-| M10 | CV OUT mit Multimeter: SELECT → DIAG FIX 2048 → SELECT → Programmstart → Rückkehr | Spannungen je Zustand notieren; DAC-Code 0 ≠ 0 V annehmen | NICHT GEMESSEN |
-| M11 | Strom weg während `LOADING` | nächster Start: Verwaltung (kein Flash verändert) | NICHT GEMESSEN |
-| M12 | DFU-Update der Verwaltung abbrechen (Stecker), dann erneut flashen | Wiederherstellung gelingt | NICHT GEMESSEN |
+| M1 | Flash the manager, start without a card | `info`: `cat=NOCARD sd=0`; only LED 16 dimmed | NICHT GEMESSEN |
+| M2 | Insert a card with the template (`pm_card.py check` PASS, FAT32) | after ~0.3 s `cat=OK`, slots dimmed; `list` shows the entries; `rootbin=0` | NICHT GEMESSEN |
+| M3 | exFAT card | the bootloader still starts the manager; `cat=OK` with `fs=EXFAT` (SDTEST in DIAG) | NICHT GEMESSEN |
+| M4 | First start: key 1 (Toy Piano v0.4 package) | LED bar, then reset, briefly DFU, Toy Piano identifies itself (MIDI IDENTIFY); key test | NICHT GEMESSEN |
+| M5 | `pm_cli.py start --slot 1 --id toy-piano --hash <prefix> --gen <gen>` | `ACK`, `pct` rises, `RESTARTING`, port gone | NICHT GEMESSEN |
+| M6 | Return from Toy Piano: S1+S16 3 s | manager starts (after the 100 ms window), `info` answers | NICHT GEMESSEN |
+| M7 | Pull the card during `LOADING` | `uerr=NOCARD`, manager usable, no start | NICHT GEMESSEN |
+| M8 | Package with one changed byte (hash error) | `e=HASH`, no start; afterwards a valid package starts | NICHT GEMESSEN |
+| M9 | Five changes in a row (Toy Piano ↔ Reverb) | start and return every time | NICHT GEMESSEN |
+| M10 | CV OUT with a multimeter: SELECT → DIAG FIX 2048 → SELECT → program start → return | note the voltages per state; assume DAC code 0 ≠ 0 V | NICHT GEMESSEN |
+| M11 | Power loss during `LOADING` | next start: manager (no flash changed) | NICHT GEMESSEN |
+| M12 | Abort a DFU update of the manager (unplug), then flash again | recovery succeeds | NICHT GEMESSEN |
 
-## Protokoll
+## Log
 
-| Datum | Image / SHA-256 | Schritt | Beobachtung |
+| Date | Image / SHA-256 | Step | Observation |
 | --- | --- | --- | --- |
 | – | – | – | – |

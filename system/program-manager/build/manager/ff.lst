@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 1
 
 
    1              		.cpu cortex-m7
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
   28:../../common/sd/fatfs/ff.c ****    Module Private Definitions
   29:../../common/sd/fatfs/ff.c **** 
   30:../../common/sd/fatfs/ff.c **** ---------------------------------------------------------------------------*/
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 2
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 2
 
 
   31:../../common/sd/fatfs/ff.c **** 
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
   85:../../common/sd/fatfs/ff.c **** /* exFAT directory entry types */
   86:../../common/sd/fatfs/ff.c **** #define	ET_BITMAP	0x81	/* Allocation bitmap */
   87:../../common/sd/fatfs/ff.c **** #define	ET_UPCASE	0x82	/* Up-case table */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 3
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 3
 
 
   88:../../common/sd/fatfs/ff.c **** #define	ET_VLABEL	0x83	/* Volume label */
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  142:../../common/sd/fatfs/ff.c **** #define BPB_VolIDEx			100		/* exFAT: Volume serial number (DWORD) */
  143:../../common/sd/fatfs/ff.c **** #define BPB_FSVerEx			104		/* exFAT: Filesystem version (WORD) */
  144:../../common/sd/fatfs/ff.c **** #define BPB_VolFlagEx		106		/* exFAT: Volume flags (WORD, out of check sum calculation) */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 4
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 4
 
 
  145:../../common/sd/fatfs/ff.c **** #define BPB_BytsPerSecEx	108		/* exFAT: Log2 of sector size in unit of byte (BYTE) */
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  199:../../common/sd/fatfs/ff.c **** #define FSI_TrailSig		508		/* FAT32 FSI: Trailing signature (DWORD) */
  200:../../common/sd/fatfs/ff.c **** 
  201:../../common/sd/fatfs/ff.c **** #define MBR_Table			446		/* MBR: Offset of partition table in the MBR */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 5
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 5
 
 
  202:../../common/sd/fatfs/ff.c **** #define SZ_PTE				16		/* MBR: Size of a partition table entry */
@@ -298,7 +298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  256:../../common/sd/fatfs/ff.c **** #define LD2PD(vol) (BYTE)(vol)	/* Each logical drive is associated with the same physical drive num
  257:../../common/sd/fatfs/ff.c **** #define LD2PT(vol) 0			/* Auto partition search */
  258:../../common/sd/fatfs/ff.c **** #endif
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 6
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 6
 
 
  259:../../common/sd/fatfs/ff.c **** 
@@ -358,7 +358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  313:../../common/sd/fatfs/ff.c **** 					0xF0,0xF1,0xF2,0xF3,0xF4,0xF5,0xF6,0xF7,0xF8,0xF9,0xFA,0xFB,0xFC,0xFD,0xFE,0xFF}
  314:../../common/sd/fatfs/ff.c **** #define TBL_CT737  {0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8A,0x8B,0x8C,0x8D,0x8E,0x8F
  315:../../common/sd/fatfs/ff.c **** 					0x90,0x92,0x92,0x93,0x94,0x95,0x96,0x97,0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87, \
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 7
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 7
 
 
  316:../../common/sd/fatfs/ff.c **** 					0x88,0x89,0x8A,0x8B,0x8C,0x8D,0x8E,0x8F,0x90,0x91,0xAA,0x92,0x93,0x94,0x95,0x96, \
@@ -418,7 +418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  370:../../common/sd/fatfs/ff.c **** #define TBL_CT860  {0x80,0x9A,0x90,0x8F,0x8E,0x91,0x86,0x80,0x89,0x89,0x92,0x8B,0x8C,0x98,0x8E,0x8F
  371:../../common/sd/fatfs/ff.c **** 					0x90,0x91,0x92,0x8C,0x99,0xA9,0x96,0x9D,0x98,0x99,0x9A,0x9B,0x9C,0x9D,0x9E,0x9F, \
  372:../../common/sd/fatfs/ff.c **** 					0x86,0x8B,0x9F,0x96,0xA5,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF, \
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 8
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 8
 
 
  373:../../common/sd/fatfs/ff.c **** 					0xB0,0xB1,0xB2,0xB3,0xB4,0xB5,0xB6,0xB7,0xB8,0xB9,0xBA,0xBB,0xBC,0xBD,0xBE,0xBF, \
@@ -478,7 +478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  427:../../common/sd/fatfs/ff.c **** 					0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9A,0x86,0x9C,0x8D,0x8F,0x90, \
  428:../../common/sd/fatfs/ff.c **** 					0x91,0x90,0x92,0x95,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF, \
  429:../../common/sd/fatfs/ff.c **** 					0xB0,0xB1,0xB2,0xB3,0xB4,0xB5,0xB6,0xB7,0xB8,0xB9,0xBA,0xBB,0xBC,0xBD,0xBE,0xBF, \
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 9
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 9
 
 
  430:../../common/sd/fatfs/ff.c **** 					0xC0,0xC1,0xC2,0xC3,0xC4,0xC5,0xC6,0xC7,0xC8,0xC9,0xCA,0xCB,0xCC,0xCD,0xCE,0xCF, \
@@ -538,7 +538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  484:../../common/sd/fatfs/ff.c **** static const char *const VolumeStr[FF_VOLUMES] = {FF_VOLUME_STRS};	/* Pre-defined volume ID */
  485:../../common/sd/fatfs/ff.c **** #endif
  486:../../common/sd/fatfs/ff.c **** #endif
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 10
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 10
 
 
  487:../../common/sd/fatfs/ff.c **** 
@@ -598,7 +598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  541:../../common/sd/fatfs/ff.c **** #define FREE_NAMEBUFF()
  542:../../common/sd/fatfs/ff.c **** #endif
  543:../../common/sd/fatfs/ff.c **** #define LEAVE_MKFS(res)	return res
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 11
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 11
 
 
  544:../../common/sd/fatfs/ff.c **** 
@@ -658,7 +658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  598:../../common/sd/fatfs/ff.c **** #elif FF_CODE_PAGE < 900	/* Static code page configuration (SBCS) */
  599:../../common/sd/fatfs/ff.c **** #define CODEPAGE FF_CODE_PAGE
  600:../../common/sd/fatfs/ff.c **** static const BYTE ExCvt[] = MKCVTBL(TBL_CT, FF_CODE_PAGE);
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 12
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 12
 
 
  601:../../common/sd/fatfs/ff.c **** 
@@ -718,7 +718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  655:../../common/sd/fatfs/ff.c **** 	return rv;
  656:../../common/sd/fatfs/ff.c **** }
  657:../../common/sd/fatfs/ff.c **** #endif
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 13
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 13
 
 
  658:../../common/sd/fatfs/ff.c **** 
@@ -778,7 +778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  712:../../common/sd/fatfs/ff.c **** }
  713:../../common/sd/fatfs/ff.c **** 
  714:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 14
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 14
 
 
  715:../../common/sd/fatfs/ff.c **** /* Test if the byte is DBC 2nd byte */
@@ -838,7 +838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  769:../../common/sd/fatfs/ff.c **** 		} else {							/* Wrong sequence */
  770:../../common/sd/fatfs/ff.c **** 			return 0xFFFFFFFF;
  771:../../common/sd/fatfs/ff.c **** 		}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 15
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 15
 
 
  772:../../common/sd/fatfs/ff.c **** 		do {	/* Get and merge trailing bytes */
@@ -898,7 +898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  826:../../common/sd/fatfs/ff.c **** 	*buf++ = hs;
  827:../../common/sd/fatfs/ff.c **** 	*buf++ = wc;
  828:../../common/sd/fatfs/ff.c **** 	return 2;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 16
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 16
 
 
  829:../../common/sd/fatfs/ff.c **** 
@@ -958,7 +958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  883:../../common/sd/fatfs/ff.c **** 		*buf++ = (TCHAR)wc;			/* Store DBC 2nd byte */
  884:../../common/sd/fatfs/ff.c **** 		return 2;
  885:../../common/sd/fatfs/ff.c **** 	}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 17
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 17
 
 
  886:../../common/sd/fatfs/ff.c **** 	if (wc == 0 || szb < 1) return 0;	/* Invalid character or buffer overflow? */
@@ -1018,7 +1018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  940:../../common/sd/fatfs/ff.c **** 
  941:../../common/sd/fatfs/ff.c **** #endif
  942:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 18
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 18
 
 
  943:../../common/sd/fatfs/ff.c **** 
@@ -1078,7 +1078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  997:../../common/sd/fatfs/ff.c **** 		 && Files[i].ofs == dp->dptr) break;
  998:../../common/sd/fatfs/ff.c **** 	}
  999:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 19
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 19
 
 
 1000:../../common/sd/fatfs/ff.c **** 	if (i == FF_FS_LOCK) {			/* Not opened. Register it as new. */
@@ -1138,7 +1138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1054:../../common/sd/fatfs/ff.c **** 
 1055:../../common/sd/fatfs/ff.c **** 
 1056:../../common/sd/fatfs/ff.c **** /*-----------------------------------------------------------------------*/
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 20
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 20
 
 
 1057:../../common/sd/fatfs/ff.c **** /* Move/Flush disk access window in the filesystem object                */
@@ -1198,7 +1198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1111:../../common/sd/fatfs/ff.c **** /*-----------------------------------------------------------------------*/
 1112:../../common/sd/fatfs/ff.c **** 
 1113:../../common/sd/fatfs/ff.c **** static FRESULT sync_fs (	/* Returns FR_OK or FR_DISK_ERR */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 21
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 21
 
 
 1114:../../common/sd/fatfs/ff.c **** 	FATFS* fs		/* Filesystem object */
@@ -1258,7 +1258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1168:../../common/sd/fatfs/ff.c **** 	if (clst >= fs->n_fatent - 2) return 0;		/* Is it invalid cluster number? */
 1169:../../common/sd/fatfs/ff.c **** 	return fs->database + (LBA_t)fs->csize * clst;	/* Start sector number of the cluster */
 1170:../../common/sd/fatfs/ff.c **** }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 22
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 22
 
 
 1171:../../common/sd/fatfs/ff.c **** 
@@ -1318,7 +1318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1225:../../common/sd/fatfs/ff.c **** 					val = clst + 1; 	/* Generate the value */
 1226:../../common/sd/fatfs/ff.c **** 					break;
 1227:../../common/sd/fatfs/ff.c **** 				}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 23
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 23
 
 
 1228:../../common/sd/fatfs/ff.c **** 				if (obj->stat != 2) {	/* Get value from FAT if FAT chain is valid */
@@ -1378,7 +1378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1282:../../common/sd/fatfs/ff.c **** 			break;
 1283:../../common/sd/fatfs/ff.c **** 
 1284:../../common/sd/fatfs/ff.c **** 		case FS_FAT16:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 24
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 24
 
 
 1285:../../common/sd/fatfs/ff.c **** 			res = move_window(fs, fs->fatbase + (clst / (SS(fs) / 2)));
@@ -1438,7 +1438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1339:../../common/sd/fatfs/ff.c **** 		do {
 1340:../../common/sd/fatfs/ff.c **** 			do {
 1341:../../common/sd/fatfs/ff.c **** 				bv = fs->win[i] & bm; bm <<= 1;		/* Get bit value */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 25
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 25
 
 
 1342:../../common/sd/fatfs/ff.c **** 				if (++val >= fs->n_fatent - 2) {	/* Next cluster (with wrap-around) */
@@ -1498,7 +1498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1396:../../common/sd/fatfs/ff.c **** /*---------------------------------------------*/
 1397:../../common/sd/fatfs/ff.c **** 
 1398:../../common/sd/fatfs/ff.c **** static FRESULT fill_first_frag (
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 26
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 26
 
 
 1399:../../common/sd/fatfs/ff.c **** 	FFOBJID* obj	/* Pointer to the corresponding object */
@@ -1558,7 +1558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1453:../../common/sd/fatfs/ff.c **** 	FRESULT res = FR_OK;
 1454:../../common/sd/fatfs/ff.c **** 	DWORD nxt;
 1455:../../common/sd/fatfs/ff.c **** 	FATFS *fs = obj->fs;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 27
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 27
 
 
 1456:../../common/sd/fatfs/ff.c **** #if FF_FS_EXFAT || FF_USE_TRIM
@@ -1618,7 +1618,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1510:../../common/sd/fatfs/ff.c **** 			obj->stat = 0;		/* Change the chain status 'initial' */
 1511:../../common/sd/fatfs/ff.c **** 		} else {
 1512:../../common/sd/fatfs/ff.c **** 			if (obj->stat == 0) {	/* Is it a fragmented chain from the beginning of this session? */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 28
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 28
 
 
 1513:../../common/sd/fatfs/ff.c **** 				clst = obj->sclust;		/* Follow the chain to check if it gets contiguous */
@@ -1678,7 +1678,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1567:../../common/sd/fatfs/ff.c **** 		ncl = find_bitmap(fs, scl, 1);				/* Find a free cluster */
 1568:../../common/sd/fatfs/ff.c **** 		if (ncl == 0 || ncl == 0xFFFFFFFF) return ncl;	/* No free cluster or hard error? */
 1569:../../common/sd/fatfs/ff.c **** 		res = change_bitmap(fs, ncl, 1, 1);			/* Mark the cluster 'in use' */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 29
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 29
 
 
 1570:../../common/sd/fatfs/ff.c **** 		if (res == FR_INT_ERR) return 1;
@@ -1738,7 +1738,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1624:../../common/sd/fatfs/ff.c **** 	if (res == FR_OK) {			/* Update allocation information if the function succeeded */
 1625:../../common/sd/fatfs/ff.c **** 		fs->last_clst = ncl;
 1626:../../common/sd/fatfs/ff.c **** 		if (fs->free_clst > 0 && fs->free_clst <= fs->n_fatent - 2) {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 30
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 30
 
 
 1627:../../common/sd/fatfs/ff.c **** 			fs->free_clst--;
@@ -1798,7 +1798,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1681:../../common/sd/fatfs/ff.c **** )
 1682:../../common/sd/fatfs/ff.c **** {
 1683:../../common/sd/fatfs/ff.c **** 	LBA_t sect;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 31
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 31
 
 
 1684:../../common/sd/fatfs/ff.c **** 	UINT n, szb;
@@ -1858,7 +1858,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1738:../../common/sd/fatfs/ff.c **** 		dp->sect = fs->dirbase;
 1739:../../common/sd/fatfs/ff.c **** 
 1740:../../common/sd/fatfs/ff.c **** 	} else {			/* Dynamic table (sub-directory or root-directory on the FAT32/exFAT volume) */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 32
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 32
 
 
 1741:../../common/sd/fatfs/ff.c **** 		csz = (DWORD)fs->csize * SS(fs);	/* Bytes per cluster */
@@ -1918,7 +1918,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1795:../../common/sd/fatfs/ff.c **** 					}
 1796:../../common/sd/fatfs/ff.c **** 					clst = create_chain(&dp->obj, dp->clust);	/* Allocate a cluster */
 1797:../../common/sd/fatfs/ff.c **** 					if (clst == 0) return FR_DENIED;			/* No free cluster */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 33
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 33
 
 
 1798:../../common/sd/fatfs/ff.c **** 					if (clst == 1) return FR_INT_ERR;			/* Internal error */
@@ -1978,7 +1978,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1852:../../common/sd/fatfs/ff.c **** 		} while (res == FR_OK);
 1853:../../common/sd/fatfs/ff.c **** 	}
 1854:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 34
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 34
 
 
 1855:../../common/sd/fatfs/ff.c **** 	if (res == FR_NO_FILE) res = FR_DENIED;	/* No directory entry to allocate */
@@ -2038,7 +2038,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1909:../../common/sd/fatfs/ff.c **** {
 1910:../../common/sd/fatfs/ff.c **** 	UINT ni, di;
 1911:../../common/sd/fatfs/ff.c **** 	WCHAR pchr, chr;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 35
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 35
 
 
 1912:../../common/sd/fatfs/ff.c **** 
@@ -2098,7 +2098,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1966:../../common/sd/fatfs/ff.c **** 		lfnbuf[ni] = 0;
 1967:../../common/sd/fatfs/ff.c **** 	}
 1968:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 36
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 36
 
 
 1969:../../common/sd/fatfs/ff.c **** 	return 1;		/* The part of LFN is valid */
@@ -2158,7 +2158,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2023:../../common/sd/fatfs/ff.c **** 	BYTE ns[8], c;
 2024:../../common/sd/fatfs/ff.c **** 	UINT i, j;
 2025:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 37
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 37
 
 
 2026:../../common/sd/fatfs/ff.c **** 
@@ -2218,7 +2218,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2080:../../common/sd/fatfs/ff.c **** 	do {
 2081:../../common/sd/fatfs/ff.c **** 		sum = (sum >> 1) + (sum << 7) + *dir++;
 2082:../../common/sd/fatfs/ff.c **** 	} while (--n);
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 38
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 38
 
 
 2083:../../common/sd/fatfs/ff.c **** 	return sum;
@@ -2278,7 +2278,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2137:../../common/sd/fatfs/ff.c **** )
 2138:../../common/sd/fatfs/ff.c **** {
 2139:../../common/sd/fatfs/ff.c **** 	sum = ((sum & 1) ? 0x80000000 : 0) + (sum >> 1) + dat;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 39
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 39
 
 
 2140:../../common/sd/fatfs/ff.c **** 	return sum;
@@ -2338,7 +2338,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2194:../../common/sd/fatfs/ff.c **** 	return FR_OK;
 2195:../../common/sd/fatfs/ff.c **** }
 2196:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 40
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 40
 
 
 2197:../../common/sd/fatfs/ff.c **** 
@@ -2398,7 +2398,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2251:../../common/sd/fatfs/ff.c **** 
 2252:../../common/sd/fatfs/ff.c **** #if !FF_FS_READONLY
 2253:../../common/sd/fatfs/ff.c **** /*----------------------------------------*/
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 41
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 41
 
 
 2254:../../common/sd/fatfs/ff.c **** /* exFAT: Store the directory entry block */
@@ -2458,7 +2458,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2308:../../common/sd/fatfs/ff.c **** 	nlen = n_c1 = 0; chr = 1;
 2309:../../common/sd/fatfs/ff.c **** 	do {
 2310:../../common/sd/fatfs/ff.c **** 		dirb[i++] = ET_FILENAME; dirb[i++] = 0;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 42
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 42
 
 
 2311:../../common/sd/fatfs/ff.c **** 		do {	/* Fill name field */
@@ -2518,7 +2518,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2365:../../common/sd/fatfs/ff.c **** 						dp->obj.attr = fs->dirbuf[XDIR_Attr] & AM_MASK;	/* Get attribute */
 2366:../../common/sd/fatfs/ff.c **** 					}
 2367:../../common/sd/fatfs/ff.c **** 					break;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 43
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 43
 
 
 2368:../../common/sd/fatfs/ff.c **** 				}
@@ -2578,7 +2578,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2422:../../common/sd/fatfs/ff.c **** #if FF_USE_LFN
 2423:../../common/sd/fatfs/ff.c **** 	BYTE attr, ord, sum;
 2424:../../common/sd/fatfs/ff.c **** #endif
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 44
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 44
 
 
 2425:../../common/sd/fatfs/ff.c **** 
@@ -2638,7 +2638,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2479:../../common/sd/fatfs/ff.c **** #else		/* Non LFN configuration */
 2480:../../common/sd/fatfs/ff.c **** 		dp->obj.attr = dp->dir[DIR_Attr] & AM_MASK;
 2481:../../common/sd/fatfs/ff.c **** 		if (!(dp->dir[DIR_Attr] & AM_VOL) && !memcmp(dp->dir, dp->fn, 11)) break;	/* Is it a valid entry?
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 45
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 45
 
 
 2482:../../common/sd/fatfs/ff.c **** #endif
@@ -2698,7 +2698,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2536:../../common/sd/fatfs/ff.c **** 				for (n = 1; n <= fs->xcwds.depth && dp->obj.sclust != fs->xcwds.tbl[n].d_scl; n++) ;	/* Check i
 2537:../../common/sd/fatfs/ff.c **** 				if (n <= fs->xcwds.depth) {		/* If exist, update it */
 2538:../../common/sd/fatfs/ff.c **** 					fs->xcwds.tbl[n].d_size = (DWORD)dp->obj.objsize | dp->obj.stat;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 46
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 46
 
 
 2539:../../common/sd/fatfs/ff.c **** 				}
@@ -2758,7 +2758,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2593:../../common/sd/fatfs/ff.c **** #endif
 2594:../../common/sd/fatfs/ff.c **** 			fs->wflag = 1;
 2595:../../common/sd/fatfs/ff.c **** 		}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 47
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 47
 
 
 2596:../../common/sd/fatfs/ff.c **** 	}
@@ -2818,7 +2818,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2650:../../common/sd/fatfs/ff.c **** 
 2651:../../common/sd/fatfs/ff.c **** #if FF_FS_MINIMIZE <= 1 || FF_FS_RPATH >= 2
 2652:../../common/sd/fatfs/ff.c **** /*-----------------------------------------------------------------------*/
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 48
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 48
 
 
 2653:../../common/sd/fatfs/ff.c **** /* Get file information from directory entry                             */
@@ -2878,7 +2878,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2707:../../common/sd/fatfs/ff.c **** 		fno->crtime = ld_16(fs->dirbuf + XDIR_CrtTime + 0);	/* Created time */
 2708:../../common/sd/fatfs/ff.c **** 		fno->crdate = ld_16(fs->dirbuf + XDIR_CrtTime + 2);	/* Created date */
 2709:../../common/sd/fatfs/ff.c **** #endif
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 49
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 49
 
 
 2710:../../common/sd/fatfs/ff.c **** 		return;
@@ -2938,7 +2938,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2764:../../common/sd/fatfs/ff.c **** 
 2765:../../common/sd/fatfs/ff.c **** 			for (si = di = 0; fno->altname[si]; si++, di++) {	/* Copy altname[] to fname[] with case informa
 2766:../../common/sd/fatfs/ff.c **** 				wc = (WCHAR)fno->altname[si];
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 50
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 50
 
 
 2767:../../common/sd/fatfs/ff.c **** 				if (wc == '.') lcflg = NS_EXT;
@@ -2998,7 +2998,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2821:../../common/sd/fatfs/ff.c **** 
 2822:../../common/sd/fatfs/ff.c **** #else									/* ANSI/OEM input */
 2823:../../common/sd/fatfs/ff.c **** 	chr = (BYTE)*(*ptr)++;				/* Get a byte */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 51
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 51
 
 
 2824:../../common/sd/fatfs/ff.c **** 	if (IsLower(chr)) chr -= 0x20;		/* To upper ASCII char */
@@ -3058,7 +3058,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2878:../../common/sd/fatfs/ff.c **** 			if (pchr != nchr) break;	/* Branch mismatched? */
 2879:../../common/sd/fatfs/ff.c **** 			if (pchr == 0) return 1;	/* Branch matched? (matched at end of both strings) */
 2880:../../common/sd/fatfs/ff.c **** 		}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 52
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 52
 
 
 2881:../../common/sd/fatfs/ff.c **** 		get_achar(&nam);			/* nam++ */
@@ -3118,7 +3118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2935:../../common/sd/fatfs/ff.c **** 			dp->fn[i] = (i < di) ? '.' : ' ';
 2936:../../common/sd/fatfs/ff.c **** 		}
 2937:../../common/sd/fatfs/ff.c **** 		dp->fn[i] = cf | NS_DOT;	/* This is a dot entry */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 53
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 53
 
 
 2938:../../common/sd/fatfs/ff.c **** 		return FR_OK;
@@ -3178,7 +3178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2992:../../common/sd/fatfs/ff.c **** 		if (wc >= 0x100) {				/* Is this a DBC? */
 2993:../../common/sd/fatfs/ff.c **** 			if (i >= ni - 1) {			/* Field overflow? */
 2994:../../common/sd/fatfs/ff.c **** 				cf |= NS_LOSS | NS_LFN;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 54
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 54
 
 
 2995:../../common/sd/fatfs/ff.c **** 				i = ni; continue;		/* Next field */
@@ -3238,7 +3238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3049:../../common/sd/fatfs/ff.c **** 		}
 3050:../../common/sd/fatfs/ff.c **** 		*path = p + si;					/* Return pointer to the next segment */
 3051:../../common/sd/fatfs/ff.c **** 		sfn[NSFLAG] = (c <= ' ') ? NS_LAST | NS_DOT : NS_DOT;	/* Set last segment flag if end of the path
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 55
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 55
 
 
 3052:../../common/sd/fatfs/ff.c **** 		return FR_OK;
@@ -3298,7 +3298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3106:../../common/sd/fatfs/ff.c **** 	const TCHAR* path			/* Full-path string to find a file or directory */
 3107:../../common/sd/fatfs/ff.c **** )
 3108:../../common/sd/fatfs/ff.c **** {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 56
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 56
 
 
 3109:../../common/sd/fatfs/ff.c **** 	FRESULT res;
@@ -3358,7 +3358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3163:../../common/sd/fatfs/ff.c **** 						dp->obj.c_scl = fs->xcwds2.tbl[fs->xcwds2.depth - 1].d_scl;
 3164:../../common/sd/fatfs/ff.c **** 						dp->obj.c_size = fs->xcwds2.tbl[fs->xcwds2.depth - 1].d_size;
 3165:../../common/sd/fatfs/ff.c **** 						dp->obj.c_ofs = fs->xcwds2.tbl[fs->xcwds2.depth - 1].nxt_ofs;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 57
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 57
 
 
 3166:../../common/sd/fatfs/ff.c **** 					}
@@ -3418,7 +3418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3220:../../common/sd/fatfs/ff.c **** /* Get logical drive number from path name                               */
 3221:../../common/sd/fatfs/ff.c **** /*-----------------------------------------------------------------------*/
 3222:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 58
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 58
 
 
 3223:../../common/sd/fatfs/ff.c **** static int get_ldnumber (	/* Returns logical drive number (-1:invalid drive number or null pointer)
@@ -3478,7 +3478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
   61              	.LVL4:
 3244:../../common/sd/fatfs/ff.c **** 		if (IsDigit(*tp) && tp + 2 == tt) {	/* Is it a numeric volume ID + colon? */
   62              		.loc 1 3244 3 view .LVU15
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 59
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 59
 
 
   63              		.loc 1 3244 6 is_stmt 0 view .LVU16
@@ -3538,7 +3538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
   96              	.LVL11:
   97              		.loc 1 3262 10 view .LVU30
   98 002a 7047     		bx	lr
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 60
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 60
 
 
   99              	.LVL12:
@@ -3598,7 +3598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3298:../../common/sd/fatfs/ff.c **** /* Calculate CRC32 in byte-by-byte */
 3299:../../common/sd/fatfs/ff.c **** 
 3300:../../common/sd/fatfs/ff.c **** static DWORD crc32 (	/* Returns next CRC value */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 61
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 61
 
 
 3301:../../common/sd/fatfs/ff.c **** 	DWORD crc,			/* Current CRC value */
@@ -3658,7 +3658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3355:../../common/sd/fatfs/ff.c **** 	} while (--n);
 3356:../../common/sd/fatfs/ff.c **** 	return seed;
 3357:../../common/sd/fatfs/ff.c **** }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 62
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 62
 
 
 3358:../../common/sd/fatfs/ff.c **** 
@@ -3718,7 +3718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3412:../../common/sd/fatfs/ff.c **** 	UINT part		/* Partition to fined = 0:find as SFD and partitions, >0:forced partition number */
 3413:../../common/sd/fatfs/ff.c **** )
 3414:../../common/sd/fatfs/ff.c **** {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 63
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 63
 
 
 3415:../../common/sd/fatfs/ff.c **** 	UINT fmt, i;
@@ -3778,7 +3778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3469:../../common/sd/fatfs/ff.c **** {
 3470:../../common/sd/fatfs/ff.c **** 	int vol;
 3471:../../common/sd/fatfs/ff.c **** 	FATFS *fs;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 64
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 64
 
 
 3472:../../common/sd/fatfs/ff.c **** 	DSTATUS stat;
@@ -3838,7 +3838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3526:../../common/sd/fatfs/ff.c **** 	if (fmt == 1) {
 3527:../../common/sd/fatfs/ff.c **** 		QWORD maxlba;
 3528:../../common/sd/fatfs/ff.c **** 		DWORD so, cv, bcl, ncl, i;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 65
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 65
 
 
 3529:../../common/sd/fatfs/ff.c **** 
@@ -3898,7 +3898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3583:../../common/sd/fatfs/ff.c **** 		fs->fsi_flag = 0;	/* Enable to sync PercInUse value in VBR */
 3584:../../common/sd/fatfs/ff.c **** #endif
 3585:../../common/sd/fatfs/ff.c **** 		fmt = FS_EXFAT;			/* FAT sub-type */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 66
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 66
 
 
 3586:../../common/sd/fatfs/ff.c **** 	} else
@@ -3958,7 +3958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3640:../../common/sd/fatfs/ff.c **** 			szbfat = (fmt == FS_FAT16) ?				/* (Needed FAT size) */
 3641:../../common/sd/fatfs/ff.c **** 				fs->n_fatent * 2 : fs->n_fatent * 3 / 2 + (fs->n_fatent & 1);
 3642:../../common/sd/fatfs/ff.c **** 		}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 67
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 67
 
 
 3643:../../common/sd/fatfs/ff.c **** 		if (fs->fsize < (szbfat + (SS(fs) - 1)) / SS(fs)) return FR_NO_FILESYSTEM;	/* (BPB_FATSz must not
@@ -4018,7 +4018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3697:../../common/sd/fatfs/ff.c **** /* Check if the file/directory object is valid or not                    */
 3698:../../common/sd/fatfs/ff.c **** /*-----------------------------------------------------------------------*/
 3699:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 68
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 68
 
 
 3700:../../common/sd/fatfs/ff.c **** static FRESULT validate (	/* Returns FR_OK or FR_INVALID_OBJECT */
@@ -4078,7 +4078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3715:../../common/sd/fatfs/ff.c **** 			}
 3716:../../common/sd/fatfs/ff.c **** 		} else {	/* Could not take */
 3717:../../common/sd/fatfs/ff.c **** 			res = FR_TIMEOUT;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 69
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 69
 
 
 3718:../../common/sd/fatfs/ff.c **** 		}
@@ -4138,7 +4138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  194              	.LFB356:
 2206:../../common/sd/fatfs/ff.c **** 	FATFS *fs = dobj->fs;
  195              		.loc 1 2206 1 is_stmt 1 view -0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 70
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 70
 
 
  196              		.cfi_startproc
@@ -4198,7 +4198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2215:../../common/sd/fatfs/ff.c **** 	dobj->objsize = ld_64(fs->dirbuf + XDIR_FileSize);	/* Size */
  233              		.loc 1 2215 25 is_stmt 0 view .LVU74
  234 001a 136B     		ldr	r3, [r2, #48]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 71
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 71
 
 
  235              	.LVL25:
@@ -4258,7 +4258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  648:../../common/sd/fatfs/ff.c **** 	rv = rv << 8 | ptr[5];
  273              		.loc 1 648 2 is_stmt 1 view .LVU91
  649:../../common/sd/fatfs/ff.c **** 	rv = rv << 8 | ptr[4];
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 72
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 72
 
 
  274              		.loc 1 649 2 view .LVU92
@@ -4318,7 +4318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  311 000c 46415433 		.ascii	"FAT32   \000"
  311      32202020 
  311      00
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 73
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 73
 
 
  312              		.section	.text.check_fs,"ax",%progbits
@@ -4378,7 +4378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  354              	.LVL31:
  355              	.LBB186:
  356              	.LBI171:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 74
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 74
 
 
 1082:../../common/sd/fatfs/ff.c **** 	FATFS* fs,		/* Filesystem object */
@@ -4438,7 +4438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  394              		.loc 1 3393 3 view .LVU138
 3393:../../common/sd/fatfs/ff.c **** 			&& b != 0 && (b & (b - 1)) == 0				/* Properness of cluster size (2^n) */
  395              		.loc 1 3393 15 is_stmt 0 view .LVU139
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 75
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 75
 
 
  396 002e 5A1E     		subs	r2, r3, #1
@@ -4498,7 +4498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  633:../../common/sd/fatfs/ff.c **** 
  438              		.loc 1 633 2 view .LVU152
  635:../../common/sd/fatfs/ff.c **** 	rv = rv << 8 | ptr[2];
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 76
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 76
 
 
  439              		.loc 1 635 2 view .LVU153
@@ -4558,7 +4558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1094:../../common/sd/fatfs/ff.c **** 			if (disk_read(fs->pdrv, fs->win, sect, 1) != RES_OK) {
  480              		.loc 1 1094 3 view .LVU167
 1095:../../common/sd/fatfs/ff.c **** 				sect = (LBA_t)0 - 1;	/* Invalidate window if read data is not valid */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 77
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 77
 
 
  481              		.loc 1 1095 4 view .LVU168
@@ -4618,7 +4618,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  522              	.LVL49:
 3383:../../common/sd/fatfs/ff.c **** #endif
  523              		.loc 1 3383 2 is_stmt 1 view .LVU182
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 78
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 78
 
 
 3383:../../common/sd/fatfs/ff.c **** #endif
@@ -4678,7 +4678,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  565              	.LBE176:
  566              	.LBE179:
  567              	.LBE184:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 79
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 79
 
 
  568              	.LBE191:
@@ -4738,7 +4738,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3393:../../common/sd/fatfs/ff.c **** 			&& b != 0 && (b & (b - 1)) == 0				/* Properness of cluster size (2^n) */
  608              		.loc 1 3393 15 is_stmt 0 view .LVU210
  609 00e2 5A1E     		subs	r2, r3, #1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 80
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 80
 
 
 3393:../../common/sd/fatfs/ff.c **** 			&& b != 0 && (b & (b - 1)) == 0				/* Properness of cluster size (2^n) */
@@ -4798,7 +4798,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  651 0110 00000000 		.word	.LC0
  652 0114 0C000000 		.word	.LC1
  653              		.cfi_endproc
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 81
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 81
 
 
  654              	.LFE363:
@@ -4858,7 +4858,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  698 000e 00F08E80 		beq	.L92
 2676:../../common/sd/fatfs/ff.c **** 		UINT nc = 0;
  699              		.loc 1 2676 5 view .LVU236
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 82
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 82
 
 
  700 0012 3B78     		ldrb	r3, [r7]	@ zero_extendqisi2
@@ -4918,7 +4918,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  739              		.loc 1 2722 5 is_stmt 1 view .LVU251
  740              	.LBB213:
  741              	.LBB214:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 83
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 83
 
 
  879:../../common/sd/fatfs/ff.c **** 	if (wc >= 0x100) {	/* Is this a DBC? */
@@ -4978,7 +4978,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  781              	.L117:
 2715:../../common/sd/fatfs/ff.c **** 			hs = 0;
  782              		.loc 1 2715 12 view .LVU267
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 84
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 84
 
 
  783 0062 0026     		movs	r6, #0
@@ -5038,7 +5038,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  822 008a 0FD0     		beq	.L118
  823 008c 052B     		cmp	r3, #5
 2739:../../common/sd/fatfs/ff.c **** #if FF_LFN_UNICODE >= 1	/* Unicode output */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 85
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 85
 
 
  824              		.loc 1 2739 54 discriminator 1 view .LVU283
@@ -5098,7 +5098,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  863              		.loc 1 2759 5 is_stmt 0 view .LVU298
  864 00b6 57BB     		cbnz	r7, .L123
 2760:../../common/sd/fatfs/ff.c **** 			fno->fname[di++] = '\?';	/* This object is inaccessible due to wrong buffer or locale settings *
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 86
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 86
 
 
  865              		.loc 1 2760 3 is_stmt 1 view .LVU299
@@ -5158,7 +5158,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2765:../../common/sd/fatfs/ff.c **** 				wc = (WCHAR)fno->altname[si];
  904              		.loc 1 2765 34 is_stmt 0 discriminator 1 view .LVU315
  905 00e0 591C     		adds	r1, r3, #1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 87
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 87
 
 
  906 00e2 5A78     		ldrb	r2, [r3, #1]	@ zero_extendqisi2
@@ -5218,7 +5218,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  943              	.LBB222:
 2765:../../common/sd/fatfs/ff.c **** 				wc = (WCHAR)fno->altname[si];
  944              		.loc 1 2765 42 discriminator 2 view .LVU333
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 88
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 88
 
 
  945 0100 0C3C     		subs	r4, r4, #12
@@ -5278,7 +5278,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  981              		.loc 1 638 2 view .LVU351
  639:../../common/sd/fatfs/ff.c **** }
  982              		.loc 1 639 2 view .LVU352
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 89
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 89
 
 
  638:../../common/sd/fatfs/ff.c **** 	return rv;
@@ -5338,7 +5338,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2723:../../common/sd/fatfs/ff.c **** 					di = 0; break;
  1023              		.loc 1 2723 5 is_stmt 1 view .LVU367
  1024              	.LBB226:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 90
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 90
 
 
  1025              	.LBB217:
@@ -5398,7 +5398,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1065              		.loc 1 882 10 is_stmt 0 view .LVU381
  1066 0160 AA19     		adds	r2, r5, r6
  882:../../common/sd/fatfs/ff.c **** 		*buf++ = (TCHAR)wc;			/* Store DBC 2nd byte */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 91
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 91
 
 
  1067              		.loc 1 882 12 view .LVU382
@@ -5458,7 +5458,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1107              	.LVL114:
 2772:../../common/sd/fatfs/ff.c **** 		if (!dp->dir[DIR_NTres]) fno->altname[0] = 0;	/* Altname is not needed if neither LFN nor case in
  1108              		.loc 1 2772 18 view .LVU397
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 92
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 92
 
 
  1109 017a A376     		strb	r3, [r4, #26]
@@ -5518,7 +5518,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2685:../../common/sd/fatfs/ff.c **** 			wc = ld_16(fs->dirbuf + si); si += 2; nc++;	/* Get a character */
  1148              		.loc 1 2685 31 discriminator 1 view .LVU413
  1149 019e 08BF     		it	eq
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 93
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 93
 
 
  1150 01a0 0236     		addeq	r6, r6, #2
@@ -5578,7 +5578,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  809:../../common/sd/fatfs/ff.c **** 	DWORD chr,	/* UTF-16 encoded character (Surrogate pair if >=0x10000) */
  1190              		.loc 1 809 13 is_stmt 1 view .LVU428
  1191              	.LBB232:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 94
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 94
 
 
  877:../../common/sd/fatfs/ff.c **** 
@@ -5638,7 +5638,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1228 01e0 6B73     		strb	r3, [r5, #13]
 2702:../../common/sd/fatfs/ff.c **** 		fno->fsize = (fno->fattrib & AM_DIR) ? 0 : ld_64(fs->dirbuf + XDIR_FileSize);	/* Size */
  1229              		.loc 1 2702 3 is_stmt 1 view .LVU447
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 95
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 95
 
 
 2702:../../common/sd/fatfs/ff.c **** 		fno->fsize = (fno->fattrib & AM_DIR) ? 0 : ld_64(fs->dirbuf + XDIR_FileSize);	/* Size */
@@ -5698,7 +5698,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1264              		.loc 1 2703 14 discriminator 4 view .LVU467
  1265 01f2 C5E90032 		strd	r3, r2, [r5]
 2704:../../common/sd/fatfs/ff.c **** 		fno->fdate = ld_16(fs->dirbuf + XDIR_ModTime + 2);	/* Last modified date */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 96
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 96
 
 
  1266              		.loc 1 2704 3 is_stmt 1 view .LVU468
@@ -5758,7 +5758,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1305              		.loc 1 2691 4 is_stmt 1 view .LVU483
  1306              	.LBB241:
  1307              	.LBB234:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 97
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 97
 
 
  888:../../common/sd/fatfs/ff.c **** #endif
@@ -5818,7 +5818,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  882:../../common/sd/fatfs/ff.c **** 		*buf++ = (TCHAR)wc;			/* Store DBC 2nd byte */
  1348              		.loc 1 882 10 is_stmt 0 view .LVU498
  1349 0230 05EB0803 		add	r3, r5, r8
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 98
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 98
 
 
  883:../../common/sd/fatfs/ff.c **** 		return 2;
@@ -5878,7 +5878,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1390              	.LBE244:
  1391              	.LBB245:
 2765:../../common/sd/fatfs/ff.c **** 				wc = (WCHAR)fno->altname[si];
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 99
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 99
 
 
  1392              		.loc 1 2765 12 view .LVU513
@@ -5938,7 +5938,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3464:../../common/sd/fatfs/ff.c **** 	const TCHAR** path,			/* Pointer to pointer to the path name (drive number) */
  1436              		.loc 1 3464 16 view .LVU526
  1437 000a 0D46     		mov	r5, r1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 100
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 100
 
 
 3479:../../common/sd/fatfs/ff.c **** 	if (vol < 0) return FR_INVALID_DRIVE;
@@ -5998,7 +5998,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1473              		.loc 1 3493 6 is_stmt 0 view .LVU545
  1474 002e C607     		lsls	r6, r0, #31
  1475 0030 73D5     		bpl	.L175
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 101
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 101
 
 
  1476 0032 6078     		ldrb	r0, [r4, #1]	@ zero_extendqisi2
@@ -6058,7 +6058,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1513              	.LBE343:
  1514              	.LBE342:
 3519:../../common/sd/fatfs/ff.c **** 	if (fmt >= 2) return FR_NO_FILESYSTEM;	/* No FAT volume is found */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 102
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 102
 
 
  1515              		.loc 1 3519 2 is_stmt 1 view .LVU563
@@ -6118,7 +6118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1552              		.loc 1 3597 3 is_stmt 1 view .LVU580
 3599:../../common/sd/fatfs/ff.c **** 		if (fs->n_fats != 1 && fs->n_fats != 2) return FR_NO_FILESYSTEM;	/* (Must be 1 or 2) */
  1553              		.loc 1 3599 23 is_stmt 0 view .LVU581
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 103
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 103
 
 
  1554 0076 94F84410 		ldrb	r1, [r4, #68]	@ zero_extendqisi2
@@ -6178,7 +6178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1590              		.loc 1 3606 17 discriminator 1 view .LVU599
  1591 009a 2681     		strh	r6, [r4, #8]	@ movhi
 3607:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 104
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 104
 
 
  1592              		.loc 1 3607 3 is_stmt 1 view .LVU600
@@ -6238,7 +6238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1627 00aa BEF1000F 		cmp	lr, #0
  1628 00ae 67D0     		beq	.L188
 3601:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 105
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 105
 
 
  1629              		.loc 1 3601 10 view .LVU620
@@ -6298,7 +6298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3630:../../common/sd/fatfs/ff.c **** 		fs->database = bsect + sysect;					/* Data start sector */
  1667              		.loc 1 3630 23 is_stmt 0 view .LVU637
  1668 00d8 05EB0E01 		add	r1, r5, lr
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 106
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 106
 
 
 3628:../../common/sd/fatfs/ff.c **** 		fs->volbase = bsect;							/* Volume start sector */
@@ -6358,7 +6358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1703 00f2 216E     		ldr	r1, [r4, #96]	@ unaligned
  1704              	.LVL179:
  636:../../common/sd/fatfs/ff.c **** 	rv = rv << 8 | ptr[1];
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 107
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 107
 
 
  1705              		.loc 1 636 2 is_stmt 1 view .LVU658
@@ -6418,7 +6418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3670:../../common/sd/fatfs/ff.c **** 
  1742              		.loc 1 3670 11 view .LVU676
  1743 010c 0133     		adds	r3, r3, #1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 108
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 108
 
 
 3669:../../common/sd/fatfs/ff.c **** 	fs->id = ++Fsid;		/* Volume mount ID */
@@ -6478,7 +6478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1784              		.loc 1 631 14 view .LVU690
  1785              	.LBB345:
  633:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 109
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 109
 
 
  1786              		.loc 1 633 2 view .LVU691
@@ -6538,7 +6538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1820              	.LBE349:
 3447:../../common/sd/fatfs/ff.c **** 		mbr_pt[i] = ld_32(fs->win + MBR_Table + i * SZ_PTE + PTE_StLba);
  1821              		.loc 1 3447 22 is_stmt 1 discriminator 3 view .LVU712
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 110
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 110
 
 
 3447:../../common/sd/fatfs/ff.c **** 		mbr_pt[i] = ld_32(fs->win + MBR_Table + i * SZ_PTE + PTE_StLba);
@@ -6598,7 +6598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1854 013c 0091     		str	r1, [sp]
  1855 013e 0292     		str	r2, [sp, #8]
  1856 0140 0393     		str	r3, [sp, #12]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 111
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 111
 
 
 3447:../../common/sd/fatfs/ff.c **** 		mbr_pt[i] = ld_32(fs->win + MBR_Table + i * SZ_PTE + PTE_StLba);
@@ -6658,7 +6658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1897              	.L182:
 3519:../../common/sd/fatfs/ff.c **** 	if (fmt >= 2) return FR_NO_FILESYSTEM;	/* No FAT volume is found */
  1898              		.loc 1 3519 23 discriminator 1 view .LVU749
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 112
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 112
 
 
  1899 0166 0120     		movs	r0, #1
@@ -6718,7 +6718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1942              		.cfi_restore_state
 3480:../../common/sd/fatfs/ff.c **** 
  1943              		.loc 1 3480 22 discriminator 1 view .LVU761
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 113
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 113
 
 
  1944 0188 0B20     		movs	r0, #11
@@ -6778,7 +6778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  1983 019a FFF46CAF 		bcc	.L199
  1984 019e EFE7     		b	.L188
  1985              	.LVL208:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 114
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 114
 
 
  1986              	.L186:
@@ -6838,7 +6838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2020 01b2 E36F     		ldr	r3, [r4, #124]	@ unaligned
  2021 01b4 D4F88020 		ldr	r2, [r4, #128]	@ unaligned
  2022              	.LBE363:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 115
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 115
 
 
  2023              	.LBE362:
@@ -6898,7 +6898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2059 01d4 012B     		cmp	r3, #1
 3544:../../common/sd/fatfs/ff.c **** 		if (fs->n_fats != 1) return FR_NO_FILESYSTEM;	/* (Supports only 1 FAT) */
  2060              		.loc 1 3544 14 view .LVU815
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 116
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 116
 
 
  2061 01d6 E370     		strb	r3, [r4, #3]
@@ -6958,7 +6958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3551:../../common/sd/fatfs/ff.c **** 		fs->n_fatent = ncl + 2;
  2096              		.loc 1 3551 6 is_stmt 0 view .LVU835
  2097 01ec 304F     		ldr	r7, .L260+20
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 117
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 117
 
 
 3551:../../common/sd/fatfs/ff.c **** 		fs->n_fatent = ncl + 2;
@@ -7018,7 +7018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3558:../../common/sd/fatfs/ff.c **** 		fs->dirbase = ld_32(fs->win + BPB_RootClusEx);
  2133              		.loc 1 3558 36 view .LVU855
  2134 0208 9B19     		adds	r3, r3, r6
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 118
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 118
 
 
 3556:../../common/sd/fatfs/ff.c **** 		fs->fatbase = bsect + ld_32(fs->win + BPB_FatOfsEx);
@@ -7078,7 +7078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2171              		.loc 1 633 2 view .LVU873
  635:../../common/sd/fatfs/ff.c **** 	rv = rv << 8 | ptr[2];
  2172              		.loc 1 635 2 view .LVU874
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 119
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 119
 
 
  636:../../common/sd/fatfs/ff.c **** 	rv = rv << 8 | ptr[1];
@@ -7138,7 +7138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3566:../../common/sd/fatfs/ff.c **** 				so++;
  2211              		.loc 1 3566 5 is_stmt 1 view .LVU891
  2212              	.LVL222:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 120
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 120
 
 
  2213              	.LBB384:
@@ -7198,7 +7198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2252              	.LBB380:
  2253              	.LBI376:
 1082:../../common/sd/fatfs/ff.c **** 	FATFS* fs,		/* Filesystem object */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 121
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 121
 
 
  2254              		.loc 1 1082 16 is_stmt 1 view .LVU907
@@ -7258,7 +7258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2293 026c 04D0     		beq	.L193
 3570:../../common/sd/fatfs/ff.c **** 		}
  2294              		.loc 1 3570 4 is_stmt 1 view .LVU923
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 122
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 122
 
 
 3570:../../common/sd/fatfs/ff.c **** 		}
@@ -7318,7 +7318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2331 0282 7FF67DAF 		bls	.L188
 3573:../../common/sd/fatfs/ff.c **** 		fs->bitbase = fs->database + fs->csize * (bcl - 2);	/* Bitmap sector */
  2332              		.loc 1 3573 15 discriminator 2 view .LVU942
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 123
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 123
 
 
  2333 0286 2369     		ldr	r3, [r4, #16]
@@ -7378,7 +7378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2375              		.loc 1 3577 4 is_stmt 1 view .LVU954
  2376              	.LBB402:
  2377              	.LBI402:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 124
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 124
 
 
  631:../../common/sd/fatfs/ff.c **** {
@@ -7438,7 +7438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2415              		.loc 1 3576 4 view .LVU971
 3576:../../common/sd/fatfs/ff.c **** 			cv = ld_32(fs->win + bcl % (SS(fs) / 4) * 4);
  2416              		.loc 1 3576 8 is_stmt 0 view .LVU972
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 125
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 125
 
 
  2417 02ca 256A     		ldr	r5, [r4, #32]
@@ -7498,7 +7498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1095:../../common/sd/fatfs/ff.c **** 				sect = (LBA_t)0 - 1;	/* Invalidate window if read data is not valid */
  2459              		.loc 1 1095 7 is_stmt 0 discriminator 1 view .LVU985
  2460 02e2 0028     		cmp	r0, #0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 126
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 126
 
 
  2461 02e4 E6D0     		beq	.L196
@@ -7558,7 +7558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2503              		.loc 1 3622 27 is_stmt 1 discriminator 1 view .LVU997
 3623:../../common/sd/fatfs/ff.c **** 		if (nclst <= MIN_FAT12) fmt = 0;
  2504              		.loc 1 3623 3 view .LVU998
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 127
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 127
 
 
 3623:../../common/sd/fatfs/ff.c **** 		if (nclst <= MIN_FAT12) fmt = 0;
@@ -7618,7 +7618,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2540 0314 5200     		lsls	r2, r2, #1
  2541 0316 0220     		movs	r0, #2
  2542 0318 EEE6     		b	.L206
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 128
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 128
 
 
  2543              	.LVL248:
@@ -7678,7 +7678,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2578              	.LVL251:
 3640:../../common/sd/fatfs/ff.c **** 				fs->n_fatent * 2 : fs->n_fatent * 3 / 2 + (fs->n_fatent & 1);
  2579              		.loc 1 3640 4 is_stmt 1 view .LVU1037
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 129
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 129
 
 
 3641:../../common/sd/fatfs/ff.c **** 		}
@@ -7738,7 +7738,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2624              		.cfi_offset 4, -24
  2625              		.cfi_offset 5, -20
  2626              		.cfi_offset 6, -16
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 130
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 130
 
 
  2627              		.cfi_offset 7, -12
@@ -7798,7 +7798,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2673 0028 0120     		movs	r0, #1
  2674              	.LVL258:
 1247:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 131
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 131
 
 
  2675              		.loc 1 1247 1 view .LVU1058
@@ -7858,7 +7858,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1232:../../common/sd/fatfs/ff.c **** 						val = ld_32(fs->win + clst * 4 % SS(fs)) & 0x7FFFFFFF;
  2718              		.loc 1 1232 11 view .LVU1070
  2719 0048 06EBD416 		add	r6, r6, r4, lsr #7
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 132
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 132
 
 
  2720              	.LVL261:
@@ -7918,7 +7918,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2759              	.L284:
 1102:../../common/sd/fatfs/ff.c **** }
  2760              		.loc 1 1102 2 is_stmt 0 view .LVU1086
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 133
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 133
 
 
  2761              	.LBE449:
@@ -7978,7 +7978,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2798              		.loc 1 1211 8 is_stmt 0 view .LVU1103
  2799 0076 2E6A     		ldr	r6, [r5, #32]
  2800              	.LBB457:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 134
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 134
 
 
  2801              	.LBB458:
@@ -8038,7 +8038,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2838 0082 A300     		lsls	r3, r4, #2
 1212:../../common/sd/fatfs/ff.c **** 			break;
  2839              		.loc 1 1212 35 view .LVU1121
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 135
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 135
 
 
  2840 0084 03F4FE73 		and	r3, r3, #508
@@ -8098,7 +8098,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2881              		.loc 1 1207 4 is_stmt 1 view .LVU1134
 1207:../../common/sd/fatfs/ff.c **** 			break;
  2882              		.loc 1 1207 31 is_stmt 0 view .LVU1135
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 136
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 136
 
 
  2883 009e 6300     		lsls	r3, r4, #1
@@ -8158,7 +8158,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2922              	.LVL280:
  2923              	.L269:
 1090:../../common/sd/fatfs/ff.c **** #if !FF_FS_READONLY
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 137
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 137
 
 
  2924              		.loc 1 1090 5 view .LVU1151
@@ -8218,7 +8218,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  2962              		.loc 1 1095 8 is_stmt 0 view .LVU1167
  2963 00ce 0123     		movs	r3, #1
  2964 00d0 4246     		mov	r2, r8
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 138
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 138
 
 
  2965 00d2 05F13401 		add	r1, r5, #52
@@ -8278,7 +8278,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1202:../../common/sd/fatfs/ff.c **** 			break;
  3004              		.loc 1 1202 33 discriminator 2 view .LVU1183
  3005 00f8 C0F30B00 		ubfxpl	r0, r0, #0, #12
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 139
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 139
 
 
  3006 00fc 8AE7     		b	.L262
@@ -8338,7 +8338,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3044              	.L283:
 1221:../../common/sd/fatfs/ff.c **** 					break;
  3045              		.loc 1 1221 40 discriminator 1 view .LVU1200
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 140
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 140
 
 
  3046 0126 601C     		adds	r0, r4, #1
@@ -8398,7 +8398,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3085              		.loc 1 1102 2 is_stmt 0 view .LVU1215
  3086 013c A1E7     		b	.L277
  3087              	.LVL301:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 141
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 141
 
 
  3088              	.L303:
@@ -8458,7 +8458,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3130              	.LBE482:
 1102:../../common/sd/fatfs/ff.c **** }
  3131              		.loc 1 1102 2 is_stmt 1 view .LVU1228
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 142
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 142
 
 
 1102:../../common/sd/fatfs/ff.c **** }
@@ -8518,7 +8518,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3171 0168 99E7     		b	.L275
  3172              	.L270:
 1102:../../common/sd/fatfs/ff.c **** }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 143
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 143
 
 
  3173              		.loc 1 1102 2 view .LVU1244
@@ -8578,7 +8578,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3214 0176 0329     		cmp	r1, #3
  3215 0178 7FF460AF 		bne	.L281
 1224:../../common/sd/fatfs/ff.c **** 					val = clst + 1; 	/* Generate the value */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 144
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 144
 
 
  3216              		.loc 1 1224 24 discriminator 1 view .LVU1258
@@ -8638,7 +8638,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3262 0004 0668     		ldr	r6, [r0]
  3263              	.LVL319:
 1774:../../common/sd/fatfs/ff.c **** 	if (ofs >= (DWORD)((FF_FS_EXFAT && fs->fs_type == FS_EXFAT) ? MAX_DIR_EX : MAX_DIR)) dp->sect = 0;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 145
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 145
 
 
  3264              		.loc 1 1774 2 is_stmt 1 view .LVU1269
@@ -8698,7 +8698,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3303 002c F9D0     		beq	.L308
 1778:../../common/sd/fatfs/ff.c **** 		dp->sect++;				/* Next sector */
  3304              		.loc 1 1778 2 is_stmt 1 view .LVU1285
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 146
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 146
 
 
 1778:../../common/sd/fatfs/ff.c **** 		dp->sect++;				/* Next sector */
@@ -8758,7 +8758,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1791:../../common/sd/fatfs/ff.c **** #if !FF_FS_READONLY
  3340              		.loc 1 1791 19 is_stmt 0 view .LVU1305
  3341 0052 3369     		ldr	r3, [r6, #16]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 147
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 147
 
 
 1791:../../common/sd/fatfs/ff.c **** #if !FF_FS_READONLY
@@ -8818,7 +8818,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3381              	.LVL327:
  3382              	.L310:
 1812:../../common/sd/fatfs/ff.c **** 	dp->dir = fs->win + ofs % SS(fs);	/* Pointer to the entry in the win[] */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 148
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 148
 
 
  3383              		.loc 1 1812 2 is_stmt 1 view .LVU1321
@@ -8878,7 +8878,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3422 008c CAE7     		b	.L307
  3423              		.cfi_endproc
  3424              	.LFE380:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 149
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 149
 
 
  3426 008e 00BF     		.section	.text.dir_read.constprop.0,"ax",%progbits
@@ -8938,7 +8938,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3469              	.LBB546:
  3470              	.LBB547:
  3471              	.LBB548:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 150
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 150
 
 
 1095:../../common/sd/fatfs/ff.c **** 				sect = (LBA_t)0 - 1;	/* Invalidate window if read data is not valid */
@@ -8998,7 +8998,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3512              	.LVL342:
 2400:../../common/sd/fatfs/ff.c **** 	}
  3513              		.loc 1 2400 3 is_stmt 1 view .LVU1363
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 151
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 151
 
 
 2400:../../common/sd/fatfs/ff.c **** 	}
@@ -9058,7 +9058,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3553              		.loc 1 1099 4 is_stmt 1 view .LVU1378
 1099:../../common/sd/fatfs/ff.c **** 		}
  3554              		.loc 1 1099 16 is_stmt 0 view .LVU1379
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 152
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 152
 
 
  3555 0052 B561     		str	r5, [r6, #24]
@@ -9118,7 +9118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3592              	.LVL350:
 2156:../../common/sd/fatfs/ff.c **** 
  3593              		.loc 1 2156 22 view .LVU1397
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 153
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 153
 
 
  3594              	.LBE557:
@@ -9178,7 +9178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3633 0074 9845     		cmp	r8, r3
  3634 0076 47D1     		bne	.L393
  3635              	.LVL354:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 154
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 154
 
 
  3636              	.L331:
@@ -9238,7 +9238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1102:../../common/sd/fatfs/ff.c **** }
  3676              		.loc 1 1102 2 is_stmt 0 view .LVU1427
  3677              	.LBE550:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 155
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 155
 
 
  3678              	.LBE552:
@@ -9298,7 +9298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3716              		.loc 1 2381 7 is_stmt 1 view .LVU1443
 2381:../../common/sd/fatfs/ff.c **** 						dp->blk_ofs = dp->dptr;
  3717              		.loc 1 2381 26 view .LVU1444
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 156
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 156
 
 
 2382:../../common/sd/fatfs/ff.c **** 					}
@@ -9358,7 +9358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1952:../../common/sd/fatfs/ff.c **** 
  3757              		.loc 1 1952 38 is_stmt 0 view .LVU1460
  3758 00cc 013A     		subs	r2, r2, #1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 157
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 157
 
 
 1952:../../common/sd/fatfs/ff.c **** 
@@ -9418,7 +9418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3796              		.loc 1 1957 4 view .LVU1477
 1956:../../common/sd/fatfs/ff.c **** 			if (ni >= FF_MAX_LFN + 1) return 0;	/* Buffer overflow? */
  3797              		.loc 1 1956 6 is_stmt 0 view .LVU1478
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 158
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 158
 
 
  3798 00ee BCF1000F 		cmp	ip, #0
@@ -9478,7 +9478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3841 0110 7878     		ldrb	r0, [r7, #1]	@ zero_extendqisi2
  3842 0112 FFF7FEFF 		bl	disk_read
  3843              	.LVL376:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 159
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 159
 
 
 1095:../../common/sd/fatfs/ff.c **** 				sect = (LBA_t)0 - 1;	/* Invalidate window if read data is not valid */
@@ -9538,7 +9538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2164:../../common/sd/fatfs/ff.c **** 	if (sz_ent < 3 * SZDIRE || sz_ent > 19 * SZDIRE) return FR_INT_ERR;	/* Invalid block size? */
  3883              		.loc 1 2164 36 view .LVU1505
  3884 0134 0137     		adds	r7, r7, #1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 160
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 160
 
 
 2163:../../common/sd/fatfs/ff.c **** 	sz_ent = ((UINT)dirb[XDIR_NumSec] + 1) * SZDIRE;	/* Size of this entry block */
@@ -9598,7 +9598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2171:../../common/sd/fatfs/ff.c **** 	if (res != FR_OK) return res;
  3923              		.loc 1 2171 2 is_stmt 1 view .LVU1522
 2171:../../common/sd/fatfs/ff.c **** 	if (res != FR_OK) return res;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 161
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 161
 
 
  3924              		.loc 1 2171 8 is_stmt 0 view .LVU1523
@@ -9658,7 +9658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  3963              		.loc 1 1102 2 is_stmt 1 view .LVU1538
  3964              	.LVL387:
 1102:../../common/sd/fatfs/ff.c **** }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 162
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 162
 
 
  3965              		.loc 1 1102 2 is_stmt 0 view .LVU1539
@@ -9718,7 +9718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2387:../../common/sd/fatfs/ff.c **** 						dp->blk_ofs = 0xFFFFFFFF;	/* It has no LFN. */
  4006              		.loc 1 2387 9 is_stmt 0 view .LVU1553
  4007 01a6 6FB9     		cbnz	r7, .L357
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 163
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 163
 
 
  4008 01a8 01F10B00 		add	r0, r1, #11
@@ -9778,7 +9778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4047 01ca 0020     		movs	r0, #0
  4048 01cc 5AE7     		b	.L388
  4049              	.LVL398:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 164
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 164
 
 
  4050              	.L332:
@@ -9838,7 +9838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4092              		.loc 1 1966 3 is_stmt 1 view .LVU1580
 1966:../../common/sd/fatfs/ff.c **** 	}
  4093              		.loc 1 1966 14 is_stmt 0 view .LVU1581
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 165
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 165
 
 
  4094 01dc 0023     		movs	r3, #0
@@ -9898,7 +9898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4135 01fc D968     		ldr	r1, [r3, #12]	@ unaligned
  4136 01fe C5F820E0 		str	lr, [r5, #32]	@ unaligned
 2175:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 166
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 166
 
 
  4137              		.loc 1 2175 6 is_stmt 0 view .LVU1595
@@ -9958,7 +9958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4176              	.LVL405:
 2183:../../common/sd/fatfs/ff.c **** 		if (res != FR_OK) return res;
  4177              		.loc 1 2183 3 is_stmt 1 view .LVU1611
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 167
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 167
 
 
 2181:../../common/sd/fatfs/ff.c **** 		if (res != FR_OK) return res;
@@ -10018,7 +10018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4217              	.LBE586:
  4218              	.LBE589:
 1090:../../common/sd/fatfs/ff.c **** #if !FF_FS_READONLY
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 168
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 168
 
 
  4219              		.loc 1 1090 5 is_stmt 0 view .LVU1627
@@ -10078,7 +10078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1099:../../common/sd/fatfs/ff.c **** 		}
  4260              		.loc 1 1099 16 is_stmt 0 view .LVU1641
  4261 027c C9F818A0 		str	r10, [r9, #24]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 169
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 169
 
 
 1102:../../common/sd/fatfs/ff.c **** }
@@ -10138,7 +10138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4300              	.LVL417:
  4301              	.L397:
  4302              	.LBB624:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 170
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 170
 
 
  4303              	.LBB605:
@@ -10198,7 +10198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4344              		.loc 1 2095 13 view .LVU1670
  4345              	.LBB597:
 2099:../../common/sd/fatfs/ff.c **** 	WORD sum;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 171
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 171
 
 
  4346              		.loc 1 2099 2 view .LVU1671
@@ -10258,7 +10258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4382 02fa 10FA82F2 		uxtah	r2, r0, r2
 2104:../../common/sd/fatfs/ff.c **** 		if (i == XDIR_SetSum) {	/* Skip 2-byte sum field */
  4383              		.loc 1 2104 22 discriminator 1 view .LVU1690
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 172
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 172
 
 
  4384 02fe 9942     		cmp	r1, r3
@@ -10318,7 +10318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4430              		.cfi_offset 3, -16
  4431              		.cfi_offset 4, -12
  4432              		.cfi_offset 5, -8
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 173
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 173
 
 
  4433              		.cfi_offset 14, -4
@@ -10378,7 +10378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1751:../../common/sd/fatfs/ff.c **** 	dp->sect += ofs / SS(fs);			/* Sector# of the directory entry */
  4470              		.loc 1 1751 2 is_stmt 1 view .LVU1718
 1751:../../common/sd/fatfs/ff.c **** 	dp->sect += ofs / SS(fs);			/* Sector# of the directory entry */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 174
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 174
 
 
  4471              		.loc 1 1751 5 is_stmt 0 view .LVU1719
@@ -10438,7 +10438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4507              		.loc 1 1742 14 view .LVU1737
  4508 0034 2BB1     		cbz	r3, .L409
 1742:../../common/sd/fatfs/ff.c **** 			clst = get_fat(&dp->obj, clst);				/* Get next cluster */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 175
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 175
 
 
  4509              		.loc 1 1742 14 is_stmt 0 view .LVU1738
@@ -10498,7 +10498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4549              		.loc 1 1750 2 is_stmt 1 view .LVU1752
 1751:../../common/sd/fatfs/ff.c **** 	dp->sect += ofs / SS(fs);			/* Sector# of the directory entry */
  4550              		.loc 1 1751 2 view .LVU1753
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 176
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 176
 
 
  4551              	.L403:
@@ -10558,7 +10558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4591 0009 000000   		.align	2
  4592              	.LC3:
  4593 000c 2B2C3B3D 		.ascii	"+,;=[]\000"
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 177
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 177
 
 
  4593      5B5D00
@@ -10618,7 +10618,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3121:../../common/sd/fatfs/ff.c **** 		dp->obj.sclust = 0;					/* Start at the root directory */
  4637              		.loc 1 3121 10 discriminator 1 view .LVU1778
  4638 0012 01D0     		beq	.L582
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 178
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 178
 
 
  4639 0014 2F2B     		cmp	r3, #47
@@ -10678,7 +10678,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3151:../../common/sd/fatfs/ff.c **** 			if (res != FR_OK) break;
  4679              		.loc 1 3151 4 view .LVU1793
  4680              	.LBB690:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 179
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 179
 
 
  4681              	.LBI664:
@@ -10738,7 +10738,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  796:../../common/sd/fatfs/ff.c **** 		wc = ff_oem2uni(wc, CODEPAGE);	/* ANSI/OEM ==> Unicode */
  4713              		.loc 1 796 5 view .LVU1816
  4714              	.LBE667:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 180
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 180
 
 
  4715              	.LBE666:
@@ -10798,7 +10798,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  797:../../common/sd/fatfs/ff.c **** 		if (wc == 0) return 0xFFFFFFFF;	/* Invalid code? */
  4760              		.loc 1 797 8 view .LVU1826
  4761              	.LBE669:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 181
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 181
 
 
  4762              	.LBE675:
@@ -10858,7 +10858,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4799 0074 5C2E     		cmp	r6, #92
  4800 0076 00F0A181 		beq	.L433
 2917:../../common/sd/fatfs/ff.c **** 		if (di >= FF_MAX_LFN) return FR_INVALID_NAME;	/* Reject too long name */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 182
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 182
 
 
  4801              		.loc 1 2917 6 view .LVU1844
@@ -10918,7 +10918,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  791:../../common/sd/fatfs/ff.c **** 		sb = (BYTE)*p++;		/* Get 2nd byte */
  4837              		.loc 1 791 2 is_stmt 1 view .LVU1863
  796:../../common/sd/fatfs/ff.c **** 		wc = ff_oem2uni(wc, CODEPAGE);	/* ANSI/OEM ==> Unicode */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 183
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 183
 
 
  4838              		.loc 1 796 2 view .LVU1864
@@ -10978,7 +10978,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4877 00b2 18BF     		it	ne
  4878 00b4 2E2B     		cmpne	r3, #46
  4879 00b6 14BF     		ite	ne
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 184
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 184
 
 
  4880 00b8 0123     		movne	r3, #1
@@ -11038,7 +11038,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4919 00f0 0236     		adds	r6, r6, #2
  4920              	.LVL480:
  4921              	.L440:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 185
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 185
 
 
 2951:../../common/sd/fatfs/ff.c **** 	while (di > 0 && lfn[di - 1] != '.') di--;	/* Find last dot (di<=si: no extension) */
@@ -11098,7 +11098,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  4962 0122 05F14003 		add	r3, r5, #64
 2957:../../common/sd/fatfs/ff.c **** 		if (wc == 0) break;				/* Break on end of the LFN */
  4963              		.loc 1 2957 6 view .LVU1909
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 186
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 186
 
 
  4964 0126 1188     		ldrh	r1, [r2]
@@ -11158,7 +11158,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5004              		.loc 1 2961 4 is_stmt 1 view .LVU1923
  5005              	.L450:
 2956:../../common/sd/fatfs/ff.c **** 		wc = lfn[si++];					/* Get an LFN character */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 187
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 187
 
 
  5006              		.loc 1 2956 2 view .LVU1924
@@ -11218,7 +11218,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5045 018a 04D0     		beq	.L468
 3016:../../common/sd/fatfs/ff.c **** 	if (!(cf & NS_LFN)) {				/* When LFN is in 8.3 format without extended character, NT flags are cre
  5046              		.loc 1 3016 25 discriminator 2 view .LVU1940
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 188
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 188
 
 
  5047 018c 0BF00303 		and	r3, fp, #3
@@ -11278,7 +11278,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5086              	.LVL498:
 2421:../../common/sd/fatfs/ff.c **** #if FF_USE_LFN
  5087              		.loc 1 2421 2 is_stmt 1 view .LVU1956
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 189
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 189
 
 
 2423:../../common/sd/fatfs/ff.c **** #endif
@@ -11338,7 +11338,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5128 01c2 8B46     		mov	fp, r1
  5129              	.LBE698:
  5130              	.LBE703:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 190
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 190
 
 
  5131              	.LBE708:
@@ -11398,7 +11398,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5170              		.loc 1 1096 5 is_stmt 1 view .LVU1985
  5171              	.LVL506:
 1097:../../common/sd/fatfs/ff.c **** 			}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 191
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 191
 
 
  5172              		.loc 1 1097 5 view .LVU1986
@@ -11458,7 +11458,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5215              	.LBE744:
 3175:../../common/sd/fatfs/ff.c **** 				if (res == FR_NO_FILE) {	/* Object is not found */
  5216              		.loc 1 3175 4 is_stmt 1 view .LVU1998
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 192
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 192
 
 
 3176:../../common/sd/fatfs/ff.c **** 					if (FF_FS_RPATH && (ns & NS_DOT)) {	/* If dot entry is not exist, stay there (may be root dir 
@@ -11518,7 +11518,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5256              		.loc 1 2458 3 is_stmt 1 view .LVU2013
 2458:../../common/sd/fatfs/ff.c **** 		if (et == DDEM || ((attr & AM_VOL) && attr != AM_LFN)) {	/* An entry without valid data */
  5257              		.loc 1 2458 32 is_stmt 0 view .LVU2014
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 193
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 193
 
 
  5258 01f6 C87A     		ldrb	r0, [r1, #11]	@ zero_extendqisi2
@@ -11578,7 +11578,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2484:../../common/sd/fatfs/ff.c **** 
  5298              		.loc 1 2484 15 is_stmt 0 view .LVU2029
  5299              	.LBE734:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 194
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 194
 
 
  5300              	.LBE745:
@@ -11638,7 +11638,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2475:../../common/sd/fatfs/ff.c **** 				ord = 0xFF; dp->blk_ofs = 0xFFFFFFFF;	/* Not matched, reset LFN sequence */
  5340              		.loc 1 2475 8 is_stmt 0 view .LVU2044
  5341 023e 95F84B30 		ldrb	r3, [r5, #75]	@ zero_extendqisi2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 195
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 195
 
 
  5342 0242 DA07     		lsls	r2, r3, #31
@@ -11698,7 +11698,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5382              		.loc 1 1876 5 view .LVU2058
  5383 0272 0329     		cmp	r1, #3
  5384              	.LBE749:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 196
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 196
 
 
  5385              	.LBE748:
@@ -11758,7 +11758,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5423              	.LBB683:
 2910:../../common/sd/fatfs/ff.c **** 	for (;;) {
  5424              		.loc 1 2910 26 view .LVU2075
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 197
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 197
 
 
  5425 028c 2B68     		ldr	r3, [r5]
@@ -11818,7 +11818,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5464              		.loc 1 2471 6 is_stmt 1 view .LVU2090
  5465              	.L495:
  5466              	.LBB718:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 198
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 198
 
 
  5467              	.LBI718:
@@ -11878,7 +11878,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5506              		.loc 1 1926 7 view .LVU2105
  5507 02ce 0D46     		mov	r5, r1
  5508              	.LVL532:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 199
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 199
 
 
 1926:../../common/sd/fatfs/ff.c **** 		}
@@ -11938,7 +11938,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5548 0302 0CD1     		bne	.L621
  5549              	.LVL538:
  5550              	.L500:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 200
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 200
 
 
 1918:../../common/sd/fatfs/ff.c **** 		chr = ld_16(dir + LfnOfs[di]);		/* Pick a character from the entry */
@@ -11998,7 +11998,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5591              		.loc 1 1926 7 view .LVU2134
  5592              	.LBE721:
  5593              	.LBE724:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 201
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 201
 
 
  5594              	.LBE737:
@@ -12058,7 +12058,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5635              	.LVL550:
 3010:../../common/sd/fatfs/ff.c **** 	}
  5636              		.loc 1 3010 15 view .LVU2148
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 202
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 202
 
 
  5637 035c 80F84010 		strb	r1, [r0, #64]
@@ -12118,7 +12118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2474:../../common/sd/fatfs/ff.c **** 				if (!(dp->fn[NSFLAG] & NS_LOSS) && !memcmp(dp->dir, dp->fn, 11)) break;	/* SFN matched? */
  5678              		.loc 1 2474 18 discriminator 1 view .LVU2162
  5679 037e 5B45     		cmp	r3, fp
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 203
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 203
 
 
  5680 0380 7FF45DAF 		bne	.L504
@@ -12178,7 +12178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2971:../../common/sd/fatfs/ff.c **** 			continue;
  5720              		.loc 1 2971 13 view .LVU2177
 2971:../../common/sd/fatfs/ff.c **** 			continue;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 204
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 204
 
 
  5721              		.loc 1 2971 20 view .LVU2178
@@ -12238,7 +12238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5759              		.loc 1 2926 6 is_stmt 0 view .LVU2194
  5760 03d6 BCF11F0F 		cmp	ip, #31
  5761 03da 8CBF     		ite	hi
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 205
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 205
 
 
  5762 03dc 4FF0000C 		movhi	ip, #0
@@ -12298,7 +12298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2999:../../common/sd/fatfs/ff.c **** 				wc = '_'; cf |= NS_LOSS | NS_LFN;/* Lossy conversion */
  5801              		.loc 1 2999 4 view .LVU2210
  5802 0408 DDF81080 		ldr	r8, [sp, #16]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 206
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 206
 
 
 2999:../../common/sd/fatfs/ff.c **** 				wc = '_'; cf |= NS_LOSS | NS_LFN;/* Lossy conversion */
@@ -12358,7 +12358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3019:../../common/sd/fatfs/ff.c **** 	}
  5841              		.loc 1 3019 20 is_stmt 0 discriminator 1 view .LVU2227
  5842 0442 48F00803 		orr	r3, r8, #8
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 207
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 207
 
 
  5843 0446 5FFA83F8 		uxtb	r8, r3
@@ -12418,7 +12418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5883 0474 FFF7FEFF 		bl	init_alloc_info
  5884              	.LVL584:
  5885 0478 08E7     		b	.L511
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 208
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 208
 
 
  5886              	.LVL585:
@@ -12478,7 +12478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2126:../../common/sd/fatfs/ff.c **** 		sum = ((sum & 1) ? 0x8000 : 0) + (sum >> 1) + (chr >> 8);
  5923              		.loc 1 2126 34 view .LVU2259
  5924 048c 43EA5403 		orr	r3, r3, r4, lsr #1
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 209
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 209
 
 
  5925              	.LVL590:
@@ -12538,7 +12538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  5964              		.loc 1 2438 16 is_stmt 0 view .LVU2274
  5965 04be 326B     		ldr	r2, [r6, #48]
 2438:../../common/sd/fatfs/ff.c **** 			for (nc = fs->dirbuf[XDIR_NumName], di = SZDIRE * 2, ni = 0; nc; nc--, di += 2, ni++) {	/* Compa
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 210
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 210
 
 
  5966              		.loc 1 2438 7 discriminator 1 view .LVU2275
@@ -12598,7 +12598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 2441:../../common/sd/fatfs/ff.c **** 			}
  6006              		.loc 1 2441 9 is_stmt 0 discriminator 1 view .LVU2290
  6007 04ea D05B     		ldrh	r0, [r2, r7]	@ unaligned
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 211
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 211
 
 
 2439:../../common/sd/fatfs/ff.c **** 				if ((di % SZDIRE) == 0) di += 2;
@@ -12658,7 +12658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6047 0518 CBD1     		bne	.L476
  6048 051a DDF80CA0 		ldr	r10, [sp, #12]
  6049 051e 9BE6     		b	.L482
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 212
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 212
 
 
  6050              	.LVL609:
@@ -12718,7 +12718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6089              		.cfi_def_cfa_offset 36
  6090              		@ sp needed
  6091 053c BDE8F04F 		pop	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 213
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 213
 
 
  6092              		.cfi_restore 14
@@ -12778,7 +12778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6137 0558 DDE90659 		ldrd	r5, r9, [sp, #24]
  6138              	.LVL617:
 1930:../../common/sd/fatfs/ff.c **** 
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 214
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 214
 
 
  6139              		.loc 1 1930 29 discriminator 1 view .LVU2330
@@ -12838,7 +12838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6180 0584 E7E6     		b	.L461
  6181              	.LVL621:
  6182              	.L640:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 215
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 215
 
 
 2994:../../common/sd/fatfs/ff.c **** 				i = ni; continue;		/* Next field */
@@ -12898,7 +12898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6222              		.loc 1 3013 5 is_stmt 0 view .LVU2358
  6223 059a 95F84030 		ldrb	r3, [r5, #64]	@ zero_extendqisi2
  6224 059e E52B     		cmp	r3, #229
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 216
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 216
 
 
  6225 05a0 02D1     		bne	.L455
@@ -12958,7 +12958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6267              		.global	f_mount
  6268              		.syntax unified
  6269              		.thumb
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 217
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 217
 
 
  6270              		.thumb_func
@@ -13018,7 +13018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6293              		.loc 1 3757 8 view .LVU2379
  6294 0008 03A8     		add	r0, sp, #12
  6295              	.LVL632:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 218
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 218
 
 
 3749:../../common/sd/fatfs/ff.c **** 	FATFS *cfs;
@@ -13078,7 +13078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3774:../../common/sd/fatfs/ff.c **** #if FF_FS_REENTRANT				/* Create a volume mutex */
 3775:../../common/sd/fatfs/ff.c **** 		fs->ldrv = (BYTE)vol;	/* Owner volume ID */
 3776:../../common/sd/fatfs/ff.c **** 		if (!ff_mutex_create(vol)) return FR_INT_ERR;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 219
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 219
 
 
 3777:../../common/sd/fatfs/ff.c **** #if FF_FS_LOCK
@@ -13138,7 +13138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3793:../../common/sd/fatfs/ff.c **** 	LEAVE_FF(fs, res);
  6363              		.loc 1 3793 8 view .LVU2411
  6364 0040 FFF7FEFF 		bl	mount_volume.isra.0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 220
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 220
 
 
  6365              	.LVL639:
@@ -13198,7 +13198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6405              		@ frame_needed = 0, uses_anonymous_args = 0
 3810:../../common/sd/fatfs/ff.c **** 	FRESULT res;
  6406              		.loc 1 3810 2 view .LVU2417
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 221
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 221
 
 
 3811:../../common/sd/fatfs/ff.c **** 	DIR dj;
@@ -13258,7 +13258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3824:../../common/sd/fatfs/ff.c **** 		dj.obj.fs = fs;
 3825:../../common/sd/fatfs/ff.c **** 		INIT_NAMEBUFF(fs);
 3826:../../common/sd/fatfs/ff.c **** 		res = follow_path(&dj, path);	/* Follow the file path */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 222
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 222
 
 
 3827:../../common/sd/fatfs/ff.c **** #if !FF_FS_READONLY	/* Read/Write configuration */
@@ -13318,7 +13318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3881:../../common/sd/fatfs/ff.c **** 					st_32(dj.dir + DIR_ModTime, tm);	/* Set modified time (tmp setting) */
 3882:../../common/sd/fatfs/ff.c **** 					cl = ld_clust(fs, dj.dir);			/* Get current cluster chain */
 3883:../../common/sd/fatfs/ff.c **** 					dj.dir[DIR_Attr] = AM_ARC;			/* Reset attribute */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 223
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 223
 
 
 3884:../../common/sd/fatfs/ff.c **** 					st_clust(fs, dj.dir, 0);			/* Reset file allocation info */
@@ -13378,7 +13378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3938:../../common/sd/fatfs/ff.c **** 			{
 3939:../../common/sd/fatfs/ff.c **** 				fp->obj.sclust = ld_clust(fs, dj.dir);					/* Get object allocation info */
 3940:../../common/sd/fatfs/ff.c **** 				fp->obj.objsize = ld_32(dj.dir + DIR_FileSize);
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 224
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 224
 
 
 3941:../../common/sd/fatfs/ff.c **** 			}
@@ -13438,7 +13438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3990:../../common/sd/fatfs/ff.c **** 
 3991:../../common/sd/fatfs/ff.c **** 	LEAVE_FF(fs, res);
 3992:../../common/sd/fatfs/ff.c **** }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 225
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 225
 
 
  6451              		.loc 1 3992 1 view .LVU2434
@@ -13498,7 +13498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6490 0040 9DF81640 		ldrb	r4, [sp, #22]	@ zero_extendqisi2
 3925:../../common/sd/fatfs/ff.c **** 					res = FR_NO_FILE;
  6491              		.loc 1 3925 8 is_stmt 0 view .LVU2450
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 226
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 226
 
 
  6492 0044 14F01004 		ands	r4, r4, #16
@@ -13558,7 +13558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6528              		.loc 1 1880 2 is_stmt 0 view .LVU2468
  6529              	.LBE773:
  6530              	.LBE772:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 227
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 227
 
 
 3939:../../common/sd/fatfs/ff.c **** 				fp->obj.objsize = ld_32(dj.dir + DIR_FileSize);
@@ -13618,7 +13618,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6566              		.loc 1 3949 13 is_stmt 0 view .LVU2487
  6567 0074 0021     		movs	r1, #0
 3947:../../common/sd/fatfs/ff.c **** 			fp->sect = 0;		/* Invalidate current data sector */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 228
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 228
 
 
  6568              		.loc 1 3947 12 view .LVU2488
@@ -13678,7 +13678,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6610 009a FFF7FEFF 		bl	init_alloc_info
  6611              	.LVL660:
  6612 009e E3E7     		b	.L666
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 229
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 229
 
 
  6613              		.cfi_endproc
@@ -13738,7 +13738,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6647              		.cfi_offset 11, -8
  6648              		.cfi_offset 14, -4
  6649 0004 9846     		mov	r8, r3
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 230
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 230
 
 
  6650 0006 85B0     		sub	sp, sp, #20
@@ -13798,7 +13798,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6693              		.loc 1 4020 31 view .LVU2529
  6694 0038 E16B     		ldr	r1, [r4, #60]
  6695              		.loc 1 4020 9 view .LVU2530
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 231
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 231
 
 
  6696 003a 1B1A     		subs	r3, r3, r0
@@ -13858,7 +13858,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4033:../../common/sd/fatfs/ff.c **** 					if (fp->cltbl) {
 4034:../../common/sd/fatfs/ff.c **** 						clst = clmt_clust(fp, fp->fptr);	/* Get cluster# from the CLMT */
 4035:../../common/sd/fatfs/ff.c **** 					} else
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 232
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 232
 
 
 4036:../../common/sd/fatfs/ff.c **** #endif
@@ -13918,7 +13918,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4046:../../common/sd/fatfs/ff.c **** 			if (sect == 0) ABORT(fs, FR_INT_ERR);
  6771              		.loc 1 4046 4 is_stmt 1 view .LVU2562
  6772              		.loc 1 4046 7 is_stmt 0 view .LVU2563
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 233
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 233
 
 
  6773 007c 79B1     		cbz	r1, .L685
@@ -13978,7 +13978,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4079:../../common/sd/fatfs/ff.c **** 			fp->sect = sect;
  6793              		.loc 1 4079 4 view .LVU2574
 4080:../../common/sd/fatfs/ff.c **** 		}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 234
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 234
 
 
 4081:../../common/sd/fatfs/ff.c **** 		rcnt = SS(fs) - (UINT)fp->fptr % SS(fs);	/* Number of bytes remains in the sector */
@@ -14038,7 +14038,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6828 00ae 0143     		orrs	r1, r1, r0
  6829 00b0 45D1     		bne	.L681
 4030:../../common/sd/fatfs/ff.c **** 				} else {						/* Middle or end of the file */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 235
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 235
 
 
  6830              		.loc 1 4030 6 is_stmt 1 view .LVU2585
@@ -14098,7 +14098,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6867 00cc B542     		cmp	r5, r6
  6868 00ce 28BF     		it	cs
  6869 00d0 3546     		movcs	r5, r6
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 236
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 236
 
 
  6870              	.LVL684:
@@ -14158,7 +14158,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4048:../../common/sd/fatfs/ff.c **** 			if (cc > 0) {						/* Read maximum contiguous sectors directly */
  6909              		.loc 1 4048 7 view .LVU2618
  6910 00fe 750A     		lsrs	r5, r6, #9
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 237
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 237
 
 
 4050:../../common/sd/fatfs/ff.c **** 					cc = fs->csize - csect;
@@ -14218,7 +14218,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  6949 0128 0099     		ldr	r1, [sp]
  6950 012a 0028     		cmp	r0, #0
  6951 012c B1D0     		beq	.L690
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 238
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 238
 
 
  6952              	.LVL694:
@@ -14278,7 +14278,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4019:../../common/sd/fatfs/ff.c **** 	remain = fp->obj.objsize - fp->fptr;
  6996              		.loc 1 4019 29 discriminator 1 view .LVU2647
  6997 0150 0727     		movs	r7, #7
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 239
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 239
 
 
  6998              	.LVL701:
@@ -14338,7 +14338,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4131:../../common/sd/fatfs/ff.c **** 				if (fp->fptr == 0) {		/* On the top of the file? */
 4132:../../common/sd/fatfs/ff.c **** 					clst = fp->obj.sclust;	/* Follow from the origin */
 4133:../../common/sd/fatfs/ff.c **** 					if (clst == 0) {		/* If no cluster is allocated, */
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 240
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 240
 
 
 4134:../../common/sd/fatfs/ff.c **** 						clst = create_chain(&fp->obj, 0);	/* create a new cluster chain */
@@ -14398,7 +14398,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4188:../../common/sd/fatfs/ff.c **** 				fs->winsect = sect;
 4189:../../common/sd/fatfs/ff.c **** 			}
 4190:../../common/sd/fatfs/ff.c **** #else
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 241
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 241
 
 
 4191:../../common/sd/fatfs/ff.c **** 			if (fp->sect != sect && 		/* Fill sector cache with file data */
@@ -14458,7 +14458,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4245:../../common/sd/fatfs/ff.c **** 					res = fill_last_frag(&fp->obj, fp->clust, 0xFFFFFFFF);	/* Fill last fragment on the FAT if nee
 4246:../../common/sd/fatfs/ff.c **** 				}
 4247:../../common/sd/fatfs/ff.c **** 				if (res == FR_OK) {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 242
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 242
 
 
 4248:../../common/sd/fatfs/ff.c **** 					DIR dj;
@@ -14518,7 +14518,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4302:../../common/sd/fatfs/ff.c **** /*-----------------------------------------------------------------------*/
 4303:../../common/sd/fatfs/ff.c **** 
 4304:../../common/sd/fatfs/ff.c **** FRESULT f_close (
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 243
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 243
 
 
 4305:../../common/sd/fatfs/ff.c **** 	FIL* fp		/* Open file to be closed */
@@ -14578,7 +14578,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7048 000e 8188     		ldrh	r1, [r0, #4]
  7049 0010 DA88     		ldrh	r2, [r3, #6]
  7050 0012 9142     		cmp	r1, r2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 244
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 244
 
 
  7051 0014 01D0     		beq	.L719
@@ -14638,7 +14638,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7081              		.loc 1 3726 2 is_stmt 0 view .LVU2673
  7082              	.LBE789:
  7083              	.LBE792:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 245
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 245
 
 
 4317:../../common/sd/fatfs/ff.c **** #if FF_FS_LOCK
@@ -14698,7 +14698,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4341:../../common/sd/fatfs/ff.c **** 	const TCHAR* path		/* Drive number to set */
 4342:../../common/sd/fatfs/ff.c **** )
 4343:../../common/sd/fatfs/ff.c **** {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 246
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 246
 
 
 4344:../../common/sd/fatfs/ff.c **** 	int vol;
@@ -14758,7 +14758,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4398:../../common/sd/fatfs/ff.c **** 				}
 4399:../../common/sd/fatfs/ff.c **** 			}
 4400:../../common/sd/fatfs/ff.c **** 		}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 247
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 247
 
 
 4401:../../common/sd/fatfs/ff.c **** 		FREE_NAMEBUFF();
@@ -14818,7 +14818,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4455:../../common/sd/fatfs/ff.c **** #else						/* String volume ID */
 4456:../../common/sd/fatfs/ff.c **** 			if (FF_STR_VOLUME_ID == 2 && wi < len) buff[wi++] = '/';
 4457:../../common/sd/fatfs/ff.c **** 			for (vid = (const char*)VolumeStr[CurrVol]; *vid && wi < len; buff[wi++] = *vid++) ;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 248
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 248
 
 
 4458:../../common/sd/fatfs/ff.c **** #endif
@@ -14878,7 +14878,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4512:../../common/sd/fatfs/ff.c **** 				buff[--i] = '/';
 4513:../../common/sd/fatfs/ff.c **** 			}
 4514:../../common/sd/fatfs/ff.c **** 			if (res == FR_OK) {
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 249
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 249
 
 
 4515:../../common/sd/fatfs/ff.c **** 				if (i == len) buff[--i] = '/';	/* Is it the root-directory? */
@@ -14938,7 +14938,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4565:../../common/sd/fatfs/ff.c **** 	FRESULT res;
  7127              		.loc 1 4565 2 view .LVU2684
 4566:../../common/sd/fatfs/ff.c **** 	FATFS *fs;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 250
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 250
 
 
  7128              		.loc 1 4566 2 view .LVU2685
@@ -14998,7 +14998,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7167 001e 50D1     		bne	.L721
 4580:../../common/sd/fatfs/ff.c **** 
 4581:../../common/sd/fatfs/ff.c **** #if FF_USE_FASTSEEK
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 251
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 251
 
 
 4582:../../common/sd/fatfs/ff.c **** 	if (fp->cltbl) {	/* Fast seek */
@@ -15058,7 +15058,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4636:../../common/sd/fatfs/ff.c **** 
 4637:../../common/sd/fatfs/ff.c **** 	/* Normal Seek */
 4638:../../common/sd/fatfs/ff.c **** 	{
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 252
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 252
 
 
 4639:../../common/sd/fatfs/ff.c **** #if FF_FS_EXFAT
@@ -15118,7 +15118,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7209 005a B9F80A20 		ldrh	r2, [r9, #10]
 4649:../../common/sd/fatfs/ff.c **** 			if (ifptr > 0 &&
  7210              		.loc 1 4649 7 view .LVU2715
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 253
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 253
 
 
  7211 005e 53EA0701 		orrs	r1, r3, r7
@@ -15178,7 +15178,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4671:../../common/sd/fatfs/ff.c **** 						if (FF_FS_EXFAT && fp->fptr > fp->obj.objsize) {	/* No FAT chain object needs correct objsize
 4672:../../common/sd/fatfs/ff.c **** 							fp->obj.objsize = fp->fptr;
 4673:../../common/sd/fatfs/ff.c **** 							fp->flag |= FA_MODIFIED;
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 254
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 254
 
 
 4674:../../common/sd/fatfs/ff.c **** 						}
@@ -15238,7 +15238,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7274 00ae E763     		str	r7, [r4, #60]
  7275              	.LVL725:
 4668:../../common/sd/fatfs/ff.c **** #if !FF_FS_READONLY
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 255
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 255
 
 
  7276              		.loc 1 4668 18 is_stmt 1 view .LVU2739
@@ -15298,7 +15298,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4702:../../common/sd/fatfs/ff.c **** #if !FF_FS_READONLY
 4703:../../common/sd/fatfs/ff.c **** 			if (fp->flag & FA_DIRTY) {			/* Write-back dirty sector cache */
 4704:../../common/sd/fatfs/ff.c **** 				if (disk_write(fs->pdrv, fp->buf, fp->sect, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 256
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 256
 
 
 4705:../../common/sd/fatfs/ff.c **** 				fp->flag &= (BYTE)~FA_DIRTY;
@@ -15358,7 +15358,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7339 00ec CDE90001 		strd	r0, r1, [sp]
 4650:../../common/sd/fatfs/ff.c **** 				fp->fptr = (ifptr - 1) & ~(FSIZE_t)(bcs - 1);	/* start from the current cluster */
  7340              		.loc 1 4650 36 view .LVU2762
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 257
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 257
 
 
  7341 00f0 5046     		mov	r0, r10
@@ -15418,7 +15418,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4685:../../common/sd/fatfs/ff.c **** 					fp->clust = clst;
  7381              		.loc 1 4685 45 is_stmt 0 discriminator 3 view .LVU2777
  7382 0120 84F83130 		strb	r3, [r4, #49]
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 258
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 258
 
 
 4685:../../common/sd/fatfs/ff.c **** 					fp->clust = clst;
@@ -15478,7 +15478,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7419              		.loc 1 1169 22 view .LVU2795
  7420 0146 D9F82820 		ldr	r2, [r9, #40]
  7421 014a 01FB0022 		mla	r2, r1, r0, r2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 259
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 259
 
 
  7422              	.LVL744:
@@ -15538,7 +15538,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4708:../../common/sd/fatfs/ff.c **** #endif
  7461              		.loc 1 4708 80 is_stmt 1 discriminator 2 view .LVU2811
 4710:../../common/sd/fatfs/ff.c **** 		}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 260
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 260
 
 
  7462              		.loc 1 4710 4 view .LVU2812
@@ -15598,7 +15598,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7496              		.cfi_offset 5, -8
  7497              		.cfi_offset 14, -4
  7498 0002 85B0     		sub	sp, sp, #20
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 261
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 261
 
 
  7499              		.cfi_def_cfa_offset 32
@@ -15658,7 +15658,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4766:../../common/sd/fatfs/ff.c **** 					}
 4767:../../common/sd/fatfs/ff.c **** 				}
 4768:../../common/sd/fatfs/ff.c **** #endif
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 262
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 262
 
 
 4769:../../common/sd/fatfs/ff.c **** 			}
@@ -15718,7 +15718,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7554              		.loc 1 4742 7 is_stmt 0 view .LVU2842
  7555 002c 94F94B30 		ldrsb	r3, [r4, #75]
  7556 0030 002B     		cmp	r3, #0
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 263
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 263
 
 
  7557 0032 0DDB     		blt	.L759
@@ -15778,7 +15778,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 1880:../../common/sd/fatfs/ff.c **** }
  7594              		.loc 1 1880 2 is_stmt 1 view .LVU2860
 1880:../../common/sd/fatfs/ff.c **** }
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 264
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 264
 
 
  7595              		.loc 1 1880 2 is_stmt 0 view .LVU2861
@@ -15838,7 +15838,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7632 0068 0520     		movs	r0, #5
  7633              	.LVL761:
 4772:../../common/sd/fatfs/ff.c **** 	}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 265
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 265
 
 
  7634              		.loc 1 4772 30 discriminator 1 view .LVU2879
@@ -15898,7 +15898,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7675              		@ frame_needed = 0, uses_anonymous_args = 0
 4790:../../common/sd/fatfs/ff.c **** 	FRESULT res;
  7676              		.loc 1 4790 2 view .LVU2885
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 266
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 266
 
 
 4791:../../common/sd/fatfs/ff.c **** 	FATFS *fs;
@@ -15958,7 +15958,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7716              	.LBE811:
 4795:../../common/sd/fatfs/ff.c **** 	if (res == FR_OK) {
 4796:../../common/sd/fatfs/ff.c **** #if FF_FS_LOCK
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 267
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 267
 
 
 4797:../../common/sd/fatfs/ff.c **** 		if (dp->obj.lockid) res = dec_share(dp->obj.lockid);	/* Decrement sub-directory open counter */
@@ -16018,7 +16018,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7748 0028 10BD     		pop	{r4, pc}
  7749              	.LVL775:
  7750              	.L790:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 268
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 268
 
 
  7751              		.cfi_def_cfa_offset 0
@@ -16078,7 +16078,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7785              		.loc 1 4826 2 view .LVU2921
  7786              	.LBB816:
  7787              	.LBI816:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 269
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 269
 
 
 3700:../../common/sd/fatfs/ff.c **** 	FFOBJID* obj,			/* Pointer to the FFOBJID, the 1st member in the FIL/DIR structure, to check valid
@@ -16138,7 +16138,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7829              		.loc 1 4826 8 view .LVU2935
  7830 001a 0920     		movs	r0, #9
  7831              	.LVL780:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 270
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 270
 
 
  7832              	.L794:
@@ -16198,7 +16198,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 3721:../../common/sd/fatfs/ff.c **** 		}
  7862              		.loc 1 3721 4 is_stmt 1 view .LVU2947
  7863              	.LVL785:
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 271
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 271
 
 
 3725:../../common/sd/fatfs/ff.c **** 	return res;
@@ -16258,7 +16258,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  7900              	.LVL791:
 4838:../../common/sd/fatfs/ff.c **** 			}
  7901              		.loc 1 4838 5 is_stmt 1 view .LVU2966
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 272
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 272
 
 
 4838:../../common/sd/fatfs/ff.c **** 			}
@@ -16318,7 +16318,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4851:../../common/sd/fatfs/ff.c **** /*-----------------------------------------------------------------------*/
 4852:../../common/sd/fatfs/ff.c **** /* API: Find Next File                                                   */
 4853:../../common/sd/fatfs/ff.c **** /*-----------------------------------------------------------------------*/
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 273
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 273
 
 
 4854:../../common/sd/fatfs/ff.c **** 
@@ -16378,7 +16378,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4908:../../common/sd/fatfs/ff.c **** 	const TCHAR* path,	/* Pointer to the file path */
 4909:../../common/sd/fatfs/ff.c **** 	FILINFO* fno		/* Pointer to file information to return */
 4910:../../common/sd/fatfs/ff.c **** )
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 274
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 274
 
 
 4911:../../common/sd/fatfs/ff.c **** {
@@ -16438,7 +16438,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
 4930:../../common/sd/fatfs/ff.c **** 		FREE_NAMEBUFF();
  7981              		.loc 1 4930 18 is_stmt 1 view .LVU2987
 4931:../../common/sd/fatfs/ff.c **** 	}
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 275
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 275
 
 
 4932:../../common/sd/fatfs/ff.c **** 
@@ -16498,7 +16498,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  8022              		.loc 1 4927 8 is_stmt 0 view .LVU3003
  8023 0036 002D     		cmp	r5, #0
  8024 0038 EFD0     		beq	.L818
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 276
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 276
 
 
 4927:../../common/sd/fatfs/ff.c **** 			}
@@ -16558,7 +16558,7 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  8054      FEFF
  8055              		.section	.bss.LfnBuf,"aw",%nobits
  8056              		.align	2
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 277
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 277
 
 
  8059              	LfnBuf:
@@ -16599,78 +16599,78 @@ ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 1
  8091              		.file 6 "../../common/sd/fatfs/diskio.h"
  8092              		.file 7 "D:/Eigene Dateien/Eigene Dokumente/Playground/Daisy-Seed/.tools/xpack-arm-none-eabi-gcc-1
  8093              		.file 8 "<built-in>"
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 278
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 278
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 ff.c
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:20     .text.get_ldnumber:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:26     .text.get_ldnumber:00000000 get_ldnumber
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:110    .text.validate:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:116    .text.validate:00000000 validate
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:186    .text.init_alloc_info:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:192    .text.init_alloc_info:00000000 init_alloc_info
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:306    .rodata.check_fs.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:313    .text.check_fs:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:319    .text.check_fs:00000000 check_fs
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:651    .text.check_fs:00000110 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:657    .text.get_fileinfo:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:663    .text.get_fileinfo:00000000 get_fileinfo
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:1400   .text.mount_volume.isra.0:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:1406   .text.mount_volume.isra.0:00000000 mount_volume.isra.0
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:2351   .text.mount_volume.isra.0:0000029c $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8083   .bss.FatFs:00000000 FatFs
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8077   .bss.Fsid:00000000 Fsid
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8059   .bss.LfnBuf:00000000 LfnBuf
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8065   .bss.DirBuf:00000000 DirBuf
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:2364   .text.mount_volume.isra.0:000002b4 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:2601   .text.get_fat:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:2607   .text.get_fat:00000000 get_fat
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:2658   .text.get_fat:00000024 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:2663   .text.get_fat:00000028 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:3237   .text.dir_next.constprop.0:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:3243   .text.dir_next.constprop.0:00000000 dir_next.constprop.0
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:3427   .text.dir_read.constprop.0:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:3433   .text.dir_read.constprop.0:00000000 dir_read.constprop.0
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:4404   .text.dir_read.constprop.0:0000030c $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8071   .rodata.LfnOfs:00000000 LfnOfs
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:4412   .text.dir_sdi.constprop.0:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:4418   .text.dir_sdi.constprop.0:00000000 dir_sdi.constprop.0
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:4588   .rodata.follow_path.str1.4:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:4595   .text.follow_path:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:4601   .text.follow_path:00000000 follow_path
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:5586   .text.follow_path:00000328 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:5600   .text.follow_path:00000334 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:6259   .text.follow_path:000005b8 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8047   .rodata.ExCvt:00000000 ExCvt
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:6265   .text.f_mount:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:6272   .text.f_mount:00000000 f_mount
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:6387   .text.f_mount:00000050 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:6392   .text.f_open:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:6399   .text.f_open:00000000 f_open
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:6617   .text.f_read:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:6624   .text.f_read:00000000 f_read
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7005   .text.f_close:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7012   .text.f_close:00000000 f_close
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7113   .text.f_lseek:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7120   .text.f_lseek:00000000 f_lseek
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7475   .text.f_opendir:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7482   .text.f_opendir:00000000 f_opendir
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7662   .text.f_closedir:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7669   .text.f_closedir:00000000 f_closedir
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7769   .text.f_readdir:00000000 $t
-ARM GAS  C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s 			page 279
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:20     .text.get_ldnumber:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:26     .text.get_ldnumber:00000000 get_ldnumber
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:110    .text.validate:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:116    .text.validate:00000000 validate
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:186    .text.init_alloc_info:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:192    .text.init_alloc_info:00000000 init_alloc_info
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:306    .rodata.check_fs.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:313    .text.check_fs:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:319    .text.check_fs:00000000 check_fs
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:651    .text.check_fs:00000110 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:657    .text.get_fileinfo:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:663    .text.get_fileinfo:00000000 get_fileinfo
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:1400   .text.mount_volume.isra.0:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:1406   .text.mount_volume.isra.0:00000000 mount_volume.isra.0
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:2351   .text.mount_volume.isra.0:0000029c $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8083   .bss.FatFs:00000000 FatFs
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8077   .bss.Fsid:00000000 Fsid
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8059   .bss.LfnBuf:00000000 LfnBuf
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8065   .bss.DirBuf:00000000 DirBuf
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:2364   .text.mount_volume.isra.0:000002b4 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:2601   .text.get_fat:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:2607   .text.get_fat:00000000 get_fat
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:2658   .text.get_fat:00000024 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:2663   .text.get_fat:00000028 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:3237   .text.dir_next.constprop.0:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:3243   .text.dir_next.constprop.0:00000000 dir_next.constprop.0
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:3427   .text.dir_read.constprop.0:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:3433   .text.dir_read.constprop.0:00000000 dir_read.constprop.0
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:4404   .text.dir_read.constprop.0:0000030c $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8071   .rodata.LfnOfs:00000000 LfnOfs
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:4412   .text.dir_sdi.constprop.0:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:4418   .text.dir_sdi.constprop.0:00000000 dir_sdi.constprop.0
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:4588   .rodata.follow_path.str1.4:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:4595   .text.follow_path:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:4601   .text.follow_path:00000000 follow_path
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:5586   .text.follow_path:00000328 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:5600   .text.follow_path:00000334 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:6259   .text.follow_path:000005b8 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8047   .rodata.ExCvt:00000000 ExCvt
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:6265   .text.f_mount:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:6272   .text.f_mount:00000000 f_mount
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:6387   .text.f_mount:00000050 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:6392   .text.f_open:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:6399   .text.f_open:00000000 f_open
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:6617   .text.f_read:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:6624   .text.f_read:00000000 f_read
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7005   .text.f_close:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7012   .text.f_close:00000000 f_close
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7113   .text.f_lseek:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7120   .text.f_lseek:00000000 f_lseek
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7475   .text.f_opendir:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7482   .text.f_opendir:00000000 f_opendir
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7662   .text.f_closedir:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7669   .text.f_closedir:00000000 f_closedir
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7769   .text.f_readdir:00000000 $t
+ARM GAS  C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s 			page 279
 
 
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7776   .text.f_readdir:00000000 f_readdir
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7938   .text.f_stat:00000000 $t
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:7945   .text.f_stat:00000000 f_stat
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8044   .rodata.ExCvt:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8056   .bss.LfnBuf:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8062   .bss.DirBuf:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8068   .rodata.LfnOfs:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8074   .bss.Fsid:00000000 $d
-C:\Users\ssche\AppData\Local\Temp\ccFacdEL.s:8080   .bss.FatFs:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7776   .text.f_readdir:00000000 f_readdir
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7938   .text.f_stat:00000000 $t
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:7945   .text.f_stat:00000000 f_stat
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8044   .rodata.ExCvt:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8056   .bss.LfnBuf:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8062   .bss.DirBuf:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8068   .rodata.LfnOfs:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8074   .bss.Fsid:00000000 $d
+C:\Users\ssche\AppData\Local\Temp\cchUrOWy.s:8080   .bss.FatFs:00000000 $d
 
 UNDEFINED SYMBOLS
 disk_status

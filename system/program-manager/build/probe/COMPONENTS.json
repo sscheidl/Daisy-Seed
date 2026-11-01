@@ -22,11 +22,11 @@
     }
   ],
   "compatible_control_panels": [],
-  "repository_commit": "ff6c63402369b34a80e26db57dfa9b27d537da6d",
+  "repository_commit": "bbfbe120b9e5b88c93d098d61c0f4a9cd6c18391",
   "working_tree_dirty": true,
   "image": {
     "name": "DaisyProgramManagerProbe-v0.1.0.bin",
     "bytes": 141128,
-    "sha256": "7fc2ce90f204fc4effcbbc81d41ef33f14637a77914227df4cac8296539986c8"
+    "sha256": "5478c449dd6acb072e3f880451cdbf72a1bb00323406c613b2818ca8d9e07cbe"
   }
 }

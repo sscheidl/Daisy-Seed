@@ -1,0 +1,90 @@
+{
+  "sections": [
+    {
+      "name": ".isr_vector",
+      "vma": "0x24000000",
+      "lma": "0x24000000",
+      "size": 664,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".text",
+      "vma": "0x240002a0",
+      "lma": "0x240002a0",
+      "size": 153140,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".exidx",
+      "vma": "0x240258d4",
+      "lma": "0x240258d4",
+      "size": 8,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".init_array",
+      "vma": "0x240258dc",
+      "lma": "0x240258dc",
+      "size": 64,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".fini_array",
+      "vma": "0x2402591c",
+      "lma": "0x2402591c",
+      "size": 4,
+      "noload": false,
+      "region": "TARGET"
+    },
+    {
+      "name": ".sram1_bss",
+      "vma": "0x30000000",
+      "lma": "0x30000000",
+      "size": 18084,
+      "noload": true,
+      "region": "D2"
+    },
+    {
+      "name": ".data",
+      "vma": "0x20000000",
+      "lma": "0x24025920",
+      "size": 4328,
+      "noload": false,
+      "region": "DTCM"
+    },
+    {
+      "name": ".bss",
+      "vma": "0x200010e8",
+      "lma": "0x200010e8",
+      "size": 106360,
+      "noload": true,
+      "region": "DTCM"
+    },
+    {
+      "name": ".backup_sram",
+      "vma": "0x38800000",
+      "lma": "0x38800000",
+      "size": 12,
+      "noload": true,
+      "region": "BACKUP"
+    }
+  ],
+  "noload_in_target": [],
+  "warnings": [],
+  "marker_version": "0.1.0",
+  "image_bytes": 158216,
+  "stack": "0x20020000",
+  "reset": "0x240003d1",
+  "payload_sha256": "07e259c5f1b247890f44d0a06170b1486d807cce6fdb41d0bbe49d6727492b8f",
+  "product": "step-seq",
+  "version": "0.1.0",
+  "package": "system\\program-manager\\build\\packages\\StepSeq-v0.1.0.dsy",
+  "package_bytes": 158376,
+  "file_sha256": "271cd2773540411d0b4127dbb60d9c849eada37004c73e86d2f572223b661076",
+  "elf": "sequencers\\step-seq\\build\\StepSeq-v0.1.0.elf",
+  "bin": "sequencers\\step-seq\\build\\StepSeq-v0.1.0.bin"
+}

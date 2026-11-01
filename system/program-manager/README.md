@@ -1,101 +1,101 @@
 # Daisy Program Manager
 
-Programmverwaltung für das Seed3 Desktop Kit: eine dauerhaft im QSPI installierte
-Anwendung hinter dem **unveränderten Daisy-Bootloader**, die bis zu 15 Programme von
-der SD-Karte auswählt, prüft, ins SRAM lädt und startet. Platz 16 ist die residente
-Diagnose (dieselbe Diagnoseschicht wie `diagnostics/`). Normale Programmwechsel
-schreiben weder internen Flash noch QSPI. Entwurf E aus
-[Konzept v2](../../docs/SD_RAM_BOOT_CONCEPT_V2.md); Verträge in [docs/CONTRACT.md](docs/CONTRACT.md).
+Program management for the Seed3 Desktop Kit: an application installed permanently in
+QSPI behind the **unchanged Daisy bootloader** that selects up to 15 programs from the
+SD card, verifies them, loads them into SRAM and starts them. Slot 16 is the resident
+diagnostics (the same diagnostics layer as `diagnostics/`). Normal program changes write
+neither internal flash nor QSPI. Design E of the
+[concept v2](../../docs/SD_RAM_BOOT_CONCEPT_V2.md) (German); contracts in [docs/CONTRACT.md](docs/CONTRACT.md).
 
-**Status 01.11.2026: Version 0.1.0, Software vollständig getestet, Hardware
-experimentell – NICHT GEMESSEN** ([docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md)).
+**Status 2026-11-01: version 0.1.0, software fully tested, hardware experimental –
+NICHT GEMESSEN** ([docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md)).
 
-## Aufbau
+## Structure
 
-| Teil | Ort | Prüfung |
+| Part | Location | Verification |
 | --- | --- | --- |
-| Portabler Kern: `.dsy`-Header, Katalog, Loader-Zustandsautomat, Modi/Tasten/LEDs, PM-Protokoll | `src/pm_*.{h,cpp}`, `src/pm_sha256.c` | `make test`, `make test-sanitize` |
-| Hardware-Glue (libDaisy, `common/sd`, Cache, BootInfo) | `src/pm_main.cpp`, `ld/program_manager_qspi.lds` | ARM-Build, `make check` |
-| Geteilter Kit-Adapter (Tasten, LEDs, CV, Ton, CDC) | `diagnostics/firmware/src/devkit_board.h` | Diagnose-Tests/-Builds |
-| Rückkehrdienst für Anwendungen | `common/bootloader/return_entry.h`, `return_daisy.h` | `test_return_entry` |
-| PC-Werkzeuge: Paketierung, Kartenvorlage, Image-Check, CDC-CLI | `tools/` | `make test-python` |
-| HTML-Panel (Web Serial) | `web/` | Browsertest manuell |
+| Portable core: `.dsy` header, catalog, loader state machine, modes/keys/LEDs, PM protocol | `src/pm_*.{h,cpp}`, `src/pm_sha256.c` | `make test`, `make test-sanitize` |
+| Hardware glue (libDaisy, `common/sd`, cache, BootInfo) | `src/pm_main.cpp`, `ld/program_manager_qspi.lds` | ARM build, `make check` |
+| Shared kit adapter (keys, LEDs, CV, tone, CDC) | `diagnostics/firmware/src/devkit_board.h` | diagnostics tests/builds |
+| Return service for applications | `common/bootloader/return_entry.h`, `return_daisy.h` | `test_return_entry` |
+| PC tools: packaging, card template, image check, CDC CLI | `tools/` | `make test-python` |
+| HTML panel (Web Serial) | `web/` | manual browser test |
 
-## Bauen
+## Building
 
 ```bash
 make -C system/program-manager PROFILE=probe     # build/probe/DaisyProgramManagerProbe-v0.1.0.bin
 make -C system/program-manager                   # build/manager/DaisyProgramManager-v0.1.0.bin
 make -C system/program-manager check PYTHON=python SD_CHECK_PYTHON=python
-make PROJECT=program-manager                     # über die Projektauswahl (auch program-manager-probe)
+make PROJECT=program-manager                     # through the project selection (also program-manager-probe)
 ```
 
-Windows: xPack-GCC und Build-Tools aus `.tools` in den PATH ([docs/BUILD.md](../../docs/BUILD.md));
-Host-Tests mit `HOST_CXX=clang++ HOST_CC=clang`. Beide Profile haben getrennte
-Buildverzeichnisse; der `build=`-Wert in `PMINFO` ist der kurze Quellcommit.
+Windows: put the xPack GCC and build tools from `.tools` on the PATH ([docs/BUILD.md](../../docs/BUILD.md));
+host tests with `HOST_CXX=clang++ HOST_CC=clang`. Both profiles have separate build
+directories; the `build=` value in `PMINFO` is the short source commit.
 
-**Probe** (LED, CDC, Diagnose, Service, kein SD-Start) ist der erste Hardwarekandidat:
-sie klärt den XIP-Start aus QSPI. **Manager** ist Version 1 mit SD-Katalog und Start.
+**Probe** (LED, CDC, diagnostics, service, no SD start) is the first hardware candidate: it
+settles the XIP start from QSPI. **Manager** is version 1 with SD catalog and start.
 
-## Speicher- und Startvertrag (Kurzfassung)
+## Memory and start contract (summary)
 
-* Verwaltung: Code in QSPI ab `0x90040000` (unter `0x907E0000`), `.data`/`.bss`/Stack in
-  DTCM, Heap in D2, 4-KiB-IDMA-Bounce in den oberen 32 KiB AXI. `0x24000000`–`0x24078000`
-  bleibt frei – `tools/check_qspi_image.py` erzwingt das aus dem ELF.
-* Start: Paket prüfen (Header, Länge, SHA-256, Vektoren) → Ziel genullt und befüllt →
-  Audio/LED/SD stillgelegt → D-Cache zurückgeschrieben → `boot_info = JUMP(0x24000000)`
-  → Software-Reset. Der Bootloader springt wie bei jedem heutigen BOOT_SRAM-Start.
-* Rückkehr: Anwendung beendet sich geordnet und ruft `ResetToBootloader(DAISY_SKIP_TIMEOUT)`.
-  Service/DFU unverändert (S9+S16, BL-SysEx, DDP `BOOT`).
+* Manager: code in QSPI from `0x90040000` (below `0x907E0000`), `.data`/`.bss`/stack in
+  DTCM, heap in D2, a 4 KiB IDMA bounce buffer in the upper 32 KiB of AXI SRAM.
+  `0x24000000`–`0x24078000` stays free – `tools/check_qspi_image.py` enforces that from the ELF.
+* Start: verify the package (header, length, SHA-256, vectors) → target zeroed and filled →
+  audio/LED/SD quiesced → D-cache written back → `boot_info = JUMP(0x24000000)` → software
+  reset. The bootloader jumps exactly as for every BOOT_SRAM start today.
+* Return: the application shuts down in an orderly way and calls
+  `ResetToBootloader(DAISY_SKIP_TIMEOUT)`. Service/DFU unchanged (S9+S16, BL SysEx, DDP `BOOT`).
 
-## Bedienung
+## Operation
 
-| Modus | Tasten | LEDs |
+| Mode | Keys | LEDs |
 | --- | --- | --- |
-| Auswahl | Taste 1–15 einmal drücken und loslassen startet den Platz; Taste 16 öffnet die Diagnose. Beim Einschalten gehaltene Tasten zählen nicht; Akkorde und Halten ≥ 3 s wählen nie | belegte Plätze und 16 gedimmt, gedrückte Taste hell; Fehler: alle blinken 1,5 s (betroffener Platz dauerhaft an) |
-| Diagnose | wie Diagnosefirmware; **S1+S16 3 s** zurück zur Auswahl | Diagnoseschicht |
-| Laden | keine | Balken mit Fortschritt |
-| Service | – | alle an |
+| Select | pressing and releasing key 1–15 once starts that slot; key 16 opens the diagnostics. Keys held at power-up do not count; chords and holds ≥ 3 s never select | occupied slots and 16 dimmed, the pressed key bright; error: all blink for 1.5 s (the affected slot stays on) |
+| Diagnostics | as in the diagnostics firmware; **S1+S16 for 3 s** returns to Select | diagnostics layer |
+| Loading | none | bar growing with progress |
+| Service | – | all on |
 
-Kein Autostart eines Programms. Ohne Karte bleiben Diagnose und Service nutzbar.
-CV OUT und Testton nur in der Diagnose während einer Hostsitzung; elektrischer
-Ruhezustand NICHT GEMESSEN.
+No program autostarts. Without a card, diagnostics and service remain usable. CV OUT and
+the test tone only in Diagnostics during a host session; the electrical rest state is
+NICHT GEMESSEN.
 
-## Karte
+## Card
 
 ```text
 /DAISY/catalog.json
-/DAISY/PROGRAMS/<produkt-id>/<Image>-v<Version>.dsy
+/DAISY/PROGRAMS/<product-id>/<Image>-v<version>.dsy
 ```
 
-**Kartenregel:** keine Datei mit `.bin` im Namen im Wurzelverzeichnis – der
-Bootloader würde sie vor der Verwaltung flashen. Vorlage am PC aufbauen und prüfen,
-dann kopieren ([docs/PACKAGE.md](docs/PACKAGE.md)):
+**Card rule:** no file whose name contains `.bin` may lie in the root directory – the
+bootloader would flash it before the manager starts. Build and check the template on the
+PC, then copy it ([docs/PACKAGE.md](docs/PACKAGE.md)):
 
 ```bash
-python tools/dsy_pack.py pack --elf instruments/toy-piano/build/ToyPiano-v0.4.0.elf \
-    --bin instruments/toy-piano/build/ToyPiano-v0.4.0.bin --project toy-piano --out out/
+python tools/dsy_pack.py pack --elf instruments/toy-piano/build/ToyPiano-v0.4.elf \
+    --bin instruments/toy-piano/build/ToyPiano-v0.4.bin --project toy-piano --out out/
 python tools/pm_card.py init out/card
-python tools/pm_card.py add out/card out/ToyPiano-v0.4.0.dsy --slot 1 --name "Toy Piano" --category instrument
+python tools/pm_card.py add out/card out/ToyPiano-v0.4.dsy --slot 1 --name "Toy Piano" --category instrument
 python tools/pm_card.py check out/card
 ```
 
-## Updates und Wiederherstellung
+## Updates and recovery
 
-| Vorgang | Weg |
+| Task | Path |
 | --- | --- |
-| Programm aktualisieren | neues `.dsy` auf die Karte, Katalog mit `pm_card.py add`, Karte auswerfen; kein Flashen |
-| Verwaltung aktualisieren | wie bisher ein Firmware-Update über den Bootloader nach `0x90040000` ([docs/FLASHING.md](../../docs/FLASHING.md)); **Achtung:** ein dort geflashtes Instrument-BIN ersetzt die Verwaltung |
-| Verwaltung hängt/defekt | Reset, dann BOOT innerhalb ~2 s → DFU; erneut flashen. Letzter Weg: ROM-DFU am Modulport. Nie `program-boot` (installiert einen Bootloader; nicht Teil dieses Projekts) |
+| Update a program | new `.dsy` on the card, catalog via `pm_card.py add`, eject the card; no flashing |
+| Update the manager | the usual firmware update through the bootloader to `0x90040000` ([docs/FLASHING.md](../../docs/FLASHING.md)); **note:** an instrument BIN flashed there replaces the manager |
+| Manager hangs / is damaged | reset, then BOOT within ~2 s → DFU; flash again. Last resort: ROM DFU on the module port. Never `program-boot` (installs a bootloader; not part of this project) |
 
 ## Host
 
-* CLI: `python tools/pm_cli.py [-p COMx] info|list|status|start|mode|rescan|service` (pyserial). Lesende Befehle ändern nichts; `start`/`service` sind ausdrückliche Aktionen.
-* HTML-Panel: `web/panel.html` in Chrome/Edge öffnen (Web Serial); Simulator nur über die sichtbar gekennzeichnete Schaltfläche.
-* Protokoll: [docs/PROTOCOL.md](docs/PROTOCOL.md). JUCE Standalone/VST3 folgen später mit derselben Semantik.
+* CLI: `python tools/pm_cli.py [-p COMx] info|list|status|start|mode|rescan|service` (pyserial). Reading commands change nothing; `start`/`service` are explicit actions.
+* HTML panel: open `web/panel.html` in Chrome/Edge (Web Serial); the simulator only through the visibly marked button.
+* Protocol: [docs/PROTOCOL.md](docs/PROTOCOL.md). JUCE standalone/VST3 follow later with the same semantics.
 
-## Grenzen
+## Limits
 
-MSC/Kartenleser bleibt eigenes Diagnose-Image; keine Prüfung nach dem Reset, kein
-Flash-Schreibschutz, 2-s-DFU-Fenster, kein Watchdog. Produkte ohne Rückkehrdienst
-sind als Pakete startbar, kehren aber nur über Service zurück.
+MSC/card reader stays a separate diagnostics image; no check after the reset, no flash
+write protection, 2 s DFU window, no watchdog. Products without the return service can be
+started as packages but return only through the service path.

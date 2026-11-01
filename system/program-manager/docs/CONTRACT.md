@@ -1,165 +1,160 @@
-# Speicher-, Start- und Commit-Vertrag der Daisy-Programmverwaltung
+# Memory, start and commit contract of the Daisy Program Manager
 
-**Stand 01.11.2026, Version 0.1.0.** Verbindliche Regeln für Firmware, Linker,
-Werkzeuge und Tests. Jede Aussage ist als **[B]** belegt (Datei/Zeile oder
-Upstream-Quelle), **[P]** Praxis am Kit (datierte Berichte anderer Teile des Repos)
-oder **[A]** Annahme markiert, die erst ein Hardwaretest bestätigt
-([HARDWARE_TEST.md](HARDWARE_TEST.md)). Grundlage: [Konzept v2](../../../docs/SD_RAM_BOOT_CONCEPT_V2.md),
-[Review](../../../docs/SD_RAM_BOOT_REVIEW_CLAUDE.md), [Entwicklungsauftrag](../../../docs/SD_RAM_BOOT_CLAUDE_AUFTRAG.md).
+**Status 2026-11-01, version 0.1.0.** Binding rules for firmware, linker, tools and
+tests. Every statement is marked **[B]** proven (file/line or upstream source), **[P]**
+practice on the kit (dated reports elsewhere in the repository) or **[A]** assumption
+that only a hardware test confirms ([HARDWARE_TEST.md](HARDWARE_TEST.md)). Basis:
+[concept v2](../../../docs/SD_RAM_BOOT_CONCEPT_V2.md), [review](../../../docs/SD_RAM_BOOT_REVIEW_CLAUDE.md),
+[development order](../../../docs/SD_RAM_BOOT_CLAUDE_AUFTRAG.md) (all German).
 
-## 1. Quellenblatt
+## 1. Source sheet
 
-| Gegenstand | Quelle | Stand |
+| Subject | Source | Status |
 | --- | --- | --- |
-| Tatsächlicher Startcode | `libDaisy/core/startup_stm32h750xx.c` (Zeilen 1535–1558): bei `BOOT_APP` kein `SystemInit()`, kein eigenes Setzen von SP | [B], libDaisy `f715e487` |
-| BOOT_QSPI/BOOT_SRAM-Auswahl | `libDaisy/core/Makefile` 229–241 (`-DBOOT_APP`, Linker) | [B] |
-| Bootloader-JUMP-Pfad | DaisyBootloader `shared/bootloader.cpp` `startup_process()`, Tag v6.4.0 (gelesen 31.10.2026): `InitBackupSram`, `version = v6_1`, bei `JUMP` → `status = INVALID`, SRAM-Ziel: `SCB->VTOR = data`, `__set_MSP(*data)`, Sprung; QSPI-Ziel: `HAL_Init`, QSPI memory-mapped, Sprung | [B] (Quelle); dass das installierte Binary diesem Tag entspricht: [A] |
-| Rückkehr/Service | `libDaisy/src/sys/system.cpp` 301–353 (`ResetToBootloader`: `boot_info.status`, `RCC->CIER = 0`, `HAL_NVIC_SystemReset`); Upstream: `SKIP_TIMEOUT` → 100 ms, `INF_TIMEOUT` → `UINT32_MAX` | [B] |
-| Täglicher Reset→SRAM-Start | alle Instrumente sind BOOT_SRAM (`common/desktop.mk:9`); Diagnose H1–H10 GEMESSEN 2026-10-17 | [P] |
-| Cache-Funktionen | CMSIS 5.9 `cachel1_armv7.h` 358–377: `SCB_CleanDCache_by_Addr(addr, dsize)` verarbeitet ab `addr` in 32-Byte-Zeilen, `op_size = dsize + (addr & 31)` → Rundung auf volle Zeilen, `DSB/ISB` am Ende | [B] |
-| SDMMC1-IDMA-Ziele | libDaisy `src/hid/fatfs.h:21-25` (nur AXI SRAM, nicht DTCM); Diagnose-Praxis: Puffer in AXI/SDRAM | [B]/[P]; D2 nicht freigegeben |
-| **RM0433** (System-Reset, SRAM-Erhalt, RSR-Flags, RAMECC, Bus-Matrix, BOOT_ADD) | **nicht gelesen**: der Download von st.com scheitert in dieser Umgebung (kein Browser-Download ohne Freigabe, curl liefert 0 Byte). Keine Abschnittsnummern erfunden. | offen – siehe Abschnitt 11 |
+| Actual start-up code | `libDaisy/core/startup_stm32h750xx.c` (lines 1535–1558): for `BOOT_APP` no `SystemInit()`, SP not set by the handler | [B], libDaisy `f715e487` |
+| BOOT_QSPI/BOOT_SRAM selection | `libDaisy/core/Makefile` 229–241 (`-DBOOT_APP`, linker) | [B] |
+| Bootloader JUMP path | DaisyBootloader `shared/bootloader.cpp` `startup_process()`, tag v6.4.0 (read 2026-10-31): `InitBackupSram`, `version = v6_1`, on `JUMP` → `status = INVALID`; SRAM target: `SCB->VTOR = data`, `__set_MSP(*data)`, jump; QSPI target: `HAL_Init`, QSPI memory mapped, jump | [B] (source); that the installed binary matches this tag: [A] |
+| Return/service | `libDaisy/src/sys/system.cpp` 301–353 (`ResetToBootloader`: `boot_info.status`, `RCC->CIER = 0`, `HAL_NVIC_SystemReset`); upstream: `SKIP_TIMEOUT` → 100 ms, `INF_TIMEOUT` → `UINT32_MAX` | [B] |
+| Daily reset→SRAM start | all instruments are BOOT_SRAM (`common/desktop.mk:9`); diagnostics H1–H10 GEMESSEN 2026-10-17 | [P] |
+| Cache functions | CMSIS 5.9 `cachel1_armv7.h` 358–377: `SCB_CleanDCache_by_Addr(addr, dsize)` walks 32-byte lines from `addr`, `op_size = dsize + (addr & 31)` → rounds to whole lines, `DSB/ISB` at the end | [B] |
+| SDMMC1 IDMA targets | libDaisy `src/hid/fatfs.h:21-25` (AXI SRAM only, not DTCM); diagnostics practice: buffers in AXI/SDRAM | [B]/[P]; D2 not released |
+| **RM0433** (system reset, SRAM retention, RSR flags, RAMECC, bus matrix, BOOT_ADD) | **not read**: the download from st.com fails in this environment (no browser download without approval, curl returns 0 bytes). No section numbers invented. | open – see section 11 |
 
-## 2. Geerbter Übergabezustand (Bootloader → Anwendung)
+## 2. Inherited hand-over state (bootloader → application)
 
-Die Verwaltung baut kein eigenes Sprungtrampolin. Beim Eintritt in den Reset-Handler
-einer gestarteten BOOT_SRAM-Anwendung gilt der Zustand des Upstream-JUMP-Pfads [B]:
-RCC im Reset-Zustand (HSI), SysTick aus, Caches aus, MPU aus, CPACR (FPU) durch den
-Startcode des Bootloaders freigegeben, `SCB->VTOR = 0x24000000`, MSP = Wort 0 des
-Images, Backup-SRAM zugänglich, `boot_info.version = v6_1`, `boot_info.status =
-INVALID`, QSPI **nicht** memory-mapped. Das ist identisch mit dem heutigen Start
-jeder Anwendung über DFU/QSPI-Kopie; nur die Quelle der Bytes (SD statt QSPI-Kopie)
-und der Weg dorthin (CPU-Kopie mit Cache) sind neu.
+The manager builds no jump trampoline of its own. On entry into the reset handler of a
+started BOOT_SRAM application the state of the upstream JUMP path applies [B]: RCC in its
+reset state (HSI), SysTick off, caches off, MPU off, CPACR (FPU) enabled by the
+bootloader's start-up code, `SCB->VTOR = 0x24000000`, MSP = word 0 of the image, backup
+SRAM accessible, `boot_info.version = v6_1`, `boot_info.status = INVALID`, QSPI **not**
+memory mapped. This is identical to today's start of every application via DFU/QSPI copy;
+only the source of the bytes (SD instead of the QSPI copy) and the way there (CPU copy
+through the cache) are new.
 
-Für die Verwaltung selbst (QSPI-Ziel) tut der Bootloader zusätzlich `HAL_Init()`
-und richtet QSPI memory-mapped ein [B]; `DaisySeed::Init` überspringt deshalb
-`qspi.Init` (`daisy_seed.cpp:121`), und `QSPIHandle` verweigert Schreib-/Löschzugriffe
-aus QSPI-Ausführung (`qspi.cpp:971-980`). Die Taktumschaltung in `System::Init`
-während XIP ist upstream vorgesehen, am Seed3 aber **[A]** (erster Probe-Test).
+For the manager itself (QSPI target) the bootloader additionally runs `HAL_Init()` and
+configures QSPI memory mapped [B]; `DaisySeed::Init` therefore skips `qspi.Init`
+(`daisy_seed.cpp:121`), and `QSPIHandle` refuses write/erase from QSPI execution
+(`qspi.cpp:971-980`). The clock change in `System::Init` while executing in place is
+supported upstream but **[A]** on the Seed3 (first probe test).
 
-## 3. Speicherplan der Verwaltung
+## 3. Memory plan of the manager
 
-Linker: [`ld/program_manager_qspi.lds`](../ld/program_manager_qspi.lds). Prüfung:
-`tools/check_qspi_image.py` (ELF-Sektionen VMA **und** LMA gegen die Regionen,
-`.qspiflash_*` leer, Vektoren, Marker, BIN = QSPI-Ausdehnung).
+Linker: [`ld/program_manager_qspi.lds`](../ld/program_manager_qspi.lds). Check:
+`tools/check_qspi_image.py` (ELF sections, VMA **and** LMA, against the regions;
+`.qspiflash_*` empty, vectors, marker, BIN = QSPI extent).
 
-| Region | Adressen (Ende exklusiv) | Inhalt der Verwaltung | Gemessen im Build 0.1.0 (Manager / Probe) |
+| Region | Addresses (end exclusive) | Manager content | Measured in build 0.1.0 (manager / probe) |
 | --- | --- | --- | --- |
-| QSPI | `0x90040000`–`0x907E0000` | Vektoren, Code, Rodata, Init-Arrays, `.data`-Ladebild | 156 752 B / 141 128 B |
-| SRAM_TARGET | `0x24000000`–`0x24078000` | **nichts** (Imageziel) | 0 B / 0 B, vom Checker erzwungen |
-| SRAM_HELPER | `0x24078000`–`0x24080000` | `.pm_axi_bounce`: 4 KiB SDMMC1-IDMA-Bounce, 32-Byte-ausgerichtet | 4 096 B / 0 B |
-| DTCM | `0x20000000`–`0x20020000` | `.data`, `.bss` (FatFs-Objekte, Katalogtext 16 KiB, Diagnosepuffer), Stack bis `_estack = 0x20020000`; Linker-ASSERT: ≥ 16 KiB Stackreserve | 104 200 B / 101 360 B |
-| RAM_D2_DMA | `0x30000000`–`0x30008000` | libDaisy-DMA-Puffer (LED, ADC, Audio, MIDI) | 17 096 B |
-| RAM_D2 | `0x30008000`–`0x30048000` | Heap (`end`); kein `malloc` in eigenem Code | 0 B belegt |
-| Backup-SRAM | `0x38800000`–`0x38801000` | libDaisys `boot_info` (12 B) | 12 B |
-| SDRAM | `0xC0000000`–`0xC4000000` | unbenutzt (initialisiert durch `DaisySeed::Init`) | 0 B |
+| QSPI | `0x90040000`–`0x907E0000` | vectors, code, rodata, init arrays, `.data` load image | 156 744 B / 141 120 B |
+| SRAM_TARGET | `0x24000000`–`0x24078000` | **nothing** (image target) | 0 B / 0 B, enforced by the checker |
+| SRAM_HELPER | `0x24078000`–`0x24080000` | `.pm_axi_bounce`: 4 KiB SDMMC1 IDMA bounce, 32-byte aligned | 4 096 B / 0 B |
+| DTCM | `0x20000000`–`0x20020000` | `.data`, `.bss` (FatFs objects, 16 KiB catalog text, diagnostics buffers), stack up to `_estack = 0x20020000`; linker ASSERT: ≥ 16 KiB stack reserve | 104 200 B / 101 360 B |
+| RAM_D2_DMA | `0x30000000`–`0x30008000` | libDaisy DMA buffers (LED, ADC, audio, MIDI) | 17 096 B |
+| RAM_D2 | `0x30008000`–`0x30048000` | heap (`end`); no `malloc` in own code | 0 B used |
+| Backup SRAM | `0x38800000`–`0x38801000` | libDaisy's `boot_info` (12 B) | 12 B |
+| SDRAM | `0xC0000000`–`0xC4000000` | unused (initialized by `DaisySeed::Init`) | 0 B |
 
-Regeln: kein DMA-Ziel in DTCM (SDMMC1 erreicht es nicht [B]); D2 nicht als
-SD-IDMA-Ziel ohne RM0433-Nachweis; Bounce-Puffer besitzt eigene Cachezeilen; der
-logische FatFs-/Katalogpuffer in DTCM wird nur per CPU-`memcpy` aus dem Bounce
-gefüllt (`common/sd/ro_sd.c:102-109` [B]).
+Rules: no DMA target in DTCM (SDMMC1 cannot reach it [B]); D2 not as SD IDMA target
+without RM0433 evidence; the bounce buffer owns its cache lines; the logical FatFs/catalog
+buffer in DTCM is only filled by CPU `memcpy` from the bounce (`common/sd/ro_sd.c:102-109` [B]).
 
-## 4. Imageprofil `axi-sram-480k-v1`
+## 4. Image profile `axi-sram-480k-v1`
 
-Ein `.dsy`-Payload ist ein unverändertes BOOT_SRAM-BIN. `tools/dsy_pack.py check`
-verlangt vor dem Paketieren (Begründung in Klammern):
+A `.dsy` payload is an unchanged BOOT_SRAM BIN. `tools/dsy_pack.py check` requires before
+packaging (reason in parentheses):
 
-* `.isr_vector` bei `0x24000000`; jede Sektion mit Dateiinhalt wird innerhalb
-  `0x24000000`–`0x24078000` geladen (Ziel ist genau dieser Bereich);
-* `.data` liegt in DTCM mit Ladeadresse im Ziel, `.bss` und `.reserved_for_stack`
-  in DTCM, `_estack = 0x20020000` (Startcode kopiert `.data` aus dem Ziel, zählt
-  `.bss` selbst; MSP aus Wort 0 muss in DTCM liegen);
-* keine Sektion in internem Flash oder QSPI, `.qspiflash_*` leer (ein Image, das
-  QSPI-Daten erwartet, hinge von der geflashten Verwaltung ab);
-* NOLOAD-Sektionen innerhalb des Ziels (`.axi_bss` von Toy Piano/Physical Modeling,
-  `.neb_sd` von Nebulae) enden unter `0x24078000` **und** werden mit `--noload`
-  benannt: der Paketierer bestätigt damit, dass das Produkt sie selbst
-  initialisiert. Der Loader nullt zwar das ganze Ziel vor dem Kopieren, das
-  ersetzt aber keine Produktinitialisierung von D2-/SDRAM-/ITCM-Bereichen;
-* BIN = Ladeausdehnung, 8 B ≤ Länge ≤ 491 520 B; Wort 0 in `(0x20000000, 0x20020000]`
-  und 8-Byte-ausgerichtet, Wort 1 Thumb und im Payload, ELF-Entry = Resetvektor;
-* Produkt-ID/Version/Marker aus `components/registry.json` (`--project`).
+* `.isr_vector` at `0x24000000`; every section with file content is loaded inside
+  `0x24000000`–`0x24078000` (the target is exactly this range);
+* `.data` lives in DTCM with its load address in the target, `.bss` and
+  `.reserved_for_stack` in DTCM, `_estack = 0x20020000` (the start-up code copies `.data`
+  from the target and zeroes `.bss` itself; MSP from word 0 must be in DTCM);
+* no section in internal flash or QSPI, `.qspiflash_*` empty (an image expecting QSPI data
+  would depend on the flashed manager);
+* NOLOAD sections inside the target (`.axi_bss` of Toy Piano/Physical Modeling, `.neb_sd` of
+  Nebulae) end below `0x24078000` **and** are named with `--noload`: the packager thereby
+  confirms that the product initializes them itself. The loader zeroes the whole target
+  before copying, but that replaces no product initialization of D2/SDRAM/ITCM areas;
+* BIN = load extent, 8 B ≤ length ≤ 491 520 B; word 0 in `(0x20000000, 0x20020000]` and
+  8-byte aligned, word 1 Thumb and inside the payload, ELF entry = reset vector;
+* product id/version/marker from `components/registry.json` (`--project`).
 
-Der Laufzeitloader prüft unabhängig davon Header (CRC, Felder), Länge, SHA-256 und
-dieselben Vektorbedingungen (`pm_image.cpp`, `pm_loader.cpp`).
+The runtime loader independently checks the header (CRC, fields), length, SHA-256 and the
+same vector conditions (`pm_image.cpp`, `pm_loader.cpp`).
 
-## 5. Ladevertrag (`pm_loader.cpp`)
+## 5. Load contract (`pm_loader.cpp`)
 
-Reihenfolge je `Step()` (ein Chunk von 4 096 B Karten-I/O pro Hauptschleifendurchlauf,
-Gesamtbudget 60 s, Kartenanwesenheit vor jedem Schritt):
+Order per `Step()` (one chunk of 4 096 B card I/O per main-loop pass, overall budget 60 s,
+card presence before every step):
 
-1. **Opening**: Datei öffnen; Dateigröße muss in `160+8 … 160+491520` liegen.
-2. **Header**: 160 B lesen, parsen (Magic → CRC → Felder); Produkt-ID = Katalog-ID;
-   Header-Hash = Katalog-Hash; Dateigröße = 160 + Payloadlänge; dann wird das
-   **ganze** 480-KiB-Ziel genullt und der SHA-256 begonnen.
-3. **Payload**: Chunks direkt in das Ziel (CPU-Kopie aus dem Bounce), Hash fortlaufend;
-   EOF vor der Länge → `SHORT`, Lesefehler → `READ`; danach ein Probelesen: weitere
-   Bytes → `LONG`.
-4. **Verify**: Hash = Header-Hash, Vektoren prüfen, Datei schließen.
+1. **Opening**: open the file; the file size must lie in `160+8 … 160+491520`.
+2. **Header**: read 160 B, parse (magic → CRC → fields); product id = catalog id; header hash
+   = catalog hash; file size = 160 + payload length; then the **whole** 480 KiB target is
+   zeroed and the SHA-256 started.
+3. **Payload**: chunks directly into the target (CPU copy from the bounce), hash running; EOF
+   before the length → `SHORT`, read error → `READ`; then one probe read: more bytes → `LONG`.
+4. **Verify**: hash = header hash, check vectors, close the file.
 5. **Finalize**: `Quiesce()` → `Clean(480 KiB)` → `Commit(0x24000000)`.
 
-Bei jedem Fehler bleibt `boot_info` unberührt, die Datei wird geschlossen und die
-Verwaltung zeigt den Fehler (`PMSTATUS e=…`, LED-Blinken). Host-Tests decken alle
-Fehlerpfade, Teilreads, Abbruch, Budget und die Commit-Reihenfolge ab
-(`tests/test_loader.cpp`, 77 Prüfungen).
+On every error `boot_info` stays untouched, the file is closed and the manager shows the
+error (`PMSTATUS e=…`, LED blinking). Host tests cover all error paths, partial reads,
+cancel, budget and the commit order (`tests/test_loader.cpp`, 77 checks).
 
-## 6. Commit-Vertrag (`pm_main.cpp`, `DaisyBootCommit`, `SramTarget`)
+## 6. Commit contract (`pm_main.cpp`, `DaisyBootCommit`, `SramTarget`)
 
-| Schritt | Code | Begründung |
+| Step | Code | Reason |
 | --- | --- | --- |
-| Quiesce | `hw.seed.StopAudio()`; LEDs aus, `UpdateLeds()` zweimal (wartet den letzten DMA-Transfer ab); DAC-Codes 0/0; `ro_sd_unmount()`, `HAL_SD_DeInit` | nach diesem Punkt schreibt kein Interrupt/DMA mehr in RAM; DAC-Code 0 ist kein elektrischer Nachweis (NICHT GEMESSEN) |
-| Clean | `SCB_CleanDCache_by_Addr(0x24000000, 480 KiB)`, `__DSB(); __ISB();` | Image und Nullung wurden über den D-Cache geschrieben; der Reset verwirft den Cache. Clean (nicht Invalidate) schreibt schmutzige Zeilen zurück; CMSIS rundet auf Zeilen [B]. Der Stock-Bootloader kopiert mit **abgeschaltetem** D-Cache (`bootloader/main.cpp`: `SCB_DisableDCache()`), diese Pflicht ist daher neu und wird vom Host-Test nur als Reihenfolge, nicht als Registerwirkung bewiesen |
-| Commit | `__disable_irq()`; `boot_info.data = 0x24000000; DSB; boot_info.status = JUMP; DSB; RCC->CIER = 0; HAL_NVIC_SystemReset()` | gleiche Reihenfolge wie `ResetToBootloader()` [B]; Ziel zuerst, Status zuletzt; **nicht** `ResetToBootloader()` rufen (würde den Status überschreiben). Backup-SRAM-Zugriff ist seit dem Bootloader aktiv (`InitBackupSram`) und per MPU nicht cachebar (`system.cpp:548-556`) |
+| Quiesce | `hw.seed.StopAudio()`; LEDs off, `UpdateLeds()` twice (waits for the last DMA transfer); DAC codes 0/0; `ro_sd_unmount()`, `HAL_SD_DeInit` | after this point no interrupt/DMA writes RAM; DAC code 0 is no electrical evidence (NICHT GEMESSEN) |
+| Clean | `SCB_CleanDCache_by_Addr(0x24000000, 480 KiB)`, `__DSB(); __ISB();` | image and zeroing were written through the D-cache; the reset drops the cache. Clean (not invalidate) writes dirty lines back; CMSIS rounds to lines [B]. The stock bootloader copies with the D-cache **disabled** (`bootloader/main.cpp`: `SCB_DisableDCache()`), so this duty is new and the host test proves only the order, not the register effect |
+| Commit | `__disable_irq()`; `boot_info.data = 0x24000000; DSB; boot_info.status = JUMP; DSB; RCC->CIER = 0; HAL_NVIC_SystemReset()` | same order as `ResetToBootloader()` [B]; target first, status last; **not** calling `ResetToBootloader()` (it would overwrite the status). Backup SRAM access is active since the bootloader (`InitBackupSram`) and non-cacheable via MPU (`system.cpp:548-556`) |
 
-Restrisiken (akzeptiert, Konzept v2 §6): der Bootloader prüft nach dem Reset weder
-Hash noch Resetursache; `boot_info.data` ist dort ein freier Zeiger; nur die
-Verwaltung schreibt `JUMP`, Anwendungen nie.
+Residual risks (accepted, concept v2 §6): the bootloader checks neither hash nor reset
+cause after the reset; `boot_info.data` is a free pointer there; only the manager writes
+`JUMP`, applications never.
 
-## 7. Rückkehr und Service
+## 7. Return and service
 
-* Rückkehr aus einer Anwendung: `common/bootloader/return_entry.h` (S1+S16 3 s, SysEx
-  `F0 7D 50 4D 01 01 4F 50 45 4E F7`) → Anwendung beendet Audio/MIDI/CV/Speicherung
-  selbst → `manager_return::Enter()` → `ResetToBootloader(DAISY_SKIP_TIMEOUT)` →
-  Bootloader startet nach 100 ms die QSPI-Anwendung (Verwaltung) über einen zweiten
-  Reset. Zwischen beiden erscheint kurz DFU `0483:DF11` auf J7.
-* Service/DFU: unverändert S9+S16 5 s, BL-SysEx, DDP `BOOT` → `DAISY_INFINITE_TIMEOUT`.
-  In der Verwaltung ist `BOOT` während `LOADING` mit `ERR e=BUSY` gesperrt.
-* Verwaltungsupdate = heutiger DFU-Weg nach `0x90040000` (`docs/FLASHING.md`); es
-  läuft aus internem Flash, nie aus dem zu schreibenden QSPI.
+* Return from an application: `common/bootloader/return_entry.h` (S1+S16 3 s, SysEx
+  `F0 7D 50 4D 01 01 4F 50 45 4E F7`) → the application ends audio/MIDI/CV/storage itself →
+  `manager_return::Enter()` → `ResetToBootloader(DAISY_SKIP_TIMEOUT)` → after 100 ms the
+  bootloader starts the QSPI application (manager) through a second reset. Between the two
+  a DFU device `0483:DF11` briefly appears on J7.
+* Service/DFU: unchanged S9+S16 5 s, BL SysEx, DDP `BOOT` → `DAISY_INFINITE_TIMEOUT`. In the
+  manager `BOOT` is refused with `ERR e=BUSY` while `LOADING`.
+* Manager update = today's DFU path to `0x90040000` (`docs/FLASHING.md`); it runs from internal
+  flash, never from the QSPI being written.
 
-## 8. Bedienung und Modi (`pm_manager.cpp`)
+## 8. Operation and modes (`pm_manager.cpp`)
 
-`SELECT` (Tasten 1–15 wählen, 16 öffnet Diagnose), `DIAG` (Diagnoseschicht besitzt
-Tasten/LEDs/CV/Ton; S1+S16 3 s oder `PMMODE m=SELECT` zurück), `LOADING` (Tasten
-ignoriert), `SERVICE`. Auswahl nur durch einen vollständigen Druck-/Loslass-Zyklus
-genau einer Taste; beim Start oder Moduswechsel gehaltene Tasten müssen erst
-losgelassen werden; Akkorde und Haltezeiten ≥ 3 s wählen nie. Kein Autostart eines
-Programms; der Bootloader startet nach dem Einschalten die Verwaltung (2 s Fenster).
-CV OUT und Testton nur in `DIAG` und nur in einer Hostsitzung; beim Verlassen von
-`DIAG` werden DAC 0/0 und Ton aus gesetzt.
+`SELECT` (keys 1–15 select, 16 opens diagnostics), `DIAG` (the diagnostics layer owns
+keys/LEDs/CV/tone; S1+S16 3 s or `PMMODE m=SELECT` returns), `LOADING` (keys ignored),
+`SERVICE`. A selection requires one complete press/release cycle of exactly one key; keys
+held at start-up or at a mode change must be released first; chords and holds ≥ 3 s never
+select. No program autostarts; the bootloader starts the manager after power-up (2 s
+window). CV OUT and the test tone only in `DIAG` and only in a host session; on leaving
+`DIAG` the DAC is set to 0/0 and the tone off.
 
-## 9. Kartenregel
+## 9. Card rule
 
-Der unveränderte Bootloader flasht beim Start eine Datei des Wurzelverzeichnisses,
-deren Name `.bin`/`.BIN` enthält, nach `0x90040000` und überschreibt damit die
-Verwaltung (Upstream `SearchBin` [B]). Deshalb: **keine Datei mit `.bin` im Namen
-(beliebige Schreibung) im Wurzelverzeichnis**; Programme nur als `.dsy` unter
-`/DAISY/PROGRAMS/`. `tools/pm_card.py check` prüft das am PC vor dem Einlegen;
-`PMINFO rootbin=1` meldet es nachträglich (für den aktuellen Start zu spät).
+At start-up the unchanged bootloader flashes a root-directory file whose name contains
+`.bin`/`.BIN` to `0x90040000`, replacing the manager (upstream `SearchBin` [B]).
+Therefore: **no file with `.bin` in its name (any case) in the root directory**; programs
+only as `.dsy` below `/DAISY/PROGRAMS/`. `tools/pm_card.py check` enforces that on the PC
+before the card is inserted; `PMINFO rootbin=1` reports it afterwards (too late for the
+current boot).
 
-## 10. Grenzen von Version 1
+## 10. Limits of version 1
 
-Kein MSC in der Verwaltung (Reader bleibt separates Image), kein Autostart, kein
-Watchdog (HardFault = Hänger bis zum manuellen Reset), keine Prüfung nach dem Reset,
-kein Flash-Schreibschutz, DFU-Fenster 2 s bleibt, Single-Slot-Update (abgebrochenes
-DFU → erneut flashen; ROM-DFU am Modulport als letzter Weg). JUCE/VST3 nachgelagert.
+No MSC in the manager (the reader stays a separate image), no autostart, no watchdog
+(HardFault = hang until a manual reset), no check after the reset, no flash write
+protection, the 2 s DFU window remains, single-slot update (an aborted DFU → flash again;
+ROM DFU on the module port as the last resort). JUCE/VST3 deferred.
 
-## 11. Offene Nachweise
+## 11. Open evidence
 
-| ID | Nachweis | Stand |
+| ID | Evidence | Status |
 | --- | --- | --- |
-| C1 | RM0433: System-Reset-Quellen, SRAM-Erhalt über Software-Reset, RSR-Flags, RAMECC-Verhalten, SDMMC1-Bus-Matrix, BOOT_ADD-Bereich | Dokument nicht beschaffbar in dieser Umgebung; vor dem ersten SD→SRAM-Test vom Menschen bereitstellen oder nachschlagen |
-| C2 | installierter Bootloader ≙ Tag v6.4.0 (`SKIP_TIMEOUT`/`INF_TIMEOUT`-Verhalten) | NICHT GEMESSEN (B1–B14 in `docs/HARDWARE_TEST_BOOTLOADER.md`) |
-| C3 | XIP-Start der Probe am Seed3 inkl. Taktumschaltung, QSPI-Chip | NICHT GEMESSEN |
-| C4 | Cache-Clean + Commit: erstes SD→SRAM-Image startet und meldet sich | NICHT GEMESSEN |
-| C5 | elektrischer Ruhezustand CV OUT über alle Übergänge | NICHT GEMESSEN (H14/H15 offen) |
+| C1 | RM0433: system reset sources, SRAM retention across a software reset, RSR flags, RAMECC behaviour, SDMMC1 bus matrix, BOOT_ADD range | document not obtainable in this environment; provide or look up before the first SD→SRAM test |
+| C2 | installed bootloader ≙ tag v6.4.0 (`SKIP_TIMEOUT`/`INF_TIMEOUT` behaviour) | NICHT GEMESSEN (B1–B14 in `docs/HARDWARE_TEST_BOOTLOADER.md`) |
+| C3 | XIP start of the probe on the Seed3 incl. clock change, QSPI chip | NICHT GEMESSEN |
+| C4 | cache clean + commit: first SD→SRAM image starts and identifies itself | NICHT GEMESSEN |
+| C5 | electrical rest state of CV OUT across all transitions | NICHT GEMESSEN (H14/H15 open) |

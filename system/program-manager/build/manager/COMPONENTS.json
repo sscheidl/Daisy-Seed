@@ -22,11 +22,11 @@
     }
   ],
   "compatible_control_panels": [],
-  "repository_commit": "ff6c63402369b34a80e26db57dfa9b27d537da6d",
+  "repository_commit": "bbfbe120b9e5b88c93d098d61c0f4a9cd6c18391",
   "working_tree_dirty": true,
   "image": {
     "name": "DaisyProgramManager-v0.1.0.bin",
     "bytes": 156752,
-    "sha256": "9149288b8067e3e8580a9023ef3741cea8f6b31631d183eefc461ec9504351a0"
+    "sha256": "82384379663be547a142beef857704869c35fa176354355b8794babe1f44e3d0"
   }
 }
