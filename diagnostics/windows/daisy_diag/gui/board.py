@@ -105,7 +105,6 @@ class BoardWidget(QWidget):
     jackToggled = Signal(str)  # "left" / "right"
     gateToggled = Signal(int)
     cvChanged = Signal(int, float)
-    ledClicked = Signal(int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -113,7 +112,6 @@ class BoardWidget(QWidget):
         self.setMouseTracking(True)
         self.state: p.BoardState | None = None
         self.interactive = False  # simulation: inputs can be operated with the mouse
-        self.led_selectable = False  # LED mode MASK: LEDs can be toggled
         self.simulated = False
         self.connected = False
         self.sd_display = SdDisplay('No data', theme.MUTED)
@@ -184,9 +182,6 @@ class BoardWidget(QWidget):
         if hit is None or event.button() != Qt.LeftButton:
             return
         kind, index = hit
-        if kind == "led" and self.led_selectable:
-            self.ledClicked.emit(index)
-            return
         if not self.interactive:
             return
         if kind == "button":
@@ -214,10 +209,9 @@ class BoardWidget(QWidget):
             self._drag_to(self.to_board(event.position()))
             return
         hit = self.hit_test(self.to_board(event.position()))
-        clickable = hit is not None and (
-            (self.interactive and hit[0] in ("button", "pot", "sw17", "sw18", "sd", "in_l", "in_r",
-                                             "gate_in_1", "gate_in_2", "cv_in_1", "cv_in_2"))
-            or (self.led_selectable and hit[0] == "led"))
+        clickable = hit is not None and self.interactive and hit[0] in (
+            "button", "pot", "sw17", "sw18", "sd", "in_l", "in_r",
+            "gate_in_1", "gate_in_2", "cv_in_1", "cv_in_2")
         self.setCursor(Qt.PointingHandCursor if clickable else Qt.ArrowCursor)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -270,9 +264,9 @@ class BoardWidget(QWidget):
                     f"Press count: {st.press_counts[i]} (modulo 256){suffix}")
         if kind == "led":
             state = 'no data' if st is None else ('ON' if st.leds[i] else 'OFF')
-            hint = '\nClick to toggle this LED (Individual mode)' if self.led_selectable else ""
             return (f"LED D{i + 1}: commanded state {state}\n"
-                    f"No electrical feedback – inspect the physical board.{hint}{suffix}")
+                    f"Lights while button S{i + 1} is pressed (Buttons → LEDs mode).\n"
+                    f"No electrical feedback – inspect the physical board.{suffix}")
         if kind == "pot":
             if st is None:
                 return f"Potentiometer VR{i + 1}"

@@ -115,9 +115,9 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
 QSplitter::handle { background: #1c1d1f; }
 QTabWidget::pane { border: 1px solid #36393d; background: #1c1d1f; }
 QTabBar::tab {
-    background: #25272a; color: #989ca2; padding: 8px 12px;
+    background: #25272a; color: #989ca2; padding: 8px 9px;
     border: 1px solid #36393d; border-bottom: 2px solid #36393d;
-    font-family: 'Bahnschrift'; min-width: 65px;
+    font-family: 'Bahnschrift'; min-width: 28px;
 }
 QTabBar::tab:selected { color: #ffffff; background: #303235; border-bottom-color: #d6d8db; }
 QTabBar::tab:hover { background: #393c40; }

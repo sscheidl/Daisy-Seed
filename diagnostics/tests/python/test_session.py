@@ -560,3 +560,51 @@ def test_cv_out_off_after_host_timeout():
     clock.advance(3.5)
     dev.output(clock())
     assert dev.cv_mode == "OFF"
+
+
+def _mounted(clock, cable, s):
+    cable.device.inputs.sd_card = True
+    run(clock, s, 1.2)  # the periodic READER status must report LOCAL first
+    assert s.request_sd_test()
+    run(clock, s, 0.1)
+    assert s.sd is not None and s.sd.status == "MOUNTED"
+    s.drain_events()
+
+
+def test_card_removal_invalidates_the_sd_result(connected):
+    clock, cable, s = connected
+    _mounted(clock, cable, s)
+    cable.device.inputs.sd_card = False
+    run(clock, s, 0.1)
+    assert s.sd is None and s.snapshot()["sd"] is None
+    assert ("sd", None) in s.drain_events()
+    cable.device.inputs.sd_card = True
+    run(clock, s, 0.1)
+    assert s.sd is None  # a new card needs a new test
+
+
+def test_disconnect_clears_sd_device_and_port_in_the_snapshot(connected):
+    clock, cable, s = connected
+    _mounted(clock, cable, s)
+    cable.unplug()
+    run(clock, s, 2.0)
+    assert not s.connected
+    report = s.snapshot()
+    assert report["connected"] is False
+    assert report["sd"] is None and report["device"] is None and report["port"] is None
+    assert report["board"] is None and report["system"] is None
+
+
+def test_rejected_sd_test_releases_the_pending_state(connected):
+    clock, cable, s = connected
+    cable.device.inputs.sd_card = True
+    run(clock, s, 1.2)
+    cable.device.reader_state = "SHARED"  # changed behind the host's back (stale LOCAL view)
+    assert s.request_sd_test() and s.sd_test_pending
+    run(clock, s, 0.1)
+    assert not s.sd_test_pending and s.sd is None
+    events = s.drain_events()
+    assert ("sd", None) in events
+    assert any("ERR c=SDTEST e=BUSY" in str(v) for k, v in events if k == "log")
+    run(clock, s, 2.0)
+    assert s.connected  # the RX timeout is armed again and the stream keeps it alive

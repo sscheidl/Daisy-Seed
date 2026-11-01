@@ -8,11 +8,14 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > Windows SD card reader, both CV channels and both gate inputs. Results are
 > real-board measurements, separate from software/simulation tests.
 
-## Control panel review candidate
+## Control panel 0.3.4
 
-App **0.3.3** reorganizes the control panel into SD card, CV / Gate, Controls and
-USB tabs, including live CV input/ADC values, gate states/edges and reported DAC
-codes. Firmware stays at 0.3.2. [Change and validation](docs/CONTROL_PANEL_0.3.3.md).
+App **0.3.4** splits the control panel into six categories (USB, Buttons, Pots,
+CV / Gate, SD card, Log; plus Simulation in simulation mode), keeps the
+firmware's **Buttons → LEDs** behaviour as the default instead of
+per-LED checkboxes, and fixes the host findings of the independent milestone review
+(stale SD result in saved reports, CV min/max aliasing, stuck SD-test lock).
+Firmware stays at 0.3.2. [Change and validation](docs/CONTROL_PANEL_0.3.4.md).
 The existing 0.3.2 downloads below remain the published binary baseline.
 
 ## Hardware validation
