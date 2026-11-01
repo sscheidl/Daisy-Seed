@@ -5,15 +5,12 @@
 #ifndef AMBIENT_CONTIGUOUS_FIR
 #define AMBIENT_CONTIGUOUS_FIR 0
 #endif
-// Diagnostic (default 0 = off): highest wet engine rate in Hz, e.g. 32000 like a
-// real FV-1. The core is prepared at that rate, so its times stay correct; Stretch
-// still reaches the same lowest rate (a quarter of the host rate).
-#ifndef AMBIENT_WET_MAX_HZ
-#define AMBIENT_WET_MAX_HZ 0
-#endif
 
 namespace ambient {
-// Keeps dry audio at codec rate. The wet engine is clocked at 12–48 kHz by a
+// Shared wet-clock policy for every host, independent of the codec sample rate.
+constexpr float kMinimumWetRate = 12000.f;
+constexpr float kMaximumWetRate = 32000.f;
+// Keeps dry audio at codec rate. The wet engine is clocked at 12–32 kHz by a
 // fractional scheduler; a 64-tap low-pass FIR precedes decimation and the wet
 // output is linearly interpolated. No allocation or coefficient design in Process().
 class WetPath {
@@ -27,6 +24,7 @@ class WetPath {
     Stereo Process(Stereo input, bool rightConnected);
     const Diagnostics &GetDiagnostics() const { return core_.GetDiagnostics(); }
     float InternalRateRatio() const { return ratio_; }
+    float InternalSampleRate() const { return sampleRate_ * ratio_; }
 
   private:
     static constexpr unsigned kTaps = 64;
@@ -35,15 +33,8 @@ class WetPath {
     AmbientReverb core_;
     Parameters parameters_{};
     float sampleRate_ = 48000, ratio_ = 1, targetRatio_ = 1, phase_ = 0;
+    float minimumRatio_ = .25f, maximumRatio_ = 2.f / 3.f;
     float filterRatio_ = -1;
-#if AMBIENT_WET_MAX_HZ
-    float maxRatio_ = 1; // Core rate / host rate at Stretch 0.
-    float StretchRatio(float stretch) const {
-        return maxRatio_ * std::pow(.25f / maxRatio_, stretch);
-    }
-#else
-    float StretchRatio(float stretch) const { return std::pow(.25f, stretch); }
-#endif
 #if AMBIENT_CONTIGUOUS_FIR
     // Diagnostic (default off): each sample is stored twice, so the newest kTaps
     // samples are contiguous; the summation order is unchanged (bit-identical).
@@ -60,5 +51,6 @@ class WetPath {
     void DesignFilterBank(); // Called only by Prepare(), before audio starts.
     void ConfigureFilter(float safeRatio);
     Stereo Filter(Stereo input);
+    float StretchRatio(float stretch) const;
 };
 } // namespace ambient

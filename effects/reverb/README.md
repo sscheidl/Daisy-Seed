@@ -1,6 +1,11 @@
-# Ambient Reverb v0.3 — Seed3 Desktop Dev Kit
+# Ambient Reverb v0.4.0 — Seed3 Desktop Dev Kit
 
 **Buildable prototype; no hardware run has been reported.** Project ID: `reverb-fx`.
+The shared FX now limits its wet clock to **32–12 kHz** and processes only the
+pitch shifters needed by the active/fading modes. Codec and dry audio stay at
+48 kHz. This deliberately changes the sound from v0.3.1. Start with the standalone
+FX; instrument acceptance follows separately. See the
+[performance implementation and acceptance plan](docs/PERFORMANCE.md).
 This is an original stereo ambient reverb imported from the
 [`feature/seed3-ambient-reverb` branch at `eb7fe38`](https://github.com/sscheidl/fv-1-DSP-xtractor/tree/eb7fe38e165b2a997e8128ebc2b7a7a228bfcb65).
 The native DSP, Seed3 example, and host verification were written for that
@@ -50,7 +55,7 @@ The exact physical button and pot orientation still needs a board check.
 | VR5 | Wet Pan, left–center–right |
 | VR6 | Mode-dependent X: sustained Cloud vibrato, Halo/Abyss/Shimmer octave amount, Scatter tap diffusion, Bloom rise |
 | VR7 | Base LFO rate, 0.03–1.5 Hz |
-| VR8 | Stretch: continuously varies the wet processing clock from 48 to 12 kHz |
+| VR8 | Stretch: continuously varies the wet processing clock from 32 to 12 kHz |
 
 Exactly one of LEDs D1–D6 indicates the selected mode. D15 lights when bypass
 is active; D16 lights when Sustain is active. D7–D14 remain off. The main loop
@@ -69,14 +74,16 @@ and its clock range have not been verified.
 
 The [Desktop control plan](docs/CONTROL_PLAN.md) records the source checks,
 mode expansion path, and hardware acceptance steps. The table above describes
-the v0.3 firmware; the older plan predates the sixth algorithm.
+the v0.4.0 firmware; the older plan predates the sixth algorithm.
 
 ## Reuse inside an instrument
 
 `src/fx_adapter.h` exposes the existing DSP through the shared wet-only audio
 contract. Its integration adapter has its own version in `adapter_version.h`;
-the shared core is versioned 0.3.1 (0.3 plus the bootloader entry and USB-MIDI in
-the standalone firmware; the DSP is unchanged). The first composed firmware is
+the shared core is versioned 0.4.0 and its adapter 0.2.0. The wet-clock cap and
+pitch policy live in the FX component, so all consumers compile the same behavior.
+Existing instrument integrations are regression-tested consumers; their device
+CPU and listening acceptance is a later, separate step. The first composed firmware is
 `make PROJECT=physical-modeling-fx-ambient`; see
 [modular components](../../docs/MODULAR_COMPONENTS.md) for its limited pilot
 parameter mapping and hardware-test boundary.
@@ -90,10 +97,10 @@ as in [BUILD.md](../../docs/BUILD.md):
 make PROJECT=reverb-fx test
 make PROJECT=reverb-fx test-sanitize
 make PROJECT=reverb-fx -j4
-python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.3.1.bin
+python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.4.0.bin
 ```
 
-The firmware is `effects/reverb/build/AmbientReverb-v0.3.1.bin`, built with the
+The firmware is `effects/reverb/build/AmbientReverb-v0.4.0.bin`, built with the
 same `BOOT_SRAM` setup and external DFU bootloader as Toy Piano. Follow the
 [Desktop Kit flashing guide](../../docs/FLASHING.md); no bootloader change is
 required. Do not flash the research project's original image if you want the

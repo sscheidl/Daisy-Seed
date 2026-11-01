@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: MIT
 #include "wet_path.hpp"
 
-static_assert(AMBIENT_WET_MAX_HZ == 0 || AMBIENT_WET_MAX_HZ >= 32000,
-              "the reverb core runs at 32 kHz or more");
 namespace ambient {
+float WetPath::StretchRatio(float stretch) const {
+    return (kMaximumWetRate / sampleRate_) *
+           std::pow(kMinimumWetRate / kMaximumWetRate, stretch);
+}
 bool WetPath::Prepare(float sampleRate, Memory &memory) {
     if (!std::isfinite(sampleRate) || sampleRate < 32000 || sampleRate > 96000)
         return false;
     sampleRate_ = sampleRate;
-#if AMBIENT_WET_MAX_HZ
-    const float coreRate = std::min(sampleRate, float(AMBIENT_WET_MAX_HZ));
-    maxRatio_ = coreRate / sampleRate;
-#else
-    const float coreRate = sampleRate;
-#endif
+    minimumRatio_ = kMinimumWetRate / sampleRate;
+    maximumRatio_ = kMaximumWetRate / sampleRate;
     ready_ = false;
     historyLeft_.fill(0);
     historyRight_.fill(0);
@@ -31,7 +29,9 @@ bool WetPath::Prepare(float sampleRate, Memory &memory) {
     wetParameters.trails = true;
     wetParameters.hold = false;
     core_.SetParameters(wetParameters);
-    if (!core_.Prepare(coreRate, memory))
+    // Size delays and coefficients at the maximum wet rate. The 32 kHz cap
+    // preserves nominal times at Stretch 0 instead of slowing a 48 kHz core.
+    if (!core_.Prepare(kMaximumWetRate, memory))
         return false;
     const float dry = parameters_.bypass ? 1.f : std::cos(parameters_.mix * kPi * .5f);
     dry_.Set(dry, 0);
@@ -77,9 +77,10 @@ void WetPath::ServiceFilter() {
 }
 void WetPath::DesignFilterBank() {
     for (unsigned band = 0; band < kFilterBands; ++band) {
-        const float ratio = .25f + .75f * float(band) / float(kFilterBands - 1);
-        // Keep the stopband below the new Nyquist rate at maximum stretch.
-        const float cutoff = .35f * ratio + .1f * (ratio - .25f) / .75f;
+        const float blend = float(band) / float(kFilterBands - 1);
+        const float ratio = minimumRatio_ + (maximumRatio_ - minimumRatio_) * blend;
+        // Leave transition bandwidth below the wet Nyquist rate, even at the cap.
+        const float cutoff = ratio * (.35f + .05f * blend);
         float sum = 0;
         for (unsigned i = 0; i < kTaps; ++i) {
             const float t = float(i) - float(kTaps - 1) * .5f;
@@ -96,11 +97,12 @@ void WetPath::DesignFilterBank() {
     }
 }
 void WetPath::ConfigureFilter(float safeRatio) {
-    safeRatio = Bounded(safeRatio, .25f, 1.f, 1.f);
+    safeRatio = Bounded(safeRatio, minimumRatio_, maximumRatio_, minimumRatio_);
     if (std::abs(safeRatio - filterRatio_) < .003f)
         return;
     filterRatio_ = safeRatio;
-    const float position = (safeRatio - .25f) * float(kFilterBands - 1) / .75f;
+    const float position = (safeRatio - minimumRatio_) * float(kFilterBands - 1) /
+                           (maximumRatio_ - minimumRatio_);
     const unsigned lower = std::min(unsigned(position), kFilterBands - 1);
     const unsigned upper = std::min(lower + 1, kFilterBands - 1);
     const float blend = position - float(lower);

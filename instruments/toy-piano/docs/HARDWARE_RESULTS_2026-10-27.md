@@ -1,5 +1,11 @@
 # Hardwaremessung Toy Piano + Ambient: CPU-Überlast — 27./28.10.2026
 
+**Historischer Bericht:** Seit 01.11.2026 werden beide damaligen Entwicklungsstände
+in PR #68 zusammengeführt. Kern 0.4.0 / Adapter 0.2.0 verwenden Gate und 32–12 kHz
+zentral im FX; die alten `AMB_GATE`-/`AMB_WET32`-Schalter entfallen. Die folgenden
+Messungen und Prüfsummen gelten weiterhin ausschließlich für die damaligen Images.
+FX-zuerst-Abnahme und aktueller Stand: [FX-Performance](../../../effects/reverb/docs/PERFORMANCE.md).
+
 **CPU-ÜBERLAST GEMESSEN (27./28.10.2026) — URSACHE: AMBIENT-REVERB-KERN BEI VOLLER WET-RATE.**
 
 Der Mensch hat alle Images geflasht und gespielt. Auf seinen Wunsch hat der Agent das

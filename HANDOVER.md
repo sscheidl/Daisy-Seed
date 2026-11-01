@@ -1,5 +1,13 @@
 # Übergabe — lokal weiterarbeiten
 
+**Ambient FX 01.11.2026:** Die Arbeit aus PR #68 wird FX-zuerst fortgeführt:
+gemeinsamer Kern `ambient-reverb 0.4.0`, Adapter `0.2.0`, Wet-Takt 32–12 kHz,
+bedarfsgerechte Pitchshifter. Standalone-FX, Toy Piano und Physical Modeling
+verwenden dieselben FX-Quellen. Die Klangänderung ist beabsichtigt; erst den FX
+am Gerät abnehmen, danach jedes Instrument separat. Historische Messungen vom
+27./28.10. betreffen die alte Fassung. Aktueller Stand, Validierung und
+Abnahmefolge: [FX-Performance](effects/reverb/docs/PERFORMANCE.md).
+
 **Diagnose 31.10.2026:** PR #70 gemergt, Suite 0.3.2. SD-Kartenleser mit
 Dateioperationen, physischer Schreibunterbrechung und Wiederanlauf GEMESSEN;
 beide CV-Kanäle und beide Gate-Eingänge funktional mit 0.3.1 GEMESSEN.

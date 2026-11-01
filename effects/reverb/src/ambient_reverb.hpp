@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: MIT
 #include "primitives.hpp"
 namespace ambient {
+#if defined(AMBIENT_PITCH_GATE) || defined(AMBIENT_WET_MAX_HZ)
+#error "Ambient 0.4 uses one shared pitch/32 kHz policy; remove obsolete experiment defines"
+#endif
 // Append modes to preserve existing numeric IDs.
 enum class Mode : unsigned { Cloud, Bloom, Abyss, Halo, Scatter, Shimmer };
 struct Parameters {
@@ -14,8 +17,8 @@ struct Parameters {
     float pan = 0, stretch = 0;
     bool hold = false, bypass = false, trails = true, sustain = false;
 };
-// Diagnostic layout (default off): capacities sized for the 48 kHz core that every
-// host uses (Stretch skips core samples, it never changes the core rate), with the
+// Diagnostic layout (default off): capacities sized for a core up to 48 kHz
+// (WetPath prepares at 32 kHz; Stretch skips core calls), with the
 // all-pass and pitch buffers split off so a host can place them in internal RAM.
 // Reads stay within each line's length, so the output is bit-identical.
 #ifndef AMBIENT_COMPACT_48K
@@ -52,6 +55,7 @@ struct Memory {
 };
 struct Diagnostics {
     uint64_t samples = 0, guardEvents = 0;
+    uint64_t upSamples = 0, downSamples = 0;
     float peakWet = 0;
 };
 class AmbientReverb {
@@ -96,9 +100,7 @@ class AmbientReverb {
     Highpass highpass_[8];
     Oscillator lfo_[8];
     Octave up_, down_;
-#if AMBIENT_PITCH_GATE
     bool upRunning_ = true, downRunning_ = true;
-#endif
     Stereo feedback_{};
     float envelope_ = 0, swell_ = 1;
     bool gate_ = false;

@@ -1,5 +1,12 @@
 # Modularer Ausbau: erste konkrete Stufe
 
+**Aktuell, 01.11.2026:** Ambient wird zuerst als eigenständige FX-Komponente
+entwickelt und geprüft. Kern 0.4.0 / Adapter 0.2.0 legen 32–12 kHz Wet-Takt und
+Pitchshifter-Nutzung zentral fest. Alle vorhandenen Instrument-Hosts verwenden
+diese Quellen; Bedienzuordnungen bleiben im Host. Die Hardwareabnahme folgt
+zuerst für den Standalone-FX, danach getrennt für Toy Piano und Rings/Torus.
+Details und historische Branch-Zuordnung: [FX-Performance](../effects/reverb/docs/PERFORMANCE.md).
+
 Instrumente, Effekte und Control Panels werden getrennt entwickelt und beim
 Bauen zu benannten Produkten kombiniert. Diese Stufe ergänzt den vorhandenen
 Rings/Torus-/Mod-on-Daisy-Aufbau. Es gibt keinen Laufzeit-Lader, keine zweite
