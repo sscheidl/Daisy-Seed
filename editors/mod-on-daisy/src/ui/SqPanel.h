@@ -433,7 +433,7 @@ class SqPanel : public juce::Component {
     // The device state as product patch; Streichwurst adds the matrix of the MD session.
     AcidPatch CurrentPatch() const {
         AcidPatch p = PatchFromSession(s_);
-        if(Streichwurst() && matrix_text)
+        if(s_.Identity().HasModMatrix() && matrix_text)
             p.matrix = matrix_text();
         return p;
     }

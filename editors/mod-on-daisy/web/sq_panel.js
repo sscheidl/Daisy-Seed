@@ -269,7 +269,7 @@
     }
     function savePatch() {
       const product = client.identity.product || 'acid-seq';
-      const text = S.serializePatch(S.patchFromClient(client, isStreichwurst(client) ? getMatrix() : null));
+      const text = S.serializePatch(S.patchFromClient(client, client.identity.hasModMatrix ? getMatrix() : null));
       const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: 'application/json' })), download: product + '.' + S.patchExtension(product) });
       a.click();
       URL.revokeObjectURL(a.href);
