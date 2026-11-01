@@ -66,8 +66,9 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   run `program-dfu` unless the human has put the kit into bootloader mode and asked
   for it. Listening tests, keys, pots, cables and MIDI keyboards are done by the human;
   the agent runs the command-line steps and records what the human reports.
-* **Report only what was observed.** Mark results `GEMESSEN` (with date) or
-  `NICHT GEMESSEN`. Never fill in expected values as results.
+* **Report only what was observed.** Mark results `MEASURED` (with date) or
+  `NOT MEASURED` (older German docs use `GEMESSEN` / `NICHT GEMESSEN`). Never fill
+  in expected values as results.
 * **Releases**: changing `instruments/toy-piano/src/version.h` does not
   start a release. Only the human manually dispatches the release workflow;
   publish a draft only after hardware acceptance.
