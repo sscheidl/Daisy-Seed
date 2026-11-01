@@ -1,5 +1,9 @@
 # Performance-Optimierungen und Vergleich — 27.10.2026
 
+Nachtrag: Der spätere [A/B-Hardwarelauf vom 27.10.](HARDWARE_RESULTS_2026-10-27.md)
+hat CPU-Gewinne gemessen. ARM-Render-Hashes und Hörprüfung bleiben NICHT GEMESSEN.
+Die folgenden Umsetzungsnotizen halten den Stand vor dieser Messung fest.
+
 Die Optimierungen verändern weder Stimmenzahl, Resonanzmoden, Abtastrate noch
 Hallstruktur. Die vorhandenen Golden-Prüfwerte werden nicht angepasst.
 **CPU-Gewinn, ARM-Render-Hashes und Hörprüfung: NICHT GEMESSEN.**

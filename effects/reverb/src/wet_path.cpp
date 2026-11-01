@@ -2,17 +2,23 @@
 #include "wet_path.hpp"
 
 namespace ambient {
+float WetPath::StretchRatio(float stretch) const {
+    return (kMaximumWetRate / sampleRate_) *
+           std::pow(kMinimumWetRate / kMaximumWetRate, stretch);
+}
 bool WetPath::Prepare(float sampleRate, Memory &memory) {
     if (!std::isfinite(sampleRate) || sampleRate < 32000 || sampleRate > 96000)
         return false;
     sampleRate_ = sampleRate;
+    minimumRatio_ = kMinimumWetRate / sampleRate;
+    maximumRatio_ = kMaximumWetRate / sampleRate;
     ready_ = false;
     historyLeft_.fill(0);
     historyRight_.fill(0);
     historyIndex_ = 0;
     phase_ = 0;
     previousWet_ = currentWet_ = {};
-    ratio_ = targetRatio_ = std::pow(.25f, Bounded(parameters_.stretch, 0, 1, 0));
+    ratio_ = targetRatio_ = StretchRatio(Bounded(parameters_.stretch, 0, 1, 0));
     filterRatio_ = -1;
     DesignFilterBank();
     ConfigureFilter(ratio_);
@@ -23,7 +29,9 @@ bool WetPath::Prepare(float sampleRate, Memory &memory) {
     wetParameters.trails = true;
     wetParameters.hold = false;
     core_.SetParameters(wetParameters);
-    if (!core_.Prepare(sampleRate, memory))
+    // Size delays and coefficients at the maximum wet rate. The 32 kHz cap
+    // preserves nominal times at Stretch 0 instead of slowing a 48 kHz core.
+    if (!core_.Prepare(kMaximumWetRate, memory))
         return false;
     const float dry = parameters_.bypass ? 1.f : std::cos(parameters_.mix * kPi * .5f);
     dry_.Set(dry, 0);
@@ -42,7 +50,7 @@ void WetPath::SetParameters(const Parameters &input) {
     p.stretch = Bounded(p.stretch, 0, 1, 0);
     p.outputGain = Bounded(p.outputGain, 0, 1, .8f);
     parameters_ = p;
-    targetRatio_ = std::pow(.25f, p.stretch);
+    targetRatio_ = StretchRatio(p.stretch);
     if (!ready_)
         return;
     Parameters wetParameters = p;
@@ -69,9 +77,10 @@ void WetPath::ServiceFilter() {
 }
 void WetPath::DesignFilterBank() {
     for (unsigned band = 0; band < kFilterBands; ++band) {
-        const float ratio = .25f + .75f * float(band) / float(kFilterBands - 1);
-        // Keep the stopband below the new Nyquist rate at maximum stretch.
-        const float cutoff = .35f * ratio + .1f * (ratio - .25f) / .75f;
+        const float blend = float(band) / float(kFilterBands - 1);
+        const float ratio = minimumRatio_ + (maximumRatio_ - minimumRatio_) * blend;
+        // Leave transition bandwidth below the wet Nyquist rate, even at the cap.
+        const float cutoff = ratio * (.35f + .05f * blend);
         float sum = 0;
         for (unsigned i = 0; i < kTaps; ++i) {
             const float t = float(i) - float(kTaps - 1) * .5f;
@@ -88,11 +97,12 @@ void WetPath::DesignFilterBank() {
     }
 }
 void WetPath::ConfigureFilter(float safeRatio) {
-    safeRatio = Bounded(safeRatio, .25f, 1.f, 1.f);
+    safeRatio = Bounded(safeRatio, minimumRatio_, maximumRatio_, minimumRatio_);
     if (std::abs(safeRatio - filterRatio_) < .003f)
         return;
     filterRatio_ = safeRatio;
-    const float position = (safeRatio - .25f) * float(kFilterBands - 1) / .75f;
+    const float position = (safeRatio - minimumRatio_) * float(kFilterBands - 1) /
+                           (maximumRatio_ - minimumRatio_);
     const unsigned lower = std::min(unsigned(position), kFilterBands - 1);
     const unsigned upper = std::min(lower + 1, kFilterBands - 1);
     const float blend = position - float(lower);
@@ -101,6 +111,18 @@ void WetPath::ConfigureFilter(float safeRatio) {
                            blend * (coefficientBank_[upper][i] - coefficientBank_[lower][i]);
 }
 Stereo WetPath::Filter(Stereo input) {
+#if AMBIENT_CONTIGUOUS_FIR
+    historyLeft_[historyIndex_] = historyLeft_[historyIndex_ + kTaps] = input.left;
+    historyRight_[historyIndex_] = historyRight_[historyIndex_ + kTaps] = input.right;
+    // Newest first, as in the ring version: tap k reads the sample k steps back.
+    const float *left = historyLeft_.data() + historyIndex_ + kTaps;
+    const float *right = historyRight_.data() + historyIndex_ + kTaps;
+    Stereo result{};
+    for (unsigned k = 0; k < kTaps; ++k) {
+        result.left += coefficients_[k] * left[-int(k)];
+        result.right += coefficients_[k] * right[-int(k)];
+    }
+#else
     historyLeft_[historyIndex_] = input.left;
     historyRight_[historyIndex_] = input.right;
     Stereo result{};
@@ -110,6 +132,7 @@ Stereo WetPath::Filter(Stereo input) {
         result.right += c * historyRight_[index];
         index = (index - 1) & (kTaps - 1);
     }
+#endif
     historyIndex_ = (historyIndex_ + 1) & (kTaps - 1);
     return result;
 }

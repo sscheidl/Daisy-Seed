@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: MIT
 #include "primitives.hpp"
 namespace ambient {
+#if defined(AMBIENT_PITCH_GATE) || defined(AMBIENT_WET_MAX_HZ)
+#error "Ambient 0.4 uses one shared pitch/32 kHz policy; remove obsolete experiment defines"
+#endif
 // Append modes to preserve existing numeric IDs.
 enum class Mode : unsigned { Cloud, Bloom, Abyss, Halo, Scatter, Shimmer };
 struct Parameters {
@@ -14,17 +17,45 @@ struct Parameters {
     float pan = 0, stretch = 0;
     bool hold = false, bypass = false, trails = true, sustain = false;
 };
+// Diagnostic layout (default off): capacities sized for a core up to 48 kHz
+// (WetPath prepares at 32 kHz; Stretch skips core calls), with the
+// all-pass and pitch buffers split off so a host can place them in internal RAM.
+// Reads stay within each line's length, so the output is bit-identical.
+#ifndef AMBIENT_COMPACT_48K
+#define AMBIENT_COMPACT_48K 0
+#endif
+#if AMBIENT_COMPACT_48K
+constexpr std::size_t kTankCapacity = 8192, kTankAllpassCapacity = 2048,
+                      kInputAllpassCapacity = 1024, kPreDelayCapacity = 16384;
+#else
+constexpr std::size_t kTankCapacity = 16384, kTankAllpassCapacity = 4096,
+                      kInputAllpassCapacity = 2048, kPreDelayCapacity = 32768;
+#endif
+constexpr std::size_t kPitchCapacity = 8192;
+#if AMBIENT_COMPACT_48K
+struct FastMemory {
+    std::array<std::array<float, kTankAllpassCapacity>, 8> tankAllpass;
+    std::array<std::array<float, kInputAllpassCapacity>, 8> inputAllpass;
+    std::array<std::array<float, kPitchCapacity>, 4> pitch;
+};
+#endif
 // Plain storage, deliberately no constructors/default member initializers.
 // Place in SDRAM and call Prepare AFTER the hardware initializes SDRAM.
 struct Memory {
-    std::array<std::array<float, 16384>, 8> tank;
-    std::array<std::array<float, 4096>, 8> tankAllpass;
-    std::array<std::array<float, 2048>, 8> inputAllpass;
-    std::array<std::array<float, 32768>, 2> preDelay;
-    std::array<std::array<float, 8192>, 4> pitch;
+    std::array<std::array<float, kTankCapacity>, 8> tank;
+#if AMBIENT_COMPACT_48K
+    std::array<std::array<float, kPreDelayCapacity>, 2> preDelay;
+    FastMemory *fast; // Set by the host before Prepare.
+#else
+    std::array<std::array<float, kTankAllpassCapacity>, 8> tankAllpass;
+    std::array<std::array<float, kInputAllpassCapacity>, 8> inputAllpass;
+    std::array<std::array<float, kPreDelayCapacity>, 2> preDelay;
+    std::array<std::array<float, kPitchCapacity>, 4> pitch;
+#endif
 };
 struct Diagnostics {
     uint64_t samples = 0, guardEvents = 0;
+    uint64_t upSamples = 0, downSamples = 0;
     float peakWet = 0;
 };
 class AmbientReverb {
@@ -60,15 +91,16 @@ class AmbientReverb {
     float sampleRate_ = 48000, waveSmoothing_ = 0, envelopeRelease_ = 0;
     Parameters parameters_{};
     Diagnostics diagnostics_{};
-    Delay<16384> tank_[8];
-    Delay<4096> tankAp_[8];
-    Delay<2048> inputAp_[8];
-    Delay<32768> pre_[2];
+    Delay<kTankCapacity> tank_[8];
+    Delay<kTankAllpassCapacity> tankAp_[8];
+    Delay<kInputAllpassCapacity> inputAp_[8];
+    Delay<kPreDelayCapacity> pre_[2];
     unsigned tankLength_[8]{}, apLength_[8]{}, inputLength_[8]{};
     Lowpass damping_[8];
     Highpass highpass_[8];
     Oscillator lfo_[8];
     Octave up_, down_;
+    bool upRunning_ = true, downRunning_ = true;
     Stereo feedback_{};
     float envelope_ = 0, swell_ = 1;
     bool gate_ = false;

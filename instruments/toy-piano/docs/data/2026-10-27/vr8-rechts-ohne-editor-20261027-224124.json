@@ -1,0 +1,42 @@
+{
+ "label": "vr8-rechts-ohne-editor",
+ "firmware": {
+  "protocol": "1.0",
+  "module": "0.1.0",
+  "instrument": "toy-piano-ambient",
+  "version": "0.1.2",
+  "max_active": 8,
+  "tick_hz": 1000,
+  "slots": 0,
+  "schema": "4B1F2547",
+  "capabilities": 126,
+  "capabilities2": 1
+ },
+ "utc": "2026-10-27T21:41:24.879394+00:00",
+ "phases": [
+  {
+   "phase": "ruhig",
+   "load_avg": 92.55,
+   "load_max": 112.07,
+   "overruns": 1663,
+   "blocks": 16204,
+   "midi_send_errors": 0
+  },
+  {
+   "phase": "akkorde",
+   "load_avg": 95.49,
+   "load_max": 116.86,
+   "overruns": 10877,
+   "blocks": 16443,
+   "midi_send_errors": 8
+  },
+  {
+   "phase": "dicht",
+   "load_avg": 93.27,
+   "load_max": 116.49,
+   "overruns": 10124,
+   "blocks": 16156,
+   "midi_send_errors": 0
+  }
+ ]
+}

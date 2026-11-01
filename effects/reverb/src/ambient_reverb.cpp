@@ -15,6 +15,15 @@ float Pole(float hz, float fs) {
 bool AmbientReverb::Prepare(float sampleRate, Memory &memory) {
     if (!std::isfinite(sampleRate) || sampleRate < 32000 || sampleRate > 96000)
         return false;
+#if AMBIENT_COMPACT_48K
+    // The compact capacities hold the longest reads (tank incl. modulation,
+    // pre-delay incl. early taps) only up to 48 kHz.
+    if (sampleRate > 48000 || !memory.fast)
+        return false;
+    FastMemory &fast = *memory.fast;
+#else
+    Memory &fast = memory;
+#endif
     sampleRate_ = sampleRate;
     ready_ = true;
     state_ = {};
@@ -25,8 +34,8 @@ bool AmbientReverb::Prepare(float sampleRate, Memory &memory) {
     gate_ = false;
     for (unsigned i = 0; i < 8; ++i) {
         tank_[i].Bind(memory.tank[i]);
-        tankAp_[i].Bind(memory.tankAllpass[i]);
-        inputAp_[i].Bind(memory.inputAllpass[i]);
+        tankAp_[i].Bind(fast.tankAllpass[i]);
+        inputAp_[i].Bind(fast.inputAllpass[i]);
         tankLength_[i] = unsigned(std::round(kTankSeconds[i] * sampleRate));
         apLength_[i] = unsigned(std::round(kApSeconds[i] * sampleRate));
         inputLength_[i] = unsigned(std::round(kInputSeconds[i] * sampleRate));
@@ -36,8 +45,9 @@ bool AmbientReverb::Prepare(float sampleRate, Memory &memory) {
     }
     pre_[0].Bind(memory.preDelay[0]);
     pre_[1].Bind(memory.preDelay[1]);
-    up_.Prepare(sampleRate, memory.pitch[0], memory.pitch[1], 2.f);
-    down_.Prepare(sampleRate, memory.pitch[2], memory.pitch[3], .5f);
+    up_.Prepare(sampleRate, fast.pitch[0], fast.pitch[1], 2.f);
+    down_.Prepare(sampleRate, fast.pitch[2], fast.pitch[3], .5f);
+    upRunning_ = downRunning_ = true;
     waveSmoothing_ = 1 - Pole(8.f, sampleRate);
     envelopeRelease_ = Pole(2.f, sampleRate);
     SetParameters(parameters_, true);
@@ -145,7 +155,23 @@ Stereo AmbientReverb::Process(Stereo in) {
     const float loopSend = (.35f + .35f * mode[5]) * (1 - maximumGain) * (1 - hold);
     Stereo pitchIn{.7f * x.left + loopSend * feedback_.left,
                    .7f * x.right + loopSend * feedback_.right};
-    const Stereo octaveUp = up_.Process(pitchIn), octaveDown = down_.Process(pitchIn);
+    // Keep outgoing shifters alive throughout the mode crossfade. Restart only
+    // a newly needed shifter, with logical empty history and a window-long fade.
+    const bool needsUp = mode[3] > 0 || mode[5] > 0;
+    const bool needsDown = mode[2] > 0;
+    Stereo octaveUp{}, octaveDown{};
+    if (needsUp) {
+        if (!upRunning_) up_.Restart();
+        octaveUp = up_.Process(pitchIn);
+        ++diagnostics_.upSamples;
+    }
+    if (needsDown) {
+        if (!downRunning_) down_.Restart();
+        octaveDown = down_.Process(pitchIn);
+        ++diagnostics_.downSamples;
+    }
+    upRunning_ = needsUp;
+    downRunning_ = needsDown;
     const float amount = .5f * texture;
     x.left += amount * (mode[2] * octaveDown.left + mode[3] * octaveUp.left);
     x.right += amount * (mode[2] * octaveDown.right + mode[3] * octaveUp.right);

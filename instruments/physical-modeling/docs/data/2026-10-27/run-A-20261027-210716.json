@@ -1,0 +1,313 @@
+{
+ "label": "A",
+ "started": "2026-10-27T20:07:16.720465+00:00",
+ "finished": "2026-10-27T20:15:19.972119+00:00",
+ "ports": [
+  "Daisy Seed External 18",
+  "Daisy Seed External 19"
+ ],
+ "seconds": 15,
+ "stress_seconds": 30,
+ "summary": [
+  {
+   "model": 1,
+   "name": "Modal Resonator",
+   "phase": "wechsel",
+   "average_percent": 33.6,
+   "maximum_percent": 40.44,
+   "overruns": 0,
+   "blocks": 1007,
+   "reported_model": 1
+  },
+  {
+   "model": 1,
+   "name": "Modal Resonator",
+   "phase": "ruhig",
+   "average_percent": 33.87,
+   "maximum_percent": 35.16,
+   "overruns": 0,
+   "blocks": 15009,
+   "reported_model": 1
+  },
+  {
+   "model": 1,
+   "name": "Modal Resonator",
+   "phase": "regler2",
+   "average_percent": 33.84,
+   "maximum_percent": 35.0,
+   "overruns": 0,
+   "blocks": 14996,
+   "reported_model": 1
+  },
+  {
+   "model": 1,
+   "name": "Modal Resonator",
+   "phase": "regler8",
+   "average_percent": 33.56,
+   "maximum_percent": 35.03,
+   "overruns": 0,
+   "blocks": 15000,
+   "reported_model": 1
+  },
+  {
+   "model": 1,
+   "name": "Modal Resonator",
+   "phase": "stress",
+   "average_percent": 34.0,
+   "maximum_percent": 35.58,
+   "overruns": 0,
+   "blocks": 30014,
+   "reported_model": 1
+  },
+  {
+   "model": 2,
+   "name": "Sympathetic Strings",
+   "phase": "wechsel",
+   "average_percent": 42.09,
+   "maximum_percent": 136.76,
+   "overruns": 1,
+   "blocks": 1006,
+   "reported_model": 2
+  },
+  {
+   "model": 2,
+   "name": "Sympathetic Strings",
+   "phase": "ruhig",
+   "average_percent": 44.0,
+   "maximum_percent": 49.63,
+   "overruns": 0,
+   "blocks": 15002,
+   "reported_model": 2
+  },
+  {
+   "model": 2,
+   "name": "Sympathetic Strings",
+   "phase": "regler2",
+   "average_percent": 44.27,
+   "maximum_percent": 52.63,
+   "overruns": 0,
+   "blocks": 14998,
+   "reported_model": 2
+  },
+  {
+   "model": 2,
+   "name": "Sympathetic Strings",
+   "phase": "regler8",
+   "average_percent": 43.53,
+   "maximum_percent": 50.59,
+   "overruns": 0,
+   "blocks": 15009,
+   "reported_model": 2
+  },
+  {
+   "model": 2,
+   "name": "Sympathetic Strings",
+   "phase": "stress",
+   "average_percent": 43.58,
+   "maximum_percent": 56.49,
+   "overruns": 0,
+   "blocks": 30016,
+   "reported_model": 2
+  },
+  {
+   "model": 3,
+   "name": "Inharmonic Strings",
+   "phase": "wechsel",
+   "average_percent": 39.86,
+   "maximum_percent": 128.59,
+   "overruns": 1,
+   "blocks": 1006,
+   "reported_model": 3
+  },
+  {
+   "model": 3,
+   "name": "Inharmonic Strings",
+   "phase": "ruhig",
+   "average_percent": 40.44,
+   "maximum_percent": 44.93,
+   "overruns": 0,
+   "blocks": 15000,
+   "reported_model": 3
+  },
+  {
+   "model": 3,
+   "name": "Inharmonic Strings",
+   "phase": "regler2",
+   "average_percent": 40.49,
+   "maximum_percent": 45.16,
+   "overruns": 0,
+   "blocks": 14998,
+   "reported_model": 3
+  },
+  {
+   "model": 3,
+   "name": "Inharmonic Strings",
+   "phase": "regler8",
+   "average_percent": 40.25,
+   "maximum_percent": 44.86,
+   "overruns": 0,
+   "blocks": 15011,
+   "reported_model": 3
+  },
+  {
+   "model": 3,
+   "name": "Inharmonic Strings",
+   "phase": "stress",
+   "average_percent": 40.55,
+   "maximum_percent": 50.44,
+   "overruns": 0,
+   "blocks": 30012,
+   "reported_model": 3
+  },
+  {
+   "model": 4,
+   "name": "FM Voice",
+   "phase": "wechsel",
+   "average_percent": 37.02,
+   "maximum_percent": 43.88,
+   "overruns": 0,
+   "blocks": 1007,
+   "reported_model": 4
+  },
+  {
+   "model": 4,
+   "name": "FM Voice",
+   "phase": "ruhig",
+   "average_percent": 36.53,
+   "maximum_percent": 39.41,
+   "overruns": 0,
+   "blocks": 15004,
+   "reported_model": 4
+  },
+  {
+   "model": 4,
+   "name": "FM Voice",
+   "phase": "regler2",
+   "average_percent": 37.12,
+   "maximum_percent": 39.47,
+   "overruns": 0,
+   "blocks": 15009,
+   "reported_model": 4
+  },
+  {
+   "model": 4,
+   "name": "FM Voice",
+   "phase": "regler8",
+   "average_percent": 36.58,
+   "maximum_percent": 40.0,
+   "overruns": 0,
+   "blocks": 14997,
+   "reported_model": 4
+  },
+  {
+   "model": 4,
+   "name": "FM Voice",
+   "phase": "stress",
+   "average_percent": 37.4,
+   "maximum_percent": 40.13,
+   "overruns": 0,
+   "blocks": 30014,
+   "reported_model": 4
+  },
+  {
+   "model": 5,
+   "name": "Western Chords",
+   "phase": "wechsel",
+   "average_percent": 43.9,
+   "maximum_percent": 140.36,
+   "overruns": 1,
+   "blocks": 1006,
+   "reported_model": 5
+  },
+  {
+   "model": 5,
+   "name": "Western Chords",
+   "phase": "ruhig",
+   "average_percent": 43.31,
+   "maximum_percent": 47.95,
+   "overruns": 0,
+   "blocks": 15002,
+   "reported_model": 5
+  },
+  {
+   "model": 5,
+   "name": "Western Chords",
+   "phase": "regler2",
+   "average_percent": 43.5,
+   "maximum_percent": 47.67,
+   "overruns": 0,
+   "blocks": 14995,
+   "reported_model": 5
+  },
+  {
+   "model": 5,
+   "name": "Western Chords",
+   "phase": "regler8",
+   "average_percent": 42.64,
+   "maximum_percent": 48.27,
+   "overruns": 0,
+   "blocks": 14997,
+   "reported_model": 5
+  },
+  {
+   "model": 5,
+   "name": "Western Chords",
+   "phase": "stress",
+   "average_percent": 43.12,
+   "maximum_percent": 56.72,
+   "overruns": 0,
+   "blocks": 30016,
+   "reported_model": 5
+  },
+  {
+   "model": 6,
+   "name": "String & Reverb",
+   "phase": "wechsel",
+   "average_percent": 40.4,
+   "maximum_percent": 131.55,
+   "overruns": 1,
+   "blocks": 1006,
+   "reported_model": 6
+  },
+  {
+   "model": 6,
+   "name": "String & Reverb",
+   "phase": "ruhig",
+   "average_percent": 40.6,
+   "maximum_percent": 45.58,
+   "overruns": 0,
+   "blocks": 15001,
+   "reported_model": 6
+  },
+  {
+   "model": 6,
+   "name": "String & Reverb",
+   "phase": "regler2",
+   "average_percent": 40.7,
+   "maximum_percent": 45.18,
+   "overruns": 0,
+   "blocks": 14995,
+   "reported_model": 6
+  },
+  {
+   "model": 6,
+   "name": "String & Reverb",
+   "phase": "regler8",
+   "average_percent": 40.5,
+   "maximum_percent": 45.1,
+   "overruns": 0,
+   "blocks": 14997,
+   "reported_model": 6
+  },
+  {
+   "model": 6,
+   "name": "String & Reverb",
+   "phase": "stress",
+   "average_percent": 40.93,
+   "maximum_percent": 53.95,
+   "overruns": 0,
+   "blocks": 30014,
+   "reported_model": 6
+  }
+ ]
+}
