@@ -1,131 +1,131 @@
-# Verbindliche modulare Entwicklung für Daisy
+# Binding modular development for Daisy
 
-**Nutzerentscheidung 01.11.2026:** Das modulare Konzept gilt generell für alle
-Daisy-Entwicklungen in diesem Repository. Instrumente und FX sollen getrennt
-weiterentwickelt und anschließend wieder in Firmwareprodukte eingebunden werden
-können. Ein kompatibles FX-Modul muss austauschbar sein, beispielsweise Reverb
-gegen Delay, ohne den Instrument-DSP umzuschreiben.
+**User decision 01.11.2026:** the modular concept applies generally to all
+Daisy developments in this repository. Instruments and FX shall be developed
+further separately and then be integrated into firmware products again.
+A compatible FX module must be replaceable, for example reverb
+for delay, without rewriting the instrument DSP.
 
-Diese Regel konkretisiert die vorhandenen
-[modularen Komponenten](MODULAR_COMPONENTS.md) und die
-[Baukastenidee](MODULAR_KERNEL_IDEA.md). Sie ist für neue Entwicklungen und
-wesentliche Erweiterungen verbindlich. Die vorhandenen stabilen Produkte werden
-bei gezielten Umbauten schrittweise angepasst; keine unbeauftragte breite
-Migration oder Klangänderung. Historische Berichte bleiben als solche erhalten.
+This rule makes the existing
+[modular components](MODULAR_COMPONENTS.md) and the
+[building-block idea](MODULAR_KERNEL_IDEA.md) concrete. It is binding for new developments and
+substantial extensions. The existing stable products are adapted step by step
+during targeted reworks; no unrequested broad
+migration or sound change. Historical reports are kept as such.
 
-## 1. Bausteine und Firmwareprodukt
+## 1. Building blocks and firmware product
 
-* **Instrument:** eigene Klangerzeugung, Noten-/Stimmenzustände und Hüllkurven.
-  Keine fest eingebaute, nur intern erreichbare FX-Implementierung.
-* **FX:** eigene Zustände, Parameter und Speicherverträge. Ein FX kann aus
-  mehreren separat aufrufbaren Stufen bestehen, wenn das Routing es erfordert.
-  Keine Abhängigkeit von der konkreten Instrumentimplementierung.
-* **MIDI-/Control-Engine:** wiederverwendbare Transport-, Queue-, Dispatch- und
-  Parameteranbindung. Bestehende Bausteine gezielt nutzen oder erweitern;
-  Instrument und FX erhalten typisierte Events/Parameter statt eigene USBstacks.
-* **Modulation:** vorhandener Mod-on-Daisy-Kern als separater Baustein. Kein
-  neuer duplizierter Matrixkern je Instrument oder FX.
-* **Control App:** gemeinsame bestehende Oberfläche mit Komponenten-/Parameter-
-  Adaptern. App, DSP und Hardwarebedienung bleiben getrennt. Das Panel ist kein
-  in der Daisy-Firmware enthaltener Audio-DSP.
-* **Firmwareprodukt/Host:** benennt und verbindet die Komponenten, besitzt
-  Speicher, Audiograph, Board-/Bedienmapping, Routing, Mischungen, Ausgangsschutz
-  und gemeinsame Dienste. Die Produktzusammenstellung ist sichtbar und versioniert.
+* **Instrument:** own sound generation, note/voice states and envelopes.
+  No hard-wired FX implementation reachable only internally.
+* **FX:** own states, parameters and memory contracts. An FX may consist of
+  several separately callable stages if the routing requires it.
+  No dependency on the concrete instrument implementation.
+* **MIDI/control engine:** reusable transport, queue, dispatch and
+  parameter connection. Use or extend existing building blocks in a targeted way;
+  instrument and FX receive typed events/parameters instead of their own USB stacks.
+* **Modulation:** the existing Mod on Daisy core as a separate building block. No
+  new duplicated matrix core per instrument or FX.
+* **Control App:** the shared existing interface with component/parameter
+  adapters. App, DSP and hardware controls remain separate. The panel is not an
+  audio DSP contained in the Daisy firmware.
+* **Firmware product/host:** names and connects the components, owns
+  memory, audio graph, board/control mapping, routing, mixes, output protection
+  and shared services. The product composition is visible and versioned.
 
-Gemeinsam genutzter Code hat eine eigene Quelle. Derselbe Algorithmus wird
-nicht zum Weiterentwickeln in mehrere Firmwareverzeichnisse kopiert.
-Eine einzelne Produkt-Makefile oder `main.cpp` darf die Komponenten verbinden;
-dadurch werden die DSP-Kerne nicht zu einem einzigen untrennbaren Modul.
+Shared code has its own source. The same algorithm is
+not copied into several firmware directories for further development.
+A single product Makefile or `main.cpp` may connect the components;
+this does not turn the DSP cores into a single inseparable module.
 
-## 2. Austauschbare FX und Audiograph
+## 2. Replaceable FX and audio graph
 
-Ein FX-Platz besitzt einen dokumentierten Port-/Parameter-/Speichervertrag.
-Kompatible FX werden durch die Produktkonfiguration oder einen kleinen
-Hostadapter ausgewählt. Reverb gegen Delay auszutauschen verändert diesen
-Zusammenbau und seine Parameterbeschreibung; der Instrumentkern bleibt gleich.
-Ein Bypass-/Durchgangspfad erlaubt isolierte Tests der Quelle.
+An FX slot has a documented port/parameter/memory contract.
+Compatible FX are selected through the product configuration or a small
+host adapter. Swapping reverb for delay changes this
+assembly and its parameter description; the instrument core stays the same.
+A bypass/pass-through path allows isolated tests of the source.
 
-Die bestehende [FX-Schnittstelle 1.0](../common/audio/fx_contract.h) ist die
-Grundlage für Stereo-Wet-Stufen: `Prepare(Config, Storage&)`, `SetParameters`,
-`Process(StereoBlock)`, vom Host bereitgestellter Speicher und vom Host
-verantwortete Dry/Wet-Mischung. Bestehende Verträge nicht still verändern.
-Zusätzliche Ports, Kontrollsignale oder Mehrbusstufen werden ausdrücklich
-beschrieben und versioniert. So bleiben beispielsweise getrennte String-/Solo-
-Wege möglich, ohne ihre FX vorzeitig auf die Gesamtmischung zu verschieben.
+The existing [FX interface 1.0](../common/audio/fx_contract.h) is the
+basis for stereo wet stages: `Prepare(Config, Storage&)`, `SetParameters`,
+`Process(StereoBlock)`, memory provided by the host and a dry/wet mix
+owned by the host. Do not silently change existing contracts.
+Additional ports, control signals or multi-bus stages are explicitly
+described and versioned. This way, for example, separate string/solo
+paths remain possible without moving their FX prematurely onto the overall mix.
 
-Vor dem Austausch prüfen:
+Check before swapping:
 
-* Kanal-/Buslayout, Format, Samplerate, Blockgrenzen, In-place-/Aliasregeln;
-* Speicherbedarf, Alignment, Platzierung, Stack und maximale Rechenlast;
-* Gain, Dry/Wet, Latenz, Tails, Bypass und Reset-/Wechselverhalten;
-* Parameter-, Status- und Patchschema sowie anwendbare Modulationsziele.
+* channel/bus layout, format, sample rate, block boundaries, in-place/alias rules;
+* memory requirements, alignment, placement, stack and maximum computational load;
+* gain, dry/wet, latency, tails, bypass and reset/switching behaviour;
+* parameter, status and patch schema as well as applicable modulation targets.
 
-Inkompatible Komponenten werden abgewiesen oder über einen ausdrücklich
-getesteten Adapter verbunden. Kein automatischer Mix-/Gainwechsel als
-unbemerkter Nebeneffekt eines FX-Austauschs.
+Incompatible components are rejected or connected via an explicitly
+tested adapter. No automatic mix/gain change as an
+unnoticed side effect of an FX swap.
 
-**Erste garantierte Entwicklungsstufe:** Zusammensetzung beim Bauen mit
-expliziter Auswahl im Produkt. Eine neue FX-Wahl darf nicht bloß ein neues
-kopiertes Synthesizerprojekt erzeugen. Ein allgemeiner Laufzeitwechsel oder
-dynamischer Loader ist erst implementiert, wenn Zustandsübergabe, Vorreservierung,
-Ausklang, Pegel, Speicher und Echtzeitlast tatsächlich abgesichert sind.
-Die Richtlinie behauptet nicht, dass ein solcher Loader bereits existiert.
+**First guaranteed development stage:** composition at build time with
+an explicit selection in the product. A new FX choice must not merely create a new
+copied synthesizer project. A general runtime switch or
+dynamic loader is only implemented once state hand-over, pre-reservation,
+tail-out, levels, memory and real-time load are actually secured.
+The policy does not claim that such a loader already exists.
 
-## 3. Module unabhängig weiterentwickeln und wieder einbinden
+## 3. Develop modules independently and integrate them again
 
-Jedes Modul besitzt stabile Komponenten-ID, eigene Versionsquelle, öffentliche
-Schnittstelle, README, Herkunft/Lizenz und gezielte Hosttests. Interne Änderungen
-können unabhängig erfolgen, solange der öffentliche Vertrag eingehalten wird.
-Inkompatible Audio-, Parameter-, Patch- oder Speicheränderungen werden als
-Vertrags-/Schemaänderung versioniert und mit einer Anpassungsstrategie dokumentiert.
+Every module has a stable component ID, its own version source, a public
+interface, README, provenance/licence and targeted host tests. Internal changes
+can happen independently as long as the public contract is kept.
+Incompatible audio, parameter, patch or memory changes are versioned as a
+contract/schema change and documented with a migration strategy.
 
-Jedes gebaute Produktmanifest nennt die konkrete Produktversion und die
-eingebundenen Komponenten-/Vertragsversionen, Gitrevision sowie passende
-Control Panels. Keine zweite manuell gepflegte Kopie der Modulversion.
-Gitstände machen die Auswahl reproduzierbar und einen Rückwechsel möglich.
+Every built product manifest names the concrete product version and the
+integrated component/contract versions, the Git revision and the matching
+control panels. No second manually maintained copy of the module version.
+Git states make the selection reproducible and a switch back possible.
 
-Ein separat weiterentwickeltes Modul wird in dieser Reihenfolge reintegriert:
+A separately developed module is reintegrated in this order:
 
-1. Eigene Modul-/Vertragstests mit definierten Eingaben bestehen lassen.
-2. Versions-/Abhängigkeitsauswahl und gegebenenfalls Hostadapter aktualisieren.
-3. Betroffene Verbraucher und deren Audio-/Ereignis-/Parametergrenzen testen.
-4. Klangänderungen begründen, Goldenwerte gezielt aktualisieren und
-   Patchkompatibilität prüfen; unveränderte Varianten erhalten ihre Referenzen.
-5. Zusammengesetzte Firmware tatsächlich bauen und Ressourcen aus dem Build
-   dokumentieren. Gesamte CPU-Last anschließend auf Hardware messen.
+1. Let the module's own module/contract tests pass with defined inputs.
+2. Update the version/dependency selection and, if needed, the host adapter.
+3. Test the affected consumers and their audio/event/parameter limits.
+4. Justify sound changes, update golden values deliberately and
+   check patch compatibility; unchanged variants keep their references.
+5. Actually build the composed firmware and document resources from the build.
+   Then measure the total CPU load on hardware.
 
-Ein bestandener Modultest allein bestätigt noch keine funktionierende
-Gesamtfirmware. Austauschbarkeit bedeutet nicht, dass jede Kombination
-innerhalb jedes Speicher-/CPUbudgets möglich ist.
+A passed module test alone does not yet confirm a working
+overall firmware. Replaceability does not mean that every combination
+is possible within every memory/CPU budget.
 
-## 4. Gemeinsamer Parameter- und Appvertrag
+## 4. Shared parameter and app contract
 
-Kitbedienung, MIDI, Modulation und Control App greifen über dasselbe
-Parameterregister auf die aktiven Module zu. Komponenten-/Parameter-ID,
-Typ/Einheit, Range/Default/Enum, Rate/Glättung, Gültigkeit und Anwendungsrevision
-sind eindeutig. Die App erkennt Komponenten und bedient deren Parameter über
-den gemeinsamen Vertrag; spezielle Seiten können diesen ergänzen.
+Kit controls, MIDI, modulation and the control app access the active modules through the same
+parameter register. Component/parameter ID,
+type/unit, range/default/enum, rate/smoothing, validity and application revision
+are unambiguous. The app recognises components and operates their parameters via
+the shared contract; special pages can supplement it.
 
-Neue Module erweitern die bestehende Mod-on-Daisy-App an ihren gemeinsamen
-Session-/Protokollpfaden. JUCE-Standalone, Browser und VST3 bleiben konsistent.
-Änderungen vorhandener Protokolle werden zusammen mit Firmware, CLI-Probe,
-Editoren und Tests versioniert. Bestehende Geräte und Patches bleiben bedienbar.
-Keine unabhängige Editor-/Transportkopie für jedes neue Instrument.
+New modules extend the existing Mod on Daisy app at its shared
+session/protocol paths. JUCE standalone, browser and VST3 remain consistent.
+Changes to existing protocols are versioned together with firmware, CLI probe,
+editors and tests. Existing devices and patches remain operable.
+No independent editor/transport copy for each new instrument.
 
-Zustand beim Verbinden zuerst lesen. Annahme eines Befehls und tatsächliche
-Anwendung im Audiopfad auseinanderhalten. Reset, Modulwechsel, Reconnect und
-Presetladen besitzen definierte Regeln. Hardware-/Gerätedaten gehören nicht
-unbemerkt in einen musikalischen Patch.
+Read the state first when connecting. Keep the acceptance of a command and its actual
+application in the audio path apart. Reset, module change, reconnect and
+preset loading have defined rules. Hardware/device data does not belong
+in a musical patch unnoticed.
 
-## 5. Verbindlicher Reviewpunkt
+## 5. Binding review point
 
-Jeder neue Instrument-/FX-Arbeitsauftrag und PR beschreibt:
+Every new instrument/FX work order and PR describes:
 
-* Modulgrenzen, IDs/Versionen, Verträge und Produktzusammensetzung;
-* Austauschweg für FX und Wiederverwendung vorhandener gemeinsamer Dienste;
-* getrennte Modulprüfungen sowie Tests der betroffenen Gesamtprodukte/Apppfade;
-* Speicher-/CPUannahmen, eigene Klangabweichungen und noch nicht gemessene Teile.
+* module boundaries, IDs/versions, contracts and product composition;
+* the swap path for FX and the reuse of existing shared services;
+* separate module checks as well as tests of the affected overall products/app paths;
+* memory/CPU assumptions, own sound deviations and parts not yet measured.
 
-Hardwarefreigaben, Echtzeitregeln, Lizenz-/Datengrenzen und Actionsbudget aus
-[AGENTS.md](../AGENTS.md) gelten weiterhin. Diese Richtlinie verlangt keine
-breite automatische Buildmatrix und startet keine Migration oder Hardwareaktion.
+Hardware approvals, real-time rules, licence/data limits and the Actions budget from
+[AGENTS.md](../AGENTS.md) continue to apply. This policy does not require a
+broad automatic build matrix and does not start any migration or hardware action.

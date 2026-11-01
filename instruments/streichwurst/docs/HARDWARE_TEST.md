@@ -1,37 +1,37 @@
-# Streichwurst 0.1.0: Laufzettel für den Hardwaretest
+# Streichwurst 0.1.0: hardware test sheet
 
-Stand 01.11.2026. Alle Punkte sind **NICHT GEMESSEN**, bis der Mensch sie am Kit
-durchführt und das Ergebnis berichtet. Der Agent flasht nicht; Flashen nur, wenn der
-Mensch das Kit in den Bootloader gebracht und darum gebeten hat ([FLASHING.md](../../../docs/FLASHING.md)).
+As of 01.11.2026. All items are **NOT MEASURED** until the human carries them out on the kit
+and reports the result. The agent does not flash; flashing only when the
+human has put the kit into the bootloader and asked for it ([FLASHING.md](../../../docs/FLASHING.md)).
 
-**Reihenfolge (Modular FX first):** zuerst die Standalone-FX-Firmware abnehmen
-([FX-Laufzettel](../../../effects/streichwurst-fx/docs/HARDWARE_TEST.md)), danach dieses Produkt.
+**Order (Modular FX first):** first accept the standalone FX firmware
+([FX test sheet](../../../effects/streichwurst-fx/docs/HARDWARE_TEST.md)), then this product.
 
-Image: `instruments/streichwurst/build/Streichwurst-v0.1.0.bin` (lokal gebaut, nicht
-veröffentlicht). Vorher: `python scripts/check-firmware.py <bin>`.
+Image: `instruments/streichwurst/build/Streichwurst-v0.1.0.bin` (built locally, not
+published). Beforehand: `python scripts/check-firmware.py <bin>`.
 
-| Nr. | Prüfung | Erwartung (keine Messung) | Ergebnis |
+| No. | Check | Expectation (not a measurement) | Result |
 | --- | --- | --- | --- |
-| H1 | Start, Ausgang Kopfhörer/Line | Stille ohne Noten, kein Knacken beim Start | NICHT GEMESSEN |
-| H2 | S1–S8 spielen C4–C5 | Strings mit Ensemble Modus 1 und etwas Hall, Stereo | NICHT GEMESSEN |
-| H3 | USB-MIDI (J7) Noten, Pitchbend, Sustain | Klang, Bend ±2 Halbtöne, Pedal hält | NICHT GEMESSEN |
-| H4 | DIN-MIDI Noten | wie H3 (gleicher Kanalfilter) | NICHT GEMESSEN |
-| H5 | VR1–VR8 Hauptseite | Registrierung, Crescendo, Release, Balance, Animate, Phaser, Reverb, Master; Übernahme erst nach Überqueren | NICHT GEMESSEN |
-| H6 | S9 Seitenwechsel Haupt→Solo→FX, LEDs S9–S11 | Seite wechselt beim Loslassen, keine Sprünge der Werte | NICHT GEMESSEN |
-| H7 | S10 Oktaven, S11 Modus, S12 Ensemble, S13 Solo-Sustain, S14 Split | hörbare Umschaltung, Ensemblewechsel ohne Klick (20 ms Überblendung) | NICHT GEMESSEN |
-| H8 | S15 RAM-Presets 0–3 | Blinkfolge an S15, Klang wechselt, Kanal/Master/Balance bleiben | NICHT GEMESSEN |
-| H9 | S16 Panik | Ton bricht mit kurzer Rampe ab, danach spielbar | NICHT GEMESSEN |
-| H10 | S9+S16 kurz gedrückt, losgelassen | weder Seitenwechsel noch Panik | NICHT GEMESSEN |
-| H11 | S9+S16 5 s halten | alle LEDs an, Bootloader wartet (DFU-Gerät erscheint) | NICHT GEMESSEN |
-| H12 | Editor (JUCE 0.3.0 oder Browser 0.3.0) verbinden | „streichwurst 0.1.0 · SQ + Matrix“, Werte vom Gerät, nichts überschrieben | NICHT GEMESSEN |
-| H13 | Parameter in der App ändern, Poti drehen | App-Änderung hörbar; Potibewegung erscheint in der App | NICHT GEMESSEN |
-| H14 | Matrix: LFO 1 → Registrierung | wandernde Klangfarbe; Matrix leeren → Grundklang | NICHT GEMESSEN |
-| H15 | `.swpatch` speichern, ändern, laden + übertragen | Zustand wie gespeichert, Matrix inklusive | NICHT GEMESSEN |
-| H16 | Dichter Akkord (10 Tasten, Oktaven „Beide“, Modus 1, Hall) | keine Aussetzer; Zähler in der App: Callback-Frist 0 | NICHT GEMESSEN |
-| H17 | CPU: Callback-Spitze (App → Zähler lesen) | Ziel ≤ 60 % von 480 000 Zyklen je 1-ms-Block | NICHT GEMESSEN |
-| H18 | Stack frei (Zähler 16) | deutlich > 0 nach H16 (Linkerreserve 8,6 KiB) | NICHT GEMESSEN |
-| H19 | Firmware-Update aus der App | Rückfrage, Bootloader, alle LEDs | NICHT GEMESSEN |
-| H20 | Hörvergleich mit Originalplugin/-gerät | eigene Annäherung, Abweichungen siehe [FIDELITY.md](FIDELITY.md) | NICHT GEMESSEN |
+| H1 | Start-up, headphone/line output | Silence without notes, no click at start-up | NOT MEASURED |
+| H2 | Play C4–C5 on S1–S8 | Strings with ensemble mode 1 and some reverb, stereo | NOT MEASURED |
+| H3 | USB MIDI (J7) notes, pitch bend, sustain | Sound, bend ±2 semitones, pedal holds | NOT MEASURED |
+| H4 | DIN MIDI notes | as H3 (same channel filter) | NOT MEASURED |
+| H5 | VR1–VR8 Main page | Registration, Crescendo, Release, Balance, Animate, Phaser, Reverb, Master; takeover only after crossing | NOT MEASURED |
+| H6 | S9 page change Main→Solo→FX, LEDs S9–S11 | Page changes on release, no jumps of the values | NOT MEASURED |
+| H7 | S10 octaves, S11 mode, S12 ensemble, S13 solo sustain, S14 split | Audible switching, ensemble change without click (20 ms crossfade) | NOT MEASURED |
+| H8 | S15 RAM presets 0–3 | Blink sequence on S15, sound changes, channel/master/balance are kept | NOT MEASURED |
+| H9 | S16 panic | Sound stops with a short ramp, playable afterwards | NOT MEASURED |
+| H10 | S9+S16 pressed briefly, released | neither page change nor panic | NOT MEASURED |
+| H11 | Hold S9+S16 for 5 s | all LEDs on, bootloader waits (DFU device appears) | NOT MEASURED |
+| H12 | Connect the editor (JUCE 0.3.0 or browser 0.3.0) | "streichwurst 0.1.0 · SQ + Matrix", values from the device, nothing overwritten | NOT MEASURED |
+| H13 | Change a parameter in the app, turn a pot | App change audible; pot movement appears in the app | NOT MEASURED |
+| H14 | Matrix: LFO 1 → Registration | Moving timbre; Clear matrix → basic sound | NOT MEASURED |
+| H15 | Save `.swpatch`, change, load + send | State as saved, matrix included | NOT MEASURED |
+| H16 | Dense chord (10 keys, octaves "Both", mode 1, reverb) | no dropouts; counters in the app: callback deadline 0 | NOT MEASURED |
+| H17 | CPU: callback peak (app → Read counters) | Target ≤ 60 % of 480 000 cycles per 1 ms block | NOT MEASURED |
+| H18 | Stack free (counter 16) | clearly > 0 after H16 (linker reserve 8.6 KiB) | NOT MEASURED |
+| H19 | Firmware update from the app | Confirmation prompt, bootloader, all LEDs | NOT MEASURED |
+| H20 | Listening comparison with the original plugin/device | Own approximation, deviations see [FIDELITY.md](FIDELITY.md) | NOT MEASURED |
 
-Berichtete Ergebnisse trägt der Agent mit Datum als GEMESSEN in diese Tabelle und in
-[VALIDATION.md](VALIDATION.md) ein.
+The agent enters reported results with the date as MEASURED in this table and in
+[VALIDATION.md](VALIDATION.md).

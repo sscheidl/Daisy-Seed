@@ -1,273 +1,273 @@
-# Mod on Daisy — Validierung Phase 2
+# Mod on Daisy — Validation phase 2
 
-**Stand:** 24. Oktober 2026 · Modul v0.1.0, Messfirmware ModBench v0.1.0
-**Umgebung:** Linux x86-64, GCC (Host), xPack ARM GCC 13.2.1-1.1, gepinnte libDaisy
-`f715e48`. Hardwareergebnisse werden vom Betreiber auf dem Seed3 Desktop Kit unter
-Windows ergänzt.
+**As of:** 24 October 2026 · module v0.1.0, measurement firmware ModBench v0.1.0
+**Environment:** Linux x86-64, GCC (host), xPack ARM GCC 13.2.1-1.1, pinned libDaisy
+`f715e48`. Hardware results are added by the owner on the Seed3 Desktop Kit under
+Windows.
 
-Kennzeichnung: `GEMESSEN` = in diesem Stand ausgeführt; `NICHT GEMESSEN` = steht aus.
+Marking: `MEASURED` = executed in this state; `NOT MEASURED` = pending.
 
-## 1. Host-Tests (`GEMESSEN`)
+## 1. Host tests (`MEASURED`)
 
-`make -C modules/mod-on-daisy test`, `test-sanitize` (ASan + UBSan) und `test-thread`
-(TSan): **alle grün**.
+`make -C modules/mod-on-daisy test`, `test-sanitize` (ASan + UBSan) and `test-thread`
+(TSan): **all green**.
 
-| Testgruppe (TEST_PLAN § 2) | Ergebnis |
+| Test group (TEST_PLAN § 2) | Result |
 | --- | --- |
-| 2.1 Quellen | LFO-Phase bei Tick 12/32/48/64/256 nach 288 000 Samples **bitgleich**; 20 Hz → **12 000 Zyklen in 600 s**; Inkrementfehler < 0,05 % bei 0,02/1/20 Hz; Sinus-Näherung max. **0,109 %**; Retrigger; S&H 10 Hz → 9–11 Wechsel/s; Random reproduzierbar, geglättet stetig; Glättung 10 ms ± 5 % bei n = 48/256, exakte Konvergenz; CV-Totzone und Kalibrierung |
-| 2.1 Synchronisation | MIDI-Clock 120 BPM: Periode 1000 ± 30 Samples erkannt; Start → Taktanfang; Clock-Stopp → LFO hält. Gate 5 Hz, Teilung 2/1: **89 LFO-Zyklen** und **44 Random-Schritte** in 9 s (erwartet 90/45, Abweichung durch den Messbeginn mitten in einer Periode) |
-| 2.2 Patch | CRC-Prüfwert `CBF43926`; 1000 zufällige Patches Round-Trip; Validierung (Bereich, Grenze 8, gesperrte Zellen, Teilung passend zur Sync-Quelle, 7-Bit-Name); Patch-Testvektor `E2340CC6` in C++ und Python gleich |
-| 2.3 Engine | leerer Patch bitgenau neutral für 100 001 Werte × 8 Ziele, auch nach Entfernen einer Verbindung; ±50 % heben sich exakt auf; Begrenzung nach der Summe; span; Program-Wechsel ohne Phasensprung; **0 Allokationen** in Tick/Apply/HandleMidi/Service über 1000 Durchläufe |
-| 2.4 Stimmenweg | Drucktabelle, Last-Note mit Überlauf (17 Noten), Voice-Stealing (Gleiten 10 ms, `Reset`), gleiche Note in zwei Stimmen, Poly AT global → Last-Note |
-| 2.5 Nebenläufigkeit | Triple-Buffer 200 000 Veröffentlichungen ohne gemischte oder ältere Werte; Main/Audio-Threads mit Noten, Druck, CC, Clock, SysEx und Monitor: **keine Meldung von TSan** |
-| 2.6 Codec | alle Kommandos Round-Trip; `GET_MATRIX` = **100 Byte**, `SET_MATRIX` = **95 Byte**; jedes gekippte Bit eines Rahmens erkannt; durch libDaisy gekürzter 128-Byte-Rumpf → `NAK 2`; falsche Version → `NAK 6`; fremde SysEx → ans Instrument; **10⁶ Fuzz-Rahmen** ohne Absturz, Patch immer gültig |
-| 2.7 Controller | Instrument-Key bis 24 Zeichen vollständig in `IDENTIFY` (`physical-modeling` = 17, Review-Befund); Wiederholung mit gleicher `seq` einmal ausgeführt, Lesekommandos immer frisch, lokale Änderung löscht den Wiederholungsspeicher; 9. aktive Zelle → `NAK 7`, CRC unverändert; Warteschlange 2, ≤ 1 Antwort/ms; Monitor ~20 Hz, endet nach 3 s; ohne USB-Host keine Warteschlangenstaus; Speicherkommandos → `NAK 9` |
-| Variante `kMaxActive = 64` | dieselben Tests (ohne Grenzprüfung 8) grün; Szenario S6 mit 64 aktiven Zellen gültig |
-| Szenarien | S0–S8 gültig für das Prüfinstrument; S4 nutzt jede Quelle genau einmal |
+| 2.1 Sources | LFO phase at tick 12/32/48/64/256 after 288 000 samples **bit-identical**; 20 Hz → **12 000 cycles in 600 s**; increment error < 0.05 % at 0.02/1/20 Hz; sine approximation max. **0.109 %**; retrigger; S&H 10 Hz → 9–11 changes/s; random reproducible, smooth continuous; smoothing 10 ms ± 5 % at n = 48/256, exact convergence; CV dead zone and calibration |
+| 2.1 Synchronization | MIDI clock 120 BPM: period 1000 ± 30 samples detected; start → start of the bar; clock stop → LFO holds. Gate 5 Hz, division 2/1: **89 LFO cycles** and **44 random steps** in 9 s (expected 90/45, deviation due to the measurement starting in the middle of a period) |
+| 2.2 Patch | CRC check value `CBF43926`; 1000 random patches round trip; validation (range, limit 8, locked cells, division matching the sync source, 7-bit name); patch test vector `E2340CC6` identical in C++ and Python |
+| 2.3 Engine | empty patch bit-exactly neutral for 100 001 values × 8 targets, also after removing a connection; ±50 % cancel exactly; clamping after the sum; span; Program change without phase jump; **0 allocations** in Tick/Apply/HandleMidi/Service over 1000 runs |
+| 2.4 Voice path | pressure table, last note with overflow (17 notes), voice stealing (glide 10 ms, `Reset`), same note in two voices, poly AT global → last note |
+| 2.5 Concurrency | triple buffer 200 000 publications without mixed or older values; main/audio threads with notes, pressure, CC, clock, SysEx and monitor: **no report from TSan** |
+| 2.6 Codec | all commands round trip; `GET_MATRIX` = **100 bytes**, `SET_MATRIX` = **95 bytes**; every flipped bit of a frame detected; 128-byte body truncated by libDaisy → `NAK 2`; wrong version → `NAK 6`; foreign SysEx → to the instrument; **10⁶ fuzz frames** without crash, patch always valid |
+| 2.7 Controller | instrument key up to 24 characters complete in `IDENTIFY` (`physical-modeling` = 17, review finding); repeat with the same `seq` executed once, read commands always fresh, local change clears the repeat memory; 9th active cell → `NAK 7`, CRC unchanged; queue 2, ≤ 1 reply/ms; monitor ~20 Hz, ends after 3 s; without a USB host no queue jams; storage commands → `NAK 9` |
+| Variant `kMaxActive = 64` | the same tests (without limit check 8) green; scenario S6 with 64 active cells valid |
+| Scenarios | S0–S8 valid for the test instrument; S4 uses each source exactly once |
 
-Zwei Fehler wurden vor dem Commit gefunden und behoben:
+Two bugs were found and fixed before the commit:
 
-* Die Tests fanden einen um ein Byte zu kleinen Antwortpuffer für Zustandsänderungen;
-  die CRC wurde abgeschnitten.
-* Bei der Durchsicht fiel auf, dass der Wiederholungsspeicher auch Lesekommandos
-  beantwortete. Ein neu gestarteter Client mit gleicher `seq` hätte veraltete Werte
-  erhalten, etwa alte Statistiken.
+* The tests found a reply buffer for state changes that was one byte too small; the CRC
+  was cut off.
+* During review it was noticed that the repeat memory also answered read commands. A
+  newly started client with the same `seq` would have received stale values, such as
+  old statistics.
 
-## 1a. Browser-Editor gegen den echten Controller (`GEMESSEN`)
+## 1a. Browser editor against the real controller (`MEASURED`)
 
 `make -C modules/mod-on-daisy test-editor`:
-* Headless-Chromium (Playwright) mit simuliertem Web-MIDI-Port.
-* Die Rahmen gehen an `tools/mod_sim`, also den Controller- und Engine-Code der
-  Firmware auf dem PC.
-* Geprüft mit den Spalten von Toy Piano und Physical Modeling sowie offline.
-* Nach jedem Schritt stimmt die Patch-CRC von Editor und Gerät überein: Tastatur,
-  Ziehen, Mausrad, Regler, Ein/Aus, Quellen, Grenze 8, Monitor, Datei
-  speichern/laden.
+* Headless Chromium (Playwright) with a simulated Web MIDI port.
+* The frames go to `tools/mod_sim`, i.e. the firmware's controller and engine code on
+  the PC.
+* Checked with the columns of Toy Piano and Physical Modeling as well as offline.
+* After every step the patch CRC of editor and device match: keyboard, dragging, mouse
+  wheel, controls, on/off, sources, limit 8, monitor, file save/load.
 
-Der Test fand zwei Fehler im Modul, die behoben sind:
+The test found two bugs in the module, which are fixed:
 
-* **Protokoll**: Die Antwort auf `MONITOR` (0x30 | 0x40 = 0x70) hatte denselben Code
-  wie die Monitor-Datenrahmen. Ein Client konnte die Bestätigung nicht von den Daten
-  unterscheiden; `mod_probe.py monitor` wäre in eine Zeitüberschreitung gelaufen. Die
-  Monitor-Rahmen nutzen jetzt `0x7E`. Ein Test stellt sicher, dass kein Antwortcode
-  mit ihnen kollidiert.
-* **Sync-Teilung**: Beim Wechsel MIDI-Clock ↔ Gate blieb der Teilungsindex stehen. Aus
-  MIDI 1/4 wurde so Gate 4/1. Jetzt beginnt jede Sync-Art mit ihrem Standard (1/4 bzw.
-  1/1).
+* **Protocol**: the reply to `MONITOR` (0x30 | 0x40 = 0x70) had the same code as the
+  monitor data frames. A client could not tell the confirmation apart from the data;
+  `mod_probe.py monitor` would have run into a timeout. The monitor frames now use
+  `0x7E`. A test ensures that no reply code collides with them.
+* **Sync division**: when switching MIDI clock ↔ gate, the division index stayed the
+  same. MIDI 1/4 thus became gate 4/1. Now each sync type starts with its default (1/4
+  or 1/1).
 
-Der Browser-Codec (`editors/mod-on-daisy/web/mod_protocol.js`) liefert dieselben
-Referenzwerte wie C++ und Python: CRC-Prüfwert, Patch-Testvektor `E2340CC6`,
-Rahmengrößen 95/100 Byte. Das Gerät startet mit der Standard-Patch-CRC `61C264C4`.
+The browser codec (`editors/mod-on-daisy/web/mod_protocol.js`) returns the same
+reference values as C++ and Python: CRC check value, patch test vector `E2340CC6`,
+frame sizes 95/100 bytes. The device starts with the default patch CRC `61C264C4`.
 
-## 1b. JUCE-Editor gegen den echten Controller (`GEMESSEN`)
+## 1b. JUCE editor against the real controller (`MEASURED`)
 
-* **Kern** (`make -C editors/mod-on-daisy test`, auch mit ASan/UBSan):
-  * Der Kern des JUCE-Editors läuft gegen Controller und Engine der Firmware.
-  * Geprüft: Verbinden, Spalten, gesperrte Zellen, Bearbeiten, Grenze 8 (auch für eine
-    auf 0 gesetzte, eingeschaltete Zelle), Quellen, Name, Leeren, Datei-Upload mit
-    Abbruch, Trennen ohne späte Wiederholungen, keine Antwort.
-  * 100 Werte beim Ziehen gehen als 6 `SET_CELL` zum Gerät.
-  * 400 zufällige Änderungen bei je 5 % verlorenen Anfragen, verlorenen und
-    verfälschten Antworten (drei Startwerte): Editor und Gerät enden auf derselben
-    Patch-CRC.
-* **Fenster** (`--selftest`, Linux unter Xvfb): Tastatur, Ziehen, Mausrad, Regler,
-  Doppelklick, Quellen, Grenze, Name und Dateien gegen den Simulator mit Toy-Piano- und
-  Physical-Modeling-Spalten. Nach jedem Schritt stimmt die Patch-CRC überein.
-* **Dateien**: Eine vom JUCE-Editor gespeicherte Datei ergibt im Browser-Editor dieselbe
-  Patch-CRC (`506290C2`), eine Datei des Browser-Editors lädt im Kern unverändert.
-* **Windows** (MSVC): Build, Kerntest und Selbsttest laufen in der CI
+* **Core** (`make -C editors/mod-on-daisy test`, also with ASan/UBSan):
+  * The core of the JUCE editor runs against the firmware's controller and engine.
+  * Checked: connecting, columns, locked cells, editing, limit 8 (also for an enabled
+    cell set to 0), sources, name, clearing, file upload with abort, disconnecting
+    without late retries, no reply.
+  * 100 values while dragging go to the device as 6 `SET_CELL`.
+  * 400 random changes with 5 % each of lost requests, lost and corrupted replies (three
+    seeds): editor and device end on the same patch CRC.
+* **Window** (`--selftest`, Linux under Xvfb): keyboard, dragging, mouse wheel, controls,
+  double-click, sources, limit, name and files against the simulator with Toy Piano and
+  Physical Modeling columns. After every step the patch CRC matches.
+* **Files**: a file saved by the JUCE editor gives the same patch CRC (`506290C2`) in the
+  browser editor; a file from the browser editor loads unchanged in the core.
+* **Windows** (MSVC): build, core test and self-test run in CI
   (`.github/workflows/editor.yml`).
 
-### Am Gerät: JUCE-Editor mit `PhysicalModelingMod-v0.1.0.bin` (`GEMESSEN` 23.10.2026)
+### On the device: JUCE editor with `PhysicalModelingMod-v0.1.0.bin` (`MEASURED` 23.10.2026)
 
-Vom Betreiber unter Windows mit `ModOnDaisyEditor.exe` (Stand PR #24) beobachtet und
-berichtet. Die Fehler sind auf dem Host nachvollzogen.
+Observed and reported by the owner under Windows with `ModOnDaisyEditor.exe` (state of
+PR #24). The bugs have been reproduced on the host.
 
-| Nr. | Ergebnis |
+| No. | Result |
 | --- | --- |
-| E1 | bestanden: Verbindung über „Daisy Seed External“, Status `physical-modeling 0.1.0-mod · ID 0`, alle 8 Spalten |
-| E2–E8 | bestanden bis auf die Befunde unten; Patch-CRC bestätigt (z. B. `09EC4D1C` bei 7 Verbindungen) |
-| E9 | Poly AT → Brightness bestätigt; Poly AT × Excitation schraffiert |
-| R8 | MIDI-Clock synchronisiert die LFOs |
-| übrige R | `NICHT GEMESSEN` |
+| E1 | passed: connection via "Daisy Seed External", status `physical-modeling 0.1.0-mod · ID 0`, all 8 columns |
+| E2–E8 | passed except for the findings below; patch CRC confirmed (e.g. `09EC4D1C` with 7 connections) |
+| E9 | Poly AT → Brightness confirmed; Poly AT × Excitation hatched |
+| R8 | MIDI clock synchronizes the LFOs |
+| other R | `NOT MEASURED` |
 
-Befunde:
+Findings:
 
-1. **Kontextmenü** öffnete immer an derselben Stelle statt am Mauszeiger und in den
-   Standardfarben. Behoben: Das Menü öffnet am Mauszeiger, in den Farben der App.
-2. **Schnelle LFOs**: Bei hoher Rate schien die Anzeige hängen zu bleiben. Ursache ist
-   Aliasing: Die Live-Anzeige kommt mit 20 Bildern/s, ein 20-Hz-LFO wird dann immer an
-   derselben Phase abgetastet. Behoben: Über 5 Hz zeigt der Balken ein Band statt eines
-   scheinbar stehenden Werts.
-3. **Studio One** öffnet den Daisy-Port exklusiv.
-   * Der Editor steuert weiter, solange er verbunden bleibt, erhält aber keine Antworten
-     und keine Live-Daten mehr („keine Antwort vom Gerät“).
-   * Nach dem Trennen ist kein neues Verbinden möglich, solange Studio One den Port hält.
-     Einmal war das Gerät 1–2 s lang wieder sichtbar; der Mechanismus ist unbekannt.
-   * Teilweise behoben: Die Meldung nennt die wahrscheinliche Ursache, und der Editor
-     zeigt „keine Live-Daten“, statt eingefrorene Balken. Die eigentliche Lösung (H4/E7)
-     ist offen.
-4. **LFO-Anzeige im MIDI-Clock-Modus**, auch nach dem Zurückschalten auf Frei, blieb aus.
-   * Im Simulator mit dem Firmware-Code laufen die Werte im Clock-Modus und danach im
-     Frei-Modus weiter; bei Clock-Stopp hält der LFO wie vorgesehen (N4).
-   * Wahrscheinlichste Ursache ist Befund 3: Studio One als Clock-Quelle hält den
-     Eingang, dann kommen keine Live-Daten an.
-   * Außerdem berechnet die Firmware Quellen ohne aktive Verbindung nicht. Ihre Balken
-     sind jetzt abgedunkelt; der Tooltip erklärt das.
-5. **„Vom Gerät laden“** zeigte keine erkennbare Wirkung. Das ist richtig, solange
-   nichts anderes das Gerät geändert hat. Jetzt meldet der Editor „Zustand vom Gerät
-   geladen (Patch-CRC …)“, und der Tooltip erklärt den Knopf.
-6. **Spalte „Reverb“** (Hallzeit) wirkt kaum. Auf Entscheidung des Betreibers ist
-   Spalte 7 jetzt **Level** (Ausgangspegel 0…2, mit leerer Matrix genau 1); IDENTIFY
-   meldet `0.1.0-mod2`. Host: Modwheel → Level −100 blendet bis Stille aus; der
-   Golden-Hash der leeren Matrix ist unverändert. Am Gerät `NICHT GEMESSEN`.
-7. **Potistellungen** wurden nicht angezeigt. Je nach Stellung wirkt dieselbe Modulation
-   anders, weil der Offset zum Potiwert addiert und auf 0…1 begrenzt wird.
-   * Umgesetzt als abwärtskompatible Protokollerweiterung: Grundwerte hinten im
-     Monitor-Rahmen (52 statt 36 Byte), Fähigkeit Bit 4. Eingeschaltet nur im
-     Physical-Modeling-Build `MOD=1`.
-   * Beide Editoren zeigen die Potistellung als Strich und den Weg der Modulation als
-     Balken; `mod_probe.py monitor` druckt sie mit.
-   * Toy Piano v0.3, die reguläre Physical-Modeling-Fassung und alle ModBench-Varianten
-     sind bytegleich zum Übergabe-Paket.
-   * Am Gerät `NICHT GEMESSEN`.
+1. **Context menu** always opened at the same place instead of at the mouse pointer, and
+   in the default colors. Fixed: the menu opens at the mouse pointer, in the app's
+   colors.
+2. **Fast LFOs**: at a high rate the display seemed to get stuck. The cause is aliasing:
+   the live display arrives at 20 frames/s, so a 20 Hz LFO is always sampled at the same
+   phase. Fixed: above 5 Hz the bar shows a band instead of a seemingly stationary value.
+3. **Studio One** opens the Daisy port exclusively.
+   * The editor keeps controlling as long as it stays connected, but no longer receives
+     replies or live data ("no answer from the device").
+   * After disconnecting, reconnecting is not possible as long as Studio One holds the
+     port. Once the device was visible again for 1–2 s; the mechanism is unknown.
+   * Partially fixed: the message names the probable cause, and the editor shows
+     "no live data" instead of frozen bars. The actual solution (H4/E7) is open.
+4. **LFO display in MIDI clock mode**, also after switching back to free, stayed off.
+   * In the simulator with the firmware code, the values keep running in clock mode and
+     afterwards in free mode; on clock stop the LFO holds as intended (N4).
+   * The most likely cause is finding 3: Studio One as the clock source holds the input,
+     so no live data arrives.
+   * In addition, the firmware does not compute sources without an active connection.
+     Their bars are now dimmed; the tooltip explains this.
+5. **"Load from device"** had no recognizable effect. That is correct as long as nothing
+   else has changed the device. Now the editor reports "State loaded from the device
+   (patch CRC …)", and the tooltip explains the button.
+6. **Column "Reverb"** (reverb time) has hardly any effect. By decision of the owner,
+   column 7 is now **Level** (output level 0…2, exactly 1 with an empty matrix); IDENTIFY
+   reports `0.1.0-mod2`. Host: Modwheel → Level −100 fades out to silence; the golden
+   hash of the empty matrix is unchanged. On the device `NOT MEASURED`.
+7. **Pot positions** were not displayed. Depending on the position, the same modulation
+   acts differently, because the offset is added to the pot value and clamped to 0…1.
+   * Implemented as a backwards-compatible protocol extension: base values at the end of
+     the monitor frame (52 instead of 36 bytes), capability bit 4. Enabled only in the
+     Physical Modeling build `MOD=1`.
+   * Both editors show the pot position as a line and the path of the modulation as a
+     bar; `mod_probe.py monitor` prints them as well.
+   * Toy Piano v0.3, the regular Physical Modeling build and all ModBench variants are
+     byte-identical to the hand-over package.
+   * On the device `NOT MEASURED`.
 
-### Am Gerät: `0.1.0-mod3` und JUCE-Editor vom Stand PR #29 (`GEMESSEN` 24.10.2026)
+### On the device: `0.1.0-mod3` and JUCE editor from the state of PR #29 (`MEASURED` 24.10.2026)
 
-Lokal unter Windows 11; Befehle vom Agenten, Bedienung und Beobachtung vom Betreiber.
+Locally under Windows 11; commands by the agent, operation and observation by the owner.
 
-| Nr. | Ergebnis |
+| No. | Result |
 | --- | --- |
-| IDENTIFY (`mod_probe.py`, 19:14) | `physical-modeling 0.1.0-mod3`, Fähigkeiten 122 (`0x7A`), Schema `942B2D07`; `targets` mit Level in Spalte 6; leere Matrix, Patch-CRC `C422B385` |
-| USB nach dem Flashen | zuerst Gerätemanager-Code 10 (`VID_0483 PID_5740`, ohne Name); nach Abziehen/Einstecken an J7 „Daisy Seed External“, OK |
-| E9b | `NICHT GEMESSEN`: Der Editor war mit dem eingebauten Simulator verbunden, nicht mit dem Kit (Simulatoren seither nur mit `--simulators`) |
-| E7b | **nicht bestanden** (vom Betreiber berichtet): Mit laufendem Studio One werden die Modulationen nicht durchgereicht. Die ältere Editor-Version (Stand PR #24) hat im Parallelbetrieb funktioniert. **Ursache gefunden** (21:45–21:50, Studio One spielt, `mod_probe.py` parallel): Windows MIDI Services lässt beide Programme an den Port, Befehle kommen an und wirken (LFO 1 → Pitch hörbar). Studio One schickt aber alles vom Daisy per Input-Monitoring zurück; die Firmware beantwortete jeden zurückgeschickten Antwortrahmen mit NAK, das ergab endlose NAK-Schleifen (rund 500 Rahmen/s, `7F`-Rahmen mit festen Seq-Nummern), die die Antworten verdrängten. IDENTIFY kam meist noch durch, `MONITOR`, `GET_TARGET`, `SET_SOURCE` nicht. Behoben in `0.1.0-mod4` (PROTOCOL § 2, Schritt 2a) |
+| IDENTIFY (`mod_probe.py`, 19:14) | `physical-modeling 0.1.0-mod3`, capabilities 122 (`0x7A`), schema `942B2D07`; `targets` with Level in column 6; empty matrix, patch CRC `C422B385` |
+| USB after flashing | first Device Manager code 10 (`VID_0483 PID_5740`, without name); after unplugging/replugging at J7 "Daisy Seed External", OK |
+| E9b | `NOT MEASURED`: the editor was connected to the built-in simulator, not to the kit (simulators since then only with `--simulators`) |
+| E7b | **failed** (reported by the owner): with Studio One running, the modulations are not passed through. The older editor version (state of PR #24) worked in parallel operation. **Cause found** (21:45–21:50, Studio One playing, `mod_probe.py` in parallel): Windows MIDI Services lets both programs onto the port, commands arrive and take effect (LFO 1 → Pitch audible). But Studio One sends everything from the Daisy back via input monitoring; the firmware answered every returned reply frame with NAK, which resulted in endless NAK loops (around 500 frames/s, `7F` frames with fixed seq numbers) that crowded out the replies. IDENTIFY mostly still got through, `MONITOR`, `GET_TARGET`, `SET_SOURCE` did not. Fixed in `0.1.0-mod4` (PROTOCOL § 2, step 2a) |
 
-Befunde: `mod_probe.py` fand unter Windows den Eingang nicht und brach bei `matrix` in der
-cp1252-Konsole ab (behoben in `bee9023`). Wünsche aus dem Test: aktueller Wert im
-Spaltenkopf und aktives Modell im Verbindungsbereich (umgesetzt in `0.1.0-mod4`, § 1d).
+Findings: under Windows, `mod_probe.py` did not find the input and aborted at `matrix` in
+the cp1252 console (fixed in `bee9023`). Requests from the test: current value in the
+column header and active model in the connection area (implemented in `0.1.0-mod4`, § 1d).
 
-### Am Gerät: `0.1.0-mod4` und JUCE-Editor von PR #33 (`GEMESSEN` 24.10.2026, ab 21:55)
+### On the device: `0.1.0-mod4` and JUCE editor from PR #33 (`MEASURED` 24.10.2026, from 21:55)
 
-Image `PhysicalModelingMod-v0.1.0.bin` SHA-256 `9517db27…`, vom Betreiber mit dem Daisy Web
-Programmer geflasht. Studio One lief und spielte das Kit (Daisy als Ein- und Ausgang).
+Image `PhysicalModelingMod-v0.1.0.bin` SHA-256 `9517db27…`, flashed by the owner with the
+Daisy Web Programmer. Studio One was running and playing the kit (Daisy as input and
+output).
 
-| Nr. | Ergebnis |
+| No. | Result |
 | --- | --- |
-| `mod_probe.py` parallel zu Studio One (Agent) | IDENTIFY 3/3: `0.1.0-mod4`, Fähigkeiten 122, Fähigkeiten 2 = 1; `modes`: alle sechs Modelle mit Bankhinweis; Monitor 61 Rahmen in 3 s; Grundwerte = Potistellungen; MIDI-Clock aus Studio One erkannt; Modell 3 (FM Voice), Herkunft Gerät |
-| E7b | **bestanden** in der Reihenfolge erst Studio One, dann Editor (vom Betreiber berichtet): Status grün, Modulation hörbar, Änderungen mit Patch-CRC bestätigt. Umgekehrte Reihenfolge: `NICHT GEMESSEN` |
-| E9b | Spaltenwerte und Strich folgen den Potis (vom Betreiber berichtet). Modwheel → Level −100: `NICHT GEMESSEN` |
-| E18 | Modell wechselt mit SW17/SW18 (vom Betreiber berichtet). CC28 mit „(MIDI)“: `NICHT GEMESSEN` |
-| E19, E11–E17, R1–R7, R9, R10 | `NICHT GEMESSEN` |
+| `mod_probe.py` in parallel with Studio One (agent) | IDENTIFY 3/3: `0.1.0-mod4`, capabilities 122, capabilities 2 = 1; `modes`: all six models with bank hint; monitor 61 frames in 3 s; base values = pot positions; MIDI clock from Studio One detected; model 3 (FM Voice), origin device |
+| E7b | **passed** in the order Studio One first, then the editor (reported by the owner): status green, modulation audible, changes confirmed with patch CRC. Reverse order: `NOT MEASURED` |
+| E9b | column values and line follow the pots (reported by the owner). Modwheel → Level −100: `NOT MEASURED` |
+| E18 | model changes with SW17/SW18 (reported by the owner). CC28 with "(MIDI)": `NOT MEASURED` |
+| E19, E11–E17, R1–R7, R9, R10 | `NOT MEASURED` |
 
-## 1d. Aktives Modell und Spaltenwerte (`GEMESSEN` 24.10.2026, Host)
+## 1d. Active model and column values (`MEASURED` 24.10.2026, host)
 
-* Firmware `0.1.0-mod4`: Fähigkeiten 2 (an IDENTIFY angehängt), `GET_MODE`, Monitor 91 Byte
-  (PROTOCOL.md § 3.6). Modultest `TestModes`, Physical-Modeling-Test `TestModel`
-  (Schalter → String & Reverb, CC28 → FM Voice mit Herkunft MIDI).
-* Bytegleich zur Übergabe (lokal gebaut, xPack GCC 13.2.1): Toy Piano v0.3 `6dd79871…`,
-  reguläres Physical Modeling `eb8f412a…`, ModBench `9f50a57b…` / `5cdeb0f6…` / `7f209c15…`.
-  `PhysicalModelingMod-v0.1.0.bin` (mod4 ohne Rückkopplungsschutz): 171.828 Byte.
-* Editoren: Kerntest `TestModeAndValueLabels`, Browser-Codec-Test (91-Byte-Rahmen,
-  Spaltenwerte), JUCE-Selbsttest unter Windows (VS Build Tools 2022) bestanden.
-* Rückkopplung: Antwortrahmen werden nie beantwortet; Modultest `TestEchoedReplies` schickt jeden
-  ausgehenden Rahmen zurück: 20 Monitorrahmen/s, kein NAK. `PhysicalModelingMod-v0.1.0.bin`
-  danach 171.684 Byte; die übrigen Images weiter bytegleich.
-* Toy Piano v0.4 (`GEMESSEN` 25.10.2026, Host/ARM unter Windows): dieselbe Regel einzeln mit
-  `MOD_ON_DAISY_IGNORE_REPLIES=1`; Modultest zusätzlich in dieser Variante (`test_mod_echo`),
-  Toy-Piano-Test über den USB-Pfad: 20 Monitorrahmen/s, kein NAK. Übrige Images bytegleich zu
-  `main` (Physical Modeling mod `9517db27…`). Am Gerät `NICHT GEMESSEN`.
-* Am Gerät: `NICHT GEMESSEN` (E18, E19, E9b, E7b mit mod4).
+* Firmware `0.1.0-mod4`: capabilities 2 (appended to IDENTIFY), `GET_MODE`, monitor 91
+  bytes (PROTOCOL.md § 3.6). Module test `TestModes`, Physical Modeling test `TestModel`
+  (switch → String & Reverb, CC28 → FM Voice with origin MIDI).
+* Byte-identical to the hand-over (built locally, xPack GCC 13.2.1): Toy Piano v0.3
+  `6dd79871…`, regular Physical Modeling `eb8f412a…`, ModBench `9f50a57b…` / `5cdeb0f6…` /
+  `7f209c15…`. `PhysicalModelingMod-v0.1.0.bin` (mod4 without feedback protection):
+  171 828 bytes.
+* Editors: core test `TestModeAndValueLabels`, browser codec test (91-byte frames,
+  column values), JUCE self-test under Windows (VS Build Tools 2022) passed.
+* Feedback: reply frames are never answered; module test `TestEchoedReplies` sends every
+  outgoing frame back: 20 monitor frames/s, no NAK. `PhysicalModelingMod-v0.1.0.bin`
+  afterwards 171 684 bytes; the other images still byte-identical.
+* Toy Piano v0.4 (`MEASURED` 25.10.2026, host/ARM under Windows): the same rule
+  individually with `MOD_ON_DAISY_IGNORE_REPLIES=1`; module test additionally in this
+  variant (`test_mod_echo`), Toy Piano test via the USB path: 20 monitor frames/s, no NAK.
+  Other images byte-identical to `main` (Physical Modeling mod `9517db27…`). On the
+  device `NOT MEASURED`.
+* On the device: `NOT MEASURED` (E18, E19, E9b, E7b with mod4).
 
-## 1e. VST3-Plugin (`GEMESSEN` 24.10.2026, Host)
+## 1e. VST3 plug-in (`MEASURED` 24.10.2026, host)
 
-* Gebaut unter Windows 11 mit VS Build Tools 2022 und JUCE 9.0.4 (VST3-Schnittstelle aus
-  JUCE, kein separates SDK): `Mod on Daisy.vst3`, Hersteller Daisy-Seed, Fx|Tools.
-* `ModOnDaisyPluginCheck` (lädt das `.vst3` wie ein Host, ohne Kit-Verbindung): ein
-  Effekt, Stereo ein/aus, Ton bitgleich durchgereicht, Projekt-State ist der `.modpatch`-
-  Text und übersteht das Hin und Zurück in eine zweite Instanz, Fenster öffnet zweimal.
-  Alle Prüfungen bestanden.
-* Selbsttest des Standalone-Editors: neuer Schritt „Patch aus dem Projekt offline geladen,
-  beim Verbinden zum Gerät gesendet“ gegen den Simulator bestanden; Kerntest bestanden.
-* In Studio One und am Kit: `NICHT GEMESSEN` (Laufzettel P1–P5).
+* Built under Windows 11 with VS Build Tools 2022 and JUCE 9.0.4 (VST3 interface from
+  JUCE, no separate SDK): `Mod on Daisy.vst3`, manufacturer Daisy-Seed, Fx|Tools.
+* `ModOnDaisyPluginCheck` (loads the `.vst3` like a host, without a kit connection): one
+  effect, stereo in/out, audio passed through bit-identically, the project state is the
+  `.modpatch` text and survives the round trip into a second instance, the window opens
+  twice. All checks passed.
+* Self-test of the standalone editor: new step "patch loaded offline from the project,
+  sent to the device on connecting" passed against the simulator; core test passed.
+* In Studio One and on the kit: `NOT MEASURED` (run sheet P1–P5).
 
-## 1c. Korrekturauftrag nach der Review (`GEMESSEN` 24.10.2026, Host)
+## 1c. Correction request after the review (`MEASURED` 24.10.2026, host)
 
-Umgesetzt: Kompatibilitätsprüfung vor dem Laden (F1), Portfreigabe in allen Pfaden
-(F2), Bereichsanzeige für schnelle Quellen und Ziele mit Grundwert und Begrenzung
-(F3/F4), Verbindungszustand (F5), gemeinsame Aftertouch-Anzeige (Betreiberentscheidung),
-Regressionstests für Laden/Leeren/Nullsetzen (F7), dazu die LFO-Quermodulation.
-Firmware-Seite: erweiterter Monitor und `fm` hinter `MOD_ON_DAISY_EXTENSIONS`, zur
-Laufzeit nur im Physical-Modeling-Build `MOD=1` eingeschaltet (PROTOCOL § 3.6).
+Implemented: compatibility check before loading (F1), port release in all paths
+(F2), range display for fast sources and targets with base value and clamping
+(F3/F4), connection state (F5), common aftertouch display (owner decision),
+regression tests for loading/clearing/setting to zero (F7), plus the LFO
+cross-modulation. Firmware side: extended monitor and `fm` behind
+`MOD_ON_DAISY_EXTENSIONS`, enabled at run time only in the Physical Modeling build
+`MOD=1` (PROTOCOL § 3.6).
 
-| Kommando | Ergebnis |
+| Command | Result |
 | --- | --- |
-| `make -C modules/mod-on-daisy test` | grün, auch Variante mit Erweiterungen (`test_mod_ext`): 89-Byte-Rahmen, Bereich, Taktzustand, Aftertouch, FM (LFO mit Quermodulation: 6 → 25 Zyklen in 10 s) |
-| `make -C modules/mod-on-daisy test-sanitize` | grün (ASan/UBSan) |
-| `make -C modules/mod-on-daisy test-thread` | grün, auch mit Erweiterungen; keine TSan-Meldung (Messfenster per atomarer Fensternummer) |
-| `make -C modules/mod-on-daisy test-editor` | grün: Browser gegen `mod_sim`, inkl. gezählter `close()`-Aufrufe (belegter Eingang, IDENTIFY-Zeitüberschreitung, Trennen), Kompatibilitätsdialog mit `legacy-reverb.modpatch`, Verbindungszustand, Bereich, Aftertouch, FM, Nullsetzen, Leeren, Standardpatch |
-| `node editors/mod-on-daisy/web/tests/protocol.test.cjs` | grün: Format-2-CRC `C422B385` / `9D6E020E` wie C++ und Python, Monitor 36/89 Byte, Zielbereich, Kompatibilität |
-| `make -C editors/mod-on-daisy test`, `test-sanitize` | grün: Kompatibilität (alte Datei `E337FC28` → Gerät `942B2D07`, nur Spalte Level betroffen), Verbindungszustand, Regressionen § 7, Zielbereich 0,1/0,5/0,9 ± 0,5 → 0…0,6 / 0…1 / 0,4…1, Aftertouch-Fälle (Wert 0, erste von zwei Noten, Note Off, All Notes Off, beide Arten, Bearbeitung bleibt bei der Zelle), FM |
-| JUCE-Selbsttest unter Xvfb | `PASS`, inkl. FM-Regler, Bereich, Taktzustand, Verbindungszustand, Kompatibilitätsfrage, Portfreigabe nach fehlgeschlagenem Verbinden |
-| `mod_probe.py selftest` | grün |
-| `make PROJECT=toy-piano test` | grün, Golden `52580874FA24361F` |
-| `make PROJECT=physical-modeling test`, `PROJECT=physical-modeling-mod test` | grün, Golden `37DE0BF9D93B81CE` in beiden Fassungen |
-| ARM-Builds (xPack 13.2.1-1.1) | bytegleich: `ToyPiano-v0.3.bin` `6dd79871…`, `PhysicalModeling-v0.1.0.bin` `eb8f412a…`, ModBench `9f50a57b…` / `5cdeb0f6…` / `7f209c15…`. Geändert nur die eigene Fassung `PhysicalModelingMod-v0.1.0.bin` (mod3): 170 312 Byte, `ccabdaa9…`, DTCM 110 352 B (Reserve 20 720); `check-firmware.py` und `check-physical-elf.py` bestanden |
+| `make -C modules/mod-on-daisy test` | green, also the variant with extensions (`test_mod_ext`): 89-byte frames, range, clock state, aftertouch, FM (LFO with cross-modulation: 6 → 25 cycles in 10 s) |
+| `make -C modules/mod-on-daisy test-sanitize` | green (ASan/UBSan) |
+| `make -C modules/mod-on-daisy test-thread` | green, also with extensions; no TSan report (measurement window via atomic window number) |
+| `make -C modules/mod-on-daisy test-editor` | green: browser against `mod_sim`, incl. counted `close()` calls (input in use, IDENTIFY timeout, disconnecting), compatibility dialog with `legacy-reverb.modpatch`, connection state, range, aftertouch, FM, setting to zero, clearing, default patch |
+| `node editors/mod-on-daisy/web/tests/protocol.test.cjs` | green: format 2 CRC `C422B385` / `9D6E020E` as in C++ and Python, monitor 36/89 bytes, target range, compatibility |
+| `make -C editors/mod-on-daisy test`, `test-sanitize` | green: compatibility (old file `E337FC28` → device `942B2D07`, only column Level affected), connection state, regressions § 7, target range 0.1/0.5/0.9 ± 0.5 → 0…0.6 / 0…1 / 0.4…1, aftertouch cases (value 0, first of two notes, note off, All Notes Off, both types, editing stays with the cell), FM |
+| JUCE self-test under Xvfb | `PASS`, incl. FM control, range, clock state, connection state, compatibility question, port release after a failed connect |
+| `mod_probe.py selftest` | green |
+| `make PROJECT=toy-piano test` | green, golden `52580874FA24361F` |
+| `make PROJECT=physical-modeling test`, `PROJECT=physical-modeling-mod test` | green, golden `37DE0BF9D93B81CE` in both builds |
+| ARM builds (xPack 13.2.1-1.1) | byte-identical: `ToyPiano-v0.3.bin` `6dd79871…`, `PhysicalModeling-v0.1.0.bin` `eb8f412a…`, ModBench `9f50a57b…` / `5cdeb0f6…` / `7f209c15…`. Changed only the separate build `PhysicalModelingMod-v0.1.0.bin` (mod3): 170 312 bytes, `ccabdaa9…`, DTCM 110 352 B (reserve 20 720); `check-firmware.py` and `check-physical-elf.py` passed |
 
-Der neue Regressionstest fand einen Fehler, der behoben ist: Lief eine Dateiübertragung
-in eine Zeitüberschreitung, hatte das Gerät einen Teil schon übernommen, der Editor
-zeigte aber die ganze Datei. Jetzt lädt der Editor den Gerätezustand neu, sobald das
-Gerät wieder etwas sendet.
+The new regression test found a bug, which is fixed: if a file transfer ran into a
+timeout, the device had already taken over part of it, but the editor showed the whole
+file. Now the editor reloads the device state as soon as the device sends something
+again.
 
-**Grenzen:** Alles oben lief gegen den Firmware-Code auf dem PC (Simulator, `mod_sim`).
-Am Gerät `NICHT GEMESSEN`: E7b (beide Reihenfolgen), E9b, E11–E17 und die
-Portfreigabe unter Windows. Der Zielbereich addiert die Fensterbereiche der Quellen; bei
-mehreren Verbindungen ist er der erreichbare, nicht der gemessene Bereich.
+**Limits:** everything above ran against the firmware code on the PC (simulator,
+`mod_sim`). On the device `NOT MEASURED`: E7b (both orders), E9b, E11–E17 and the port
+release under Windows. The target range adds up the window ranges of the sources; with
+several connections it is the reachable range, not the measured one.
 
-## 2. ARM-Build der Messfirmware (`GEMESSEN`)
+## 2. ARM build of the measurement firmware (`MEASURED`)
 
-| Variante | BIN | `mod::Module` (RAM) | `Engine::Tick` Code | `Controller::Execute` Code |
+| Variant | BIN | `mod::Module` (RAM) | `Engine::Tick` code | `Controller::Execute` code |
 | --- | ---: | ---: | ---: | ---: |
 | Block 48, kMaxActive 8 (`build/ModBench-v0.1.0.bin`) | 138 608 B | **1 936 B** | 3 406 B | 8 628 B |
 | Block 256, kMaxActive 8 (`build/b256-max8/`) | 138 624 B | 1 936 B | 3 406 B | 8 628 B |
 | Block 48, kMaxActive 64 (`build/b48-max64/`) | 143 448 B | 3 280 B | 3 332 B | 12 504 B |
 
-* `scripts/check-firmware.py`: **PASS** (BOOT_SRAM-Vektoren, eingebettete Version).
+* `scripts/check-firmware.py`: **PASS** (BOOT_SRAM vectors, embedded version).
 * Stack `Engine::Tick` 40 B (`-fstack-usage`).
-* DTCM gesamt (Standardvariante) 108 772 B von 131 072 B (83 %). Den größten Teil
-  belegt libDaisy (MIDI-FIFO etwa 37 KB, USB); das Modul trägt 1,9 KB bei.
-* Toy Piano baut mit dem geänderten `common/desktop.mk` unverändert
+* DTCM total (default variant) 108 772 B of 131 072 B (83 %). Most of it is used by
+  libDaisy (MIDI FIFO about 37 KB, USB); the module contributes 1.9 KB.
+* Toy Piano builds unchanged with the modified `common/desktop.mk`
   (`check-firmware.py`: PASS, v0.2).
 
-## 3. Hardware (`NICHT GEMESSEN`)
+## 3. Hardware (`NOT MEASURED`)
 
-Anleitung: [bench/README.md](../bench/README.md). Ergebnisse hier eintragen.
+Instructions: [bench/README.md](../bench/README.md). Enter the results here.
 
-### 3.1 Szenarien (TEST_PLAN § 3.2), Block 48
+### 3.1 Scenarios (TEST_PLAN § 3.2), block 48
 
-| Szenario | Matrix-Zyklen min/mittel/max | Callback-Last mittel/max | Überläufe | MIDI verloren | Main max (Dispatch/Service) |
+| Scenario | Matrix cycles min/mean/max | Callback load mean/max | Overruns | MIDI lost | Main max (dispatch/service) |
 | --- | --- | --- | --- | --- | --- |
-| S0 Bypass | NICHT GEMESSEN | | | | |
-| S1 inaktiv | NICHT GEMESSEN | | | | |
-| S2 1 Verbindung | NICHT GEMESSEN | | | | |
-| S3 4 Verbindungen | NICHT GEMESSEN | | | | |
-| S4 8 Verbindungen | NICHT GEMESSEN | | | | |
-| S5 S4 + 32 Stimmen | NICHT GEMESSEN | | | | |
-| S6 64 Zellen (Variante max64) | NICHT GEMESSEN | | | | |
-| S7 S4 + Editor-Last | NICHT GEMESSEN | | | | |
-| S8 S4 + MIDI-Flut | NICHT GEMESSEN | | | | |
+| S0 bypass | NOT MEASURED | | | | |
+| S1 inactive | NOT MEASURED | | | | |
+| S2 1 connection | NOT MEASURED | | | | |
+| S3 4 connections | NOT MEASURED | | | | |
+| S4 8 connections | NOT MEASURED | | | | |
+| S5 S4 + 32 voices | NOT MEASURED | | | | |
+| S6 64 cells (variant max64) | NOT MEASURED | | | | |
+| S7 S4 + editor load | NOT MEASURED | | | | |
+| S8 S4 + MIDI flood | NOT MEASURED | | | | |
 
-Dieselbe Tabelle wird für Block 256 (Variante `b256-max8`) erstellt.
+The same table is created for block 256 (variant `b256-max8`).
 
-### 3.2 Funktionstests (TEST_PLAN § 4)
+### 3.2 Function tests (TEST_PLAN § 4)
 
-| Nr. | Test | Ergebnis |
+| No. | Test | Result |
 | --- | --- | --- |
-| H1 | USB-Enumeration | NICHT GEMESSEN |
-| H2 | SysEx empfangen (`mod_probe.py lengths`) | NICHT GEMESSEN |
-| H3 | SysEx senden, bytegenau | NICHT GEMESSEN |
-| H4 | Portkonflikt mit Studio One | NICHT GEMESSEN |
-| H5 | CV-Nullpunkt, Rauschen, Skalierung (`mod_probe.py monitor`) | NICHT GEMESSEN |
-| H6 | Live-MIDI (CC1, Channel AT, Poly AT) | NICHT GEMESSEN |
-| H7 | Hörtest Zipper | NICHT GEMESSEN |
-| H8 | MIDI-Clock- und Gate-Sync | NICHT GEMESSEN |
+| H1 | USB enumeration | NOT MEASURED |
+| H2 | SysEx receive (`mod_probe.py lengths`) | NOT MEASURED |
+| H3 | SysEx send, byte-exact | NOT MEASURED |
+| H4 | Port conflict with Studio One | NOT MEASURED |
+| H5 | CV zero point, noise, scaling (`mod_probe.py monitor`) | NOT MEASURED |
+| H6 | Live MIDI (CC1, Channel AT, Poly AT) | NOT MEASURED |
+| H7 | Listening test zipper | NOT MEASURED |
+| H8 | MIDI clock and gate sync | NOT MEASURED |
