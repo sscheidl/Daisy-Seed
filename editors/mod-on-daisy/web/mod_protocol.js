@@ -19,15 +19,15 @@
     monitor: 0x30, getStats: 0x31, resetStats: 0x32, setScenario: 0x33,
   };
   const ERRORS = {
-    1: 'Prüfsumme', 2: 'Länge', 3: 'unbekanntes Kommando', 4: 'Wert außerhalb des Bereichs',
-    5: 'beschäftigt', 6: 'Protokollversion', 7: 'höchstens 8 aktive Verbindungen',
-    8: 'Zelle nicht erlaubt', 9: 'nicht implementiert', 10: 'Speicherfehler', 11: 'Schema',
+    1: 'checksum', 2: 'length', 3: 'unknown command', 4: 'value out of range',
+    5: 'busy', 6: 'protocol version', 7: 'at most 8 active connections',
+    8: 'cell not allowed', 9: 'not implemented', 10: 'storage error', 11: 'schema',
   };
 
   const SOURCES = ['LFO 1', 'LFO 2', 'Random', 'CV 1', 'CV 2', 'Modwheel', 'Channel AT', 'Poly AT'];
-  const SHAPES = ['Sinus', 'Dreieck', 'Sägezahn ↑', 'Sägezahn ↓', 'Rechteck', 'S&H'];
-  const RANDOM_MODES = ['Stufe', 'Geglättet'];
-  const SYNCS = ['Frei', 'MIDI-Clock', 'Gate'];
+  const SHAPES = ['Sine', 'Triangle', 'Saw ↑', 'Saw ↓', 'Square', 'S&H'];
+  const RANDOM_MODES = ['Stepped', 'Smooth'];
+  const SYNCS = ['Free', 'MIDI clock', 'Gate'];
   const MIDI_DIVISIONS = ['4 Takte', '2 Takte', '1 Takt', '1/2', '1/4', '1/4T', '1/8', '1/8T', '1/16', '1/16T', '1/32'];
   const GATE_DIVISIONS = ['1/4', '1/2', '1/1', '2/1', '4/1'];
   const DEFAULT_MIDI_DIVISION = 4, DEFAULT_GATE_DIVISION = 2;
@@ -82,7 +82,7 @@
   class Reader {
     constructor(bytes) { this.bytes = bytes; this.pos = 0; }
     u7() {
-      if (this.pos >= this.bytes.length) throw new Error('Antwort zu kurz');
+      if (this.pos >= this.bytes.length) throw new Error('answer too short');
       return this.bytes[this.pos++] & 127;
     }
     u14() { const lo = this.u7(); return lo | (this.u7() << 7); }
@@ -101,7 +101,7 @@
 
   // Complete MIDI message F0 … F7.
   function buildFrame(device, command, seq, payload = []) {
-    if (payload.length > MAX_PAYLOAD) throw new Error('Nutzdaten zu lang');
+    if (payload.length > MAX_PAYLOAD) throw new Error('payload too long');
     const body = [VERSION, device & 127, command & 127, seq & 127, payload.length, ...payload.map((b) => b & 127)];
     return [0xf0, MANUFACTURER, ...PROJECT, ...body, checksum(body), 0xf7];
   }
@@ -113,8 +113,8 @@
     const body = m.slice(1, -1);
     if (body[0] !== MANUFACTURER || body[1] !== PROJECT[0] || body[2] !== PROJECT[1]) return null;
     const length = body[7];
-    if (body.length !== HEADER + length + 1) throw new Error('Rahmenlänge stimmt nicht');
-    if (checksum(body.slice(3, HEADER + length)) !== body[HEADER + length]) throw new Error('Prüfsumme falsch');
+    if (body.length !== HEADER + length + 1) throw new Error('frame length mismatch');
+    if (checksum(body.slice(3, HEADER + length)) !== body[HEADER + length]) throw new Error('checksum wrong');
     return { version: body[3], device: body[4], command: body[5], seq: body[6], payload: body.slice(HEADER, HEADER + length) };
   }
 
@@ -244,7 +244,7 @@
     if (file.instrument_key && file.instrument_key !== device.key) {
       c.keyMismatch = true;
       c.affected = active;
-      c.notes.push(`Die Datei ist für „${file.instrument_key}“, verbunden ist „${device.key}“.`);
+      c.notes.push(`The file is for “${file.instrument_key}”, connected is “${device.key}”.`);
     } else if (!file.schema_hash || String(file.schema_hash).toUpperCase() !== hex) {
       c.schemaUnknown = !file.schema_hash;
       c.schemaChanged = !!file.schema_hash;
@@ -255,16 +255,16 @@
         const now = targets[t], was = file.columns ? file.columns[t] : null;
         if (!was) {
           c.affected |= column;
-          c.notes.push(`Spalte ${t + 1} (jetzt „${now.name}“): Bedeutung in der Datei unbekannt.`);
+          c.notes.push(`Column ${t + 1} (now “${now.name}”): meaning in the file unknown.`);
         } else if (!now.present || was !== now.name) {
           c.affected |= column;
-          c.notes.push(`Spalte ${t + 1}: Datei „${was}“ → Gerät „${now.present ? now.name : 'kein Ziel'}“.`);
+          c.notes.push(`Column ${t + 1}: file “${was}” → device “${now.present ? now.name : 'no target'}”.`);
         }
       }
     }
     if (file.hasFm && !(device.caps & CAP.lfoFm)) {
       c.fmUnsupported = true;
-      c.notes.push('Das Gerät kennt keine LFO-Quermodulation; sie wird auf 0 gesetzt.');
+      c.notes.push('The device has no LFO cross modulation; it is set to 0.');
     }
     c.needsDecision = c.keyMismatch || c.affected !== 0n || c.fmUnsupported;
     return c;

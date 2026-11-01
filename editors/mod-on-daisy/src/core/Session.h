@@ -115,18 +115,18 @@ inline GoalSpan GoalSpanOf(const Model& model, const MonitorValues& m, std::size
 
 inline std::string ErrorText(unsigned code) {
     switch(code) {
-        case proto::ErrChecksum: return "Prüfsumme";
-        case proto::ErrLength: return "Länge";
-        case proto::ErrUnknown: return "unbekanntes Kommando";
-        case proto::ErrRange: return "Wert außerhalb des Bereichs";
-        case proto::ErrBusy: return "beschäftigt";
-        case proto::ErrVersion: return "Protokollversion";
-        case proto::ErrLimit: return "zu viele aktive Verbindungen";
-        case proto::ErrNotAllowed: return "Zelle nicht erlaubt";
-        case proto::ErrNotImplemented: return "nicht implementiert";
-        case proto::ErrStorage: return "Speicherfehler";
-        case proto::ErrSchema: return "Schema";
-        default: return "Fehler " + std::to_string(code);
+        case proto::ErrChecksum: return "checksum";
+        case proto::ErrLength: return "length";
+        case proto::ErrUnknown: return "unknown command";
+        case proto::ErrRange: return "value out of range";
+        case proto::ErrBusy: return "busy";
+        case proto::ErrVersion: return "protocol version";
+        case proto::ErrLimit: return "too many active connections";
+        case proto::ErrNotAllowed: return "cell not allowed";
+        case proto::ErrNotImplemented: return "not implemented";
+        case proto::ErrStorage: return "storage error";
+        case proto::ErrSchema: return "schema";
+        default: return "error " + std::to_string(code);
     }
 }
 
@@ -153,7 +153,7 @@ class Session {
     std::string StatusText() const {
         if(!Connected() || health_ == Health::Ok)
             return status_;
-        return status_ + (health_ == Health::NoReplies ? " · keine Antwort" : " · keine Live-Daten");
+        return status_ + (health_ == Health::NoReplies ? " · no answer" : " · no live data");
     }
     bool Pending(int cell) const { return pending_cells_.count(cell) || in_flight_cell_ == cell; }
     // Nothing waiting, nothing open: what the tests wait for.
@@ -167,7 +167,7 @@ class Session {
         now_ = now_ms;
         state_ = LinkState::Connecting;
         device_ = proto::kBroadcast;
-        SetStatus("verbinde …");
+        SetStatus("connecting …");
         Send(proto::Identify, {}, proto::kBroadcast, [this](const Reply& r) {
             proto::Reader rd(r.payload.data(), r.payload.size());
             DeviceInfo d;
@@ -186,8 +186,8 @@ class Session {
             d.caps2 = rd.AtEnd() ? 0 : int(rd.U7()); // appended by newer firmware
             d.device = r.device;
             if(!rd.Ok() || d.protocol_major != proto::kVersion) {
-                Fail("Protokollversion " + std::to_string(d.protocol_major) + "." + std::to_string(d.protocol_minor)
-                     + " wird nicht unterstützt.");
+                Fail("Protocol version " + std::to_string(d.protocol_major) + "." + std::to_string(d.protocol_minor)
+                     + " is not supported.");
                 return;
             }
             device_ = uint8_t(d.device);
@@ -199,7 +199,7 @@ class Session {
                 last_frame_ms_ = last_live_ms_ = now_; // grace until the first monitor frame
                 SetStatus(device_info_.key + " " + device_info_.version + " · ID " + std::to_string(device_));
                 last_monitor_ = now_ - kMonitorRenewMs; // start at once
-                Log(LogKind::Ok, "Verbunden. Der Zustand des Geräts wurde geladen.");
+                Log(LogKind::Ok, "Connected. The device state has been loaded.");
                 if(device_info_.Modes())
                     FetchMode(0);
             });
@@ -255,7 +255,7 @@ class Session {
         Reply reply{f.command, f.device, std::vector<uint8_t>(f.payload, f.payload + f.length)};
         if(f.command == proto::kNak) {
             const unsigned code = f.length > 1 ? f.payload[1] : 0;
-            Finish(nullptr, "Gerät lehnt ab: " + ErrorText(code));
+            Finish(nullptr, "Device refuses: " + ErrorText(code));
         } else if(f.command == (current_->command | proto::kReplyBit)) {
             Finish(&reply, {});
         }
@@ -272,8 +272,8 @@ class Session {
                 // The device may have applied it without its reply arriving (review F7):
                 // once it is heard again, its state is reloaded.
                 unconfirmed_ = Connected();
-                Finish(nullptr, "keine Antwort vom Gerät – ist der MIDI-Eingang von einer anderen Anwendung belegt "
-                                "(z. B. Studio One)?");
+                Finish(nullptr, "no answer from the device – is the MIDI input held by another application "
+                                "(e.g. Studio One)?");
             }
         }
         FlushEdits();
@@ -289,8 +289,8 @@ class Session {
     Model::Edit EditDepth(int cell, int depth, std::optional<bool> enable = std::nullopt) {
         const Model::Edit e = model_.SetDepth(cell, depth, enable);
         if(e == Model::Edit::Limited)
-            Log(LogKind::Warn, "Höchstens " + std::to_string(model_.max_active)
-                                   + " aktive Verbindungen – diese Zelle bleibt ausgeschaltet.");
+            Log(LogKind::Warn, "At most " + std::to_string(model_.max_active)
+                                   + " active connections – this cell stays switched off.");
         if(e != Model::Edit::None) {
             if(transport_)
                 pending_cells_.insert(cell);
@@ -339,13 +339,13 @@ class Session {
         pending_name_ = false;
         Changed();
         if(!transport_) {
-            Log(LogKind::Ok, "Patch geladen (offline).");
+            Log(LogKind::Ok, "Patch loaded (offline).");
             return;
         }
         auto job = std::make_shared<Job>();
         job->failed = [this](const std::string& message) {
             Pull(false, [this, message] {
-                Log(LogKind::Error, "Datei nur teilweise übertragen (" + message + ") – Zustand neu vom Gerät geladen.");
+                Log(LogKind::Error, "File only partly sent (" + message + ") – state reloaded from the device.");
             });
         };
         uint8_t depth[mod::kCells];
@@ -538,7 +538,7 @@ class Session {
                 FetchMode(index + 1);
             if(changed)
                 changed();
-        }, [this](const std::string& message) { Log(LogKind::Warn, "Modi nicht gelesen: " + message); });
+        }, [this](const std::string& message) { Log(LogKind::Warn, "Modes not read: " + message); });
     }
 
     std::vector<uint8_t> SourcePayload(int src, int param) const {
@@ -600,7 +600,7 @@ class Session {
         ++current_->tries;
         current_->sent_ms = now_;
         if(!transport_->Send(current_->frame.data(), current_->frame.size()))
-            Fail("Der MIDI-Ausgang verweigert das Senden – Verbindung getrennt.");
+            Fail("The MIDI output refuses to send – connection closed.");
     }
 
     // Completes the open request; handlers run after the link state is consistent.
@@ -690,11 +690,11 @@ class Session {
         if(HasPendingEdits() || changes_in_flight_ > 0)
             return; // more is on its way
         if(crc != model_.Crc()) {
-            Log(LogKind::Warn, "Editor und Gerät waren nicht gleich – Zustand neu vom Gerät geladen.");
+            Log(LogKind::Warn, "Editor and device differed – state reloaded from the device.");
             Pull();
             return;
         }
-        Log(LogKind::Ok, "Gerät bestätigt (Patch-CRC " + Hex32(crc) + ").");
+        Log(LogKind::Ok, "Device confirmed (patch CRC " + Hex32(crc) + ").");
     }
 
     FailHandler Resync() {
@@ -705,7 +705,7 @@ class Session {
     }
 
     void Fail(const std::string& message) {
-        Disconnect("Fehler");
+        Disconnect("error");
         Log(LogKind::Error, message);
     }
     void SetStatus(const std::string& text) {
@@ -734,10 +734,10 @@ class Session {
         health_ = next;
         if(next == Health::NoReplies) {
             unconfirmed_ = true;
-            Log(LogKind::Error, "Keine Antwort vom Gerät seit 5 s – Port von einer anderen Anwendung belegt (z. B. "
-                                "Studio One) oder Kabel getrennt? Änderungen bleiben unbestätigt.");
+            Log(LogKind::Error, "No answer from the device for 5 s – port held by another application (e.g. "
+                                "Studio One) or cable unplugged? Changes stay unconfirmed.");
         } else if(before == Health::NoReplies) {
-            Log(LogKind::Warn, "Das Gerät antwortet wieder – Zustand wird neu geladen.");
+            Log(LogKind::Warn, "The device answers again – reloading its state.");
         }
         Changed();
     }
