@@ -8,8 +8,10 @@ As of 01.11.2026, product 0.1.0 (instrument 0.1.0, FX 0.1.0), Control App 0.3.0.
 | ARM firmware | built, image check passed, memory from the map file (MEASURED 01.11.2026) |
 | Control App (core, browser, JUCE standalone, VST3) | Tests, self-test and plugin check passed (MEASURED 01.11.2026) |
 | Standalone FX firmware (FX first) | built and checked on host fakes; acceptance on the kit **NOT MEASURED** ([FX test sheet](../../../effects/streichwurst-fx/docs/HARDWARE_TEST.md)) |
-| Board audio / controls / LEDs / USB and DIN MIDI / CPU load | **NOT MEASURED**, test sheet [HARDWARE_TEST.md](HARDWARE_TEST.md) |
+| Board audio / controls / MIDI / control app on the kit | **MEASURED 01.11.2026 (partly)**, human report: keys, MIDI keyboard, Layer, pots, ensemble modes, JUCE EXE OK, no audio or performance problems. Split, LEDs/pages, presets, panic, bootloader, matrix, patches, VST3 and browser **NOT MEASURED**; details in [HARDWARE_TEST.md](HARDWARE_TEST.md) |
+| CPU load / stack at run time (counters) | **NOT MEASURED** (no problems heard, counters not read) |
 | Listening comparison with the original plugin/device | **NOT MEASURED** |
+| Own listening impression | **MEASURED 01.11.2026**, human report: ensemble modes and phaser very musical and convincing; reverb somewhat weak and metallic (to improve later) |
 
 Software tests do not prove sonic identity with the original. Deviations per module:
 [FIDELITY.md](FIDELITY.md).
