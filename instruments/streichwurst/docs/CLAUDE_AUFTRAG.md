@@ -151,4 +151,3 @@ instruments/streichwurst/docs/CLAUDE_AUFTRAG.md vollständig aus.
 Neues Instrument: Streichwurst, Ziel Seed3 Desktop Development Kit,
 Klang möglichst originalgetreu, Bedienung am Streichfett orientiert.
 ```
-

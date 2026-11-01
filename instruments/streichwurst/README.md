@@ -56,4 +56,3 @@ das Projekt erst nach erfolgreichem ARM-Build als `buildable`.
 
 Eigener Code unter der MIT-Lizenz des Repositorys. Herstellerprogramme,
 Originaldaten, kopierte Tabellen und rohe Analyseausgaben gehören nicht hierher.
-

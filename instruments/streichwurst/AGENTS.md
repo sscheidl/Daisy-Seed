@@ -20,4 +20,3 @@ Zusätzlich zu den Repositoryregeln:
 * Änderungen auf Streichwurst und notwendige gezielte Registry-/CI-Erweiterungen
   begrenzen. Andere Instrumente und Bibliothekspins erhalten.
 * Code und Codekommentare Englisch, Projekt-/Bedien-/Prüfdokumentation Deutsch.
-

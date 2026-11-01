@@ -50,4 +50,3 @@ Soft takeover bis zum Überqueren des gespeicherten Werts mit Hysterese;
 Anzeige/Latch pro Parameter. MIDIänderungen berücksichtigen. Glättung und
 MIDI-/Poti-Priorität dokumentieren. Dieser Entwurf darf bei realen
 Bedienkonflikten begründet verbessert werden.
-

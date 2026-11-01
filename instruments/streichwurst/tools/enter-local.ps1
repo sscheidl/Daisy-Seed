@@ -18,4 +18,3 @@ foreach ($streichwurstBin in $streichwurstBins) {
 $env:PATH = ($streichwurstBins -join [IO.Path]::PathSeparator) + [IO.Path]::PathSeparator + $env:PATH
 Write-Output "Streichwurst tools ready in this shell. Repository: $streichwurstRepo"
 Write-Output 'Host C++: use HOST_CXX=clang++ when the project Makefile exists.'
-

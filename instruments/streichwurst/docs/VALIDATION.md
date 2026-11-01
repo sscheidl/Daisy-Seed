@@ -61,4 +61,3 @@ ungetrackten Reviewdateien wurden nicht übernommen oder verändert.
 
 Es wurde kein manueller Actions-Workflow gestartet und kein Gerät angesprochen.
 Host-/Toolchainprüfungen sind keine Hardwaremessung und kein Klangvergleich.
-

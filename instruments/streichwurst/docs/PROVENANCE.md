@@ -73,4 +73,3 @@ Codeherkunft und Notices vorhandener Bibliotheken erhalten. Kein Hersteller-
 Quellcode wird unter der MIT-Lizenz des eigenen Projekts ausgegeben.
 Künftige Befunde und Abweichungen in `FIDELITY.md` führen; unbekannte Werte
 begründen statt aus Namen oder generischen Synthesizerrezepten als belegt ausgeben.
-
