@@ -1,0 +1,61 @@
+{
+  "format_version": 1,
+  "note": "Stable parameter IDs, ranges and CC plan of the Streichwurst components (docs/PARAMETERS.md). IDs never change meaning; new parameters get new IDs. Values travel as i32 milli-units (value * 1000) over SQ. Types, units and flags are the shared SQ lists of sequencers/step-seq/contracts/parameters.json.",
+  "units": ["none", "percent", "hz", "ms", "db", "semitones", "cents", "bpm", "channel", "velocity"],
+  "types": ["float", "int", "enum", "bool"],
+  "flags": {"readonly": 1, "log": 2},
+  "cc_channel": "midi_channel",
+  "components": {
+    "streichwurst-instrument": {
+      "schema": 1,
+      "parameters": [
+        {"id": 1, "key": "registration", "label": "Registrierung", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 50, "cc": 20, "control": "VR1 Haupt", "page": "strings"},
+        {"id": 2, "key": "octave", "label": "Oktaven", "type": "enum", "unit": "none", "min": 0, "max": 2, "default": 0, "cc": 21, "control": "S10", "page": "strings",
+         "enum": ["base", "both", "upper"], "enum_labels": ["Grundlage", "Beide", "Höhere"]},
+        {"id": 3, "key": "crescendo", "label": "Crescendo", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 20, "cc": 22, "control": "VR2 Haupt", "page": "strings"},
+        {"id": 4, "key": "release", "label": "Release Strings", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 45, "cc": 23, "control": "VR3 Haupt", "page": "strings"},
+        {"id": 5, "key": "solo_tone", "label": "Solo Tone", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 50, "cc": 24, "control": "VR1 Solo", "page": "solo"},
+        {"id": 6, "key": "solo_attack", "label": "Solo Attack", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 10, "cc": 25, "control": "VR2 Solo", "page": "solo"},
+        {"id": 7, "key": "solo_release", "label": "Solo Release", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 30, "cc": 26, "control": "VR3 Solo", "page": "solo"},
+        {"id": 8, "key": "solo_sus_mode", "label": "Solo Sustain-Modus", "type": "enum", "unit": "none", "min": 0, "max": 2, "default": 0, "cc": 27, "control": "S13", "page": "solo",
+         "enum": ["decay", "hold", "percussive"], "enum_labels": ["Abklingen auf Pegel", "Halten", "Perkussiv"]},
+        {"id": 9, "key": "solo_sustain", "label": "Solo Sustain", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 70, "cc": 28, "control": "VR6 Solo", "page": "solo"},
+        {"id": 10, "key": "solo_trem_depth", "label": "Tremolo-Tiefe", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 0, "cc": 29, "control": "VR4 Solo", "page": "solo"},
+        {"id": 11, "key": "solo_trem_rate", "label": "Tremolo-Rate", "type": "float", "unit": "hz", "min": 0.5, "max": 12, "default": 5, "cc": 30, "control": "VR5 Solo", "page": "solo", "flags": ["log"]},
+        {"id": 12, "key": "split_mode", "label": "Layer/Split", "type": "enum", "unit": "none", "min": 0, "max": 1, "default": 0, "cc": 31, "control": "S14", "page": "keyboard",
+         "enum": ["layer", "split"], "enum_labels": ["Layer", "Split"]},
+        {"id": 13, "key": "split_key", "label": "Splitpunkt (MIDI-Note)", "type": "int", "unit": "none", "min": 0, "max": 127, "default": 60, "cc": 85, "control": "VR7 Solo", "page": "keyboard"},
+        {"id": 14, "key": "string_velocity", "label": "Anschlag Strings", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 0, "cc": 86, "page": "strings"},
+        {"id": 15, "key": "solo_velocity", "label": "Anschlag Solo", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 100, "cc": 87, "page": "solo"},
+        {"id": 16, "key": "bend_range", "label": "Bend-Bereich", "type": "int", "unit": "semitones", "min": 0, "max": 12, "default": 2, "cc": null, "page": "keyboard"},
+        {"id": 17, "key": "transpose", "label": "Transponierung", "type": "int", "unit": "semitones", "min": -24, "max": 24, "default": 0, "cc": null, "page": "keyboard"},
+        {"id": 18, "key": "tune", "label": "Stimmung", "type": "float", "unit": "cents", "min": -50, "max": 50, "default": 0, "cc": null, "page": "keyboard"}
+      ]
+    },
+    "streichwurst-fx": {
+      "schema": 1,
+      "parameters": [
+        {"id": 1, "key": "animate", "label": "Animate", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 0, "cc": 102, "control": "VR5 Haupt, VR1 FX", "page": "fx"},
+        {"id": 2, "key": "animate_rate", "label": "Animate-Rate (eigen)", "type": "float", "unit": "hz", "min": 0.05, "max": 5, "default": 0.5, "cc": 103, "control": "VR2 FX", "page": "fx", "flags": ["log"]},
+        {"id": 3, "key": "ensemble_on", "label": "Ensemble", "type": "bool", "unit": "none", "min": 0, "max": 1, "default": 1, "cc": 104, "control": "S12", "page": "fx"},
+        {"id": 4, "key": "ensemble_mode", "label": "Ensemble-Modus", "type": "enum", "unit": "none", "min": 0, "max": 2, "default": 1, "cc": 105, "control": "S11", "page": "fx",
+         "enum": ["mode_0", "mode_1", "mode_2"], "enum_labels": ["Modus 0 (3 Taps)", "Modus 1 (Dry + 5)", "Modus 2 (Dry + 3)"]},
+        {"id": 5, "key": "phaser", "label": "Phaser", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 0, "cc": 106, "control": "VR6 Haupt, VR3 FX", "page": "fx"},
+        {"id": 6, "key": "phaser_rate", "label": "Phaser-Rate (eigen)", "type": "float", "unit": "hz", "min": 0.05, "max": 5, "default": 0.4, "cc": 107, "control": "VR4 FX", "page": "fx", "flags": ["log"]},
+        {"id": 7, "key": "reverb", "label": "Reverb", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 20, "cc": 108, "control": "VR7 Haupt, VR5 FX", "page": "fx"},
+        {"id": 8, "key": "reverb_decay", "label": "Reverb-Decay (eigen)", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 50, "cc": 109, "control": "VR6 FX", "page": "fx"}
+      ]
+    },
+    "streichwurst": {
+      "schema": 1,
+      "parameters": [
+        {"id": 1, "key": "balance", "label": "Balance Strings/Solo", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 50, "cc": 8, "control": "VR4 Haupt, VR8 FX", "page": "global"},
+        {"id": 2, "key": "master", "label": "Master", "type": "float", "unit": "percent", "min": 0, "max": 100, "default": 80, "cc": 7, "control": "VR8 Haupt/Solo, VR7 FX", "page": "global"},
+        {"id": 3, "key": "midi_channel", "label": "MIDI-Kanal (0 = Omni)", "type": "int", "unit": "channel", "min": 0, "max": 16, "default": 0, "cc": null, "page": "global"},
+        {"id": 4, "key": "pot_page", "label": "Reglerseite am Kit", "type": "enum", "unit": "none", "min": 0, "max": 2, "default": 0, "cc": null, "control": "S9", "page": "global", "flags": ["readonly"],
+         "enum": ["main", "solo", "fx"], "enum_labels": ["Haupt", "Solo", "FX"]},
+        {"id": 5, "key": "preset", "label": "RAM-Preset (zuletzt geladen)", "type": "int", "unit": "none", "min": 0, "max": 3, "default": 0, "cc": null, "control": "S15", "page": "global", "flags": ["readonly"]}
+      ]
+    }
+  }
+}

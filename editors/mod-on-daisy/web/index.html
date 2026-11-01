@@ -103,6 +103,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
   <button id="connect" class="primary">Verbinden</button>
   <button id="updateBtn" title="Startet das Kit im Daisy-Bootloader neu, ohne BOOT und RESET. Danach die Firmware mit dem Daisy Web Programmer oder make program-dfu laden.">Firmware-Update …</button>
   <span id="status" class="pill">offline</span>
+  <button id="swViewBtn" hidden title="Streichwurst: Klangparameter (SQ) und Modulationsmatrix (Mod on Daisy) desselben Geräts">Matrix</button>
   <span id="mode" class="pill" hidden></span>
 </header>
 <main id="mdMain">
@@ -132,6 +133,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     <button id="pullBtn" disabled>Vom Gerät neu laden</button>
     <button id="demoBtn" title="Spalten von Toy Piano v0.3 und ein Beispiel-Patch, ohne Gerät">Demo (offline)</button>
     <button id="sqDemoBtn" title="Die Seiten von Acid Seq mit den Parametern aus dem Vertrag, ohne Gerät (auch zum Bearbeiten und Speichern von Patches)">Acid Seq offline</button>
+    <button id="swDemoBtn" title="Die Seiten von Streichwurst mit den Parametern aus dem Vertrag, ohne Gerät (auch zum Bearbeiten und Speichern von Patches)">Streichwurst offline</button>
     <span id="log" role="status"></span>
     <span class="hint" id="panelBuild"></span>
   </section>
@@ -800,10 +802,21 @@ async function connect() {
   }
 }
 
-// ------------------------------------------------------------------ Acid Seq (SQ protocol)
-// A device answering SQ IDENTIFY gets the Acid Seq pages; no MD matrix is read from it
-// (R09). The device has priority: the panel only reads on connect (D13).
-const sqPanel = window.SqPanel.mount(document.getElementById('sqMain'), { log, onClose: () => hideSq() });
+// ------------------------------------------------------------------ SQ devices (Acid Seq, Streichwurst)
+// A device answering SQ IDENTIFY gets the SQ pages; no MD matrix is read from it (R09),
+// unless it reports SQ 1.1 capability bit 6 (Streichwurst): then the Mod on Daisy session
+// runs alongside on the same port, and "Matrix" switches between both views. The device
+// has priority: the panel only reads on connect (D13).
+const sqPanel = window.SqPanel.mount(document.getElementById('sqMain'), {
+  log, onClose: () => hideSq(),
+  getMatrix: () => (state.link && state.device ? JSON.parse(matrixPatchText()) : null),
+  uploadMatrix: (obj) => uploadMatrixPatch(JSON.stringify(obj)),
+});
+function showMatrixView(on) {
+  $('mdMain').hidden = !on;
+  $('sqMain').hidden = on;
+  $('swViewBtn').textContent = on ? 'Klangparameter' : 'Matrix';
+}
 let sqTimer = null;
 function showSq(client) {
   $('mdMain').hidden = true;
@@ -814,6 +827,7 @@ function hideSq() {
   sqPanel.detach();
   $('sqMain').hidden = true;
   $('mdMain').hidden = false;
+  $('swViewBtn').hidden = true;
 }
 async function connectSq(out, inp) {
   const client = new window.SqProtocol.Client((frame) => out.send(frame), { retries: 1 });
@@ -842,12 +856,22 @@ async function connectSq(out, inp) {
   showSq(client);
   sqTimer = setInterval(() => client.request(window.SqProtocol.TYPE.monitor, [1]).catch(() => {}), 1000);
   log('Verbunden. Der Zustand des Geräts wurde geladen.', 'ok');
+  if (client.identity.hasModMatrix) { // SQ 1.1: Mod on Daisy on the same port (Streichwurst)
+    await connectLink(out, inp, client);
+    if (state.sq && state.link) {
+      $('swViewBtn').hidden = false;
+      state.statusBase = `${client.identity.product} ${client.identity.version} · SQ + Matrix`;
+      setStatus(state.statusBase, 'ok');
+      showMatrixView(false);
+    }
+  }
   return true;
 }
 function disconnectSq(reason) {
   const sq = state.sq;
   state.sq = null;
   clearInterval(sqTimer);
+  if (state.link) disconnect(); // the matrix session on the same port (Streichwurst)
   if (sq) {
     sq.inp.onmidimessage = null;
     closePorts(sq.out, sq.inp);
@@ -857,8 +881,17 @@ function disconnectSq(reason) {
   $('connect').textContent = 'Verbinden';
 }
 
-async function connectLink(out, inp) {
+// sqClient: the SQ client of an SQ 1.1 device that shares this port; its frames keep going
+// to it, everything else to Mod on Daisy.
+async function connectLink(out, inp, sqClient = null) {
   const link = new DeviceLink(out, inp, onMonitor);
+  if (sqClient) {
+    inp.onmidimessage = (e) => {
+      const data = Array.from(e.data);
+      if (window.SqProtocol.protocolOf(data) === 'sq') sqClient.onMessage(data);
+      else link.receive(e.data);
+    };
+  }
   state.link = link;
   link.onTimeout = () => { state.unconfirmed = true; };
   link.onHeard = () => {
@@ -944,7 +977,8 @@ async function pull(withColumns = false) {
 
 // ------------------------------------------------------------------ files
 const hex32 = (v) => v.toString(16).toUpperCase().padStart(8, '0');
-function savePatch() {
+// The .modpatch document of the current matrix (file save, Streichwurst product patch).
+function matrixPatchText() {
   const p = state.patch;
   // Connected: the device's key, schema and columns. Offline: those of the file it was
   // loaded from, so its meaning stays checkable; otherwise unknown (null).
@@ -960,7 +994,13 @@ function savePatch() {
     lfo: p.lfo.map((l) => ({ rate: l.rate, shape: l.shape, sync: l.sync, gate: l.gate, division: l.division, retrigger: l.retrigger, fm: l.fm || 0 })),
     random: p.random,
   };
-  const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
+  return JSON.stringify(doc, null, 2);
+}
+// Streichwurst: the matrix of a product patch, checked like a file (columns, safe/force).
+function uploadMatrixPatch(text) { return loadPatch(text); }
+function savePatch() {
+  const p = state.patch;
+  const blob = new Blob([matrixPatchText()], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = (p.name || 'patch').replace(/[^\w.-]+/g, '_') + '.modpatch';
@@ -1134,6 +1174,12 @@ async function firmwareUpdate() {
 $('updateBtn').addEventListener('click', firmwareUpdate);
 $('demoBtn').addEventListener('click', loadDemo);
 // Acid Seq pages without a device: the contract's parameters, patches edit and save offline.
+$('swViewBtn').addEventListener('click', () => showMatrixView($('mdMain').hidden));
+$('swDemoBtn').addEventListener('click', () => {
+  if (state.sq) return log('Erst trennen, dann offline bearbeiten.', 'warn');
+  if (!$('sqMain').hidden && sqPanel.client() && sqPanel.client().identity.product === 'streichwurst') return hideSq();
+  showSq(new window.SqPanel.OfflineClient('streichwurst'));
+});
 $('sqDemoBtn').addEventListener('click', () => {
   if (state.sq) return log('Erst trennen, dann offline bearbeiten.', 'warn');
   if (!$('sqMain').hidden) return hideSq();

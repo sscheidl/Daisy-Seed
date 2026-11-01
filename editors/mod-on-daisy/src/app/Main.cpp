@@ -40,6 +40,7 @@ class SelfTest {
         Offline();
         ProjectPatch();
         AcidSeq();
+        Streichwurst();
         if(failures_)
             Say("FAIL: " + juce::String(failures_) + " checks");
         else
@@ -363,6 +364,64 @@ class SelfTest {
         e_.RefreshNow();
         SELFTEST_CHECK(!e_.GetSqPanel().isVisible() && !e_.SqActive());
         Say("PASS Acid Seq: SQ pages from descriptors, edits confirmed, song patch asks first (no / always)");
+    }
+
+    // Streichwurst (SQ 1.1 + Mod on Daisy on one port): pages by contract page, the matrix
+    // session alongside, edits, the product patch with embedded matrix (device first).
+    void Streichwurst() {
+        e_.ConnectTo(PortIndex("Streichwurst (Sim)"));
+        SqSession& s = e_.GetSqSession();
+        for(int i = 0; i < 4000 && !(s.Ready() && e_.GetSession().Connected()); ++i)
+            e_.Step(1);
+        e_.RefreshNow();
+        SELFTEST_CHECK(s.Ready() && s.Identity().HasModMatrix() && s.Components().size() == 3);
+        SELFTEST_CHECK(e_.GetSession().Connected()); // the matrix session on the same port
+        SELFTEST_CHECK(e_.GetStreichwurstSimulator() && e_.GetStreichwurstSimulator()->Writes() == 0);
+        SELFTEST_CHECK(e_.GetSqPanel().isVisible() && e_.GetSqPanel().Streichwurst());
+        SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("registration") != nullptr); // page "Strings"
+        SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("solo_tone") == nullptr);
+        Shot("streichwurst-strings.png");
+        e_.GetSqPanel().SelectTab(3); // FX
+        SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("reverb") != nullptr);
+        s.SetParam(1, "reverb", 60);
+        e_.Step(20);
+        e_.RefreshNow();
+        SELFTEST_CHECK(e_.GetStreichwurstSimulator()->Value(1, 7) == 60000);
+        SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("reverb")->getValue() == 60.0);
+        Shot("streichwurst-fx.png");
+        // Matrix pages of the same device.
+        e_.ShowMatrix(true);
+        e_.RefreshNow();
+        SELFTEST_CHECK(e_.MatrixShown() && !e_.GetSqPanel().isVisible());
+        SELFTEST_CHECK(e_.GetModel().columns[0].name == "Registr.");
+        e_.GetSession().EditDepth(0, 50, true); // LFO 1 -> Registration
+        e_.Step(200);
+        e_.RefreshNow();
+        SELFTEST_CHECK(e_.GetStreichwurstSimulator()->Matrix().CurrentPatch().depth[0][0] == 50);
+        Shot("streichwurst-matrix.png");
+        e_.ShowMatrix(false);
+        // Song state: the Streichwurst patch with matrix; loading asks before sending.
+        const std::string project = e_.PatchText();
+        SELFTEST_CHECK(project.find("streichwurst-patch") != std::string::npos && project.find("\"matrix\"") != std::string::npos);
+        s.SetParam(1, "reverb", 10);
+        e_.GetSession().EditDepth(0, 0);
+        e_.Step(200);
+        int asked = 0;
+        e_.sq_upload_decision = [&](const AcidCompat& c) {
+            ++asked;
+            return c.Clean() ? 1 : 0;
+        };
+        e_.LoadProjectPatch(project);
+        for(int i = 0; i < 1500; ++i)
+            e_.Step(1);
+        // "Immer übertragen" from the Acid Seq part still holds for this instance: no question.
+        SELFTEST_CHECK(asked <= 1 && e_.GetStreichwurstSimulator()->Value(1, 7) == 60000);
+        SELFTEST_CHECK(e_.GetStreichwurstSimulator()->Matrix().CurrentPatch().depth[0][0] == 50);
+        e_.sq_upload_decision = nullptr;
+        e_.Disconnect();
+        e_.RefreshNow();
+        SELFTEST_CHECK(!e_.GetSqPanel().isVisible() && !e_.SqActive() && !e_.GetSession().Connected());
+        Say("PASS Streichwurst: SQ pages by contract page, matrix alongside, edits, song patch with matrix");
     }
 
     EditorComponent& e_;

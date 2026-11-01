@@ -41,6 +41,15 @@ def select_suites(changed):
     fixtures = touched('tests/fixtures/acid-seq/', 'tests/test_acid_seq_contracts.py')
     diagnostics_adapter = touched('modules/mod-on-daisy/adapters/')
     acid_common = shared or diagnostics_adapter or sq_contract or stepseq_base
+    # Streichwurst: instrument, FX component and product; the product embeds the SQ device
+    # and queues of Step Seq, Mod on Daisy, the FX contract, and its test swaps in the
+    # stereo delay. The shared parameter generator writes its table and the editor labels.
+    sq_generator = touched('sequencers/step-seq/tools/gen_params.py')
+    streichwurst = (shared or mod_api or fx_contract or sq_contract or sq_generator or touched(
+        'instruments/streichwurst/', 'effects/streichwurst-fx/', 'effects/stereo-delay/include/',
+        'sequencers/step-seq/tests/fakes/', *('sequencers/step-seq/include/step_seq/' + name for name in
+                                              ('device.h', 'diagnostics.h', 'spsc.h', 'sq_protocol.h',
+                                               'param_table.h', 'pattern.h', 'cv.h'))))
     stepseq = acid_common or touched('sequencers/step-seq/')
     acid303 = acid_common or fixtures or touched('instruments/acid-303/') # renders the 303 fixture
     drive = acid_common or dsp or fx_contract or fixtures or touched('effects/drive/')
@@ -56,7 +65,13 @@ def select_suites(changed):
         'reverb': shared or touched('effects/reverb/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),
         'mod': shared or touched('modules/mod-on-daisy/'),
-        'editor': shared or touched('editors/mod-on-daisy/') or mod_api or sq_contract or sq_codec,
+        # The editor's Streichwurst simulator and patch use the product register and tables.
+        'editor': shared or touched('editors/mod-on-daisy/', 'instruments/streichwurst/contracts/',
+                                    'instruments/streichwurst/src/register.h', 'instruments/streichwurst/src/mod_targets.h',
+                                    'instruments/streichwurst/include/streichwurst/param_table.h',
+                                    'instruments/streichwurst/include/streichwurst/params.h',
+                                    'effects/streichwurst-fx/include/streichwurst_fx/params.h') or mod_api or
+                  sq_contract or sq_codec or sq_generator,
         'diagnostics': shared or touched('diagnostics/', 'common/sd/reader/'),
         'fx': shared or fx or dsp or acid_fx,
         'sd': shared or touched('common/sd/', 'scripts/check-sd-symbols.py'),
@@ -66,12 +81,14 @@ def select_suites(changed):
         'delay': delay,
         # Any change to one of its cores also tests the composed product.
         'acidseq': stepseq or acid303 or drive or delay or touched('sequencers/acid-seq/'),
+        'streichwurst': streichwurst,
         'components': True, # tiny registry/selection tests; no compiler or dependencies
     }
     if '.github/workflows/quick.yml' in changed:
         suites = {key: True for key in suites}
     suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape',
-                                                    'stepseq', 'acid303', 'drive', 'delay', 'acidseq'))
+                                                    'stepseq', 'acid303', 'drive', 'delay', 'acidseq',
+                                                    'streichwurst'))
     return suites
 
 

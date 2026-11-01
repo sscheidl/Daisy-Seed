@@ -1,9 +1,10 @@
-// Acid Seq panel pages of the browser editor (ARBEITSAUFTRAG Phase 5): pattern grid with
-// note names and play position, transport and switch states, clock and tempo, parameter
-// pages built from the device's descriptors (labels from sq_contract.js), calibration
-// with the separate CV enable (stored per kit UID in this browser), product patch load and
-// save with an explicit upload, error counters. Works with a live SqProtocol.Client or
-// with OfflineClient (demo and patch editing without a device).
+// SQ panel pages of the browser editor (Acid Seq Phase 5, Streichwurst Phase 4): pattern
+// grid with note names and play position, transport and switch states, clock and tempo,
+// parameter pages built from the device's descriptors (labels and Streichwurst pages from
+// sq_contract.js), calibration with the separate CV enable (stored per kit UID in this
+// browser), product patch load and save with an explicit upload (Streichwurst: .swpatch
+// with the embedded matrix through the getMatrix/uploadMatrix hooks), error counters.
+// Works with a live SqProtocol.Client or with OfflineClient (demo and offline editing).
 (function (root, factory) {
   const api = factory(root.SqProtocol, root.SqContract);
   root.SqPanel = api;
@@ -11,6 +12,12 @@
   'use strict';
 
   const TABS = [['step-seq', 'Sequencer'], ['acid-303', 'Stimme'], ['drive', 'Drive'], ['stereo-delay', 'Delay']];
+  // Streichwurst pages: [tab, title, component, contract page ('' = whole component)].
+  const SW_TABS = [['strings', 'Strings', 'streichwurst-instrument', 'strings'], ['solo', 'Solo', 'streichwurst-instrument', 'solo'],
+    ['keyboard', 'Tastatur', 'streichwurst-instrument', 'keyboard'], ['fx', 'FX', 'streichwurst-fx', ''], ['global', 'Global', 'streichwurst', '']];
+  // The product or the standalone Streichwurst FX firmware (FX page only).
+  const isStreichwurst = (client) => !!(client.component('streichwurst-instrument') || client.component('streichwurst-fx'));
+  const productOf = (componentId) => (componentId.startsWith('streichwurst') ? 'streichwurst' : 'acid-seq');
   const MIDI_KEYS = ['seq_channel', 'voice_channel', 'usb_out', 'din_out', 'velocity', 'accent_velocity', 'clock_out'];
   const STATS = ['Rahmenlänge', 'Prüfsumme', 'Version', 'unbekannter Typ', 'zu lang', 'Statusbyte im Rahmen', 'Wiederholung',
     'Echo', 'beschäftigt', 'Monitor verworfen', 'Note-On verworfen', 'MIDI-Queue übergelaufen', 'Clock ignoriert',
@@ -45,9 +52,12 @@
   class OfflineClient {
     constructor(product = 'acid-seq') {
       this.offline = true;
-      this.identity = { product, version: 'offline', uid: [0, 0, 0], capabilities: 63, bootId: 0 };
+      const sw = product === 'streichwurst';
+      this.identity = { product, version: 'offline', uid: [0, 0, 0], capabilities: sw ? 16 : 63, bootId: 0 };
       const types = ['float', 'int', 'enum', 'bool'], units = ['none', 'percent', 'hz', 'ms', 'db', 'semitones', 'cents', 'bpm', 'channel', 'velocity'];
-      this.components = Object.entries(CONTRACT).map(([id, c]) => ({ id, version: '0.1.0', schema: c.schema,
+      // Only the components of this product (the contract lists Acid Seq and Streichwurst).
+      this.components = Object.entries(CONTRACT).filter(([id]) => productOf(id) === (sw ? 'streichwurst' : 'acid-seq')).map(([id, c]) => ({
+        id, version: '0.1.0', schema: c.schema, kind: id === 'streichwurst' ? 4 : 0,
         parameters: c.parameters.map((p) => ({ id: p.id, key: p.key, type: types.indexOf(p.type), unit: units.indexOf(p.unit),
           flags: ((p.flags || []).includes('readonly') ? 1 : 0) | ((p.flags || []).includes('log') ? 2 : 0), min: p.min, max: p.max,
           def: p.default, cc: p.cc === null ? 127 : p.cc, enumKeys: p.enum || [], value: p.default })) }));
@@ -74,7 +84,9 @@
     async readStats() { return []; }
   }
 
-  function mount(container, { log = () => {}, onClose = () => {} } = {}) {
+  // getMatrix(): the matrix of the Mod on Daisy session as .modpatch object (or null);
+  // uploadMatrix(obj): its explicit upload with a product patch. Both Streichwurst only.
+  function mount(container, { log = () => {}, onClose = () => {}, getMatrix = () => null, uploadMatrix = null } = {}) {
     let client = null, tab = 'step-seq', selected = 0, loadedPatch = null;
     const css = el('style', {}, `
       .sq { display: grid; gap: 16px; }
@@ -101,15 +113,17 @@
     const cal = el('div', { class: 'cal', id: 'sqCal' });
     const patchInfo = el('div', { class: 'hint', id: 'sqPatchInfo' });
     const stats = el('table', { class: 'stats', id: 'sqStats' });
-    const fileInput = el('input', { type: 'file', accept: '.acidpatch,.json', hidden: true, id: 'sqFile' });
+    const fileInput = el('input', { type: 'file', accept: '.acidpatch,.swpatch,.json', hidden: true, id: 'sqFile' });
+    const title = el('h2', { id: 'sqTitle' }, 'Acid Seq');
     const wrap = (title, ...body) => el('section', { class: 'card' }, el('h2', {}, title), ...body);
     const run = (promise, ok) => Promise.resolve(promise).then(() => ok && log(ok, 'ok')).catch((e) => log(e.message, 'err'));
 
+    const patternCard = wrap('Pattern', steps, stepEditor), calCard = wrap('Kalibrierung und CV-Freigabe', cal);
     const root = el('div', { class: 'sq' }, css,
-      wrap('Acid Seq', status),
-      wrap('Pattern', steps, stepEditor),
+      el('section', { class: 'card' }, title, status),
+      patternCard,
       wrap('Parameter', tabs, params),
-      wrap('Kalibrierung und CV-Freigabe', cal),
+      calCard,
       wrap('Patch', el('div', { class: 'bar' },
         el('button', { id: 'sqSave', onclick: savePatch }, 'Patch speichern …'),
         el('button', { id: 'sqLoad', onclick: () => fileInput.click() }, 'Patch laden …'), fileInput,
@@ -124,10 +138,18 @@
 
     function renderStatus() {
       const s = client.state, id = client.identity;
-      const seq = client.component('step-seq');
+      const seq = client.component('step-seq'), sw = isStreichwurst(client);
       const pill = (text, kind = '') => el('span', { class: 'pill ' + kind }, text);
+      title.textContent = sw ? 'Streichwurst' : 'Acid Seq';
+      patternCard.hidden = sw; // no sequencer, no CV outputs
+      calCard.hidden = sw;
       status.replaceChildren(
         pill(`${id.product} ${id.version}`, client.offline ? 'warn' : 'ok'),
+        ...(sw ? [
+          ...client.components.filter((c) => c.kind !== 4).map((c) => pill(`${c.id} ${c.version}`)),
+          pill(`Revision ${s.applied}/${s.accepted}`, s.applied === s.accepted ? '' : 'warn'),
+          ...(id.hasModMatrix ? [pill('Matrix: Mod on Daisy am selben Port')] : []),
+        ] : []),
         ...(seq ? [
           pill(S.STATE_NAMES[s.state] || '?', s.state === 2 ? 'ok' : ''),
           pill('SW17 ' + (s.sw17 ? 'Run' : 'Stop')),
@@ -159,6 +181,7 @@
         el('label', {}, 'Gate-Länge ', length, ` ${s.gateLength} %`), box('sqGateOn', 'Gate', 'gate'), box('sqAccent', 'Accent', 'accent'), box('sqSlide', 'Slide', 'slide'));
     }
     function renderParams() {
+      if (isStreichwurst(client)) return renderStreichwurstParams();
       const present = TABS.filter(([id]) => client.component(id));
       if (!present.some(([id]) => id === tab) && present.length) tab = present[0][0];
       tabs.replaceChildren(...present.map(([id, name]) => el('button', { class: id === tab ? 'on' : '', 'data-tab': id, onclick: () => { tab = id; renderParams(); } }, name)),
@@ -167,7 +190,22 @@
       const comp = client.component(component);
       if (!comp) { params.replaceChildren(); return; }
       const list = comp.parameters.filter((p) => (tab === 'midi') === MIDI_KEYS.includes(p.key) || component !== 'step-seq');
-      params.replaceChildren(...list.map((p) => {
+      params.replaceChildren(...list.map((p) => paramRow(component, p)));
+    }
+    // Streichwurst: pages by the contract's "page" of each parameter.
+    function renderStreichwurstParams() {
+      const present = SW_TABS.filter(([, , c]) => client.component(c));
+      if (!present.some(([id]) => id === tab) && present.length) tab = present[0][0];
+      tabs.replaceChildren(...present.map(([id, name]) =>
+        el('button', { class: id === tab ? 'on' : '', 'data-tab': id, onclick: () => { tab = id; renderParams(); } }, name)));
+      const [, , component, page] = SW_TABS.find(([id]) => id === tab);
+      const comp = client.component(component);
+      if (!comp) { params.replaceChildren(); return; }
+      const list = comp.parameters.filter((p) => !page || (contractParam(component, p.key) || {}).page === page);
+      params.replaceChildren(...list.map((p) => paramRow(component, p)));
+    }
+    function paramRow(component, p) {
+      {
         p.component = component;
         const value = el('span', { class: 'v' }, format(p, p.value));
         const set = (v) => run(client.setParam(component, p.key, v).then((applied) => { value.textContent = format(p, applied); }));
@@ -176,17 +214,18 @@
           input = el('select', { 'data-key': p.key, disabled: !!(p.flags & 1), onchange: (e) => set(+e.target.value) },
             ...Array.from({ length: p.max + 1 }, (_, v) => el('option', { value: v, selected: v === Math.round(p.value) }, format(p, v))));
         } else if (p.type === 3) {
-          input = el('input', { type: 'checkbox', 'data-key': p.key, checked: p.value >= 0.5, onchange: (e) => set(e.target.checked ? 1 : 0) });
+          input = el('input', { type: 'checkbox', 'data-key': p.key, checked: p.value >= 0.5, disabled: !!(p.flags & 1), onchange: (e) => set(e.target.checked ? 1 : 0) });
         } else {
           const log2 = p.flags & 2;
           const toPos = (v) => (log2 ? Math.log(v / p.min) / Math.log(p.max / p.min) : (v - p.min) / (p.max - p.min)) * 1000;
           const fromPos = (x) => (log2 ? p.min * Math.pow(p.max / p.min, x / 1000) : p.min + (p.max - p.min) * x / 1000);
-          input = el('input', { type: 'range', 'data-key': p.key, min: 0, max: 1000, value: Math.round(toPos(p.value)),
+          input = el('input', { type: 'range', 'data-key': p.key, min: 0, max: 1000, value: Math.round(toPos(p.value)), disabled: !!(p.flags & 1),
             oninput: (e) => { value.textContent = format(p, fromPos(+e.target.value)); },
             onchange: (e) => set(p.type === 1 ? Math.round(fromPos(+e.target.value)) : fromPos(+e.target.value)) });
         }
-        return el('div', { class: 'param', title: `${component}.${p.key}${p.cc !== 127 ? ' · CC ' + p.cc : ''}` }, el('span', {}, label(component, p.key)), input, value);
-      }));
+        return el('div', { class: 'param', title: `${component}.${p.key}${p.cc !== 127 ? ' · CC ' + p.cc : ''}${p.flags & 1 ? ' · nur lesen (Zustand am Kit)' : ''}` },
+          el('span', {}, label(component, p.key)), input, value);
+      }
     }
     function storedCal() {
       try { return JSON.parse(localStorage.getItem('acid-seq-cal-' + client.identity.uid.join('-')) || 'null'); } catch (e) { return null; }
@@ -228,8 +267,9 @@
       renderParams();
     }
     function savePatch() {
-      const text = S.serializePatch(S.patchFromClient(client));
-      const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: 'application/json' })), download: (client.identity.product || 'acid-seq') + '.acidpatch' });
+      const product = client.identity.product || 'acid-seq';
+      const text = S.serializePatch(S.patchFromClient(client, isStreichwurst(client) ? getMatrix() : null));
+      const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: 'application/json' })), download: product + '.' + S.patchExtension(product) });
       a.click();
       URL.revokeObjectURL(a.href);
       log('Patch gespeichert', 'ok');
@@ -250,7 +290,13 @@
     }
     function uploadPatch() {
       if (!loadedPatch) return;
-      run(S.uploadPatch(loadedPatch, client).then((n) => log(`${n} Werte übertragen`, 'ok')).then(render));
+      const matrix = loadedPatch.matrix;
+      run(S.uploadPatch(loadedPatch, client).then((n) => {
+        log(`${n} Werte übertragen`, 'ok');
+        if (matrix && uploadMatrix) return uploadMatrix(matrix);
+        if (matrix) log('Matrix übersprungen (keine Mod-on-Daisy-Verbindung)', 'warn');
+        return null;
+      }).then(render));
     }
     function readStats() {
       run(client.readStats().then((values) => {
@@ -273,5 +319,5 @@
     };
   }
 
-  return { mount, OfflineClient, TABS };
+  return { mount, OfflineClient, TABS, SW_TABS };
 });

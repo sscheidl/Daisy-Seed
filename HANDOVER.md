@@ -1,5 +1,38 @@
 # Übergabe — lokal weiterarbeiten
 
+**Verbindliche Modularität, Nutzerentscheidung 01.11.2026:**
+[Entwicklungsrichtlinie](docs/MODULAR_DEVELOPMENT_POLICY.md) und AGENTS.md gelten
+für alle neuen Daisy-Entwicklungen und wesentlichen Erweiterungen: Instrument,
+FX, MIDI/control, Modulation, Control App und Firmwarezusammensetzung getrennt;
+kompatible FX austauschbar; Module mit eigenen Verträgen, Versionen und Tests
+unabhängig weiterentwickeln und geprüft wieder einbinden. Bestehende Architektur-
+Dokumente verweisen darauf; keine breite Bestandsmigration gestartet.
+
+**Streichwurst, Vorbereitung 01.11.2026:** Neues Instrument unter
+`instruments/streichwurst/`, eigener Branch `claude/streichwurst`,
+[Claude-Auftrag](instruments/streichwurst/docs/CLAUDE_AUFTRAG.md). Ziel Seed3
+Desktop, Bedienung am Streichfett orientiert, Klang möglichst originalgetreu.
+Forschung und eigenes Pythonmodell liegen beim Projekt; Originale und Rohdaten
+bleiben außerhalb Git. Firmware noch nicht implementiert, Build-ID `streichwurst`
+als `planned` registriert. Lokal eigener Worktree `.work/streichwurst/`;
+bestehender Hauptcheckout und seine fremden Änderungen bleiben erhalten.
+
+**Streichwurst 0.1.0, 01.11.2026 (Branch `claude/streichwurst`, PR #77):**
+Firmwareprototyp implementiert: Instrument (`streichwurst-instrument` 0.1.0),
+separater FX (`streichwurst-fx` 0.1.0), Produkt `streichwurst` 0.1.0 mit einem
+Parameterregister für Kit, MIDI CC, SQ 1.1 und Mod-on-Daisy-Matrix; Control App
+0.3.0 (JUCE, VST3, Browser) mit Streichwurst-Seiten, Matrix am selben Port und
+`.swpatch`. Host-, Sanitizer-, App- und ARM-Builds lokal bestanden
+([Prüfstatus](instruments/streichwurst/docs/VALIDATION.md)); Hardware, CPU-Last und
+Klangvergleich NICHT GEMESSEN ([Laufzettel](instruments/streichwurst/docs/HARDWARE_TEST.md),
+[Klangtreue](instruments/streichwurst/docs/FIDELITY.md)).
+
+**Streichwurst-Präzisierung:** Instrument = Stringsection und Soli; separate
+FX-Komponente unter `effects/streichwurst-fx/`. Die Firmware verbindet beide
+mit gemeinsamer MIDI-/Control-Anbindung. Nutzer wählt die Erweiterung der
+bestehenden Mod-on-Daisy-App. [Modulvertrag](instruments/streichwurst/docs/MODULAR_ARCHITECTURE.md)
+und Claude-Auftrag sind entsprechend erweitert; Appanbindung ist Pflichtumfang.
+
 **Ambient FX 01.11.2026:** Die Arbeit aus PR #68 wird FX-zuerst fortgeführt:
 gemeinsamer Kern `ambient-reverb 0.4.0`, Adapter `0.2.0`, Wet-Takt 32–12 kHz,
 bedarfsgerechte Pitchshifter. Standalone-FX, Toy Piano und Physical Modeling

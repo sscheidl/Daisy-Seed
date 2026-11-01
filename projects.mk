@@ -65,3 +65,14 @@ BUILDABLE_PROJECTS += delay-fx
 PROJECT_DIR_acid-seq := sequencers/acid-seq
 PROJECT_STATUS_acid-seq := buildable
 BUILDABLE_PROJECTS += acid-seq
+
+# Streichwurst: instrument + separate FX + shared MIDI/control; ARM build verified 2026-11-01.
+PROJECTS += streichwurst
+BUILDABLE_PROJECTS += streichwurst
+PROJECT_DIR_streichwurst := instruments/streichwurst
+PROJECT_STATUS_streichwurst := buildable
+# Standalone Streichwurst FX ("Modular FX first"): ARM build verified 2026-11-01.
+PROJECTS += streichwurst-fx
+BUILDABLE_PROJECTS += streichwurst-fx
+PROJECT_DIR_streichwurst-fx := effects/streichwurst-fx
+PROJECT_STATUS_streichwurst-fx := buildable

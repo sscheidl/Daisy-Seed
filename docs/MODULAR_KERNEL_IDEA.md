@@ -1,5 +1,11 @@
 # Idee: Modularer Firmwarekern („Daisy-Baukasten“)
 
+**Nutzerentscheidung 01.11.2026:** Die modulare Entwicklung ist durch die
+[verbindliche Richtlinie](MODULAR_DEVELOPMENT_POLICY.md) jetzt allgemeine
+Vorgabe für neue Entwicklungen und wesentliche Erweiterungen. Dieser Text
+bleibt der historische Entwurf; ein allgemeiner Laufzeitloader ist damit
+weiterhin nicht als implementiert ausgewiesen.
+
 **Umsetzung der ersten Stufe:** [Modulare Komponenten](MODULAR_COMPONENTS.md)
 beschreibt die zusätzlichen Torus-/Ambient-FX-Builds, den gemeinsamen
 Audiovertrag und die Versionsmanifeste. Die folgenden Überlegungen bleiben der

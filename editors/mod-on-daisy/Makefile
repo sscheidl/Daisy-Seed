@@ -6,13 +6,17 @@ INCLUDES = -I../../modules/mod-on-daisy/include -I../../common/bootloader -DMOD_
 HEADERS = $(wildcard src/core/*.h) $(wildcard ../../sequencers/step-seq/include/step_seq/*.h) $(wildcard ../../modules/mod-on-daisy/include/mod_on_daisy/*.h) $(wildcard ../../common/bootloader/*.h)
 
 .PHONY: test test-sanitize test-editor-sq app clean
-SQ_INCLUDES = -I../../sequencers/step-seq/include
-test: $(HEADERS) tests/test_core.cpp tests/test_sq.cpp
+# Streichwurst register, tables and Mod on Daisy columns (simulator and its tests).
+SQ_INCLUDES = -I../../sequencers/step-seq/include -I../../instruments/streichwurst/include -I../../instruments/streichwurst/src -I../../effects/streichwurst-fx/include -D_USE_MATH_DEFINES
+HEADERS += $(wildcard ../../instruments/streichwurst/src/*.h) $(wildcard ../../instruments/streichwurst/include/streichwurst/*.h)
+test: $(HEADERS) tests/test_core.cpp tests/test_sq.cpp tests/test_streichwurst.cpp
 	mkdir -p build/host
 	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) tests/test_core.cpp -o build/host/test_core
 	./build/host/test_core
 	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/test_sq.cpp -o build/host/test_sq
 	./build/host/test_sq
+	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/test_streichwurst.cpp -o build/host/test_streichwurst
+	./build/host/test_streichwurst
 	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/sq_sim.cpp -o build/host/sq_sim
 	node web/tests/sq_protocol.test.cjs
 	node web/tests/sq_client.test.cjs build/host/sq_sim

@@ -51,7 +51,7 @@ class ComponentTests(unittest.TestCase):
                 buildable.extend(match.group(1).split())
         self.assertEqual(set(buildable), set(data['products']))
         self.assertEqual(manifest.read_version(data['components']['mod-on-daisy']['version']), '0.1.0')
-        self.assertEqual(manifest.read_version(data['components']['mod-editor-web']['version']), '0.2.0')
+        self.assertEqual(manifest.read_version(data['components']['mod-editor-web']['version']), '0.3.0')
 
     def test_composition_and_image_identity(self):
         for effect in ('torus', 'ambient'):
@@ -186,12 +186,12 @@ class ComponentTests(unittest.TestCase):
         cases = {
             # Shared Step Seq base: every standalone firmware built on it (Codex F14).
             'sequencers/step-seq/include/step_seq/engine.h': ACID_SEQ_SUITES,
-            'sequencers/step-seq/include/step_seq/spsc.h': ACID_SEQ_SUITES,
+            'sequencers/step-seq/include/step_seq/spsc.h': ACID_SEQ_SUITES + ('streichwurst',),
             'sequencers/step-seq/include/step_seq/controls.h': ACID_SEQ_SUITES,
-            'sequencers/step-seq/include/step_seq/diagnostics.h': ACID_SEQ_SUITES,
-            'sequencers/step-seq/tests/fakes/desktop_devkit.h': ACID_SEQ_SUITES,
-            'sequencers/step-seq/include/step_seq/device.h': ACID_SEQ_SUITES + ('editor',),
-            'sequencers/step-seq/include/step_seq/sq_protocol.h': ACID_SEQ_SUITES + ('editor',),
+            'sequencers/step-seq/include/step_seq/diagnostics.h': ACID_SEQ_SUITES + ('streichwurst',),
+            'sequencers/step-seq/tests/fakes/desktop_devkit.h': ACID_SEQ_SUITES + ('streichwurst',),
+            'sequencers/step-seq/include/step_seq/device.h': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
+            'sequencers/step-seq/include/step_seq/sq_protocol.h': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             # Step Seq's own parts.
             'sequencers/step-seq/include/step_seq/midi_out.h': ('stepseq', 'acidseq'),
             'sequencers/step-seq/include/step_seq/params.h': ('stepseq', 'acidseq'),
@@ -199,17 +199,23 @@ class ComponentTests(unittest.TestCase):
             'instruments/acid-303/include/acid303/voice.h': ('acid303', 'acidseq'),
             # New effect cores and adapters also run the shared FX contract test.
             'effects/drive/include/drive/drive.h': ('drive', 'fx', 'acidseq'),
-            'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'acidseq'),
+            'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'acidseq', 'streichwurst'),
             'sequencers/acid-seq/src/main.cpp': ('acidseq',),
             # Shared saturation: its consumers only, no longer every suite.
             'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
             'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
-            'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq'),
-            'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor',),
-            'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor',),
+            'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst'),
+            'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
+            'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             'tests/fixtures/acid-seq/manifest.json': ('acid303', 'drive', 'delay', 'acidseq'),
             'sequencers/README.md': (),
             'sequencers/step-seq/README.md': ('stepseq', 'acidseq'),
+            # Streichwurst: its own suite; the contract also regenerates the editor labels.
+            'instruments/streichwurst/include/streichwurst/instrument.h': ('streichwurst',),
+            'effects/streichwurst-fx/include/streichwurst_fx/ensemble.h': ('streichwurst',),
+            'instruments/streichwurst/contracts/parameters.json': ('streichwurst', 'editor'),
+            'instruments/streichwurst/src/register.h': ('streichwurst', 'editor'),
+            'sequencers/step-seq/tools/gen_params.py': ('stepseq', 'acidseq', 'streichwurst', 'editor'),
         }
         for path, selected in cases.items():
             suites = selection.select_suites([path])
@@ -226,8 +232,12 @@ class ComponentTests(unittest.TestCase):
         for path in ('instruments/toy-piano/src/toy_piano.cpp', 'effects/tape-fx/src/tape_fx.h',
                      'editors/mod-on-daisy/web/mod_protocol.js', 'common/sd/ro_sd.c'):
             suites = selection.select_suites([path])
-            for key in ACID_SEQ_SUITES:
+            for key in ACID_SEQ_SUITES + ('streichwurst',):
                 self.assertFalse(suites[key], f'{path}: {key}')
+        # Streichwurst sources leave the other instruments alone.
+        suites = selection.select_suites(['instruments/streichwurst/src/main.cpp'])
+        self.assertOnly(suites, ('streichwurst',), 'streichwurst main')
+        self.assertTrue(suites['submodules'])
 
 
 if __name__ == '__main__':

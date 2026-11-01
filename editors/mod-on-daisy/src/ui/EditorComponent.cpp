@@ -4,6 +4,7 @@ namespace editor::ui {
 namespace {
 constexpr int kHeader = 56, kCellCard = 300, kSourcesHeight = 250, kFooter = 56, kPad = 14;
 constexpr int kSqSimulator = -2; // Port::simulator of "Acid Seq (Sim)"
+constexpr int kSwSimulator = -3; // Port::simulator of "Streichwurst (Sim)"
 
 juce::Colour LogColour(LogKind k) {
     switch(k) {
@@ -54,6 +55,17 @@ EditorComponent::EditorComponent(bool with_simulators)
     update_.setTooltip(U("Startet das Kit im Daisy-Bootloader neu, ohne BOOT und RESET. Danach die Firmware mit "
                          "dem Daisy Web Programmer oder „make program-dfu“ laden."));
     update_.onClick = [this] { ConfirmFirmwareUpdate(); };
+    addChildComponent(view_);
+    view_.setTooltip(U("Streichwurst: Klangparameter (SQ) und Modulationsmatrix (Mod on Daisy) desselben Geräts"));
+    view_.onClick = [this] { ShowMatrix(!show_matrix_); };
+    sq_panel_.matrix_text = [this] { return session_.Connected() ? SavePatch(model_, &session_.Device()) : std::string(); };
+    sq_panel_.upload_matrix = [this](const std::string& text) {
+        const LoadedPatch loaded = LoadPatch(text, model_);
+        if(!loaded.ok || !session_.Connected())
+            return Log(LogKind::Warn, U("Matrix aus dem Patch nicht übertragen: ") +
+                                          U(loaded.ok ? std::string("keine Mod-on-Daisy-Verbindung") : loaded.error));
+        SendProjectPatch(loaded); // columns that mean something else stay off
+    };
     addAndMakeVisible(status_);
     addAndMakeVisible(mode_);
     mode_.setColour(juce::Label::textColourId, colour::ink);
@@ -151,8 +163,10 @@ void EditorComponent::RefreshPorts() {
     std::vector<Port> ports;
     for(int i = 0; with_simulators_ && i < int(std::size(kSimInstruments)); ++i)
         ports.push_back({U(kSimInstruments[i].label), i, {}, {}});
-    if(with_simulators_)
+    if(with_simulators_) {
         ports.push_back({U("Acid Seq (Sim)"), kSqSimulator, {}, {}});
+        ports.push_back({U("Streichwurst (Sim)"), kSwSimulator, {}, {}});
+    }
     for(const auto& out : outs) {
         // The input with the same name, else one that also says "Daisy".
         juce::MidiDeviceInfo in;
@@ -186,7 +200,7 @@ void EditorComponent::RefreshPorts() {
     const juce::String previous = port_.getText();
     // While offline, a Daisy that appears later replaces a non-Daisy suggestion (the kit is
     // often plugged in or leaves the bootloader after the editor started).
-    const bool keep = midi_ || simulator_ || sq_sim_ || previous.containsIgnoreCase("daisy");
+    const bool keep = midi_ || simulator_ || sq_sim_ || sw_sim_ || previous.containsIgnoreCase("daisy");
     ports_ = std::move(ports);
     port_.clear(juce::dontSendNotification);
     int same_label = -1, daisy = -1;
@@ -221,6 +235,15 @@ void EditorComponent::ConnectTo(int index) {
             return true;
         };
         sq_session_.Connect(now_);
+    } else if(p.simulator == kSwSimulator) {
+        sw_sim_ = std::make_unique<StreichwurstSim>();
+        sw_sim_->SetOut([this](const uint8_t* b, std::size_t n) { sq_sim_out_.emplace_back(b, b + n); });
+        sq_link_.send = [this](const uint8_t* b, std::size_t n) {
+            sw_sim_->Receive(b, n, now_);
+            return true;
+        };
+        md_link_.send = sq_link_.send;
+        sq_session_.Connect(now_);
     } else if(p.simulator >= 0) {
         simulator_ = std::make_unique<Simulator>(kSimInstruments[p.simulator].make(),
                                                  uint32_t(juce::Random::getSystemRandom().nextInt()));
@@ -244,8 +267,16 @@ void EditorComponent::ConnectTo(int index) {
     RefreshAll();
 }
 
+void EditorComponent::ShowMatrix(bool on) {
+    show_matrix_ = on && sq_session_.Ready() && sq_session_.Identity().HasModMatrix();
+    RefreshAll();
+    resized();
+}
+
 void EditorComponent::Disconnect() {
     md_pending_ = false;
+    md_alongside_ = false;
+    show_matrix_ = false;
     sq_session_.Disconnect();
     session_.Disconnect("");
     ReleasePort();
@@ -300,21 +331,21 @@ void EditorComponent::AutoConnect() {
 }
 
 std::string EditorComponent::PatchText() const {
-    if(sq_session_.Ready()) // an Acid Seq device: the product patch is the song state
-        return SerializeAcidPatch(PatchFromSession(sq_session_));
+    if(sq_session_.Ready()) // an SQ device: the product patch (Streichwurst: with matrix) is the song state
+        return SerializeAcidPatch(sq_panel_.CurrentPatch());
     return SavePatch(model_, session_.Connected() ? &session_.Device() : nullptr);
 }
 
 void EditorComponent::LoadProjectPatch(const std::string& text) {
-    if(text.find("\"acid-seq-patch\"") != std::string::npos) {
+    if(text.find("\"acid-seq-patch\"") != std::string::npos || text.find("\"streichwurst-patch\"") != std::string::npos) {
         std::string error;
         sq_project_ = ParseAcidPatch(text, error);
         if(!sq_project_)
-            return Log(LogKind::Error, U("Acid-Seq-Patch im Projekt nicht lesbar: ") + U(error));
+            return Log(LogKind::Error, U("Produkt-Patch im Projekt nicht lesbar: ") + U(error));
         if(sq_session_.Ready())
             AskProjectUpload();
         else
-            Log(LogKind::Info, U("Acid-Seq-Patch aus dem Projekt geladen; beim Verbinden wird gefragt, ob er übertragen wird."));
+            Log(LogKind::Info, U("Produkt-Patch aus dem Projekt geladen; beim Verbinden wird gefragt, ob er übertragen wird."));
         return;
     }
     const LoadedPatch loaded = LoadPatch(text, model_);
@@ -342,12 +373,18 @@ void EditorComponent::Advance(uint32_t now_ms) {
     now_ = now_ms;
     if(simulator_)
         simulator_->Advance(1, [this](const uint8_t* b, std::size_t n) { session_.OnMessage(b, n); });
-    if(sq_sim_) {
-        sq_sim_->Advance(now_);
+    if(sq_sim_ || sw_sim_) {
+        if(sq_sim_)
+            sq_sim_->Advance(now_);
+        if(sw_sim_)
+            sw_sim_->Advance(now_);
         while(!sq_sim_out_.empty()) {
             const std::vector<uint8_t> m = std::move(sq_sim_out_.front());
             sq_sim_out_.pop_front();
-            sq_session_.OnMessage(m.data(), m.size(), now_);
+            if(ClassifySysEx(m.data(), m.size()) == Protocol::Sq)
+                sq_session_.OnMessage(m.data(), m.size(), now_);
+            else
+                session_.OnMessage(m.data(), m.size());
         }
     }
     if(midi_)
@@ -359,6 +396,16 @@ void EditorComponent::Advance(uint32_t now_ms) {
                 session_.OnMessage(m.data(), m.size());
         }
     sq_session_.Tick(now_);
+    // SQ 1.1 with CapModMatrix (Streichwurst): Mod on Daisy alongside on the same port,
+    // started once the SQ state has been read; it reads the matrix first as well.
+    if(!md_alongside_ && sq_session_.Ready() && sq_session_.Identity().HasModMatrix() &&
+       session_.State() == LinkState::Offline && (midi_ || sw_sim_)) {
+        md_alongside_ = true;
+        if(midi_)
+            session_.Connect(*midi_, now_);
+        else
+            session_.Connect(md_link_, now_);
+    }
     if(md_pending_ && midi_ && sq_session_.GetPhase() == SqSession::Phase::Failed) {
         md_pending_ = false; // no SQ device: a Mod on Daisy firmware, as before
         sq_session_.Disconnect();
@@ -370,7 +417,7 @@ void EditorComponent::Advance(uint32_t now_ms) {
     session_.Tick(now_);
     // The session gave up (no answer to IDENTIFY, refused send, wrong protocol): the
     // port is released at once, so another application or a new attempt can open it.
-    if(session_.State() == LinkState::Offline && !md_pending_ && !SqActive() && (midi_ || simulator_ || sq_sim_))
+    if(session_.State() == LinkState::Offline && !md_pending_ && !SqActive() && (midi_ || simulator_ || sq_sim_ || sw_sim_))
         ReleasePort();
     FinishFirmwareUpdate(boot_.Poll(now_));
 }
@@ -441,7 +488,9 @@ void EditorComponent::ReleasePort() {
     grid_.ClearMonitor();
     simulator_.reset();
     sq_link_.send = {};
+    md_link_.send = {};
     sq_sim_.reset();
+    sw_sim_.reset();
     sq_sim_out_.clear();
     midi_.reset();
     RefreshAll();
@@ -510,10 +559,17 @@ void EditorComponent::RefreshAll() {
     if(sq_ready && !sq_was_ready_)
         AskProjectUpload(); // the device state has just been read
     sq_was_ready_ = sq_ready;
-    sq_panel_.setVisible(sq_ready);
-    if(sq_ready) {
+    const bool matrix_available = sq_ready && sq_session_.Identity().HasModMatrix();
+    if(!matrix_available)
+        show_matrix_ = false;
+    view_.setVisible(matrix_available);
+    view_.setEnabled(session_.Connected() || show_matrix_);
+    view_.setButtonText(U(show_matrix_ ? "Klangparameter" : "Matrix"));
+    sq_panel_.setVisible(sq_ready && !show_matrix_);
+    if(sq_ready && !show_matrix_) {
         sq_panel_.Refresh();
-        status_.setText(U(sq_session_.Identity().product + " " + sq_session_.Identity().version + " · SQ"),
+        status_.setText(U(sq_session_.Identity().product + " " + sq_session_.Identity().version + " · SQ" +
+                          (matrix_available ? (session_.Connected() ? " + Matrix" : " · Matrix verbindet …") : "")),
                         juce::dontSendNotification);
         status_.setColour(juce::Label::textColourId, colour::ok);
         connect_.setButtonText("Trennen");
@@ -553,7 +609,7 @@ void EditorComponent::RefreshAll() {
     connect_.setButtonText(busy ? "Trennen" : "Verbinden");
     RefreshMode();
     port_.setEnabled(!busy);
-    update_.setEnabled(!boot_.Waiting() && !simulator_ && !ports_.empty());
+    update_.setEnabled(!boot_.Waiting() && !simulator_ && !sq_sim_ && !sw_sim_ && !ports_.empty());
     pull_.setEnabled(session_.Connected());
     count_.setText(U("Aktive Verbindungen: ") + juce::String(model_.ActiveCount()) + " / "
                        + juce::String(model_.max_active),
@@ -640,6 +696,8 @@ void EditorComponent::resized() {
         h.removeFromLeft(8);
         connect_.setBounds(h.removeFromLeft(110));
         update_.setBounds(h.removeFromRight(150));
+        h.removeFromRight(8);
+        view_.setBounds(h.removeFromRight(130));
         h.removeFromRight(12);
         h.removeFromLeft(12);
         status_.setBounds(h.removeFromLeft(330));

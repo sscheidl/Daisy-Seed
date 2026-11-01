@@ -56,6 +56,35 @@ Seit Acid Seq Phase 5 bedienen alle drei Fassungen auch die Acid-Seq-Firmwares (
   * JUCE: Die Kalibrierung zeigt und sendet Bruchteile exakt (F13).
   * Browser: Die Kalibrierung zeigt nach dem Senden „gültig“.
 
+## Streichwurst (SQ 1.1 + Mod on Daisy, ab Editor 0.3.0)
+
+Alle drei Fassungen bedienen die [Streichwurst-Firmware](../../instruments/streichwurst/README.md)
+über einen Port: Klangparameter über SQ 1.1, die Modulationsmatrix über Mod on Daisy
+([SQ § 8](../../sequencers/step-seq/docs/PROTOCOL.md)).
+
+* **Erkennung:** Meldet ein SQ-Gerät Fähigkeit Bit 6, startet der Editor nach dem Lesen
+  des SQ-Zustands zusätzlich seine Mod-on-Daisy-Sitzung auf demselben Port. Beide lesen
+  zuerst; geschrieben wird nur bei einer Änderung oder ausdrücklichem Übertragen. Die
+  Statuszeile zeigt „streichwurst 0.1.0 · SQ + Matrix“. Acid-Seq-Geräte (SQ 1.0) und
+  reine Mod-on-Daisy-Geräte verhalten sich wie bisher.
+* **Seiten:** Strings, Solo, Tastatur, FX und Global, gebildet aus den Deskriptoren des
+  Geräts und den Seiten des Parametervertrags; Statuszeile mit Produkt-, Instrument- und
+  FX-Version sowie angewandter/angenommener Revision. „Reglerseite am Kit“ und „RAM-Preset“
+  sind nur lesbar. Potibewegungen am Kit erscheinen über den Monitor in der App.
+* **Matrix:** Der Knopf „Matrix“ (oben) zeigt die bekannte Rasteransicht mit den acht
+  Streichwurst-Zielen, „Klangparameter“ führt zurück.
+* **Patch** (`.swpatch`, JSON, Format `streichwurst-patch`): alle schreibbaren Parameter
+  von Instrument, FX und Produkt mit Komponenten- und Schemaversion, dazu die Matrix als
+  eingebettetes `.modpatch`-Objekt. Beim Übertragen werden fehlende oder inkompatible
+  Teile übersprungen; die Matrix durchläuft die bekannte Spaltenprüfung. Im VST3 ist der
+  `.swpatch` der Songzustand, mit derselben Rückfrage wie bei Acid Seq. `.modpatch` und
+  `.acidpatch` bleiben unverändert.
+* **Offline:** Browser „Streichwurst offline“ zeigt die Seiten aus dem Vertrag.
+* **Standalone-FX** (`StreichwurstFx-v0.1.0`, SQ 1.0, eine Komponente): nur die Seite FX, keine
+  Matrix.
+* **Simulator:** Mit `--simulators` gibt es „Streichwurst (Sim)“: SQ-Gerät, Register und
+  Mod-on-Daisy-Kern der Firmware auf dem PC (kein Audio-DSP im Editor).
+
 ## JUCE-Editor
 
 ### Windows-Programm holen

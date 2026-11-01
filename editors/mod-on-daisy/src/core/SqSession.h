@@ -4,8 +4,9 @@
 // bootloader reply (7D 42 4C) apart, and the SQ client of the Acid Seq panel pages.
 //
 // Connect() reads the device first (D13: the device has priority): IDENTIFY, components,
-// parameter descriptors and enum labels, values, pattern, state, calibration, then the
-// monitor. Nothing is written to the device without an explicit call (an edit or
+// parameter descriptors and enum labels, values, pattern (capability bit 3), state,
+// calibration (bit 5), then the monitor. SQ 1.1 devices with bit 6 (CapModMatrix) also
+// speak Mod on Daisy on the same port; the editor then runs its MD session alongside. Nothing is written to the device without an explicit call (an edit or
 // Upload()). One request at a time, 200 ms timeout, three retries with the same request ID.
 //
 // Single-threaded: OnMessage(), Tick() and all calls on the GUI thread.
@@ -73,7 +74,16 @@ struct SqIdentity {
     uint32_t boot_id = 0, uid[3] = {};
     uint16_t capabilities = 0;
     uint8_t component_count = 0;
+    bool HasPattern() const { return capabilities & 8; }
+    bool HasCalibration() const { return capabilities & 32; }
+    bool HasModMatrix() const { return capabilities & 64; } // SQ 1.1: MD on the same port
 };
+
+// Component kinds of GET_COMPONENT (4 = the firmware product itself, SQ 1.1).
+inline const char* SqKindName(uint8_t kind) {
+    static const char* names[] = {"Sequencer", "Instrument", "Effekt", "DSP", "Produkt"};
+    return kind < 5 ? names[kind] : "?";
+}
 
 struct SqState {
     uint8_t state = 0, mode = 0, sw17 = 0, sw18 = 1, source = 0;
@@ -473,9 +483,10 @@ class SqSession {
             components_.assign(id.component_count, SqComponent{});
             for(uint8_t c = 0; c < id.component_count; ++c)
                 ReadComponent(c);
-            ReadPattern();
+            if(id.HasPattern())
+                ReadPattern();
             ReadState();
-            if(id.capabilities & 32) {
+            if(id.HasCalibration()) {
                 ReadCal(0);
                 ReadCal(1);
             }

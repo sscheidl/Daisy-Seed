@@ -7,6 +7,7 @@
 #include "../core/SimInstruments.h"
 #include "../core/Simulator.h"
 #include "../core/SqSimulator.h"
+#include "../core/StreichwurstSim.h"
 #include "MatrixGrid.h"
 #include "MidiPort.h"
 #include "SqPanel.h"
@@ -46,6 +47,10 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     SqSession& GetSqSession() { return sq_session_; }
     SqPanel& GetSqPanel() { return sq_panel_; }
     SqSimulator* GetSqSimulator() { return sq_sim_.get(); }
+    StreichwurstSim* GetStreichwurstSimulator() { return sw_sim_.get(); }
+    // Streichwurst: Mod on Daisy runs alongside SQ on the same port; this shows its pages.
+    void ShowMatrix(bool on);
+    bool MatrixShown() const { return show_matrix_; }
     bool SqActive() const {
         return sq_session_.GetPhase() == SqSession::Phase::Reading || sq_session_.GetPhase() == SqSession::Phase::Ready;
     }
@@ -121,7 +126,11 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     SqLink sq_link_;
     SqSession sq_session_{sq_link_};
     std::unique_ptr<SqSimulator> sq_sim_;
+    std::unique_ptr<StreichwurstSim> sw_sim_;      // "Streichwurst (Sim)": SQ and MD on one port
+    SqLink md_link_;                                // the MD session's way to that simulator
     std::deque<std::vector<uint8_t>> sq_sim_out_;
+    bool md_alongside_ = false; // SQ 1.1 device with CapModMatrix: MD session started on its port
+    bool show_matrix_ = false;  // matrix pages instead of the SQ pages
     SqPanel sq_panel_{sq_session_};
     bool md_pending_ = false;        // real port: Mod on Daisy is tried once SQ did not answer
     bool sq_was_ready_ = false;
@@ -147,6 +156,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     juce::ComboBox port_;
     juce::TextButton connect_{"Verbinden"};
     juce::TextButton update_;
+    juce::TextButton view_; // Streichwurst: "Matrix" / "Klangparameter"
     juce::Label status_;
     juce::Label mode_; // active instrument mode, e.g. "Modell: Western Chords"
     int mode_index_ = -1, mode_origin_ = -1; // from the last monitor frame

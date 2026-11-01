@@ -26,6 +26,10 @@
     6: 'Protokollversion', 7: 'anderes Kit (UID)', 8: 'nicht kalibriert', 9: 'im aktuellen Zustand nicht erlaubt',
   };
   const TIMEOUT_MS = 200, RETRIES = 3;
+  // IDENTIFY capabilities and GET_COMPONENT kinds (SQ 1.1 adds bit 6 and kind 4).
+  const CAP = { cv: 1, din: 2, voice: 4, pattern: 8, monitor: 16, calibration: 32, modMatrix: 64 };
+  const KIND = { sequencer: 0, instrument: 1, effect: 2, dsp: 3, product: 4 };
+  const KIND_NAMES = ['Sequencer', 'Instrument', 'Effekt', 'DSP', 'Produkt'];
 
   // CRC-8/SMBUS: polynomial 0x07, init 0, no reflection; check('123456789') = 0xF4.
   function crc8(bytes) {
@@ -284,8 +288,11 @@
     }
     async readAll() {
       let r = await this.request(TYPE.identify);
-      const id = { protocol: `${r.u7()}.${r.u7()}`, product: r.str(), version: r.str(), bootId: r.u32(),
+      const major = r.u7(), minor = r.u7();
+      const id = { protocol: `${major}.${minor}`, minor, product: r.str(), version: r.str(), bootId: r.u32(),
         uid: [r.u32(), r.u32(), r.u32()], capabilities: r.u14(), componentCount: r.u7() };
+      // SQ 1.1, bit 6: the device also speaks Mod on Daisy on this port (Streichwurst).
+      id.hasModMatrix = !!(id.capabilities & CAP.modMatrix);
       this.restarted = !!(this.identity && this.identity.bootId !== id.bootId);
       this.identity = id;
       this.components = [];
@@ -328,6 +335,8 @@
         this.state.applied = r.u14();
         this.pattern = Array.from({ length: 16 }, () => readStep(r));
         await this.readState();
+      } else if (this.components.some((c) => c.kind === KIND.product)) {
+        await this.readState(); // accepted/applied revision of a product without sequencer
       }
       if (id.capabilities & 32) for (const o of [0, 1]) await this.readCal(o);
       await this.request(TYPE.monitor, [1]);
@@ -424,8 +433,12 @@
     let s = (Math.round(v * 1000) / 1000).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
     return s === '-0' ? '0' : s;
   };
-  function patchFromClient(client) {
+  // File format by product: Streichwurst has its own name and may embed the matrix.
+  const patchFormat = (product) => (product === 'streichwurst' ? 'streichwurst-patch' : 'acid-seq-patch');
+  const patchExtension = (product) => (product === 'streichwurst' ? 'swpatch' : 'acidpatch');
+  function patchFromClient(client, matrix = null) {
     return {
+      matrix,
       product: client.identity ? client.identity.product : '',
       components: client.components.map((c) => ({ id: c.id, version: c.version, schema: c.schema,
         params: Object.fromEntries(c.parameters.filter((p) => !(p.flags & 1)).map((p) => [p.key, p.value])) })),
@@ -434,7 +447,8 @@
   }
   function serializePatch(p) {
     const q = JSON.stringify;
-    let out = '{\n  "format": "acid-seq-patch",\n  "format_version": 1,\n  "product": ' + q(p.product) + ',\n  "components": [';
+    let out = '{\n  "format": "' + patchFormat(p.product) + '",\n  "format_version": 1,\n  "product": ' + q(p.product) +
+      ',\n  "components": [';
     p.components.forEach((c, i) => {
       const keys = Object.keys(c.params).sort();
       out += (i ? ',' : '') + '\n    {"id": ' + q(c.id) + ', "version": ' + q(c.version) + ', "schema": ' + c.schema +
@@ -445,6 +459,7 @@
       out += ',\n  "pattern": [' + p.pattern.map((s, i) => (i ? ',' : '') + '\n    {"note": ' + s.note + ', "gate_length": ' +
         s.gateLength + ', "gate": ' + s.gate + ', "accent": ' + s.accent + ', "slide": ' + s.slide + '}').join('') + '\n  ]';
     }
+    if (p.matrix) out += ',\n  "matrix": ' + JSON.stringify(p.matrix);
     return out + '\n}\n';
   }
   // Whole number within [lo, hi]; checked before use (Codex F07: 1e999, 3.5, strings).
@@ -452,8 +467,15 @@
   function parsePatch(text) {
     let root;
     try { root = JSON.parse(text); } catch (e) { throw new Error('keine gültige JSON-Datei'); }
-    if (!root || typeof root !== 'object' || root.format !== 'acid-seq-patch' || !isInt(root.format_version, 1, 1e6)) {
-      throw new Error('kein Acid-Seq-Patch');
+    if (!root || typeof root !== 'object' || !['acid-seq-patch', 'streichwurst-patch'].includes(root.format) ||
+        !isInt(root.format_version, 1, 1e6)) {
+      throw new Error('kein Acid-Seq- oder Streichwurst-Patch');
+    }
+    if (root.format === 'streichwurst-patch' && root.product !== 'streichwurst') {
+      throw new Error('Streichwurst-Patch für ein anderes Produkt');
+    }
+    if (root.matrix !== undefined && (!root.matrix || typeof root.matrix !== 'object' || Array.isArray(root.matrix))) {
+      throw new Error('ungültige Matrix');
     }
     if (root.format_version > 1) throw new Error('Patch-Format ' + root.format_version + ' ist neuer als dieser Editor');
     if (root.pattern !== undefined && (!Array.isArray(root.pattern) || root.pattern.length !== 16)) {
@@ -476,7 +498,7 @@
       }
       return { id: c.id, version: c.version, schema: c.schema, params };
     });
-    return { product: root.product || '', components, pattern };
+    return { product: root.product || '', components, pattern, matrix: root.matrix || null };
   }
   function checkPatch(p, client) {
     const result = { missing: [], incompatible: [], unknown: [], patternSkipped: false };
@@ -513,6 +535,6 @@
     HEADER, VERSION, VERSION_MINOR, MAX_FRAME, OVERHEAD, MAX_PAYLOAD, RESPONSE, MONITOR_EVENT, NAK,
     TYPE, ERROR, ERROR_TEXT, TIMEOUT_MS, RETRIES, STATE_NAMES, SOURCE_NAMES, UNIT_TEXT, MONITOR,
     crc8, Writer, Reader, encode, assemble, classify, parseReply, protocolOf, Session, Client, noteName,
-    patchFromClient, serializePatch, parsePatch, checkPatch, uploadPatch,
+    patchFromClient, serializePatch, parsePatch, checkPatch, uploadPatch, patchFormat, patchExtension, CAP, KIND, KIND_NAMES,
   };
 });
