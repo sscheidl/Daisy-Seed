@@ -37,12 +37,15 @@ class SqPanel : public juce::Component {
         load_.onClick = [this] { LoadDialog(); };
         upload_.onClick = [this] { Upload(); };
         upload_.setEnabled(false);
-        for(juce::Label* l : {&status_, &patch_info_, &stats_, &cal_hint_, &step_label_})
+        for(juce::Label* l : {&status_, &patch_info_, &cal_hint_, &step_label_})
             addAndMakeVisible(l);
         status_.setFont(juce::FontOptions(14.0f, juce::Font::bold));
         patch_info_.setColour(juce::Label::textColourId, colour::muted);
-        stats_.setJustificationType(juce::Justification::topLeft);
-        stats_.setFont(juce::FontOptions(12.0f));
+        for(juce::Label& l : stats_) {
+            addAndMakeVisible(l);
+            l.setJustificationType(juce::Justification::topLeft);
+            l.setFont(juce::FontOptions(12.0f));
+        }
         cal_hint_.setColour(juce::Label::textColourId, colour::muted);
         cal_hint_.setFont(juce::FontOptions(12.0f));
         for(int i = 0; i < 16; ++i) {
@@ -205,7 +208,7 @@ class SqPanel : public juce::Component {
             b->setBounds(ed.removeFromLeft(90));
         }
         r.removeFromTop(10);
-        juce::Rectangle<int> bottom = r.removeFromBottom(250);
+        juce::Rectangle<int> bottom = r.removeFromBottom(270);
         juce::Rectangle<int> tabs = r.removeFromTop(28);
         for(auto& t : tabs_) {
             t.setBounds(tabs.removeFromLeft(110));
@@ -240,7 +243,10 @@ class SqPanel : public juce::Component {
         upload_.setBounds(b2.removeFromLeft(170));
         patch_info_.setBounds(right.removeFromTop(40));
         stats_btn_.setBounds(right.removeFromTop(28).removeFromLeft(140));
-        stats_.setBounds(right);
+        // Counters in three columns: all 17 rows fit (two per row needed nine lines).
+        const int column = right.getWidth() / int(stats_.size());
+        for(juce::Label& l : stats_)
+            l.setBounds(right.removeFromLeft(column));
     }
     void paint(juce::Graphics& g) override { g.fillAll(colour::bg); }
 
@@ -284,6 +290,20 @@ class SqPanel : public juce::Component {
         tab_ = t;
         rebuild_ = true;
         Refresh();
+    }
+    // Self-test: the "Read counters" button, and whether every counter line is drawn (a
+    // label drops the lines that do not fit its height).
+    void ReadCounters() { stats_btn_.onClick(); }
+    int CounterLines() const {
+        int n = 0;
+        for(const juce::Label& l : stats_) {
+            const int lines = juce::StringArray::fromLines(l.getText().trimEnd()).size();
+            const int room = int(l.getBorderSize().subtractedFrom(l.getLocalBounds()).getHeight() / l.getFont().getHeight());
+            if(l.getText().isEmpty() || !getLocalBounds().contains(l.getBounds()))
+                continue;
+            n += std::min(lines, std::max(1, room));
+        }
+        return n;
     }
 
     // The product or the standalone Streichwurst FX firmware (FX page only).
@@ -424,10 +444,11 @@ class SqPanel : public juce::Component {
                                       "Repeat", "Echo", "Busy", "Monitor dropped", "Note-on dropped",
                                       "MIDI queue overflow", "Clock ignored", "Callback deadline", "Callback peak",
                                       "Queue high water", "Stack free"};
-        juce::String text;
+        juce::String text[3];
         for(std::size_t i = 0; i < s_.Stats().size(); ++i)
-            text << U(i < 17 ? names[i] : "Counter") << ": " << juce::String(juce::int64(s_.Stats()[i])) << (i % 2 ? "\n" : "    ");
-        stats_.setText(text, juce::dontSendNotification);
+            text[i % 3] << U(i < 17 ? names[i] : "Counter") << ": " << juce::String(juce::int64(s_.Stats()[i])) << "\n";
+        for(std::size_t c = 0; c < stats_.size(); ++c)
+            stats_[c].setText(text[c], juce::dontSendNotification);
     }
   public:
     // The device state as product patch; Streichwurst adds the matrix of the MD session.
@@ -466,7 +487,8 @@ class SqPanel : public juce::Component {
     }
 
     SqSession& s_;
-    juce::Label status_, patch_info_, stats_, cal_hint_, step_label_;
+    juce::Label status_, patch_info_, cal_hint_, step_label_;
+    std::array<juce::Label, 3> stats_; // counter columns
     juce::TextButton start_{"Start"}, stop_{U("Stop")}, pull_{U("Read from device")}, save_{U("Save patch …")},
         load_{U("Load patch …")}, upload_{U("Send to device")}, stats_btn_{U("Read counters")},
         cv_on_{U("Enable CV")}, cv_off_{U("Lock CV")};
