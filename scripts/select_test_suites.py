@@ -8,8 +8,8 @@ import subprocess
 def select_suites(changed):
     def touched(*prefixes):
         return any(p.startswith(prefixes) for p in changed)
-    # common/audio/ (FX contract), common/dsp/ (shared saturation) and common/sd/ (Nebulae
-    # and the Diagnostics card reader) have their own consumer rules instead of selecting
+    # common/audio/ (FX contract), common/dsp/ (shared saturation) and common/sd/ (Nebulae,
+    # the looper and the Diagnostics card reader) have their own consumer rules instead of selecting
     # every firmware suite.
     shared = any(p in ('Makefile', 'projects.mk', 'libDaisy', 'DaisySP') or
                  (p.startswith('common/') and
@@ -52,7 +52,10 @@ def select_suites(changed):
         # Nebulae 0.2 links common/sd (read-only FatFs, card reader) and the DDP framing.
         'granular': shared or touched('instruments/granular/', 'common/sd/', 'diagnostics/protocol/',
                                       'diagnostics/firmware/src/ring_buffer.h'),
-        'looper': shared or touched('instruments/looper/') or mod_api,
+        # The looper's SD management links the card reader and the DDP framing (not the
+        # read-only driver; it keeps libDaisy's writable FatFs for loop.wav).
+        'looper': shared or touched('instruments/looper/', 'common/sd/reader/', 'diagnostics/protocol/',
+                                    'diagnostics/firmware/src/ring_buffer.h') or mod_api,
         'reverb': shared or touched('effects/reverb/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),
         'mod': shared or touched('modules/mod-on-daisy/'),

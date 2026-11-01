@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Looper for the Daisy Seed3 Desktop Dev Kit, libDaisy commit in the repository
 // README. Engine with loop modes and Slice/Skip, loop persistence and WAV import
-// on the microSD card; no effects. USB-MIDI on J7: CC control (midi_control.h) and
-// the bootloader request. MOD=1 (LOOPER_MOD) builds the separate Mod on Daisy image
-// with the modulation matrix of docs/MODULATION.md.
+// on the microSD card; no effects. USB-MIDI on J7: CC control (midi_control.h), the
+// control SysEx for the Windows control panel (control_sysex.h) and the bootloader
+// request. A second boot personality hands the card to Windows over USB mass storage
+// (sd_management.h, docs/SD_MANAGEMENT.md). MOD=1 (LOOPER_MOD) builds the separate Mod
+// on Daisy image with the modulation matrix of docs/MODULATION.md.
+#include "boot_intent.h"
 #include "card_volume.h"
+#include "control_sysex.h"
 #include "loop_store.h"
 #include "looper_engine.h"
 #include "midi_control.h"
@@ -17,6 +21,7 @@ const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
 #include "desktop_devkit.h"
 #include "bootloader_daisy.h"
 #include "bootloader_midi.h"
+#include "sd_management.h"
 #include "usbd_core.h"
 #if LOOPER_MOD
 #include "modulation.h"
@@ -27,6 +32,7 @@ const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
 #include <cmath>
 #include <iterator>
 #include <memory>
+#include <new>
 using namespace daisy;
 
 #ifndef LOOPER_BUFFER_FRAMES
@@ -117,9 +123,23 @@ static void ForwardToModulation(const MidiEvent& event) {
 alignas(32) static uint8_t DSY_SDRAM_BSS transfer[32768];
 // Filter phases for importing 44.1 kHz files (40 KB; DTCM has no room for it).
 static float DSY_SDRAM_BSS resampleTable[looper::resample::kTableSize];
-static looper::LoopStore store;
+// The store (5 KB, main loop only) lives in AXI SRAM rather than in DTCM, which
+// keeps the main stack reserve above 12 KiB with the SD management code (memory.ld).
+// The section is NOLOAD: the object is constructed here, before main().
+#ifdef __arm__
+#define LOOPER_AXI_BSS __attribute__((section(".looper_axi")))
+#else
+#define LOOPER_AXI_BSS
+#endif
+alignas(looper::LoopStore) static unsigned char storeStorage[sizeof(looper::LoopStore)] LOOPER_AXI_BSS;
+static looper::LoopStore& store = *new (storeStorage) looper::LoopStore();
 static bool storageReady = false;
 static std::atomic<bool> cardPresent{false}, importRequested{false};
+// SD management (docs/SD_MANAGEMENT.md): an accepted SHARE fades the output to
+// silence within one block, then the main loop restarts into the card reader.
+static std::atomic<bool> fadeOut{false}, faded{false};
+static int32_t fadeLeft = -1;  // audio callback only: samples left, -1 before the fade
+static bool shareRequested = false, restarting = false;  // main loop only
 
 // Engine state for the main loop, published by the audio callback under a
 // sequence lock (odd while it is written).
@@ -378,6 +398,19 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
         out[1][i] = CodecLevel(inRight[i] + out[1][i]);
     }
 #endif
+    if (fadeOut.load(std::memory_order_acquire)) {  // never set while performing
+        if (fadeLeft < 0)
+            fadeLeft = int32_t(n);  // a linear ramp to exactly zero over one block
+        const float length = float(n ? n : 1);
+        for (size_t i = 0; i < n; ++i) {
+            fadeLeft = fadeLeft > 0 ? fadeLeft - 1 : 0;
+            const float gain = float(fadeLeft) / length;
+            out[0][i] *= gain;
+            out[1][i] *= gain;
+        }
+        if (fadeLeft == 0)
+            faded.store(true, std::memory_order_release);
+    }
     const uint32_t elapsed = DWT->CYCCNT - start;
     if (elapsed > maximumCycles.load(std::memory_order_relaxed))
         maximumCycles.store(elapsed, std::memory_order_relaxed);
@@ -413,6 +446,68 @@ static void SendMidi(uint8_t* bytes, size_t size) {
         usbMidi.SendMessage(bytes, size);
 }
 
+// "major.minor.patch" from version.h at compile time.
+constexpr unsigned VersionPart(const char* v, unsigned part) {
+    unsigned value = 0;
+    for (; *v && part; ++v)
+        if (*v == '.')
+            --part;
+    for (; *v >= '0' && *v <= '9'; ++v)
+        value = value * 10 + unsigned(*v - '0');
+    return value;
+}
+
+// Main loop: the state the control panel sees (STATUS) and SHARE decides on.
+static looper::sysex::Status CurrentStatus() {
+    looper::sysex::Status st;
+    for (unsigned i = 0; i < 3; ++i)
+        st.fw[i] = uint8_t(VersionPart(LOOPER_VERSION, i));
+    const looper::EngineSnapshot s = view.Get();
+    const uint32_t flags = uiState.load(std::memory_order_relaxed);
+    st.card = CardPresent();
+    st.loop = s.length > 0;
+    st.recording = flags & (ui::Recording | ui::RecordPending);
+    if (storageReady && store.VersionKnown()) {
+        st.unsaved = s.version != store.SavedVersion();
+        st.save_failed = store.SaveFailed();
+    } else {  // the card was never usable: the loop cannot be saved
+        st.unsaved = st.loop;
+        st.save_failed = true;
+    }
+    st.saving = storageReady && store.Saving();
+    st.importing = storageReady && store.Importing();
+    st.fault = storageReady ? uint8_t(store.LastFault()) : 0;
+    st.loop_ms = s.length / 48u;
+    const uint32_t o = overruns.load(std::memory_order_relaxed);
+    st.overrun = o != 0;
+    st.overruns = uint16_t(o > 16383 ? 16383 : o);
+    const uint64_t load =
+        budgetCycles ? uint64_t(maximumCycles.load(std::memory_order_relaxed)) * 100u / budgetCycles : 0;
+    st.peak_load = uint8_t(load > 127 ? 127 : load);
+    return st;
+}
+
+// Main loop: answers STATUS and SHARE at once. SAVING starts the save without the
+// usual 2 s delay; ACCEPTED restarts into SD management after this iteration.
+static void HandleControl(const MidiEvent& event) {
+    looper::sysex::Reply reply(0);
+    int result = -1;
+    if (!looper::sysex::Handle(event.sysex_data, event.sysex_message_len, CurrentStatus(), reply,
+                               result))
+        return;
+    const uint8_t* bytes = reply.Finish();
+    SendMidi(const_cast<uint8_t*>(bytes), reply.Size());
+    if (result == looper::sysex::kSaving)
+        store.SaveSoon();
+    else if (result == looper::sysex::kAccepted)
+        shareRequested = true;
+}
+
+static bool IsControlSysEx(const MidiEvent& event) {
+    return event.type == SystemCommon && event.sc_type == SystemExclusive &&
+           looper::sysex::IsControl(event.sysex_data, event.sysex_message_len);
+}
+
 // Main loop. A SysEx request is answered at once, because a card write may hold
 // the reset back for longer than an editor waits for the reply.
 static void ServiceUsbMidi() {
@@ -426,6 +521,10 @@ static void ServiceUsbMidi() {
 #else
             midiIn.ControlChange(event.data[0], event.data[1]);
 #endif
+            continue;
+        }
+        if (IsControlSysEx(event)) {
+            HandleControl(event);
             continue;
         }
         if (!bootloader::IsRequest(event)) {
@@ -482,7 +581,27 @@ static void ShowLeds(uint32_t now, uint32_t& shown) {
     hw.UpdateLeds();
 }
 
-static void Halt() {
+// PREPARE_SHARE (docs/SD_MANAGEMENT.md): silence, stop audio, stop any card write,
+// unmount and reset the SD interface, then restart this image into SD management.
+// Never returns on the board. The loop comes back from loop.wav after the return.
+static void PrepareShare() {
+    fadeOut.store(true, std::memory_order_release);
+    for (unsigned i = 0; i < 50 && !faded.load(std::memory_order_acquire); ++i)
+        System::Delay(1);
+    hw.seed.StopAudio();
+    store.Halt();  // only a confirmed share can interrupt a save; loop.wav stays intact
+    looper::ReleaseCard();
+    for (unsigned i = 0; i < 16; ++i)
+        hw.SetLed(i, 0.f);
+    hw.UpdateLeds();
+    hw.UpdateLeds();
+    looper::boot::StoreBootIntent(looper_intent_words(), looper::boot::Personality::SdManagement);
+    System::Delay(20);  // the SysEx reply leaves before the reset
+    restarting = true;
+    System::ResetToBootloader(System::BootloaderMode::DAISY_SKIP_TIMEOUT);
+}
+
+[[noreturn]] static void Halt() {
     while (true)
         System::Delay(100);
 }
@@ -490,6 +609,13 @@ static void Halt() {
 int main() {
     asm volatile("" : : "r"(looper_firmware_version));  // Keep the version in the BIN.
     hw.Init();
+    // The boot intent is taken (read and cleared) before anything else is decided:
+    // without a valid record this is always the performance personality.
+    if (looper::boot::TakeBootIntent(looper_intent_words()) ==
+        looper::boot::Personality::SdManagement) {
+        looper_run_sd_management(hw);
+        Halt();
+    }
     hw.seed.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(48);
 #if LOOPER_MOD
@@ -519,10 +645,15 @@ int main() {
     usbMidi.StartReceive();
     hw.seed.StartAudio(AudioCallback);
     uint32_t shown = ~0u, ledsAt = 0;
-    while (true) {
+    while (!restarting) {
         const uint32_t now = System::GetNow();
         ServiceStorage(now);
         ServiceUsbMidi();
+        if (shareRequested) {
+            shareRequested = false;
+            PrepareShare();
+            continue;
+        }
 #if LOOPER_MOD
         modulation.controller.Service(System::GetNow(), modSender);
 #endif
@@ -535,4 +666,5 @@ int main() {
             System::Delay(1);
         // Inspect maximumCycles / overruns in a debugger for on-board CPU evidence.
     }
+    Halt();
 }

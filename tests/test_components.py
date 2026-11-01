@@ -128,15 +128,18 @@ class ComponentTests(unittest.TestCase):
 
     def test_sd_driver_consumers(self):
         # Nebulae 0.2 links the shared read-only driver and the card reader; the
-        # Diagnostics card-reader image links only the reader. Nothing else runs.
+        # Diagnostics card-reader image and the looper's SD management link only the
+        # reader. Nothing else runs.
         suites = selection.select_suites(['common/sd/ro_sd.c'])
         self.assertTrue(suites['sd'] and suites['granular'] and suites['submodules'])
         for key in ('toy', 'physical', 'looper', 'reverb', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
         reader = selection.select_suites(['common/sd/reader/msc_bot.cpp'])
-        self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'])
+        self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'] and reader['looper'])
         self.assertFalse(reader['toy'])
-        self.assertTrue(selection.select_suites(['diagnostics/protocol/ddp.cpp'])['granular'])
+        ddp = selection.select_suites(['diagnostics/protocol/ddp.cpp'])
+        self.assertTrue(ddp['granular'] and ddp['looper'])
+        self.assertFalse(selection.select_suites(['diagnostics/windows/daisy_diag/looper.py'])['looper'])
         self.assertTrue(selection.select_suites(['Makefile'])['sd'])
 
     def test_acid_seq_components(self):

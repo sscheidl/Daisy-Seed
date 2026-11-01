@@ -11,6 +11,10 @@ personality). Host tests, sanitizers, a Cortex-M7 compile and the ELF symbol pol
 The driver's behaviour on the board is **NICHT GEMESSEN**; the card reader in
 `reader/` is unchanged from the hardware-tested Diagnostics 0.3.2 (GEMESSEN 2026-10-31,
 Diagnostics image rebuilt byte-identical after the move).
+The Looper 0.5.0 links only the card reader (its SD management personality,
+[instruments/looper/docs/SD_MANAGEMENT.md](../../instruments/looper/docs/SD_MANAGEMENT.md));
+its loop persistence still needs a writable FatFs and keeps libDaisy's R0.12c until a
+writable variant of this driver exists.
 
 ## Files
 

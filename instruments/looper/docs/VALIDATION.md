@@ -1,7 +1,8 @@
-# Validation — Looper v0.3
+# Validation — Looper v0.5
 
 Date: 2026-10-20, updated 2026-10-25 for v0.3.2 (44.1 kHz import) and v0.4.0
-(MIDI CC control), 2026-10-26 for the separate Mod on Daisy build (`MOD=1`).
+(MIDI CC control), 2026-10-26 for the separate Mod on Daisy build (`MOD=1`),
+2026-11-01 for v0.5.0 (SD management, see the section below).
 Hardware validation: **PENDING — no run on the Seed3 yet.**
 
 | Gate | Status | Evidence |
@@ -18,6 +19,8 @@ Hardware validation: **PENDING — no run on the Seed3 yet.**
 | Golden, MOD vs. regular | PASS | `tests/test_golden.cpp`: same output hash from both builds |
 | Regular image unchanged | PASS | `Looper-v0.4.0.bin` byte-identical to the v0.4.0 image after the MOD integration |
 | MOD ARM build | PASS | `make PROJECT=looper MOD=1`, image check with `scripts/check-firmware.py` |
+| SD management (v0.5) | PASS (host) | `tests/test_control.cpp`, `tests/test_admin.cpp`, SaveSoon/Halt in `tests/test_store.cpp`, share part of `tests/test_callback.cpp` (both builds), panel tests in `diagnostics/tests/python` |
+| Golden after v0.5 | PASS | `2A2DBCEC41A54F57` for both builds, the same hash as v0.4.0 |
 | Hardware | PENDING | see the list at the end |
 
 ## Toolchain
@@ -93,6 +96,30 @@ from llvm-mingw, `-O2` and the ASan/UBSan build at `-O1`); columns and rules in
 
 Not measured: the callback load of the matrix on the board, the editors against the
 real device, and how fast Start/Size modulation sounds (see "Needs hardware").
+
+## SD management (v0.5.0, 2026-11-01)
+
+Local Linux run in a cloud session: xPack ARM GCC 13.2.1-1.1, host g++ 13.3.0, libDaisy
+`f715e48`. As a reproducibility check the unchanged v0.4.0 sources were built first and
+gave the documented `Looper-v0.4.0.bin` SHA-256 `7477080f…49447727a67`.
+
+| Check | Result |
+| --- | --- |
+| `make PROJECT=looper test` | PASS, all suites incl. `test_control` (10,185 checks), `test_admin` (59 checks), new store and callback cases |
+| `make PROJECT=looper test-sanitize` | PASS (ASan, UBSan) |
+| Golden | `2A2DBCEC41A54F57` for the regular and the MOD build, unchanged from v0.4.0: the fade-out for the share is inactive while performing |
+| `Looper-v0.5.0.bin` | 186,308 bytes, SHA-256 `64e5b5f7355fc6f02891a1c82ae4e66360b8de7dc989c8cdc5e2072b64b66c0a` (local build, not a release); `check-firmware.py` PASS |
+| `LooperMod-v0.5.0.bin` | 219,996 bytes, SHA-256 `d5d6e7a19d239da496b4ac5b6fc005d87f0439a71825bf4c1249084571b248e9` (local build, not a release); `check-firmware.py` PASS |
+| DTCM | regular 113,056 B (86.3 %, reserve 18,016 B; v0.4.0: 15,096 B), MOD 115,624 B (88.2 %, reserve 15,448 B; v0.4.0: 12,512 B). The `LoopStore` and the SD management responder moved to AXI SRAM; `src/memory.ld` asserts a 12 KiB reserve |
+| AXI SRAM | card-reader sector `.looper_sd` 512 B at a 32-byte boundary, `.looper_axi` (store + responder) 4.6 KB + 5.0 KB |
+| Strings in the image | `LOOPER-VERSION=0.5.0`, `Looper SD`, `app=LooperOnDaisy` |
+| `make test-components`, `make test-release` | PASS; CI selection runs the looper suite for `common/sd/reader/` and `diagnostics/protocol/` changes |
+| Control panel | `python -m pytest diagnostics/tests/python`: all pass (309 existing + 25 new looper tests) |
+
+Not measured (needs the kit and Windows): whether the bootloader keeps the boot intent
+in backup SRAM (R1), enumeration of `Looper SD` on Windows, copy speed, time to save an
+87 s loop before the share, the S4 return, recovery after a pulled cable. Checklist:
+[HARDWARE_TEST.md, section 10](HARDWARE_TEST.md#10-sd-management-windows-access-v05).
 
 ## Memory and image
 

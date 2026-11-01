@@ -83,8 +83,22 @@ class LoopStore {
     void RequestImport() { importRequested_ = true; }
     void Service(EngineView& view, ImportPort& port, uint32_t nowMs);
 
+    // Before handing the card to Windows (docs/SD_MANAGEMENT.md): the next save
+    // starts as soon as the engine is idle, without the kSaveDelayMs wait. A failed
+    // save still waits kRetryDelayMs.
+    void SaveSoon() { saveSoon_ = true; }
+    // Stops a running save without touching loop.wav (the temporary file is
+    // removed). Imports are not stopped here; callers refuse to share during them.
+    void Halt();
+
     Status GetStatus(uint32_t nowMs) const;
     bool Active() const { return state_ != State::Idle; }
+    bool Saving() const { return state_ == State::Saving; }
+    bool Importing() const { return state_ != State::Idle && state_ != State::Saving; }
+    // Engine content version that loop.wav holds (after Recall or the last save).
+    uint32_t SavedVersion() const { return savedVersion_; }
+    bool VersionKnown() const { return versionKnown_; }
+    bool SaveFailed() const { return fault_ == Fault::Write; }
     Fault LastFault() const { return fault_; }
     wav::Error LastFileError() const { return fileError_; }
     const char* LastImportName() const { return name_; }
@@ -138,7 +152,7 @@ class LoopStore {
     uint32_t importIndex_ = 0;
 
     uint32_t seenVersion_ = 0, savedVersion_ = 0, changedAt_ = 0, retryAt_ = 0;
-    bool versionKnown_ = false;
+    bool versionKnown_ = false, saveSoon_ = false;
     uint32_t saveVersion_ = 0, saveFrames_ = 0, savePosition_ = 0;
     const Frame* saveSource_ = nullptr;
     uint32_t saves_ = 0;

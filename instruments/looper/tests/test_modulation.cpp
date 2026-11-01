@@ -20,6 +20,7 @@ namespace looper {
 bool InitCard(bool (*)()) { return false; }  // no card: storage stays off
 Volume& CardVolume() { return memoryCard; }
 }  // namespace looper
+#include "sd_management_fakes.h"
 
 static int failures = 0;
 #define CHECK(condition)                                                        \

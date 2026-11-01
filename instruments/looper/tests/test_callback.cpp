@@ -16,6 +16,7 @@ namespace looper {
 bool InitCard(bool (*present)()) { return present != nullptr; }
 Volume& CardVolume() { return memoryCard; }
 }  // namespace looper
+#include "sd_management_fakes.h"
 
 static std::vector<uint8_t> Pcm16Stereo(uint32_t frames, int16_t value) {
     std::vector<uint8_t> b;
@@ -425,6 +426,114 @@ int main() {
     hUsbDeviceHS.dev_state = 0;
     Blocks(15);
 
+    // Control SysEx (docs/SD_MANAGEMENT.md): STATUS and SHARE over J7. The card is
+    // handed to Windows only when the loop on the card is current.
+    hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
+    usbMidi.sent.clear();
+    auto control = [](std::vector<uint8_t> body) {
+        daisy::MidiEvent e;
+        e.type = daisy::SystemCommon;
+        e.sc_type = daisy::SystemExclusive;
+        body.insert(body.begin(), {0x7D, 0x4C, 0x50});
+        std::copy(body.begin(), body.end(), e.sysex_data);
+        e.sysex_message_len = uint8_t(body.size());
+        usbMidi.incoming.push_back(e);
+        const size_t before = usbMidi.sent.size();
+        ServiceUsbMidi();  // main loop
+        return usbMidi.sent.size() == before + 1 ? usbMidi.sent.back() : std::vector<uint8_t>{};
+    };
+    auto share = [&](uint8_t confirm) {
+        const std::vector<uint8_t> r = control({0x01, 0x02, confirm, 0x11, 0x22, 0x33, 0x44});
+        const bool framed = r.size() == 12 && r[0] == 0xF0 && r[4] == 0x01 && r[5] == 0x42 &&
+                            r[7] == 0x11 && r[8] == 0x22 && r[9] == 0x33 && r[10] == 0x44 &&
+                            r[11] == 0xF7;
+        return framed ? int(r[6]) : -1;
+    };
+    Blocks(3000);  // everything saved
+    std::vector<uint8_t> st = control({0x01, 0x01});
+    CHECK(st.size() == 20 && st[0] == 0xF0 && st[1] == 0x7D && st[2] == 0x4C && st[3] == 0x50 &&
+          st[5] == 0x41 && st[19] == 0xF7);
+    CHECK(st.size() == 20 && st[6] == 0 && st[7] == 5 && st[8] == 0 && st[9] == 0);  // 0.5.0, performance
+    CHECK(st.size() == 20 && (st[10] & 0x07) == 0x03 && !(st[10] & 0x38));  // card, loop, saved, idle
+    const uint32_t loopMs = st.size() == 20 ? st[13] | st[14] << 7 | st[15] << 14 : 0;
+    CHECK(loopMs == engine.Length() / 48);
+    // Recording: BUSY, nothing happens.
+    Press(keys::Record, .3f);
+    CHECK(engine.Overdubbing() && share(0) == looper::sysex::kBusy && !shareRequested);
+    st = control({0x01, 0x01});
+    CHECK(st.size() == 20 && (st[10] & 0x10));
+    Press(keys::Record);
+    Blocks(50);
+    // Unsaved overdub: SAVING, and the save starts at once instead of after 2 s.
+    const uint32_t savesBefore = store.Saves();
+    CHECK(share(0) == looper::sysex::kSaving && !shareRequested);
+    for (unsigned i = 0; i < 100 && store.Saves() == savesBefore; ++i)
+        Blocks(1);
+    CHECK(store.Saves() == savesBefore + 1);
+    // No card: NO_CARD.
+    hw.sd_detect.pressed = false;
+    Blocks(1);
+    CHECK(share(1) == looper::sysex::kNoCard);
+    hw.sd_detect.pressed = true;
+    Blocks(1);
+    // A save that fails: CONFIRM_REQUIRED; confirm=1 gives the changes up.
+    memoryCard.failRename = true;
+    Press(keys::Record, .3f);
+    Blocks(100, .3f);
+    Press(keys::Record);
+    Blocks(50);
+    CHECK(share(0) == looper::sysex::kSaving);
+    for (unsigned i = 0; i < 100 && !store.SaveFailed(); ++i)
+        Blocks(1);
+    CHECK(store.SaveFailed() && share(0) == looper::sysex::kConfirmRequired && !shareRequested);
+    st = control({0x01, 0x01});
+    CHECK(st.size() == 20 && (st[10] & 0x04) && st[11] == 1 && st[12] == 2);  // unsaved, Fault::Write
+    // The card works again: the store retries after 10 s and the share is accepted.
+    memoryCard.failRename = false;
+    Blocks(10100);
+    CHECK(!store.SaveFailed());
+    st = control({0x01, 0x01});
+    CHECK(st.size() == 20 && !(st[10] & 0x04) && st[11] == 0);
+    // Malformed requests.
+    CHECK(share(2) == looper::sysex::kBadRequest);
+    std::vector<uint8_t> e = control({0x02, 0x01});
+    CHECK(e.size() == 9 && e[5] == 0x7F && e[6] == 0x01 && e[7] == looper::sysex::kErrVersion);
+    e = control({0x01, 0x09});
+    CHECK(e.size() == 9 && e[5] == 0x7F && e[6] == 0x09 && e[7] == looper::sysex::kErrUnknown);
+    e = control({0x01, 0x01, 0x00});
+    CHECK(e.size() == 9 && e[7] == looper::sysex::kErrLength);
+    CHECK(System::bootloader_resets == 3 && cardReleases == 0);
+    // Saved and idle: ACCEPTED, then PREPARE_SHARE in the main loop.
+    CHECK(share(0) == looper::sysex::kAccepted && shareRequested);
+    shareRequested = false;
+    PrepareShare();
+    CHECK(restarting && hw.seed.stops == 1 && cardReleases == 1 && !store.Active());
+    CHECK(System::bootloader_resets == 4 && System::bootloader_mode == System::DAISY_SKIP_TIMEOUT);
+    bool dark = true;
+    for (float v : hw.led)
+        dark &= v == 0.f;
+    CHECK(dark);
+    // The output fades to silence within one block once the share was accepted.
+    {
+        float il[kBlock], ir[kBlock], ol[kBlock], orr[kBlock];
+        const float* in[2] = {il, ir};
+        float* out[2] = {ol, orr};
+        std::fill_n(il, kBlock, .5f);
+        std::fill_n(ir, kBlock, .5f);
+        AudioCallback(in, out, kBlock);
+        CHECK(faded.load() && std::fabs(ol[kBlock - 1]) < 1e-6f && std::fabs(ol[0]) > .1f);
+        AudioCallback(in, out, kBlock);
+        float loudest = 0.f;
+        for (size_t i = 0; i < kBlock; ++i)
+            loudest = std::max({loudest, std::fabs(ol[i]), std::fabs(orr[i])});
+        CHECK(loudest == 0.f);
+    }
+    // The restart selects SD management exactly once.
+    CHECK(looper::boot::TakeBootIntent(intentWords) == looper::boot::Personality::SdManagement);
+    CHECK(looper::boot::TakeBootIntent(intentWords) == looper::boot::Personality::Performance);
+    CHECK(managementRuns == 0);
+    hUsbDeviceHS.dev_state = 0;
+
     if (failures) {
         std::printf("FAILED: %d production callback check(s)\n", failures);
         return 1;
@@ -432,6 +541,6 @@ int main() {
 #if LOOPER_MOD
     std::printf("MOD build, empty matrix: ");
 #endif
-    std::printf("PASS production callback: keys, knobs, MIDI CC, LEDs state, auto-stop, bounded output, bootloader keys/SysEx after card I/O\n");
+    std::printf("PASS production callback: keys, knobs, MIDI CC, LEDs state, auto-stop, bounded output, bootloader keys/SysEx after card I/O, control SysEx and share\n");
     return 0;
 }

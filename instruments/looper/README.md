@@ -1,16 +1,18 @@
 # Looper — Instrument Project
 
-**Status: v0.4 with all four loop modes, Slice/Skip, loop persistence and WAV
-import on the microSD card, and MIDI CC control over USB; host tests and ARM build
+**Status: v0.5 with all four loop modes, Slice/Skip, loop persistence and WAV
+import on the microSD card, MIDI CC control over USB, and Windows access to the card
+through the control panel (SD management, new in v0.5); host tests and ARM build
 pass; no hardware run yet.** Project ID: `looper`. The goal is an original
 stereo tape looper for the Seed3 Desktop Dev Kit, using the Qu-Bit Stardust as the
 behavioral reference. Validation details: [docs/VALIDATION.md](docs/VALIDATION.md); checklist for the
 first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md). A separate
 build with the Mod on Daisy modulation matrix: [docs/MODULATION.md](docs/MODULATION.md).
+Windows access to the card: [docs/SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.4.0.bin
-make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.4.0.bin
+make PROJECT=looper -j4            # firmware: build/Looper-v0.5.0.bin
+make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.5.0.bin
 make PROJECT=looper test           # host tests of both builds, incl. production callback
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```
@@ -104,10 +106,11 @@ independently from those descriptions.
   switching never steps the output; where a loop has no such region (up to 1,344
   frames), the post-roll crossfade switches in under a 384-frame jump crossfade.
 
-Not in v0.4: effects, input saturation and mix curves, Freeze, clock-synced
+Not in v0.5: effects, input saturation and mix curves, Freeze, clock-synced
 slices, 1V/Oct and CV, the encoder range modes, WAV export, MIDI notes, clock and
-feedback to the controller. J7 is a USB-MIDI device for CC control and the
-firmware update request.
+feedback to the controller. J7 is a USB-MIDI device for CC control, the
+firmware update request and the control panel's SD SysEx; in SD management it is a
+USB drive plus a serial port for the control panel.
 
 **Decided for Frippertronics (2026-10-20),** following manual v1.1.0 rather than
 the analyzed code, whose behavior is still OPEN (analysis section 8); both are
@@ -157,7 +160,9 @@ The physical orientation of keys and pots still needs a check on the board.
 
 ## microSD (v0.3)
 
-A FAT32 card holds a folder `looper/` (created when missing):
+A FAT32 card holds a folder `looper/` (created when missing). Since v0.5 the card can
+stay in the kit: the [control panel](../../diagnostics/docs/LOOPER_PROFILE.md) hands it
+to Windows as a USB drive and back ([SD management](#sd-management-v05)).
 
 * **`loop.wav`, persistence.** Two seconds after the loop last changed and once
   the engine is idle (no recording, fade, undo copy or import running), the main
@@ -199,6 +204,28 @@ interrupt runs below the audio DMA. The original fades audio out and pauses it
 for imports and reloads its undo state from the card; this firmware does neither
 (analysis sections 3 and 9).
 
+## SD management (v0.5)
+
+The Windows control panel 0.6.0 (`diagnostics/windows`, tab **SD share**) can open the
+looper's card as a Windows drive, for example to copy WAV files into `looper/loops/` or
+back up `looper/loop.wav`:
+
+1. **Share SD card with Windows** in the panel. If the loop changed since the last
+   save, the looper writes `loop.wav` at once (S8 LED blinking) and the panel waits.
+   While recording, overdubbing, resampling or importing, sharing is refused.
+2. The looper fades out, stops audio and restarts into its **SD management** mode:
+   no audio, the card appears as a USB drive (`Looper SD`). D2 shows SHARED, D16 and
+   the Seed LED blink.
+3. Eject the drive in Windows. **Return to the Looper** in the panel, or S4 held alone
+   for 2 s on the kit, restarts the looper, which reloads `loop.wav`.
+
+Undo/redo, loop and seam mode and play/reverse start fresh after the return, as after a
+power cycle. A power cycle in SD management always starts the looper. If the loop
+cannot be saved (card write error), the panel asks before the unsaved changes are given
+up. The card must be FAT32 (exFAT for the looper itself is a later step). Protocol,
+ownership rules, LEDs and memory: [docs/SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md).
+Hardware behaviour: NICHT GEMESSEN.
+
 ## MIDI control (v0.4)
 
 The kit appears as a USB-MIDI device on **J7**. The looper listens to control
@@ -235,6 +262,10 @@ ignored, and the looper sends nothing back except the bootloader reply.
 * **Pots and CCs together:** the control moved last wins. A CC takes its knob
   over at once; moving the pot by more than 2 % of its travel hands the knob
   back. Without MIDI the pots behave exactly as before.
+* SysEx `F0 7D 4C 50 …` is the control panel's STATUS/SHARE request
+  ([SD management](docs/SD_MANAGEMENT.md#performance-control-sysex-f0-7d-4c-50)); the
+  bootloader request `F0 7D 42 4C …` works as before. Other SysEx is ignored (or goes to
+  Mod on Daisy in the MOD build).
 * CC1 (mod wheel), aftertouch and CC120/123 stay free in this build. The
   separate [Mod on Daisy build](#mod-on-daisy-build-mod1) consumes them; the CCs above
   work there unchanged.
@@ -245,7 +276,7 @@ ignored, and the looper sends nothing back except the bootloader reply.
 ## Mod on Daisy build (MOD=1)
 
 `make PROJECT=looper MOD=1` (or `PROJECT=looper-mod`) builds a second image,
-`build/mod/LooperMod-v0.4.0.bin`, with the
+`build/mod/LooperMod-v0.5.0.bin`, with the
 [Mod on Daisy](../../modules/mod-on-daisy/README.md) 8×8 modulation matrix. The
 editors (browser, JUCE, VST3) connect over J7 and read its eight looper columns from
 the device: **Speed** (±12 semitones at depth 100), **Start**, **Size**, **Slice**,
@@ -320,5 +351,8 @@ The steps follow the gates of the feasibility study, adapted to this repository:
    digital effects remain; their DSP in the original is not analyzed yet.
 5. **microSD and controls:** file access outside the audio callback, WAV
    validation with bounds checks and power-cycle persistence in v0.3 (host-tested
-   with an in-memory card; the card itself is untested). Open: WAV export, the
-   mapping of the remaining Stardust controls onto the kit's switches and MIDI.
+   with an in-memory card; the card itself is untested). Windows access through the
+   shared card reader in v0.5 (host- and simulation-tested). Open: exFAT and the
+   patched FatFs R0.16 for the looper's own writes (path 1 in
+   [SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md#plan)), WAV export, the mapping of the
+   remaining Stardust controls onto the kit's switches and MIDI.
