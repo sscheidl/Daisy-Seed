@@ -20,6 +20,17 @@ DaisySP `2c72eaf9`, keine Abhängigkeit geändert.
 
 Sanitizer-Lauf (`make test-sanitize`) und TSan: siehe Einträge unten, sobald ausgeführt.
 
+## 01.11.2026 – Phase 4 (Rückkehrdienst) und Pakete
+
+| Befehl | Ergebnis |
+| --- | --- |
+| `make PROJECT=<p> test HOST_CXX=clang++` für toy-piano, reverb-fx, looper | Reverb und Looper PASS (Looper-Golden `2A2DBCEC41A54F57` unverändert); Toy Piano: alle Suiten PASS außer `test_golden` – bekannter Windows/clang-libm-Unterschied (Memory-Notiz), Linux-CI maßgeblich |
+| `make PROJECT=step-seq test` | alle C++-Suiten PASS (Golden `0x7528DC6F`); `python3`-Schritte unter Windows manuell mit `python` ausgeführt: PASS |
+| `make PROJECT=<p>` (ARM) für toy-piano, reverb-fx, looper, step-seq | alle vier gebaut (Exit 0) |
+| `dsy_pack.py pack --project …` für die vier Images, `pm_card.py init/add/check` | vier Pakete, Kartenvorlage `build/packages/card` PASS (Wurzel ohne `.bin`) |
+| `make -C system/program-manager test-sanitize` | alle acht Suiten unter ASan/UBSan 0 Fehler |
+| `node web/tests/test_pm_protocol.js`, `python -m unittest discover -s tests/python` | OK (11 Tests) |
+
 ## Artefakte (letzter Build dieses Protokolls)
 
 Die BIN-Hashes hängen vom eingebetteten `build=`-Commit ab; Werte des finalen Builds
@@ -44,4 +55,9 @@ stehen im PR-Text und werden hier nachgetragen:
 
 | Produkt | `dsy_pack.py check` | NOLOAD im Ziel | Rückkehrdienst |
 | --- | --- | --- | --- |
-| (wird mit Phase 4 ausgefüllt) | | | |
+| toy-piano 0.4 | PASS (161172 B, `d61c84c2338239d4…`) | keine | ja (S1+S16, SysEx PM) |
+| reverb-fx 0.4.0 | PASS (147460 B, `fe37f066aeb3a074…`) | keine | ja (S1+S16, SysEx PM) |
+| looper 0.4.0 | PASS (166712 B, `060834287e89f08a…`) | keine | ja (S1+S16, SysEx PM) |
+| step-seq 0.1.0 | PASS (158216 B, `07e259c5f1b24789…`) | keine | ja (S1+S16, SysEx PM) |
+| toy-piano-ambient, toy-piano-tape, looper-mod | nicht gebaut in dieser Sitzung; gleiche main.cpp, Rückkehrdienst enthalten | wie Basisprodukt (`.axi_bss` bei AMB_COMPACT=1 → `--noload .axi_bss`) | ja |
+| übrige Produkte (physical-modeling*, granular, tape-fx, drive-fx, delay-fx, acid-*, streichwurst*, mod-bench) | nicht geprüft | – | nein (Legacy: Rückkehr nur über Service) |
