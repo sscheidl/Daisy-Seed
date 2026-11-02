@@ -120,29 +120,57 @@ struct InstrumentInfo {
 
 `*` = destination that needs a new modulation hook in the DSP or FX component.
 
+### 5.0 Orientation: the hardware models (owner request 02.11.2026)
+
+The extra destinations follow what the **hardware model** of an instrument makes
+modulatable, where there is one: its CV inputs, or for a MIDI desktop synth its
+controllers and modulation wheel. Order of a catalog:
+
+1. VR1–VR8 of the main page (decision 2);
+2. further parameters the model modulates (CV input or MIDI controller);
+3. own additions only where they earn their place, marked "own", decided case by case.
+
+| Our instrument | Model | What the model modulates (source) |
+| --- | --- | --- |
+| Physical Modeling | Mutable Instruments Rings | CV: V/Oct and FM (pitch), Structure, Brightness, Damping, Position. No CV for excitation level or the output mix |
+| Granular | Qu-Bit Nebulae v2 | CV (±5 V) for Start, Speed, Size, Density, Pitch, Overlap, Window, plus 1V/Oct; Blend CV not confirmed from a primary source |
+| Looper | Qu-Bit Stardust | Knob plus CV for Start, Size, Slice, Skip (our firmware analysis); 1V/Oct on speed; Start CV can drive the Frippertronics decay instead; per a review, every control except Loop Mode and Effect Type has a CV input (9 CV inputs, incl. Mix and In Level) |
+| Streichwurst | Waldorf Streichfett | No CV. MIDI CC 70–82 and 91–94: registration, octaves, release, crescendo, ensemble type, ensemble, solo tone, solo tremolo, split, solo sustain, solo attack, solo decay, balance, FX type, animate, phaser, reverb. Modulation wheel (CC 1): vibrato level and speed of strings and solo |
+| Toy Piano | — (own instrument) | curated by us |
+
+Sources: Streichfett reference manual, MIDI implementation and "Modulation wheel"
+(manualsdir.com, pages 18, 22, 23); Nebulae v2 firmware 2.1.2 cheat sheet
+(cheatography.com, a draft); Stardust: `instruments/looper/docs/STARDUST_ANALYSIS.md`,
+Sound On Sound review, Perfect Circuit manual excerpt. Exact CV lists of Nebulae and
+Stardust are to be confirmed against the official manuals before those firmwares adopt
+their catalogs.
+
 ### 5.1 Streichwurst (pilot) — proposal for owner confirmation
 
-| # | Destination | Control | Span (depth 100) | Note |
-| --- | --- | --- | --- | --- |
-| 1 | Registration | VR1 | ±100 % | column today |
-| 2 | Crescendo* | VR2 | ±100 % | swell time; whether running notes follow is to be checked in the DSP |
-| 3 | Release* | VR3 | ±100 % | as Crescendo |
-| 4 | Balance | VR4 | ±100 % | column today |
-| 5 | Animate | VR5 | ±100 % | column today |
-| 6 | Phaser | VR6 | ±100 % | column today |
-| 7 | Reverb | VR7 | ±100 % | column today |
-| 8 | Master* | VR8 | ±100 % | default slot by decision 2 |
-| 9 | Pitch | — | ±1 st | column today (vibrato) |
-| 10 | Solo Tone | Solo VR1 | ±100 % | column today |
-| 11 | Tremolo depth | Solo VR4 | ±100 % | column today |
-| 12 | Tremolo rate* | Solo VR5 | ±100 % | log |
-| 13 | Animate rate* | FX VR2 | ±100 % | log |
-| 14 | Phaser rate* | FX VR4 | ±100 % | log |
-| 15 | Reverb decay* | FX VR6 | ±100 % | |
+| # | Destination | Control | Streichfett | Span (depth 100) | Note |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Registration | VR1 | CC 70 | ±100 % | column today |
+| 2 | Crescendo* | VR2 | CC 73 | ±100 % | swell time; whether running notes follow is to be checked in the DSP |
+| 3 | Release* | VR3 | CC 72 | ±100 % | as Crescendo |
+| 4 | Balance | VR4 | CC 82 | ±100 % | column today |
+| 5 | Animate | VR5 | CC 92 | ±100 % | column today |
+| 6 | Phaser | VR6 | CC 93 | ±100 % | column today |
+| 7 | Reverb | VR7 | CC 94 | ±100 % | column today |
+| 8 | Master* | VR8 | — | ±100 % | default slot by decision 2 |
+| 9 | Pitch (vibrato) | — | mod wheel | ±1 st | column today; the Streichfett's only built-in modulation |
+| 10 | Solo Tone | Solo VR1 | CC 76 | ±100 % | column today |
+| 11 | Tremolo depth | Solo VR4 | CC 77 | ±100 % | column today |
+| 12 | Solo Attack* | Solo VR2 | CC 80 | ±100 % | `latched` (read at the strike) |
+| 13 | Solo Release* | Solo VR3 | CC 81 | ±100 % | Streichfett "decay"; `latched` unless the DSP reads it continuously |
+| 14 | Solo Sustain* | Solo VR6 | CC 79 | ±100 % | |
+| 15 | Tremolo rate* | Solo VR5 | — | ±100 % | own (the Streichfett has one tremolo control) |
+| 16 | Animate rate* | FX VR2 | — | ±100 % | own |
+| 17 | Phaser rate* | FX VR4 | — | ±100 % | own |
+| 18 | Reverb decay* | FX VR6 | — | ±100 % | own |
 
-Not in the catalog: enums and switches (Octaves, sustain mode, Layer/Split, ensemble
-mode/on), keyboard settings (split key, bend range, transpose, tune, velocities), solo
-envelope times and sustain, MIDI channel, pot page, preset.
+Not in the catalog: switches and steps (octaves, ensemble type/on, layer/split, sustain
+mode, FX type), keyboard settings (split key, bend range, transpose, tune, velocities),
+MIDI channel, pot page, preset. Entries 15–18 are own additions and can be dropped.
 
 ### 5.2 Toy Piano (reference instrument) — proposal for owner confirmation
 
@@ -161,8 +189,9 @@ clock, whose limits stay in `effects/reverb/src/`.
 
 | Firmware | Default slots VR1–VR8 | Further catalog entries |
 | --- | --- | --- |
-| Physical Modeling | Pitch, Structure, Brightness, Damping, Position, Excitation, Reverb Decay*, Dry/Wet | Level |
-| Looper | Speed, Inertia, Slope*, Start, Size, Slice, Skip, Fripp Decay | Mix |
+| Physical Modeling | Pitch, Structure, Brightness, Damping, Position, Excitation, Reverb Decay*, Dry/Wet | Level (own); VR1–VR5 are exactly the Rings CV inputs |
+| Looper | Speed, Inertia, Slope*, Start, Size, Slice, Skip, Fripp Decay | Mix, In Level*, tape effect amount* (Stardust CV) |
+| Granular (no matrix yet) | Start, Speed, Size, Density, Pitch, Overlap, Blend, Window | — (the eight pots are the Nebulae CV parameters) |
 
 Notes:
 
