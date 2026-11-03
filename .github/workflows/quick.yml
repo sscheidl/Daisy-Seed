@@ -129,3 +129,9 @@ jobs:
       - name: Acid Seq product host tests (end-to-end golden, firmware on fakes)
         if: steps.changes.outputs.acidseq == 'true'
         run: make -C sequencers/acid-seq test
+      - name: Streichwurst host tests (FX component, instrument, product, firmware on fakes)
+        if: steps.changes.outputs.streichwurst == 'true'
+        run: |
+          python3 sequencers/step-seq/tools/gen_params.py --check
+          make -C effects/streichwurst-fx test
+          make -C instruments/streichwurst test

@@ -1,69 +1,69 @@
 # Tape FX
 
-Wiederverwendbare Stereo-Bandmaschinen-Komponente (`tape-fx` 0.1.0), portiert aus
-den drumlogue-Master-Effekten **TapeVibe** (Kern, klangliche Referenz) und
-**MixForge** (zuschaltbare Zusatzstufen) in `sscheidl/drumlogue_fx_units`. Dazu
-zwei Buildziele zum Anhören:
+Reusable stereo tape machine component (`tape-fx` 0.1.0), ported from
+the drumlogue master effects **TapeVibe** (core, sonic reference) and
+**MixForge** (switchable additional stages) in `sscheidl/drumlogue_fx_units`. Plus
+two build targets for listening:
 
-| Projekt | Inhalt | Status |
+| Project | Content | Status |
 | --- | --- | --- |
-| `tape-fx` | Stereo-Line-Eingang → Tape FX → Ausgang | Host-/Sanitizer-/ARM-Prüfungen bestanden, Hardware NICHT GEMESSEN |
-| `toy-piano-tape` | Toy Piano → Tape FX → Ausgang ([Beschreibung](../../instruments/toy-piano/docs/TAPE.md)) | Host-/Sanitizer-/ARM-Prüfungen bestanden, Hardware NICHT GEMESSEN |
+| `tape-fx` | Stereo line input → Tape FX → output | Host/sanitizer/ARM checks passed, hardware NOT MEASURED |
+| `toy-piano-tape` | Toy Piano → Tape FX → output ([description](../../instruments/toy-piano/docs/TAPE.md)) | Host/sanitizer/ARM checks passed, hardware NOT MEASURED |
 
-Funktionen: Wow, Flutter, Drive mit dynamischer Bandkompression, Head Bump,
-Tone/Age, Hiss und Dropouts in drei Charakteren (Studio, Tape, Cassette) – alles
-TapeVibe. Optional aus MixForge: weitere Drive-Kurven (TAPE mit Pre-/De-Emphasis,
-HARD, FOLD), stereo-gekoppelter Kompressor und Bitcrusher.
+Functions: wow, flutter, drive with dynamic tape compression, head bump,
+tone/age, hiss and dropouts in three characters (Studio, Tape, Cassette) – all
+TapeVibe. Optional from MixForge: further drive curves (TAPE with pre-/de-emphasis,
+HARD, FOLD), stereo-linked compressor and bitcrusher.
 
 ## API
 
 ```cpp
-#include "effects/tape-fx/src/tape_fx.h"    // DSP, nur Wet (common/audio/fx_contract.h)
-#include "effects/tape-fx/src/tape_mixer.h" // Host: Dry/Wet, Bypass, Ausgangsschutz
+#include "effects/tape-fx/src/tape_fx.h"    // DSP, wet only (common/audio/fx_contract.h)
+#include "effects/tape-fx/src/tape_mixer.h" // host: Dry/Wet, bypass, output protection
 
-static DSY_SDRAM_BSS seed::fx::TapeFx::Storage memory; // 16 KiB, Region wählt der Host
+static DSY_SDRAM_BSS seed::fx::TapeFx::Storage memory; // 16 KiB, the host chooses the region
 seed::fx::TapeFx tape;
 seed::fx::TapeMixer mixer;
 
-seed::fx::tape::Parameters p;   // Standard = TapeVibe-Initialwerte, MixForge aus
-tape.SetParameters(p);          // jederzeit; Werte gleiten 15 ms
-tape.Prepare({48000, 48}, memory); // nur beim Start; nur 48 kHz
+seed::fx::tape::Parameters p;   // default = TapeVibe initial values, MixForge off
+tape.SetParameters(p);          // any time; values glide over 15 ms
+tape.Prepare({48000, 48}, memory); // only at startup; 48 kHz only
 mixer.Reset(0.4f, false);
 
-tape.Process({in_l, in_r, out_l, out_r, n}); // Wet; In-place je Kanal erlaubt
-mixer.Process(in_l, in_r, out_l, out_r, n);  // out = Mix aus Dry und Wet, geschützt
-tape.Reset();                                 // Zustand und Rauschfolge wie TapeVibe
+tape.Process({in_l, in_r, out_l, out_r, n}); // wet; in-place per channel allowed
+mixer.Process(in_l, in_r, out_l, out_r, n);  // out = mix of dry and wet, protected
+tape.Reset();                                 // state and noise sequence as in TapeVibe
 ```
 
-`Process` ist allokations-, sperr- und I/O-frei und begrenzt. Parameter sind
-normalisiert (`drive`, `tone`, `age`, `wow`, `flutter`, `hiss`, `dropout` 0..1;
-`Parameters::FromPercent(n)` ist die exakte drumlogue-Umrechnung). Ungültige Werte
-werden begrenzt, NaN/Inf durch Standardwerte ersetzt.
+`Process` is free of allocation, locks and I/O and bounded. Parameters are
+normalized (`drive`, `tone`, `age`, `wow`, `flutter`, `hiss`, `dropout` 0..1;
+`Parameters::FromPercent(n)` is the exact drumlogue conversion). Invalid values
+are clamped, NaN/Inf replaced by default values.
 
-## Build und Tests
+## Build and tests
 
 ```bash
-make PROJECT=tape-fx test            # DSP-Hosttests + Firmware-Bedienung
+make PROJECT=tape-fx test            # DSP host tests + firmware controls
 make PROJECT=tape-fx test-sanitize   # ASan/UBSan
 make PROJECT=tape-fx test-thread     # TSan
-make PROJECT=tape-fx -j4             # ARM-Image build/TapeFx-v0.1.0.bin
+make PROJECT=tape-fx -j4             # ARM image build/TapeFx-v0.1.0.bin
 make PROJECT=tape-fx manifest
-make -C effects/tape-fx bench        # Host-Zeitmessung (nur relativ)
-make test-fx                         # gemeinsamer FX-Vertrag, alle drei Adapter
+make -C effects/tape-fx bench        # host timing (relative only)
+make test-fx                         # shared FX contract, all three adapters
 python3 scripts/check-tape-elf.py effects/tape-fx/build/TapeFx-v0.1.0.elf
 ```
 
-Die Hosttests vergleichen den Referenzpfad bitgenau mit dem unveränderten
-drumlogue-Code in `tests/reference/` ([Herkunft](tests/reference/UPSTREAM.md)) und
-messen Wow-/Flutter-Raten und -Tiefen, Drive-Kennlinien, Hiss-Pegel,
-Dropout-Raten, Stereo-Trennung, Bypass, Parameterwechsel, Reset und 10 Minuten
-Laufzeit bei Extremwerten.
+The host tests compare the reference path bit-exactly with the unmodified
+drumlogue code in `tests/reference/` ([origin](tests/reference/UPSTREAM.md)) and
+measure wow/flutter rates and depths, drive curves, hiss level,
+dropout rates, stereo separation, bypass, parameter changes, reset and 10 minutes
+of runtime at extreme values.
 
-* [Technischer Bericht](docs/REPORT.md): Architektur, Abweichungen, Optimierungen,
-  CPU- und Speicherbedarf.
-* [Hardware-Hörtest](docs/HARDWARE_TEST.md): Bedienung und Prüfablauf beider Images.
-* Fertige Hörtest-Images mit Prüfsummen, Bedienungsanleitung und Cheatsheet (PDF):
-  [releases/tape-fx-0.1.0](../../releases/tape-fx-0.1.0/). PDF-Quellen: `docs/print/`.
+* [Technical report](docs/REPORT.md): architecture, deviations, optimizations,
+  CPU and memory requirements.
+* [Hardware listening test](docs/HARDWARE_TEST.md): controls and test procedure for both images.
+* Ready-made listening test images with checksums, user manual and cheat sheet (PDF):
+  [releases/tape-fx-0.1.0](../../releases/tape-fx-0.1.0/). PDF sources: `docs/print/`.
 
-Stardust (`instruments/looper/`) ist nicht verändert. Die Komponente ist für eine
-spätere Integration dort vorbereitet (16 KiB Delay-Speicher im SDRAM-Rest).
+Stardust (`instruments/looper/`) is not changed. The component is prepared for a
+later integration there (16 KiB delay memory in the remaining SDRAM).

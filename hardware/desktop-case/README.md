@@ -1,243 +1,243 @@
-# Desktop-Gehäuse / Paper on Daisy
+# Desktop case / Paper on Daisy
 
-**Fortsetzung nach dem Testdruck:** [Übergabe und Ziele der nächsten Gehäuseversion](v4/POST_PRINT_HANDOVER.md)
-mit [Einstiegstext für einen neuen Chat](v4/START_NEXT_CHAT.md).
+**Continuation after the test print:** [Handover and goals of the next case version](v4/POST_PRINT_HANDOVER.md)
+with [starter text for a new chat](v4/START_NEXT_CHAT.md).
 
-**Aktueller Stand, 27.10.2026:** [V4 als vollständiger erster Gehäusedruck](v4/full/V4.md),
-auf ausdrücklichen Nutzerwunsch ohne vorgeschaltete Couponbestellung.
-**Vier Druckteile**, zwei 1-mm-Acrylplatten und Papier; Originalkappen direkt
-aufstecken und seitlich führen. [Druckpaket](v4/full/V4-KOMPLETTDRUCK.zip)
-mit vier STLs, drei vorpositionierten 3MF-Platten, SVGs und Montage/Einkauf.
-Digital geprüft; Hardware **NICHT GEMESSEN**.
-Rückblendenbefestigungen jetzt im freien Mittelbereich, einschließlich
-Kopf-/Werkzeug-/Mutternzugang geprüft. Die dünnen Stege zwischen den
-gepaarten Buchsentaschen sind entfernt. Das ZIP aus Stand b904a7e ist ersetzt.
+**Current status, 2026-10-27:** [V4 as a complete first case print](v4/full/V4.md),
+at the user's explicit request without a preceding coupon order.
+**Four printed parts**, two 1 mm acrylic sheets and paper; original caps fitted directly
+and guided laterally. [Print package](v4/full/V4-KOMPLETTDRUCK.zip)
+with four STLs, three pre-positioned 3MF plates, SVGs and assembly/purchasing.
+Checked digitally; hardware **NOT MEASURED**.
+Rear panel fastenings now in the free middle area, including
+head/tool/nut access checked. The thin webs between the
+paired jack pockets have been removed. The ZIP from state b904a7e is superseded.
 
-**Für die zunächst geplante reine Passprobe:** [Sparprofil und eigener Druckauftrag](v4/fit-print/README.md)
-mit [separatem ZIP](v4/fit-print/V4-PASSPROBE-SPARPROFIL.zip): gleiche vier geprüfte
-STLs, Anfrage für PLA / 0,20 mm / 20 % Füllung, ohne kosmetische Nachbearbeitung.
-Preisvorteil noch nicht kalkuliert; endgültiges Acryl zunächst zurückstellen.
+**For the originally planned pure fit test:** [Economy profile and separate print order](v4/fit-print/README.md)
+with a [separate ZIP](v4/fit-print/V4-PASSPROBE-SPARPROFIL.zip): the same four checked
+STLs, request for PLA / 0.20 mm / 20 % infill, without cosmetic post-processing.
+Price advantage not yet calculated; put the final acrylic on hold for now.
 
-## Fertigungsanbieter
+## Manufacturing suppliers
 
-Diese beiden Anbieter wurden bereits für das PreenFM2-Gehäuse genutzt;
-am 26.10.2026 anhand der vorhandenen Auftragsbelege zugeordnet:
+These two suppliers were already used for the PreenFM2 case;
+assigned on 2026-10-26 from the existing order documents:
 
-| Anbieter | Leistung | Früherer PreenFM2-Auftrag |
+| Supplier | Service | Earlier PreenFM2 order |
 | --- | --- | --- |
-| [Lazycut](https://lazycut.de/) | Laserzuschnitt der Acrylplatten | Auftrag AU-202609-10258 vom 08.09.2026 nennt „Plexiglas 1 mm klar“. |
-| [3ddruck-express.de](https://3ddruck-express.de/) | FDM-Druck der Gehäuseteile | Bestellung 4431 vom 15.08.2026: PETG-CF schwarz, 0,12-mm-Schichten; Wanne 40 %, Rückblende 60 % Füllung. |
+| [Lazycut](https://lazycut.de/) | Laser cutting of the acrylic sheets | Order AU-202609-10258 of 2026-09-08 lists "Plexiglas 1 mm klar" (Plexiglas 1 mm clear). |
+| [3ddruck-express.de](https://3ddruck-express.de/) | FDM printing of the case parts | Order 4431 of 2026-08-15: PETG-CF black, 0.12 mm layers; tray 40 %, rear panel 60 % infill. |
 
-Für den neuen V4-Auftrag gelten die [aktuellen Druck- und Acrylvorgaben](v4/full/V4.md#fertigungsauftrag).
-Die früheren Einstellungen dienen als Bestellhistorie. Die privaten Rechnungen
-und Bestell-E-Mails bleiben außerhalb des Repositorys.
+For the new V4 order the [current print and acrylic specifications](v4/full/V4.md#fertigungsauftrag) apply.
+The earlier settings serve as order history. The private invoices
+and order e-mails stay outside the repository.
 
-## Frühere Entwürfe und Prüfungen
+## Earlier designs and reviews
 
-Die folgenden Abschnitte dokumentieren ältere Entwürfe. Die frühere Empfehlung,
-vor dem Komplettdruck Coupons zu bestellen, ist für V4 durch die neue
-Nutzerentscheidung ersetzt. [Dreier-Lochprobe](v4/simple-guide/README.md)
-und [Katalog C1–C7](v4/COUPONS.md) bleiben optionale historische Hilfen.
+The following sections document older designs. The earlier recommendation
+to order coupons before the complete print has been replaced for V4 by the new
+user decision. The [three-hole test](v4/simple-guide/README.md)
+and the [catalog C1–C7](v4/COUPONS.md) remain optional historical aids.
 
-**Aktuelle Fehlerprüfung 25.10.2026:** Der [Vergleich von V3 und Claudes
-Gegenentwurf](DESIGN_REVIEW_2026-10-25.md) findet offene Anschlussabstützung,
-fehlende Kappenrückhaltung und weitere konkrete Maß-/Zugangsprobleme.
-Die RH-/ACCESS-Prüfungen decken diese zusätzlichen Anforderungen nicht ab.
-Die vorhandenen STLs sind weiterhin eine Konstruktionsstudie.
+**Current error review 2026-10-25:** The [comparison of V3 and Claude's
+counter-design](DESIGN_REVIEW_2026-10-25.md) finds open connector support,
+missing cap retention and further concrete dimension/access problems.
+The RH/ACCESS checks do not cover these additional requirements.
+The existing STLs are still a design study.
 
-**25.10.2026: [Orientierungskorrektur RH](ORIENTATION_FIX.md). Frühere
-Druck-STLs und ZIP-Pakete nicht verwenden.** Alle V1/V2/V3-STLs sind neu
-exportiert und unabhängig geprüft. Render und Druckdateien benutzen jetzt
-denselben physischen Koordinatenraum.
+**2026-10-25: [Orientation fix RH](ORIENTATION_FIX.md). Do not use earlier
+print STLs and ZIP packages.** All V1/V2/V3 STLs have been re-exported
+and independently checked. Renders and print files now use
+the same physical coordinate space.
 
-**Aktuelle V3 zusätzlich mit [seitlichem Radzugang und erweiterter
-Kopfhöreröffnung](RIGHT_ACCESS.md)** (`ACCESS-2026-10-25`). Die frühere
-10-mm-Höhenannahme für das Lautstärkerad ist korrigiert.
+**Current V3 additionally with [lateral wheel access and enlarged
+headphone opening](RIGHT_ACCESS.md)** (`ACCESS-2026-10-25`). The earlier
+10 mm height assumption for the volume wheel has been corrected.
 
-**Aktueller Entwurf: [durchgehender Druckträger V3](UNIFIED_V3.md).**
-Ein Druckteil verbindet Bedienfläche, Seed-/Buchsenhauben und das angeformte
-Tasterraster. Darauf liegen weiterhin zwei 1-mm-Acrylplatten mit Papier,
-getragen von Metallpfosten und über vier M3-Knurlies lösbar. Buchsen- und
-Schaltermuttern befestigen nur die untere Acrylplatte. Geometrie digital
-geprüft; Kappenhöhe, Pfostentoleranzen, Festigkeit und Passung am Board
-NICHT GEMESSEN. Noch keine Fertigungsfreigabe.
+**Current design: [continuous print carrier V3](UNIFIED_V3.md).**
+One printed part connects the control surface, Seed/jack hoods and the molded-on
+button grid. On top of it there are still two 1 mm acrylic sheets with paper,
+carried by metal standoffs and removable via four M3 Knurlies. Jack and
+switch nuts fasten only the lower acrylic sheet. Geometry checked
+digitally; cap height, standoff tolerances, strength and fit on the board
+NOT MEASURED. No manufacturing release yet.
 
-Eine [detaillierte Baugruppenansicht mit KiCad-Bestückung, Seed3-Modell,
-Materialien und GLB-/STL-Export](REALISTIC_RENDER.md) ergänzt den CAD-Entwurf.
+A [detailed assembly view with KiCad component placement, Seed3 model,
+materials and GLB/STL export](REALISTIC_RENDER.md) complements the CAD design.
 
-Die [V2 mit getrennten Hauben und Raster](CLOSED_V2.md) bleibt als frühere
-Konstruktionsstudie erhalten.
+The [V2 with separate hoods and grid](CLOSED_V2.md) is kept as an earlier
+design study.
 
-## Erster Entwurf V1 (Referenz)
+## First design V1 (reference)
 
-Ein **offener, verschraubter Prototyp** für das Seed3 Desktop Dev Kit: Wanne,
-separater Oberrahmen und austauschbare Papierbeschriftung. Eine optionale
-transparente 1-mm-Platte schützt das Papier auf dem Rahmen. Die Buchsen,
-Seed-Servicefläche, BOOT/RESET und microSD bleiben ausgespart.
+An **open, screwed prototype** for the Seed3 Desktop Dev Kit: tray,
+separate top frame and replaceable paper labeling. An optional
+transparent 1 mm sheet protects the paper on the frame. The jacks,
+Seed service area, BOOT/RESET and microSD remain cut out.
 
-**Stand 24.10.2026: CAD digital geprüft; Druck, Passform am Board und
-mechanische Anschlussentlastung NICHT GEMESSEN.** Die Dateien sind für einen
-ersten Passprototyp vorgesehen. Vor einem kostenpflichtigen Komplettdruck
-zuerst die Papierschablone und das kleine Prüfstück verwenden.
+**Status 2026-10-24: CAD checked digitally; print, fit on the board and
+mechanical connector strain relief NOT MEASURED.** The files are intended for a
+first fit prototype. Before a paid complete print,
+use the paper template and the small test piece first.
 
-![CAD-Prototyp, Elektronik und montierte Kappen nur schematisch](prototype/case-preview.png)
+![CAD prototype, electronics and mounted caps only schematic](prototype/case-preview.png)
 
-Die Elektronik in der Vorschau zeigt Anordnung und Freiräume; sie ist kein
-vollständiges Hersteller-3D-Modell. Insbesondere ist die dargestellte montierte
-Kappenhöhe nicht als Maßnachweis zu verwenden. Die transparente Schutzplatte ist
-in der Vorschau weggelassen; die helle Fläche stellt das Papier dar.
+The electronics in the preview show arrangement and clearances; they are not a
+complete manufacturer 3D model. In particular, the shown mounted
+cap height must not be used as proof of dimensions. The transparent protective sheet is
+omitted in the preview; the light surface represents the paper.
 
-## Dateien
+## Files
 
-Die direkt verwendbaren Dateien liegen in [prototype/](prototype/):
+The directly usable files are in [prototype/](prototype/):
 
-| Datei | Zweck |
+| File | Purpose |
 | --- | --- |
-| `tray.stl` | Wanne mit vier PCB-Auflagen, M3-Muttertaschen, Deckelpfosten und Kabelbinder-Schlitzen |
-| `overlay-frame.stl` | Flach druckbarer Oberrahmen mit acht Potiöffnungen und zwei Schalterfenstern |
-| `fit-coupon.stl` | Kleines Prüfstück, 62 × 24 mm, für Schrauben, Mutter und Öffnungen |
-| `paper-master-a4.pdf` | A4 quer, 1:1; neutrale Passschablone mit 100-mm-Kontrollstrecke |
-| `clear-cover-cut.svg` | Reine Schnittkonturen in mm für die optionale Klarplatte; keine Gravur |
-| `case-preview.png` | Vorschau der tatsächlichen STL-Geometrie mit schematischer Elektronik |
-| `validation.json` | Digitale Prüfergebnisse und SHA-256 der Quellen und Druckdateien |
+| `tray.stl` | Tray with four PCB supports, M3 nut pockets, lid posts and cable tie slots |
+| `overlay-frame.stl` | Flat-printable top frame with eight pot openings and two switch windows |
+| `fit-coupon.stl` | Small test piece, 62 × 24 mm, for screws, nut and openings |
+| `paper-master-a4.pdf` | A4 landscape, 1:1; neutral fit template with 100 mm control distance |
+| `clear-cover-cut.svg` | Pure cut contours in mm for the optional clear sheet; no engraving |
+| `case-preview.png` | Preview of the actual STL geometry with schematic electronics |
+| `validation.json` | Digital test results and SHA-256 of the sources and print files |
 
-Alle STL-Dateien verwenden **Millimeter**, liegen mit der Druckfläche auf Z=0
-und werden einzeln, ohne Skalierung importiert. Die große Bauteilfläche beträgt
-215 × 129 mm; bei einer Brim zusätzlich deren Breite auf beiden Seiten vorsehen.
-Kein Firmware-Build und keine GitHub-Actions-Ausführung werden benötigt.
+All STL files use **millimeters**, lie with the print surface on Z=0
+and are imported individually, without scaling. The large part footprint is
+215 × 129 mm; with a brim, also allow for its width on both sides.
+No firmware build and no GitHub Actions run are needed.
 
-## Maßgrundlage und Entwurfsmaße
+## Dimensional basis and design dimensions
 
-Die mechanischen Daten stammen aus den offiziellen
-[KiCad-Dateien](https://github.com/daisyaudio/Seed3-DevKit-Desktop/tree/987297fb7c9a8c58721ef40abf6d6eedd1fcda2a/pcb),
-nicht aus einem skalierten Produktfoto. Die vier veröffentlichten Revisionen
-wurden mit KiCad 10.0.6 ausgelesen und für Konturabmessungen, PCB-Dicke,
-Befestigungsbohrungen und die Mittelpunkte aller Bedienelemente verglichen.
-Diese Werte sind für Rev1 bis Rev4 gleich. Das ist keine Aussage über die
-vollständige elektrische oder dreidimensionale Gleichheit der Revisionen.
+The mechanical data come from the official
+[KiCad files](https://github.com/daisyaudio/Seed3-DevKit-Desktop/tree/987297fb7c9a8c58721ef40abf6d6eedd1fcda2a/pcb),
+not from a scaled product photo. The four published revisions
+were read out with KiCad 10.0.6 and compared for outline dimensions, PCB thickness,
+mounting holes and the center points of all controls.
+These values are the same for Rev1 to Rev4. This is no statement about the
+complete electrical or three-dimensional identity of the revisions.
 
-| Größe | Wert | Herkunft |
+| Quantity | Value | Source |
 | --- | --- | --- |
-| PCB-Kontur | 197 × 111 mm, Eckradius 2,5 mm | KiCad-Kantenmittellinien |
-| PCB-Dicke | 1,6 mm | KiCad-Platinenaufbau |
-| Bohrungen | 4 × Ø 3,5 mm | KiCad-Mounting-Pads |
-| Lochabstand | 187 × 101 mm | Differenz der Pad-Mittelpunkte |
-| Poti-Raster | 15,279 mm | KiCad VR1–VR8 |
-| Taster-Raster | 12,285714 mm horizontal, 16 mm zwischen den Reihen | KiCad S1–S16 |
-| Gehäusefläche | 215 × 129 mm | Entwurf |
-| Boden / Seitenwand | 2,8 / 2,4 mm | Entwurf |
-| PCB-Unterseite über Druckfläche | 8,8 mm; 6 mm über dem Innenboden | Entwurf |
-| Rahmenunterseite über PCB-Oberseite | 9 mm | Einstellbarer Entwurf, Passprobe offen |
-| Rahmen / Gesamthöhe | 2,4 mm / 21,8 mm ohne Füße und Klarplatte | Entwurf |
-| Klarplatte und Papier | optional 1 mm + ca. 0,15 mm | Entwurf |
-| Potiöffnungen | Ø 14 mm | Einstellbarer Entwurf, Knopfdurchmesser prüfen |
+| PCB outline | 197 × 111 mm, corner radius 2.5 mm | KiCad edge center lines |
+| PCB thickness | 1.6 mm | KiCad board stackup |
+| Holes | 4 × Ø 3.5 mm | KiCad mounting pads |
+| Hole spacing | 187 × 101 mm | Difference of the pad center points |
+| Pot pitch | 15.279 mm | KiCad VR1–VR8 |
+| Button pitch | 12.285714 mm horizontal, 16 mm between the rows | KiCad S1–S16 |
+| Case footprint | 215 × 129 mm | Design |
+| Floor / side wall | 2.8 / 2.4 mm | Design |
+| PCB underside above print surface | 8.8 mm; 6 mm above the inner floor | Design |
+| Frame underside above PCB top | 9 mm | Adjustable design, fit test open |
+| Frame / total height | 2.4 mm / 21.8 mm without feet and clear sheet | Design |
+| Clear sheet and paper | optional 1 mm + approx. 0.15 mm | Design |
+| Pot openings | Ø 14 mm | Adjustable design, check knob diameter |
 
-Nullpunkt in `board.json`: hinten links an der Platine; X nach rechts,
-Y zur spielenden Person. Beispielsweise H1=(5,5), H2=(5,106), H3=(192,5),
-H4=(192,106). Die 0,05 mm Zeichenstrichbreite von Edge.Cuts zählt nicht zum PCB.
-Dateinamen, Commit und SHA-256 aller vier Quelldateien stehen in `board.json`.
+Origin in `board.json`: rear left of the board; X to the right,
+Y towards the player. For example H1=(5,5), H2=(5,106), H3=(192,5),
+H4=(192,106). The 0.05 mm drawing line width of Edge.Cuts does not count as PCB.
+File names, commit and SHA-256 of all four source files are in `board.json`.
 
-Nicht alle Bauteile besitzen im Herstellerprojekt ein vollständiges 3D-Modell.
-Die großzügigen Servicefenster und oben offenen Anschlussausschnitte vermeiden
-deshalb eng passende, unbestätigte Buchsenkonturen. Die Höhe des Rahmens und die
-Zugänglichkeit mit den tatsächlich montierten Knöpfen und Kabeln bleiben bei der
-Passprobe zu bestätigen. Bei Knöpfen über etwa 13 mm Durchmesser muss die
-Potiöffnung angepasst oder der Knopf zur Montage abgezogen werden. Die
-gemeinsame Potiöffnung darf wegen der schmalen Zwischenstege nicht beliebig
-vergrößert werden.
+Not all components have a complete 3D model in the manufacturer project.
+The generous service windows and connector cutouts open at the top therefore avoid
+tight-fitting, unconfirmed jack outlines. The frame height and
+accessibility with the knobs and cables actually fitted remain to be confirmed in the
+fit test. For knobs above about 13 mm diameter the
+pot opening must be adapted or the knob pulled off for assembly. The
+shared pot opening must not be enlarged arbitrarily because of the narrow
+webs in between.
 
-## Paper on Daisy und bestellte Kappen
+## Paper on Daisy and ordered caps
 
-Aus dem [bestehenden Konzept](https://chatgpt.com/share/6adce96c-8884-83ed-b405-74142ff307ea)
-übernommen: **ein gemeinsames Fenster für alle 16 Taster und ihre LEDs**,
-acht Potiöffnungen, zwei großzügige Schalteröffnungen, wechselbare Papierauflage
-und optional eine klare Abdeckung. Die neutrale Schablone trägt zunächst nur
-VR1–VR8, S1–S16 und SW17/SW18; instrumentbezogene Funktionsbeschriftungen können
-auf derselben Geometrie aufgebaut werden.
+Taken over from the [existing concept](https://chatgpt.com/share/6adce96c-8884-83ed-b405-74142ff307ea):
+**one shared window for all 16 buttons and their LEDs**,
+eight pot openings, two generous switch openings, a replaceable paper overlay
+and optionally a clear cover. The neutral template initially carries only
+VR1–VR8, S1–S16 and SW17/SW18; instrument-specific function labels can
+be built on the same geometry.
 
-Die Bestellung enthält jeweils 32 E-Switch **1SBLK** (schwarz, quadratisch) und
-**1RLGR** (hellgrau, rund). Herstellerangaben:
+The order contains 32 each of E-Switch **1SBLK** (black, square) and
+**1RLGR** (light gray, round). Manufacturer data:
 [1S](https://www.e-switch.com/product/1s/) 5 × 5 × 9 mm,
 [1R](https://www.e-switch.com/product/1r/) Ø 5 × 9 mm.
-Die vorhandenen TL1105SPF250Q bleiben auf der Platine. Die Kappen werden auf die
-Betätiger gesteckt; ein selbstgebauter Tastenmechanismus gehört nicht zu V1.
-Die Kappenhöhe von 9 mm ist **nicht** die zusätzliche Höhe über dem vollständig
-montierten Taster. Sitz, Hub und montierte Höhe am eigenen Board:
-**NICHT GEMESSEN**.
+The existing TL1105SPF250Q stay on the board. The caps are pushed onto the
+actuators; a self-built key mechanism is not part of V1.
+The cap height of 9 mm is **not** the additional height above the fully
+mounted button. Fit, travel and mounted height on our own board:
+**NOT MEASURED**.
 
-Das 96 × 31,5 mm große Fenster lässt beide Kappenformen einschließlich
-0,3 mm Freiraum je Seite sowie alle LEDs in der Draufsicht frei. Die Platte
-führt oder hält die einzelnen Kappen nicht und liegt nicht auf den Tastern auf.
-Papier und Klarplatte werden auf dem Oberrahmen mit dessen vier separaten
-Schrauben gehalten. Zum Papierwechsel muss der Rahmen nicht von den
-PCB-Schrauben gelöst werden. Ein Blatt kann am äußeren Rand geringfügig kleiner
-geschnitten werden, damit es nicht übersteht.
+The 96 × 31.5 mm window leaves both cap shapes including
+0.3 mm clearance per side as well as all LEDs free in top view. The sheet
+does not guide or hold the individual caps and does not rest on the buttons.
+Paper and clear sheet are held on the top frame with its four separate
+screws. To change the paper, the frame does not have to be released from the
+PCB screws. A sheet can be cut slightly smaller at the outer edge
+so that it does not protrude.
 
-## Anschlussentlastung
+## Connector strain relief
 
-Vier PCB-Schrauben verbinden die Platine mit der Wanne. Zusätzlich befinden sich
-neben den vier Audiobuchsen, den drei DIN-Buchsen, beiden USB-Zugängen und dem
-Kopfhöreranschluss paarweise **2,6 mm breite Durchführungen für schmale
-Kabelbinder** im Boden außerhalb der PCB-Kontur.
+Four PCB screws connect the board to the tray. In addition, next to the four audio jacks,
+the three DIN jacks, both USB accesses and the
+headphone jack, there are pairs of **2.6 mm wide slots for narrow
+cable ties** in the floor outside the PCB outline.
 
-Die Kabel mit etwas Spiel an den jeweiligen Schlitzpaaren befestigen. Die
-Schlaufe umfasst die Kabelummantelung hinter dem Stecker, ohne einen Stecker
-seitlich zu verspannen oder auf die Platine zu drücken. Die Schlaufen dürfen
-unter dem Boden verlaufen; Füße halten sie vom Tisch frei. Kabel vor dem
-Abziehen lösen. Die Schlitze für den Service-USB bleiben optional.
+Fasten the cables with some slack at the respective slot pairs. The
+loop goes around the cable sheath behind the plug, without stressing a plug
+sideways or pressing on the board. The loops may
+run under the floor; feet keep them off the table. Release the cables before
+unplugging. The slots for the service USB remain optional.
 
-**Die Ausschnitte allein entlasten die Buchsen nicht.** Die Konstruktion besitzt
-keine kraftschlüssige Buchsenklemmung. Erst die befestigten Kabel können Zug in
-die Wanne abgeben. Aufnahme von Zug, Steckkräften und seitlichen Hebelkräften:
-**NICHT GEMESSEN**; V1 ist keine zertifizierte Kabelklemme. Die CV/Gate-Buchsen
-oben haben keine individuellen Kabelbinderpunkte.
+**The cutouts alone do not relieve the jacks.** The design has
+no force-fit jack clamping. Only the fastened cables can transfer tension into
+the tray. Absorption of tension, plug-in forces and lateral leverage:
+**NOT MEASURED**; V1 is not a certified cable clamp. The CV/gate jacks
+at the top have no individual cable tie points.
 
-## Druck, Teile und Montage
+## Print, parts and assembly
 
-Als erster Ansatz: normales PETG, 0,4-mm-Düse, 0,2-mm-Schichten, vier Außenlinien
-und etwa 20–30 % Füllung. Das sind **Startwerte**, keine erprobten Druckparameter.
-Beide Hauptteile flach drucken. Die kleinen Muttertaschen benötigen eine kurze
-Brücke; deren Druckqualität am Prüfstück prüfen. Druckservice kann die
-Parameter passend zu seinem Verfahren wählen.
+As a first approach: normal PETG, 0.4 mm nozzle, 0.2 mm layers, four perimeters
+and about 20–30 % infill. These are **starting values**, not proven print parameters.
+Print both main parts flat. The small nut pockets need a short
+bridge; check its print quality on the test piece. A print service can choose the
+parameters to suit its process.
 
-| Teile | Menge / Zweck |
+| Parts | Quantity / purpose |
 | --- | --- |
-| Gedruckte Wanne und Rahmen | je 1 |
-| M3×12 und normale M3-Muttern | je 4 für die PCB-Befestigung |
-| M3×10, Linsenkopf | 4 für den Rahmen; vorsichtig in Ø-2,6-mm-Kunststoffbohrungen eindrehen |
-| Kleine isolierende M3-Unterlegscheiben | 4 an der PCB, soweit nötig; Sitz auf dem Mounting-Pad prüfen |
-| Gummifüße, mindestens 3 mm hoch | 4; Unterseite und Schraubenenden freihalten |
-| Schmale Kabelbinder, maximal 2,5 mm breit | nach Kabelbelegung, möglichst wieder lösbar |
-| Klarplatte 1 mm und Papier | optional; vorhandenes Material nach Passprobe verwenden |
+| Printed tray and frame | 1 each |
+| M3×12 and normal M3 nuts | 4 each for the PCB mounting |
+| M3×10, pan head | 4 for the frame; screw carefully into Ø 2.6 mm plastic holes |
+| Small insulating M3 washers | 4 on the PCB, as needed; check seating on the mounting pad |
+| Rubber feet, at least 3 mm high | 4; keep the underside and screw ends clear |
+| Narrow cable ties, at most 2.5 mm wide | according to cable assignment, preferably releasable |
+| Clear sheet 1 mm and paper | optional; use existing material after the fit test |
 
-Die unteren Muttertaschen haben 5,7 mm Schlüsselweite und 2,4 mm Tiefe. M3×12
-ragen ohne Unterlegscheibe rechnerisch etwa 1,6 mm unter die Druckfläche; die
-Füße sind deshalb Teil des Aufbaus. Vorhandene M3×14 nicht ungeprüft einsetzen.
-Die Deckelschrauben greifen nur in die vier äußeren Kunststoffpfosten, nicht in
-das Board. Keine Gewindeeinsätze und keine Verklebung erforderlich.
+The lower nut pockets have 5.7 mm width across flats and 2.4 mm depth. Without a washer, M3×12
+protrude by a calculated approx. 1.6 mm below the print surface; the
+feet are therefore part of the assembly. Do not use existing M3×14 without checking.
+The lid screws engage only in the four outer plastic posts, not in
+the board. No threaded inserts and no gluing required.
 
-1. PDF in A4 quer mit **100 % / tatsächlicher Größe** drucken. Kontrollstrecke
-   mit einem Lineal auf exakt 100 mm prüfen; erst dann ausschneiden und auflegen.
-2. Prüfstück drucken. Die zwei kleinen runden Löcher sind Ø 3,4 und Ø 2,6 mm,
-   die Kappenöffnungen Ø 5,6 bzw. 5,6 × 5,6 mm, das große Loch Ø 14 mm. Unten
-   links liegt die M3-Mutterprobe. Schrauben, Mutter und mögliche Potiknöpfe
-   damit prüfen; die Kappen brauchen diese Öffnungen im fertigen Case nicht.
-3. Wanne drucken, Muttern von unten einsetzen. Das stromlose Board auf die vier
-   Auflagen setzen und spannungsfrei verschrauben. Unterseitenfreiheit prüfen.
-4. Tastenkappen aufstecken. Rahmen zunächst lose auflegen. Jeder Poti und
-   Schalter muss seinen gesamten Weg frei erreichen; jede Taste muss vollständig
-   zurückfedern, alle LEDs müssen sichtbar bleiben.
-5. Papier und gegebenenfalls Klarplatte auf den Rahmen legen; vier Deckelschrauben
-   nur leicht anziehen. Bei Spannungen oder blockierten Bedienelementen Maße
-   korrigieren, keine Bauteile in die Öffnungen zwingen.
-6. USB, SD, BOOT/RESET, alle benutzten Buchsen und die Kabelbinder mit den echten
-   Steckern auf Zugänglichkeit prüfen. Kabelschlaufen und Füße montieren.
+1. Print the PDF on A4 landscape at **100 % / actual size**. Check the control distance
+   with a ruler for exactly 100 mm; only then cut out and lay it on.
+2. Print the test piece. The two small round holes are Ø 3.4 and Ø 2.6 mm,
+   the cap openings Ø 5.6 and 5.6 × 5.6 mm, the large hole Ø 14 mm. At the bottom
+   left is the M3 nut test. Use it to check screws, nut and possible pot knobs;
+   the caps do not need these openings in the finished case.
+3. Print the tray, insert the nuts from below. Place the unpowered board on the four
+   supports and screw it down without stress. Check the underside clearance.
+4. Fit the button caps. Initially lay the frame on loosely. Every pot and
+   switch must reach its full travel freely; every button must spring back
+   completely, all LEDs must remain visible.
+5. Lay the paper and, if applicable, the clear sheet on the frame; only lightly tighten the four lid screws.
+   In case of stress or blocked controls, correct the dimensions;
+   do not force any parts into the openings.
+6. Check USB, SD, BOOT/RESET, all used jacks and the cable ties with the real
+   plugs for accessibility. Fit cable loops and feet.
 
-## Lokal reproduzieren
+## Reproducing locally
 
-Benötigt normales Python 3 mit `requirements.txt`; KiCad-Python nur für ein
-erneutes Auslesen der Herstellerdateien. Keine Änderung an den gepinnten
-Firmware-Abhängigkeiten.
+Requires normal Python 3 with `requirements.txt`; KiCad Python only for
+re-reading the manufacturer files. No change to the pinned
+firmware dependencies.
 
 ```powershell
 python -m venv .tools/case
@@ -245,45 +245,45 @@ python -m venv .tools/case
 .tools/case/Scripts/python.exe hardware/desktop-case/build_case.py
 ```
 
-Das erzeugt Dateien unter `hardware/desktop-case/output/` und prüft sie lokal.
-Die eingecheckte Fassung wurde mit Python 3.12 erstellt. Parameterbeispiel:
+This generates files under `hardware/desktop-case/output/` and checks them locally.
+The checked-in version was created with Python 3.12. Parameter example:
 
 ```powershell
 .tools/case/Scripts/python.exe hardware/desktop-case/build_case.py --knob-opening 14 --panel-clearance 9
 ```
 
-Zum erneuten Auslesen die vier unveränderten KiCad-Platinen vom oben genannten
-Hersteller-Commit herunterladen. Alle Pfade einzeln übergeben oder PowerShell
-die Liste erzeugen lassen (Python expandiert Wildcards unter Windows nicht):
+To read them out again, download the four unmodified KiCad boards from the
+manufacturer commit named above. Pass all paths individually or let PowerShell
+generate the list (Python does not expand wildcards on Windows):
 
 ```powershell
 $caseBoards = Get-ChildItem build/case-reference/*.kicad_pcb | ForEach-Object FullName
 & 'C:/Program Files/KiCad/10.0/bin/python.exe' hardware/desktop-case/extract_board.py @caseBoards --output hardware/desktop-case/board.json
 ```
 
-Optional die Vorschau mit Blender erstellen:
+Optionally create the preview with Blender:
 
 ```powershell
 & 'C:/Program Files/Blender Foundation/Blender 5.2/blender.exe' --background --python hardware/desktop-case/render_preview.py
 ```
 
-## Validierung vom 24.10.2026
+## Validation of 2026-10-24
 
-**Digital geprüft:** drei geschlossene, konsistent orientierte STL-Körper mit
-jeweils genau einer zusammenhängenden Komponente; PCB-Kollision mit der Wanne
-0 mm³; Kollision von Wanne und montiertem Rahmen 0 mm³; 16 Kappenhüllflächen
-und 16 LED-Hüllflächen vollständig im offenen Bereich. Die exportierten STL
-wurden erneut eingelesen. PDF als PNG gerendert und visuell geprüft; Vorschau
-aus den STL mit Blender 5.2.1 erzeugt und geprüft. Keine vollständige
-Bauteil- oder Steckerkollisionsprüfung, Festigkeitsberechnung oder Slicerprüfung.
+**Checked digitally:** three closed, consistently oriented STL bodies, each with
+exactly one connected component; PCB collision with the tray
+0 mm³; collision of tray and mounted frame 0 mm³; 16 cap envelopes
+and 16 LED envelopes completely within the open area. The exported STLs
+were read in again. PDF rendered as PNG and checked visually; preview
+generated from the STLs with Blender 5.2.1 and checked. No complete
+component or plug collision check, strength calculation or slicer check.
 
-**Hardware NICHT GEMESSEN:** erster Druck, Schrauben-/Mutterpassung, montierte
-Kappenhöhe und Sitz, Poti-/Schalterbedienung, LED-Sichtwinkel, Kabel-/SD-Zugang,
-Temperatur und mechanische Entlastung. Ergebnisse erst nach der tatsächlichen
-Passprobe als GEMESSEN mit Datum ergänzen.
+**Hardware NOT MEASURED:** first print, screw/nut fit, mounted
+cap height and seating, pot/switch operation, LED viewing angle, cable/SD access,
+temperature and mechanical strain relief. Add results as MEASURED with the date only after the actual
+fit test.
 
-Die frühere Referenz
-[Daisy Pod Case von Planet Zero Designs](https://cults3d.com/de/modell-3d/gadget/daisy-pod-case-by-pzd)
-betrifft das kleinere Pod-Board. Der bestehende Chat nennt sie als konstruktives
-Vorbild; die Cults-Seite liefert beim aktuellen Abruf HTTP 403. Es wurden keine
-fremden STL übernommen oder für das Desktop Kit skaliert.
+The earlier reference
+[Daisy Pod Case by Planet Zero Designs](https://cults3d.com/de/modell-3d/gadget/daisy-pod-case-by-pzd)
+concerns the smaller Pod board. The existing chat names it as a design
+model; the Cults page returns HTTP 403 on the current fetch. No
+third-party STLs were taken over or scaled for the Desktop Kit.

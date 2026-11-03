@@ -179,7 +179,7 @@ void TestHandshakeAndRate() {
     r.Run(1);
     auto got = r.Received();
     CHECK(got.size() == 3);
-    CHECK(got.size() == 3 && StartsWith(got[0], "HELLO proto=1 fw=0.4.0"));
+    CHECK(got.size() == 3 && StartsWith(got[0], "HELLO proto=1 fw=0.4.1"));
     CHECK(got.size() == 3 && StartsWith(got[1], "ST n=0 "));
     CHECK(got.size() == 3 && StartsWith(got[2], "SYS "));
     for(int k = 0; k < 4; ++k) {  // keep the host alive with PINGs
@@ -663,6 +663,58 @@ void TestScopeUnsupportedBoard() {
     CHECK(r.board.tone_writes == 0 || r.board.tone.mode == diag::ToneMode::Off);
 }
 
+void TestScopeBackpressurePreservesStatusAndReplies() {
+    for(const uint16_t frames : {uint16_t{256}, uint16_t{2048}}) {
+        Rig r;
+        r.board.audio = true;
+        r.Host("HELLO proto=1");
+        r.Run(16);
+        r.Received();
+        r.Host("SCOPE n=" + std::to_string(frames) + " t=0");
+        r.Run(1);
+        CHECK(Count(r.Received(), "ACK c=SCOPE ") == 1);
+        r.board.scope_samples.assign(static_cast<size_t>(frames) * 2, 0);
+        r.board.scope_ready = true;
+
+        // A short busy interval crosses the next 50 Hz status deadline. Bulk
+        // snapshot traffic must leave room for that status and a host reply.
+        r.usb.mode = diag::SendResult::Busy;
+        r.Run(5);
+        r.Host("PING n=123");
+        r.Run(5);
+        r.usb.mode = diag::SendResult::Ok;
+        r.Run(100);
+        const auto got = r.Received();
+        CHECK(r.app.stats().tx_drop == 0);
+        CHECK(!r.usb.buffer_reused_in_flight);
+        CHECK(Count(got, "PONG n=123") == 1);
+        CHECK(Count(got, "ST ") >= 5);
+        const int chunks = static_cast<int>((frames + 39) / 40);
+        CHECK(Count(got, "SC ") == chunks);
+        uint32_t expected_seq = 1;
+        uint32_t expected_chunk = 0;
+        size_t hex_digits = 0;
+        for(const auto& body : got) {
+            char text[12];
+            uint32_t value = 0;
+            if(StartsWith(body, "ST ")) {
+                CHECK(ddp::FindField(body.c_str(), "n", text, sizeof(text))
+                      && ddp::ParseU32(text, value));
+                CHECK(value == expected_seq++);
+            } else if(StartsWith(body, "SC ")) {
+                CHECK(ddp::FindField(body.c_str(), "i", text, sizeof(text))
+                      && ddp::ParseU32(text, value));
+                CHECK(value == expected_chunk++);
+                const size_t data = body.find(" d=");
+                CHECK(data != std::string::npos);
+                if(data != std::string::npos)
+                    hex_digits += body.size() - (data + 3);
+            }
+        }
+        CHECK(hex_digits == static_cast<size_t>(frames) * 8);
+    }
+}
+
 void TestPotDimBrightness() {
     Rig r;
     r.Host("HELLO proto=1");
@@ -693,6 +745,7 @@ int main() {
     TestToneLifecycle();
     TestOutputsSilencedBeforeBlockingSdTest();
     TestScopeTransfer();
+    TestScopeBackpressurePreservesStatusAndReplies();
     TestScopeUnsupportedBoard();
     TestPotDimBrightness();
     TestSilentUntilHello();

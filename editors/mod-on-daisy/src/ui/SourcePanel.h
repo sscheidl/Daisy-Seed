@@ -32,7 +32,7 @@ class SourcePanel : public juce::Component {
         gate_.addItem("Gate 1", 1);
         gate_.addItem("Gate 2", 2);
         gate_.onChange = [this] { Edit(mod::ParamGate, unsigned(gate_.getSelectedId() - 1)); };
-        retrigger_.setButtonText("bei Note On");
+        retrigger_.setButtonText("on note-on");
         retrigger_.onClick = [this] { Edit(mod::ParamRetrigger, retrigger_.getToggleState() ? 1u : 0u); };
         hz_.setJustificationType(juce::Justification::centredRight);
         fm_.setSliderStyle(juce::Slider::LinearHorizontal);
@@ -57,17 +57,17 @@ class SourcePanel : public juce::Component {
         }
         if(!random) { // cross modulation exists for LFO 1/2 only; kSourceNames[1 - src] needs src < 2
             fm_label_.setText(src == mod::Lfo1 ? U("FM ← L2") : U("FM ← L1"), juce::dontSendNotification);
-            const juce::String fm_tip = U("Quermodulation: ") + U(kSourceNames[1 - src])
-                + U(" verändert die Rate dieses LFOs, ±100 = ±2 Oktaven. Nur im freien Lauf; mit Clock oder Gate "
-                    "bestimmt der Takt die Rate.");
+            const juce::String fm_tip = U("Cross modulation: ") + U(kSourceNames[1 - src])
+                + U(" changes the rate of this LFO, ±100 = ±2 octaves. Free-running only; with clock or gate "
+                    "the clock sets the rate.");
             fm_.setTooltip(fm_tip);
             fm_label_.setTooltip(fm_tip);
         }
-        shape_label_.setText(random ? "Modus" : "Form", juce::dontSendNotification);
+        shape_label_.setText(random ? "Mode" : "Shape", juce::dontSendNotification);
         sync_label_.setText("Sync", juce::dontSendNotification);
         rate_label_.setText("Rate", juce::dontSendNotification);
-        division_label_.setText("Teilung", juce::dontSendNotification);
-        gate_label_.setText("Eingang", juce::dontSendNotification);
+        division_label_.setText("Division", juce::dontSendNotification);
+        gate_label_.setText("Input", juce::dontSendNotification);
         retrigger_label_.setText("Retrigger", juce::dontSendNotification);
         retrigger_label_.setVisible(!random);
         Refresh();
@@ -86,7 +86,7 @@ class SourcePanel : public juce::Component {
         if(int(sync) != division_sync_) {
             division_.clear(juce::dontSendNotification);
             for(unsigned i = 0; i < DivisionCount(sync); ++i)
-                division_.addItem(U(DivisionName(sync, i)) + (sync == mod::GateClock ? U(" Zyklen/Impuls") : U("")),
+                division_.addItem(U(DivisionName(sync, i)) + (sync == mod::GateClock ? U(" cycles/pulse") : U("")),
                                   int(i) + 1);
             division_sync_ = int(sync);
         }
@@ -117,9 +117,9 @@ class SourcePanel : public juce::Component {
     // Live state of the clock a synced source follows, from the monitor (-1 unknown).
     void SetClockState(int state) {
         const bool midi = model_.SourceParam(src_, mod::ParamSync) == mod::MidiClock;
-        clock_.setText(state < 0 ? U("Takt: unbekannt") : state ? U(midi ? "MIDI-Clock läuft" : "Gate-Impulse kommen an")
-                                                                 : U(midi ? "Kein MIDI-Clock – LFO steht"
-                                                                          : "Keine Gate-Impulse – LFO steht"),
+        clock_.setText(state < 0 ? U("Clock: unknown") : state ? U(midi ? "MIDI clock running" : "Gate pulses arriving")
+                                                                 : U(midi ? "No MIDI clock – LFO stopped"
+                                                                          : "No gate pulses – LFO stopped"),
                        juce::dontSendNotification);
         clock_.setColour(juce::Label::textColourId, state == 0 ? colour::warn : colour::muted);
     }

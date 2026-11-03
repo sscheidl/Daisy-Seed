@@ -6,6 +6,10 @@
 // sq_probe.py / the panel's calibration page). A patch loads without a device; missing or
 // incompatible components are listed and skipped when it is sent. Sending happens only on
 // an explicit action (D13). Parameters are stored by stable key, values in their units.
+//
+// The same structure serves every SQ product: Streichwurst writes "streichwurst-patch"
+// (.swpatch) with its instrument, FX and product parameters and, optionally, the Mod on
+// Daisy matrix as an embedded .modpatch object ("matrix"). Acid Seq files are unchanged.
 #include "SqSession.h"
 #include <cmath>
 #include <cstdio>
@@ -30,7 +34,16 @@ struct AcidPatch {
     std::vector<AcidPatchComponent> components;
     bool has_pattern = false;
     step_seq::Pattern pattern{};
+    std::string matrix; // embedded .modpatch JSON (Streichwurst), empty = none
 };
+
+// File format name and extension by product.
+inline const char* PatchFormat(const std::string& product) {
+    return product == "streichwurst" ? "streichwurst-patch" : "acid-seq-patch";
+}
+inline const char* PatchExtension(const std::string& product) {
+    return product == "streichwurst" ? "swpatch" : "acidpatch";
+}
 
 // ---- a small JSON reader for this format (objects, arrays, strings, numbers, bools) ----
 namespace acid_json {
@@ -188,6 +201,32 @@ inline std::string Quote(const std::string& s) {
     }
     return out + "\"";
 }
+// Writes a parsed value back as JSON (the embedded matrix goes to the .modpatch reader).
+inline std::string Write(const Value& v) {
+    switch(v.kind) {
+        case Value::Kind::Null: return "null";
+        case Value::Kind::Bool: return v.b ? "true" : "false";
+        case Value::Kind::Number: {
+            char buffer[40];
+            std::snprintf(buffer, sizeof(buffer), "%.17g", v.n);
+            return buffer;
+        }
+        case Value::Kind::String: return Quote(v.s);
+        case Value::Kind::Array: {
+            std::string out = "[";
+            for(std::size_t i = 0; i < v.a.size(); ++i)
+                out += (i ? "," : "") + Write(v.a[i]);
+            return out + "]";
+        }
+        case Value::Kind::Object: {
+            std::string out = "{";
+            for(std::size_t i = 0; i < v.o.size(); ++i)
+                out += (i ? "," : "") + Quote(v.o[i].first) + ":" + Write(v.o[i].second);
+            return out + "}";
+        }
+    }
+    return "null";
+}
 inline std::string Number(double v) {
     char buffer[32];
     std::snprintf(buffer, sizeof(buffer), "%.3f", v);
@@ -220,7 +259,8 @@ inline AcidPatch PatchFromSession(const SqSession& s) {
 }
 
 inline std::string SerializeAcidPatch(const AcidPatch& p) {
-    std::string out = "{\n  \"format\": \"acid-seq-patch\",\n  \"format_version\": " + std::to_string(kAcidPatchFormat) +
+    std::string out = "{\n  \"format\": \"" + std::string(PatchFormat(p.product)) +
+                      "\",\n  \"format_version\": " + std::to_string(kAcidPatchFormat) +
                       ",\n  \"product\": " + acid_json::Quote(p.product) + ",\n  \"components\": [";
     for(std::size_t i = 0; i < p.components.size(); ++i) {
         const auto& c = p.components[i];
@@ -244,6 +284,8 @@ inline std::string SerializeAcidPatch(const AcidPatch& p) {
         }
         out += "\n  ]";
     }
+    if(!p.matrix.empty())
+        out += ",\n  \"matrix\": " + p.matrix;
     return out + "\n}\n";
 }
 
@@ -260,18 +302,19 @@ inline bool AcidInt(const acid_json::Value* v, double lo, double hi, int& out) {
 inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::string& error) {
     acid_json::Value root;
     if(!acid_json::Parser(text).Parse(root) || root.kind != acid_json::Value::Kind::Object) {
-        error = "keine gültige JSON-Datei";
+        error = "not a valid JSON file";
         return std::nullopt;
     }
     const acid_json::Value* format = root.Get("format");
     const acid_json::Value* version = root.Get("format_version");
     int format_version = 0;
-    if(!format || format->s != "acid-seq-patch" || !AcidInt(version, 1, 1e6, format_version)) {
-        error = "kein Acid-Seq-Patch";
+    if(!format || (format->s != "acid-seq-patch" && format->s != "streichwurst-patch") ||
+       !AcidInt(version, 1, 1e6, format_version)) {
+        error = "not an Acid Seq or Streichwurst patch";
         return std::nullopt;
     }
     if(format_version > kAcidPatchFormat) {
-        error = "Patch-Format " + std::to_string(format_version) + " ist neuer als dieser Editor";
+        error = "Patch format " + std::to_string(format_version) + " is newer than this editor";
         return std::nullopt;
     }
     AcidPatch p;
@@ -286,7 +329,7 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
                 pc.version = v->s;
             if(const acid_json::Value* s = c.Get("schema"))
                 if(!AcidInt(s, 0, 127, pc.schema)) {
-                    error = "ungültige Schema-Version";
+                    error = "invalid schema version";
                     return std::nullopt;
                 }
             if(const acid_json::Value* params = c.Get("params"))
@@ -296,21 +339,21 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
                     } else if(kv.second.kind == acid_json::Value::Kind::Number) {
                         // Any finite value fits: the device's range clamps it when sent.
                         if(!std::isfinite(kv.second.n) || std::fabs(kv.second.n) > 2147483.0) {
-                            error = "ungültiger Wert für " + kv.first;
+                            error = "invalid value for " + kv.first;
                             return std::nullopt;
                         }
                         pc.params[kv.first] = kv.second.n;
                     }
                 }
             if(pc.id.empty()) {
-                error = "Komponente ohne ID";
+                error = "component without ID";
                 return std::nullopt;
             }
             p.components.push_back(pc);
         }
     if(const acid_json::Value* pattern = root.Get("pattern")) {
         if(pattern->a.size() != step_seq::kSteps) {
-            error = "Pattern braucht 16 Steps";
+            error = "pattern needs 16 steps";
             return std::nullopt;
         }
         for(std::size_t i = 0; i < pattern->a.size(); ++i) {
@@ -320,7 +363,7 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
             const acid_json::Value* length = s.Get("gate_length");
             int note_value = 0, length_value = 50;
             if((note && !AcidInt(note, 0, 127, note_value)) || (length && !AcidInt(length, 0, 100, length_value))) {
-                error = "ungültiger Step " + std::to_string(i + 1);
+                error = "invalid step " + std::to_string(i + 1);
                 return std::nullopt;
             }
             st.note = uint8_t(note_value);
@@ -329,11 +372,22 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
             st.accent = s.Get("accent") && s.Get("accent")->b;
             st.slide = s.Get("slide") && s.Get("slide")->b;
             if(!st.Valid()) {
-                error = "ungültiger Step " + std::to_string(i + 1);
+                error = "invalid step " + std::to_string(i + 1);
                 return std::nullopt;
             }
         }
         p.has_pattern = true;
+    }
+    if(const acid_json::Value* matrix = root.Get("matrix")) {
+        if(matrix->kind != acid_json::Value::Kind::Object) {
+            error = "invalid matrix";
+            return std::nullopt;
+        }
+        p.matrix = acid_json::Write(*matrix);
+    }
+    if(format->s == "streichwurst-patch" && p.product != "streichwurst") {
+        error = "Streichwurst patch for another product";
+        return std::nullopt;
     }
     return p;
 }

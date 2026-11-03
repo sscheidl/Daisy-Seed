@@ -18,10 +18,12 @@ enum Counter : uint8_t {
     CntEcho, CntBusy, CntMonitorDropped, CntNoteOnDropped, CntMidiQueueOverflow, CntClockIgnored,
     CntCallbackOverruns, CntCallbackPeak, CntQueueHighWater, CntStackFree, kCounters
 };
+// Bit 6 (SQ 1.1): the device also speaks Mod on Daisy (7D 4D 44) on the same port.
 enum Capability : uint16_t {
-    CapCv = 1, CapDin = 2, CapVoice = 4, CapPattern = 8, CapMonitor = 16, CapCalibration = 32,
+    CapCv = 1, CapDin = 2, CapVoice = 4, CapPattern = 8, CapMonitor = 16, CapCalibration = 32, CapModMatrix = 64,
 };
-enum Kind : uint8_t { KindSequencer = 0, KindInstrument = 1, KindEffect = 2, KindDsp = 3 };
+// Kind 4 (SQ 1.1): the firmware product's own parameters (mix, MIDI channel, kit state).
+enum Kind : uint8_t { KindSequencer = 0, KindInstrument = 1, KindEffect = 2, KindDsp = 3, KindProduct = 4 };
 
 struct Component {
     const char* id;
@@ -60,6 +62,8 @@ class Device {
   public:
     const char* product = "step-seq";
     const char* version = "0.0.0";
+    // Minor protocol version reported by IDENTIFY; products using SQ 1.1 fields set 1.
+    uint8_t protocol_minor = kVersionMinor;
     uint32_t boot_id = 0;
     uint32_t uid[3] = {};
     uint16_t capabilities = CapCv | CapDin | CapPattern | CapMonitor | CapCalibration;
@@ -221,7 +225,7 @@ class Device {
                     return NakNow(p, ErrBadArgument);
                 Writer w = Reply(p.type, p.rid);
                 w.U7(kVersion);
-                w.U7(kVersionMinor);
+                w.U7(protocol_minor);
                 w.Str(product, 16);
                 w.Str(version, 12);
                 w.U32(boot_id);
@@ -240,7 +244,7 @@ class Device {
                 Writer w = Reply(p.type, p.rid);
                 w.U7(index);
                 w.U7(component_count);
-                w.Str(c.id, 16);
+                w.Str(c.id, 24); // SQ 1.1: component IDs up to 24 characters (registry IDs)
                 w.U7(c.kind);
                 w.Str(c.version, 12);
                 w.U7(c.params ? c.params->schema : 0);

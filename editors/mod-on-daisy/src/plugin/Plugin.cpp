@@ -66,7 +66,7 @@ class Processor : public juce::AudioProcessor {
     bool hasEditor() const override { return true; }
 
     // ------------------------------------------------------------------ project state
-    // The .modpatch text (UTF-8), the same as "Datei speichern" writes.
+    // The .modpatch text (UTF-8), the same as "Save file" writes.
     void getStateInformation(juce::MemoryBlock& dest) override {
         std::lock_guard<std::mutex> lock(mutex_);
         dest.replaceAll(state_.data(), state_.size());

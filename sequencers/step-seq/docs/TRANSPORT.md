@@ -1,35 +1,35 @@
-# Transport- und Ereignisvertrag (Acid Seq)
+# Transport and event contract (Acid Seq)
 
-**Stand:** 26. Oktober 2026 · **Status:** Vertrag aus Phase 0 für Sequencer, Stimme
-und Tempo-Empfänger (Delay). Grundlage: Arbeitsauftrag 3.2, 3.3, 4.2–4.6.
-Testvektoren: [`contracts/transport_vectors.json`](../contracts/transport_vectors.json).
+**As of:** 26 October 2026 · **Status:** contract from phase 0 for the sequencer, the voice
+and tempo receivers (Delay). Basis: work order 3.2, 3.3, 4.2–4.6.
+Test vectors: [`contracts/transport_vectors.json`](../contracts/transport_vectors.json).
 
-## 1. Zeitbasis
+## 1. Time base
 
-* Abtastrate 48 kHz, Blockgröße 48 Frames. Ein Block ist ein **Tick** (1 ms).
-* Der Sequencer zählt in Samples mit einem Akkumulator aus ganzem Teil und Bruchteil
-  (64 Bit, 32 Bit Bruchteil). Ein Step dauert bei Tempo *B* und Swing *s*
-  `2 · T · s` bzw. `2 · T · (1 − s)` Samples mit `T = 48000 · 60 / (B · 4)`
-  (Sechzehntel). Der Fehler wird nie gerundet weitergetragen, das Tempo driftet nicht.
-* Ein Ereignis wird dem Tick zugeordnet, in dem sein Zeitpunkt liegt. Alle Ereignisse
-  eines Ticks haben den Zeitstempel des Blockanfangs.
+* Sample rate 48 kHz, block size 48 frames. One block is one **tick** (1 ms).
+* The sequencer counts in samples with an accumulator of integer and fractional part
+  (64 bits, 32-bit fraction). At tempo *B* and swing *s*, a step lasts
+  `2 · T · s` or `2 · T · (1 − s)` samples with `T = 48000 · 60 / (B · 4)`
+  (sixteenths). The error is never carried forward rounded; the tempo does not drift.
+* An event is assigned to the tick in which its point in time lies. All events
+  of a tick have the timestamp of the block start.
 
-## 2. Reihenfolge innerhalb eines Ticks
+## 2. Order within a tick
 
-1. Gate-Off des alten Steps (bzw. Ende einer Vorhör-Note)
-2. Reset (Gate IN 2 im Reset-Modus)
-3. Step-Wechsel und Übernahme von Pattern, Länge und Modus am Step-Rand
-4. Gate-On des neuen Steps
+1. Gate-off of the old step (or end of a preview note)
+2. Reset (Gate IN 2 in reset mode)
+3. Step change and application of pattern, length and mode at the step boundary
+4. Gate-on of the new step
 
-Fallen Gate-Off und Gate-On auf denselben Tick und hat der alte Step kein Slide,
-verschiebt sich das Gate-On um einen Tick (Retrigger-Lücke ≥ 1 ms). Gates sind
-mindestens 2 ms High und 1 ms Low.
+If gate-off and gate-on fall on the same tick and the old step has no slide,
+the gate-on is shifted by one tick (retrigger gap ≥ 1 ms). Gates are
+at least 2 ms high and 1 ms low.
 
-## 3. Ereignisse des Sequencers
+## 3. Sequencer events
 
-Der Sequencer-Kern erzeugt pro Tick höchstens eine kleine, feste Anzahl Ereignisse.
-Er kennt keine Hardware. Die Ausgänge (CV/Gate, MIDI-Queue, interne Stimme) lesen
-dieselben Ereignisse.
+The sequencer core produces at most a small, fixed number of events per tick.
+It knows no hardware. The outputs (CV/gate, MIDI queue, internal voice) read
+the same events.
 
 ```cpp
 namespace step_seq {
@@ -53,16 +53,16 @@ struct TransportEvent { uint8_t state; uint8_t position; };  // 4.3 states
 }
 ```
 
-* **Kennung (`tag`):** Jede Note-On bekommt eine neue Kennung. Ein Note-Off wirkt nur
-  auf die Note mit derselben Kennung. Ein veraltetes Off (z. B. das Ende einer
-  150-ms-Vorhör-Note nach einem Start) wird ignoriert.
-* **Legato:** Ein Step mit Slide endet nicht mit Off. Der nächste Step kommt als
-  `Legato` (neue Kennung, ersetzt die alte). Gleiche Note mit Slide: kein Ereignis,
-  die Note bleibt gehalten. Gleiche Note ohne Slide: Off, dann On im nächsten Tick.
-* **Panic** erzeugt ein `Off` für jede aktive Kennung der Quelle `Sequencer` bzw.
-  `Preview` und Gate-Low. Offene Slides enden.
+* **Identifier (`tag`):** every note-on gets a new identifier. A note-off only acts
+  on the note with the same identifier. A stale Off (e.g. the end of a
+  150 ms preview note after a start) is ignored.
+* **Legato:** a step with slide does not end with Off. The next step arrives as
+  `Legato` (new identifier, replaces the old one). Same note with slide: no event,
+  the note stays held. Same note without slide: Off, then On in the next tick.
+* **Panic** produces an `Off` for every active identifier of the source `Sequencer` or
+  `Preview`, and gate low. Open slides end.
 
-## 4. Stimme (`acid-303`)
+## 4. Voice (`acid-303`)
 
 ```cpp
 voice.NoteOn(note, velocity, accent, legato, source, tag);
@@ -70,31 +70,31 @@ voice.NoteOff(tag, source);         // ends only that note of that source
 voice.AllNotesOff(source);          // Panic of one source
 ```
 
-* Monophon mit Notenstapel (höchstens 8 Einträge je Quelle, ältester fällt heraus).
-* Die zuletzt gespielte Note klingt, gleich aus welcher Quelle. Endet die klingende
-  Note, übernimmt die jüngste noch gehaltene Note beider Quellen (Legato, ohne neue
-  Hüllkurve).
-* `Legato` gleitet mit der Slide-Zeit zur neuen Tonhöhe, ohne neue Hüllkurve.
-* Externe MIDI-Noten auf dem Stimmen-Kanal haben die Quelle `MidiIn`. Ein Panic des
-  Sequencers berührt sie nicht.
+* Monophonic with a note stack (at most 8 entries per source, the oldest drops out).
+* The most recently played note sounds, regardless of its source. If the sounding
+  note ends, the most recent still-held note of both sources takes over (legato, without a new
+  envelope).
+* `Legato` glides to the new pitch with the slide time, without a new envelope.
+* External MIDI notes on the voice channel have the source `MidiIn`. A panic of the
+  sequencer does not affect them.
 
-## 5. Tempo-Empfänger (Delay)
+## 5. Tempo receivers (Delay)
 
-* Der Host gibt jedem Tempo-Empfänger bei jeder Änderung `TempoEvent` mit
-  `samples_per_quarter = 48000 · 60 / BPM`. Bei externer Clock ist es die
-  Periodenschätzung (gleitender Mittelwert der letzten 4 Perioden).
-* Das Delay rechnet Sync-Notenwerte daraus selbst um (1/32 bis 1/1, punktiert × 1,5,
-  triolisch × 2/3). Eine Tempoänderung gleitet wie eine Zeitänderung (4.8).
-* Ohne Sequencer (Firmware `delay-fx`) gilt das Tempo von VR5.
+* On every change, the host gives each tempo receiver a `TempoEvent` with
+  `samples_per_quarter = 48000 · 60 / BPM`. With an external clock it is the
+  period estimate (moving average of the last 4 periods).
+* The delay converts sync note values from it itself (1/32 to 1/1, dotted × 1.5,
+  triplet × 2/3). A tempo change glides like a time change (4.8).
+* Without a sequencer (firmware `delay-fx`), the tempo of VR5 applies.
 
-## 6. Transport-Zustände
+## 6. Transport states
 
-STOP, WARTET, LÄUFT und PAUSE mit den Übergängen aus 4.3 des Auftrags. `TransportEvent`
-meldet jeden Wechsel. Die Panic-Regeln aus 4.4 gelten bei jedem Übergang nach STOP
-und PAUSE und beim Timeout der Clock.
+STOP, WAITING, RUNNING and PAUSE with the transitions from 4.3 of the work order. `TransportEvent`
+reports every change. The panic rules from 4.4 apply at every transition to STOP
+and PAUSE and on the clock timeout.
 
-## 7. Testvektoren
+## 7. Test vectors
 
-`transport_vectors.json` enthält die Sollfolgen aus 4.2 (Vorwärts, Rückwärts, Länge 1,
-Längen- und Moduswechsel) und die Reihenfolge innerhalb eines Ticks. Phase 1 spielt
-sie im Kern-Test nach.
+`transport_vectors.json` contains the expected sequences from 4.2 (forward, reverse, length 1,
+length and mode changes) and the order within a tick. Phase 1 replays
+them in the core test.

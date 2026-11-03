@@ -265,13 +265,13 @@ inline LoadedPatch LoadPatch(const std::string& text, const Model& m) {
     LoadedPatch out;
     json::Value doc;
     if(!json::Parser(text).Parse(doc) || doc.type != json::Value::Object) {
-        out.error = "Die Datei ist kein gültiges JSON.";
+        out.error = "The file is not valid JSON.";
         return out;
     }
     const json::Value* format = doc.Get("format");
     const json::Value* version = doc.Get("version");
     if(!format || format->string != "mod-on-daisy-patch" || !version || version->Int() != 1) {
-        out.error = "Keine Mod-on-Daisy-Patchdatei (Version 1).";
+        out.error = "Not a Mod on Daisy patch file (version 1).";
         return out;
     }
     if(const json::Value* key = doc.Get("instrument_key"); key && key->type == json::Value::String)
@@ -296,7 +296,7 @@ inline LoadedPatch LoadPatch(const std::string& text, const Model& m) {
     if(!rows8x8("depth") || !rows8x8("enabled") || !lfo_list || lfo_list->type != json::Value::Array
        || lfo_list->array.size() != 2 || lfo_list->array[0].type != json::Value::Object
        || lfo_list->array[1].type != json::Value::Object) {
-        out.error = "Die Datei ist unvollständig (Raster 8 × 8 und zwei LFOs erwartet).";
+        out.error = "The file is incomplete (8 × 8 grid and two LFOs expected).";
         return out;
     }
     mod::Patch& p = out.patch;
@@ -361,11 +361,11 @@ inline LoadedPatch LoadPatch(const std::string& text, const Model& m) {
             p.SetEnabled(std::size_t(SourceOf(c)), std::size_t(TargetOf(c)), false);
     if(!in_range || ValidateSource(p.lfo[0]) != mod::Status::Ok || ValidateSource(p.lfo[1]) != mod::Status::Ok
        || ValidateSource(p.random) != mod::Status::Ok) {
-        out.error = "Die Datei enthält ungültige Werte für LFO oder Random.";
+        out.error = "The file contains invalid values for LFO or Random.";
         return out;
     }
     if(int(mod::PopCount(p.ActiveMask())) > m.max_active) {
-        out.error = "Die Datei hat mehr als " + std::to_string(m.max_active) + " aktive Verbindungen.";
+        out.error = "The file has more than " + std::to_string(m.max_active) + " active connections.";
         return out;
     }
     out.ok = true;
@@ -393,7 +393,7 @@ inline Compatibility CheckCompatibility(const LoadedPatch& f, const Model& devic
     if(!f.instrument_key.empty() && f.instrument_key != d.key) {
         c.key_mismatch = true;
         c.affected = active;
-        c.notes.push_back("Die Datei ist für „" + f.instrument_key + "“, verbunden ist „" + d.key + "“.");
+        c.notes.push_back("The file is for “" + f.instrument_key + "”, connected is “" + d.key + "”.");
     } else if(f.schema.empty() || f.schema != Hex32(d.schema)) {
         c.schema_unknown = f.schema.empty();
         c.schema_changed = !f.schema.empty();
@@ -405,24 +405,24 @@ inline Compatibility CheckCompatibility(const LoadedPatch& f, const Model& devic
                 continue; // an unused column cannot change any sound
             const Column& now = device_model.columns[std::size_t(t)];
             const std::string& was = f.columns[std::size_t(t)];
-            const std::string label = "Spalte " + std::to_string(t + 1);
+            const std::string label = "Column " + std::to_string(t + 1);
             if(was.empty()) {
                 c.affected |= column;
-                c.notes.push_back(label + " (jetzt „" + now.name + "“): Bedeutung in der Datei unbekannt.");
+                c.notes.push_back(label + " (now “" + now.name + "”): meaning in the file unknown.");
             } else if(!now.present || was != now.name) {
                 c.affected |= column;
-                c.notes.push_back(label + ": Datei „" + was + "“ → Gerät „" + (now.present ? now.name : "kein Ziel") + "“.");
+                c.notes.push_back(label + ": file “" + was + "” → device “" + (now.present ? now.name : "no target") + "”.");
             }
         }
     }
     if(f.has_fm && !d.LfoFm()) {
         c.fm_unsupported = true;
-        c.notes.push_back("Das Gerät kennt keine LFO-Quermodulation; sie wird auf 0 gesetzt.");
+        c.notes.push_back("The device has no LFO cross modulation; it is set to 0.");
     }
     return c;
 }
 
-// "Ohne betroffene Verbindungen laden": affected cells switched off (depth kept),
+// "Load without affected": affected cells switched off (depth kept),
 // unsupported cross modulation removed. Everything else stays as in the file.
 inline mod::Patch SafePart(const mod::Patch& patch, const Compatibility& c) {
     mod::Patch p = patch;

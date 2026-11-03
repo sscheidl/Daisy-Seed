@@ -1,8 +1,10 @@
 #pragma once
-// Acid Seq pages of the JUCE editor and the VST3 (ARBEITSAUFTRAG Phase 5): status and
-// transport, 16-step pattern grid with note names and play position, step editor,
-// parameter pages from the device's descriptors (Sequencer, Stimme, Drive, Delay, MIDI),
+// SQ pages of the JUCE editor and the VST3 (Acid Seq Phase 5, Streichwurst Phase 4): status
+// and transport, 16-step pattern grid with note names and play position, step editor,
+// parameter pages from the device's descriptors (Acid Seq: Sequencer, Voice, Drive,
+// Delay, MIDI; Streichwurst: Strings, Solo, Keyboard, FX, Global by the contract's pages),
 // calibration with the separate CV enable, product patch save/load/upload, counters.
+// Streichwurst patches (.swpatch) embed the Mod on Daisy matrix through the two hooks.
 // Everything goes through SqSession; the device is read first and written only on an
 // explicit action (D13).
 #include "../core/AcidPatch.h"
@@ -16,6 +18,11 @@ namespace editor::ui {
 
 class SqPanel : public juce::Component {
   public:
+    // Streichwurst: the matrix of the MD session as .modpatch text (empty: none) for
+    // "Patch speichern", and its explicit upload with the product patch.
+    std::function<std::string()> matrix_text;
+    std::function<void(const std::string&)> upload_matrix;
+
     explicit SqPanel(SqSession& session) : s_(session) {
         for(juce::TextButton* b : {&start_, &stop_, &pull_, &save_, &load_, &upload_, &stats_btn_, &cv_on_, &cv_off_,
                                    &cal_send_[0], &cal_send_[1]})
@@ -30,12 +37,15 @@ class SqPanel : public juce::Component {
         load_.onClick = [this] { LoadDialog(); };
         upload_.onClick = [this] { Upload(); };
         upload_.setEnabled(false);
-        for(juce::Label* l : {&status_, &patch_info_, &stats_, &cal_hint_, &step_label_})
+        for(juce::Label* l : {&status_, &patch_info_, &cal_hint_, &step_label_})
             addAndMakeVisible(l);
         status_.setFont(juce::FontOptions(14.0f, juce::Font::bold));
         patch_info_.setColour(juce::Label::textColourId, colour::muted);
-        stats_.setJustificationType(juce::Justification::topLeft);
-        stats_.setFont(juce::FontOptions(12.0f));
+        for(juce::Label& l : stats_) {
+            addAndMakeVisible(l);
+            l.setJustificationType(juce::Justification::topLeft);
+            l.setFont(juce::FontOptions(12.0f));
+        }
         cal_hint_.setColour(juce::Label::textColourId, colour::muted);
         cal_hint_.setFont(juce::FontOptions(12.0f));
         for(int i = 0; i < 16; ++i) {
@@ -60,7 +70,7 @@ class SqPanel : public juce::Component {
         for(juce::Component* c : std::initializer_list<juce::Component*>{&note_, &gate_len_, &gate_, &accent_, &slide_})
             addAndMakeVisible(c);
         for(int t = 0; t < 5; ++t) {
-            tabs_[t].setButtonText(U(kTabNames[t]));
+            tabs_[t].setButtonText(U(kAcidTabs[t].name));
             tabs_[t].setClickingTogglesState(false);
             tabs_[t].onClick = [this, t] {
                 tab_ = t;
@@ -69,7 +79,7 @@ class SqPanel : public juce::Component {
             };
             addAndMakeVisible(tabs_[t]);
         }
-        static const char* fields[] = {"Code bei 0 V", "Codes pro Volt", "Gate-Low", "Gate-High", "Klemme min", "Klemme max"};
+        static const char* fields[] = {"Code at 0 V", "Codes per volt", "Gate low", "Gate high", "Clamp min", "Clamp max"};
         for(int o = 0; o < 2; ++o) {
             for(int f = 0; f < 6; ++f) {
                 cal_label_[o][f].setText(U(fields[f]), juce::dontSendNotification);
@@ -89,15 +99,24 @@ class SqPanel : public juce::Component {
             return;
         const SqState& st = s_.State();
         const bool seq = s_.HasComponent("step-seq");
+        const bool sw = Streichwurst();
         juce::String text = U(s_.Identity().product) + " " + U(s_.Identity().version);
+        if(sw) {
+            for(const SqComponent& c : s_.Components())
+                if(c.kind != 4)
+                    text << U(" · ") << U(c.id) << " " << U(c.version);
+            text << U(" · Revision ") << int(st.applied) << "/" << int(st.accepted);
+        }
         if(seq)
             text << U(" · ") << U(SqStateName(st.state)) << U(" · SW17 ") << (st.sw17 ? "Run" : "Stop") << U(" · ")
-                 << U(st.mode == 0 ? "Vorwärts" : st.mode == 1 ? "Rückwärts" : "Zufall") << U(" · ")
+                 << U(st.mode == 0 ? "Forward" : st.mode == 1 ? "Reverse" : "Random") << U(" · ")
                  << juce::String(st.bpm, 1) << U(" BPM · Revision ") << int(st.applied) << "/" << int(st.accepted)
-                 << U(st.cv_enabled ? " · CV frei" : " · CV gesperrt");
+                 << U(st.cv_enabled ? " · CV enabled" : " · CV locked");
         status_.setText(text, juce::dontSendNotification);
         start_.setEnabled(seq);
         stop_.setEnabled(seq);
+        start_.setVisible(seq); // transport exists only with a sequencer
+        stop_.setVisible(seq);
         for(int i = 0; i < 16; ++i) {
             const auto& p = s_.Pattern()[std::size_t(i)];
             steps_[std::size_t(i)]->setButtonText((i < 8 ? "A" : "B") + juce::String(i % 8 + 1) + "\n" + U(SqNoteName(p.note)) +
@@ -135,16 +154,25 @@ class SqPanel : public juce::Component {
         }
         cv_on_.setVisible(cv);
         cv_off_.setVisible(cv);
-        cal_hint_.setText(cv ? U("Vor dem ersten Anschluss an einen Synth die Diagnose H14 durchführen. Die Freigabe gilt bis zum Neustart.")
-                             : U("Dieses Gerät hat keine CV-Ausgänge."),
+        cal_hint_.setText(cv ? U("Run diagnostic H14 before the first connection to a synth. The enable lasts until the next restart.")
+                             : U("This device has no CV outputs."),
                           juce::dontSendNotification);
+        const bool ambient = s_.HasComponent("ambient-reverb");
+        const Tab* tabs = ambient ? kAmbientTabs : (sw ? kStreichwurstTabs : kAcidTabs);
+        if(sw != showing_streichwurst_ || ambient != showing_ambient_) {
+            showing_streichwurst_ = sw;
+            showing_ambient_ = ambient;
+            tab_ = 0;
+            rebuild_ = true;
+        }
         for(int t = 0; t < 5; ++t) {
-            tabs_[t].setVisible(s_.HasComponent(kTabComponents[t]));
+            tabs_[t].setButtonText(U(tabs[t].name));
+            tabs_[t].setVisible(s_.HasComponent(tabs[t].component));
             tabs_[t].setColour(juce::TextButton::buttonColourId, t == tab_ ? colour::accent : colour::panel);
         }
-        if(!s_.HasComponent(kTabComponents[tab_]))
+        if(!s_.HasComponent(tabs[tab_].component))
             for(int t = 0; t < 5; ++t)
-                if(s_.HasComponent(kTabComponents[t])) {
+                if(s_.HasComponent(tabs[t].component)) {
                     tab_ = t;
                     rebuild_ = true;
                     break;
@@ -180,7 +208,7 @@ class SqPanel : public juce::Component {
             b->setBounds(ed.removeFromLeft(90));
         }
         r.removeFromTop(10);
-        juce::Rectangle<int> bottom = r.removeFromBottom(250);
+        juce::Rectangle<int> bottom = r.removeFromBottom(270);
         juce::Rectangle<int> tabs = r.removeFromTop(28);
         for(auto& t : tabs_) {
             t.setBounds(tabs.removeFromLeft(110));
@@ -215,7 +243,10 @@ class SqPanel : public juce::Component {
         upload_.setBounds(b2.removeFromLeft(170));
         patch_info_.setBounds(right.removeFromTop(40));
         stats_btn_.setBounds(right.removeFromTop(28).removeFromLeft(140));
-        stats_.setBounds(right);
+        // Counters in three columns: all 17 rows fit (two per row needed nine lines).
+        const int column = right.getWidth() / int(stats_.size());
+        for(juce::Label& l : stats_)
+            l.setBounds(right.removeFromLeft(column));
     }
     void paint(juce::Graphics& g) override { g.fillAll(colour::bg); }
 
@@ -223,11 +254,11 @@ class SqPanel : public juce::Component {
     void SetPendingPatch(const AcidPatch& p) {
         pending_ = p;
         const AcidCompat c = CheckAcidPatch(p, s_);
-        juce::String text = U("Geladen: ") + U(p.product) + ", " + juce::String(int(p.components.size())) + U(" Komponenten. ");
+        juce::String text = U("Loaded: ") + U(p.product) + ", " + juce::String(int(p.components.size())) + U(" components. ");
         if(c.Clean())
-            text << U("Passt vollständig.");
+            text << U("Fits completely.");
         else
-            text << U("Übersprungen: ") << int(c.missing.size() + c.incompatible.size() + c.unknown.size()) << U(" Einträge.");
+            text << U("Skipped: ") << int(c.missing.size() + c.incompatible.size() + c.unknown.size()) << U(" entries.");
         patch_info_.setText(text, juce::dontSendNotification);
         upload_.setEnabled(true);
     }
@@ -236,7 +267,16 @@ class SqPanel : public juce::Component {
         if(!pending_)
             return 0;
         const int n = UploadAcidPatch(*pending_, s_);
-        patch_info_.setText(juce::String(n) + U(" Werte übertragen."), juce::dontSendNotification);
+        juce::String text = juce::String(n) + U(" values sent.");
+        if(!pending_->matrix.empty()) {
+            if(upload_matrix) {
+                upload_matrix(pending_->matrix);
+                text << U(" Matrix sent.");
+            } else {
+                text << U(" Matrix skipped (no Mod on Daisy connection).");
+            }
+        }
+        patch_info_.setText(text, juce::dontSendNotification);
         return n;
     }
     int ParamRows() const { return int(rows_.size()); }
@@ -251,10 +291,45 @@ class SqPanel : public juce::Component {
         rebuild_ = true;
         Refresh();
     }
+    // Self-test: the "Read counters" button, and whether every counter line is drawn (a
+    // label drops the lines that do not fit its height).
+    void ReadCounters() { stats_btn_.onClick(); }
+    int CounterLines() const {
+        int n = 0;
+        for(const juce::Label& l : stats_) {
+            const int lines = juce::StringArray::fromLines(l.getText().trimEnd()).size();
+            const int room = int(l.getBorderSize().subtractedFrom(l.getLocalBounds()).getHeight() / l.getFont().getHeight());
+            if(l.getText().isEmpty() || !getLocalBounds().contains(l.getBounds()))
+                continue;
+            n += std::min(lines, std::max(1, room));
+        }
+        return n;
+    }
+
+    // The product or the standalone Streichwurst FX firmware (FX page only).
+    bool Streichwurst() const { return s_.HasComponent("streichwurst-instrument") || s_.HasComponent("streichwurst-fx"); }
+    int TabIndex() const { return tab_; }
 
   private:
-    static constexpr const char* kTabNames[5] = {"Sequencer", "Stimme", "Drive", "Delay", "MIDI"};
-    static constexpr const char* kTabComponents[5] = {"step-seq", "acid-303", "drive", "stereo-delay", "step-seq"};
+    // A page: the component and, for Streichwurst, the contract page of its parameters.
+    struct Tab {
+        const char* name;
+        const char* component;
+        const char* page; // "" = every parameter of the component
+    };
+    static constexpr Tab kAcidTabs[5] = {
+        {"Sequencer", "step-seq", ""}, {"Voice", "acid-303", ""}, {"Drive", "drive", ""}, {"Delay", "stereo-delay", ""},
+        {"MIDI", "step-seq", ""}};
+    static constexpr Tab kStreichwurstTabs[5] = {{"Strings", "streichwurst-instrument", "strings"},
+                                                 {"Solo", "streichwurst-instrument", "solo"},
+                                                 {"Keyboard", "streichwurst-instrument", "keyboard"},
+                                                 {"FX", "streichwurst-fx", ""},
+                                                 {"Global", "streichwurst", ""}};
+    static constexpr Tab kAmbientTabs[5] = {{"Ambient FX", "ambient-reverb", ""},
+        {"", "", ""}, {"", "", ""}, {"", "", ""}, {"", "", ""}};
+    const Tab& Current() const {
+        return (showing_ambient_ ? kAmbientTabs : (showing_streichwurst_ ? kStreichwurstTabs : kAcidTabs))[tab_];
+    }
     static constexpr const char* kCalDefaults[6] = {"2048", "-409.6", "2048", "410", "0", "4095"};
     static bool MidiKey(const std::string& k) {
         return k == "seq_channel" || k == "voice_channel" || k == "usb_out" || k == "din_out" || k == "velocity" ||
@@ -270,18 +345,22 @@ class SqPanel : public juce::Component {
     void BuildParams() {
         rebuild_ = false;
         rows_.clear();
-        const int ci = s_.ComponentIndex(kTabComponents[tab_]);
+        const Tab& tab = Current();
+        const int ci = s_.ComponentIndex(tab.component);
         if(ci < 0)
             return;
         const std::size_t comp = std::size_t(ci);
         for(const SqParam& p : s_.Components()[comp].parameters) {
-            if(kTabComponents[tab_] == std::string("step-seq") && MidiKey(p.key) != (tab_ == 4))
+            if(!showing_streichwurst_ && tab.component == std::string("step-seq") && MidiKey(p.key) != (tab_ == 4))
+                continue;
+            const SqLabel* german = FindSqLabel(tab.component, p.key.c_str());
+            if(tab.page[0] && (!german || std::string(german->page) != tab.page))
                 continue;
             Row row;
             row.key = p.key;
-            const SqLabel* german = FindSqLabel(kTabComponents[tab_], p.key.c_str());
             row.label = std::make_unique<juce::Label>(juce::String(), german ? U(german->label) : U(p.key));
-            row.label->setTooltip(U(std::string(kTabComponents[tab_]) + "." + p.key + (p.cc != 127 ? " · CC " + std::to_string(p.cc) : "")));
+            row.label->setTooltip(U(std::string(tab.component) + "." + p.key + (p.cc != 127 ? " · CC " + std::to_string(p.cc) : "") +
+                                    (p.Readonly() ? " · read only (state on the kit)" : "")));
             param_box_.addAndMakeVisible(*row.label);
             const std::string key = p.key;
             if(p.type == 2) {
@@ -293,7 +372,8 @@ class SqPanel : public juce::Component {
                 row.combo->onChange = [this, comp, key, c = row.combo.get()] { s_.SetParam(comp, key, c->getSelectedId() - 1); };
                 param_box_.addAndMakeVisible(*row.combo);
             } else if(p.type == 3) {
-                row.toggle = std::make_unique<juce::ToggleButton>(U("an"));
+                row.toggle = std::make_unique<juce::ToggleButton>(U("on"));
+                row.toggle->setEnabled(!p.Readonly());
                 row.toggle->onClick = [this, comp, key, t = row.toggle.get()] { s_.SetParam(comp, key, t->getToggleState() ? 1 : 0); };
                 param_box_.addAndMakeVisible(*row.toggle);
             } else {
@@ -302,6 +382,7 @@ class SqPanel : public juce::Component {
                 if(p.Log())
                     row.slider->setSkewFactorFromMidPoint(std::sqrt(double(p.min) * double(p.max)) / 1000.0);
                 row.slider->setTextBoxStyle(juce::Slider::TextBoxRight, false, 70, 22);
+                row.slider->setEnabled(!p.Readonly());
                 if(p.type != 1) // wide ranges (Hz, ms) show one decimal, narrow ones two
                     row.slider->setNumDecimalPlacesToDisplay(p.max - p.min >= 100000 ? 1 : 2);
                 row.slider->onDragEnd = [this, comp, key, sl = row.slider.get()] { s_.SetParam(comp, key, sl->getValue()); };
@@ -317,7 +398,7 @@ class SqPanel : public juce::Component {
         UpdateParams();
     }
     void UpdateParams() {
-        const int ci = s_.ComponentIndex(kTabComponents[tab_]);
+        const int ci = s_.ComponentIndex(Current().component);
         if(ci < 0)
             return;
         for(auto& row : rows_) {
@@ -359,26 +440,40 @@ class SqPanel : public juce::Component {
         s_.SetCal(o, c);
     }
     void RefreshStats() {
-        static const char* names[] = {"Rahmenlänge", "Prüfsumme", "Version", "unbekannter Typ", "zu lang", "Statusbyte",
-                                      "Wiederholung", "Echo", "beschäftigt", "Monitor verworfen", "Note-On verworfen",
-                                      "MIDI-Queue übergelaufen", "Clock ignoriert", "Callback-Frist", "Callback-Spitze",
-                                      "Queue-Hochwasser", "Stack frei"};
-        juce::String text;
+        static const char* names[] = {"Frame length", "Checksum", "Version", "Unknown type", "Too long", "Status byte",
+                                      "Repeat", "Echo", "Busy", "Monitor dropped", "Note-on dropped",
+                                      "MIDI queue overflow", "Clock ignored", "Callback deadline", "Callback peak",
+                                      "Queue high water", "Stack free"};
+        juce::String text[3];
         for(std::size_t i = 0; i < s_.Stats().size(); ++i)
-            text << U(i < 17 ? names[i] : "Zähler") << ": " << juce::String(juce::int64(s_.Stats()[i])) << (i % 2 ? "\n" : "    ");
-        stats_.setText(text, juce::dontSendNotification);
+            text[i % 3] << U(i < 17 ? names[i] : "Counter") << ": " << juce::String(juce::int64(s_.Stats()[i])) << "\n";
+        for(std::size_t c = 0; c < stats_.size(); ++c)
+            stats_[c].setText(text[c], juce::dontSendNotification);
     }
+  public:
+    // The device state as product patch; Streichwurst adds the matrix of the MD session.
+    AcidPatch CurrentPatch() const {
+        AcidPatch p = PatchFromSession(s_);
+        if(s_.Identity().HasModMatrix() && matrix_text)
+            p.matrix = matrix_text();
+        return p;
+    }
+
+  private:
     void SaveDialog() {
-        chooser_ = std::make_unique<juce::FileChooser>(U("Acid-Seq-Patch speichern"), juce::File(), "*.acidpatch");
+        const std::string ext = PatchExtension(s_.Identity().product);
+        chooser_ = std::make_unique<juce::FileChooser>(U(Streichwurst() ? "Save Streichwurst patch" : "Save Acid Seq patch"),
+                                                       juce::File(), U("*." + ext));
         chooser_->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
-                              [this](const juce::FileChooser& c) {
+                              [this, ext](const juce::FileChooser& c) {
                                   const juce::File f = c.getResult();
                                   if(f != juce::File())
-                                      f.withFileExtension("acidpatch").replaceWithText(U(SerializeAcidPatch(PatchFromSession(s_))));
+                                      f.withFileExtension(U(ext)).replaceWithText(U(SerializeAcidPatch(CurrentPatch())));
                               });
     }
     void LoadDialog() {
-        chooser_ = std::make_unique<juce::FileChooser>(U("Acid-Seq-Patch laden"), juce::File(), "*.acidpatch;*.json");
+        chooser_ = std::make_unique<juce::FileChooser>(U(Streichwurst() ? "Load Streichwurst patch" : "Load Acid Seq patch"),
+                                                       juce::File(), "*.acidpatch;*.swpatch;*.json");
         chooser_->launchAsync(juce::FileBrowserComponent::openMode, [this](const juce::FileChooser& c) {
             const juce::File f = c.getResult();
             if(f == juce::File())
@@ -387,16 +482,17 @@ class SqPanel : public juce::Component {
             if(auto p = ParseAcidPatch(f.loadFileAsString().toStdString(), error))
                 SetPendingPatch(*p);
             else
-                patch_info_.setText(U("Nicht lesbar: ") + U(error), juce::dontSendNotification);
+                patch_info_.setText(U("Not readable: ") + U(error), juce::dontSendNotification);
         });
     }
 
     SqSession& s_;
-    juce::Label status_, patch_info_, stats_, cal_hint_, step_label_;
-    juce::TextButton start_{"Start"}, stop_{U("Stopp")}, pull_{U("Vom Gerät lesen")}, save_{U("Patch speichern …")},
-        load_{U("Patch laden …")}, upload_{U("Auf Gerät übertragen")}, stats_btn_{U("Zähler lesen")},
-        cv_on_{U("CV freigeben")}, cv_off_{U("CV sperren")};
-    juce::TextButton cal_send_[2] = {juce::TextButton(U("CV OUT 1 senden")), juce::TextButton(U("CV OUT 2 senden"))};
+    juce::Label status_, patch_info_, cal_hint_, step_label_;
+    std::array<juce::Label, 3> stats_; // counter columns
+    juce::TextButton start_{"Start"}, stop_{U("Stop")}, pull_{U("Read from device")}, save_{U("Save patch …")},
+        load_{U("Load patch …")}, upload_{U("Send to device")}, stats_btn_{U("Read counters")},
+        cv_on_{U("Enable CV")}, cv_off_{U("Lock CV")};
+    juce::TextButton cal_send_[2] = {juce::TextButton(U("Send CV OUT 1")), juce::TextButton(U("Send CV OUT 2"))};
     juce::Label cal_label_[2][6];
     juce::TextEditor cal_edit_[2][6];
     std::vector<std::unique_ptr<juce::TextButton>> steps_;
@@ -410,7 +506,7 @@ class SqPanel : public juce::Component {
     std::optional<AcidPatch> pending_;
     std::unique_ptr<juce::FileChooser> chooser_;
     int selected_ = 0, tab_ = 0;
-    bool rebuild_ = true;
+    bool rebuild_ = true, showing_streichwurst_ = false, showing_ambient_ = false;
 };
 
 } // namespace editor::ui

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SQ probe: command-line client for Acid Seq firmwares (docs/PROTOCOL.md).
+"""SQ probe: command-line client for the SQ firmwares, Acid Seq and Streichwurst (docs/PROTOCOL.md).
 
 Not the editor. Calibration, CV enable and diagnostics already in phase 1 (4.5).
 
@@ -9,6 +9,7 @@ Not the editor. Calibration, CV enable and diagnostics already in phase 1 (4.5).
     python sq_probe.py components                 # components and parameter descriptors
     python sq_probe.py params step-seq
     python sq_probe.py set step-seq tempo 128
+    python sq_probe.py set streichwurst-fx reverb 35   # Streichwurst (SQ 1.1)
     python sq_probe.py pattern
     python sq_probe.py state
     python sq_probe.py transport start|stop
@@ -37,8 +38,8 @@ TIMEOUT, RETRIES = 0.2, 3
 STATS = ['bad_length', 'bad_crc', 'bad_version', 'unknown_type', 'too_long', 'status_in_frame',
          'duplicate', 'echo', 'busy', 'monitor_dropped', 'note_on_dropped', 'midi_queue_overflow',
          'clock_ignored', 'callback_overruns', 'callback_peak_cycles', 'queue_high_water', 'stack_free_bytes']
-STATES = ['STOP', 'WARTET', 'LÄUFT', 'PAUSE']
-SOURCES = ['intern', 'Gate IN 1', 'MIDI USB', 'MIDI DIN']
+STATES = ['STOP', 'WAITING', 'RUNNING', 'PAUSE']
+SOURCES = ['internal', 'Gate IN 1', 'MIDI USB', 'MIDI DIN']
 CONTRACT = json.loads((Path(__file__).resolve().parent.parent / 'contracts' / 'parameters.json')
                       .read_text(encoding='utf-8'))
 
@@ -97,6 +98,7 @@ def identify(link):
     info = {'protocol': f'{r.u7()}.{r.u7()}', 'product': r.text(), 'version': r.text(),
             'boot_id': f'{r.u32():08X}', 'uid': [r.u32(), r.u32(), r.u32()],
             'capabilities': r.u14(), 'components': r.u7()}
+    info['capability_names'] = [name for name, bit in sq.CAPABILITIES.items() if info['capabilities'] & bit]
     return info
 
 
@@ -108,6 +110,7 @@ def components(link):
         r.u7(), r.u7()
         entry = {'index': index, 'id': r.text(), 'kind': r.u7(), 'version': r.text(), 'schema': r.u7(),
                  'params': []}
+        entry['kind_name'] = sq.KINDS[entry['kind']] if entry['kind'] < len(sq.KINDS) else '?'
         for p in range(r.u7()):
             d = link.request(sq.TYPES['GET_PARAM_DESC'], sq.u7(index) + sq.u7(p))
             d.u7(), d.u7(), d.u7()
@@ -243,7 +246,7 @@ def main():
     elif args.command == 'pattern':
         r = link.request(sq.TYPES['GET_PATTERN'])
         print(f'revision accepted {r.u14()}, applied {r.u14()}')
-        names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H']
+        names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
         for i in range(16):
             note, length, bits = r.u7(), r.u7(), r.u7()
             flags = ''.join(c for c, b in (('G', 1), ('A', 2), ('S', 4)) if bits & b)
@@ -251,9 +254,9 @@ def main():
     elif args.command == 'state':
         r = link.request(sq.TYPES['GET_STATE'])
         state, mode, sw17, sw18, source, step = r.u7(), r.u7(), r.u7(), r.u7(), r.u7(), r.u7()
-        print(f"{STATES[state]}, Modus {['Vorwärts', 'Rückwärts', 'Zufall'][mode]}, SW17 {'Run' if sw17 else 'Stop'}, "
-              f"SW18 {sw18}, Quelle {SOURCES[source]}, Step {step + 1 if step < 16 else '-'}, "
-              f"{r.i32() / 1000:.1f} BPM, Revision {r.u14()}/{r.u14()}, CV {'frei' if r.u7() else 'gesperrt'}")
+        print(f"{STATES[state]}, mode {['forward', 'reverse', 'random'][mode]}, SW17 {'Run' if sw17 else 'Stop'}, "
+              f"SW18 {sw18}, source {SOURCES[source]}, Step {step + 1 if step < 16 else '-'}, "
+              f"{r.i32() / 1000:.1f} BPM, Revision {r.u14()}/{r.u14()}, CV {'enabled' if r.u7() else 'locked'}")
     elif args.command == 'transport':
         link.request(sq.TYPES['TRANSPORT'], sq.u7(1 if args.action == 'start' else 0))
         print('OK')
@@ -285,7 +288,7 @@ def main():
     elif args.command in ('enable', 'disable'):
         uid = identify(link)['uid']
         link.request(sq.TYPES['CV_ENABLE'], uid_payload(uid) + sq.u7(1 if args.command == 'enable' else 0))
-        print('CV frei' if args.command == 'enable' else 'CV gesperrt')
+        print('CV enabled' if args.command == 'enable' else 'CV locked')
     elif args.command in ('stats', 'reset-stats'):
         if args.command == 'reset-stats':
             link.request(sq.TYPES['RESET_STATS'])

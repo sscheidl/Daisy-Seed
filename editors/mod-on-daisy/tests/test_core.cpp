@@ -1,5 +1,5 @@
 // Host tests of the editor core (src/core) against the firmware's Controller and
-// Engine (GUI.md § 3: "core/ wird mit einem simulierten Gerät getestet"). No JUCE.
+// Engine (GUI.md § 3: "core/ is tested with a simulated device"). No JUCE.
 //   make -C editors/mod-on-daisy test
 #include "../src/core/Bootloader.h"
 #include "../src/core/PatchFile.h"
@@ -106,7 +106,7 @@ void TestConnect() {
     CHECK(rig.model.allowed == rig.sim.Device().Allowed());
     CHECK(!rig.model.Allowed(Cell(mod::PolyAt, 3)) && rig.model.Allowed(Cell(mod::PolyAt, 1)));
     CHECK(!rig.model.Allowed(Cell(0, 6)));
-    CHECK(rig.model.BlockedReason(Cell(mod::PolyAt, 3)).find("Anschlag") != std::string::npos);
+    CHECK(rig.model.BlockedReason(Cell(mod::PolyAt, 3)).find("note-on") != std::string::npos);
     CHECK(rig.model.Crc() == 0x61C264C4u); // default patch, as in the browser codec test
     CHECK(rig.session.StatusText().find("toy-piano") != std::string::npos);
     rig.Run(500);
@@ -130,7 +130,7 @@ void TestEditsAndCoalescing() {
     CHECK(rig.RunUntilIdle());
     CHECK(rig.InSync());
     CHECK(rig.sim.Device().CurrentPatch().Active(0, 0) && rig.sim.Device().CurrentPatch().depth[5][1] == -50);
-    CHECK(rig.Logged("Gerät bestätigt"));
+    CHECK(rig.Logged("Device confirmed"));
     // A drag: 100 values within 100 ms reach the device as a few SET_CELLs, ending on the last value.
     const int before = rig.wire.set_cell;
     for(int i = 1; i <= 100; ++i) {
@@ -160,7 +160,7 @@ void TestLimit() {
     CHECK(rig.RunUntilIdle());
     CHECK(rig.model.ActiveCount() == 8 && rig.InSync());
     CHECK(rig.session.EditDepth(Cell(4, 4), 10) == Model::Edit::Limited);
-    CHECK(rig.Logged("Höchstens 8"));
+    CHECK(rig.Logged("At most 8"));
     CHECK(rig.RunUntilIdle());
     CHECK(!rig.model.Enabled(Cell(4, 4)) && rig.model.Depth(Cell(4, 4)) == 10 && rig.InSync());
     // Codex finding on PR #23: a zeroed but enabled cell is the 8th again, not a 9th.
@@ -224,7 +224,7 @@ void TestUploadAndResync() {
     CHECK(rig.InSync());
     CHECK(rig.model.patch.depth[4][4] == 40); // SET_MATRIX did arrive
     CHECK(rig.model.patch.lfo[1].shape != 9);
-    CHECK(rig.Logged("teilweise"));
+    CHECK(rig.Logged("partly"));
     std::printf("PASS upload: SET_MATRIX + sources + name; refused value reloads the device state\n");
 }
 
@@ -236,12 +236,12 @@ void TestDisconnect() {
     rig.Run(100);
     const int sent = rig.wire.frames;
     const std::size_t logs = rig.logs.size();
-    rig.session.Disconnect("Gerät getrennt");
+    rig.session.Disconnect("device disconnected");
     rig.Run(3000);
     // Codex finding on PR #23: no retries to the closed port, no late handlers.
     CHECK(rig.wire.frames == sent);
     CHECK(rig.logs.size() == logs);
-    CHECK(rig.session.State() == LinkState::Offline && rig.session.StatusText() == "Gerät getrennt");
+    CHECK(rig.session.State() == LinkState::Offline && rig.session.StatusText() == "device disconnected");
     // Codex finding on PR #24: a monitor frame arriving after Disconnect (e.g. later in
     // the same MIDI batch) must not repopulate the live display.
     const int frames = rig.monitor_frames;
@@ -263,7 +263,7 @@ void TestNoAnswer() {
     rig.Run(2000);
     CHECK(rig.session.State() == LinkState::Offline);
     CHECK(rig.wire.frames == 1 + Session::kRetries);
-    CHECK(rig.Logged("keine Antwort"));
+    CHECK(rig.Logged("no answer"));
     std::printf("PASS no answer: IDENTIFY sent %d times, then offline with a message\n", rig.wire.frames);
 }
 
@@ -430,7 +430,7 @@ void TestPatchFile() {
     // Codex findings on PR #24: incomplete files and out-of-range values are refused,
     // never turned into a default patch or wrapped into another value.
     l = LoadPatch("{\"format\": \"mod-on-daisy-patch\", \"version\": 1}", toy);
-    CHECK(!l.ok && l.error.find("unvollständig") != std::string::npos);
+    CHECK(!l.ok && l.error.find("incomplete") != std::string::npos);
     std::string short_grid = browser;
     short_grid.replace(short_grid.find("    [0, 0, 0, 0, 0, 0, 0, 0],\n"), 30, "");
     CHECK(!LoadPatch(short_grid, toy).ok);
@@ -451,11 +451,11 @@ void TestPatchFile() {
     std::string depth_row = "[0, 0, 0, 0, 0, 0, 0, 0],";
     too_many.replace(too_many.find(depth_row), depth_row.size(), "[1, 1, 1, 1, 1, 1, 1, 1],");
     l = LoadPatch(too_many, Model{});
-    CHECK(!l.ok && l.error.find("mehr als 8") != std::string::npos);
+    CHECK(!l.ok && l.error.find("more than 8") != std::string::npos);
     std::string bad_shape = browser;
     bad_shape.replace(bad_shape.find("\"shape\": 5"), 10, "\"shape\": 9");
     l = LoadPatch(bad_shape, Model{});
-    CHECK(!l.ok && l.error.find("ungültige") != std::string::npos);
+    CHECK(!l.ok && l.error.find("invalid") != std::string::npos);
     std::printf("PASS patch files: round trip, browser editor format, greyed cells off, refusals\n");
 }
 // Correction order 2026-10-24: extended monitor (F3), aftertouch (F6), LFO cross modulation.
@@ -555,21 +555,21 @@ void TestHealth() {
     rig.sim.drop_replies = 1; // e.g. Studio One took the input
     rig.Run(1600);
     CHECK(rig.session.LinkHealth() == Health::NoLiveData);
-    CHECK(rig.session.StatusText().find("keine Live-Daten") != std::string::npos);
+    CHECK(rig.session.StatusText().find("no live data") != std::string::npos);
     rig.Run(3600);
     CHECK(rig.session.LinkHealth() == Health::NoReplies);
-    CHECK(rig.session.StatusText().find("keine Antwort") != std::string::npos);
-    CHECK(rig.Logged("Keine Antwort vom Gerät seit 5 s"));
+    CHECK(rig.session.StatusText().find("no answer") != std::string::npos);
+    CHECK(rig.Logged("No answer from the device for 5 s"));
     rig.session.EditDepth(Cell(mod::Lfo1, 1), 55);
     rig.Run(5000);
     int timeouts = 0;
     for(const auto& l : rig.logs)
-        timeouts += l.second.find("keine Antwort") != std::string::npos ? 1 : 0;
+        timeouts += l.second.find("no answer") != std::string::npos ? 1 : 0;
     CHECK(timeouts <= 2); // repeats within 3 s are shown once
     rig.sim.drop_replies = 0;
     CHECK(rig.RunUntilIdle());
     rig.Run(500);
-    CHECK(rig.session.LinkHealth() == Health::Ok && rig.Logged("antwortet wieder"));
+    CHECK(rig.session.LinkHealth() == Health::Ok && rig.Logged("answers again"));
     CHECK(rig.RunUntilIdle() && rig.InSync());
 
     // A MIDI output that refuses to send ends the session instead of pretending.
@@ -580,7 +580,7 @@ void TestHealth() {
     } refuse;
     dead.session.Connect(refuse, dead.now);
     dead.Run(50);
-    CHECK(dead.session.State() == LinkState::Offline && dead.Logged("verweigert"));
+    CHECK(dead.session.State() == LinkState::Offline && dead.Logged("refuses to send"));
     std::printf("PASS health: no live data after 1.5 s, no replies after 5 s, deduplicated log, reload on "
                 "recovery, refused send disconnects\n");
 }
@@ -642,7 +642,7 @@ void TestTransferRegressions() {
     rig.sim.drop_replies = 1;
     rig.session.Upload(file);
     rig.Run(3000);
-    CHECK(!rig.Logged("FilePatch bestätigt"));
+    CHECK(!rig.Logged("FilePatch confirmed"));
     rig.sim.drop_replies = 0;
     CHECK(rig.RunUntilIdle());
     rig.Run(300);

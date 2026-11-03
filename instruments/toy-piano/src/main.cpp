@@ -10,6 +10,7 @@
 #include <atomic>
 #if TOY_PIANO_FX
 #include "ambient_host.h"
+#include "../../../effects/reverb/src/rate_control.h"
 #include "callback_diagnostics.h"
 #include <new>
 #elif TOY_PIANO_TAPE
@@ -38,11 +39,46 @@ toy_piano::ToyPiano piano;
 alignas(toy_piano::AmbientHost) unsigned char DSY_SDRAM_BSS fx_storage[sizeof(toy_piano::AmbientHost)];
 toy_piano::AmbientHost* fx = nullptr;
 mod::adapter::CallbackDiagnostics callback_diagnostics;
+#if AMBIENT_COMPACT_48K
+// Diagnostic: all-pass and pitch lines in AXI SRAM behind the image (NOLOAD,
+// cleared by Prepare). Requires ld/toy_piano_axi.lds.
+#if defined(__arm__)
+__attribute__((section(".tp_axi_bss"), aligned(32)))
+#endif
+ambient::FastMemory fast_memory;
+#endif
 bool InitializeFx() {
     std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
     fx = new(fx_storage) toy_piano::AmbientHost{};
+#if AMBIENT_COMPACT_48K
+    return fx->Prepare(&fast_memory);
+#else
     return fx->Prepare();
+#endif
 }
+#if AMBIENT_SDRAM_WRITE_ALLOCATE && defined(__arm__)
+// Diagnostic: libDaisy maps SDRAM write-back without write-allocate, so every
+// delay-line write is a single bus transaction. Same region, TEX=1 adds
+// write-allocate. Only fx_storage lives in SDRAM; no DMA touches it.
+void EnableSdramWriteAllocate() {
+    SCB_CleanInvalidateDCache();
+    HAL_MPU_Disable();
+    MPU_Region_InitTypeDef region{};
+    region.Enable = MPU_REGION_ENABLE;
+    region.Number = MPU_REGION_NUMBER1;
+    region.BaseAddress = 0xC0000000;
+    region.Size = MPU_REGION_SIZE_64MB;
+    region.AccessPermission = MPU_REGION_FULL_ACCESS;
+    region.IsBufferable = MPU_ACCESS_BUFFERABLE;
+    region.IsCacheable = MPU_ACCESS_CACHEABLE;
+    region.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+    region.TypeExtField = MPU_TEX_LEVEL1;
+    region.SubRegionDisable = 0x00;
+    region.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+    HAL_MPU_ConfigRegion(&region);
+    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+}
+#endif
 #elif TOY_PIANO_TAPE
 // Host incl. the 16 KiB delay lines in SDRAM: default .bss would be the nearly full DTCM.
 alignas(toy_piano::TapeHost) unsigned char DSY_SDRAM_BSS fx_storage[sizeof(toy_piano::TapeHost)];
@@ -58,6 +94,13 @@ toy_piano::PotFilter attack_pot, decay_pot;
 #endif
 std::atomic<uint32_t> led_mask{0};
 daisy::MidiUsbHandler usb_midi;
+#if TOY_PIANO_FX
+void SendFxControl(const uint8_t* bytes, std::size_t size) {
+    if(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED)
+        usb_midi.SendMessage(const_cast<uint8_t*>(bytes), size);
+}
+ambient::RateControl fx_rate("toy-piano-amb", TOY_PIANO_AMBIENT_VERSION, true, SendFxControl);
+#endif
 struct NoteIn { uint8_t note, velocity; };
 // Main loop -> audio callback: notes received over USB.
 toy_piano::SpscQueue<NoteIn, toy_piano::kMidiQueueSize> midi_in;
@@ -149,6 +192,8 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     modulation.engine.Tick(size);
     // Attack and decay are latched at the strike; the matrix shifts the pot value.
 #if TOY_PIANO_FX
+    fx_rate.AudioTick();
+    fx->SetReverbRate(fx_rate.RateHz());
     std::array<float, 8> raw{};
     for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
     fx->ReadControls(raw, hw.tog_sw17.Pressed(), hw.tog_sw18.Read());
@@ -290,7 +335,12 @@ void ServiceUsbMidi() {
             boot_request.Set(bootloader::Request::kSysEx);
             continue;
         }
-        mod::MidiMessage message; // Mod on Daisy sees every event first (SysEx, CC1, AT)
+#if TOY_PIANO_FX
+        if(event.type == daisy::SystemCommon && event.sc_type == daisy::SystemExclusive &&
+           fx_rate.HandleBody(event.sysex_data, event.sysex_message_len, daisy::System::GetNow()))
+            continue;
+#endif
+        mod::MidiMessage message; // Mod on Daisy sees its SysEx, CC1 and aftertouch.
         if(mod::adapter::ToMessage(event, message) && modulation.controller.HandleMidi(message))
             continue;
         if(event.type == daisy::NoteOn) {
@@ -312,6 +362,9 @@ void ServiceUsbMidi() {
     const bool connected = hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED;
     SendKeyChanges(led_mask.load(std::memory_order_relaxed), connected);
     modulation.controller.Service(daisy::System::GetNow(), mod_sender); // at most one reply per ms
+#if TOY_PIANO_FX
+    fx_rate.Service(daisy::System::GetNow(), connected);
+#endif
 }
 
 // Main loop only: replies over USB if a host asked, then resets into the bootloader.
@@ -326,6 +379,9 @@ void ServiceBootloader() {
 int main() {
     asm volatile("" : : "r"(kFirmwareId)); // Keep the version string in the image.
     hw.Init();
+#if TOY_PIANO_FX && AMBIENT_SDRAM_WRITE_ALLOCATE && defined(__arm__)
+    EnableSdramWriteAllocate(); // Before any SDRAM content is initialized.
+#endif
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(toy_piano::kBlockSize);
     piano.Init(hw.seed.AudioSampleRate());

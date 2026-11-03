@@ -110,7 +110,7 @@ async function testToyPiano(browser) {
   let d = await dump(sim);
   assert.deepStrictEqual(d.active, [[0, 0, 30]]);
   assert.strictEqual(d.crc, await pageCrc(page));
-  assert(await page.textContent('#log').then((t) => t.includes('Gerät bestätigt')));
+  assert(await page.textContent('#log').then((t) => t.includes('Device confirmed')));
 
   // Drag: Modwheel → Level, drag down 100 px (2 px per step) = -50.
   const box = await cell(page, 5, 1).boundingBox();
@@ -170,11 +170,11 @@ async function testToyPiano(browser) {
   await page.keyboard.press('PageUp');
   await settle(page);
   assert.strictEqual((await dump(sim)).active.length, 8, 'eighth connection allowed after zeroing');
-  assert(!(await page.textContent('#log')).includes('Höchstens 8'));
+  assert(!(await page.textContent('#log')).includes('At most 8'));
   await cell(page, 3, 3).click();
   await page.keyboard.press('PageUp');
   await settle(page);
-  assert((await page.textContent('#log')).includes('Höchstens 8'));
+  assert((await page.textContent('#log')).includes('At most 8'));
   assert.strictEqual((await dump(sim)).active.length, 8);
   assert.strictEqual((await dump(sim)).crc, await pageCrc(page));
 
@@ -211,7 +211,7 @@ async function testToyPiano(browser) {
   saved.depth[4][4] = 40; saved.enabled[4][4] = false;
   fs.writeFileSync(file, JSON.stringify(saved));
   await page.setInputFiles('#fileInput', file);
-  await page.waitForFunction(() => document.getElementById('log').textContent.includes('teilweise'));
+  await page.waitForFunction(() => document.getElementById('log').textContent.includes('partly'));
   await settle(page);
   const partial = await dump(sim);
   assert.strictEqual(partial.crc, await pageCrc(page), 'editor shows the partly loaded device state');
@@ -245,7 +245,7 @@ async function testPhysicalModeling(browser) {
   assert.deepStrictEqual(headers, ['Pitch', 'Structure', 'Brightness', 'Damping', 'Position', 'Excitation', 'Level', 'Dry/Wet']);
   assert(await cell(page, 7, 5).evaluate((e) => e.classList.contains('blocked')), 'Poly AT × Excitation greyed out');
   await cell(page, 7, 2).click();
-  assert((await page.textContent('#cellInfo')).includes('pro Stimme'));
+  assert((await page.textContent('#cellInfo')).includes('per voice'));
   await page.keyboard.press('PageUp');
   await settle(page);
   assert.deepStrictEqual((await dump(sim)).active, [[7, 2, 10]]);
@@ -272,14 +272,14 @@ async function testCorrections(browser) {
   // F2: output open, input taken -> the output is released again.
   await page.evaluate(() => { window.__ports.inTaken = true; });
   await page.click('#connect');
-  await page.waitForFunction(() => document.getElementById('log').textContent.includes('belegt'));
+  await page.waitForFunction(() => document.getElementById('log').textContent.includes('held by'));
   await page.evaluate(() => closing);
   let pc = await ports();
   assert.deepStrictEqual([pc.outOpen, pc.outClose, pc.inOpen], [1, 1, 0], 'output released after a taken input');
   // F2: IDENTIFY without answer -> both ports closed, no retries left.
   await page.evaluate(() => { window.__ports.inTaken = false; window.__ports.silent = true; });
   await page.click('#connect');
-  await page.waitForFunction(() => document.getElementById('status').textContent === 'Fehler', null, { timeout: 5000 });
+  await page.waitForFunction(() => document.getElementById('status').textContent === 'error', null, { timeout: 5000 });
   await page.evaluate(() => closing);
   pc = await ports();
   assert.deepStrictEqual([pc.outOpen, pc.outClose, pc.inOpen, pc.inClose], [2, 2, 1, 1], 'both released after a handshake timeout');
@@ -317,16 +317,16 @@ async function testCorrections(browser) {
   // Clock state: MIDI clock sync without clock.
   await page.locator('.source[data-src="0"] .sync button[data-sync="1"]').click();
   await settle(page);
-  await page.waitForFunction(() => document.querySelector('.source[data-src="0"] .clockRow span').textContent.includes('Kein MIDI-Clock'));
+  await page.waitForFunction(() => document.querySelector('.source[data-src="0"] .clockRow span').textContent.includes('No MIDI clock'));
   assert(await page.locator('.source[data-src="0"] input.fm').isDisabled());
   await page.locator('.source[data-src="0"] .sync button[data-sync="0"]').click();
   await settle(page);
 
   // F5: nothing arrives -> no live data after 1.5 s, no replies after 5 s, recovery reloads.
   await page.evaluate(() => { window.__ports.silent = true; });
-  await page.waitForFunction(() => document.getElementById('status').textContent.includes('keine Live-Daten'), null, { timeout: 4000 });
-  await page.waitForFunction(() => document.getElementById('status').textContent.includes('keine Antwort'), null, { timeout: 8000 });
-  assert((await page.textContent('#log')).includes('Keine Antwort vom Gerät seit 5 s'));
+  await page.waitForFunction(() => document.getElementById('status').textContent.includes('no live data'), null, { timeout: 4000 });
+  await page.waitForFunction(() => document.getElementById('status').textContent.includes('no answer'), null, { timeout: 8000 });
+  assert((await page.textContent('#log')).includes('No answer from the device for 5 s'));
   await page.evaluate(() => { window.__ports.silent = false; });
   await page.waitForFunction(() => state.health === 'ok', null, { timeout: 5000 });
   stop();
@@ -363,7 +363,7 @@ async function testCorrections(browser) {
   await page.evaluate(() => { window.__compatChoice = (c) => { window.__recordCompat(c.notes); return 'cancel'; }; });
   const before = (await dump(sim)).crc;
   await page.setInputFiles('#fileInput', legacy);
-  await page.waitForFunction(() => document.getElementById('log').textContent.includes('abgebrochen'));
+  await page.waitForFunction(() => document.getElementById('log').textContent.includes('cancelled'));
   assert.strictEqual((await dump(sim)).crc, before, 'cancel leaves the device alone');
   assert(asked[0].some((n) => n.includes('Reverb') && n.includes('Level')), JSON.stringify(asked));
   await page.evaluate(() => { window.__compatChoice = () => 'safe'; });
@@ -413,7 +413,7 @@ async function testOffline(browser) {
   await page.keyboard.press('PageDown');
   assert.strictEqual(await page.evaluate(() => state.patch.depth[12]), -10);
   await page.click('#connect');
-  assert((await page.textContent('#log')).includes('Ein- und Ausgang'));
+  assert((await page.textContent('#log')).includes('an input and an output'));
   await page.click('#demoBtn'); // offline preview with the Toy Piano columns
   const headers = await page.$$eval('#grid thead th .name', (els) => els.map((e) => e.textContent));
   assert.deepStrictEqual(headers.slice(0, 5), ['Pitch', 'Level', 'Harmonic', 'Attack', 'Decay']);

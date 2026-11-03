@@ -4,6 +4,7 @@ namespace editor::ui {
 namespace {
 constexpr int kHeader = 56, kCellCard = 300, kSourcesHeight = 250, kFooter = 56, kPad = 14;
 constexpr int kSqSimulator = -2; // Port::simulator of "Acid Seq (Sim)"
+constexpr int kSwSimulator = -3; // Port::simulator of "Streichwurst (Sim)"
 
 juce::Colour LogColour(LogKind k) {
     switch(k) {
@@ -37,12 +38,12 @@ EditorComponent::EditorComponent(bool with_simulators)
     sq_session_.changed = [this] { triggerAsyncUpdate(); };
     sq_session_.log = [this](LogKind k, const std::string& text) { Log(k, U(text)); };
     addAndMakeVisible(port_);
-    port_.setTooltip(U("Gerät: MIDI-Port des Daisy („Daisy Seed External“)"));
+    port_.setTooltip(U("Device: the Daisy's MIDI port (“Daisy Seed External”)"));
     addAndMakeVisible(connect_);
     connect_.setColour(juce::TextButton::buttonColourId, colour::accent);
     connect_.onClick = [this] {
         if(session_.State() != LinkState::Offline || SqActive() || md_pending_) {
-            user_disconnected_ = true; // the plugin stays offline until "Verbinden"
+            user_disconnected_ = true; // the plugin stays offline until "Connect"
             Disconnect();
         } else {
             user_disconnected_ = false;
@@ -50,10 +51,21 @@ EditorComponent::EditorComponent(bool with_simulators)
         }
     };
     addAndMakeVisible(update_);
-    update_.setButtonText(U("Firmware-Update …"));
-    update_.setTooltip(U("Startet das Kit im Daisy-Bootloader neu, ohne BOOT und RESET. Danach die Firmware mit "
-                         "dem Daisy Web Programmer oder „make program-dfu“ laden."));
+    update_.setButtonText(U("Firmware update …"));
+    update_.setTooltip(U("Restarts the kit into the Daisy bootloader, without BOOT and RESET. Then load the firmware "
+                         "with the Daisy Web Programmer or “make program-dfu”."));
     update_.onClick = [this] { ConfirmFirmwareUpdate(); };
+    addChildComponent(view_);
+    view_.setTooltip(U("Streichwurst: sound parameters (SQ) and modulation matrix (Mod on Daisy) of the same device"));
+    view_.onClick = [this] { ShowMatrix(!show_matrix_); };
+    sq_panel_.matrix_text = [this] { return session_.Connected() ? SavePatch(model_, &session_.Device()) : std::string(); };
+    sq_panel_.upload_matrix = [this](const std::string& text) {
+        const LoadedPatch loaded = LoadPatch(text, model_);
+        if(!loaded.ok || !session_.Connected())
+            return Log(LogKind::Warn, U("Matrix from the patch not sent: ") +
+                                          U(loaded.ok ? std::string("no Mod on Daisy connection") : loaded.error));
+        SendProjectPatch(loaded); // columns that mean something else stay off
+    };
     addAndMakeVisible(status_);
     addAndMakeVisible(mode_);
     mode_.setColour(juce::Label::textColourId, colour::ink);
@@ -65,8 +77,8 @@ EditorComponent::EditorComponent(bool with_simulators)
     addAndMakeVisible(hint_);
     hint_.setColour(juce::Label::textColourId, colour::muted);
     hint_.setFont(juce::FontOptions(12.0f));
-    hint_.setText(U("Zelle wählen · senkrecht ziehen ändert die Tiefe (Shift fein) · Mausrad ±1 (Shift ±10) · "
-                    "Doppelklick ein/aus · Rechtsklick Menü · Pfeile, +/−, Bild↑/↓ ±10, 0, Leertaste"),
+    hint_.setText(U("Select a cell · drag vertically to change the depth (Shift fine) · mouse wheel ±1 (Shift ±10) · "
+                    "double-click on/off · right-click menu · arrows, +/−, Page↑/↓ ±10, 0, Space"),
                   juce::dontSendNotification);
 
     for(juce::Label* l : {&route_, &cell_info_, &device_heading_, &device_info_})
@@ -74,7 +86,7 @@ EditorComponent::EditorComponent(bool with_simulators)
     route_.setFont(juce::FontOptions(15.0f, juce::Font::bold));
     cell_info_.setColour(juce::Label::textColourId, colour::muted);
     cell_info_.setJustificationType(juce::Justification::topLeft);
-    device_heading_.setText(U("GERÄT"), juce::dontSendNotification);
+    device_heading_.setText(U("DEVICE"), juce::dontSendNotification);
     device_heading_.setColour(juce::Label::textColourId, colour::muted);
     device_heading_.setFont(juce::FontOptions(12.0f, juce::Font::bold));
     device_info_.setColour(juce::Label::textColourId, colour::muted);
@@ -111,19 +123,19 @@ EditorComponent::EditorComponent(bool with_simulators)
         if(name_.getText().toStdString() != model_.Name())
             session_.EditName(name_.getText().toStdString());
     };
-    open_.setButtonText(U("Datei öffnen …"));
-    save_.setButtonText(U("Datei speichern …"));
-    pull_.setButtonText(U("Vom Gerät laden"));
+    open_.setButtonText(U("Open file …"));
+    save_.setButtonText(U("Save file …"));
+    pull_.setButtonText(U("Load from device"));
     for(juce::TextButton* b : {&open_, &save_, &clear_, &pull_})
         addAndMakeVisible(b);
     open_.onClick = [this] { OpenFileDialog(); };
     save_.onClick = [this] { SaveFileDialog(); };
     clear_.onClick = [this] { session_.ClearMatrix(); };
-    pull_.setTooltip(U("Liest Matrix, Quellen und Name neu vom Gerät, z. B. nach Änderungen mit einem anderen "
-                       "Programm. Ohne solche Änderungen bleibt alles gleich."));
+    pull_.setTooltip(U("Reads the matrix, sources and name again from the device, e.g. after changes made with another "
+                       "program. Without such changes everything stays the same."));
     pull_.onClick = [this] {
         session_.Pull(false, [this] {
-            Log(LogKind::Ok, U("Zustand vom Gerät geladen (Patch-CRC ") + U(Hex32(model_.Crc())) + ").");
+            Log(LogKind::Ok, U("State loaded from the device (patch CRC ") + U(Hex32(model_.Crc())) + ").");
         });
     };
     addAndMakeVisible(log_);
@@ -132,8 +144,8 @@ EditorComponent::EditorComponent(bool with_simulators)
 
     RefreshPorts();
     RefreshAll();
-    Log(LogKind::Info, with_simulators_ ? U("Nicht verbunden. Ohne Gerät lässt sich offline bearbeiten oder ein Simulator wählen.")
-                                        : U("Nicht verbunden. Ohne Gerät lässt sich offline bearbeiten."));
+    Log(LogKind::Info, with_simulators_ ? U("Not connected. Without a device you can edit offline or choose a simulator.")
+                                        : U("Not connected. Without a device you can edit offline."));
     setSize(1220, 920);
     startTimer(10);
 }
@@ -151,8 +163,10 @@ void EditorComponent::RefreshPorts() {
     std::vector<Port> ports;
     for(int i = 0; with_simulators_ && i < int(std::size(kSimInstruments)); ++i)
         ports.push_back({U(kSimInstruments[i].label), i, {}, {}});
-    if(with_simulators_)
+    if(with_simulators_) {
         ports.push_back({U("Acid Seq (Sim)"), kSqSimulator, {}, {}});
+        ports.push_back({U("Streichwurst (Sim)"), kSwSimulator, {}, {}});
+    }
     for(const auto& out : outs) {
         // The input with the same name, else one that also says "Daisy".
         juce::MidiDeviceInfo in;
@@ -177,8 +191,8 @@ void EditorComponent::RefreshPorts() {
             in_present = in_present || in.identifier == midi_->Input().identifier;
         if(!out_present || !in_present) {
             Disconnect();
-            session_.Disconnect(U("Gerät getrennt").toStdString());
-            Log(LogKind::Error, U("Die Verbindung zum Daisy ist abgerissen. Bearbeitung geht offline weiter."));
+            session_.Disconnect(U("device disconnected").toStdString());
+            Log(LogKind::Error, U("The connection to the Daisy was lost. Editing continues offline."));
         }
     }
     if(same)
@@ -186,7 +200,7 @@ void EditorComponent::RefreshPorts() {
     const juce::String previous = port_.getText();
     // While offline, a Daisy that appears later replaces a non-Daisy suggestion (the kit is
     // often plugged in or leaves the bootloader after the editor started).
-    const bool keep = midi_ || simulator_ || sq_sim_ || previous.containsIgnoreCase("daisy");
+    const bool keep = midi_ || simulator_ || sq_sim_ || sw_sim_ || previous.containsIgnoreCase("daisy");
     ports_ = std::move(ports);
     port_.clear(juce::dontSendNotification);
     int same_label = -1, daisy = -1;
@@ -211,7 +225,7 @@ juce::StringArray EditorComponent::PortNames() const {
 void EditorComponent::ConnectTo(int index) {
     Disconnect();
     if(index < 0 || index >= int(ports_.size()))
-        return Log(LogKind::Warn, U("Bitte ein Gerät wählen."));
+        return Log(LogKind::Warn, U("Please choose a device."));
     const Port& p = ports_[std::size_t(index)];
     if(p.simulator == kSqSimulator) {
         sq_sim_ = std::make_unique<SqSimulator>("acid-seq");
@@ -220,6 +234,15 @@ void EditorComponent::ConnectTo(int index) {
             sq_sim_->Receive(b, n, now_);
             return true;
         };
+        sq_session_.Connect(now_);
+    } else if(p.simulator == kSwSimulator) {
+        sw_sim_ = std::make_unique<StreichwurstSim>();
+        sw_sim_->SetOut([this](const uint8_t* b, std::size_t n) { sq_sim_out_.emplace_back(b, b + n); });
+        sq_link_.send = [this](const uint8_t* b, std::size_t n) {
+            sw_sim_->Receive(b, n, now_);
+            return true;
+        };
+        md_link_.send = sq_link_.send;
         sq_session_.Connect(now_);
     } else if(p.simulator >= 0) {
         simulator_ = std::make_unique<Simulator>(kSimInstruments[p.simulator].make(),
@@ -240,12 +263,20 @@ void EditorComponent::ConnectTo(int index) {
     }
     port_.setSelectedItemIndex(index, juce::dontSendNotification);
     last_alert_ = 0; // messages of the previous device are over
-    Log(LogKind::Info, U("Verbinde mit ") + p.label + U(" …"));
+    Log(LogKind::Info, U("Connecting to ") + p.label + U(" …"));
     RefreshAll();
+}
+
+void EditorComponent::ShowMatrix(bool on) {
+    show_matrix_ = on && sq_session_.Ready() && sq_session_.Identity().HasModMatrix();
+    RefreshAll();
+    resized();
 }
 
 void EditorComponent::Disconnect() {
     md_pending_ = false;
+    md_alongside_ = false;
+    show_matrix_ = false;
     sq_session_.Disconnect();
     session_.Disconnect("");
     ReleasePort();
@@ -300,26 +331,26 @@ void EditorComponent::AutoConnect() {
 }
 
 std::string EditorComponent::PatchText() const {
-    if(sq_session_.Ready()) // an Acid Seq device: the product patch is the song state
-        return SerializeAcidPatch(PatchFromSession(sq_session_));
+    if(sq_session_.Ready()) // an SQ device: the product patch (Streichwurst: with matrix) is the song state
+        return SerializeAcidPatch(sq_panel_.CurrentPatch());
     return SavePatch(model_, session_.Connected() ? &session_.Device() : nullptr);
 }
 
 void EditorComponent::LoadProjectPatch(const std::string& text) {
-    if(text.find("\"acid-seq-patch\"") != std::string::npos) {
+    if(text.find("\"acid-seq-patch\"") != std::string::npos || text.find("\"streichwurst-patch\"") != std::string::npos) {
         std::string error;
         sq_project_ = ParseAcidPatch(text, error);
         if(!sq_project_)
-            return Log(LogKind::Error, U("Acid-Seq-Patch im Projekt nicht lesbar: ") + U(error));
+            return Log(LogKind::Error, U("Product patch in the project is not readable: ") + U(error));
         if(sq_session_.Ready())
             AskProjectUpload();
         else
-            Log(LogKind::Info, U("Acid-Seq-Patch aus dem Projekt geladen; beim Verbinden wird gefragt, ob er übertragen wird."));
+            Log(LogKind::Info, U("Product patch loaded from the project; on connecting you will be asked whether to send it."));
         return;
     }
     const LoadedPatch loaded = LoadPatch(text, model_);
     if(!loaded.ok) {
-        Log(LogKind::Error, U("Patch im Projekt nicht lesbar: ") + U(loaded.error));
+        Log(LogKind::Error, U("Patch in the project is not readable: ") + U(loaded.error));
         return;
     }
     if(session_.Connected()) {
@@ -328,26 +359,32 @@ void EditorComponent::LoadProjectPatch(const std::string& text) {
     }
     ApplyLoaded(loaded, loaded.patch); // shown offline at once
     pending_project_ = loaded;
-    Log(LogKind::Info, U("Patch aus dem Projekt geladen; er geht beim Verbinden zum Gerät."));
+    Log(LogKind::Info, U("Patch loaded from the project; it goes to the device on connecting."));
 }
 
 // The project wins over what the device holds; mismatching columns stay off (F1, "safe").
 void EditorComponent::SendProjectPatch(const LoadedPatch& loaded) {
     const Compatibility compat = CheckCompatibility(loaded, model_, session_.Device());
     ApplyDecision(loaded, compat, compat.NeedsDecision() ? CompatChoice::Safe : CompatChoice::Force);
-    Log(LogKind::Ok, U("Patch aus dem Projekt zum Gerät gesendet."));
+    Log(LogKind::Ok, U("Patch from the project sent to the device."));
 }
 
 void EditorComponent::Advance(uint32_t now_ms) {
     now_ = now_ms;
     if(simulator_)
         simulator_->Advance(1, [this](const uint8_t* b, std::size_t n) { session_.OnMessage(b, n); });
-    if(sq_sim_) {
-        sq_sim_->Advance(now_);
+    if(sq_sim_ || sw_sim_) {
+        if(sq_sim_)
+            sq_sim_->Advance(now_);
+        if(sw_sim_)
+            sw_sim_->Advance(now_);
         while(!sq_sim_out_.empty()) {
             const std::vector<uint8_t> m = std::move(sq_sim_out_.front());
             sq_sim_out_.pop_front();
-            sq_session_.OnMessage(m.data(), m.size(), now_);
+            if(ClassifySysEx(m.data(), m.size()) == Protocol::Sq)
+                sq_session_.OnMessage(m.data(), m.size(), now_);
+            else
+                session_.OnMessage(m.data(), m.size());
         }
     }
     if(midi_)
@@ -359,6 +396,16 @@ void EditorComponent::Advance(uint32_t now_ms) {
                 session_.OnMessage(m.data(), m.size());
         }
     sq_session_.Tick(now_);
+    // SQ 1.1 with CapModMatrix (Streichwurst): Mod on Daisy alongside on the same port,
+    // started once the SQ state has been read; it reads the matrix first as well.
+    if(!md_alongside_ && sq_session_.Ready() && sq_session_.Identity().HasModMatrix() &&
+       session_.State() == LinkState::Offline && (midi_ || sw_sim_)) {
+        md_alongside_ = true;
+        if(midi_)
+            session_.Connect(*midi_, now_);
+        else
+            session_.Connect(md_link_, now_);
+    }
     if(md_pending_ && midi_ && sq_session_.GetPhase() == SqSession::Phase::Failed) {
         md_pending_ = false; // no SQ device: a Mod on Daisy firmware, as before
         sq_session_.Disconnect();
@@ -370,7 +417,7 @@ void EditorComponent::Advance(uint32_t now_ms) {
     session_.Tick(now_);
     // The session gave up (no answer to IDENTIFY, refused send, wrong protocol): the
     // port is released at once, so another application or a new attempt can open it.
-    if(session_.State() == LinkState::Offline && !md_pending_ && !SqActive() && (midi_ || simulator_ || sq_sim_))
+    if(session_.State() == LinkState::Offline && !md_pending_ && !SqActive() && (midi_ || simulator_ || sq_sim_ || sw_sim_))
         ReleasePort();
     FinishFirmwareUpdate(boot_.Poll(now_));
 }
@@ -381,14 +428,14 @@ void EditorComponent::Advance(uint32_t now_ms) {
 // connection: then the selected port is opened just for the request.
 void EditorComponent::ConfirmFirmwareUpdate() {
     auto* w = new juce::AlertWindow(
-        U("Kit in den Update-Modus schalten?"),
-        U("Das Kit startet in den Daisy-Bootloader neu: Das Programm hält an, die MIDI-Verbindung endet und alle "
-          "16 LEDs leuchten. Danach die neue Firmware mit dem Daisy Web Programmer oder „make program-dfu“ "
-          "laden; das Kit wartet ohne Zeitlimit."),
+        U("Switch the kit to update mode?"),
+        U("The kit restarts into the Daisy bootloader: the program stops, the MIDI connection ends and all "
+          "16 LEDs light up. Then load the new firmware with the Daisy Web Programmer or “make program-dfu”; "
+          "the kit waits without a time limit."),
         juce::MessageBoxIconType::QuestionIcon, this);
     w->setLookAndFeel(&look_);
-    w->addButton(U("Update-Modus starten"), 1, juce::KeyPress(juce::KeyPress::returnKey));
-    w->addButton(U("Abbrechen"), 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    w->addButton(U("Start update mode"), 1, juce::KeyPress(juce::KeyPress::returnKey));
+    w->addButton(U("Cancel"), 0, juce::KeyPress(juce::KeyPress::escapeKey));
     w->enterModalState(true, juce::ModalCallbackFunction::create([this](int result) {
                            if(result == 1)
                                StartFirmwareUpdate(port_.getSelectedItemIndex());
@@ -401,11 +448,11 @@ void EditorComponent::StartFirmwareUpdate(int index) {
         return;
     const bool valid = index >= 0 && index < int(ports_.size());
     if(simulator_ || sq_sim_ || (!midi_ && valid && ports_[std::size_t(index)].simulator != -1))
-        return Log(LogKind::Warn, U("Ein Simulator hat keinen Bootloader."));
+        return Log(LogKind::Warn, U("A simulator has no bootloader."));
     MidiPort* port = midi_.get();
     if(!port) {
         if(!valid)
-            return Log(LogKind::Warn, U("Bitte ein Gerät wählen."));
+            return Log(LogKind::Warn, U("Please choose a device."));
         juce::String error;
         boot_port_ = MidiPort::Open(ports_[std::size_t(index)].out, ports_[std::size_t(index)].in, error);
         if(!boot_port_)
@@ -414,9 +461,9 @@ void EditorComponent::StartFirmwareUpdate(int index) {
     }
     if(!boot_.Start(now_, [port](const uint8_t* b, std::size_t n) { return port->Send(b, n); })) {
         boot_port_.reset();
-        return Log(LogKind::Error, U("Der MIDI-Port hat die Anfrage abgelehnt."));
+        return Log(LogKind::Error, U("The MIDI port refused the request."));
     }
-    Log(LogKind::Info, U("Update-Modus angefordert …"));
+    Log(LogKind::Info, U("Update mode requested …"));
     RefreshAll();
 }
 
@@ -427,12 +474,12 @@ void EditorComponent::FinishFirmwareUpdate(BootRequest::Result result) {
     if(result == BootRequest::Result::Acknowledged) {
         Disconnect(); // the port disappears with the reset; no "connection lost" message
         // The reply confirms that the request was accepted, not the DFU entry itself.
-        Log(LogKind::Ok, U("Anfrage angenommen: Das Kit startet in den Update-Modus (alle LEDs an, der Looper "
-                           "erst nach laufender Kartenarbeit). Sobald es als DFU-Gerät erscheint, Firmware mit "
-                           "dem Daisy Web Programmer oder „make program-dfu“ laden."));
+        Log(LogKind::Ok, U("Request accepted: the kit restarts into update mode (all LEDs on; the Looper only after "
+                           "running card work). As soon as it appears as a DFU device, load the firmware with "
+                           "the Daisy Web Programmer or “make program-dfu”."));
     } else {
-        Log(LogKind::Warn, U("Keine Antwort vom Kit. Ältere Firmware kennt den Befehl nicht: dann S9 und S16 fünf "
-                             "Sekunden halten oder RESET und BOOT verwenden (docs/FLASHING.md)."));
+        Log(LogKind::Warn, U("No answer from the kit. Older firmware does not know the command: then hold S9 and S16 for five "
+                             "seconds or use RESET and BOOT (docs/FLASHING.md)."));
     }
     RefreshAll();
 }
@@ -441,7 +488,9 @@ void EditorComponent::ReleasePort() {
     grid_.ClearMonitor();
     simulator_.reset();
     sq_link_.send = {};
+    md_link_.send = {};
     sq_sim_.reset();
+    sw_sim_.reset();
     sq_sim_out_.clear();
     midi_.reset();
     RefreshAll();
@@ -457,14 +506,14 @@ void EditorComponent::RefreshMode() {
     if(session_.Connected() && d.Modes()) {
         if(mode_index_ >= 0 && mode_index_ < int(d.modes.size()) && !d.modes[std::size_t(mode_index_)].name.empty()) {
             const DeviceInfo::Mode& m = d.modes[std::size_t(mode_index_)];
-            text = U("Modell: ") + U(m.name) + (mode_origin_ == 1 ? U(" (MIDI)") : U(""));
-            tip = U(m.name) + U(" – am Gerät: ") + U(m.hint)
-                  + (mode_origin_ == 1 ? U("\nZuletzt per MIDI (CC28) gewählt; die Schalter stehen evtl. anders.")
+            text = U("Model: ") + U(m.name) + (mode_origin_ == 1 ? U(" (MIDI)") : U(""));
+            tip = U(m.name) + U(" – on the device: ") + U(m.hint)
+                  + (mode_origin_ == 1 ? U("\nLast selected over MIDI (CC28); the switches may be set differently.")
                                        : U(""));
         } else {
-            text = U("Modell: …");
+            text = U("Model: …");
         }
-        tip << U("\nAlle Modelle:");
+        tip << U("\nAll models:");
         for(std::size_t i = 0; i < d.modes.size(); ++i)
             tip << U("\n  ") << U(d.modes[i].name) << U(" – ") << U(d.modes[i].hint);
     }
@@ -473,7 +522,7 @@ void EditorComponent::RefreshMode() {
 }
 
 // The device has priority (D13): a song's patch is sent only after confirmation, or
-// always once "Immer" was chosen for this plugin instance.
+// always once "Always send" was chosen for this plugin instance.
 void EditorComponent::AskProjectUpload() {
     if(!sq_project_ || !sq_session_.Ready())
         return;
@@ -486,22 +535,22 @@ void EditorComponent::AskProjectUpload() {
             sq_always_upload_ = true;
         if(choice >= 1) {
             const int n = sq_panel_.Upload();
-            Log(LogKind::Ok, U("Patch aus dem Projekt übertragen (") + juce::String(n) + U(" Werte)."));
+            Log(LogKind::Ok, U("Patch from the project sent (") + juce::String(n) + U(" values)."));
         } else {
-            Log(LogKind::Info, U("Patch aus dem Projekt nicht übertragen; das Gerät behält seinen Zustand."));
+            Log(LogKind::Info, U("Patch from the project not sent; the device keeps its state."));
         }
     };
     if(sq_always_upload_)
         return apply(1);
     if(sq_upload_decision)
         return apply(sq_upload_decision(compat));
-    juce::String text = U("Das Projekt enthält einen Acid-Seq-Patch. Das Gerät hat Vorrang: Ohne Bestätigung bleibt sein Zustand.");
+    juce::String text = U("The project contains a product patch. The device has priority: without confirmation it keeps its state.");
     if(!compat.Clean())
-        text << U("\nNicht passende Teile werden übersprungen.");
-    auto* w = new juce::AlertWindow(U("Patch aus dem Projekt übertragen?"), text, juce::MessageBoxIconType::QuestionIcon, this);
-    w->addButton(U("Übertragen"), 1);
-    w->addButton(U("Immer übertragen"), 2);
-    w->addButton(U("Nicht übertragen"), 0);
+        text << U("\nParts that do not fit are skipped.");
+    auto* w = new juce::AlertWindow(U("Send the patch from the project?"), text, juce::MessageBoxIconType::QuestionIcon, this);
+    w->addButton(U("Send"), 1);
+    w->addButton(U("Always send"), 2);
+    w->addButton(U("Don't send"), 0);
     w->enterModalState(true, juce::ModalCallbackFunction::create(apply), true);
 }
 
@@ -510,13 +559,20 @@ void EditorComponent::RefreshAll() {
     if(sq_ready && !sq_was_ready_)
         AskProjectUpload(); // the device state has just been read
     sq_was_ready_ = sq_ready;
-    sq_panel_.setVisible(sq_ready);
-    if(sq_ready) {
+    const bool matrix_available = sq_ready && sq_session_.Identity().HasModMatrix();
+    if(!matrix_available)
+        show_matrix_ = false;
+    view_.setVisible(matrix_available);
+    view_.setEnabled(session_.Connected() || show_matrix_);
+    view_.setButtonText(U(show_matrix_ ? "Sound parameters" : "Matrix"));
+    sq_panel_.setVisible(sq_ready && !show_matrix_);
+    if(sq_ready && !show_matrix_) {
         sq_panel_.Refresh();
-        status_.setText(U(sq_session_.Identity().product + " " + sq_session_.Identity().version + " · SQ"),
+        status_.setText(U(sq_session_.Identity().product + " " + sq_session_.Identity().version + " · SQ" +
+                          (matrix_available ? (session_.Connected() ? " + Matrix" : " · Matrix connecting …") : "")),
                         juce::dontSendNotification);
         status_.setColour(juce::Label::textColourId, colour::ok);
-        connect_.setButtonText("Trennen");
+        connect_.setButtonText("Disconnect");
         port_.setEnabled(false);
         if(patch_changed) {
             std::string text = PatchText();
@@ -550,12 +606,12 @@ void EditorComponent::RefreshAll() {
                                                 : (session_.StatusText() == "offline" ? colour::muted : colour::err));
     status_.setColour(juce::Label::outlineColourId, status_.findColour(juce::Label::textColourId));
     const bool busy = s != LinkState::Offline || SqActive() || md_pending_;
-    connect_.setButtonText(busy ? "Trennen" : "Verbinden");
+    connect_.setButtonText(busy ? "Disconnect" : "Connect");
     RefreshMode();
     port_.setEnabled(!busy);
-    update_.setEnabled(!boot_.Waiting() && !simulator_ && !ports_.empty());
+    update_.setEnabled(!boot_.Waiting() && !simulator_ && !sq_sim_ && !sw_sim_ && !ports_.empty());
     pull_.setEnabled(session_.Connected());
-    count_.setText(U("Aktive Verbindungen: ") + juce::String(model_.ActiveCount()) + " / "
+    count_.setText(U("Active connections: ") + juce::String(model_.ActiveCount()) + " / "
                        + juce::String(model_.max_active),
                    juce::dontSendNotification);
     for(auto& panel : sources_)
@@ -565,14 +621,14 @@ void EditorComponent::RefreshAll() {
     if(session_.Connected()) {
         const DeviceInfo& d = session_.Device();
         device_info_.setText(U(d.key) + " " + U(d.version) + ", Mod on Daisy " + juce::String(d.module_major) + "."
-                                 + juce::String(d.module_minor) + "." + juce::String(d.module_patch) + ", Protokoll "
-                                 + juce::String(d.protocol_major) + "." + juce::String(d.protocol_minor) + ", Tick "
-                                 + juce::String(d.tick_hz) + " Hz, Schema " + U(Hex32(d.schema)) + U(".\nSpeicherplätze im Gerät: ")
-                                 + (d.slots ? juce::String(d.slots) : U("noch keine (Patches als Datei sichern)."))
-                                 + (simulator_ ? U("\nSimulator: der Firmware-Code auf dem PC, kein Daisy nötig.") : U("")),
+                                 + juce::String(d.module_minor) + "." + juce::String(d.module_patch) + ", protocol "
+                                 + juce::String(d.protocol_major) + "." + juce::String(d.protocol_minor) + ", tick "
+                                 + juce::String(d.tick_hz) + " Hz, schema " + U(Hex32(d.schema)) + U(".\nMemory slots on the device: ")
+                                 + (d.slots ? juce::String(d.slots) : U("none yet (save patches as files)."))
+                                 + (simulator_ ? U("\nSimulator: the firmware code on the PC, no Daisy needed.") : U("")),
                              juce::dontSendNotification);
     } else {
-        device_info_.setText(U("Nicht verbunden. Der Editor arbeitet offline; Änderungen lassen sich als Datei speichern."),
+        device_info_.setText(U("Not connected. The editor works offline; changes can be saved as a file."),
                              juce::dontSendNotification);
     }
     RefreshCellEditor();
@@ -593,11 +649,11 @@ void EditorComponent::RefreshCellEditor() {
     if(!ok) {
         info = U(model_.BlockedReason(c));
     } else {
-        info = U("Tiefe 100 = ") + (col.span_text.empty() ? U("voller Bereich") : U(col.SpanLabel()));
+        info = U("Depth 100 = ") + (col.span_text.empty() ? U("full range") : U(col.SpanLabel()));
         if(SourceOf(c) == mod::PolyAt)
-            info << U(col.per_voice ? "\nPoly AT pro Stimme" : "\nPoly AT der zuletzt gespielten Note");
+            info << U(col.per_voice ? "\nPoly AT per voice" : "\nPoly AT of the last played note");
         if(col.latched)
-            info << U("\nwirkt beim nächsten Anschlag");
+            info << U("\ntakes effect on the next note");
     }
     cell_info_.setText(info, juce::dontSendNotification);
 }
@@ -625,8 +681,8 @@ void EditorComponent::paint(juce::Graphics& g) {
     g.drawText("Mod on", title, juce::Justification::centredLeft);
     g.setColour(colour::accent);
     g.drawText("Daisy", title.withTrimmedLeft(66), juce::Justification::centredLeft);
-    PaintCard(g, grid_card_, "Modulationsmatrix");
-    PaintCard(g, cell_card_, "Verbindung");
+    PaintCard(g, grid_card_, "Modulation matrix");
+    PaintCard(g, cell_card_, "Connection");
     PaintCard(g, footer_card_, {});
 }
 
@@ -640,6 +696,8 @@ void EditorComponent::resized() {
         h.removeFromLeft(8);
         connect_.setBounds(h.removeFromLeft(110));
         update_.setBounds(h.removeFromRight(150));
+        h.removeFromRight(8);
+        view_.setBounds(h.removeFromRight(130));
         h.removeFromRight(12);
         h.removeFromLeft(12);
         status_.setBounds(h.removeFromLeft(330));
@@ -701,7 +759,7 @@ void EditorComponent::resized() {
 
 // ------------------------------------------------------------------ files
 void EditorComponent::OpenFileDialog() {
-    chooser_ = std::make_unique<juce::FileChooser>(U("Patch öffnen"), juce::File(), "*.modpatch;*.json");
+    chooser_ = std::make_unique<juce::FileChooser>(U("Open patch"), juce::File(), "*.modpatch;*.json");
     chooser_->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                           [this](const juce::FileChooser& fc) {
                               if(fc.getResult() != juce::File())
@@ -712,7 +770,7 @@ void EditorComponent::OpenFileDialog() {
 void EditorComponent::SaveFileDialog() {
     const juce::String base = model_.Name().empty() ? juce::String("patch") : U(model_.Name());
     chooser_ = std::make_unique<juce::FileChooser>(
-        U("Patch speichern"), juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+        U("Save patch"), juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
                                   .getChildFile(juce::File::createLegalFileName(base) + ".modpatch"),
         "*.modpatch");
     chooser_->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
@@ -725,10 +783,10 @@ void EditorComponent::SaveFileDialog() {
 bool EditorComponent::SaveFile(const juce::File& file) {
     const std::string text = SavePatch(model_, session_.Connected() ? &session_.Device() : nullptr);
     if(!file.replaceWithText(U(text))) {
-        Log(LogKind::Error, U("Datei lässt sich nicht schreiben: ") + file.getFullPathName());
+        Log(LogKind::Error, U("Cannot write the file: ") + file.getFullPathName());
         return false;
     }
-    Log(LogKind::Ok, U("Gespeichert: ") + file.getFileName());
+    Log(LogKind::Ok, U("Saved: ") + file.getFileName());
     return true;
 }
 
@@ -756,14 +814,14 @@ bool EditorComponent::LoadFile(const juce::File& file) {
     juce::String text;
     for(const std::string& note : compat.notes)
         text << U("• ") << U(note) << "\n";
-    text << U("\n„Ohne betroffene laden“ schaltet die betroffenen Verbindungen aus (Tiefe bleibt erhalten) und "
-              "lädt alles andere.");
-    auto* w = new juce::AlertWindow(U("Patch passt nicht genau zu diesem Gerät"), text,
+    text << U("\n“Load without affected” switches the affected connections off (their depth is kept) and "
+              "loads everything else.");
+    auto* w = new juce::AlertWindow(U("The patch does not exactly fit this device"), text,
                                     juce::MessageBoxIconType::WarningIcon, this);
     w->setLookAndFeel(&look_);
-    w->addButton(U("Ohne betroffene laden"), int(CompatChoice::Safe), juce::KeyPress(juce::KeyPress::returnKey));
-    w->addButton(U("Trotzdem vollständig"), int(CompatChoice::Force));
-    w->addButton(U("Abbrechen"), int(CompatChoice::Cancel), juce::KeyPress(juce::KeyPress::escapeKey));
+    w->addButton(U("Load without affected"), int(CompatChoice::Safe), juce::KeyPress(juce::KeyPress::returnKey));
+    w->addButton(U("Load everything anyway"), int(CompatChoice::Force));
+    w->addButton(U("Cancel"), int(CompatChoice::Cancel), juce::KeyPress(juce::KeyPress::escapeKey));
     w->enterModalState(true, juce::ModalCallbackFunction::create([this, loaded, compat](int result) {
                            ApplyDecision(loaded, compat, CompatChoice(result));
                        }),
@@ -773,14 +831,14 @@ bool EditorComponent::LoadFile(const juce::File& file) {
 
 void EditorComponent::ApplyDecision(const LoadedPatch& loaded, const Compatibility& compat, CompatChoice choice) {
     if(choice == CompatChoice::Cancel) {
-        Log(LogKind::Info, U("Laden abgebrochen, das Gerät bleibt unverändert."));
+        Log(LogKind::Info, U("Loading cancelled; the device is unchanged."));
         return;
     }
     if(choice == CompatChoice::Safe) {
         int off = 0;
         for(int c = 0; c < kCells; ++c)
             off += (compat.affected & Bit(c)) ? 1 : 0;
-        Log(LogKind::Warn, U("Geladen ohne ") + juce::String(off) + U(" betroffene Verbindung(en)."));
+        Log(LogKind::Warn, U("Loaded without ") + juce::String(off) + U(" affected connection(s)."));
         ApplyLoaded(loaded, SafePart(loaded.patch, compat));
     } else {
         ApplyLoaded(loaded, loaded.patch);

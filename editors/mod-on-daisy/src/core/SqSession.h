@@ -4,8 +4,9 @@
 // bootloader reply (7D 42 4C) apart, and the SQ client of the Acid Seq panel pages.
 //
 // Connect() reads the device first (D13: the device has priority): IDENTIFY, components,
-// parameter descriptors and enum labels, values, pattern, state, calibration, then the
-// monitor. Nothing is written to the device without an explicit call (an edit or
+// parameter descriptors and enum labels, values, pattern (capability bit 3), state,
+// calibration (bit 5), then the monitor. SQ 1.1 devices with bit 6 (CapModMatrix) also
+// speak Mod on Daisy on the same port; the editor then runs its MD session alongside. Nothing is written to the device without an explicit call (an edit or
 // Upload()). One request at a time, 200 ms timeout, three retries with the same request ID.
 //
 // Single-threaded: OnMessage(), Tick() and all calls on the GUI thread.
@@ -73,7 +74,16 @@ struct SqIdentity {
     uint32_t boot_id = 0, uid[3] = {};
     uint16_t capabilities = 0;
     uint8_t component_count = 0;
+    bool HasPattern() const { return capabilities & 8; }
+    bool HasCalibration() const { return capabilities & 32; }
+    bool HasModMatrix() const { return capabilities & 64; } // SQ 1.1: MD on the same port
 };
+
+// Component kinds of GET_COMPONENT (4 = the firmware product itself, SQ 1.1).
+inline const char* SqKindName(uint8_t kind) {
+    static const char* names[] = {"Sequencer", "Instrument", "Effect", "DSP", "Product"};
+    return kind < 5 ? names[kind] : "?";
+}
 
 struct SqState {
     uint8_t state = 0, mode = 0, sw17 = 0, sw18 = 1, source = 0;
@@ -112,25 +122,25 @@ inline int32_t CalMilli(double codes) {
 }
 
 inline const char* SqStateName(uint8_t s) {
-    static const char* names[] = {"STOP", "WARTET", "LÄUFT", "PAUSE"};
+    static const char* names[] = {"STOP", "WAITING", "RUNNING", "PAUSE"};
     return s < 4 ? names[s] : "?";
 }
 inline std::string SqNoteName(int note) { // step note 0..59 relative to C1
-    static const char* names[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H"};
+    static const char* names[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
     return std::string(names[note % 12]) + std::to_string(note / 12 + 1);
 }
 inline std::string SqErrorText(uint8_t code) {
     switch(code) {
-        case 1: return "Länge";
-        case 2: return "Prüfsumme";
-        case 3: return "unbekannter Typ";
-        case 4: return "Wert außerhalb des Bereichs";
-        case 5: return "beschäftigt";
-        case 6: return "Protokollversion";
-        case 7: return "anderes Kit (UID)";
-        case 8: return "nicht kalibriert";
-        case 9: return "im aktuellen Zustand nicht erlaubt";
-        default: return "Fehler " + std::to_string(code);
+        case 1: return "length";
+        case 2: return "checksum";
+        case 3: return "unknown type";
+        case 4: return "value out of range";
+        case 5: return "busy";
+        case 6: return "protocol version";
+        case 7: return "another kit (UID)";
+        case 8: return "not calibrated";
+        case 9: return "not allowed in the current state";
+        default: return "error " + std::to_string(code);
     }
 }
 
@@ -222,7 +232,7 @@ class SqSession {
     void StartStop(bool start, Done done = {}) {
         Enqueue(sq::TransportCmd, {uint8_t(start ? 1 : 0)}, [this, done](bool ok, uint8_t err, sq::Reader&) {
             if(!ok && log)
-                log(LogKind::Warn, "Start/Stopp abgelehnt: " + SqErrorText(err) + " (SW17 auf Run?)");
+                log(LogKind::Warn, "Start/stop refused: " + SqErrorText(err) + " (SW17 on Run?)");
             Finish(done, ok, err);
         });
     }
@@ -266,7 +276,7 @@ class SqSession {
             Finish(done, ok, err);
         });
     }
-    // Re-reads everything from the device (button "Vom Gerät lesen").
+    // Re-reads everything from the device (button "Read from device").
     void Pull() { ReadAll(); }
 
     void OnMessage(const uint8_t* m, std::size_t n, double now_ms) {
@@ -322,7 +332,7 @@ class SqSession {
                     phase_ = Phase::Failed;
                     queue_.clear();
                     if(log)
-                        log(LogKind::Error, "SQ-Gerät antwortet nicht");
+                        log(LogKind::Error, "SQ device does not answer");
                     Changed();
                 }
                 SendNext();
@@ -418,7 +428,7 @@ class SqSession {
     }
     void Finish(const Done& done, bool ok, uint8_t err) {
         if(!ok && err && log)
-            log(LogKind::Warn, "Gerät lehnt ab: " + SqErrorText(err));
+            log(LogKind::Warn, "Device refuses: " + SqErrorText(err));
         if(done)
             done(ok, err);
         Changed();
@@ -467,15 +477,16 @@ class SqSession {
             id.capabilities = r.U14();
             id.component_count = r.U7();
             if(!r.Ok() || id.protocol_major != sq::kVersion)
-                return Fail("IDENTIFY (Protokollversion)");
+                return Fail("IDENTIFY (protocol version)");
             restarted_ = old_boot && old_boot != id.boot_id;
             identity_ = id;
             components_.assign(id.component_count, SqComponent{});
             for(uint8_t c = 0; c < id.component_count; ++c)
                 ReadComponent(c);
-            ReadPattern();
+            if(id.HasPattern())
+                ReadPattern();
             ReadState();
-            if(id.capabilities & 32) {
+            if(id.HasCalibration()) {
                 ReadCal(0);
                 ReadCal(1);
             }
@@ -492,14 +503,14 @@ class SqSession {
             return;
         phase_ = Phase::Ready;
         if(log)
-            log(LogKind::Ok, "Verbunden: " + identity_.product + " " + identity_.version + " (SQ)");
+            log(LogKind::Ok, "Connected: " + identity_.product + " " + identity_.version + " (SQ)");
         Changed();
     }
     void Fail(const std::string& what) {
         phase_ = Phase::Failed;
         queue_.clear();
         if(log)
-            log(LogKind::Error, "SQ: ungültige Antwort auf " + what);
+            log(LogKind::Error, "SQ: invalid answer to " + what);
         Changed();
     }
     void ReadComponent(uint8_t c) {

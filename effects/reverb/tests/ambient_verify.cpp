@@ -437,9 +437,9 @@ void WetClockAndMono() {
     slow.SetParameters(p);
     Require(fast.Prepare(48000, *memoryFast) && slow.Prepare(48000, *memorySlow),
             "wet path prepare failed");
-    Require(std::abs(fast.InternalRateRatio() - 1) < 1e-6 &&
+    Require(std::abs(fast.InternalRateRatio() - 2.f / 3.f) < 1e-6 &&
                 std::abs(slow.InternalRateRatio() - .25f) < 1e-6,
-            "stretch endpoints are not 48/12 kHz");
+            "stretch endpoints are not 32/12 kHz");
     int firstFast = -1, firstSlow = -1;
     for (int n = 0; n < 48000; ++n) {
         const Stereo impulse{n == 0 ? .3f : 0, n == 0 ? .3f : 0};
@@ -491,7 +491,7 @@ void WetClockAndMono() {
     }
     audio = false;
     Require(allocations == 0 && peak < 1, "stretch transition allocates or clips");
-    std::cout << "Stretch first impulse sample 48/12 kHz: " << firstFast << "/" << firstSlow
+    std::cout << "Stretch first impulse sample 32/12 kHz: " << firstFast << "/" << firstSlow
               << "\n";
 }
 void Benchmark() {

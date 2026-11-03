@@ -21,6 +21,39 @@ int main() {
     hw.Init();
     controlInterval = 30;
     Tick(8);
+    // Exercise the production pot path; old core bounds must not erase headroom.
+    hw.pot[2].value = hw.pot[5].value = 1.f;
+    Tick(60);
+    assert(std::abs(parameters.modDepthMs - 3.99f) < .0001f);
+    assert(parameters.texture == 1.25f);
+    assert(std::abs(parameters.riseSeconds - 5.f) < .0001f);
+    hw.pot[2].value = hw.pot[5].value = 0.f;
+    Tick(60);
+    assert(parameters.modDepthMs == 0 && parameters.texture == 0);
+    assert(parameters.riseSeconds == .05f);
+    hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
+    uint8_t frame[sq::kMaxFrame];
+    sq::Writer writer(frame, sizeof(frame));
+    writer.Begin(sq::SetParam, 1);
+    writer.U7(0); writer.U14(1); writer.I32(1500);
+    const auto size = writer.End();
+    daisy::MidiEvent rate;
+    rate.type = daisy::SystemCommon; rate.sc_type = daisy::SystemExclusive;
+    rate.sysex_message_len = uint8_t(size - 2);
+    std::copy(frame + 1, frame + size - 1, rate.sysex_data);
+    usbMidi.incoming.push_back(rate);
+    ServiceUsbMidi();
+    assert(rateControl.device.AcceptedRevision() == 1);
+    Tick(1);
+    assert(std::abs(parameters.modRateHz - 1.5f) < .0001f);
+    hw.pot[0].value = .75f; Tick(60);
+    assert(std::abs(parameters.modRateHz - 1.5f) < .0001f); // unrelated knobs do not reset the app
+    hw.pot[6].value = .5f; Tick(60);
+    assert(std::abs(parameters.modRateHz - .212f) < .0001f); // moved VR7 takes over
+    ServiceUsbMidi();
+    assert(rateControl.device.view.applied_revision == 1);
+    usbMidi.sent.clear();
+    hUsbDeviceHS.dev_state = 0;
     const ambient::Mode expected[6] = {ambient::Mode::Cloud, ambient::Mode::Halo,
                                        ambient::Mode::Scatter, ambient::Mode::Abyss,
                                        ambient::Mode::Bloom, ambient::Mode::Shimmer};

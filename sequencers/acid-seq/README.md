@@ -1,20 +1,20 @@
 # Acid Seq
 
-Produkt aus [Step Seq](../step-seq/), [Acid 303](../../instruments/acid-303/),
-[Drive](../../effects/drive/) und [Stereo Delay](../../effects/stereo-delay/).
-Signalweg: Sequencer → Stimme → Drive → Delay → Host-Mixer → Soft-Limiter →
-Ausgang. CV/Gate und MIDI laufen auch ohne angeschlossenen Audioausgang.
+Product made of [Step Seq](../step-seq/), [Acid 303](../../instruments/acid-303/),
+[Drive](../../effects/drive/) and [Stereo Delay](../../effects/stereo-delay/).
+Signal path: sequencer → voice → Drive → Delay → host mixer → soft limiter →
+output. CV/gate and MIDI also run without a connected audio output.
 
-| Stand | |
+| Status | |
 | --- | --- |
-| Version | 0.1.0 (`src/composed_version.h`), Komponenten mit eigenen Versionen |
-| Phase | 6 umgesetzt, Host-Tests und ARM-Build grün |
-| Hardware | NICHT GEMESSEN ([Hardwaretest](docs/HARDWARE_TEST.md)) |
-| Release | keiner. Der Lieferweg für `acid-seq` ist noch offen (Arbeitsauftrag 4.10) |
+| Version | 0.1.0 (`src/composed_version.h`), components with their own versions |
+| Phase | 6 implemented, host tests and ARM build green |
+| Hardware | NOT MEASURED ([hardware test](docs/HARDWARE_TEST.md)) |
+| Release | none. The delivery path for `acid-seq` is still open (work order 4.10) |
 
-Plan und Regeln: [Arbeitsauftrag Acid Seq](../../docs/acid-seq/ARBEITSAUFTRAG.md) 4.10.
+Plan and rules: [Acid Seq work order](../../docs/acid-seq/ARBEITSAUFTRAG.md) 4.10.
 
-## Bauen und testen
+## Build and test
 
 ```bash
 make PROJECT=acid-seq -j4
@@ -25,48 +25,48 @@ python scripts/check-elf-placement.py sequencers/acid-seq/build/AcidSeq-v0.1.0.e
 make PROJECT=acid-seq manifest
 ```
 
-Image `sequencers/acid-seq/build/AcidSeq-v<version>.bin`, Kennung im Image
-`ACID-SEQ-FW-VERSION=`, SQ-Produkt `acid-seq`.
+Image `sequencers/acid-seq/build/AcidSeq-v<version>.bin`, identifier in the image
+`ACID-SEQ-FW-VERSION=`, SQ product `acid-seq`.
 
-## Bedienung am Kit
+## Controls on the kit
 
-Wie [Step Seq](../step-seq/README.md) (Arbeitsauftrag 4.1): S1–S16 Steps, VR1–VR4 der
-gewählte Step, VR5 Tempo, VR6 Swing, VR7 Länge, VR8 Transponierung, SW17 Start/Stop,
-SW18 Modus. Die Stimme und die Effekte haben am Kit keine eigenen Regler. Sie werden über
-das Panel (Editor, Seiten „Stimme“, „Drive“, „Delay“) oder per MIDI-CC eingestellt.
+As in [Step Seq](../step-seq/README.md) (work order 4.1): S1–S16 steps, VR1–VR4 the
+selected step, VR5 tempo, VR6 swing, VR7 length, VR8 transpose, SW17 start/stop,
+SW18 mode. The voice and the effects have no knobs of their own on the kit. They are set via
+the panel (editor, pages "Voice", "Drive", "Delay") or via MIDI CC.
 
-| Ausgang | Inhalt |
+| Output | Content |
 | --- | --- |
-| Audio L/R und Kopfhörer | Stimme → Drive → Delay (Ping-Pong) → Soft-Limiter |
-| CV OUT 1/2 | Tonhöhe und Gate des Sequencers, gesperrt bis zur Freigabe (H14, 4.5) |
-| MIDI OUT (USB, DIN) | Noten des Sequencers auf dem Seq-Kanal (Standard 1), MIDI-Clock |
+| Audio L/R and headphones | Voice → Drive → Delay (ping-pong) → soft limiter |
+| CV OUT 1/2 | Pitch and gate of the sequencer, locked until enabled (H14, 4.5) |
+| MIDI OUT (USB, DIN) | Sequencer notes on the seq channel (default 1), MIDI clock |
 
-## Stimme, MIDI und Effekte
+## Voice, MIDI and effects
 
-* **Stimmenbesitz (R16):** Sequencer und externe MIDI-Noten auf dem Stimmen-Kanal
-  (Standard 2, Parameter `voice_channel`) teilen sich die monophone Stimme. Die zuletzt
-  gespielte Note gilt. Jede Quelle beendet nur ihre eigenen Noten. Endet die klingende
-  Note, übernimmt die zuletzt gehaltene Note der anderen Quelle.
-* Ein Panic des Sequencers (Kanalwechsel, ausgeschalteter Ausgang) entfernt nur
-  Sequencer- und Vorhör-Noten. USB-Verlust und ein Wechsel des Stimmen-Kanals beenden die
-  MIDI-Noten. Vor dem Bootloader wird die Stimme ganz stumm geschaltet.
-* Empfangene Noten werden nicht an die MIDI-Ausgänge weitergegeben.
-* **CCs auf dem Stimmen-Kanal** (USB und DIN) nach [PARAMETERS.md](../step-seq/docs/PARAMETERS.md):
-  Stimme CC 5, 7, 70, 71, 74–79, Drive CC 20–27, Delay CC 102–109.
-  Anschlag über 100 spielt Accent.
-* **Tempo-Übergabe:** Das Delay folgt im Sync-Modus dem Tempo des Sequencers. Das
-  Tempo kommt von VR5 oder der externen Clock.
-* **Host-Mixer:** Drive blendet beim Ein- und Ausschalten in 10 ms über. Das Delay hat
-  Dry/Wet und einen Nachhall nach dem Ausschalten. Danach blendet das Produkt Dry/Wet
-  auf 0 % und gibt die Stimme exakt trocken aus. Die Einzel-Firmware `delay-fx` behält
-  dagegen `dry · (1 − mix)`.
-* **Soft-Limiter** am Ausgang: unter 0,8 unverändert, darüber weich gegen ±1.
+* **Voice ownership (R16):** The sequencer and external MIDI notes on the voice channel
+  (default 2, parameter `voice_channel`) share the monophonic voice. The most recently
+  played note wins. Each source only ends its own notes. When the sounding
+  note ends, the most recently held note of the other source takes over.
+* A sequencer panic (channel change, output switched off) removes only
+  sequencer and preview notes. USB loss and a change of the voice channel end the
+  MIDI notes. Before the bootloader the voice is fully muted.
+* Received notes are not passed on to the MIDI outputs.
+* **CCs on the voice channel** (USB and DIN) per [PARAMETERS.md](../step-seq/docs/PARAMETERS.md):
+  voice CC 5, 7, 70, 71, 74–79, Drive CC 20–27, Delay CC 102–109.
+  Velocity above 100 plays an accent.
+* **Tempo hand-over:** In sync mode the delay follows the sequencer's tempo. The
+  tempo comes from VR5 or the external clock.
+* **Host mixer:** Drive crossfades over 10 ms when switched on and off. The delay has
+  Dry/Wet and a tail after switching off. After that the product fades Dry/Wet
+  to 0 % and outputs the voice exactly dry. The single firmware `delay-fx`, in contrast, keeps
+  `dry · (1 − mix)`.
+* **Soft limiter** at the output: unchanged below 0.8, soft towards ±1 above.
 
-## Aufbau
+## Structure
 
-* `include/acid_seq/chain.h`: Signalweg, gemeinsam für Firmware und End-to-End-Test.
-* `src/main.cpp`: Firmware. Der Audio-Callback (1-ms-Blöcke) führt Bedienung,
-  Sequencer, DAC und Audiokette. `main` führt MIDI, SQ, LEDs und Bootloader. Die
-  Übergabe läuft über SPSC-Queues und einen Triple-Buffer.
-* `delay_memory` (4,6 MB) liegt im SDRAM und wird vor dem Audiostart gelöscht.
-* SQ-Komponenten in IDENTIFY-Reihenfolge: `step-seq`, `acid-303`, `drive`, `stereo-delay`.
+* `include/acid_seq/chain.h`: signal path, shared by the firmware and the end-to-end test.
+* `src/main.cpp`: firmware. The audio callback (1 ms blocks) runs controls,
+  sequencer, DAC and audio chain. `main` runs MIDI, SQ, LEDs and the bootloader. The
+  hand-over runs via SPSC queues and a triple buffer.
+* `delay_memory` (4.6 MB) is in SDRAM and is cleared before audio starts.
+* SQ components in IDENTIFY order: `step-seq`, `acid-303`, `drive`, `stereo-delay`.

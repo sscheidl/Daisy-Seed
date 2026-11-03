@@ -21,10 +21,10 @@ constexpr int kCells = int(mod::kCells);
 constexpr int kNoCell = -1;
 inline const char* const kSourceNames[mod::kSources] = {"LFO 1", "LFO 2", "Random", "CV 1",
                                                         "CV 2", "Modwheel", "Channel AT", "Poly AT"};
-inline const char* const kShapeNames[mod::kShapeCount] = {"Sinus", "Dreieck", "Sägezahn ↑",
-                                                          "Sägezahn ↓", "Rechteck", "S&H"};
-inline const char* const kRandomModeNames[mod::kRandomModeCount] = {"Stufe", "Geglättet"};
-inline const char* const kSyncNames[mod::kSyncCount] = {"Frei", "MIDI-Clock", "Gate"};
+inline const char* const kShapeNames[mod::kShapeCount] = {"Sine", "Triangle", "Saw ↑",
+                                                          "Saw ↓", "Square", "S&H"};
+inline const char* const kRandomModeNames[mod::kRandomModeCount] = {"Stepped", "Smooth"};
+inline const char* const kSyncNames[mod::kSyncCount] = {"Free", "MIDI clock", "Gate"};
 
 // One grid column as GET_TARGET describes it.
 struct Column {
@@ -129,7 +129,7 @@ class Model {
         patch = mod::Patch{};
         patch.format = 2; // offline: LFO cross modulation editable; a device sets its own format
         for(std::size_t t = 0; t < columns.size(); ++t)
-            columns[t] = Column{true, false, false, 1.0f, "Ziel " + std::to_string(t + 1), ""};
+            columns[t] = Column{true, false, false, 1.0f, "Target " + std::to_string(t + 1), ""};
         allowed = ~uint64_t{0};
         max_active = int(mod::kMaxActive);
         selected = 0;
@@ -147,12 +147,12 @@ class Model {
     std::string BlockedReason(int cell) const {
         const Column& c = columns[std::size_t(TargetOf(cell))];
         if(!c.present)
-            return "Das Instrument hat hier kein Ziel.";
+            return "The instrument has no target here.";
         if(Allowed(cell))
             return {};
         if(SourceOf(cell) == mod::PolyAt && c.latched)
-            return "Poly AT wirkt hier nicht: der Wert wird beim Anschlag übernommen.";
-        return "Diese Quelle ist im Instrument belegt.";
+            return "Poly AT does not act here: the value is taken over at note-on.";
+        return "This source is used by the instrument.";
     }
 
     enum class Edit { None, Changed, Limited };

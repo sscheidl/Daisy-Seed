@@ -64,6 +64,15 @@ template <std::size_t N> class Delay {
         data_[write_] = Quiet(x);
         write_ = (write_ + 1) & (N - 1);
     }
+    // Logical reset: an audio-thread restart must not clear a large delay buffer.
+    void Restart() { write_ = 0; }
+    float ReadAvailable(float delay, std::size_t available) const {
+        const unsigned n = unsigned(delay);
+        const float f = delay - float(n);
+        const float a = n <= available ? data_[(write_ - n) & (N - 1)] : 0.f;
+        const float b = n + 1 <= available ? data_[(write_ - n - 1) & (N - 1)] : 0.f;
+        return a + f * (b - a);
+    }
     // Before Push: delay=1 is previous sample; after Push it is the current sample.
     float Read(float delay) const {
         unsigned n = unsigned(delay);
@@ -112,6 +121,7 @@ struct Biquad {
         z2 = Quiet(b2 * x - a2 * y);
         return y;
     }
+    void Reset() { z1 = z2 = 0; }
 };
 struct AntiAlias {
     Biquad a, b;
@@ -122,6 +132,7 @@ struct AntiAlias {
     float Process(float x) {
         return b.Process(a.Process(x));
     }
+    void Reset() { a.Reset(); b.Reset(); }
 };
 // Shared phase per stereo shifter; Hann windows form a partition of unity.
 // Independent native redesign of the two-read-head principle, not rom_pitch bit emulation.
@@ -131,6 +142,8 @@ class Octave {
     AntiAlias aa_[2];
     Lowpass post_[2];
     float postCoefficient_ = 1, ratio_ = 2;
+    std::size_t available_ = 8192;
+    Ramp fade_;
     std::array<float, 1025> hann_{};
     float Weight(float phase) const {
         float t = phase / window_ * 1024;
@@ -157,6 +170,18 @@ class Octave {
         for (auto &f : post_)
             f = {};
         postCoefficient_ = 1 - std::exp(-2 * kPi * (ratio < 1 ? 3500.f : 11000.f) / sampleRate);
+        available_ = 8192; // Prepare cleared the complete buffers before audio started.
+        fade_.Set(1, 0);
+    }
+    void Restart() {
+        left_.Restart();
+        right_.Restart();
+        available_ = 0;
+        position_ = 0;
+        for (auto &f : aa_) f.Reset();
+        for (auto &f : post_) f = {};
+        fade_.Set(0, 0);
+        fade_.Set(1, unsigned(window_));
     }
     Stereo Process(Stereo x) {
         left_.Push(aa_[0].Process(x.left));
@@ -165,8 +190,17 @@ class Octave {
         if (other >= window_)
             other -= window_;
         float w = Weight(position_);
-        Stereo y{w * left_.Read(position_ + 1) + (1 - w) * left_.Read(other + 1),
+        Stereo y;
+        if (available_ == 8192) {
+            y = {w * left_.Read(position_ + 1) + (1 - w) * left_.Read(other + 1),
                  w * right_.Read(position_ + 1) + (1 - w) * right_.Read(other + 1)};
+        } else {
+            ++available_;
+            y = {w * left_.ReadAvailable(position_ + 1, available_) +
+                     (1 - w) * left_.ReadAvailable(other + 1, available_),
+                 w * right_.ReadAvailable(position_ + 1, available_) +
+                     (1 - w) * right_.ReadAvailable(other + 1, available_)};
+        }
         y.left = post_[0].Process(y.left, postCoefficient_);
         y.right = post_[1].Process(y.right, postCoefficient_);
         position_ += 1 - ratio_;
@@ -174,7 +208,8 @@ class Octave {
             position_ += window_;
         else if (position_ >= window_)
             position_ -= window_;
-        return y;
+        const float fade = fade_.Next();
+        return {y.left * fade, y.right * fade};
     }
 };
 enum class Shape : unsigned { Sine, Warp, Sink, Step, Random };

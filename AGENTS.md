@@ -3,6 +3,23 @@
 Firmware for the Electro-Smith Seed3 Desktop Kit plus host tools. Start with
 [README.md](README.md), [HANDOVER.md](HANDOVER.md) and the project's own README.
 
+## Mandatory modular architecture
+
+The user made the modular approach mandatory for all Daisy developments on
+2026-11-01. Read [MODULAR_DEVELOPMENT_POLICY.md](docs/MODULAR_DEVELOPMENT_POLICY.md)
+for every new instrument/effect or substantial extension.
+
+* Keep instrument DSP, FX DSP, MIDI/control, modulation, the control app and
+  firmware composition separate. Use the existing shared services and app.
+* Compatible FX must be replaceable through product composition/adapters
+  (for example reverb to delay) without rewriting the instrument core.
+* Give modules independent contracts, version sources and tests, so they can
+  evolve separately and be reintegrated with targeted consumer tests.
+* Record the actual product composition and component versions in the manifest.
+  Build-time composition is the baseline; never claim an unimplemented runtime loader.
+* Preserve accepted legacy sound and migrate existing products deliberately,
+  rather than refactoring unrelated instruments as a side effect.
+
 ## GitHub Actions budget policy (mandatory)
 
 The GitHub Free Actions quota is shared across private repositories. Preserve it.
@@ -49,8 +66,9 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   run `program-dfu` unless the human has put the kit into bootloader mode and asked
   for it. Listening tests, keys, pots, cables and MIDI keyboards are done by the human;
   the agent runs the command-line steps and records what the human reports.
-* **Report only what was observed.** Mark results `GEMESSEN` (with date) or
-  `NICHT GEMESSEN`. Never fill in expected values as results.
+* **Report only what was observed.** Mark results `MEASURED` (with date) or
+  `NOT MEASURED` (older German docs use `GEMESSEN` / `NICHT GEMESSEN`). Never fill
+  in expected values as results.
 * **Releases**: changing `instruments/toy-piano/src/version.h` does not
   start a release. Only the human manually dispatches the release workflow;
   publish a draft only after hardware acceptance.
@@ -66,11 +84,25 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   Mod on Daisy runs at 1 kHz control rate. The protocol is `modules/mod-on-daisy/docs/PROTOCOL.md`
   (SysEx 0x7D); change it only together with firmware, `mod_probe.py`, both editors
   and their tests.
+* **Modular FX first**: develop and validate an effect in its own `effects/<id>/`
+  component and standalone FX firmware before accepting it inside an instrument.
+  Instrument hosts reuse that component and own only mapping, routing and mixing.
+  Ambient wet-clock limits and pitch-shifter policy belong solely to
+  `effects/reverb/src/`; do not copy them into Toy Piano, Rings/Torus or a branch.
+  Continue FX work from current `main` and merge it into a relevant feature branch
+  before further FX edits. Record component versions and separate FX hardware
+  acceptance from each composed product's CPU/listening acceptance.
 * **No flash writes** for Mod on Daisy storage until the human approves (D8,
   `STORAGE.md`).
 * **Pinned versions**: libDaisy, DaisySP, xPack GCC 13.2.1-1.1 (`docs/BUILD.md`) and
   JUCE 9.0.4 (`editors/mod-on-daisy/CMakeLists.txt`). Do not bump them as a side effect.
-* **Language**: code and code comments in English; user-facing documentation of the
-  Mod on Daisy module, the editors and the hardware tests in German, as it is now.
+* **Language: English first** (user decision 2026-11-01). English is the primary language
+  for everything: code and comments, software GUIs (control app, browser editor, VST3,
+  diagnostics app, firmware texts), manuals and PDFs, READMEs and all other docs, and
+  everything on GitHub (PR and issue texts, release notes, commit messages). A German
+  translation may be added as a secondary version, never instead of the English one.
+  New and substantially revised content is written in English; existing German content
+  is migrated deliberately (its own task or when a file is reworked), not as a side effect.
+  Firmware/protocol strings keep their wire format; only their display text changes.
 * Work on a branch and merge via pull request; describe validation (commands, results,
   what is still untested on hardware) in the PR.

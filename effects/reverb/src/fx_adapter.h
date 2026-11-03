@@ -26,6 +26,8 @@ class AmbientReverb {
         requested_ = parameters;
         dirty_ = true;
     }
+    float InternalSampleRate() const { return path_.InternalSampleRate(); }
+    const ambient::Diagnostics& GetDiagnostics() const { return path_.GetDiagnostics(); }
     bool Process(audio::StereoBlock block) {
         if(!ready_ || !audio::Valid(config_, block))
             return false;

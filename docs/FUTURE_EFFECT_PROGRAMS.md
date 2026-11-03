@@ -1,27 +1,27 @@
-# Künftige Effektprogramme
+# Future effect programs
 
-**Wunsch vom 24.10.2026, noch nicht implementiert.** Für die weitere
-Daisy-Entwicklung soll der bisher mitgelieferte, als Clouds-Reverb bezeichnete
-Effekt durch folgende eigene Programme abgelöst bzw. erweitert werden:
+**Wish of 24.10.2026, not yet implemented.** For further
+Daisy development, the effect bundled so far and labelled as Clouds reverb
+shall be replaced or extended by the following own programs:
 
-* Ein Stereo-Delay-Programm.
-* Unser bereits entwickelter Ambient-Reverb aus der Slöer-Arbeit,
+* A stereo delay program.
+* Our already developed Ambient Reverb from the Slöer work,
   [effects/reverb](../effects/reverb/README.md).
 
-Der vorhandene Ambient-Reverb ist eine eigene Entwicklung mit Slöer als
-Gestaltungsreferenz. Er ist kein identifizierter Original-Walrus-Algorithmus.
-Das Stereo-Delay gibt es seit Acid Seq Phase 4 als Komponente `stereo-delay` mit eigener
-Firmware `delay-fx` ([effects/stereo-delay](../effects/stereo-delay/)): Ping-Pong und
-Stereo L/R, Sync bis 12 s im SDRAM. Das Produkt Acid Seq setzt es hinter den Drive. Andere
-Instrument-Firmwares binden es noch nicht ein.
+The existing Ambient Reverb is an own development with Slöer as
+a design reference. It is not an identified original Walrus algorithm.
+Since Acid Seq phase 4, the stereo delay exists as the component `stereo-delay` with its own
+firmware `delay-fx` ([effects/stereo-delay](../effects/stereo-delay/)): ping-pong and
+stereo L/R, sync up to 12 s in the SDRAM. The Acid Seq product places it after the Drive. Other
+instrument firmwares do not integrate it yet.
 
-Die Erwartung ist, dass Seed3-Leistung und Speicher ausreichen. **CPU-Reserve,
-Callback-Spitzen, RAM/SDRAM-Belegung und Verhalten der Kombination sind
-NICHT GEMESSEN.** Vor Integration die Effektprogramme einzeln und zusammen mit
-der jeweiligen Klangerzeugung profilieren; Delayzeit, Pufferformat und
-Reverb-Speicherbedarf daraus ableiten. Keine Allokation oder blockierende
-Operation im Audiocallback.
+The expectation is that Seed3 performance and memory suffice. **CPU reserve,
+callback peaks, RAM/SDRAM usage and the behaviour of the combination are
+NOT MEASURED.** Before integration, profile the effect programs individually and together with
+the respective sound generation; derive delay time, buffer format and
+reverb memory requirements from that. No allocation or blocking
+operation in the audio callback.
 
-Bestehende Instrumente und ihre Golden-Hashes bleiben bis zu einer gezielten,
-dokumentierten Klangänderung unverändert. Dieser Eintrag startet weder einen
-Firmwareumbau noch einen Release-Workflow.
+Existing instruments and their golden hashes remain unchanged until a targeted,
+documented sound change. This entry starts neither a
+firmware rework nor a release workflow.

@@ -1,20 +1,27 @@
-// Acid Seq panel pages of the browser editor (ARBEITSAUFTRAG Phase 5): pattern grid with
-// note names and play position, transport and switch states, clock and tempo, parameter
-// pages built from the device's descriptors (labels from sq_contract.js), calibration
-// with the separate CV enable (stored per kit UID in this browser), product patch load and
-// save with an explicit upload, error counters. Works with a live SqProtocol.Client or
-// with OfflineClient (demo and patch editing without a device).
+// SQ panel pages of the browser editor (Acid Seq Phase 5, Streichwurst Phase 4): pattern
+// grid with note names and play position, transport and switch states, clock and tempo,
+// parameter pages built from the device's descriptors (labels and Streichwurst pages from
+// sq_contract.js), calibration with the separate CV enable (stored per kit UID in this
+// browser), product patch load and save with an explicit upload (Streichwurst: .swpatch
+// with the embedded matrix through the getMatrix/uploadMatrix hooks), error counters.
+// Works with a live SqProtocol.Client or with OfflineClient (demo and offline editing).
 (function (root, factory) {
   const api = factory(root.SqProtocol, root.SqContract);
   root.SqPanel = api;
 })(typeof self !== 'undefined' ? self : this, function (S, CONTRACT) {
   'use strict';
 
-  const TABS = [['step-seq', 'Sequencer'], ['acid-303', 'Stimme'], ['drive', 'Drive'], ['stereo-delay', 'Delay']];
+  const TABS = [['step-seq', 'Sequencer'], ['acid-303', 'Voice'], ['drive', 'Drive'], ['stereo-delay', 'Delay'], ['ambient-reverb', 'Ambient FX']];
+  // Streichwurst pages: [tab, title, component, contract page ('' = whole component)].
+  const SW_TABS = [['strings', 'Strings', 'streichwurst-instrument', 'strings'], ['solo', 'Solo', 'streichwurst-instrument', 'solo'],
+    ['keyboard', 'Keyboard', 'streichwurst-instrument', 'keyboard'], ['fx', 'FX', 'streichwurst-fx', ''], ['global', 'Global', 'streichwurst', '']];
+  // The product or the standalone Streichwurst FX firmware (FX page only).
+  const isStreichwurst = (client) => !!(client.component('streichwurst-instrument') || client.component('streichwurst-fx'));
+  const productOf = (componentId) => (componentId === 'ambient-reverb' ? 'ambient-reverb' : componentId.startsWith('streichwurst') ? 'streichwurst' : 'acid-seq');
   const MIDI_KEYS = ['seq_channel', 'voice_channel', 'usb_out', 'din_out', 'velocity', 'accent_velocity', 'clock_out'];
-  const STATS = ['Rahmenlänge', 'Prüfsumme', 'Version', 'unbekannter Typ', 'zu lang', 'Statusbyte im Rahmen', 'Wiederholung',
-    'Echo', 'beschäftigt', 'Monitor verworfen', 'Note-On verworfen', 'MIDI-Queue übergelaufen', 'Clock ignoriert',
-    'Callback-Frist überschritten', 'Callback-Spitze (Zyklen)', 'Queue-Hochwasser', 'Stack frei (Byte)'];
+  const STATS = ['Frame length', 'Checksum', 'Version', 'Unknown type', 'Too long', 'Status byte in frame', 'Repeat',
+    'Echo', 'Busy', 'Monitor dropped', 'Note-on dropped', 'MIDI queue overflow', 'Clock ignored',
+    'Callback deadline missed', 'Callback peak (cycles)', 'Queue high water', 'Stack free (bytes)'];
   const el = (tag, attrs = {}, ...children) => {
     const e = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs)) {
@@ -35,8 +42,8 @@
       const cp = contractParam(p.component, p.key);
       return (cp && cp.enum_labels && cp.enum_labels[v]) || (p.enumKeys && p.enumKeys[v]) || String(v);
     }
-    if (p.type === 3) return v ? 'an' : 'aus';
-    const digits = p.type === 1 ? 0 : Math.abs(p.max - p.min) > 100 ? 0 : 1;
+    if (p.type === 3) return v ? 'on' : 'off';
+    const digits = p.key === 'reverb_lfo_rate' ? 2 : p.type === 1 ? 0 : Math.abs(p.max - p.min) > 100 ? 0 : 1;
     return v.toFixed(digits) + (S.UNIT_TEXT[p.unit] ? ' ' + S.UNIT_TEXT[p.unit] : '');
   };
 
@@ -45,9 +52,13 @@
   class OfflineClient {
     constructor(product = 'acid-seq') {
       this.offline = true;
-      this.identity = { product, version: 'offline', uid: [0, 0, 0], capabilities: 63, bootId: 0 };
+      const sw = product === 'streichwurst';
+      const ambient = product === 'ambient-reverb';
+      this.identity = { product, version: 'offline', uid: [0, 0, 0], capabilities: sw || ambient ? 16 : 63, bootId: 0 };
       const types = ['float', 'int', 'enum', 'bool'], units = ['none', 'percent', 'hz', 'ms', 'db', 'semitones', 'cents', 'bpm', 'channel', 'velocity'];
-      this.components = Object.entries(CONTRACT).map(([id, c]) => ({ id, version: '0.1.0', schema: c.schema,
+      // Only the components of this product (the contract lists Acid Seq and Streichwurst).
+      this.components = Object.entries(CONTRACT).filter(([id]) => productOf(id) === (ambient ? 'ambient-reverb' : sw ? 'streichwurst' : 'acid-seq')).map(([id, c]) => ({
+        id, version: '0.1.0', schema: c.schema, kind: id === 'streichwurst' ? 4 : 0,
         parameters: c.parameters.map((p) => ({ id: p.id, key: p.key, type: types.indexOf(p.type), unit: units.indexOf(p.unit),
           flags: ((p.flags || []).includes('readonly') ? 1 : 0) | ((p.flags || []).includes('log') ? 2 : 0), min: p.min, max: p.max,
           def: p.default, cc: p.cc === null ? 127 : p.cc, enumKeys: p.enum || [], value: p.default })) }));
@@ -74,7 +85,9 @@
     async readStats() { return []; }
   }
 
-  function mount(container, { log = () => {}, onClose = () => {} } = {}) {
+  // getMatrix(): the matrix of the Mod on Daisy session as .modpatch object (or null);
+  // uploadMatrix(obj): its explicit upload with a product patch. Both Streichwurst only.
+  function mount(container, { log = () => {}, onClose = () => {}, getMatrix = () => null, uploadMatrix = null } = {}) {
     let client = null, tab = 'step-seq', selected = 0, loadedPatch = null;
     const css = el('style', {}, `
       .sq { display: grid; gap: 16px; }
@@ -101,20 +114,22 @@
     const cal = el('div', { class: 'cal', id: 'sqCal' });
     const patchInfo = el('div', { class: 'hint', id: 'sqPatchInfo' });
     const stats = el('table', { class: 'stats', id: 'sqStats' });
-    const fileInput = el('input', { type: 'file', accept: '.acidpatch,.json', hidden: true, id: 'sqFile' });
+    const fileInput = el('input', { type: 'file', accept: '.acidpatch,.swpatch,.json', hidden: true, id: 'sqFile' });
+    const title = el('h2', { id: 'sqTitle' }, 'Acid Seq');
     const wrap = (title, ...body) => el('section', { class: 'card' }, el('h2', {}, title), ...body);
     const run = (promise, ok) => Promise.resolve(promise).then(() => ok && log(ok, 'ok')).catch((e) => log(e.message, 'err'));
 
+    const patternCard = wrap('Pattern', steps, stepEditor), calCard = wrap('Calibration and CV enable', cal);
     const root = el('div', { class: 'sq' }, css,
-      wrap('Acid Seq', status),
-      wrap('Pattern', steps, stepEditor),
+      el('section', { class: 'card' }, title, status),
+      patternCard,
       wrap('Parameter', tabs, params),
-      wrap('Kalibrierung und CV-Freigabe', cal),
+      calCard,
       wrap('Patch', el('div', { class: 'bar' },
-        el('button', { id: 'sqSave', onclick: savePatch }, 'Patch speichern …'),
-        el('button', { id: 'sqLoad', onclick: () => fileInput.click() }, 'Patch laden …'), fileInput,
-        el('button', { id: 'sqUpload', onclick: uploadPatch, disabled: true }, 'Auf Gerät übertragen')), patchInfo),
-      wrap('Diagnose', el('div', { class: 'bar' }, el('button', { id: 'sqStatsBtn', onclick: readStats }, 'Zähler lesen')), stats));
+        el('button', { id: 'sqSave', onclick: savePatch }, 'Save patch …'),
+        el('button', { id: 'sqLoad', onclick: () => fileInput.click() }, 'Load patch …'), fileInput,
+        el('button', { id: 'sqUpload', onclick: uploadPatch, disabled: true }, 'Send to device')), patchInfo),
+      wrap('Diagnostics', el('div', { class: 'bar' }, el('button', { id: 'sqStatsBtn', onclick: readStats }, 'Read counters')), stats));
     container.append(root);
     fileInput.addEventListener('change', async () => {
       const f = fileInput.files[0];
@@ -124,26 +139,34 @@
 
     function renderStatus() {
       const s = client.state, id = client.identity;
-      const seq = client.component('step-seq');
+      const seq = client.component('step-seq'), sw = isStreichwurst(client);
       const pill = (text, kind = '') => el('span', { class: 'pill ' + kind }, text);
+      title.textContent = client.component('ambient-reverb') ? 'Ambient FX' : sw ? 'Streichwurst' : 'Acid Seq';
+      patternCard.hidden = sw; // no sequencer, no CV outputs
+      calCard.hidden = sw;
       status.replaceChildren(
         pill(`${id.product} ${id.version}`, client.offline ? 'warn' : 'ok'),
+        ...(sw ? [
+          ...client.components.filter((c) => c.kind !== 4).map((c) => pill(`${c.id} ${c.version}`)),
+          pill(`Revision ${s.applied}/${s.accepted}`, s.applied === s.accepted ? '' : 'warn'),
+          ...(id.hasModMatrix ? [pill('Matrix: Mod on Daisy on the same port')] : []),
+        ] : []),
         ...(seq ? [
           pill(S.STATE_NAMES[s.state] || '?', s.state === 2 ? 'ok' : ''),
           pill('SW17 ' + (s.sw17 ? 'Run' : 'Stop')),
-          pill('Modus ' + (['Vorwärts', 'Rückwärts', 'Zufall'][s.mode] || '?')),
-          pill('Quelle ' + (S.SOURCE_NAMES[s.source] || '?')),
+          pill('Mode ' + (['Forward', 'Reverse', 'Random'][s.mode] || '?')),
+          pill('Source ' + (S.SOURCE_NAMES[s.source] || '?')),
           pill(s.bpm.toFixed(1) + ' BPM'),
           pill(`Revision ${s.applied}/${s.accepted}`, s.applied === s.accepted ? '' : 'warn'),
-          pill('CV ' + (s.cvEnabled ? 'frei' : 'gesperrt'), s.cvEnabled ? 'warn' : ''),
+          pill('CV ' + (s.cvEnabled ? 'enabled' : 'locked'), s.cvEnabled ? 'warn' : ''),
           el('button', { id: 'sqStart', onclick: () => run(client.transport(true)), disabled: client.offline }, 'Start'),
-          el('button', { id: 'sqStop', onclick: () => run(client.transport(false)), disabled: client.offline }, 'Stopp'),
+          el('button', { id: 'sqStop', onclick: () => run(client.transport(false)), disabled: client.offline }, 'Stop'),
         ] : []),
-        el('button', { id: 'sqPull', onclick: () => run(client.readAll && client.readAll(), 'Vom Gerät gelesen'), disabled: client.offline }, 'Vom Gerät lesen'),
-        ...(client.offline ? [el('button', { id: 'sqClose', onclick: onClose }, 'Offline-Ansicht schließen')] : []));
+        el('button', { id: 'sqPull', onclick: () => run(client.readAll && client.readAll(), 'Read from the device'), disabled: client.offline }, 'Read from device'),
+        ...(client.offline ? [el('button', { id: 'sqClose', onclick: onClose }, 'Close offline view')] : []));
     }
     function renderSteps() {
-      if (!client.component('step-seq')) { steps.replaceChildren(el('div', { class: 'hint' }, 'Dieses Gerät hat keinen Sequencer.')); stepEditor.replaceChildren(); return; }
+      if (!client.component('step-seq')) { steps.replaceChildren(el('div', { class: 'hint' }, 'This device has no sequencer.')); stepEditor.replaceChildren(); return; }
       steps.replaceChildren(...client.pattern.map((s, i) => el('div', {
         class: 'step' + (s.gate ? '' : ' off') + (i === selected ? ' sel' : '') + (i === client.state.step ? ' play' : ''),
         'data-step': i, onclick: () => { selected = i; renderSteps(); },
@@ -156,9 +179,10 @@
       const length = el('input', { type: 'range', id: 'sqGate', min: 5, max: 100, value: s.gateLength, onchange: (e) => send({ gateLength: +e.target.value }) });
       const box = (id, text, key) => el('label', {}, el('input', { type: 'checkbox', id, checked: s[key], onchange: (e) => send({ [key]: e.target.checked }) }), ' ' + text);
       stepEditor.replaceChildren(el('b', {}, `Step ${selected < 8 ? 'A' : 'B'}${selected % 8 + 1}`), note,
-        el('label', {}, 'Gate-Länge ', length, ` ${s.gateLength} %`), box('sqGateOn', 'Gate', 'gate'), box('sqAccent', 'Accent', 'accent'), box('sqSlide', 'Slide', 'slide'));
+        el('label', {}, 'Gate length ', length, ` ${s.gateLength} %`), box('sqGateOn', 'Gate', 'gate'), box('sqAccent', 'Accent', 'accent'), box('sqSlide', 'Slide', 'slide'));
     }
     function renderParams() {
+      if (isStreichwurst(client)) return renderStreichwurstParams();
       const present = TABS.filter(([id]) => client.component(id));
       if (!present.some(([id]) => id === tab) && present.length) tab = present[0][0];
       tabs.replaceChildren(...present.map(([id, name]) => el('button', { class: id === tab ? 'on' : '', 'data-tab': id, onclick: () => { tab = id; renderParams(); } }, name)),
@@ -167,7 +191,22 @@
       const comp = client.component(component);
       if (!comp) { params.replaceChildren(); return; }
       const list = comp.parameters.filter((p) => (tab === 'midi') === MIDI_KEYS.includes(p.key) || component !== 'step-seq');
-      params.replaceChildren(...list.map((p) => {
+      params.replaceChildren(...list.map((p) => paramRow(component, p)));
+    }
+    // Streichwurst: pages by the contract's "page" of each parameter.
+    function renderStreichwurstParams() {
+      const present = SW_TABS.filter(([, , c]) => client.component(c));
+      if (!present.some(([id]) => id === tab) && present.length) tab = present[0][0];
+      tabs.replaceChildren(...present.map(([id, name]) =>
+        el('button', { class: id === tab ? 'on' : '', 'data-tab': id, onclick: () => { tab = id; renderParams(); } }, name)));
+      const [, , component, page] = SW_TABS.find(([id]) => id === tab);
+      const comp = client.component(component);
+      if (!comp) { params.replaceChildren(); return; }
+      const list = comp.parameters.filter((p) => !page || (contractParam(component, p.key) || {}).page === page);
+      params.replaceChildren(...list.map((p) => paramRow(component, p)));
+    }
+    function paramRow(component, p) {
+      {
         p.component = component;
         const value = el('span', { class: 'v' }, format(p, p.value));
         const set = (v) => run(client.setParam(component, p.key, v).then((applied) => { value.textContent = format(p, applied); }));
@@ -176,49 +215,50 @@
           input = el('select', { 'data-key': p.key, disabled: !!(p.flags & 1), onchange: (e) => set(+e.target.value) },
             ...Array.from({ length: p.max + 1 }, (_, v) => el('option', { value: v, selected: v === Math.round(p.value) }, format(p, v))));
         } else if (p.type === 3) {
-          input = el('input', { type: 'checkbox', 'data-key': p.key, checked: p.value >= 0.5, onchange: (e) => set(e.target.checked ? 1 : 0) });
+          input = el('input', { type: 'checkbox', 'data-key': p.key, checked: p.value >= 0.5, disabled: !!(p.flags & 1), onchange: (e) => set(e.target.checked ? 1 : 0) });
         } else {
           const log2 = p.flags & 2;
           const toPos = (v) => (log2 ? Math.log(v / p.min) / Math.log(p.max / p.min) : (v - p.min) / (p.max - p.min)) * 1000;
           const fromPos = (x) => (log2 ? p.min * Math.pow(p.max / p.min, x / 1000) : p.min + (p.max - p.min) * x / 1000);
-          input = el('input', { type: 'range', 'data-key': p.key, min: 0, max: 1000, value: Math.round(toPos(p.value)),
+          input = el('input', { type: 'range', 'data-key': p.key, min: 0, max: 1000, value: Math.round(toPos(p.value)), disabled: !!(p.flags & 1),
             oninput: (e) => { value.textContent = format(p, fromPos(+e.target.value)); },
             onchange: (e) => set(p.type === 1 ? Math.round(fromPos(+e.target.value)) : fromPos(+e.target.value)) });
         }
-        return el('div', { class: 'param', title: `${component}.${p.key}${p.cc !== 127 ? ' · CC ' + p.cc : ''}` }, el('span', {}, label(component, p.key)), input, value);
-      }));
+        return el('div', { class: 'param', title: `${component}.${p.key}${p.cc !== 127 ? ' · CC ' + p.cc : ''}${p.flags & 1 ? ' · read only (state on the kit)' : ''}` },
+          el('span', {}, label(component, p.key)), input, value);
+      }
     }
     function storedCal() {
       try { return JSON.parse(localStorage.getItem('acid-seq-cal-' + client.identity.uid.join('-')) || 'null'); } catch (e) { return null; }
     }
     function renderCal() {
-      if (!(client.identity.capabilities & 32)) { cal.replaceChildren(el('div', { class: 'hint' }, 'Dieses Gerät hat keine CV-Ausgänge.')); return; }
-      const fields = [['offset', 'Code bei 0 V'], ['scale', 'Codes pro Volt'], ['gateLow', 'Gate-Low-Code'], ['gateHigh', 'Gate-High-Code'], ['clampMin', 'Klemme min'], ['clampMax', 'Klemme max']];
+      if (!(client.identity.capabilities & 32)) { cal.replaceChildren(el('div', { class: 'hint' }, 'This device has no CV outputs.')); return; }
+      const fields = [['offset', 'Code at 0 V'], ['scale', 'Codes per volt'], ['gateLow', 'Gate low code'], ['gateHigh', 'Gate high code'], ['clampMin', 'Clamp min'], ['clampMax', 'Clamp max']];
       const outputs = [0, 1].map((o) => {
         const c = client.cal[o] || {};
         const inputs = Object.fromEntries(fields.map(([k]) => [k, el('input', { type: 'number', step: k === 'scale' ? '0.1' : '1', id: `sqCal${o}${k}`,
           value: c[k] !== undefined ? c[k] : { offset: 2048, scale: -409.6, gateLow: 2048, gateHigh: 410, clampMin: 0, clampMax: 4095 }[k] })]));
-        return el('div', {}, el('b', {}, o ? 'CV OUT 2 (Gate)' : 'CV OUT 1 (Tonhöhe)'), el('span', { class: 'hint' }, c.valid ? ' gültig' : ' ungültig'),
+        return el('div', {}, el('b', {}, o ? 'CV OUT 2 (gate)' : 'CV OUT 1 (pitch)'), el('span', { class: 'hint' }, c.valid ? ' valid' : ' invalid'),
           ...fields.map(([k, t]) => el('label', {}, t, inputs[k])),
           el('button', { id: `sqCalSend${o}`, disabled: client.offline, onclick: () => {
             const v = Object.fromEntries(fields.map(([k]) => [k, +inputs[k].value]));
             // Redrawn once the device confirmed: the output then shows "gültig".
-            run(client.setCal(o, v).then(renderCal), 'Kalibrierung übernommen, CV gesperrt');
-          } }, 'Senden'));
+            run(client.setCal(o, v).then(renderCal), 'Calibration applied, CV locked');
+          } }, 'Send'));
       });
       const uid = client.identity.uid.map((u) => u.toString(16).toUpperCase().padStart(8, '0')).join('-');
       cal.replaceChildren(...outputs, el('div', {},
-        el('div', { class: 'hint' }, `Kit-UID ${uid}. Die Freigabe wird nie gespeichert. Sie gilt nur bis zum nächsten Neustart. Vorher Diagnose H14 durchführen.`),
+        el('div', { class: 'hint' }, `Kit UID ${uid}. The enable is never stored. It only lasts until the next restart. Run diagnostic H14 first.`),
         el('div', { class: 'bar' },
-          el('button', { id: 'sqCvOn', disabled: client.offline, onclick: () => run(client.cvEnable(true), 'CV freigegeben') }, 'CV freigeben'),
-          el('button', { id: 'sqCvOff', disabled: client.offline, onclick: () => run(client.cvEnable(false), 'CV gesperrt') }, 'CV sperren'),
-          el('button', { disabled: client.offline, onclick: () => { localStorage.setItem('acid-seq-cal-' + client.identity.uid.join('-'), JSON.stringify(client.cal)); log('Kalibrierung für dieses Kit gespeichert', 'ok'); } }, 'Für dieses Kit merken'),
+          el('button', { id: 'sqCvOn', disabled: client.offline, onclick: () => run(client.cvEnable(true), 'CV enabled') }, 'Enable CV'),
+          el('button', { id: 'sqCvOff', disabled: client.offline, onclick: () => run(client.cvEnable(false), 'CV locked') }, 'Lock CV'),
+          el('button', { disabled: client.offline, onclick: () => { localStorage.setItem('acid-seq-cal-' + client.identity.uid.join('-'), JSON.stringify(client.cal)); log('Calibration stored for this kit', 'ok'); } }, 'Remember for this kit'),
           el('button', { disabled: client.offline || !storedCal(), onclick: async () => {
             const stored = storedCal(); // only ever sent to the kit with the same UID
             if (!stored) return;
             for (const o of [0, 1]) if (stored[o] && stored[o].valid) await client.setCal(o, stored[o]);
-            log('Gespeicherte Kalibrierung gesendet, CV bleibt gesperrt', 'ok');
-          } }, 'Gemerkte senden'))));
+            log('Stored calibration sent, CV stays locked', 'ok');
+          } }, 'Send remembered'))));
     }
     function render() {
       if (!client) return;
@@ -228,33 +268,40 @@
       renderParams();
     }
     function savePatch() {
-      const text = S.serializePatch(S.patchFromClient(client));
-      const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: 'application/json' })), download: (client.identity.product || 'acid-seq') + '.acidpatch' });
+      const product = client.identity.product || 'acid-seq';
+      const text = S.serializePatch(S.patchFromClient(client, client.identity.hasModMatrix ? getMatrix() : null));
+      const a = el('a', { href: URL.createObjectURL(new Blob([text], { type: 'application/json' })), download: product + '.' + S.patchExtension(product) });
       a.click();
       URL.revokeObjectURL(a.href);
-      log('Patch gespeichert', 'ok');
+      log('Patch saved', 'ok');
     }
     function loadPatch(text) {
       try { loadedPatch = S.parsePatch(text); } catch (e) { return log(e.message, 'err'); }
       const compat = S.checkPatch(loadedPatch, client);
       const notes = [];
-      if (compat.missing.length) notes.push('fehlt auf dem Gerät: ' + compat.missing.join(', '));
-      if (compat.incompatible.length) notes.push('andere Schema-Version: ' + compat.incompatible.join(', '));
-      if (compat.unknown.length) notes.push('unbekannte Parameter: ' + compat.unknown.join(', '));
-      if (compat.patternSkipped) notes.push('Pattern ohne Sequencer übersprungen');
-      patchInfo.textContent = `Geladen: ${loadedPatch.product}, ${loadedPatch.components.length} Komponenten. ` +
-        (notes.length ? 'Übersprungen wird: ' + notes.join('; ') + '.' : 'Passt vollständig.') +
-        ' Erst „Auf Gerät übertragen“ sendet ihn.';
+      if (compat.missing.length) notes.push('missing on the device: ' + compat.missing.join(', '));
+      if (compat.incompatible.length) notes.push('other schema version: ' + compat.incompatible.join(', '));
+      if (compat.unknown.length) notes.push('unknown parameters: ' + compat.unknown.join(', '));
+      if (compat.patternSkipped) notes.push('pattern skipped (no sequencer)');
+      patchInfo.textContent = `Loaded: ${loadedPatch.product}, ${loadedPatch.components.length} components. ` +
+        (notes.length ? 'Skipped: ' + notes.join('; ') + '.' : 'Fits completely.') +
+        ' Only “Send to device” sends it.';
       container.querySelector('#sqUpload').disabled = false;
       if (client.offline) uploadPatch(); // offline: the patch becomes the edited model at once
     }
     function uploadPatch() {
       if (!loadedPatch) return;
-      run(S.uploadPatch(loadedPatch, client).then((n) => log(`${n} Werte übertragen`, 'ok')).then(render));
+      const matrix = loadedPatch.matrix;
+      run(S.uploadPatch(loadedPatch, client).then((n) => {
+        log(`${n} values sent`, 'ok');
+        if (matrix && uploadMatrix) return uploadMatrix(matrix);
+        if (matrix) log('Matrix skipped (no Mod on Daisy connection)', 'warn');
+        return null;
+      }).then(render));
     }
     function readStats() {
       run(client.readStats().then((values) => {
-        stats.replaceChildren(...values.map((v, i) => el('tr', {}, el('td', {}, STATS[i] || 'Zähler ' + i), el('td', {}, String(v)))));
+        stats.replaceChildren(...values.map((v, i) => el('tr', {}, el('td', {}, STATS[i] || 'Counter ' + i), el('td', {}, String(v)))));
       }));
     }
     return {
@@ -273,5 +320,5 @@
     };
   }
 
-  return { mount, OfflineClient, TABS };
+  return { mount, OfflineClient, TABS, SW_TABS };
 });

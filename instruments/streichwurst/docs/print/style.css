@@ -1,0 +1,20 @@
+@page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+* { box-sizing: border-box; }
+body { font-family: "DejaVu Sans", sans-serif; font-size: 9.6pt; line-height: 1.42; color: #1d1d1f; margin: 0; }
+h1 { font-size: 20pt; margin: 0 0 2mm; letter-spacing: -0.2pt; }
+h2 { font-size: 13pt; margin: 7mm 0 2.5mm; padding-bottom: 1mm; border-bottom: 1.2pt solid #b5651d; color: #5a2d0c; break-after: avoid; }
+h3 { font-size: 10.5pt; margin: 4.5mm 0 1.5mm; color: #5a2d0c; break-after: avoid; }
+p { margin: 0 0 2mm; }
+.sub { color: #555; font-size: 10pt; margin-bottom: 4mm; }
+table { border-collapse: collapse; width: 100%; margin: 1.5mm 0 3mm; break-inside: avoid; }
+th, td { border: 0.5pt solid #c9c2b8; padding: 1.3mm 2mm; vertical-align: top; text-align: left; }
+th { background: #f3e9df; font-weight: bold; }
+td.k, th.k { white-space: nowrap; font-weight: bold; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; background: #f4f1ec; padding: 0 1mm; border-radius: 1mm; }
+pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; background: #f4f1ec; padding: 2mm 3mm; border-radius: 1.5mm; margin: 1.5mm 0 3mm; white-space: pre-wrap; break-inside: avoid; }
+.note { border-left: 2.5pt solid #b5651d; background: #fbf5ef; padding: 2mm 3mm; margin: 2mm 0 3mm; break-inside: avoid; }
+.warn { border-left: 2.5pt solid #b3261e; background: #fcefee; padding: 2mm 3mm; margin: 2mm 0 3mm; break-inside: avoid; }
+.result { width: 24mm; }
+ul { margin: 0 0 2mm 5mm; padding-left: 3mm; }
+li { margin-bottom: 0.8mm; }
+.foot { margin-top: 6mm; font-size: 8pt; color: #777; }

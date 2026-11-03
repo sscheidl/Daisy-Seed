@@ -276,7 +276,7 @@ void TestSession() {
     CHECK_STR(Handle(s, "HELLO proto=2", 20), "ERR c=HELLO e=PROTO");
     CHECK(!s.HostActive(20));
     CHECK_STR(Handle(s, "HELLO proto=1", 100, &req),
-              "HELLO proto=1 fw=0.4.0 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM "
+              "HELLO proto=1 fw=0.4.1 app=DaisyDiagnostic dev=seed3-desktop boot=BOOT_SRAM "
               "bl=v6_1 libdaisy=f715e48 "
               "caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout,audio");
     CHECK(req == (diag::kRequestState | diag::kRequestNewSession));

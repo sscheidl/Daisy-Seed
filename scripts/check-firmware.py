@@ -7,8 +7,9 @@ Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
 effects/tape-fx/build/TapeFx-v<version>.bin, build/tape/ToyPianoTape-v<version>.bin,
 PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
 instruments/looper/build/Looper-v<version>.bin, build/mod/LooperMod-v<version>.bin and
-modules/mod-on-daisy/bench/build/ModBench-v<version>.bin and the Acid Seq images in
-ACID_SEQ (sequencers/step-seq/build/StepSeq-v<version>.bin, ...).
+modules/mod-on-daisy/bench/build/ModBench-v<version>.bin and the composed images in
+ACID_SEQ (sequencers/step-seq/build/StepSeq-v<version>.bin, ...,
+instruments/streichwurst/build/Streichwurst-v<version>.bin, effects/streichwurst-fx/build/StreichwurstFx-v<version>.bin).
 This does not replace a hardware test.
 """
 import pathlib
@@ -30,6 +31,10 @@ ACID_SEQ = {
     'DriveFx-v': ('effects/drive/src/version.h', 'DRIVE_FIRMWARE_VERSION', 'DRIVE-FX-VERSION='),
     'DelayFx-v': ('effects/stereo-delay/src/version.h', 'STEREO_DELAY_FIRMWARE_VERSION', 'DELAY-FX-VERSION='),
     'AcidSeq-v': ('sequencers/acid-seq/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
+    # Streichwurst product (same scheme: one product version for name and marker).
+    'Streichwurst-v': ('instruments/streichwurst/src/version.h', 'STREICHWURST_VERSION', 'STREICHWURST-FW-VERSION='),
+    'StreichwurstFx-v': ('effects/streichwurst-fx/src/version.h', 'STREICHWURST_FX_FIRMWARE_VERSION',
+                         'STREICHWURST-FX-VERSION='),
 }
 acid = next((prefix for prefix in ACID_SEQ if path.name.startswith(prefix)), None)
 if acid:

@@ -69,7 +69,7 @@ Neither “Sustain” nor “Legacy Mono” claims exact Slöer behavior.
 | VR5 | Wet Pan, left–center–right |
 | VR6 | Mode-dependent X |
 | VR7 | Modulation rate, 0.03–1.5 Hz |
-| VR8 | Stretch wet-clock ratio, 1–0.25 (48–12 kHz at a 48-kHz codec rate) |
+| VR8 | Stretch wet clock, 32–12 kHz since v0.4.0; codec/dry remain at 48 kHz |
 
 X adds wet modulation in Cloud **while Sustain is active**; it controls
 octave-up amount in Halo, tap level and diffusion in Scatter, octave-down

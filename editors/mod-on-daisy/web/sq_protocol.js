@@ -22,10 +22,14 @@
     notCalibrated: 8, notAllowed: 9,
   };
   const ERROR_TEXT = {
-    1: 'Länge', 2: 'Prüfsumme', 3: 'unbekannter Typ', 4: 'Wert außerhalb des Bereichs', 5: 'beschäftigt',
-    6: 'Protokollversion', 7: 'anderes Kit (UID)', 8: 'nicht kalibriert', 9: 'im aktuellen Zustand nicht erlaubt',
+    1: 'length', 2: 'checksum', 3: 'unknown type', 4: 'value out of range', 5: 'busy',
+    6: 'protocol version', 7: 'another kit (UID)', 8: 'not calibrated', 9: 'not allowed in the current state',
   };
   const TIMEOUT_MS = 200, RETRIES = 3;
+  // IDENTIFY capabilities and GET_COMPONENT kinds (SQ 1.1 adds bit 6 and kind 4).
+  const CAP = { cv: 1, din: 2, voice: 4, pattern: 8, monitor: 16, calibration: 32, modMatrix: 64 };
+  const KIND = { sequencer: 0, instrument: 1, effect: 2, dsp: 3, product: 4 };
+  const KIND_NAMES = ['Sequencer', 'Instrument', 'Effect', 'DSP', 'Product'];
 
   // CRC-8/SMBUS: polynomial 0x07, init 0, no reflection; check('123456789') = 0xF4.
   function crc8(bytes) {
@@ -196,11 +200,11 @@
     }
   }
 
-  const STATE_NAMES = ['STOP', 'WARTET', 'LÄUFT', 'PAUSE'];
-  const SOURCE_NAMES = ['intern', 'Gate IN 1', 'MIDI USB', 'MIDI DIN'];
-  const UNIT_TEXT = ['', '%', 'Hz', 'ms', 'dB', 'HT', 'ct', 'BPM', '', ''];
+  const STATE_NAMES = ['STOP', 'WAITING', 'RUNNING', 'PAUSE'];
+  const SOURCE_NAMES = ['internal', 'Gate IN 1', 'MIDI USB', 'MIDI DIN'];
+  const UNIT_TEXT = ['', '%', 'Hz', 'ms', 'dB', 'st', 'ct', 'BPM', '', ''];
   const MONITOR = { step: 1, state: 2, tempo: 3, revision: 4, param: 5, stats: 6, stepEdit: 7 };
-  const noteName = (n) => ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'][n % 12] + (Math.floor(n / 12) + 1);
+  const noteName = (n) => ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][n % 12] + (Math.floor(n / 12) + 1);
 
   const readStep = (r) => {
     const note = r.u7(), gateLength = r.u7(), bits = r.u7();
@@ -251,7 +255,7 @@
         if (req.tries > this.retries) {
           this.queue.shift();
           this.lost += 1;
-          req.reject(new Error('keine Antwort'));
+          req.reject(new Error('no answer'));
           this.transmit();
         } else {
           this.transmit();
@@ -271,21 +275,24 @@
       if (reply.type === NAK) {
         r.u7();
         const code = r.u7();
-        const error = new Error(ERROR_TEXT[code] || 'Fehler ' + code);
+        const error = new Error(ERROR_TEXT[code] || 'error ' + code);
         error.code = code;
         req.reject(error);
       } else if (reply.type === (req.type | RESPONSE)) {
         req.resolve(r);
       } else {
-        req.reject(new Error('unerwartete Antwort'));
+        req.reject(new Error('unexpected answer'));
       }
       this.transmit();
       return true;
     }
     async readAll() {
       let r = await this.request(TYPE.identify);
-      const id = { protocol: `${r.u7()}.${r.u7()}`, product: r.str(), version: r.str(), bootId: r.u32(),
+      const major = r.u7(), minor = r.u7();
+      const id = { protocol: `${major}.${minor}`, minor, product: r.str(), version: r.str(), bootId: r.u32(),
         uid: [r.u32(), r.u32(), r.u32()], capabilities: r.u14(), componentCount: r.u7() };
+      // SQ 1.1, bit 6: the device also speaks Mod on Daisy on this port (Streichwurst).
+      id.hasModMatrix = !!(id.capabilities & CAP.modMatrix);
       this.restarted = !!(this.identity && this.identity.bootId !== id.bootId);
       this.identity = id;
       this.components = [];
@@ -328,6 +335,8 @@
         this.state.applied = r.u14();
         this.pattern = Array.from({ length: 16 }, () => readStep(r));
         await this.readState();
+      } else if (this.components.some((c) => c.kind === KIND.product)) {
+        await this.readState(); // accepted/applied revision of a product without sequencer
       }
       if (id.capabilities & 32) for (const o of [0, 1]) await this.readCal(o);
       await this.request(TYPE.monitor, [1]);
@@ -353,8 +362,8 @@
     async setParam(componentId, key, value) {
       const ci = this.componentIndex(componentId);
       const p = ci >= 0 && this.components[ci].parameters.find((q) => q.key === key);
-      if (!p || p.flags & 1) throw new Error('Parameter nicht schreibbar: ' + componentId + '.' + key);
-      if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('ungültiger Wert für ' + key);
+      if (!p || p.flags & 1) throw new Error('parameter not writable: ' + componentId + '.' + key);
+      if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('invalid value for ' + key);
       // Into the descriptor's range before encoding (Codex F07): no i32 wrap-around.
       const clamped = Math.min(p.max, Math.max(p.min, value));
       const r = await this.request(TYPE.setParam, new Writer().u7(ci).u14(p.id).i32(Math.round(clamped * 1000)).bytes);
@@ -424,8 +433,12 @@
     let s = (Math.round(v * 1000) / 1000).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
     return s === '-0' ? '0' : s;
   };
-  function patchFromClient(client) {
+  // File format by product: Streichwurst has its own name and may embed the matrix.
+  const patchFormat = (product) => (product === 'streichwurst' ? 'streichwurst-patch' : 'acid-seq-patch');
+  const patchExtension = (product) => (product === 'streichwurst' ? 'swpatch' : 'acidpatch');
+  function patchFromClient(client, matrix = null) {
     return {
+      matrix,
       product: client.identity ? client.identity.product : '',
       components: client.components.map((c) => ({ id: c.id, version: c.version, schema: c.schema,
         params: Object.fromEntries(c.parameters.filter((p) => !(p.flags & 1)).map((p) => [p.key, p.value])) })),
@@ -434,7 +447,8 @@
   }
   function serializePatch(p) {
     const q = JSON.stringify;
-    let out = '{\n  "format": "acid-seq-patch",\n  "format_version": 1,\n  "product": ' + q(p.product) + ',\n  "components": [';
+    let out = '{\n  "format": "' + patchFormat(p.product) + '",\n  "format_version": 1,\n  "product": ' + q(p.product) +
+      ',\n  "components": [';
     p.components.forEach((c, i) => {
       const keys = Object.keys(c.params).sort();
       out += (i ? ',' : '') + '\n    {"id": ' + q(c.id) + ', "version": ' + q(c.version) + ', "schema": ' + c.schema +
@@ -445,38 +459,46 @@
       out += ',\n  "pattern": [' + p.pattern.map((s, i) => (i ? ',' : '') + '\n    {"note": ' + s.note + ', "gate_length": ' +
         s.gateLength + ', "gate": ' + s.gate + ', "accent": ' + s.accent + ', "slide": ' + s.slide + '}').join('') + '\n  ]';
     }
+    if (p.matrix) out += ',\n  "matrix": ' + JSON.stringify(p.matrix);
     return out + '\n}\n';
   }
   // Whole number within [lo, hi]; checked before use (Codex F07: 1e999, 3.5, strings).
   const isInt = (v, lo, hi) => typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi;
   function parsePatch(text) {
     let root;
-    try { root = JSON.parse(text); } catch (e) { throw new Error('keine gültige JSON-Datei'); }
-    if (!root || typeof root !== 'object' || root.format !== 'acid-seq-patch' || !isInt(root.format_version, 1, 1e6)) {
-      throw new Error('kein Acid-Seq-Patch');
+    try { root = JSON.parse(text); } catch (e) { throw new Error('not a valid JSON file'); }
+    if (!root || typeof root !== 'object' || !['acid-seq-patch', 'streichwurst-patch'].includes(root.format) ||
+        !isInt(root.format_version, 1, 1e6)) {
+      throw new Error('not an Acid Seq or Streichwurst patch');
     }
-    if (root.format_version > 1) throw new Error('Patch-Format ' + root.format_version + ' ist neuer als dieser Editor');
+    if (root.format === 'streichwurst-patch' && root.product !== 'streichwurst') {
+      throw new Error('Streichwurst patch for another product');
+    }
+    if (root.matrix !== undefined && (!root.matrix || typeof root.matrix !== 'object' || Array.isArray(root.matrix))) {
+      throw new Error('invalid matrix');
+    }
+    if (root.format_version > 1) throw new Error('Patch format ' + root.format_version + ' is newer than this editor');
     if (root.pattern !== undefined && (!Array.isArray(root.pattern) || root.pattern.length !== 16)) {
-      throw new Error('Pattern braucht 16 Steps');
+      throw new Error('pattern needs 16 steps');
     }
     const pattern = root.pattern ? root.pattern.map((s, i) => {
       const note = s && s.note !== undefined ? s.note : 0, gateLength = s && s.gate_length !== undefined ? s.gate_length : 50;
-      if (!s || typeof s !== 'object' || !isInt(note, 0, 59) || !isInt(gateLength, 5, 100)) throw new Error('ungültiger Step ' + (i + 1));
+      if (!s || typeof s !== 'object' || !isInt(note, 0, 59) || !isInt(gateLength, 5, 100)) throw new Error('invalid step ' + (i + 1));
       return { note, gateLength, gate: !!s.gate, accent: !!s.accent, slide: !!s.slide };
     }) : null;
-    if (root.components !== undefined && !Array.isArray(root.components)) throw new Error('kein Acid-Seq-Patch');
+    if (root.components !== undefined && !Array.isArray(root.components)) throw new Error('not an Acid Seq patch');
     const components = (root.components || []).map((c) => {
-      if (!c || typeof c.id !== 'string' || !c.id) throw new Error('Komponente ohne ID');
-      if (c.schema !== undefined && !isInt(c.schema, 0, 127)) throw new Error('ungültige Schema-Version');
+      if (!c || typeof c.id !== 'string' || !c.id) throw new Error('component without ID');
+      if (c.schema !== undefined && !isInt(c.schema, 0, 127)) throw new Error('invalid schema version');
       const params = {};
       for (const [k, v] of Object.entries(c.params && typeof c.params === 'object' ? c.params : {})) {
         if (typeof v === 'boolean') params[k] = v ? 1 : 0;
         else if (typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 2147483) params[k] = v;
-        else throw new Error('ungültiger Wert für ' + k);
+        else throw new Error('invalid value for ' + k);
       }
       return { id: c.id, version: c.version, schema: c.schema, params };
     });
-    return { product: root.product || '', components, pattern };
+    return { product: root.product || '', components, pattern, matrix: root.matrix || null };
   }
   function checkPatch(p, client) {
     const result = { missing: [], incompatible: [], unknown: [], patternSkipped: false };
@@ -513,6 +535,6 @@
     HEADER, VERSION, VERSION_MINOR, MAX_FRAME, OVERHEAD, MAX_PAYLOAD, RESPONSE, MONITOR_EVENT, NAK,
     TYPE, ERROR, ERROR_TEXT, TIMEOUT_MS, RETRIES, STATE_NAMES, SOURCE_NAMES, UNIT_TEXT, MONITOR,
     crc8, Writer, Reader, encode, assemble, classify, parseReply, protocolOf, Session, Client, noteName,
-    patchFromClient, serializePatch, parsePatch, checkPatch, uploadPatch,
+    patchFromClient, serializePatch, parsePatch, checkPatch, uploadPatch, patchFormat, patchExtension, CAP, KIND, KIND_NAMES,
   };
 });

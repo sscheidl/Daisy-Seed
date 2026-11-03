@@ -1,66 +1,66 @@
 # Stereo Delay
 
-Ping-Pong (Grundeinstellung) und Stereo L/R mit Clock-Sync bis zur punktierten ganzen
-Note bei 30 BPM (12 s je Leitung im SDRAM), Feedback bis 95 %, Dry/Wet und Dämpfung.
-Kern nach FX-Vertrag 1.0 (wet-only), eigene Firmware `delay-fx` für die Stereo-Eingänge.
+Ping-pong (default) and stereo L/R with clock sync up to the dotted whole
+note at 30 BPM (12 s per line in SDRAM), feedback up to 95 %, Dry/Wet and damping.
+Core per FX contract 1.0 (wet-only), its own firmware `delay-fx` for the stereo inputs.
 
-| Stand | |
+| Status | |
 | --- | --- |
-| Version | Kern und Firmware 0.1.0 (`src/version.h`) |
-| Software | Host-, Sanitizer- und ARM-Prüfungen bestanden (siehe CHANGELOG) |
-| Hardware | NICHT GEMESSEN, [Hardwaretest](docs/HARDWARE_TEST.md) |
+| Version | Core and firmware 0.1.0 (`src/version.h`) |
+| Software | Host, sanitizer and ARM checks passed (see CHANGELOG) |
+| Hardware | NOT MEASURED, [hardware test](docs/HARDWARE_TEST.md) |
 
-## Verhalten
+## Behavior
 
-* **Delay-Zeit** ist der Abstand zweier aufeinanderfolgender Echos. Bei Ping-Pong ist das
-  der Abstand von Seitenwechsel zu Seitenwechsel, bei Stereo L/R der Abstand je Kanal.
-* **Ping-Pong:** (L + R) / 2 geht in die linke Leitung, die Rückkopplung wechselt die
-  Seite. Echos: links nach T, rechts nach 2T, links nach 3T usw.
-* **Stereo L/R:** zwei getrennte Leitungen mit eigener Rückkopplung.
-* **Zeit:** frei 10 ms – 2 s, oder Sync mit Notenwerten 1/32 bis 1/1, auch punktiert und
-  triolisch, aus dem Tempo des Hosts. Bis 12 s wird nicht geklemmt. Darüber klemmt das
-  Delay auf 12 s und meldet es (LED D3).
-* **Zeitänderungen** gleiten mit höchstens 5 % Tonhöhenänderung. Ab 10 % Sprung wird über
-  zwei Lesezeiger in 20 ms überblendet.
-* **Feedback** 0–95 %, ein Soft-Clip in der Schleife hält es begrenzt. **Dämpfung:**
-  Tiefpass erster Ordnung in der Rückkopplung, 20 kHz bis 1 kHz.
-* **Ausschalten** (Host, `host.h`): Zuerst wird die Einspeisung über 10 ms ausgeblendet,
-  der Nachhall läuft weiter. Er endet, wenn der Wet-Pegel 500 ms plus die Delay-Zeit
-  unter −90 dBFS liegt (so geht kein Echo verloren, das noch unterwegs ist), spätestens
-  20 s nach dem Ausschalten mit 1 s Ausblenden. Danach blendet Dry/Wet in 10 ms auf 0 %,
-  der Ausgang ist exakt trocken. Wird während des Nachhalls wieder eingeschaltet, blendet
-  die Einspeisung ein, die Leitungen bleiben. Nach dem Ende des Nachhalls beginnt das
-  Delay mit leeren Leitungen. Alte Echos kommen nicht zurück, ohne dass der Callback die
-  4,6 MB löschen muss.
+* **Delay time** is the spacing between two consecutive echoes. With ping-pong that is
+  the spacing from side change to side change, with stereo L/R the spacing per channel.
+* **Ping-pong:** (L + R) / 2 goes into the left line; the feedback alternates
+  sides. Echoes: left after T, right after 2T, left after 3T and so on.
+* **Stereo L/R:** two separate lines with their own feedback.
+* **Time:** free 10 ms – 2 s, or sync with note values 1/32 to 1/1, also dotted and
+  triplet, from the host's tempo. Up to 12 s nothing is clamped. Above that the
+  delay clamps to 12 s and reports it (LED D3).
+* **Time changes** glide with at most 5 % pitch change. From a 10 % jump on, it crossfades
+  between two read pointers over 20 ms.
+* **Feedback** 0–95 %; a soft clip in the loop keeps it bounded. **Damping:**
+  first-order low-pass in the feedback, 20 kHz down to 1 kHz.
+* **Switching off** (host, `host.h`): first the feed is faded out over 10 ms;
+  the tail keeps running. It ends when the wet level has been below −90 dBFS for 500 ms plus the delay time
+  (so no echo that is still in flight is lost), at the latest
+  20 s after switching off with a 1 s fade-out. Then Dry/Wet fades to 0 % in 10 ms;
+  the output is exactly dry. If it is switched on again during the tail, the
+  feed fades in and the lines are kept. After the tail has ended, the
+  delay starts with empty lines. Old echoes do not come back, without the callback having to
+  clear the 4.6 MB.
 
-## Bedienung (Firmware `delay-fx`)
+## Controls (firmware `delay-fx`)
 
-| Element | Funktion |
+| Element | Function |
 | --- | --- |
-| VR1 | freie Zeit 10 ms – 2 s (logarithmisch) |
+| VR1 | free time 10 ms – 2 s (logarithmic) |
 | VR2 / VR3 | Feedback 0–95 % / Dry/Wet |
-| VR4 | Dämpfung 1–20 kHz (logarithmisch) |
-| VR5 | Tempo 30–300 BPM (ohne externe Clock) |
-| VR6 | Notenwert (18 Stufen: 1/32 … 1/1, je normal, triolisch, punktiert) |
-| SW17 | Delay an/aus (mit Nachhall), LED D8 |
-| SW18 | oben Ping-Pong frei, Mitte Ping-Pong Sync, unten Stereo L/R Sync |
+| VR4 | Damping 1–20 kHz (logarithmic) |
+| VR5 | Tempo 30–300 BPM (without external clock) |
+| VR6 | Note value (18 steps: 1/32 … 1/1, each normal, triplet, dotted) |
+| SW17 | Delay on/off (with tail), LED D8 |
+| SW18 | up ping-pong free, middle ping-pong sync, down stereo L/R sync |
 | S9 + S16 (5 s) | Bootloader |
 
-LEDs: D1 Sync, D2 Stereo L/R, D3 geklemmt, D4 externes Tempo, D16 Callback-Frist
-überschritten. **MIDI-Clock** über USB oder DIN setzt das Tempo (Mittel über 24 Clocks),
-nach 2 s ohne Clock gilt wieder VR5. MIDI-CC 102–109 (omni) und SQ-Parameter über USB.
-Potis und Schalter wirken, wenn sie bewegt werden.
+LEDs: D1 sync, D2 stereo L/R, D3 clamped, D4 external tempo, D16 callback deadline
+exceeded. **MIDI clock** over USB or DIN sets the tempo (average over 24 clocks);
+after 2 s without clock VR5 applies again. MIDI CC 102–109 (omni) and SQ parameters over USB.
+Pots and switches take effect when they are moved.
 
-## Bauen und testen
+## Build and test
 
 ```bash
 make PROJECT=delay-fx -j4                 # build/DelayFx-v0.1.0.bin
-make PROJECT=delay-fx test                # Kern und Firmware auf Fakes
+make PROJECT=delay-fx test                # core and firmware on fakes
 make PROJECT=delay-fx test-sanitize
-make test-fx                              # gemeinsamer FX-Vertragstest (mit Stereo Delay)
+make test-fx                              # shared FX contract test (with Stereo Delay)
 python3 scripts/check-firmware.py effects/stereo-delay/build/DelayFx-v0.1.0.bin
 python3 scripts/check-elf-placement.py effects/stereo-delay/build/DelayFx-v0.1.0.elf --sdram delay_memory:4608000
 ```
 
-Speicher: 2 Leitungen × (12 s × 48 000 + 64 Samples Rand) als Float = 4 608 512 Byte im
-SDRAM (`DSY_SDRAM_BSS`), vom Host gestellt und vor dem Audiostart gelöscht.
+Memory: 2 lines × (12 s × 48 000 + 64 samples margin) as float = 4 608 512 bytes in
+SDRAM (`DSY_SDRAM_BSS`), provided by the host and cleared before audio starts.

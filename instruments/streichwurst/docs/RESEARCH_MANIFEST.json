@@ -1,0 +1,49 @@
+{
+  "source_commit": "a7b81b61092b499eb4384905f1ebc4b9f62f27a2",
+  "source_worktree_note": "Daisy budget includes subsequent user hardware clarification; original/source hashes distinguish this from the commit.",
+  "transform": "UTF-8 LF; Markdown snapshot headers and relative links; Python checker import replaced by standalone own output-path guard; DSP and tests unchanged",
+  "files": [
+    {
+      "source_path": "analysis/projects/streichwurst/02_string-engine/streichfett-audio-and-voices.md",
+      "source_sha256": "5341dd6c401f439ffaae8a366e183a1be5190349e28ab0e744bbcbccaee964bd",
+      "destination": "docs/research/audio-and-voices.md",
+      "destination_sha256": "3feede95f35557f234167e27ccb9945b205e1067260abe09a23c04e6edcca3d2"
+    },
+    {
+      "source_path": "analysis/projects/streichwurst/02_string-engine/streichfett-parameters.md",
+      "source_sha256": "2e87dbabe6da574e84d6a9cab4e710afdf83346c03aa3ef61c316b2afeebe22e",
+      "destination": "docs/research/parameters.md",
+      "destination_sha256": "b57a8ae8d5d548c5a7cfbfe2559d514422a669596de265a8d5fec4dd423b0b2c"
+    },
+    {
+      "source_path": "analysis/projects/streichwurst/02_string-engine/focused-findings.md",
+      "source_sha256": "efb4238323d2536c3d4341a86d5c229a1ea80b7d90752d1f7f635d3c4830c42e",
+      "destination": "docs/research/focused-findings.md",
+      "destination_sha256": "bc1dd6f2132a490d3989d462331abcfdd841a07dc9a270d4e28132692ce120e3"
+    },
+    {
+      "source_path": "analysis/projects/streichwurst/03_ensemble-animate/streichfett-ensemble.md",
+      "source_sha256": "5b391916d32d500d2cb0f177e63da278670aa5d2c399a58a21eabe171699639a",
+      "destination": "docs/research/ensemble.md",
+      "destination_sha256": "39ce5e474a9f72bd0bc08d7fbc4e959f0f0bc32badebe9c235a8101efe8f6fa5"
+    },
+    {
+      "source_path": "analysis/projects/streichwurst/06_specifications/daisy-dsp-draft.md",
+      "source_sha256": "2b5b4ddee1cfff14f47be9dbd44a8a0e16d5fb870f2b5fe6da8fe00cd5994f08",
+      "destination": "docs/research/daisy-dsp-draft-0.2.md",
+      "destination_sha256": "95f8600d40286ff3abc8db57c7eaa27246691d8d7b791e659d504250dafc0e40"
+    },
+    {
+      "source_path": "analysis/projects/streichwurst/05_platform-comparison/daisy-budget.md",
+      "source_sha256": "ed74b4b5652a659b5465a539223912639422c3804abca57041540a071b8eff61",
+      "destination": "docs/research/daisy-budget.md",
+      "destination_sha256": "736d953b7b6e058d537579f540c2e0c95ed83b9f81660afd2901a956907fa302"
+    },
+    {
+      "source_path": "analysis/projects/streichwurst/08_validation/scripts/own_dsp_model.py",
+      "source_sha256": "dd06449fbc19b3fab508fb6673ced184b6af73c737ff7d87aff038e066482e2a",
+      "destination": "tests/reference/own_dsp_model.py",
+      "destination_sha256": "817c76eb3493abfb7fe12caf1fc2342a64d11c9877833ce0b3be3cc6a49e6f83"
+    }
+  ]
+}
