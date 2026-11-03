@@ -1,3 +1,33 @@
+# Validation — Looper v0.5.0 (card driver, exFAT, SD sharing)
+
+Date: 2026-11-03, Linux container (g++ 13, xPack GCC 13.2.1-1.1, libDaisy `f715e48`).
+**SOFTWARE PASS / HARDWARE PENDING** — nothing of v0.5 has run on a Seed3. Plan and
+decisions: [SD_V0_5_PLAN.md](SD_V0_5_PLAN.md); behaviour: [SD_MANAGEMENT.md](SD_MANAGEMENT.md).
+
+| Item | Result |
+| --- | --- |
+| `build/Looper-v0.5.0.bin` | 189,496 B, SHA256 `3f89db9f44d0f2955c29193fb99e581b3c7d8fc89b2a28798e0460b3bc84241b`; reproduced bit-identically from a clean worktree |
+| `build/mod/LooperMod-v0.5.0.bin` | 223,176 B, SHA256 `dc5a143933048b053b4d101c81dd7a74a1ceedcbb8f90d308a7bf75245552a30`; reproduced bit-identically |
+| `scripts/check-firmware.py` (both) | PASS, BOOT_SRAM vectors, v0.5.0 marker |
+| `make sd-check` (both) | PASS: writable policy, 28 symbols banned (format/erase/lock/label, polling/IT writes, libDaisy FatFs), 7 required |
+| Golden | `2A2DBCEC41A54F57` for the regular and the MOD build, unchanged from v0.4.0 |
+| `make PROJECT=looper test` / `test-sanitize` (ASan/UBSan) | exit 0 / exit 0 |
+| `tests/test_card.cpp` | FatVolume + writable FatFs R0.16 + `ro_sd.c` on FAT32, exFAT (4 KB) and exFAT (32 KB clusters): save, recall after power-up, import with long/umlaut names and 44.1 kHz, multi-sector transfers (whole clusters, 63 sectors with 32 KB clusters) |
+| Power-loss campaign | card gone after every block of a replacing save: FAT32 143 cut points / 140 block writes, exFAT 137 / 134; recall gave the old loop 136/132 times, the new loop 7/5 times, **never anything else**; the next save and recall worked every time |
+| SD sharing (`tests/test_callback.cpp`, both builds) | STATUS layout, BUSY while recording, PENDING → save → fade → stop audio → release card → intent `LPR1` → restart, ACCEPTED when in sync (no extra save), failed save → share failed → CONFIRM → confirm=1, NO_CARD, version/length errors, Nebulae prefix ignored, power-on with intent enters SD management |
+| `tests/test_share.cpp` | SHARE decision for all 64 input combinations; never ACCEPTED with an unsaved loop unless confirmed |
+| common/sd (`test`, `test-sanitize`, `arm-check`) | exit 0; writable tests incl. 300 random power-cut rounds |
+| common/sdshare (`test`, `test-sanitize`) | exit 0 (boot intent per magic, SysEx frame, DDP responder 57 checks) |
+| Control panel 0.6.0 (`pytest diagnostics/tests/python`) | 317 passed (Looper workflow and GUI included) |
+| Repo regression | `make all-projects`, `make test-projects`, `make test-release`, components, Nebulae `test-sanitize`/`test-thread`, Diagnostics tests: all exit 0; Nebulae 0.2.0 and both Diagnostics images byte-identical to `main` |
+
+Needs hardware (NICHT GEMESSEN): multi-block IDMA write timing and the 1 s bounds, save time
+of an 87 s loop on FAT32 and exFAT, real power loss during a save, boot intent through the
+bootloader, Windows enumeration of "Looper SD", fade/click at the restart. Steps:
+[HARDWARE_TEST.md section 7b](HARDWARE_TEST.md#7b-exfat-and-sd-card-sharing-v05).
+
+---
+
 # Validation — Looper v0.3
 
 Date: 2026-10-20, updated 2026-10-25 for v0.3.2 (44.1 kHz import) and v0.4.0
