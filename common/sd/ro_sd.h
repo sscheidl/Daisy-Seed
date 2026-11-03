@@ -1,4 +1,6 @@
-/* Shared read-only microSD access for Seed3 Desktop firmware (SDMMC1 + FatFs R0.16).
+/* Shared microSD access for Seed3 Desktop firmware (SDMMC1 + FatFs R0.16). Read-only by
+ * default; the writable configuration (rw/ffconf.h, SD_WRITABLE = 1 in sd.mk) adds
+ * disk_write for firmware that saves files itself (Looper).
  * One FatFs volume "0:", used from the main loop only; never from an interrupt or
  * the audio callback. The FatFs build is read-only (FF_FS_READONLY 1), so no write,
  * create, rename, delete or format function exists. See common/sd/README.md.
@@ -32,6 +34,9 @@ typedef struct {
      * reader/reader_abort.h (hardware-tested in the Diagnostics card reader 0.3.2);
      * the next ro_sd_mount() re-initializes the interface either way. */
     void (*abort)(void);
+    /* Writable build only (rw/ffconf.h): bound for one write transfer including the
+     * card's programming time, and for CTRL_SYNC. 0 = 1000 ms. Ignored when read-only. */
+    uint32_t write_timeout_ms;
 } RoSdConfig;
 
 /* Validates and copies the configuration. Returns 0, or -1 for an invalid one.
@@ -48,7 +53,7 @@ void ro_sd_unmount(void);
 /* Restarts the overall budget, e.g. at the start of a diagnostic test. */
 void ro_sd_restart_budget(void);
 
-/* Current disk status bits; STA_PROTECT is always set. */
+/* Current disk status bits; STA_PROTECT is always set in the read-only build. */
 DSTATUS ro_sd_status(void);
 
 #ifdef __cplusplus

@@ -1,5 +1,6 @@
 # Host tests and ARM checks for the shared read-only SD driver.
 # Firmware projects do not use this file; they include sd.mk.
+SHELL := /bin/bash
 HOST_CC ?= gcc
 HOST_CXX ?= g++
 PYTHON ?= python3
@@ -23,6 +24,16 @@ test:
 	$(HOST_CXX) -std=c++17 $(HOST_OPT) $(SAN) $(HOST_WARN) -I. -Ifatfs -Itests/fakes tests/test_ro_sd.cpp \
 		$(B)/driver/ro_sd.o $(B)/driver/ff.o $(B)/driver/ffunicode.o -o $(B)/test_ro_sd
 	./$(B)/test_ro_sd $(B)/fat32.img $(B)/exfat.img
+	# Writable configuration (rw/ffconf.h first on the include path), same disk layer.
+	mkdir -p $(B)/rw
+	$(HOST_CC) -std=gnu11 $(HOST_OPT) $(SAN) -Irw -I. -Ifatfs -c fatfs/ff.c -o $(B)/rw/ff.o
+	$(HOST_CC) -std=gnu11 $(HOST_OPT) $(SAN) -Irw -I. -Ifatfs -c fatfs/ffunicode.c -o $(B)/rw/ffunicode.o
+	$(HOST_CC) -std=gnu11 $(HOST_OPT) $(SAN) $(HOST_WARN) -Irw -I. -Ifatfs -Itests/fakes -c ro_sd.c -o $(B)/rw/ro_sd.o
+	$(HOST_CXX) -std=c++17 $(HOST_OPT) $(SAN) $(HOST_WARN) -Irw -I. -Ifatfs -Itests/fakes tests/test_rw_sd.cpp \
+		$(B)/rw/ro_sd.o $(B)/rw/ff.o $(B)/rw/ffunicode.o -o $(B)/test_rw_sd
+	./$(B)/test_rw_sd $(B)/fat32.img $(B)/exfat.img
+	# The two configurations differ only in FF_FS_READONLY and the header comment.
+	diff <(grep -v '^ \*\|^/\*' ffconf.h | grep -v FF_FS_READONLY) <(grep -v '^ \*\|^/\*' rw/ffconf.h | grep -v FF_FS_READONLY)
 
 test-sanitize:
 	"$(MAKE)" test HOST_OPT="-O1 -g" SAN="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
@@ -46,6 +57,15 @@ arm-check:
 	$(PYTHON) ../../scripts/check-sd-symbols.py --nm $(ARM_NM) \
 		--require disk_read,disk_initialize,disk_status,f_mount,f_open,f_read,f_readdir \
 		$(A)/ro_sd.o $(A)/ff.o $(A)/ffunicode.o
+	# Writable configuration: write API present, formatting/erase/lock/label still absent.
+	mkdir -p $(A)/rw
+	$(ARM_CC) $(subst -I. ,-Irw -I. ,$(ARM_FLAGS)) -Werror -c ro_sd.c -o $(A)/rw/ro_sd.o
+	$(ARM_CC) $(subst -I. ,-Irw -I. ,$(ARM_FLAGS)) -c fatfs/ff.c -o $(A)/rw/ff.o
+	$(ARM_CC) $(subst -I. ,-Irw -I. ,$(ARM_FLAGS)) -c fatfs/ffunicode.c -o $(A)/rw/ffunicode.o
+	$(PYTHON) ../../scripts/check-sd-symbols.py --nm $(ARM_NM) \
+		--allow disk_write,f_write,f_unlink,f_rename,f_mkdir,f_truncate,f_sync,BSP_SD_WriteBlocks_DMA \
+		--require disk_read,disk_write,f_write,f_unlink,f_rename,f_mkdir,f_mount \
+		$(A)/rw/ro_sd.o $(A)/rw/ff.o $(A)/rw/ffunicode.o
 	printf 'int HAL_SD_WriteBlocks(void*,void*,unsigned,unsigned,unsigned);\nint probe(void){return HAL_SD_WriteBlocks(0,0,0,1,1);}\n' > $(A)/inject.c
 	$(ARM_CC) -mcpu=cortex-m7 -mthumb -mfpu=fpv5-d16 -mfloat-abi=hard -O2 -c $(A)/inject.c -o $(A)/inject.o
 	! $(PYTHON) ../../scripts/check-sd-symbols.py --nm $(ARM_NM) --require f_mount \

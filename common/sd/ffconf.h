@@ -331,3 +331,6 @@
 */
 #define _VOLUMES	FF_VOLUMES
 #define _MAX_LFN	FF_MAX_LFN
+
+/* Marker checked by ro_sd.c: this is a common/sd configuration, not libDaisy's. */
+#define RO_SD_FFCONF	1
