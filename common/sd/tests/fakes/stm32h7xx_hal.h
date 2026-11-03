@@ -13,6 +13,7 @@ int HAL_SD_Abort(SD_HandleTypeDef* hsd);
 int HAL_SD_DeInit(SD_HandleTypeDef* hsd);
 void SCB_CleanInvalidateDCache_by_Addr(uint32_t* addr, int32_t size);
 void SCB_InvalidateDCache_by_Addr(uint32_t* addr, int32_t size);
+void SCB_CleanDCache_by_Addr(uint32_t* addr, int32_t size);
 #ifdef __cplusplus
 }
 #endif
