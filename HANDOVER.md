@@ -1,5 +1,12 @@
 # Handover — continuing work locally
 
+**SD card work, state 2026-11-03 (read first for SD/Looper/Nebulae):**
+[docs/HANDOVER_2026-11-04_SD.md](docs/HANDOVER_2026-11-04_SD.md). `main` carries the
+Codex integration (PR #78: Nebulae 0.2.1, Looper 0.5.1, panel 0.6.0); hardware run sheet
+for 2026-11-04: [docs/HARDWARE_TEST_SESSION_2026-11-04.md](docs/HARDWARE_TEST_SESSION_2026-11-04.md).
+PR #94 conflicts with `main` and must be reworked per
+[SD_WRITE_EXFAT_CLAUDE.md](docs/SD_WRITE_EXFAT_CLAUDE.md) before any merge.
+
 **Mandatory modularity, user decision 2026-11-01:**
 The [development policy](docs/MODULAR_DEVELOPMENT_POLICY.md) and AGENTS.md apply
 to all new Daisy developments and substantial extensions: instrument, FX,
