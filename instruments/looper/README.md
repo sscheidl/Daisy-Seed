@@ -1,6 +1,10 @@
 # Looper — Instrument Project
 
-**Status: v0.5 with all four loop modes, Slice/Skip, loop persistence and WAV
+For the 0.5.1 handover fixes and current test binaries, see the
+[integration report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md). Local loop
+storage still requires FAT32; Windows sharing uses the shared raw-block reader.
+
+**Status: v0.5.1 with all four loop modes, Slice/Skip, loop persistence and WAV
 import on the microSD card, MIDI CC control over USB, and Windows access to the card
 through the control panel (SD management, new in v0.5); host tests and ARM build
 pass; no hardware run yet.** Project ID: `looper`. The goal is an original
@@ -11,8 +15,8 @@ build with the Mod on Daisy modulation matrix: [docs/MODULATION.md](docs/MODULAT
 Windows access to the card: [docs/SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.5.0.bin
-make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.5.0.bin
+make PROJECT=looper -j4            # firmware: build/Looper-v0.5.1.bin
+make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.5.1.bin
 make PROJECT=looper test           # host tests of both builds, incl. production callback
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```
@@ -276,7 +280,7 @@ ignored, and the looper sends nothing back except the bootloader reply.
 ## Mod on Daisy build (MOD=1)
 
 `make PROJECT=looper MOD=1` (or `PROJECT=looper-mod`) builds a second image,
-`build/mod/LooperMod-v0.5.0.bin`, with the
+`build/mod/LooperMod-v0.5.1.bin`, with the
 [Mod on Daisy](../../modules/mod-on-daisy/README.md) 8×8 modulation matrix. The
 editors (browser, JUCE, VST3) connect over J7 and read its eight looper columns from
 the device: **Speed** (±12 semitones at depth 100), **Start**, **Size**, **Slice**,

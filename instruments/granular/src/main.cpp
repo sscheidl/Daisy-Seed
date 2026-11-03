@@ -186,7 +186,8 @@ constexpr unsigned VersionPart(const char* v,unsigned part) {
 }
 constexpr uint8_t kVersion[3]={uint8_t(VersionPart(NEBULAE_VERSION,0)),uint8_t(VersionPart(NEBULAE_VERSION,1)),
                                uint8_t(VersionPart(NEBULAE_VERSION,2))};
-static_assert(kVersion[0]==0 && kVersion[1]==2 && kVersion[2]==0,"version.h and STATUS must agree");
+static_assert(VersionPart(NEBULAE_VERSION,0)<128 && VersionPart(NEBULAE_VERSION,1)<128
+              && VersionPart(NEBULAE_VERSION,2)<128,"STATUS version must fit MIDI data bytes");
 neb::sysex::Status CurrentStatus() {
     neb::sysex::Status s;
     for(unsigned i=0;i<3;++i) s.fw[i]=kVersion[i];

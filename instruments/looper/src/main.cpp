@@ -469,7 +469,7 @@ static looper::sysex::Status CurrentStatus() {
     st.recording = flags & (ui::Recording | ui::RecordPending);
     if (storageReady && store.VersionKnown()) {
         st.unsaved = s.version != store.SavedVersion();
-        st.save_failed = store.SaveFailed();
+        st.save_failed = store.SaveFailed() || !store.CardReady();
     } else {  // the card was never usable: the loop cannot be saved
         st.unsaved = st.loop;
         st.save_failed = true;

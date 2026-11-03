@@ -453,7 +453,7 @@ int main() {
     std::vector<uint8_t> st = control({0x01, 0x01});
     CHECK(st.size() == 20 && st[0] == 0xF0 && st[1] == 0x7D && st[2] == 0x4C && st[3] == 0x50 &&
           st[5] == 0x41 && st[19] == 0xF7);
-    CHECK(st.size() == 20 && st[6] == 0 && st[7] == 5 && st[8] == 0 && st[9] == 0);  // 0.5.0, performance
+    CHECK(st.size() == 20 && st[6] == 0 && st[7] == 5 && st[8] == 1 && st[9] == 0);  // 0.5.1, performance
     CHECK(st.size() == 20 && (st[10] & 0x07) == 0x03 && !(st[10] & 0x38));  // card, loop, saved, idle
     const uint32_t loopMs = st.size() == 20 ? st[13] | st[14] << 7 | st[15] << 14 : 0;
     CHECK(loopMs == engine.Length() / 48);
@@ -494,6 +494,22 @@ int main() {
     CHECK(!store.SaveFailed());
     st = control({0x01, 0x01});
     CHECK(st.size() == 20 && !(st[10] & 0x04) && st[11] == 0);
+    // A physically inserted card with an unmountable filesystem cannot save.
+    // VersionKnown alone does not prove that the save destination is available.
+    memoryCard.ready = false;
+    Press(keys::Record, .3f);
+    Blocks(100, .3f);
+    Press(keys::Record);
+    Blocks(50);
+    CHECK(store.VersionKnown() && !store.CardReady() && CardPresent());
+    st = control({0x01, 0x01});
+    CHECK(st.size() == 20 && (st[10] & 0x04) && st[11] == 1);
+    CHECK(share(0) == looper::sysex::kConfirmRequired && !shareRequested);
+    CHECK(share(1) == looper::sysex::kAccepted && shareRequested);
+    shareRequested = false;  // inspect consent without restarting the fake device
+    memoryCard.ready = true;
+    Blocks(3010);
+    CHECK(store.CardReady() && !store.SaveFailed());
     // Malformed requests.
     CHECK(share(2) == looper::sysex::kBadRequest);
     std::vector<uint8_t> e = control({0x02, 0x01});

@@ -98,6 +98,8 @@ class LoopStore {
     // Engine content version that loop.wav holds (after Recall or the last save).
     uint32_t SavedVersion() const { return savedVersion_; }
     bool VersionKnown() const { return versionKnown_; }
+    // Last filesystem readiness observed by Service, independent of content version.
+    bool CardReady() const { return cardReady_; }
     bool SaveFailed() const { return fault_ == Fault::Write; }
     Fault LastFault() const { return fault_; }
     wav::Error LastFileError() const { return fileError_; }
