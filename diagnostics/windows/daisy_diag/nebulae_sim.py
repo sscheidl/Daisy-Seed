@@ -1,4 +1,5 @@
-"""Simulated Nebulae on Daisy 0.2.0: performance personality on a simulated USB-MIDI
+"""Simulated firmwares with SD management - Nebulae on Daisy 0.2.0 and Looper 0.5.0
+(SimulatedLooper): performance personality on a simulated USB-MIDI
 port, SD management personality on the simulated CDC cable. Mirrors the firmware rules
 (instruments/granular/src/control_sysex.h and admin.cpp); simulation only, no drive is
 created on Windows.
@@ -26,7 +27,7 @@ class SimulatedNebulaeManagement(SimulatedDevice):
 
     def _neb(self, action: str) -> str:
         ret = 1 if self.reader_state == "LOCAL" else 0
-        return (f"NEB mode=SDMGMT fw={'.'.join(map(str, FIRMWARE))}-sim card={int(self.inputs.sd_card)} "
+        return (f"NEB mode=SDMGMT fw={'.'.join(map(str, self.owner.firmware))}-sim card={int(self.inputs.sd_card)} "
                 f"ret={ret} bank={self.owner.bank} slot={self.owner.slot} a={action}")
 
     def _send_sys(self, now: float) -> None:
@@ -41,8 +42,8 @@ class SimulatedNebulaeManagement(SimulatedDevice):
             self._last_rx = now
             self._streaming = True
             self._last_sent = None
-            self._send(f"HELLO proto={self.protocol_version} fw={'.'.join(map(str, FIRMWARE))}-sim "
-                       f"app={APP_NAME} dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 "
+            self._send(f"HELLO proto={self.protocol_version} fw={'.'.join(map(str, self.owner.firmware))}-sim "
+                       f"app={self.owner.app} dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 "
                        "caps=btn,pot,potraw,sw17,sw18,sd,boot,sdmsc,nebmgmt sim=1")
             self._send_state(now)
             self._send_reader("STATUS")
@@ -104,6 +105,9 @@ class SimulatedMidiLink:
 
 class SimulatedNebulae:
     """Whole device. `cable` is the CDC side used by DeviceSession."""
+
+    app = APP_NAME
+    firmware = FIRMWARE
 
     def __init__(self, clock) -> None:
         self._clock = clock
@@ -186,3 +190,79 @@ class SimulatedNebulae:
                 self.restart("MGMT", self._clock())
             return head + bytes([CMD_SHARE | REPLY_BIT, result, *body[3:7], 0xF7])
         return head + bytes([CMD_ERROR | REPLY_BIT, cmd, 2, 0xF7])
+
+
+class SimulatedLooper(SimulatedNebulae):
+    """Looper 0.5.0: SHARE saves the loop first (PENDING), then restarts; a failing save
+    (``save_fails``) ends in "share failed" and needs confirmation. Mirrors
+    instruments/looper/src/share_control.h and main.cpp."""
+
+    app = "Looper"
+    firmware = (0, 5, 0)
+    PREFIX = bytes([0xF0, 0x7D, 0x4C, 0x50])
+    SAVE_S = 1.0
+
+    def __init__(self, clock) -> None:
+        super().__init__(clock)
+        self.loop = True
+        self.in_sync = False      # the loop was changed since the last save
+        self.importing = False
+        self.save_fails = False
+        self.share_pending = False
+        self.share_failed = False
+        self.fault = 0
+        self._save_done: float | None = None
+
+    def advance(self) -> None:
+        if self.share_pending and self._save_done is not None and self._clock() >= self._save_done:
+            self._save_done = None
+            self.share_pending = False
+            if self.save_fails:
+                self.share_failed = True
+                self.fault = 2
+            else:
+                self.in_sync = True
+                self.restart("MGMT", self._clock())
+        super().advance()
+        if self.personality == "PERF" and not self.restarting and self._switch_at is None and self.restarts:
+            self.in_sync = True  # recalled from the card after any restart
+
+    def handle_sysex(self, msg: bytes) -> bytes | None:
+        if len(msg) < 7 or msg[:4] != self.PREFIX or msg[-1] != 0xF7:
+            return None
+        body = msg[4:-1]
+        version, cmd = body[0], body[1]
+        head = self.PREFIX + bytes([0x01])
+        if version != 0x01:
+            return head + bytes([0x7F, cmd, 1, 0xF7])
+        if cmd == 0x01 and len(body) == 2:
+            a = (int(self.card) | (2 if self.loop else 0) | (4 if self.recording else 0)
+                 | (8 if self.share_pending else 0) | (16 if self.importing else 0)
+                 | (32 if self.in_sync else 0) | (64 if self.overruns else 0))
+            b = (1 if self.share_pending else 0) | (2 if self.share_failed else 0)
+            data = [*self.firmware, 0, a, b, 87, 0, self.fault, self.overruns & 0x7F, 0, 30]
+            return head + bytes([0x41, *data, 0xF7])
+        if cmd == 0x02:
+            if len(body) != 7 or body[2] > 1:
+                return head + bytes([0x42, 4, 0, 0, 0, 0, 0xF7])
+            confirm = body[2] == 1
+            if not self.card:
+                result = 3
+            elif self.recording or self.importing:
+                result = 2
+            elif self.in_sync or confirm:
+                result = 0
+            elif self.share_failed:
+                result = 1
+            else:
+                result = 5
+            if result == 0:
+                self.share_failed = False
+                self.restart("MGMT", self._clock())
+            elif result == 5:
+                self.share_pending = True
+                self.share_failed = False
+                self._save_done = self._clock() + self.SAVE_S
+            return head + bytes([0x42, result, *body[3:7], 0xF7])
+        return head + bytes([0x7F, cmd, 2, 0xF7])
+

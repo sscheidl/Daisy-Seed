@@ -28,7 +28,7 @@ def neb(app):
     for timer in (window.poll_timer, window.panel_timer, window.port_timer):
         timer.stop()
     window.resize(1500, 900)
-    window.control_tabs.setCurrentIndex(mw.TABS.index("Nebulae"))
+    window.control_tabs.setCurrentIndex(mw.TABS.index("SD share"))
     window.show()
     app.processEvents()
 
@@ -168,3 +168,66 @@ def test_diagnostics_simulation_has_no_nebulae(app):
     assert window.nebulae.phase == Phase.NOT_FOUND and not window.neb_share.isEnabled()
     assert window.led_buttons["FOLLOW"].isEnabled()  # diagnostics unchanged
     window.close()
+
+
+@pytest.fixture
+def looper(app):
+    clock = FakeClock()
+    window = mw.MainWindow(simulation=True, clock=clock, sim_device="looper")
+    for timer in (window.poll_timer, window.panel_timer, window.port_timer):
+        timer.stop()
+    window.resize(1280, 850)
+    window.show()
+    app.processEvents()
+
+    def step(seconds=0.1):
+        for _ in range(int(seconds / 0.01)):
+            clock.advance(0.01)
+            window._tick()
+        window._refresh_panels()
+        app.processEvents()
+
+    def until(predicate, seconds=10.0):
+        for _ in range(int(seconds / 0.1)):
+            if predicate():
+                return True
+            step(0.1)
+        return predicate()
+
+    step(1.5)
+    yield window, step, until
+    window.close()
+
+
+def test_looper_profile_saves_then_shares_via_buttons(looper):
+    window, step, until = looper
+    assert window.control_tabs.currentIndex() == mw.TABS.index("SD share")
+    assert window.neb_phase.text().startswith("Looper: Performance")
+    assert "not saved yet" in window.neb_info["bank"].text() and "Undo" in window.neb_warning.text()
+    assert window.neb_return.text() == "Return to Looper"
+    window.neb_share.click()
+    assert until(lambda: window.nebulae.phase == Phase.SAVING, 2)
+    assert "Saving the loop" in window.neb_phase.text() and not window.neb_share.isEnabled()
+    assert until(lambda: window.nebulae.reader_state == "SHARED", 15)
+    window.cable.device.reader_eject()
+    assert until(lambda: window.neb_return.isEnabled())
+    window.neb_return.click()
+    assert until(lambda: window.nebulae.phase == Phase.PERFORMANCE, 15)
+    step(1.5)
+    assert "saved on the card" in window.neb_info["bank"].text()
+
+
+def test_looper_failed_save_offers_share_without_saving(looper):
+    window, step, until = looper
+    window.neb_sim.save_fails = True
+    window.neb_share.click()
+    assert until(lambda: window.neb_confirm.isVisible(), 5)
+    assert window.neb_confirm.text() == "Share without saving"
+    assert "LOSES the unsaved change" in window.neb_warning.text()
+    assert "write error" in window.neb_error.text()
+    page = window.control_tabs.currentWidget()
+    for widget in (window.neb_confirm, window.neb_cancel, window.neb_warning, window.neb_message):
+        left = widget.mapTo(page.viewport(), QPoint(0, 0)).x()
+        assert left >= 0 and left + widget.width() <= page.viewport().width()
+    window.neb_confirm.click()
+    assert until(lambda: window.nebulae.phase == Phase.MANAGEMENT, 10)
