@@ -86,7 +86,10 @@ struct Hardware {
         void SetAudioBlockSize(std::size_t) {}
         float AudioCallbackRate() const { return 1500.f; }
         float AudioSampleRate() const { return 48000.f; }
-        template <typename Callback> void StartAudio(Callback) {}
+        template <typename Callback> void StartAudio(Callback) { audio = true; }
+        void StopAudio() { audio = false; ++stops; }
+        bool audio = false;
+        unsigned stops = 0;
     } seed;
     struct Pot {
         float value = 0;
@@ -106,7 +109,8 @@ struct Hardware {
         for (std::size_t i = 0; i < button.size(); ++i)
             button[i].Debounce(!pressed[i]);
     }
-    void SetLed(int, float) {}
+    std::array<float, 16> led{};
+    void SetLed(int i, float v) { if (i >= 0 && i < 16) led[size_t(i)] = v; }
     void UpdateLeds() {}
 };
 }

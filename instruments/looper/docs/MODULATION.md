@@ -1,8 +1,10 @@
 # Looper + Mod on Daisy (separate build)
 
-**Image:** `build/mod/LooperMod-v0.4.0.bin` (`make PROJECT=looper MOD=1`, or
-`make PROJECT=looper-mod`). Firmware marker: `LOOPER-MOD-VERSION=0.4.0`; IDENTIFY
-reports the key `looper` and the version `0.4.0`, the same version as image and marker.
+**Image:** `build/mod/LooperMod-v0.5.0.bin` (`make PROJECT=looper MOD=1`, or
+`make PROJECT=looper-mod`). Firmware marker: `LOOPER-MOD-VERSION=0.5.0`; IDENTIFY
+reports the key `looper` and the version `0.5.0`, the same version as image and marker.
+v0.5 adds the [SD management](SD_MANAGEMENT.md) to both builds; the looper's control
+SysEx (`F0 7D 4C 50`) is handled before anything is forwarded to the matrix.
 **Status:** software tested, hardware test pending (NICHT GEMESSEN).
 
 This is an **additional, separate build** of the looper with the

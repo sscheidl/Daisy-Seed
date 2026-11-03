@@ -16,10 +16,28 @@ else
 TARGET = Looper-v$(VERSION)
 endif
 STORE_SOURCES = src/wav.cpp src/resample.cpp src/loop_store.cpp
-CPP_SOURCES = src/main.cpp src/looper_engine.cpp src/midi_control.cpp $(STORE_SOURCES) src/fatfs_volume.cpp
+# SD management personality (docs/SD_MANAGEMENT.md): the shared, hardware-tested card
+# reader of common/sd/reader (USB CDC + MSC) and the DDP responder for the control panel.
+SD_DIR = ../../common/sd
+READER_DIR = $(SD_DIR)/reader
+PROTOCOL_DIR = ../../diagnostics/protocol
+RING_DIR = ../../diagnostics/firmware/src
+READER_SOURCES = $(READER_DIR)/card_reader.cpp $(READER_DIR)/msc_bot.cpp $(READER_DIR)/reader_usb.cpp
+SD_MGMT_SOURCES = src/sd_admin.cpp src/sd_management.cpp $(READER_SOURCES) $(PROTOCOL_DIR)/ddp.cpp
+CPP_SOURCES = src/main.cpp src/looper_engine.cpp src/midi_control.cpp $(STORE_SOURCES) src/fatfs_volume.cpp \
+	$(SD_MGMT_SOURCES)
+C_SOURCES = $(READER_DIR)/reader_ctlreq.c
+# Loop persistence needs a writable FatFs: libDaisy's R0.12c (FAT32) for now. The
+# read-only common/sd driver is not linked; the card reader only uses raw blocks.
 USE_FATFS = 1
-C_INCLUDES += -Isrc
+C_INCLUDES += -Isrc -I$(READER_DIR) -I$(PROTOCOL_DIR) -I$(RING_DIR)
+C_INCLUDES += -I../../libDaisy/Middlewares/Patched/ST/STM32_USB_Device_Library/Class/CDC/Inc
+# USB identity of the SD management composite (CDC + MSC): its own Windows instance,
+# apart from the Diagnostics reader (3.00, A) and Nebulae (2.00, N).
+C_DEFS += -DREADER_USB_PRODUCT='"Looper SD"' -DREADER_USB_BCD_MAJOR=4 -DREADER_USB_SERIAL_SUFFIX="'L'"
 include ../../common/desktop.mk
+LDFLAGS += -Tsrc/memory.ld
+$(BUILD_DIR)/$(TARGET).elf: src/memory.ld
 
 .PHONY: test test-sanitize version
 version:
@@ -42,6 +60,11 @@ test:
 	./build/host/test_midi
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc -Itests/fakes tests/test_store.cpp src/looper_engine.cpp $(STORE_SOURCES) -o build/host/test_store
 	./build/host/test_store
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_control.cpp -o build/host/test_control
+	./build/host/test_control
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(READER_DIR) -I$(PROTOCOL_DIR) -I$(RING_DIR) tests/test_admin.cpp \
+		src/sd_admin.cpp $(READER_DIR)/card_reader.cpp $(PROTOCOL_DIR)/ddp.cpp -o build/host/test_admin
+	./build/host/test_admin
 	$(HOST_CXX) $(HOST_FLAGS) $(CALLBACK_FLAGS) tests/test_callback.cpp $(CALLBACK_SOURCES) -o build/host/test_callback
 	./build/host/test_callback
 	$(HOST_CXX) $(HOST_FLAGS) $(CALLBACK_FLAGS) $(MOD_FLAGS) tests/test_callback.cpp $(CALLBACK_SOURCES) -o build/host/test_callback_mod

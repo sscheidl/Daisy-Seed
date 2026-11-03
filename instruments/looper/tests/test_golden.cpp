@@ -20,6 +20,7 @@ namespace looper {
 bool InitCard(bool (*)()) { return false; }
 Volume& CardVolume() { return memoryCard; }
 }  // namespace looper
+#include "sd_management_fakes.h"
 
 namespace {
 constexpr size_t kBlock = 48;

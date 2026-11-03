@@ -7,8 +7,11 @@
 // shares their cache lines.
 #include "card_volume.h"
 #include "daisy_seed.h"
+#include "reader_abort.h"
 #include <cstring>
 #include <new>
+
+extern SD_HandleTypeDef hsd1;  // libDaisy per/sdmmc.cpp
 
 namespace looper {
 namespace {
@@ -35,6 +38,11 @@ class FatFsVolume final : public Volume {
         initialized_ = fs_->Init(daisy::FatFSInterface::Config::MEDIA_SD) ==
                        daisy::FatFSInterface::Result::OK;
         return initialized_;
+    }
+
+    void Release() {
+        Unmount();
+        diag::AbortReaderSd(hsd1);  // no transfer can be running: called from the main loop
     }
 
     bool Ready() override {
@@ -154,5 +162,6 @@ FatFsVolume volume;
 
 bool InitCard(bool (*present)()) { return volume.Init(present); }
 Volume& CardVolume() { return volume; }
+void ReleaseCard() { volume.Release(); }
 
 }  // namespace looper

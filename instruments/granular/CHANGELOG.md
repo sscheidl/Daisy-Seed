@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 - SD handover regression fix, 2026-11-03
+
+* Reject SHARE/RETURN while a performance or bootloader restart is pending; recheck local ownership and BOT idleness before the deferred reset.
+* Add regressions for both restart types, blocked ACK transmission and ownership changes during ACK settling.
+* Derive MIDI STATUS version limits from the version source rather than pinning the previous patch number.
+* Preserve the existing FAT32/exFAT read-only and Windows raw-block paths. Hardware: **NOT MEASURED** for this version.
+
 ## 0.2.0 - software release candidate, not flashed, not released
 
 Hardware status: **HARDWARE PENDING**. Release decision and publication are the human's.

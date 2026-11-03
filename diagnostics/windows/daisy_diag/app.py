@@ -13,6 +13,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         help='start in simulation mode (no hardware)')
     parser.add_argument("--sim-nebulae", action="store_true",
                         help='simulate Nebulae on Daisy 0.2 (USB-MIDI performance and SD management)')
+    parser.add_argument("--sim-looper", action="store_true",
+                        help='simulate the Looper 0.5 (USB-MIDI performance and SD management)')
     parser.add_argument("--port", help='use a fixed COM port, e.g. COM5')
     parser.add_argument("--selftest", type=float, metavar='SECONDS',
                         help='exit after N seconds; exit code 0 if device data was received (for automated startup tests)')
@@ -32,8 +34,9 @@ def main(argv: list[str] | None = None) -> int:
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setApplicationName("DaisyDiagnostic")
     theme.apply(app)
-    window = MainWindow(simulation=args.sim or args.sim_nebulae, port=args.port,
-                        sim_device="nebulae" if args.sim_nebulae else "diagnostics")
+    sim_device = "nebulae" if args.sim_nebulae else "looper" if args.sim_looper else "diagnostics"
+    window = MainWindow(simulation=args.sim or args.sim_nebulae or args.sim_looper, port=args.port,
+                        sim_device=sim_device)
     window.show()
     result = {"code": 0}
     if args.selftest is not None:

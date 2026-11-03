@@ -4,6 +4,8 @@
 // rescanned, every slot is loaded, and the PCM hashes must equal what "Windows"
 // wrote. Renamed/deleted files must show up as such.
 // Usage: test_e2e_return <card.img> <expected.txt>
+// FatFs' Windows compatibility macros must follow the C++ math declarations.
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
