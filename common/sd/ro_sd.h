@@ -34,9 +34,12 @@ typedef struct {
      * reader/reader_abort.h (hardware-tested in the Diagnostics card reader 0.3.2);
      * the next ro_sd_mount() re-initializes the interface either way. */
     void (*abort)(void);
+#if !FF_FS_READONLY
     /* Writable build only (rw/ffconf.h): bound for one write transfer including the
-     * card's programming time, and for CTRL_SYNC. 0 = 1000 ms. Ignored when read-only. */
+     * card's programming time, and for CTRL_SYNC. 0 = 1000 ms. Absent in the read-only
+     * build, so read-only images stay byte-identical to their previous builds. */
     uint32_t write_timeout_ms;
+#endif
 } RoSdConfig;
 
 /* Validates and copies the configuration. Returns 0, or -1 for an invalid one.
