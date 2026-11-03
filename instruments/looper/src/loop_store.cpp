@@ -190,10 +190,12 @@ void LoopStore::Service(EngineView& view, ImportPort& port, uint32_t nowMs) {
         if (importRequested_) {
             importRequested_ = false;
             StartImport(port, nowMs);
-        } else if (s.idle && s.version != savedVersion_ && nowMs - changedAt_ >= kSaveDelayMs &&
-                   int32_t(nowMs - retryAt_) >= 0) {
+        } else if (s.idle && s.version != savedVersion_ &&
+                   (saveNow_ || (nowMs - changedAt_ >= kSaveDelayMs && int32_t(nowMs - retryAt_) >= 0))) {
             StartSave(s, nowMs);
         }
+        if (saveNow_ && InSync())
+            saveNow_ = false;
         break;
     case State::Saving:
         if (importRequested_) {  // the import replaces the loop anyway
@@ -211,6 +213,7 @@ void LoopStore::Service(EngineView& view, ImportPort& port, uint32_t nowMs) {
 }
 
 void LoopStore::Fail(Fault fault, uint32_t nowMs, wav::Error file) {
+    saveNow_ = false;  // a requested save that failed is not retried at once
     fault_ = fault;
     fileError_ = file;
     errorAt_ = nowMs;

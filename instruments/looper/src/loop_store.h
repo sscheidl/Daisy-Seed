@@ -89,6 +89,14 @@ class LoopStore {
     wav::Error LastFileError() const { return fileError_; }
     const char* LastImportName() const { return name_; }
     uint32_t Saves() const { return saves_; }
+    // SD sharing (v0.5): save the current loop as soon as the engine is idle, without the
+    // 2 s delay and the retry wait. Cleared by CancelSaveNow or once the card is in sync.
+    void RequestSaveNow() { saveNow_ = true; }
+    void CancelSaveNow() { saveNow_ = false; }
+    bool SaveNowPending() const { return saveNow_; }
+    // The card holds exactly the engine's current content (loop.wav, or none after erase)
+    // and no save or import is running. Valid after Service has seen the current version.
+    bool InSync() const { return versionKnown_ && seenVersion_ == savedVersion_ && state_ == State::Idle; }
 
   private:
     enum class State : uint8_t { Idle, Saving, ImportGrant, ImportCopy, ImportCommit };
@@ -142,6 +150,7 @@ class LoopStore {
     uint32_t saveVersion_ = 0, saveFrames_ = 0, savePosition_ = 0;
     const Frame* saveSource_ = nullptr;
     uint32_t saves_ = 0;
+    bool saveNow_ = false;
 
     wav::Info info_;
     const float* resampleTable_ = nullptr;
