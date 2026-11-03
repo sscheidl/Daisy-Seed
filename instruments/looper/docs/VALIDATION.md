@@ -19,6 +19,7 @@ decisions: [SD_V0_5_PLAN.md](SD_V0_5_PLAN.md); behaviour: [SD_MANAGEMENT.md](SD_
 | common/sd (`test`, `test-sanitize`, `arm-check`) | exit 0; writable tests incl. 300 random power-cut rounds |
 | common/sdshare (`test`, `test-sanitize`) | exit 0 (boot intent per magic, SysEx frame, DDP responder 57 checks) |
 | Control panel 0.6.0 (`pytest diagnostics/tests/python`) | 317 passed (Looper workflow and GUI included) |
+| CI `Hardware diagnostics` [run 41714425126](https://github.com/sscheidl/Daisy-Seed/actions/runs/41714425126) on `6a0096a` (manual, once) | success: Windows 317 tests, EXE built and started with `--sim --selftest`; `DaisyDiagnostic.exe` 0.6.0, 48,099,501 B, SHA256 `38539a6b3f7066140e8d416d6ea73be5c7f9aa0ce2f61e7f08a8d66e2733d8a6` (re-checked after download, `rtmidi` bundled); Diagnostics firmware job green |
 | Repo regression | `make all-projects`, `make test-projects`, `make test-release`, components, Nebulae `test-sanitize`/`test-thread`, Diagnostics tests: all exit 0; Nebulae 0.2.0 and both Diagnostics images byte-identical to `main` |
 
 Needs hardware (NICHT GEMESSEN): multi-block IDMA write timing and the 1 s bounds, save time
