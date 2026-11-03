@@ -1,6 +1,6 @@
 # Looper v0.5.0: exFAT, shared writable SD driver, SD management from Windows - PLAN
 
-Status: plan of 2026-11-03, nothing implemented. Hardware behaviour of every step is
+Status: plan of 2026-11-03, decisions confirmed by the human the same day; implementation in progress. Hardware behaviour of every step is
 **NICHT GEMESSEN** until the human runs it.
 
 ## Starting point (`main` @ `53927d2`, Looper v0.4.0)
@@ -73,8 +73,7 @@ the Looper cannot use it as is: it must write.
 | R5 | Moving the Nebulae SD-management code changes Nebulae | Nebulae host/sanitizer/e2e tests unchanged; ELF checks |
 | R6 | Two FatFs configurations confused in one image | `sd.mk` allows exactly one; compile-time asserts in each disk layer; symbol check per image |
 
-## Open questions for the human
+## Decisions by the human (2026-11-03)
 
-* Scope: both goals in one PR, or first the writable driver + exFAT (steps 1-3) and the
-  Windows management later?
-* Is "finish the pending save, then restart" (L6) the wanted behaviour for SHARE?
+* Scope: **all steps in one PR**.
+* SHARE: **finish the pending save first**, then restart (L6).
