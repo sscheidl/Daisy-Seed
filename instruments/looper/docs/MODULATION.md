@@ -1,8 +1,8 @@
 # Looper + Mod on Daisy (separate build)
 
-**Image:** `build/mod/LooperMod-v0.4.0.bin` (`make PROJECT=looper MOD=1`, or
-`make PROJECT=looper-mod`). Firmware marker: `LOOPER-MOD-VERSION=0.4.0`; IDENTIFY
-reports the key `looper` and the version `0.4.0`, the same version as image and marker.
+**Image:** `build/mod/LooperMod-v0.5.0.bin` (`make PROJECT=looper MOD=1`, or
+`make PROJECT=looper-mod`). Firmware marker: `LOOPER-MOD-VERSION=0.5.0`; IDENTIFY
+reports the key `looper` and the version `0.5.0`, the same version as image and marker.
 **Status:** software tested, hardware test pending (NICHT GEMESSEN).
 
 This is an **additional, separate build** of the looper with the
@@ -10,10 +10,12 @@ This is an **additional, separate build** of the looper with the
 [Physical Modeling](../../physical-modeling/docs/MODULATION.md) pattern. The regular
 firmware stays as it is:
 
-* `make PROJECT=looper` still compiles exactly the v0.4.0 sources. Its image is
-  **byte-identical** to the v0.4.0 image of `feat/looper-midi-cc` (166,072 bytes,
+* `make PROJECT=looper` builds the regular image without any matrix code. Up to v0.4.0 it
+  was **byte-identical** to the v0.4.0 image of `feat/looper-midi-cc` (166,072 bytes,
   SHA-256 `7477080fb2b21e2d79393dfc3db4a93749f5695d5db97df8fe11449447727a67`,
-  compared after a clean rebuild on 2026-10-26).
+  compared after a clean rebuild on 2026-10-26). v0.5.0 changes the card driver and adds
+  SD sharing ([SD_MANAGEMENT.md](SD_MANAGEMENT.md)) in both images; the golden test still
+  gives the same sound for both.
 * All matrix code in `src/main.cpp` sits behind `LOOPER_MOD`. Only `MOD=1` sets it
   (together with `MOD_ON_DAISY_EXTENSIONS`), and that build uses its own `build/mod/`
   directory.

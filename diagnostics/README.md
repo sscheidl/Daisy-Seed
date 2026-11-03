@@ -8,6 +8,13 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > Windows SD card reader, both CV channels and both gate inputs. Results are
 > real-board measurements, separate from software/simulation tests.
 
+## App 0.6.0: SD share tab for Nebulae and Looper
+
+App **0.6.0** renames the tab to **SD share** and adds the Looper 0.5.0 profile: the
+Looper saves its loop before the restart (PENDING/"Saving the loop …"); only a failed save
+asks for **Share without saving**. `--sim-looper` simulates it
+([profile](docs/NEBULAE_PROFILE.md), [Looper](../instruments/looper/docs/SD_MANAGEMENT.md)).
+
 ## App 0.5.0: Nebulae on Daisy profile
 
 App **0.5.0** adds the **Nebulae** tab: share the sample card of Nebulae on Daisy 0.2.0

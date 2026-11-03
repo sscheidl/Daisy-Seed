@@ -1,16 +1,16 @@
 # Looper — Instrument Project
 
-**Status: v0.4 with all four loop modes, Slice/Skip, loop persistence and WAV
-import on the microSD card, and MIDI CC control over USB; host tests and ARM build
-pass; no hardware run yet.** Project ID: `looper`. The goal is an original
+**Status: v0.5 with all four loop modes, Slice/Skip, loop persistence and WAV
+import on the microSD card (FAT32 and exFAT), SD card sharing with Windows, and MIDI CC
+control over USB; host tests and ARM build pass; no hardware run yet.** Project ID: `looper`. The goal is an original
 stereo tape looper for the Seed3 Desktop Dev Kit, using the Qu-Bit Stardust as the
 behavioral reference. Validation details: [docs/VALIDATION.md](docs/VALIDATION.md); checklist for the
 first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md). A separate
 build with the Mod on Daisy modulation matrix: [docs/MODULATION.md](docs/MODULATION.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.4.0.bin
-make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.4.0.bin
+make PROJECT=looper -j4            # firmware: build/Looper-v0.5.0.bin
+make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.5.0.bin
 make PROJECT=looper test           # host tests of both builds, incl. production callback
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```
@@ -155,9 +155,12 @@ Size, Slice, Skip and Decay.
 
 The physical orientation of keys and pots still needs a check on the board.
 
-## microSD (v0.3)
+## microSD (v0.3, exFAT and sharing v0.5)
 
-A FAT32 card holds a folder `looper/` (created when missing):
+A FAT32 or exFAT card holds a folder `looper/` (created when missing). Since v0.5 the
+card runs on the shared writable driver (FatFs R0.16, [common/sd](../../common/sd/README.md))
+and can be shared with Windows without taking it out:
+[SD management](docs/SD_MANAGEMENT.md).
 
 * **`loop.wav`, persistence.** Two seconds after the loop last changed and once
   the engine is idle (no recording, fade, undo copy or import running), the main
@@ -245,7 +248,7 @@ ignored, and the looper sends nothing back except the bootloader reply.
 ## Mod on Daisy build (MOD=1)
 
 `make PROJECT=looper MOD=1` (or `PROJECT=looper-mod`) builds a second image,
-`build/mod/LooperMod-v0.4.0.bin`, with the
+`build/mod/LooperMod-v0.5.0.bin`, with the
 [Mod on Daisy](../../modules/mod-on-daisy/README.md) 8×8 modulation matrix. The
 editors (browser, JUCE, VST3) connect over J7 and read its eight looper columns from
 the device: **Speed** (±12 semitones at depth 100), **Start**, **Size**, **Slice**,

@@ -7,7 +7,7 @@ skipped one.
 
 ## 0. Prepare
 
-- [ ] Build or download `Looper-v0.4.0.bin` and note its SHA-256. The PR CI
+- [ ] Build or download `Looper-v0.5.0.bin` and note its SHA-256. The PR CI
       artifact and a local build of the same commit must match.
 - [ ] Flash it through the external Daisy bootloader as in
       [docs/FLASHING.md](../../../docs/FLASHING.md) (`PROJECT=looper`). Do not
@@ -121,6 +121,35 @@ of about 80 s.
 - [ ] Check `looper/loop.wav` on a computer: it plays as a 32-bit float stereo
       WAV at 48 kHz.
 
+## 7b. exFAT and SD card sharing (v0.5)
+
+Use a **test card without important data**: a FAT32 card and, if available, an exFAT card
+larger than 32 GB. Needs the Windows control panel 0.6.0 (`DaisyDiagnostic.exe`, tab
+**SD share**). Record results as GEMESSEN (date) or NICHT GEMESSEN.
+
+- [ ] exFAT card: section 7 again (save, power-cycle recall, import incl. a long file name
+      with an umlaut). Note the save time of a full 87 s loop on both cards and compare it
+      with section 7; audio must not drop out, D16 stays off.
+- [ ] Panel finds the Looper in performance ("Looper: Performance (USB-MIDI)", 0.5.0) and
+      shows the loop length and "saved on the card" / "not saved yet".
+- [ ] Change the loop, click **Share SD card with Windows** at once: the panel shows
+      "Saving the loop …", the S8 LED blinks, then audio fades out (note clicks), the kit
+      restarts, D16 blinks slowly, D2 lights and Windows shows a drive. Note the time.
+- [ ] In Windows: copy a WAV into `looper/loops`, rename one, delete one.
+- [ ] **Return to Looper** stays disabled until Windows ejected the card ("Safely Remove
+      Hardware"); then D4 lights and Return works. After the restart the same loop plays
+      (recalled from `loop.wav`), S8 imports the new file.
+- [ ] While recording: Share is disabled / refused (BUSY). With a full card: the panel
+      shows the failed save and offers **Share without saving**; Cancel keeps playing.
+- [ ] Shared, unplug USB without ejecting: the Looper starts normally after power-up and
+      recalls `loop.wav`; the card is readable.
+- [ ] Shared, pull the card during a copy: D5 blinks, the panel asks for
+      **Acknowledge**; never shows "ejected".
+- [ ] Without a PC: share, eject in Windows, close the panel, hold S4 alone for 2 s: the
+      Looper returns to performance.
+- [ ] If the kit comes back on USB-MIDI instead of a drive after Share: note it (risk R4:
+      the bootloader does not keep the boot intent).
+
 ## 8. MIDI control
 
 Connect J7 to the computer. In the DAW (or a MIDI monitor plus a controller),
@@ -147,11 +176,11 @@ Optional, after sections 1–8 passed with the regular image. Columns and rules:
 `python modules/mod-on-daisy/tools/mod_probe.py` (`pip install mido python-rtmidi`);
 close the DAW or disable its port while `P` runs.
 
-- [ ] Build or download `build/mod/LooperMod-v0.4.0.bin`, note its SHA-256, and
+- [ ] Build or download `build/mod/LooperMod-v0.5.0.bin`, note its SHA-256, and
       flash it like the regular image (`PROJECT=looper-mod`).
 - [ ] Without a computer: keys, pots and recording behave exactly as with the
       regular image (sections 2–6, short pass). D16 stays off.
-- [ ] `P identify`: instrument `looper`, version `0.4.0`, capabilities `122`
+- [ ] `P identify`: instrument `looper`, version `0.5.0`, capabilities `122`
       (`0x7A`), capabilities2 `1`. `P targets`: Speed, Start, Size, Slice, Skip,
       Inertia, Fripp Decay, Mix. `P modes`: the four loop modes.
 - [ ] `P lengths`: `frame lengths OK`.

@@ -1,6 +1,13 @@
 # Looper v0.5.0: exFAT, shared writable SD driver, SD management from Windows - PLAN
 
-Status: plan of 2026-11-03, decisions confirmed by the human the same day; implementation in progress. Hardware behaviour of every step is
+Status: plan of 2026-11-03, decisions confirmed by the human the same day; **implemented
+2026-11-03** ([SD_MANAGEMENT.md](SD_MANAGEMENT.md), [VALIDATION.md](VALIDATION.md)).
+Hardware behaviour NICHT GEMESSEN.
+
+Deviation from L5: Nebulae on Daisy still uses its own copies of the SD-management code.
+The human is hardware-testing Nebulae 0.2.0 right now; moving it onto `common/sdshare`
+would change that image. Follow-up after its hardware acceptance. The read-only build of
+`common/sd` was kept byte-identical for the same reason (Nebulae SHA256 `3734dde5…2f19`). Hardware behaviour of every step is
 **NICHT GEMESSEN** until the human runs it.
 
 ## Starting point (`main` @ `53927d2`, Looper v0.4.0)

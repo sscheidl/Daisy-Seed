@@ -1,4 +1,14 @@
-# Control panel 0.5.0: Nebulae on Daisy profile
+# Control panel: SD share profiles (Nebulae 0.5.0, Looper 0.6.0)
+
+> App 0.6.0: the tab is called **SD share** and also drives Looper 0.5.0 (prefix
+> `F0 7D 4C 50`, app name `Looper`). Differences: the Looper answers SHARE with PENDING
+> and saves its loop before restarting (panel phase "Saving the loop …", up to 130 s);
+> CONFIRM_REQUIRED only follows a failed save ("Share without saving"). STATUS shows the
+> loop length and whether it is saved. Discovery sends STATUS with both prefixes; each
+> firmware answers only its own. `--sim-looper` simulates it. Tests:
+> `tests/python/test_looper_share.py`, `test_gui_nebulae.py`.
+
+## App 0.5.0: Nebulae on Daisy profile
 
 App 0.5.0 adds a **Nebulae** tab for Nebulae on Daisy firmware 0.2.0. It moves the
 microSD that stays in the kit between Nebulae and Windows. All diagnostic functions of

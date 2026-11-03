@@ -234,7 +234,7 @@
 
 
 #define FF_MIN_GPT		0x10000000
-/* Minimum number of sectors to switch GPT as partitioning format in f_mkfs() and 
+/* Minimum number of sectors to switch GPT as partitioning format in f_mkfs() and
 /  f_fdisk(). 2^32 sectors maximum. This option has no effect when FF_LBA64 == 0. */
 
 

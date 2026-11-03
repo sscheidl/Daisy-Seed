@@ -265,4 +265,3 @@ class SimulatedLooper(SimulatedNebulae):
                 self._save_done = self._clock() + self.SAVE_S
             return head + bytes([0x42, result, *body[3:7], 0xF7])
         return head + bytes([0x7F, cmd, 2, 0xF7])
-

@@ -1,4 +1,4 @@
-# Shared read-only SD driver
+# Shared SD driver (read-only, or writable)
 
 microSD access for Seed3 Desktop firmware: SDMMC1 through libDaisy's BSP/HAL and
 the vendored **FatFs R0.16** with patch-1 and patch-2 ([version](fatfs/VERSION.md)),
@@ -23,6 +23,26 @@ Diagnostics image rebuilt byte-identical after the move).
 | `Makefile`, `tests/` | Host tests, image generator, ARM compile check |
 | `../../scripts/check-sd-symbols.py` | Symbol policy for objects and images |
 | `reader/` | USB mass-storage card reader (exclusive ownership, BOT/SCSI, IDMA blocks, RCC-reset abort, CDC+MSC composite); moved unchanged from `diagnostics/firmware/src`, USB identity strings are `READER_USB_*` macros |
+
+## Writable configuration (Looper 0.5.0)
+
+`SD_WRITABLE = 1` (before including `sd.mk`) puts `rw/ffconf.h` ahead of `ffconf.h`: the
+same FatFs R0.16 and the same disk layer `ro_sd.c`, with `FF_FS_READONLY 0`. Only the
+file API needed to save files is compiled in (`f_write`, `f_unlink`, `f_rename`, `f_mkdir`,
+`f_sync`, `f_truncate`); formatting, labels, chmod/expand and string functions stay off.
+
+* `disk_write` copies into the bounce buffer, cleans the cache, starts a multi-block IDMA
+  write (`BSP_SD_WriteBlocks_DMA`) and returns only after the card is back in the transfer
+  state (programming completed), each step bounded by `write_timeout_ms` (default 1 s).
+  `CTRL_SYNC` waits for the same state. Every fault calls the `abort` hook and sets
+  `STA_NOINIT` (remount needed).
+* `make sd-check` then allows exactly the write path (`SD_WRITE_ALLOW` in `sd.mk`); erase,
+  lock, polling/IT writes and libDaisy's FatFs stay banned.
+* `write_timeout_ms` exists only in the writable build, so read-only images (Nebulae) are
+  byte-identical to their builds before this configuration existed.
+* Host tests (`tests/test_rw_sd.cpp`): file operations on FAT32 and exFAT, chunking,
+  programming waits, sync, every fault, removal mid-transfer, full card, and 300 rounds of
+  random power cuts in which untouched files always survive.
 
 ## Use in a firmware project
 
