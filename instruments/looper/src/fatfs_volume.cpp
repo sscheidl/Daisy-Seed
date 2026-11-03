@@ -9,6 +9,7 @@
 #include "reader_abort.h"
 #include "ro_sd.h"
 #include "daisy_seed.h"
+#include "sd_management.h"
 
 extern SD_HandleTypeDef hsd1;
 
@@ -49,5 +50,10 @@ bool InitCard(bool (*present)()) {
 }
 
 Volume& CardVolume() { return volume; }
+
+void ReleaseCard() {
+    volume.Unmount();
+    sdshare::ReleaseSd();
+}
 
 }  // namespace looper

@@ -10,5 +10,7 @@ namespace looper {
 // while `present` reports a card in the slot.
 bool InitCard(bool (*present)());
 Volume& CardVolume();
+// Before a restart into SD management: close and unmount, power the SD interface down.
+void ReleaseCard();
 
 }  // namespace looper

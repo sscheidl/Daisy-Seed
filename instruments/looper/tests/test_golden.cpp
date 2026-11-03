@@ -7,6 +7,7 @@
 #define main FirmwareMain
 #include "../src/main.cpp"
 #undef main
+#include "sdshare_fake.h"
 #include "memory_volume.h"
 extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }
 #include <cinttypes>

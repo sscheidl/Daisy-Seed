@@ -6,6 +6,7 @@
 #define main FirmwareMain
 #include "../src/main.cpp"
 #undef main
+#include "sdshare_fake.h"
 #include "memory_volume.h"
 #include "mod_on_daisy/protocol.h"
 extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }

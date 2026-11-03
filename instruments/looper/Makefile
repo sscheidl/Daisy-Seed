@@ -23,17 +23,31 @@ CPP_SOURCES = src/main.cpp src/looper_engine.cpp src/midi_control.cpp $(STORE_SO
 USE_FATFS = 0
 SD_WRITABLE = 1
 SD_DIR = ../../common/sd
+SDSHARE_DIR = ../../common/sdshare
+READER_DIR = $(SD_DIR)/reader
+PROTOCOL_DIR = ../../diagnostics/protocol
+RING_DIR = ../../diagnostics/firmware/src
+# SD management personality (v0.5): card reader (CDC + MSC), DDP responder, restart.
+CPP_SOURCES += $(SDSHARE_DIR)/admin.cpp $(SDSHARE_DIR)/sd_management.cpp \
+	$(READER_DIR)/card_reader.cpp $(READER_DIR)/msc_bot.cpp $(READER_DIR)/reader_usb.cpp $(PROTOCOL_DIR)/ddp.cpp
+C_SOURCES += $(READER_DIR)/reader_ctlreq.c
 BUILD_DIR ?= build
 include $(SD_DIR)/sd.mk
-C_INCLUDES += -Isrc -I$(SD_DIR)/reader
+C_INCLUDES += -Isrc -I$(READER_DIR) -I$(SDSHARE_DIR) -I$(PROTOCOL_DIR) -I$(RING_DIR)
+C_INCLUDES += -I../../libDaisy/Middlewares/Patched/ST/STM32_USB_Device_Library/Class/CDC/Inc
+# USB identity of the SD management composite: its own Windows device instance.
+C_DEFS += -DREADER_USB_PRODUCT='"Looper SD"' -DREADER_USB_BCD_MAJOR=4 -DREADER_USB_SERIAL_SUFFIX="'L'"
 include ../../common/desktop.mk
+LDFLAGS += -Tsrc/memory.ld
+$(BUILD_DIR)/$(TARGET).elf: src/memory.ld
+SD_CHECK_REQUIRE = disk_read,disk_write,f_mount,f_readdir,f_write,SDMMC_CmdReadSingleBlock,HAL_SD_WriteBlocks_DMA
 
 .PHONY: test test-sanitize test-card version
 version:
 	@echo $(VERSION)
 HOST_CXX ?= g++
 HOST_FLAGS = -std=c++17 -O2 -Wall -Wextra -Werror -pthread
-CALLBACK_FLAGS = -Isrc -Itests/fakes -I$(BOOTLOADER_DIR) -I$(LIBDAISY_DIR)/src -DLOOPER_BUFFER_FRAMES=192000
+CALLBACK_FLAGS = -Isrc -Itests/fakes -I$(BOOTLOADER_DIR) -I$(LIBDAISY_DIR)/src -I$(SDSHARE_DIR) -DLOOPER_BUFFER_FRAMES=192000
 CALLBACK_SOURCES = src/looper_engine.cpp src/midi_control.cpp $(STORE_SOURCES)
 # The callback tests run the production main.cpp with a 4 s buffer and a card in memory,
 # the MOD variants with the Mod on Daisy matrix. Both builds always run, whatever MOD is.
@@ -61,6 +75,8 @@ test-card:
 
 test: test-card
 	mkdir -p build/host
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(SDSHARE_DIR) tests/test_share.cpp -o build/host/test_share
+	./build/host/test_share
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_engine.cpp src/looper_engine.cpp -o build/host/test_engine
 	./build/host/test_engine
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_wav.cpp src/wav.cpp -o build/host/test_wav

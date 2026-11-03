@@ -87,6 +87,8 @@ struct Hardware {
         float AudioCallbackRate() const { return 1500.f; }
         float AudioSampleRate() const { return 48000.f; }
         template <typename Callback> void StartAudio(Callback) {}
+        bool audio_stopped = false;
+        void StopAudio() { audio_stopped = true; }
     } seed;
     struct Pot {
         float value = 0;

@@ -5,6 +5,7 @@
 #define main FirmwareMain
 #include "../src/main.cpp"
 #undef main
+#include "sdshare_fake.h"
 #include "memory_volume.h"
 extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }  // the USB state the firmware reads
 #include <cmath>
@@ -425,6 +426,100 @@ int main() {
     hUsbDeviceHS.dev_state = 0;
     Blocks(15);
 
+    // ---- SD sharing (v0.5): control SysEx "LP", save first, then restart -------------
+    hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
+    auto control = [](std::initializer_list<uint8_t> body) {
+        daisy::MidiEvent e;
+        e.type = daisy::SystemCommon;
+        e.sc_type = daisy::SystemExclusive;
+        size_t n = 0;
+        for (uint8_t v : body) e.sysex_data[n++] = v;
+        e.sysex_message_len = n;
+        usbMidi.incoming.push_back(e);
+        ServiceUsbMidi();
+        return usbMidi.sent.empty() ? std::vector<uint8_t>{} : usbMidi.sent.back();
+    };
+    auto share = [&](uint8_t confirm) { return control({0x7D, 'L', 'P', 1, 2, confirm, 1, 2, 3, 4}); };
+    auto status = [&] { return control({0x7D, 'L', 'P', 1, 1}); };
+    auto runShare = [](unsigned ms) {
+        for (unsigned i = 0; i < ms && !restarting; ++i) {
+            Blocks(1);
+            ServiceShare(System::now);
+        }
+    };
+    auto resume = [] {  // what a restart into performance would give back
+        restarting = false; fadeOut.store(false); faded.store(false); outputGain = 1.f;
+        hw.seed.audio_stopped = false;
+    };
+    Blocks(3000);  // let the earlier changes reach the card
+    std::vector<uint8_t> r = status();
+    CHECK(r.size() == 6 + looper::share::kStatusPayload + 1 && r[5] == 0x41);
+    CHECK(r[6] == 0 && r[7] == 5 && r[8] == 0 && r[9] == 0);  // firmware 0.5.0, performance
+    CHECK((r[10] & 1) && (r[10] & 2) && (r[10] & 32));       // card, loop, in sync
+    // Recording: BUSY, nothing happens.
+    hw.pressed[keys::Record] = true; Blocks(15, .5f); hw.pressed[keys::Record] = false; Blocks(200, .5f);
+    r = share(0);
+    CHECK(r[5] == 0x42 && r[6] == 2 && r[7] == 1 && r[10] == 4 && sdshare::restarts == 0);
+    Press(keys::Record, .5f);
+    // Unsaved change: PENDING, the loop is saved at once, then the restart follows.
+    r = share(0);
+    CHECK(r[6] == 5 && sharePending);
+    r = status();
+    CHECK((r[11] & 1) && !(r[10] & 32));  // share pending, not yet in sync
+    const uint32_t savesBefore = store.Saves();
+    runShare(5000);
+    CHECK(restarting && sdshare::restarts == 1 && store.Saves() == savesBefore + 1);
+    CHECK(store.InSync() && memoryCard.files.count("0:/looper/loop.wav"));
+    CHECK(hw.seed.audio_stopped && looper::card_releases == 1 && fadeOut.load());
+    CHECK(sdshare::TakeBootIntent(kIntentMagic, sdshare::intent_words).personality == sdshare::Personality::SdManagement);
+    Blocks(1);  // the 1 ms ramp to zero
+    peak = 0.f;
+    Blocks(3);
+    CHECK(peak == 0.f);  // then silence
+    resume();
+    // In sync: ACCEPTED, restart without another save.
+    r = share(0);
+    CHECK(r[6] == 0 && shareNow);
+    ServiceShare(System::now);
+    CHECK(restarting && sdshare::restarts == 2 && store.Saves() == savesBefore + 1);
+    resume();
+    // The save fails (card full): no restart, STATUS reports it, CONFIRM, then confirm=1.
+    Press(keys::Record, .5f); Blocks(300, .4f); Press(keys::Record, .4f);
+    memoryCard.failWriteAfter = memoryCard.written;
+    r = share(0);
+    CHECK(r[6] == 5);
+    runShare(3000);
+    CHECK(!restarting && !sharePending && shareFailed && sdshare::restarts == 2);
+    r = status();
+    CHECK((r[11] & 2) && !(r[11] & 1) && r[14] == uint8_t(looper::LoopStore::Fault::Write));
+    r = share(0);
+    CHECK(r[6] == 1 && !restarting);  // confirmation required
+    r = share(1);
+    CHECK(r[6] == 0);
+    ServiceShare(System::now);
+    CHECK(restarting && sdshare::restarts == 3);
+    resume();
+    memoryCard.failWriteAfter = -1;
+    // No card: NO_CARD. Malformed requests: errors, never a restart.
+    hw.sd_detect.pressed = false;  // card pulled
+    Blocks(20);
+    r = share(1);
+    CHECK(r[6] == 3);
+    hw.sd_detect.pressed = true;
+    Blocks(20);
+    r = control({0x7D, 'L', 'P', 2, 1});
+    CHECK(r[5] == 0x7F && r[7] == 1);
+    r = control({0x7D, 'L', 'P', 1, 2, 7, 1, 2, 3, 4});
+    CHECK(r[5] == 0x42 && r[6] == 4);
+    r = control({0x7D, 'N', 'B', 1, 1});  // Nebulae's prefix: not answered here
+    CHECK(r[5] == 0x42 && sdshare::restarts == 3);
+    // Power-on with this firmware's intent: SD management instead of performance.
+    sdshare::StoreBootIntent(kIntentMagic, sdshare::intent_words, {sdshare::Personality::SdManagement, 0, 0});
+    bool management = false;
+    try { FirmwareMain(); } catch (const std::runtime_error&) { management = true; }
+    CHECK(management && sdshare::managements == 1 && sdshare::intent_words[0] == 0);
+    hUsbDeviceHS.dev_state = 0;
+
     if (failures) {
         std::printf("FAILED: %d production callback check(s)\n", failures);
         return 1;
@@ -432,6 +527,6 @@ int main() {
 #if LOOPER_MOD
     std::printf("MOD build, empty matrix: ");
 #endif
-    std::printf("PASS production callback: keys, knobs, MIDI CC, LEDs state, auto-stop, bounded output, bootloader keys/SysEx after card I/O\n");
+    std::printf("PASS production callback: keys, knobs, MIDI CC, LEDs state, auto-stop, bounded output, bootloader keys/SysEx after card I/O, SD sharing (STATUS, BUSY, PENDING save then restart, ACCEPTED, failed save + confirm, NO_CARD, intent dispatch)\n");
     return 0;
 }

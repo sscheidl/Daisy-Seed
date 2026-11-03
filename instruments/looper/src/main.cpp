@@ -18,6 +18,8 @@ const char looper_firmware_version[] = "LOOPER-VERSION=" LOOPER_VERSION;
 #include "bootloader_daisy.h"
 #include "bootloader_midi.h"
 #include "usbd_core.h"
+#include "sd_management.h"  // common/sdshare: SD management personality (v0.5)
+#include "share_control.h"
 #if LOOPER_MOD
 #include "modulation.h"
 #include "mod_on_daisy_desktop.h"
@@ -120,6 +122,15 @@ static float DSY_SDRAM_BSS resampleTable[looper::resample::kTableSize];
 static looper::LoopStore store;
 static bool storageReady = false;
 static std::atomic<bool> cardPresent{false}, importRequested{false};
+
+// SD sharing (v0.5, common/sdshare, docs/SD_MANAGEMENT.md): a SHARE request over USB-MIDI
+// first saves the current loop, then fades out and restarts this image into SD management
+// (USB CDC + mass storage). The boot intent carries this firmware's own magic.
+static constexpr uint32_t kIntentMagic = sdshare::Magic('L', 'P', 'R', '1');
+static std::atomic<bool> fadeOut{false}, faded{false};
+static float outputGain = 1.f;  // audio callback only
+static bool sharePending = false, shareFailed = false, shareNow = false, restarting = false;
+static uint32_t shareSince = 0;
 
 // Engine state for the main loop, published by the audio callback under a
 // sequence lock (odd while it is written).
@@ -378,6 +389,18 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
         out[1][i] = CodecLevel(inRight[i] + out[1][i]);
     }
 #endif
+    // SD sharing: silence within one block before the audio stops. Untouched otherwise,
+    // so the output stays bit-identical (golden test).
+    if (fadeOut.load(std::memory_order_acquire)) {
+        const float step = 1.f / float(n ? n : 1);
+        for (size_t i = 0; i < n; ++i) {
+            outputGain = outputGain > step ? outputGain - step : 0.f;
+            out[0][i] *= outputGain;
+            out[1][i] *= outputGain;
+        }
+        if (outputGain == 0.f)
+            faded.store(true, std::memory_order_release);
+    }
     const uint32_t elapsed = DWT->CYCCNT - start;
     if (elapsed > maximumCycles.load(std::memory_order_relaxed))
         maximumCycles.store(elapsed, std::memory_order_relaxed);
@@ -413,6 +436,124 @@ static void SendMidi(uint8_t* bytes, size_t size) {
         usbMidi.SendMessage(bytes, size);
 }
 
+// ---- SD sharing (control SysEx "LP") --------------------------------------------------
+constexpr unsigned VersionPart(const char* v, unsigned part) {
+    unsigned value = 0;
+    for (; *v && part; ++v)
+        if (*v == '.')
+            --part;
+    for (; *v >= '0' && *v <= '9'; ++v)
+        value = value * 10 + unsigned(*v - '0');
+    return value;
+}
+
+static looper::share::Inputs ShareInputs() {
+    looper::share::Inputs in;
+    const uint32_t now = System::GetNow();
+    in.card = storageReady && CardPresent() && store.GetStatus(now) != looper::LoopStore::Status::NoCard;
+    in.engineIdle = snapshotIdle.load(std::memory_order_relaxed);
+    in.importing = store.Active() && store.GetStatus(now) != looper::LoopStore::Status::Saving;
+    in.inSync = storageReady && store.InSync();
+    in.saveFailed = store.LastFault() == looper::LoopStore::Fault::Write ||
+                    store.LastFault() == looper::LoopStore::Fault::Card;
+    return in;
+}
+
+static looper::share::Status CurrentStatus() {
+    looper::share::Status s;
+    s.fw[0] = uint8_t(VersionPart(LOOPER_VERSION, 0));
+    s.fw[1] = uint8_t(VersionPart(LOOPER_VERSION, 1));
+    s.fw[2] = uint8_t(VersionPart(LOOPER_VERSION, 2));
+    const auto in = ShareInputs();
+    const uint32_t length = snapshotLength.load(std::memory_order_relaxed);
+    s.card = in.card;
+    s.loop = length != 0;
+    s.busy = !in.engineIdle;
+    s.saving = storageReady && store.GetStatus(System::GetNow()) == looper::LoopStore::Status::Saving;
+    s.importing = in.importing;
+    s.inSync = in.inSync;
+    s.sharePending = sharePending;
+    s.shareFailed = shareFailed;
+    s.overrun = overruns.load(std::memory_order_relaxed) != 0;
+    s.loopDeciseconds = uint32_t(uint64_t(length) * 10 / 48000);
+    s.fault = uint8_t(store.LastFault());
+    s.overruns = overruns.load(std::memory_order_relaxed);
+    const uint64_t budget = budgetCycles ? budgetCycles : 1;
+    const uint64_t peak = uint64_t(maximumCycles.load(std::memory_order_relaxed)) * 100 / budget;
+    s.peakLoad = uint8_t(peak > 127 ? 127 : peak);
+    return s;
+}
+
+static void HandleControl(const MidiEvent& event) {
+    namespace sx = sdshare::sysex;
+    constexpr sx::Prefix prefix = looper::share::kPrefix;
+    sx::ShareRequest request;
+    sx::Reply reply(prefix, sx::kError);
+    const sx::Command command = sx::Parse(event.sysex_data, event.sysex_message_len, prefix, request, reply);
+    if (command == sx::kStatus) {
+        reply = sx::Reply(prefix, sx::kStatus);
+        looper::share::WriteStatus(reply, CurrentStatus());
+    } else if (command == sx::kShare) {
+        const sx::ShareResult result = looper::share::Decide(ShareInputs(), request.confirm);
+        sx::ShareReply(reply, prefix, result, request);
+        if (result == sx::kAccepted) {
+            shareNow = true;  // after the reply has left (ServiceShare)
+        } else if (result == sx::kPending) {
+            sharePending = true;
+            shareFailed = false;
+            shareSince = System::GetNow();
+            store.RequestSaveNow();
+        }
+    }
+    const uint8_t* bytes = reply.Finish();
+    SendMidi(const_cast<uint8_t*>(bytes), reply.Size());
+}
+
+// PREPARE_SHARE: silence, stop audio, release the card, restart into SD management.
+// Never returns on the board.
+static void PrepareShare() {
+    sharePending = false;
+    fadeOut.store(true, std::memory_order_release);
+    for (int i = 0; i < 50 && !faded.load(std::memory_order_acquire); ++i)
+        System::Delay(1);
+    hw.seed.StopAudio();
+    looper::ReleaseCard();
+    for (int i = 0; i < 16; ++i)
+        hw.SetLed(i, 0.f);
+    hw.UpdateLeds();
+    restarting = true;
+    System::Delay(20);  // the SysEx reply leaves before the reset
+    sdshare::BootIntent intent;
+    intent.personality = sdshare::Personality::SdManagement;
+    sdshare::RestartInto(kIntentMagic, intent);
+}
+
+// Main loop: a pending share waits until the current loop is on the card.
+static void ServiceShare(uint32_t now) {
+    if (shareNow) {
+        shareNow = false;
+        PrepareShare();
+        return;
+    }
+    if (!sharePending)
+        return;
+    const auto in = ShareInputs();
+    if (in.inSync && in.engineIdle && !store.Active()) {
+        PrepareShare();
+        return;
+    }
+    const bool gaveUp = !in.card || (in.saveFailed && !store.SaveNowPending()) ||
+                        now - shareSince >= looper::share::kSaveTimeoutMs;
+    if (gaveUp) {  // nothing restarts; the panel sees "share failed" in STATUS
+        sharePending = false;
+        shareFailed = true;
+        store.CancelSaveNow();
+        return;
+    }
+    if (!store.SaveNowPending() && !in.inSync)
+        store.RequestSaveNow();  // the loop changed again (overdub): save once more
+}
+
 // Main loop. A SysEx request is answered at once, because a card write may hold
 // the reset back for longer than an editor waits for the reply.
 static void ServiceUsbMidi() {
@@ -426,6 +567,11 @@ static void ServiceUsbMidi() {
 #else
             midiIn.ControlChange(event.data[0], event.data[1]);
 #endif
+            continue;
+        }
+        if (event.type == SystemCommon && event.sc_type == SystemExclusive &&
+            sdshare::sysex::IsOurs(event.sysex_data, event.sysex_message_len, looper::share::kPrefix)) {
+            HandleControl(event);
             continue;
         }
         if (!bootloader::IsRequest(event)) {
@@ -490,6 +636,16 @@ static void Halt() {
 int main() {
     asm volatile("" : : "r"(looper_firmware_version));  // Keep the version in the BIN.
     hw.Init();
+    // The boot intent is taken (read and cleared) first: without this firmware's valid
+    // record the looper always starts in performance.
+    if (sdshare::TakeBootIntent(kIntentMagic, sdshare::IntentWords()).personality ==
+        sdshare::Personality::SdManagement) {
+        sdshare::ManagementConfig config;
+        config.app = "Looper";
+        config.firmware = LOOPER_VERSION;
+        config.magic = kIntentMagic;
+        sdshare::RunSdManagement(hw, config);
+    }
     hw.seed.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(48);
 #if LOOPER_MOD
@@ -523,6 +679,7 @@ int main() {
         const uint32_t now = System::GetNow();
         ServiceStorage(now);
         ServiceUsbMidi();
+        ServiceShare(now);
 #if LOOPER_MOD
         modulation.controller.Service(System::GetNow(), modSender);
 #endif
