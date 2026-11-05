@@ -1,5 +1,12 @@
 # Changelog: fv1-vm
 
+## toy-piano-fv1 0.7.1 (2026-11-05, unreleased)
+
+* Transposition without an active matrix no longer runs the per-voice matrix path. With VR1 off centre that path
+  cost about 28 % of the block budget without a sounding voice (MEASURED 2026-11-05 on 0.7.0: REV 1 about 81 % with
+  VR1 off centre, 53 % centred) and overloaded the heaviest programs: avg 100 %, peak 109 %, about 1760 overruns with
+  16 voices. Also in the regular Toy Piano 0.5 (not on the kit yet).
+
 ## toy-piano-fv1 0.7.0 (2026-11-05, unreleased)
 
 * Status packet after each telemetry reply (channel-16 CC80..89): internal rate, VR1 transposition, dry/wet, bypass
@@ -8,8 +15,9 @@
 ## toy-piano-fv1 0.6.1 (2026-11-05, unreleased)
 
 * `FxVar` hot loops in float with 32-bit ring indices: per-tap double arithmetic and 64-bit conversions (library
-  calls on the Cortex-M7) moved to once per sample. Same response (tests unchanged). Reason: on the board 0.6.0 ran
-  REV 32 (no notes) at 81 % average load against 61 % with the fixed adapter in 0.2.0 (MEASURED 2026-11-05).
+  calls on the Cortex-M7) moved to once per sample. Same response (tests unchanged). Correction: the board drop from
+  81 % to 54 % first credited to this change came from VR1 being centred in the second reading (see 0.7.1); the
+  effect of this change alone on the board is NOT MEASURED.
 
 ## toy-piano-fv1 0.6.0 (2026-11-05, unreleased)
 

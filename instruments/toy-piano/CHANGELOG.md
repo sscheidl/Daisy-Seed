@@ -11,6 +11,8 @@ The version is defined in [src/version.h](src/version.h).
 * **Sound unchanged with VR1 in the centre:** the golden performance (tests with VR1 at 0.5, attack/decay on
   VR2/VR3) gives the same hash as before on the same host compiler (E34CE1F8D2676D39 on llvm-mingw, before and
   after). The pinned Linux hash is not checked on this host. Toy Piano Tape and Ambient images are byte-identical.
+* With VR1 off centre and an empty matrix only the transposition is applied, not the per-voice matrix path
+  (that path cost about 28 % of the block budget in toy-piano-fv1, MEASURED 2026-11-05).
 * Hardware: NOT MEASURED.
 
 ## 0.4 — 2026-10-25

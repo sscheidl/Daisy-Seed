@@ -211,6 +211,21 @@ void ModulateVoices(size_t size) {
         return;
     }
     modulating = true;
+    if(!engine.Active()) {
+        // Transposition only. The matrix path below costs about 130 000 cycles per block on the Seed3 for 32
+        // voices (MEASURED 2026-11-05: 28 % of the budget without a sounding voice), so skip it while it is empty.
+        const float harmonic = toy_piano::HarmonicWeight(toy_piano::kHarmonicBase);
+        for(size_t v = 0; v < toy_piano::kNumVoices; ++v) {
+            float ratio = piano_transpose, gain = toy_piano::LevelGain(toy_piano::kLevelBase);
+            const float increment = piano.BaseIncrement(v);
+            if(increment * ratio >= .5f) {
+                ratio = .49f / increment;
+                gain = 0; // Notes transposed beyond Nyquist fade silent instead of folding.
+            }
+            piano.Modulate(v, ratio, gain, harmonic, size);
+        }
+        return;
+    }
     for(size_t v = 0; v < toy_piano::kNumVoices; ++v) {
         const int note = v < toy_piano::kNumKeys ? -1 : piano.MidiVoiceNote(v - toy_piano::kNumKeys);
         const float p = voice_pressure[v].Process(engine, note);
