@@ -1,5 +1,11 @@
 # Changelog: fv1-vm
 
+## toy-piano-fv1 0.6.1 (2026-11-05, unreleased)
+
+* `FxVar` hot loops in float with 32-bit ring indices: per-tap double arithmetic and 64-bit conversions (library
+  calls on the Cortex-M7) moved to once per sample. Same response (tests unchanged). Reason: on the board 0.6.0 ran
+  REV 32 (no notes) at 81 % average load against 61 % with the fixed adapter in 0.2.0 (MEASURED 2026-11-05).
+
 ## toy-piano-fv1 0.6.0 (2026-11-05, unreleased)
 
 * DIN MIDI in, handled like USB (notes, Program Change/Bank Select, CC1, aftertouch, channel-16 CCs); SysEx only

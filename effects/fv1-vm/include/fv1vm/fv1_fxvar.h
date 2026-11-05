@@ -108,11 +108,13 @@ template <typename T> class FxVar {
             table_[j] = float(kCutoff * sinc * w);
         }
     }
-    float Kernel(double u) const { // symmetric, zero outside +-kZeros
-        u = std::fabs(u) * kPhases;
-        if(u >= kTable) return 0.f;
-        const unsigned j = unsigned(u);
-        const float f = float(u - j);
+    // Hot loops run in float with 32-bit ring indices; double and 64-bit arithmetic (library calls on the
+    // Cortex-M7) happen once per output sample, not per tap.
+    float Kernel(float u) const { // symmetric, zero outside +-kZeros
+        const float x = std::fabs(u) * float(kPhases);
+        if(x >= float(kTable)) return 0.f;
+        const unsigned j = unsigned(x);
+        const float f = x - float(j);
         return table_[j] + f * (table_[j + 1] - table_[j]);
     }
     void ResetResamplers() {
@@ -128,13 +130,17 @@ template <typename T> class FxVar {
     }
     void Down(double center, double q, double inv_q, float& l, float& r) const {
         const double reach = kZeros * q;
-        const int64_t first = int64_t(std::ceil(center - reach)), last = int64_t(std::floor(center + reach));
+        const int64_t first = int64_t(std::ceil(center - reach));
+        const int count = int(int64_t(std::floor(center + reach)) - first) + 1;
+        const int k0 = first < 0 ? int(-first) : 0; // only right after a reset
+        const float du = float(inv_q);
+        float u = float((center - double(first)) * inv_q) - float(k0) * du; // kernel argument, falls by du per tap
+        uint32_t idx = uint32_t(first + k0);
         float sl = 0, sr = 0, norm = 0;
-        for(int64_t i = first; i <= last; ++i) {
-            if(i < 0) continue;
-            const float h = Kernel((center - double(i)) * inv_q);
-            sl += h * in_l_[uint64_t(i) & kInMask];
-            sr += h * in_r_[uint64_t(i) & kInMask];
+        for(int k = k0; k < count; ++k, u -= du, ++idx) {
+            const float h = Kernel(u);
+            sl += h * in_l_[idx & kInMask];
+            sr += h * in_r_[idx & kInMask];
             norm += h;
         }
         // Exact unity gain at DC for every q (the stretched kernel's sum differs from 1 by its sampling).
@@ -142,15 +148,21 @@ template <typename T> class FxVar {
         l = sl * g; r = sr * g;
     }
     void Up(double sigma, float& l, float& r) const {
-        const int64_t first = int64_t(std::ceil(sigma - kZeros)), last = int64_t(std::floor(sigma + kZeros));
+        const double floor_sigma = std::floor(sigma);
+        const int64_t base = int64_t(floor_sigma);
+        const float f = float(sigma - floor_sigma); // taps base + d, kernel argument f - d
         const int64_t newest = int64_t(vm_count_) - 1;
+        // Taps outside 0..newest count in the normalisation only (start-up and, by design, never later).
+        const int d_lo = base + (1 - int(kZeros)) < 0 ? int(-base) : 1 - int(kZeros);
+        const int d_hi = base + int(kZeros) > newest ? int(newest - base) : int(kZeros);
         float sl = 0, sr = 0, norm = 0;
-        for(int64_t k = first; k <= last; ++k) {
-            const float h = Kernel(sigma - double(k));
+        uint32_t idx = uint32_t(base + (1 - int(kZeros)));
+        for(int d = 1 - int(kZeros); d <= int(kZeros); ++d, ++idx) {
+            const float h = Kernel(f - float(d));
             norm += h;
-            if(k < 0 || k > newest) continue;
-            sl += h * vm_l_[uint64_t(k) & kVmMask];
-            sr += h * vm_r_[uint64_t(k) & kVmMask];
+            if(d < d_lo || d > d_hi) continue;
+            sl += h * vm_l_[idx & kVmMask];
+            sr += h * vm_r_[idx & kVmMask];
         }
         const float g = norm > 1e-6f ? 1.f / norm : 0.f;
         l = sl * g; r = sr * g;
