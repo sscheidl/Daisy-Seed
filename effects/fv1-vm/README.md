@@ -2,7 +2,8 @@
 
 **Status: version 0.1.0, 2026-11-05, research / feasibility study.**
 * Component, standalone firmware `fv1-vm-fx` and the composed `toy-piano-fv1` are built and host-tested.
-* Hardware, CPU load and sound: **NOT MEASURED**.
+* Hardware: CPU sweeps over all 240 programs, standalone (`float`/SDRAM) and inside `toy-piano-fv1`, MEASURED
+  2026-11-05 without an overrun (see [Hardware results](#hardware-results)); `double`, AXI and sound NOT MEASURED.
 
 ## Purpose
 
@@ -134,6 +135,36 @@ Windows host, llvm-mingw clang++ 23.1.3 (host), xPack arm-none-eabi-gcc 13.2.1-1
   run these tests (no workflow change without the owner's approval); hardware.
 * The Toy Piano golden test fails with this Windows host compiler also on unmodified sources (hash pinned for the
   Linux toolchain); it is unaffected by this change.
+
+## Hardware results
+
+**Board run 1 (MEASURED 2026-11-05, owner's Seed3 Desktop Kit):** `Fv1VmFxLocal-v0.1.0.bin` (local table of the
+240 FX AID programs, `float`, delay RAM in SDRAM, 32 kHz, block 32) built from 4dab672, flashed with
+`make PROGRAMS=local program-dfu`. `fv1vm_probe.py --noise --pots 64 64 64 --sweep 240 --seconds 2`:
+
+| Quantity | Value |
+| --- | --- |
+| Programs answered | 240 / 240 |
+| Overruns | 0 |
+| Whole-callback average load | 15.4 % min, 42.6 % median, 64.1 % max of the block budget |
+| Peak load | 65.4 % max (a dual pitch shifter); the pitch shifters and dual shimmers lead |
+| Cycles per sample (average) | about 2 300 to 9 600 |
+
+Correlation of the average load over the 240 programs: interpolated delay reads r = 0.63, active instruction slots
+r = 0.60, delay size r = 0.34. Only one pot setting and one input signal were measured; `double` and AXI delay RAM
+are NOT MEASURED.
+
+**Board run 2 (MEASURED 2026-11-05):** `ToyPianoFv1Local-v0.1.0.bin` (same 240 programs inside `toy-piano-fv1`),
+`fv1vm_probe.py --notes 4 --sweep 240 --seconds 2` (four MIDI note-ons every 100 ms keep all 16 MIDI voices
+sounding; pots at their physical positions):
+
+| Quantity | Value |
+| --- | --- |
+| Programs answered / overruns | 240 / 0 |
+| Whole-callback average load | 42.5 % min, 70.2 % median, 88.6 % max |
+| Peak load | 92.7 % max; 5 programs (dual and barberpole pitch shifters) ≥ 90 %, 45 programs ≥ 80 % |
+| Extra over the standalone run | 22.5 to 33.4 points (median 27.7): piano, 48 kHz adapter, host state in SDRAM | The owner heard the programs process the noise test signal; no
+fault was reported, a listening assessment was not done.
 
 ## Next
 

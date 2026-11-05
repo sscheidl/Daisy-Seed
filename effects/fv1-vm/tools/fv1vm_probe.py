@@ -62,6 +62,8 @@ def main():
     parser.add_argument('--sweep', type=int, default=0, help='measure programs 1..N (0: current program only)')
     parser.add_argument('--noise', action='store_true', help='use the internal noise input')
     parser.add_argument('--pots', type=int, nargs=3, metavar=('P0', 'P1', 'P2'), help='remote pots 0..127')
+    parser.add_argument('--notes', type=int, default=0,
+                        help='note-ons per 100 ms during each measurement (instrument products, e.g. toy-piano-fv1)')
     parser.add_argument('--csv', default='fv1vm-cpu.csv', help='output CSV with device readings')
     args = parser.parse_args()
     try:
@@ -95,6 +97,18 @@ def main():
                 time.sleep(.001)
             raise RuntimeError('no telemetry reply within 3 s; check firmware, ports and MIDI routing')
 
+        strikes = [0]
+
+        def play(seconds):
+            """Waits `seconds`; with --notes, sends that many note-ons (channel 1) every 100 ms."""
+            end = time.monotonic() + seconds
+            while time.monotonic() < end:
+                for i in range(args.notes):
+                    note = 48 + (strikes[0] * 7 + i * 5) % 37
+                    outgoing.send(mido.Message('note_on', channel=0, note=note, velocity=100))
+                strikes[0] += 1
+                time.sleep(min(.1, max(0.0, end - time.monotonic())) if args.notes else max(0.0, end - time.monotonic()))
+
         cc(28, 0)
         cc(24, 1 if args.noise else 0)
         if args.pots:
@@ -105,9 +119,11 @@ def main():
                 cc(22, index >> 7)
                 cc(23, index & 127)
                 time.sleep(.3)  # program change, delay-RAM clear, settle
+            if args.notes:
+                play(.5)  # fill the voice pool before the measured window
             cc(119, 2)
             read()
-            time.sleep(args.seconds)
+            play(args.seconds)
             cc(119, 1)
             sample = read()
             row = dict(utc=datetime.now(timezone.utc).isoformat(), **sample)
