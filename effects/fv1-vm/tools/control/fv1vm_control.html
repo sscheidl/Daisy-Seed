@@ -98,7 +98,7 @@ section + section { margin-top: 16px; }
     <section>
       <h2>Programs <span id="count"></span></h2>
       <div class="toolbar">
-        <input id="search" type="search" placeholder="Search name, code (REV 32) or #FX AID number" autocomplete="off">
+        <input id="search" type="search" placeholder="Search name, code (REV 32) or #reference" autocomplete="off">
         <button id="prev" title="Previous (↑)">◀ Prev</button>
         <button id="next" title="Next (↓)">Next ▶</button>
       </div>
@@ -300,7 +300,7 @@ function renderList() {
     li.innerHTML = '<span class="num"></span><span class="name"></span><span class="cat"></span>';
     li.children[0].textContent = code(p);
     li.children[1].textContent = shortName(p);
-    li.children[1].title = p.name + (p.ref ? ` · FX AID #${p.ref}` : '');
+    li.children[1].title = p.name + (p.ref ? ` · ref #${p.ref}` : '');
     li.children[2].textContent = grouped ? (p.ref ? `#${p.ref}` : '') : p.category;
     li.onclick = () => select(p.index);
     frag.append(li);
@@ -313,7 +313,7 @@ function markCurrent(scroll) {
   const p = programs[current];
   $('now-name').textContent = p ? `${code(p)} · ${shortName(p)}` : '–';
   $('now-sub').textContent = p ? [grouped ? groupTitle(p.group) : p.category, grouped ? `bank ${p.bank} · program ${p.position + 1}` : '',
-                                   p.ref ? `FX AID #${p.ref}` : ''].filter(Boolean).join(' · ') : 'no program sent yet';
+                                   p.ref ? `ref #${p.ref}` : ''].filter(Boolean).join(' · ') : 'no program sent yet';
   const el = list.querySelector('li.current');
   if (scroll && el) el.scrollIntoView({ block: 'nearest' });
 }

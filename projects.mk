@@ -76,7 +76,7 @@ PROJECTS += streichwurst-fx
 BUILDABLE_PROJECTS += streichwurst-fx
 PROJECT_DIR_streichwurst-fx := effects/streichwurst-fx
 PROJECT_STATUS_streichwurst-fx := buildable
-# FV-1 interpreter FX (research / feasibility study, L2A case fx-aid-catalog): standalone
+# FV-1 interpreter FX (research / feasibility study): standalone
 # firmware with own demo programs; ARM build verified 2026-11-05. PROGRAMS=local images are local only.
 PROJECTS += fv1-vm-fx
 BUILDABLE_PROJECTS += fv1-vm-fx

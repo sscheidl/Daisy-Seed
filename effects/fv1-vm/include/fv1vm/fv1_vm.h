@@ -3,7 +3,7 @@
 // FV-1 instruction-set interpreter as an FX component (research / feasibility study).
 //
 // Executes one 128-word FV-1 program per sample. The semantics follow the L2A case model
-// (fx-aid-catalog, scripts/fv1_model.py, assumptions A1-A7 and A5b) so that host results can be
+// (local reference model fv1_model.py, assumptions A1-A7 and A5b) so that host results can be
 // compared sample by sample with that model. This is NOT a certified chip emulation: delay-RAM
 // compression, MULX/coefficient truncation and silicon LFO details are not modelled.
 //

@@ -9,7 +9,7 @@
 
 Executes a 128-word Spin FV-1 program per sample as an FX component behind the
 [FX interface 1.0](../../common/audio/fx_contract.h). It exists to measure on the Seed3 whether FV-1-class effects,
-here the FX AID catalogue analysed in the owner's L2A case `fx-aid-catalog`, fit next to an instrument. It also
+here a third-party FV-1 program collection analysed locally, fit next to an instrument. It also
 serves as a reference for later native ports. Composition: Toy Piano with this component as its stereo FX
 (owner decision 2026-11-05, modular policy), see [docs/FV1.md](../../instruments/toy-piano/docs/FV1.md).
 
@@ -38,9 +38,9 @@ Delay-RAM compression, MULX truncation and silicon LFO details are **not** model
 
 ## Programs and licensing
 
-**This repository contains no FV-1 program data except the two own demo programs.** FX AID programs are used under
-the owner's decision of 2026-11-05 (research / feasibility study only; no products, releases or redistribution).
-They enter a build only as a local, git-ignored table:
+**This repository contains no FV-1 program data except the two own demo programs.** Programs that are not openly
+licensed are used for research only (no products, releases or redistribution). They enter a build only as a
+local, git-ignored table:
 
 ```bash
 python effects/fv1-vm/tools/gen_programs.py --label "..." <512-byte program files ...>   # -> effects/fv1-vm/generated/
@@ -79,7 +79,7 @@ CC89 = 64. The control page shows it; the probe ignores it.
 **Standard MIDI program selection** (both firmwares, any channel): Bank Select MSB (CC0) or, if the MSB is 0,
 LSB (CC32) sets *bank*; Program Change *n* then selects a program.
 * **With groups** (since firmware 0.3.0 / toy-piano-fv1 0.4.0; table generated with `--groups`): bank = group,
-  *n* = position in the group (0-based). A bank or position beyond the table is ignored. The local FX AID table uses
+  *n* = position in the group (0-based). A bank or position beyond the table is ignored. The local table uses
   11 functional groups, alphabetical inside each group (REV, DLY, GRN, MOD, FLT, PIT, SAT, DYN, ENV, UTL, GEN).
 * **Without groups** (demo programs, or a table without `--groups`): index *bank* × 128 + *n*, wrapping around.
 
@@ -171,7 +171,7 @@ Windows host, llvm-mingw clang++ 23.1.3 (host), xPack arm-none-eabi-gcc 13.2.1-1
 ## Hardware results
 
 **Board run 1 (MEASURED 2026-11-05, owner's Seed3 Desktop Kit):** `Fv1VmFxLocal-v0.1.0.bin` (local table of the
-240 FX AID programs, `float`, delay RAM in SDRAM, 32 kHz, block 32) built from 4dab672, flashed with
+240 third-party programs, `float`, delay RAM in SDRAM, 32 kHz, block 32) built from 4dab672, flashed with
 `make PROGRAMS=local program-dfu`. `fv1vm_probe.py --noise --pots 64 64 64 --sweep 240 --seconds 2`:
 
 | Quantity | Value |

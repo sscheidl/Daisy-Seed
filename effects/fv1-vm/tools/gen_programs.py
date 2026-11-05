@@ -4,8 +4,7 @@
 Each input is a 512-byte FV-1 program image (128 big-endian 32-bit words). The table keeps the
 input order; index 0 is the first file. Output default: generated/fv1vm_programs.local.h.
 
-Programs that are not openly licensed (for example the FX AID catalogue, used under the owner's
-research / feasibility-study decision of 2026-11-05) must stay local: the generated header and
+Programs that are not openly licensed must stay local: the generated header and
 any image built from it are never committed, released or uploaded. This script contains no
 program data. Standard library only.
 
