@@ -316,7 +316,8 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
 #elif TOY_PIANO_FV1
     std::array<float, 8> raw{};
     for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
-    fv1->ReadControls(raw, hw.tog_sw17.Pressed()); // VR4..VR6 POT0..2, VR7 dry/wet, VR8 rate, SW17 bypass
+    // VR4..VR6 POT0..2, VR7 dry/wet, VR8 rate, SW17 bypass, SW18 POT0 override
+    fv1->ReadControls(raw, hw.tog_sw17.Pressed(), hw.tog_sw18.Read());
     const int32_t fv1_program = fv1_program_request.exchange(-1, std::memory_order_acquire);
     const bool fv1_changed = fv1_program >= 0;
     if(fv1_changed) fv1->Select(unsigned(fv1_program));
