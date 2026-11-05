@@ -1,0 +1,329 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT
+     Local Web-MIDI control page for the fv1-vm firmwares (fv1-vm-fx and toy-piano-fv1).
+     Research / feasibility study. This file holds no program data: program names come from the local,
+     git-ignored ../../generated/fv1vm_programs.local.js written by tools/gen_programs.py --names.
+     Open it directly in Chrome or Edge (file://); Web MIDI asks for permission once. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FV-1 Control</title>
+<style>
+:root {
+  --bg: #f6f6f3; --panel: #ffffff; --ink: #1d1f22; --muted: #686c72; --line: #dcdcd6;
+  --accent: #2f6fdd; --accent-ink: #ffffff; --sel: #e7efff; --ok: #1f8a4c; --warn: #b7791f; --bad: #c53030;
+  --bar: #e9e9e4;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171a; --panel: #1e2125; --ink: #e8e9eb; --muted: #9aa0a8; --line: #30343a;
+    --accent: #6a9cff; --accent-ink: #0f1115; --sel: #24324d; --ok: #48c07d; --warn: #e0a842; --bad: #f06a6a;
+    --bar: #2a2e34;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, "Segoe UI", sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 16px;
+  border-bottom: 1px solid var(--line); background: var(--panel); }
+h1 { font-size: 17px; margin: 0 8px 0 0; }
+.status { font-size: 12px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); }
+.status.on { color: var(--ok); border-color: var(--ok); }
+.status.err { color: var(--bad); border-color: var(--bad); }
+label.inline { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
+select, input[type=search], input[type=number], button {
+  font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+button { cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; padding: 16px; max-width: 1200px; margin: 0 auto; }
+@media (max-width: 820px) { main { grid-template-columns: minmax(0, 1fr); } }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 10px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.toolbar input[type=search] { flex: 1 1 180px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip { font-size: 12px; padding: 3px 10px; border-radius: 12px; }
+.chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+#list { list-style: none; margin: 0; padding: 0; max-height: calc(100vh - 230px); min-height: 240px; overflow: auto;
+  border: 1px solid var(--line); border-radius: 8px; }
+#list li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; padding: 6px 10px; cursor: pointer;
+  border-bottom: 1px solid var(--line); }
+#list li:last-child { border-bottom: 0; }
+#list li:hover { background: var(--sel); }
+#list li.current { background: var(--accent); color: var(--accent-ink); }
+#list li.current .cat { color: inherit; }
+.num { font-variant-numeric: tabular-nums; color: var(--muted); }
+#list li.current .num { color: inherit; }
+.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat { font-size: 12px; color: var(--muted); }
+.now { font-size: 22px; font-weight: 600; margin: 2px 0; overflow-wrap: anywhere; }
+.now-sub { color: var(--muted); margin-bottom: 10px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.meter { margin: 8px 0; }
+.meter .lbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.meter .track { height: 10px; background: var(--bar); border-radius: 5px; overflow: hidden; }
+.meter .fill { height: 100%; width: 0; background: var(--ok); transition: width .2s; }
+.meter .fill.warn { background: var(--warn); } .meter .fill.bad { background: var(--bad); }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 8px 0 0; font-size: 12px; }
+dt { color: var(--muted); } dd { margin: 0; font-variant-numeric: tabular-nums; }
+.slider { display: grid; grid-template-columns: 54px 1fr 36px; gap: 8px; align-items: center; font-size: 12px; }
+.note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.banner { margin: 16px 16px 0; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--warn); color: var(--warn); }
+details summary { cursor: pointer; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+section + section { margin-top: 16px; }
+</style>
+<script src="../../generated/fv1vm_programs.local.js"></script>
+</head>
+<body>
+<header>
+  <h1>FV-1 Control</h1>
+  <span id="status" class="status">not connected</span>
+  <label class="inline">In <select id="in"></select></label>
+  <label class="inline">Out <select id="out"></select></label>
+  <button id="connect" class="primary">Connect MIDI</button>
+  <label class="inline">Select via
+    <select id="mode">
+      <option value="cc">CC22/CC23, channel 16</option>
+      <option value="pc">Program Change + Bank, channel 1</option>
+    </select>
+  </label>
+</header>
+<div id="banner" class="banner" hidden></div>
+<main>
+  <div>
+    <section>
+      <h2>Programs <span id="count"></span></h2>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search name or number" autocomplete="off">
+        <button id="prev" title="Previous (↑)">◀ Prev</button>
+        <button id="next" title="Next (↓)">Next ▶</button>
+      </div>
+      <div id="chips" class="chips"></div>
+      <ul id="list" tabindex="0" aria-label="Programs"></ul>
+    </section>
+  </div>
+  <div>
+    <section>
+      <h2>Now</h2>
+      <div class="now" id="now-name">–</div>
+      <div class="now-sub" id="now-sub">no program sent yet</div>
+      <div class="row">
+        <button id="chord">Play test chord</button>
+        <span class="note">4 notes on channel 1 (Toy Piano)</span>
+      </div>
+    </section>
+    <section>
+      <h2>CPU (whole audio callback)</h2>
+      <div class="meter"><div class="lbl"><span>Average</span><span id="avg">–</span></div>
+        <div class="track"><div class="fill" id="avg-bar"></div></div></div>
+      <div class="meter"><div class="lbl"><span>Peak</span><span id="peak">–</span></div>
+        <div class="track"><div class="fill" id="peak-bar"></div></div></div>
+      <dl>
+        <dt>Blocks</dt><dd id="blocks">–</dd>
+        <dt>Overruns</dt><dd id="overruns">–</dd>
+        <dt>Program</dt><dd id="tprog">–</dd>
+        <dt>Flags</dt><dd id="flags">–</dd>
+        <dt>Last reply</dt><dd id="age">–</dd>
+      </dl>
+      <div class="row">
+        <label class="inline"><input type="checkbox" id="poll" checked> poll every second</label>
+        <button id="reset">Reset counters</button>
+      </div>
+    </section>
+    <section>
+      <details>
+        <summary>Standalone firmware only (fv1-vm-fx)</summary>
+        <div class="slider"><span>POT0</span><input type="range" min="0" max="127" value="64" data-cc="25"><span>64</span></div>
+        <div class="slider"><span>POT1</span><input type="range" min="0" max="127" value="64" data-cc="26"><span>64</span></div>
+        <div class="slider"><span>POT2</span><input type="range" min="0" max="127" value="64" data-cc="27"><span>64</span></div>
+        <div class="row">
+          <label class="inline"><input type="checkbox" id="noise"> internal noise input</label>
+          <label class="inline"><input type="checkbox" id="bypass"> bypass</label>
+        </div>
+        <p class="note">Remote pots hold until a panel pot moves. In Toy Piano, VR1–VR4 stay in charge.</p>
+      </details>
+    </section>
+    <p class="note" id="source"></p>
+  </div>
+</main>
+<script>
+'use strict';
+// ---- Program list (local file) or plain numbers --------------------------------------------------------
+const data = window.FV1VM_PROGRAMS;
+const banner = document.getElementById('banner');
+let programs;
+if (data && Array.isArray(data.programs)) {
+  programs = data.programs.map(p => ({ index: p.index, id: String(p.id), name: String(p.name), category: String(p.category || '') }));
+  document.getElementById('source').textContent =
+    `Program list: ${data.label} · ${programs.length} programs · words SHA-256 ${String(data.sha256).slice(0, 12)}… · local only, do not share.`;
+} else {
+  programs = Array.from({ length: 2 }, (_, i) => ({ index: i, id: String(i + 1), name: ['Thru (demo)', 'Echo (demo)'][i], category: 'Demo' }));
+  banner.hidden = false;
+  banner.textContent = 'No local program list found (../../generated/fv1vm_programs.local.js). Showing the two built-in demo programs. ' +
+    'Generate the list with tools/gen_programs.py --names.';
+}
+
+// ---- Telemetry decoder: channel-16 CC100..119, protocol id 2 (src/fv1_firmware.h) --------------------------
+const FLAG_NAMES = { 1: 'double', 2: 'fast memory', 4: 'bypass', 8: 'noise', 16: 'local programs' };
+function makeDecoder() {
+  let values = [];
+  return function feed(status, control, value) {
+    if (status !== 0xBF || control < 100 || control > 119 || value > 127) return null;
+    if (control === 100) { values = value === 2 ? [value] : []; return null; }
+    if (!values.length || control !== 100 + values.length) { values = []; return null; }
+    values.push(value);
+    if (control !== 119) return null;
+    const v = values; values = [];
+    if (v[19] !== 64) return null;
+    const num = (start, digits) => { let n = 0; for (let i = digits - 1; i >= 0; i--) n = n * 128 + v[start + i]; return n; };
+    const blocks = num(7, 5), overruns = num(12, 4);
+    if (overruns > blocks) return null;
+    const flags = Object.entries(FLAG_NAMES).filter(([bit]) => v[18] & bit).map(([, n]) => n);
+    return { average: num(1, 3) / 100, peak: num(4, 3) / 100, blocks, overruns, program: num(16, 2) + 1, flags };
+  };
+}
+window.fv1vmDecoder = makeDecoder; // exposed for checks in the browser console
+
+// ---- MIDI ----------------------------------------------------------------------------------------------
+let access = null, input = null, output = null, lastReply = 0;
+const feed = makeDecoder();
+const $ = id => document.getElementById(id);
+function setStatus(text, cls) { const s = $('status'); s.textContent = text; s.className = 'status' + (cls ? ' ' + cls : ''); }
+function send(bytes) { if (output) output.send(bytes); }
+function cc16(control, value) { send([0xBF, control, value]); }
+
+function fillPorts() {
+  for (const [sel, ports] of [[$('in'), access.inputs], [$('out'), access.outputs]]) {
+    const keep = sel.value;
+    sel.innerHTML = '';
+    for (const p of ports.values()) sel.add(new Option(p.name, p.id));
+    const daisy = [...sel.options].find(o => /daisy/i.test(o.text));
+    if ([...sel.options].some(o => o.value === keep)) sel.value = keep; else if (daisy) sel.value = daisy.value;
+  }
+}
+function bindPorts() {
+  if (input) input.onmidimessage = null;
+  input = access.inputs.get($('in').value) || null;
+  output = access.outputs.get($('out').value) || null;
+  if (input) input.onmidimessage = e => {
+    const [s, c, v] = e.data;
+    const t = feed(s, c, v);
+    if (t) showTelemetry(t);
+  };
+  setStatus(input && output ? `connected: ${output.name}` : 'choose ports', input && output ? 'on' : '');
+}
+$('connect').onclick = async () => {
+  if (!navigator.requestMIDIAccess) { setStatus('Web MIDI not available (use Chrome or Edge)', 'err'); return; }
+  try {
+    access = await navigator.requestMIDIAccess({ sysex: false });
+    access.onstatechange = () => { fillPorts(); bindPorts(); };
+    fillPorts(); bindPorts();
+  } catch (err) { setStatus('MIDI access refused: ' + err.message, 'err'); }
+};
+$('in').onchange = $('out').onchange = () => access && bindPorts();
+
+// ---- Program list UI -------------------------------------------------------------------------------------
+let current = null, category = '', filtered = programs;
+const list = $('list');
+const categories = [...new Set(programs.map(p => p.category).filter(Boolean))];
+function chip(label, value) {
+  const b = document.createElement('button');
+  b.className = 'chip' + (value === category ? ' on' : '');
+  b.textContent = label;
+  b.onclick = () => { category = value; renderChips(); renderList(); };
+  return b;
+}
+function renderChips() {
+  const box = $('chips'); box.innerHTML = '';
+  box.append(chip('All', ''), ...categories.map(c => chip(`${c} (${programs.filter(p => p.category === c).length})`, c)));
+}
+function renderList() {
+  const q = $('search').value.trim().toLowerCase();
+  filtered = programs.filter(p => (!category || p.category === category) &&
+    (!q || p.name.toLowerCase().includes(q) || String(p.index + 1) === q || p.id.toLowerCase() === q));
+  list.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (const p of filtered) {
+    const li = document.createElement('li');
+    li.dataset.index = p.index;
+    if (p.index === current) li.className = 'current';
+    li.innerHTML = '<span class="num"></span><span class="name"></span><span class="cat"></span>';
+    li.children[0].textContent = p.index + 1;
+    li.children[1].textContent = p.name;
+    li.children[2].textContent = p.category;
+    li.onclick = () => select(p.index);
+    frag.append(li);
+  }
+  list.append(frag);
+  $('count').textContent = `(${filtered.length} of ${programs.length})`;
+}
+function markCurrent(scroll) {
+  for (const li of list.children) li.classList.toggle('current', Number(li.dataset.index) === current);
+  const p = programs[current];
+  $('now-name').textContent = p ? `${p.index + 1} · ${p.name}` : '–';
+  $('now-sub').textContent = p ? (p.category || '') : 'no program sent yet';
+  const el = list.querySelector('li.current');
+  if (scroll && el) el.scrollIntoView({ block: 'nearest' });
+}
+function select(index) {
+  if (index < 0 || index >= programs.length) return;
+  current = index;
+  if ($('mode').value === 'pc') {
+    send([0xB0, 0, 0]); send([0xB0, 32, index >> 7]); send([0xC0, index & 127]);
+  } else {
+    cc16(22, index >> 7); cc16(23, index & 127);
+  }
+  markCurrent(true);
+  if (output) setTimeout(() => cc16(119, 2), 350); // fresh counters for the new program
+}
+function step(delta) {
+  const pos = filtered.findIndex(p => p.index === current);
+  const next = filtered[pos < 0 ? 0 : Math.min(filtered.length - 1, Math.max(0, pos + delta))];
+  if (next) select(next.index);
+}
+$('prev').onclick = () => step(-1);
+$('next').onclick = () => step(1);
+$('search').oninput = renderList;
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return; // typing, sliders, port menus
+  if (e.key === 'ArrowDown') { step(1); e.preventDefault(); }
+  if (e.key === 'ArrowUp') { step(-1); e.preventDefault(); }
+});
+
+// ---- Telemetry UI ------------------------------------------------------------------------------------------
+function bar(id, value) {
+  const el = $(id);
+  el.style.width = Math.min(100, value) + '%';
+  el.className = 'fill' + (value >= 90 ? ' bad' : value >= 75 ? ' warn' : '');
+}
+function showTelemetry(t) {
+  lastReply = Date.now();
+  $('avg').textContent = t.average.toFixed(2) + ' %'; bar('avg-bar', t.average);
+  $('peak').textContent = t.peak.toFixed(2) + ' %'; bar('peak-bar', t.peak);
+  $('blocks').textContent = t.blocks; $('overruns').textContent = t.overruns;
+  $('tprog').textContent = t.program; $('flags').textContent = t.flags.join(', ') || 'none';
+  if (t.program - 1 !== current && t.program - 1 < programs.length) { current = t.program - 1; markCurrent(false); }
+}
+setInterval(() => {
+  if ($('poll').checked && output) cc16(119, 1);
+  $('age').textContent = lastReply ? `${((Date.now() - lastReply) / 1000).toFixed(0)} s ago` : '–';
+}, 1000);
+$('reset').onclick = () => cc16(119, 2);
+
+// ---- Standalone controls and test chord -----------------------------------------------------------------------
+for (const r of document.querySelectorAll('input[type=range][data-cc]')) {
+  r.oninput = () => { r.nextElementSibling.textContent = r.value; cc16(Number(r.dataset.cc), Number(r.value)); };
+}
+$('noise').onchange = e => cc16(24, e.target.checked ? 1 : 0);
+$('bypass').onchange = e => cc16(28, e.target.checked ? 1 : 0);
+let strike = 0;
+$('chord').onclick = () => {
+  const root = 48 + (strike++ * 5) % 24;
+  for (const n of [0, 4, 7, 12]) send([0x90, root + n, 100]);
+};
+
+renderChips(); renderList();
+</script>
+</body>
+</html>

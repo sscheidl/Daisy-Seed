@@ -1,6 +1,6 @@
 # FV-1 interpreter FX component (`fv1-vm`)
 
-**Status: version 0.1.0, 2026-11-05, research / feasibility study.**
+**Status: firmware 0.2.0 (component 0.1.0), 2026-11-05, research / feasibility study.**
 * Component, standalone firmware `fv1-vm-fx` and the composed `toy-piano-fv1` are built and host-tested.
 * Hardware: CPU sweeps over all 240 programs, standalone (`float`/SDRAM) and inside `toy-piano-fv1`, MEASURED
   2026-11-05 without an overrun (see [Hardware results](#hardware-results)); `double`, AXI and sound NOT MEASURED.
@@ -43,8 +43,8 @@ They enter a build only as a local, git-ignored table:
 
 ```bash
 python effects/fv1-vm/tools/gen_programs.py --label "..." <512-byte program files ...>   # -> effects/fv1-vm/generated/
-make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.1.0.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
-make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.1.0.bin
+make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.2.0.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
+make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.2.0.bin
 ```
 
 Local tables and images built from them must never be committed, released or uploaded as CI artifacts. Openly
@@ -69,7 +69,24 @@ A program change loads the program, clears the delay RAM and mutes that one bloc
 CC24 input (0 line, 1 noise), CC25..27 POT0..2 (value/127, held until a panel pot moves by more than 0.03),
 CC28 bypass, CC119 = 1 read / 2 reset and read. The reply is twenty channel-16 CCs, CC100..119, protocol id 2
 (the physical-modeling decoder ignores it): average and peak cycles per block in 1/10 000 of the block budget,
-blocks, overruns, program index and flags. `tools/fv1vm_probe.py` decodes it and can sweep all programs:
+blocks, overruns, program index and flags. `tools/fv1vm_probe.py` decodes it and can sweep all programs.
+
+**Standard MIDI program selection** (since firmware 0.2.0, both firmwares, any channel): Program Change *n* selects
+index *bank* × 128 + *n*; Bank Select MSB (CC0) or, if the MSB is 0, LSB (CC32) sets *bank*. Bank 0 holds
+programs 1–128, bank 1 programs 129–240. Indices beyond the program count wrap around, as with CC22/CC23.
+
+**Control page** `tools/control/fv1vm_control.html` (Web MIDI, Chrome or Edge): searchable program list with
+categories, selection by CC22/CC23 or Program Change, prev/next with ↑/↓, a test chord, live CPU telemetry, and
+the standalone-only remote pots, noise input and bypass. It contains no program data; with
+`gen_programs.py --names <csv>` it shows the names from the local, git-ignored
+`generated/fv1vm_programs.local.js`, otherwise the two demo programs. Open the file directly or serve the
+component folder on `127.0.0.1`; other software must not hold the MIDI port at the same time.
+
+```bash
+python effects/fv1-vm/tools/gen_programs.py --label "..." --names catalogue.csv <program files ...>  # header + names
+```
+
+Probe usage:
 
 ```bash
 python effects/fv1-vm/tools/fv1vm_probe.py --list
@@ -91,12 +108,12 @@ Measurement variants, each with its own build directory and the same image name:
 
 ```bash
 make -C effects/fv1-vm test                 # interpreter, firmware logic, 48 kHz adapter, Python tools
-make PROJECT=fv1-vm-fx -j4                  # ARM image effects/fv1-vm/build/Fv1VmFx-v0.1.0.bin
+make PROJECT=fv1-vm-fx -j4                  # ARM image effects/fv1-vm/build/Fv1VmFx-v0.2.0.bin
 make PROJECT=fv1-vm-fx manifest
 make PROJECT=toy-piano-fv1 test             # composed end-to-end host test
 make PROJECT=toy-piano-fv1 -j4
-python3 scripts/check-firmware.py effects/fv1-vm/build/Fv1VmFx-v0.1.0.bin
-python3 scripts/check-elf-placement.py effects/fv1-vm/build/Fv1VmFx-v0.1.0.elf --sdram vm_memory:131072
+python3 scripts/check-firmware.py effects/fv1-vm/build/Fv1VmFx-v0.2.0.bin
+python3 scripts/check-elf-placement.py effects/fv1-vm/build/Fv1VmFx-v0.2.0.elf --sdram vm_memory:131072
 make -C effects/fv1-vm tool                 # host runner for cross-checks with an external reference
 ```
 

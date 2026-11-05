@@ -83,6 +83,18 @@ static void TestRemote() {
     CHECK(r.Handle(15, 24, 2).command == Command::None, "invalid input value");
     CHECK(r.Handle(15, 28, 1).command == Command::Bypass, "bypass");
     CHECK(r.Handle(15, 119, 2).command == Command::Telemetry && r.Handle(15, 119, 3).command == Command::None, "telemetry");
+    // Standard Program Change on any channel, bank 0 by default.
+    a = r.HandleProgramChange(0, 5);
+    CHECK(a.command == Command::Program && a.value == 5, "program change, bank 0");
+    CHECK(r.Handle(3, 32, 1).command == Command::None, "bank LSB latched on any channel");
+    CHECK(r.HandleProgramChange(3, 71).value == 199, "bank 1 via LSB");
+    r.Handle(0, 0, 2);
+    CHECK(r.HandleProgramChange(0, 0).value == 256, "MSB wins over LSB");
+    r.Handle(0, 0, 0); r.Handle(0, 32, 0);
+    CHECK(r.HandleProgramChange(9, 127).value == 127, "bank reset");
+    CHECK(r.HandleProgramChange(16, 1).command == Command::None && r.HandleProgramChange(0, 128).command == Command::None,
+          "invalid program change");
+    CHECK(r.Handle(0, 25, 64).command == Command::None, "remote CCs stay on channel 16");
 }
 
 static void TestTelemetryPacket() {

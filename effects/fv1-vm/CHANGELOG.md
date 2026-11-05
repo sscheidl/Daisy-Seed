@@ -1,5 +1,14 @@
 # Changelog: fv1-vm
 
+## Firmware 0.2.0, toy-piano-fv1 0.2.0 (2026-11-05, unreleased; component stays 0.1.0)
+
+* Standard MIDI program selection in both firmwares: Program Change on any channel with Bank Select CC0/CC32
+  (bank × 128 + program).
+* Local Web-MIDI control page `tools/control/fv1vm_control.html` (program list, selection, CPU telemetry,
+  standalone remote controls); `gen_programs.py --names` writes its local, git-ignored program list.
+* `fv1vm_probe.py --notes N` for instrument products.
+* Board CPU sweeps of 0.1.0 recorded in the README (no overrun in either product).
+
 ## 0.1.0 (2026-11-05, unreleased)
 
 * Header-only FV-1 interpreter `seed::fx::fv1::Vm<T>` behind the FX interface 1.0, decoder, host runner

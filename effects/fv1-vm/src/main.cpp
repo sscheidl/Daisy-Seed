@@ -195,8 +195,10 @@ void ServiceUsbMidi() {
     while(usb_midi.HasEvents()) {
         const auto event = usb_midi.PopEvent();
         if(bootloader::IsRequest(event)) { boot_request.Set(bootloader::Request::kSysEx); continue; }
-        if(event.type != ControlChange) continue;
-        const fv1_fw::Action a = remote.Handle(event.channel, event.data[0], event.data[1]);
+        fv1_fw::Action a;
+        if(event.type == ControlChange) a = remote.Handle(event.channel, event.data[0], event.data[1]);
+        else if(event.type == ProgramChange) a = remote.HandleProgramChange(event.channel, event.data[0]);
+        else continue;
         switch(a.command) {
             case fv1_fw::Command::Program: request_program.store(int32_t(a.value), std::memory_order_release); break;
             case fv1_fw::Command::Input: request_input.store(int32_t(a.value), std::memory_order_release); break;

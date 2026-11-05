@@ -406,14 +406,21 @@ void ServiceUsbMidi() {
             continue;
         }
 #if TOY_PIANO_FV1
-        // Channel 16 CC22/23 program, CC119 telemetry; the other remote commands are standalone-only.
-        if(event.type == daisy::ControlChange && event.channel == 15) {
+        // Program Change (+ Bank Select CC0/CC32) on any channel; channel 16 CC22/23 program and CC119
+        // telemetry. The other channel-16 remote commands are standalone-only and ignored here.
+        if(event.type == daisy::ProgramChange) {
+            const fv1_fw::Action action = fv1_remote.HandleProgramChange(event.channel, event.data[0]);
+            if(action.command == fv1_fw::Command::Program)
+                fv1_program_request.store(int32_t(action.value), std::memory_order_release);
+            continue;
+        }
+        if(event.type == daisy::ControlChange) {
             const fv1_fw::Action action = fv1_remote.Handle(event.channel, event.data[0], event.data[1]);
             if(action.command == fv1_fw::Command::Program)
                 fv1_program_request.store(int32_t(action.value), std::memory_order_release);
             else if(action.command == fv1_fw::Command::Telemetry)
                 fv1_telemetry_request.store(int32_t(action.value), std::memory_order_relaxed);
-            if(action.command != fv1_fw::Command::None || event.data[0] == 22) continue;
+            if(event.channel == 15 && (action.command != fv1_fw::Command::None || event.data[0] == 22)) continue;
         }
 #endif
 #if TOY_PIANO_FX

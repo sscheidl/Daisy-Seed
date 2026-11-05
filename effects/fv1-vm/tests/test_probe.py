@@ -55,6 +55,13 @@ class GeneratorTest(unittest.TestCase):
             self.assertIn('kCount = 1;', text)
             self.assertIn('0x01000000u, 0x01000001u', text)
             self.assertIn('LOCAL ONLY', text)
+            names = pathlib.Path(tmp) / 'names.csv'
+            names.write_text('id,name,category\np,Demo "one",Test\n', encoding='utf-8')
+            self.assertEqual(gen.main(['--out', str(out), '--names', str(names), str(path)]), 0)
+            js = out.with_suffix('.js').read_text()
+            self.assertTrue(js.startswith('// GENERATED') and 'window.FV1VM_PROGRAMS = ' in js)
+            self.assertIn('"name": "Demo \\"one\\""', js)
+            self.assertIn('"category": "Test"', js)
             path.write_bytes(b'\0' * 100)
             with self.assertRaises(ValueError):
                 gen.main(['--out', str(out), str(path)])

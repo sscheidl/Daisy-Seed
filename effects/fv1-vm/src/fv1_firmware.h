@@ -82,7 +82,7 @@ class Noise {
     uint32_t x_;
 };
 
-// ---- Remote control: channel 16 (index 15) control changes ---------------------------------------
+// ---- Remote control: channel 16 (index 15) control changes, plus standard Program Change ------------
 // CC22 program index high 7 bits (latched), CC23 low 7 bits (applies, 0-based),
 // CC24 input (0 line, 1 internal noise), CC25..27 POT0..2 = value/127 (remote pots until a
 // panel pot moves), CC28 bypass (0 off, 1 on), CC119 telemetry (1 read, 2 reset and read).
@@ -91,10 +91,18 @@ struct Action {
     Command command = Command::None;
     unsigned value = 0, index = 0;
 };
+// Standard MIDI on any channel: Bank Select MSB (CC0) or LSB (CC32) chooses a bank of 128 programs
+// (MSB if non-zero, else LSB); Program Change n then selects index bank * 128 + n. Like CC22/CC23, an
+// index beyond the program count wraps around.
 class Remote {
   public:
     Action Handle(unsigned channel, unsigned cc, unsigned value) {
-        if(channel != 15 || value > 127) return {};
+        if(channel > 15 || value > 127) return {};
+        if(cc == 0 || cc == 32) {
+            (cc == 0 ? bank_msb_ : bank_lsb_) = value;
+            return {};
+        }
+        if(channel != 15) return {};
         switch(cc) {
             case 22: high_ = value; return {};
             case 23: return {Command::Program, (high_ << 7) | value, 0};
@@ -105,8 +113,13 @@ class Remote {
             default: return {};
         }
     }
+    Action HandleProgramChange(unsigned channel, unsigned program) {
+        if(channel > 15 || program > 127) return {};
+        const unsigned bank = bank_msb_ ? bank_msb_ : bank_lsb_;
+        return {Command::Program, bank * 128 + program, 0};
+    }
   private:
-    unsigned high_ = 0;
+    unsigned high_ = 0, bank_msb_ = 0, bank_lsb_ = 0;
 };
 
 // ---- CPU telemetry ------------------------------------------------------------------------------------

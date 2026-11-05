@@ -1,14 +1,15 @@
-# Toy Piano + FV-1 interpreter v0.1.0 (research / feasibility study)
+# Toy Piano + FV-1 interpreter v0.2.0 (research / feasibility study)
 
 Own test product `toy-piano-fv1`: Toy Piano → [fv1-vm](../../../effects/fv1-vm/) (48 kHz adapter, program at
 32 kHz) → stereo output. Composition by build flag `FV1=1`; the regular Toy Piano, `toy-piano-tape` and
-`toy-piano-ambient` stay unchanged (ARM images byte-identical, 2026-11-05). No device was connected or flashed.
+`toy-piano-ambient` stay unchanged (ARM images byte-identical, 2026-11-05 for 0.1.0 and 0.2.0). Board results:
+[fv1-vm README](../../../effects/fv1-vm/README.md#hardware-results).
 
 ```bash
 make PROJECT=toy-piano-fv1 test
 make PROJECT=toy-piano-fv1 -j4
 make PROJECT=toy-piano-fv1 manifest
-python3 scripts/check-firmware.py instruments/toy-piano/build/fv1/ToyPianoFv1-v0.1.0.bin
+python3 scripts/check-firmware.py instruments/toy-piano/build/fv1/ToyPianoFv1-v0.2.0.bin
 # Local catalogue (never committed or released): FV1_PROGRAMS=local, see effects/fv1-vm/README.md
 make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local -j4
 ```
@@ -20,12 +21,19 @@ make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local -j4
 | Keys S1..S16, MIDI notes | Toy Piano as usual; attack 2 ms and decay 1.5 s are fixed bases (the matrix can modulate them) |
 | VR1..VR3 | POT0..POT2 of the FV-1 program |
 | VR4 | dry/wet (0 = exact dry piano) |
+| MIDI Program Change, any channel | program bank × 128 + n; Bank Select CC0 (MSB) or CC32 (LSB): bank 0 = 1–128, bank 1 = 129–240 (since 0.2.0) |
 | MIDI channel 16 CC22/CC23 | program index (high/low 7 bits, 0-based, wraps); the change mutes one block |
 | MIDI channel 16 CC119 | CPU telemetry, reply CC100..119 (protocol id 2, `effects/fv1-vm/tools/fv1vm_probe.py`) |
 
-Mod on Daisy identifies the product as `toy-piano-fv1` with the five Toy Piano columns.
+Mod on Daisy identifies the product as `toy-piano-fv1` with the five Toy Piano columns. Program list, selection
+and CPU display: the local control page `effects/fv1-vm/tools/control/fv1vm_control.html`.
+
+Generator programs: the piano is the only FV-1 input, the same mono signal on both channels. Free-running
+generators sound regardless of the keys (mix with VR4); programs that read the input as a trigger or expect a
+separate clock or gate on one channel do not get one (not measured in this product).
 
 ## Notes
 
 * The whole `Fv1Host` (interpreter, resamplers, 128 KiB delay RAM) lives in SDRAM; DTCM is 91.3 % used.
-* Hardware, CPU load and sound: **NOT MEASURED** ([test plan](../../../effects/fv1-vm/docs/HARDWARE_TEST.md)).
+* CPU load of all 240 local programs with 16 voices sounding: MEASURED 2026-11-05 with 0.1.0, no overrun, peak
+  ≤ 92.7 %. Sound and listening: NOT MEASURED ([test plan](../../../effects/fv1-vm/docs/HARDWARE_TEST.md)).

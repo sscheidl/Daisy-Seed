@@ -1,10 +1,11 @@
 # fv1-vm hardware test plan (research / feasibility study)
 
-Status: **NOT MEASURED**. Hardware is the owner's: the agent builds and runs host tools; flashing happens only
+Status: H2 (float, SDRAM) and the H3 CPU sweep MEASURED 2026-11-05 (README § Hardware results); the rest
+**NOT MEASURED**. Hardware is the owner's: the agent builds and runs host tools; flashing happens only
 after the owner has put the kit into update mode (or uses S9 + S16 for 5 s on a running image) and asked for it.
 Log every run with date, image, SHA-256 and the CSV.
 
-## H1 Standalone, demo programs (`Fv1VmFx-v0.1.0.bin`, float, SDRAM)
+## H1 Standalone, demo programs (`Fv1VmFx-v0.2.0.bin`, float, SDRAM)
 
 1. Flash, line input on J1/J2, headphones or line output.
 2. Program 1 (LEDs: S1 on): thru. Input must pass unchanged.

@@ -44,6 +44,13 @@ void SendCc(unsigned channel, unsigned cc, unsigned value) {
     usb_midi.incoming.push_back(e);
 }
 
+void SendProgramChange(unsigned channel, unsigned program) {
+    daisy::MidiEvent e;
+    e.type = daisy::ProgramChange; e.channel = int(channel);
+    e.data[0] = uint8_t(program);
+    usb_midi.incoming.push_back(e);
+}
+
 const float kAttack = toy_piano::kAttackMin;
 const float kDecay = toy_piano::LogTime(toy_piano::kFv1DecayBase, toy_piano::kDecayMin, toy_piano::kDecayMax);
 
@@ -148,12 +155,38 @@ void TestTelemetryAndProgramChange() {
     std::puts("PASS: CC119 telemetry (peak 20.00 %, blocks) and CC22/23 program change (muted, unmeasured)");
 }
 
+// Standard Program Change from a keyboard on channel 1, with Bank Select; notes keep working.
+void TestStandardProgramChange() {
+    SendProgramChange(0, 1);
+    ServiceUsbMidi();
+    Tick();
+    assert(fv1->Program() == 1);
+    SendCc(0, 0, 0); SendCc(0, 32, 1); SendProgramChange(0, 0); // bank 1 -> index 128, wraps over 2 programs
+    ServiceUsbMidi();
+    Tick();
+    assert(fv1->Program() == 0);
+    SendCc(0, 32, 0);
+    daisy::MidiEvent note;
+    note.type = daisy::NoteOn; note.channel = 0; note.data[0] = 60; note.data[1] = 100;
+    usb_midi.incoming.push_back(note);
+    ServiceUsbMidi();
+    hw.pot[3].value = 0.f; // dry: the note must sound
+    double energy = 0;
+    for(unsigned b = 0; b < 50; ++b) {
+        Tick();
+        for(unsigned i = 0; i < kN; ++i) energy += double(left[i]) * left[i];
+    }
+    assert(energy > 1e-3);
+    std::puts("PASS: Program Change (any channel) with Bank Select CC0/CC32; notes still play");
+}
+
 int main() {
     hw.Init(); piano.Init(); assert(InitializeFx()); InitModulation(48000);
     assert(std::strcmp(toy_piano::MakeModInfo().key, "toy-piano-fv1") == 0);
     TestExactComposition();
     TestDryMix();
     TestTelemetryAndProgramChange();
+    TestStandardProgramChange();
     assert(allocations == 0);
     std::puts("PASS composed Toy Piano + fv1-vm; no allocation in the audio callback");
 }
