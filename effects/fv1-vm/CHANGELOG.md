@@ -1,5 +1,10 @@
 # Changelog: fv1-vm
 
+## toy-piano-fv1 0.3.0 (2026-11-05, unreleased)
+
+* Piano first (owner decision): VR1 attack and VR2 decay as in the regular Toy Piano, VR3..VR5 = FV-1
+  POT0..POT2, VR6 dry/wet, SW17 FX bypass (exact dry piano). Firmware fv1-vm-fx stays 0.2.0.
+
 ## Firmware 0.2.0, toy-piano-fv1 0.2.0 (2026-11-05, unreleased; component stays 0.1.0)
 
 * Standard MIDI program selection in both firmwares: Program Change on any channel with Bank Select CC0/CC32

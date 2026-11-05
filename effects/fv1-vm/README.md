@@ -44,7 +44,7 @@ They enter a build only as a local, git-ignored table:
 ```bash
 python effects/fv1-vm/tools/gen_programs.py --label "..." <512-byte program files ...>   # -> effects/fv1-vm/generated/
 make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.2.0.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
-make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.2.0.bin
+make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.3.0.bin
 ```
 
 Local tables and images built from them must never be committed, released or uploaded as CI artifacts. Openly
@@ -130,7 +130,7 @@ Windows host, llvm-mingw clang++ 23.1.3 (host), xPack arm-none-eabi-gcc 13.2.1-1
   −80.4 dB at 20 kHz and −80.1 dB at 17.5 kHz; the demo echo keeps its 16 383-sample 32 kHz length
   (24 574 samples at 48 kHz); added latency 48 samples (1 ms).
 * **Composed `toy-piano-fv1`**: keys → piano → `Fv1Host` → output bit-identical to the separately run components
-  over 2500 blocks; VR4 = 0 gives the exact dry piano; CC22/23 program change and CC119 telemetry; no allocation
+  over 2500 blocks; VR6 = 0 (VR4 before 0.3.0) and SW17 bypass give the exact dry piano; CC22/23 program change and CC119 telemetry; no allocation
   in the audio callback.
 * **ARM builds** (all pass `check-firmware.py` and `check-elf-placement.py`):
 

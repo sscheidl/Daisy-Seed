@@ -114,6 +114,8 @@ std::atomic<int32_t> fv1_program_request{-1}, fv1_telemetry_request{-1};
 fv1_fw::Meter fv1_meter;
 fv1_fw::Snapshot fv1_snapshot;
 std::atomic<bool> fv1_snapshot_ready{false};
+// Piano first (0.3.0): VR1 attack and VR2 decay as in the regular Toy Piano.
+toy_piano::PotFilter attack_pot, decay_pot;
 bool InitializeFx() {
     std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
     fv1 = new(fx_storage) toy_piano::Fv1Host{};
@@ -264,18 +266,20 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
 #elif TOY_PIANO_FV1
     std::array<float, 8> raw{};
     for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
-    fv1->ReadControls(raw);
+    fv1->ReadControls(raw, hw.tog_sw17.Pressed()); // VR3..VR5 POT0..2, VR6 dry/wet, SW17 bypass
     const int32_t fv1_program = fv1_program_request.exchange(-1, std::memory_order_acquire);
     const bool fv1_changed = fv1_program >= 0;
     if(fv1_changed) fv1->Select(unsigned(fv1_program));
-    // VR1..VR4 belong to the FV-1 program and its mix; the piano times are fixed bases.
-    const float attack = modulation.engine.Apply(toy_piano::ModAttack, 0.f);
-    const float decay = modulation.engine.Apply(toy_piano::ModDecay, toy_piano::kFv1DecayBase);
+    // Piano first: VR1 attack and VR2 decay exactly as in the regular Toy Piano.
+    const float attack_base = attack_pot.Process(raw[0]);
+    const float decay_base = decay_pot.Process(raw[1]);
+    const float attack = modulation.engine.Apply(toy_piano::ModAttack, attack_base);
+    const float decay = modulation.engine.Apply(toy_piano::ModDecay, decay_base);
     modulation.engine.ReportBase(toy_piano::ModPitch, toy_piano::kPitchBase);
     modulation.engine.ReportBase(toy_piano::ModLevel, toy_piano::kLevelBase);
     modulation.engine.ReportBase(toy_piano::ModHarmonic, toy_piano::kHarmonicBase);
-    modulation.engine.ReportBase(toy_piano::ModAttack, 0.f);
-    modulation.engine.ReportBase(toy_piano::ModDecay, toy_piano::kFv1DecayBase);
+    modulation.engine.ReportBase(toy_piano::ModAttack, attack_base);
+    modulation.engine.ReportBase(toy_piano::ModDecay, decay_base);
 #else
     const float attack_base = attack_pot.Process(hw.pot[0].Value());
     const float decay_base = decay_pot.Process(hw.pot[1].Value());

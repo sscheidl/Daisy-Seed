@@ -44,7 +44,7 @@ inline mod::InstrumentInfo MakeModInfo() {
     info.key = "toy-piano-tape";
     info.version = TOY_PIANO_TAPE_VERSION;
 #elif TOY_PIANO_FV1
-    // The five Toy Piano columns; the FV-1 program is played from VR1..VR4 and MIDI CC.
+    // The five Toy Piano columns (VR1 attack, VR2 decay); the FV-1 program uses VR3..VR6 and MIDI.
     info.key = "toy-piano-fv1";
     info.version = TOY_PIANO_FV1_VERSION;
 #else

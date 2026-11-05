@@ -24,9 +24,16 @@ static unsigned allocations = 0;
 
 constexpr std::size_t kN = toy_piano::kBlockSize;
 float left[kN]{}, right[kN]{};
+// Reference VR1/VR2 filters, fed with the same pot values as the firmware in every block.
+toy_piano::PotFilter ref_attack_pot, ref_decay_pot;
+float ref_attack = 0, ref_decay = 0;
+float RefAttack() { return toy_piano::LogTime(ref_attack, toy_piano::kAttackMin, toy_piano::kAttackMax); }
+float RefDecay() { return toy_piano::LogTime(ref_decay, toy_piano::kDecayMin, toy_piano::kDecayMax); }
 void Tick(unsigned count = 1) {
     float* output[]{left, right};
     for(unsigned block = 0; block < count; ++block) {
+        ref_attack = ref_attack_pot.Process(hw.pot[0].value);
+        ref_decay = ref_decay_pot.Process(hw.pot[1].value);
         in_audio = true;
         AudioCallback(nullptr, output, kN);
         in_audio = false;
@@ -51,12 +58,10 @@ void SendProgramChange(unsigned channel, unsigned program) {
     usb_midi.incoming.push_back(e);
 }
 
-const float kAttack = toy_piano::kAttackMin;
-const float kDecay = toy_piano::LogTime(toy_piano::kFv1DecayBase, toy_piano::kDecayMin, toy_piano::kDecayMax);
-
-// Keys -> piano -> Fv1Host (program 1 = own echo) -> output, bit-identical to the components.
+// Keys -> piano (VR1 attack, VR2 decay) -> Fv1Host (program 1 = own echo; VR3..VR5, VR6 mix) -> output,
+// bit-identical to the components.
 void TestExactComposition() {
-    const float pots[8] = {.2f, .6f, .9f, .7f, 0.f, 0.f, 0.f, 0.f};
+    const float pots[8] = {.3f, .55f, .2f, .6f, .9f, .7f, 0.f, 0.f};
     for(unsigned i = 0; i < 8; ++i) hw.pot[i].value = pots[i];
     SendCc(15, 22, 0); SendCc(15, 23, 1); // program index 1 (echo)
     ServiceUsbMidi();
@@ -74,12 +79,12 @@ void TestExactComposition() {
         for(unsigned k = 0; k < 16; ++k) hw.pressed[k] = false;
         if(step < std::size(pattern) && block % 200 < 30) hw.pressed[pattern[step]] = true;
         Tick();
-        host->ReadControls(raw);
+        host->ReadControls(raw, false);
         if(block == 0) host->Select(1);
         const uint32_t held = led_mask.load();
         for(unsigned key = 0; key < 16; ++key)
             if((held & (1u << key)) && !(previous & (1u << key)))
-                reference.Trigger(key, kAttack, kDecay);
+                reference.Trigger(key, RefAttack(), RefDecay());
         previous = held;
         float mono[kN], l[kN], r[kN];
         for(unsigned i = 0; i < kN; ++i) mono[i] = reference.Process();
@@ -91,34 +96,47 @@ void TestExactComposition() {
         }
     }
     assert(fv1->Program() == 1 && energy > 1 && wet_difference > 10);
-    std::puts("PASS: Toy Piano -> fv1-vm (echo, mix 0.7) -> output bit-identical to the composed components");
+    std::puts("PASS: Toy Piano (VR1/VR2) -> fv1-vm (echo, VR3..VR5, mix VR6 0.7) -> output bit-identical to the components");
 }
 
-void TestDryMix() {
-    hw.pressed.fill(false);
-    Tick(3000);
-    hw.pot[3].value = 0.f; // dry only
-    Tick(2);
-    piano.Init();
-    toy_piano::ToyPiano reference;
-    reference.Init();
-    hw.pressed.fill(true);
-    uint32_t previous = 0;
-    for(unsigned block = 0; block < 200; ++block) {
-        Tick();
-        const uint32_t held = led_mask.load();
-        for(unsigned key = 0; key < 16; ++key)
-            if((held & (1u << key)) && !(previous & (1u << key)))
-                reference.Trigger(key, kAttack, kDecay);
-        previous = held;
-        for(unsigned i = 0; i < kN; ++i) {
-            const float expected = reference.Process();
-            assert(left[i] == expected && right[i] == expected);
+// Exact dry piano with VR6 = 0 and with SW17 bypass; VR1/VR2 still set the piano times.
+void TestDryMixAndBypass() {
+    for(unsigned mode = 0; mode < 2; ++mode) {
+        hw.pressed.fill(false);
+        Tick(3000);
+        hw.pot[0].value = mode ? .8f : .1f; // attack
+        hw.pot[1].value = mode ? .2f : .9f; // decay
+        hw.pot[5].value = mode ? 1.f : 0.f; // VR6: dry only, or full wet behind the bypass
+        hw.tog_sw17.value = mode == 1;
+        Tick(50);
+        assert(fv1->Bypass() == (mode == 1));
+        piano.Init();
+        toy_piano::ToyPiano reference;
+        reference.Init();
+        hw.pressed.fill(true);
+        uint32_t previous = 0;
+        double energy = 0;
+        for(unsigned block = 0; block < 200; ++block) {
+            Tick();
+            const uint32_t held = led_mask.load();
+            for(unsigned key = 0; key < 16; ++key)
+                if((held & (1u << key)) && !(previous & (1u << key)))
+                    reference.Trigger(key, RefAttack(), RefDecay());
+            previous = held;
+            for(unsigned i = 0; i < kN; ++i) {
+                const float expected = reference.Process();
+                assert(left[i] == expected && right[i] == expected);
+                energy += double(expected) * expected;
+            }
         }
+        assert(energy > 1e-3);
+        hw.pressed.fill(false);
+        Tick(10);
     }
-    hw.pressed.fill(false);
-    Tick(10);
-    std::puts("PASS: VR4 = 0 gives the exact dry Toy Piano");
+    hw.tog_sw17.value = false;
+    hw.pot[5].value = 0.f;
+    Tick(2);
+    std::puts("PASS: VR6 = 0 and SW17 bypass give the exact dry Toy Piano with VR1/VR2 attack and decay");
 }
 
 void TestTelemetryAndProgramChange() {
@@ -170,7 +188,7 @@ void TestStandardProgramChange() {
     note.type = daisy::NoteOn; note.channel = 0; note.data[0] = 60; note.data[1] = 100;
     usb_midi.incoming.push_back(note);
     ServiceUsbMidi();
-    hw.pot[3].value = 0.f; // dry: the note must sound
+    hw.pot[5].value = 0.f; // VR6 dry: the note must sound
     double energy = 0;
     for(unsigned b = 0; b < 50; ++b) {
         Tick();
@@ -184,7 +202,7 @@ int main() {
     hw.Init(); piano.Init(); assert(InitializeFx()); InitModulation(48000);
     assert(std::strcmp(toy_piano::MakeModInfo().key, "toy-piano-fv1") == 0);
     TestExactComposition();
-    TestDryMix();
+    TestDryMixAndBypass();
     TestTelemetryAndProgramChange();
     TestStandardProgramChange();
     assert(allocations == 0);
