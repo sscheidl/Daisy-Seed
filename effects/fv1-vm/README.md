@@ -198,6 +198,20 @@ sounding; pots at their physical positions):
 | Extra over the standalone run | 22.5 to 33.4 points (median 27.7): piano, 48 kHz adapter, host state in SDRAM | The owner heard the programs process the noise test signal; no
 fault was reported, a listening assessment was not done.
 
+**Board run 3 (MEASURED 2026-11-05):** `ToyPianoFv1Local-v0.8.0.bin` (variable-rate adapter, host in AXI SRAM), rate
+32 kHz confirmed by the status packet before and after, VR1 slightly off centre, dry/wet 24 %, the 12 programs with the
+highest peaks in run 2, four note-ons per 100 ms, 3 s each (about 3060 blocks per program):
+
+| Quantity | Value |
+| --- | --- |
+| Overruns | 0 |
+| Peak load | 76.2 to 87.9 % (run 2 with the fixed adapter: 87.8 to 92.7 %; 0.7.1: up to 108.8 %) |
+| Average load | 74.6 to 84.4 % |
+| Lightest check, first reverb without notes | 56.1 % average (0.7.1: 80 %) |
+
+Measured for these 12 programs and one pot setting only. Owner's listening check on 0.7.0: VR1, VR7, VR8 and DIN MIDI
+work, no sound faults; the rate drop is a welcome effect.
+
 ## Next
 
 Board measurements (owner's kit, flashing only after the owner has put it into update mode and asked):
