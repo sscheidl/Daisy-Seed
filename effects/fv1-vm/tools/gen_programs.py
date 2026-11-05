@@ -9,8 +9,13 @@ research / feasibility-study decision of 2026-11-05) must stay local: the genera
 any image built from it are never committed, released or uploaded. This script contains no
 program data. Standard library only.
 
-Usage: gen_programs.py [--out FILE] [--label TEXT] [--names CSV] program.bin [program.bin ...]
-With --names, a program list for the local control page is written next to the header (<out>.js).
+Usage: gen_programs.py [--out FILE] [--label TEXT] [--names CSV [--groups]] program.bin [...]
+
+--names CSV  columns id,name[,category][,group,group_title][,ref]; id matches the program file stem.
+             Also writes <out>.js, the program list of tools/control/fv1vm_control.html.
+--groups     consecutive programs with the same `group` form one group (at most 128 programs):
+             MIDI Bank Select = group number, Program Change = position in the group. A group key
+             that reappears after another group is an error; pass the files in group order.
 """
 import argparse
 import csv
@@ -30,7 +35,26 @@ def read_program(path):
     return list(struct.unpack('>128I', data))
 
 
-def render(programs, names, label):
+def make_groups(entries):
+    """[{key, title, offset, size}] from consecutive equal entry['group'] values."""
+    groups = []
+    for i, e in enumerate(entries):
+        key = e.get('group') or ''
+        if not key:
+            raise ValueError(f'program {e["id"]}: --groups needs a group for every program')
+        if groups and groups[-1]['key'] == key:
+            groups[-1]['size'] += 1
+            continue
+        if any(g['key'] == key for g in groups):
+            raise ValueError(f'group {key!r} is not contiguous (program {e["id"]}); pass the files in group order')
+        groups.append({'key': key, 'title': e.get('group_title') or key, 'offset': i, 'size': 1})
+    for g in groups:
+        if g['size'] > 128:
+            raise ValueError(f'group {g["key"]!r} has {g["size"]} programs; at most 128 per MIDI bank')
+    return groups
+
+
+def render(programs, names, label, groups):
     digest = hashlib.sha256(b''.join(struct.pack('>128I', *p) for p in programs)).hexdigest()
     lines = [
         '#pragma once',
@@ -40,6 +64,9 @@ def render(programs, names, label):
         '#include <cstdint>',
         'namespace fv1vm_local {',
         f'inline constexpr unsigned kCount = {len(programs)};',
+        f'inline constexpr unsigned kGroupCount = {len(groups)}; // 0: no groups (flat banks of 128)',
+        'inline constexpr uint16_t kGroupOffset[] = {' + (', '.join(str(g['offset']) for g in groups) or '0') + '};',
+        'inline constexpr uint16_t kGroupSize[] = {' + (', '.join(str(g['size']) for g in groups) or '0') + '};',
         'inline constexpr uint32_t kPrograms[kCount][128] = {',
     ]
     for words, name in zip(programs, names):
@@ -56,27 +83,37 @@ def main(argv=None):
     parser.add_argument('programs', nargs='+')
     parser.add_argument('--out', default=str(HERE / 'generated' / 'fv1vm_programs.local.h'))
     parser.add_argument('--label', default='local')
-    parser.add_argument('--names', help='CSV with columns id,name[,category]; id matches the program file stem. '
-                                        'Also writes <out>.js for tools/control/fv1vm_control.html')
+    parser.add_argument('--names', help='CSV with program names (see above); also writes <out>.js')
+    parser.add_argument('--groups', action='store_true', help='MIDI banks from the `group` column of --names')
     args = parser.parse_args(argv)
     if len(args.programs) > 16383:
         parser.error('at most 16383 programs (14-bit remote program index)')
+    if args.groups and not args.names:
+        parser.error('--groups needs --names')
     programs = [read_program(p) for p in args.programs]
-    names = [pathlib.Path(p).name.replace('*/', '') for p in args.programs]
-    text, digest = render(programs, names, args.label.replace('\n', ' '))
-    out = pathlib.Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(text, encoding='ascii', newline='\n')
-    print(f'{out}: {len(programs)} programs, sha256 {digest}')
+    entries = []
     if args.names:
-        catalogue = {row['id']: row for row in csv.DictReader(open(args.names, encoding='utf-8', newline=''))}
-        entries = []
+        catalogue = {row['id']: row for row in csv.DictReader(open(args.names, encoding='utf-8-sig', newline=''))}
         for index, path in enumerate(args.programs):
             stem = pathlib.Path(path).stem
             row = catalogue.get(stem, {})
             entries.append({'index': index, 'id': stem, 'name': row.get('name') or stem,
-                            'category': row.get('category') or ''})
-        data = {'label': args.label, 'sha256': digest, 'programs': entries}
+                            'category': row.get('category') or '', 'group': row.get('group') or '',
+                            'group_title': row.get('group_title') or '', 'ref': row.get('ref') or ''})
+    groups = make_groups(entries) if args.groups else []
+    comments = [pathlib.Path(p).name.replace('*/', '') for p in args.programs]
+    text, digest = render(programs, comments, args.label.replace('\n', ' '), groups)
+    out = pathlib.Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text, encoding='ascii', newline='\n')
+    print(f'{out}: {len(programs)} programs, {len(groups)} groups, sha256 {digest}')
+    if args.names:
+        for g_number, g in enumerate(groups):
+            for position in range(g['size']):
+                e = entries[g['offset'] + position]
+                e['bank'], e['position'] = g_number, position
+        data = {'label': args.label, 'sha256': digest, 'groups': groups,
+                'programs': [{k: v for k, v in e.items() if k != 'group_title'} for e in entries]}
         js = out.with_suffix('.js')
         js.write_text('// GENERATED by gen_programs.py - LOCAL ONLY, never commit or upload.\n'
                       'window.FV1VM_PROGRAMS = ' + json.dumps(data, ensure_ascii=True, indent=1) + ';\n',

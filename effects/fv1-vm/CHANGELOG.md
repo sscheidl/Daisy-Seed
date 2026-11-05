@@ -1,5 +1,13 @@
 # Changelog: fv1-vm
 
+## Firmware 0.3.0, toy-piano-fv1 0.4.0 (2026-11-05, unreleased)
+
+* Program groups: `gen_programs.py --groups` writes a group table (offset and size per group) into the local header
+  and the program list; MIDI Bank Select = group, Program Change = position; out-of-range requests are ignored.
+  Without groups the flat bank × 128 + program mapping stays.
+* Standalone: S3/S4 jump to the previous/next group; LEDs S1..S8 show the position, S9..S12 the group.
+* Control page: groups as chips and list headers, codes such as `REV 32`, search by code or `#` catalogue number.
+
 ## toy-piano-fv1 0.3.0 (2026-11-05, unreleased)
 
 * Piano first (owner decision): VR1 attack and VR2 decay as in the regular Toy Piano, VR3..VR5 = FV-1

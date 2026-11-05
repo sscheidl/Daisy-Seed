@@ -120,7 +120,8 @@ bool InitializeFx() {
     std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
     fv1 = new(fx_storage) toy_piano::Fv1Host{};
 #if FV1VM_LOCAL_PROGRAMS
-    return fv1->Prepare({fv1vm_local::kPrograms, fv1vm_local::kCount});
+    return fv1->Prepare({fv1vm_local::kPrograms, fv1vm_local::kCount, fv1vm_local::kGroupOffset,
+                         fv1vm_local::kGroupSize, fv1vm_local::kGroupCount});
 #else
     return fv1->Prepare({});
 #endif
@@ -414,8 +415,9 @@ void ServiceUsbMidi() {
         // telemetry. The other channel-16 remote commands are standalone-only and ignored here.
         if(event.type == daisy::ProgramChange) {
             const fv1_fw::Action action = fv1_remote.HandleProgramChange(event.channel, event.data[0]);
-            if(action.command == fv1_fw::Command::Program)
-                fv1_program_request.store(int32_t(action.value), std::memory_order_release);
+            unsigned index; // groups of the local table: bank = group, program = position
+            if(action.command == fv1_fw::Command::BankProgram && fv1->Resolve(action.index, action.value, index))
+                fv1_program_request.store(int32_t(index), std::memory_order_release);
             continue;
         }
         if(event.type == daisy::ControlChange) {

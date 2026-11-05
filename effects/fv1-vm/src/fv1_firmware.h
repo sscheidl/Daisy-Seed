@@ -41,23 +41,59 @@ inline void BuildBuiltin(unsigned index, uint32_t (&words)[fv1::kProgramWords]) 
 }
 
 // ---- Program bank: own demos, or a local generated table (make PROGRAMS=local) ---------------------
+// Optional groups (gen_programs.py --names with groups): group g holds the consecutive programs
+// size[g] starting at offset[g]; MIDI Bank Select g + Program Change p selects program p of group g.
 struct ProgramTable {
     const uint32_t (*words)[fv1::kProgramWords] = nullptr;
     unsigned count = 0;
+    const uint16_t* group_offset = nullptr;
+    const uint16_t* group_size = nullptr;
+    unsigned groups = 0;
 };
 class ProgramBank {
   public:
-    // A table with count 0 selects the built-in demo programs.
+    // A table with count 0 selects the built-in demo programs. Groups that do not tile the table
+    // exactly (in order, without gaps) are ignored.
     void Init(ProgramTable local) {
         local_ = local;
         for(unsigned i = 0; i < kBuiltinCount; ++i) BuildBuiltin(i, builtin_[i]);
+        unsigned next = 0;
+        bool valid = local_.count > 0 && local_.groups > 0 && local_.group_offset && local_.group_size;
+        for(unsigned g = 0; valid && g < local_.groups; ++g) {
+            valid = local_.group_offset[g] == next && local_.group_size[g] > 0 && local_.group_size[g] <= 128;
+            next += local_.group_size[g];
+        }
+        if(!valid || next != local_.count) local_.groups = 0;
     }
     bool Local() const { return local_.count > 0; }
     unsigned Count() const { return Local() ? local_.count : kBuiltinCount; }
+    unsigned Groups() const { return local_.groups; }
     const uint32_t* Words(unsigned index) const {
         index %= Count();
         return Local() ? local_.words[index] : builtin_[index];
     }
+    // Bank Select + Program Change -> table index. With groups: false if bank or program is out of
+    // range (the request is ignored). Without groups: bank * 128 + program, wrapping as before.
+    bool Resolve(unsigned bank, unsigned program, unsigned& index) const {
+        if(!Groups()) {
+            index = (bank * 128 + program) % Count();
+            return true;
+        }
+        if(bank >= Groups() || program >= local_.group_size[bank]) return false;
+        index = local_.group_offset[bank] + program;
+        return true;
+    }
+    // Group (0-based) and position in it (0-based) of an index; group 0 / index without groups.
+    void Locate(unsigned index, unsigned& group, unsigned& position) const {
+        index %= Count();
+        group = 0; position = index;
+        for(unsigned g = 0; g < Groups(); ++g)
+            if(index >= local_.group_offset[g] && index < unsigned(local_.group_offset[g]) + local_.group_size[g]) {
+                group = g; position = index - local_.group_offset[g];
+            }
+    }
+    // First program of the group `delta` groups away (wraps); without groups: index + 10 * delta.
+    unsigned StepGroup(unsigned index, int delta) const;
   private:
     ProgramTable local_{};
     uint32_t builtin_[kBuiltinCount][fv1::kProgramWords]{};
@@ -68,6 +104,12 @@ inline unsigned StepIndex(unsigned index, int delta, unsigned count) {
     if(!count) return 0;
     const long long m = (static_cast<long long>(index) + delta) % static_cast<long long>(count);
     return unsigned(m < 0 ? m + count : m);
+}
+inline unsigned ProgramBank::StepGroup(unsigned index, int delta) const {
+    if(!Groups()) return StepIndex(index, 10 * delta, Count());
+    unsigned group, position;
+    Locate(index, group, position);
+    return local_.group_offset[StepIndex(group, delta, Groups())];
 }
 
 // ---- Test signal: the LCG noise of the host runner, amplitude 0.3 ---------------------------------
@@ -86,14 +128,14 @@ class Noise {
 // CC22 program index high 7 bits (latched), CC23 low 7 bits (applies, 0-based),
 // CC24 input (0 line, 1 internal noise), CC25..27 POT0..2 = value/127 (remote pots until a
 // panel pot moves), CC28 bypass (0 off, 1 on), CC119 telemetry (1 read, 2 reset and read).
-enum class Command : uint8_t { None, Program, Input, Pot, Bypass, Telemetry };
+enum class Command : uint8_t { None, Program, BankProgram, Input, Pot, Bypass, Telemetry };
 struct Action {
     Command command = Command::None;
     unsigned value = 0, index = 0;
 };
-// Standard MIDI on any channel: Bank Select MSB (CC0) or LSB (CC32) chooses a bank of 128 programs
-// (MSB if non-zero, else LSB); Program Change n then selects index bank * 128 + n. Like CC22/CC23, an
-// index beyond the program count wraps around.
+// Standard MIDI on any channel: Bank Select MSB (CC0) or LSB (CC32) chooses the bank (MSB if
+// non-zero, else LSB); Program Change n yields BankProgram {value n, index bank}, which
+// ProgramBank::Resolve maps to a table index (a group, or bank * 128 + n without groups).
 class Remote {
   public:
     Action Handle(unsigned channel, unsigned cc, unsigned value) {
@@ -115,8 +157,7 @@ class Remote {
     }
     Action HandleProgramChange(unsigned channel, unsigned program) {
         if(channel > 15 || program > 127) return {};
-        const unsigned bank = bank_msb_ ? bank_msb_ : bank_lsb_;
-        return {Command::Program, bank * 128 + program, 0};
+        return {Command::BankProgram, program, bank_msb_ ? bank_msb_ : bank_lsb_};
     }
   private:
     unsigned high_ = 0, bank_msb_ = 0, bank_lsb_ = 0;

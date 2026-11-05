@@ -43,8 +43,8 @@ They enter a build only as a local, git-ignored table:
 
 ```bash
 python effects/fv1-vm/tools/gen_programs.py --label "..." <512-byte program files ...>   # -> effects/fv1-vm/generated/
-make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.2.0.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
-make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.3.0.bin
+make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.3.0.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
+make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.4.0.bin
 ```
 
 Local tables and images built from them must never be committed, released or uploaded as CI artifacts. Openly
@@ -56,10 +56,11 @@ licensed FV-1 programs (Spin free programs with attribution, Otherworld MIT) may
 | --- | --- |
 | VR1..VR3 | POT0..POT2 |
 | S1 / S2 | program −1 / +1 (wraps) |
-| S3 / S4 | program −10 / +10 |
+| S3 / S4 | previous / next group (−10 / +10 without groups) |
 | S5 | bypass (input copied to the output) |
 | S6 | input: line ↔ internal noise (the LCG of the host runner, amplitude 0.3) |
-| LEDs S1..S8 | program number, binary, 1-based |
+| LEDs S1..S8 | position in the group (program number without groups), binary, 1-based |
+| LEDs S9..S12 | group number, binary, 1-based (off without groups) |
 | LEDs S13 / S14 / S15 / S16 | noise input / bypass / double build / a block over budget since the last telemetry reset |
 | S9 + S16 for 5 s | Daisy bootloader (shared `common/bootloader`) |
 
@@ -71,9 +72,14 @@ CC28 bypass, CC119 = 1 read / 2 reset and read. The reply is twenty channel-16 C
 (the physical-modeling decoder ignores it): average and peak cycles per block in 1/10 000 of the block budget,
 blocks, overruns, program index and flags. `tools/fv1vm_probe.py` decodes it and can sweep all programs.
 
-**Standard MIDI program selection** (since firmware 0.2.0, both firmwares, any channel): Program Change *n* selects
-index *bank* × 128 + *n*; Bank Select MSB (CC0) or, if the MSB is 0, LSB (CC32) sets *bank*. Bank 0 holds
-programs 1–128, bank 1 programs 129–240. Indices beyond the program count wrap around, as with CC22/CC23.
+**Standard MIDI program selection** (both firmwares, any channel): Bank Select MSB (CC0) or, if the MSB is 0,
+LSB (CC32) sets *bank*; Program Change *n* then selects a program.
+* **With groups** (since firmware 0.3.0 / toy-piano-fv1 0.4.0; table generated with `--groups`): bank = group,
+  *n* = position in the group (0-based). A bank or position beyond the table is ignored. The local FX AID table uses
+  11 functional groups, alphabetical inside each group (REV, DLY, GRN, MOD, FLT, PIT, SAT, DYN, ENV, UTL, GEN).
+* **Without groups** (demo programs, or a table without `--groups`): index *bank* × 128 + *n*, wrapping around.
+
+CC22/CC23 always select the running index over the whole table, in table order.
 
 **Control page** `tools/control/fv1vm_control.html` (Web MIDI, Chrome or Edge): searchable program list with
 categories, selection by CC22/CC23 or Program Change, prev/next with ↑/↓, a test chord, live CPU telemetry, and
@@ -84,6 +90,7 @@ component folder on `127.0.0.1`; other software must not hold the MIDI port at t
 
 ```bash
 python effects/fv1-vm/tools/gen_programs.py --label "..." --names catalogue.csv <program files ...>  # header + names
+python effects/fv1-vm/tools/gen_programs.py --label "..." --names grouped.csv --groups <files in group order ...>
 ```
 
 Probe usage:

@@ -47,9 +47,12 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: v
 .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 #list { list-style: none; margin: 0; padding: 0; max-height: calc(100vh - 230px); min-height: 240px; overflow: auto;
   border: 1px solid var(--line); border-radius: 8px; }
-#list li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; padding: 6px 10px; cursor: pointer;
+#list li { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 8px; padding: 6px 10px; cursor: pointer;
   border-bottom: 1px solid var(--line); }
 #list li:last-child { border-bottom: 0; }
+#list li.grp { display: block; cursor: default; position: sticky; top: 0; background: var(--bar); color: var(--muted);
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 4px 10px; }
+#list li.grp:hover { background: var(--bar); }
 #list li:hover { background: var(--sel); }
 #list li.current { background: var(--accent); color: var(--accent-ink); }
 #list li.current .cat { color: inherit; }
@@ -95,7 +98,7 @@ section + section { margin-top: 16px; }
     <section>
       <h2>Programs <span id="count"></span></h2>
       <div class="toolbar">
-        <input id="search" type="search" placeholder="Search name or number" autocomplete="off">
+        <input id="search" type="search" placeholder="Search name, code (REV 32) or #FX AID number" autocomplete="off">
         <button id="prev" title="Previous (↑)">◀ Prev</button>
         <button id="next" title="Next (↓)">Next ▶</button>
       </div>
@@ -152,13 +155,16 @@ section + section { margin-top: 16px; }
 // ---- Program list (local file) or plain numbers --------------------------------------------------------
 const data = window.FV1VM_PROGRAMS;
 const banner = document.getElementById('banner');
-let programs;
+let programs, groups = [];
 if (data && Array.isArray(data.programs)) {
-  programs = data.programs.map(p => ({ index: p.index, id: String(p.id), name: String(p.name), category: String(p.category || '') }));
+  // Groups (gen_programs.py --groups): MIDI bank = group, Program Change = position in the group.
+  groups = Array.isArray(data.groups) ? data.groups.map(g => ({ key: String(g.key), title: String(g.title), offset: g.offset, size: g.size })) : [];
+  programs = data.programs.map(p => ({ index: p.index, id: String(p.id), name: String(p.name), category: String(p.category || ''),
+    group: String(p.group || ''), bank: p.bank, position: p.position, ref: String(p.ref || '') }));
   document.getElementById('source').textContent =
     `Program list: ${data.label} · ${programs.length} programs · words SHA-256 ${String(data.sha256).slice(0, 12)}… · local only, do not share.`;
 } else {
-  programs = Array.from({ length: 2 }, (_, i) => ({ index: i, id: String(i + 1), name: ['Thru (demo)', 'Echo (demo)'][i], category: 'Demo' }));
+  programs = Array.from({ length: 2 }, (_, i) => ({ index: i, id: String(i + 1), name: ['Thru (demo)', 'Echo (demo)'][i], category: 'Demo', group: '', ref: '' }));
   banner.hidden = false;
   banner.textContent = 'No local program list found (../../generated/fv1vm_programs.local.js). Showing the two built-in demo programs. ' +
     'Generate the list with tools/gen_programs.py --names.';
@@ -224,34 +230,53 @@ $('connect').onclick = async () => {
 $('in').onchange = $('out').onchange = () => access && bindPorts();
 
 // ---- Program list UI -------------------------------------------------------------------------------------
-let current = null, category = '', filtered = programs;
+let current = null, filter = '', filtered = programs;
 const list = $('list');
+const grouped = groups.length > 0;
 const categories = [...new Set(programs.map(p => p.category).filter(Boolean))];
+const STRIP = { REV: /^reverb\s+/i, DLY: /^delay\s+/i }; // the group already says it
+const shortName = p => (STRIP[p.group] ? p.name.replace(STRIP[p.group], '') : p.name);
+const code = p => (grouped ? `${p.group} ${p.position + 1}` : String(p.index + 1));
+const groupTitle = key => { const g = groups.find(x => x.key === key); return g ? g.title : key; };
+const keyOf = p => (grouped ? p.group : p.category);
 function chip(label, value) {
   const b = document.createElement('button');
-  b.className = 'chip' + (value === category ? ' on' : '');
+  b.className = 'chip' + (value === filter ? ' on' : '');
   b.textContent = label;
-  b.onclick = () => { category = value; renderChips(); renderList(); };
+  b.title = value ? (grouped ? groupTitle(value) : value) : 'all programs';
+  b.onclick = () => { filter = value; renderChips(); renderList(); };
   return b;
 }
 function renderChips() {
   const box = $('chips'); box.innerHTML = '';
-  box.append(chip('All', ''), ...categories.map(c => chip(`${c} (${programs.filter(p => p.category === c).length})`, c)));
+  const items = grouped ? groups.map(g => chip(`${g.key} · ${g.title.split(/[:(,]/)[0].trim()} (${g.size})`, g.key))
+                        : categories.map(c => chip(`${c} (${programs.filter(p => p.category === c).length})`, c));
+  box.append(chip('All', ''), ...items);
 }
 function renderList() {
   const q = $('search').value.trim().toLowerCase();
-  filtered = programs.filter(p => (!category || p.category === category) &&
-    (!q || p.name.toLowerCase().includes(q) || String(p.index + 1) === q || p.id.toLowerCase() === q));
+  filtered = programs.filter(p => (!filter || keyOf(p) === filter) &&
+    (!q || p.name.toLowerCase().includes(q) || code(p).toLowerCase() === q || code(p).toLowerCase().replace(' ', '') === q ||
+     (p.ref && `#${p.ref}` === q)));
   list.innerHTML = '';
   const frag = document.createDocumentFragment();
+  let lastGroup = null;
   for (const p of filtered) {
+    if (grouped && !filter && p.group !== lastGroup) {
+      const h = document.createElement('li');
+      h.className = 'grp';
+      h.textContent = `${p.group} · ${groupTitle(p.group)} · bank ${p.bank}`;
+      frag.append(h);
+      lastGroup = p.group;
+    }
     const li = document.createElement('li');
     li.dataset.index = p.index;
     if (p.index === current) li.className = 'current';
     li.innerHTML = '<span class="num"></span><span class="name"></span><span class="cat"></span>';
-    li.children[0].textContent = p.index + 1;
-    li.children[1].textContent = p.name;
-    li.children[2].textContent = p.category;
+    li.children[0].textContent = code(p);
+    li.children[1].textContent = shortName(p);
+    li.children[1].title = p.name + (p.ref ? ` · FX AID #${p.ref}` : '');
+    li.children[2].textContent = grouped ? (p.ref ? `#${p.ref}` : '') : p.category;
     li.onclick = () => select(p.index);
     frag.append(li);
   }
@@ -261,16 +286,19 @@ function renderList() {
 function markCurrent(scroll) {
   for (const li of list.children) li.classList.toggle('current', Number(li.dataset.index) === current);
   const p = programs[current];
-  $('now-name').textContent = p ? `${p.index + 1} · ${p.name}` : '–';
-  $('now-sub').textContent = p ? (p.category || '') : 'no program sent yet';
+  $('now-name').textContent = p ? `${code(p)} · ${shortName(p)}` : '–';
+  $('now-sub').textContent = p ? [grouped ? groupTitle(p.group) : p.category, grouped ? `bank ${p.bank} · program ${p.position + 1}` : '',
+                                   p.ref ? `FX AID #${p.ref}` : ''].filter(Boolean).join(' · ') : 'no program sent yet';
   const el = list.querySelector('li.current');
   if (scroll && el) el.scrollIntoView({ block: 'nearest' });
 }
 function select(index) {
   if (index < 0 || index >= programs.length) return;
   current = index;
+  const p = programs[index];
   if ($('mode').value === 'pc') {
-    send([0xB0, 0, 0]); send([0xB0, 32, index >> 7]); send([0xC0, index & 127]);
+    const bank = grouped ? p.bank : index >> 7, program = grouped ? p.position : index & 127;
+    send([0xB0, 0, 0]); send([0xB0, 32, bank]); send([0xC0, program]);
   } else {
     cc16(22, index >> 7); cc16(23, index & 127);
   }
@@ -302,7 +330,7 @@ function showTelemetry(t) {
   $('avg').textContent = t.average.toFixed(2) + ' %'; bar('avg-bar', t.average);
   $('peak').textContent = t.peak.toFixed(2) + ' %'; bar('peak-bar', t.peak);
   $('blocks').textContent = t.blocks; $('overruns').textContent = t.overruns;
-  $('tprog').textContent = t.program; $('flags').textContent = t.flags.join(', ') || 'none';
+  $('tprog').textContent = programs[t.program - 1] ? code(programs[t.program - 1]) : t.program; $('flags').textContent = t.flags.join(', ') || 'none';
   if (t.program - 1 !== current && t.program - 1 < programs.length) { current = t.program - 1; markCurrent(false); }
 }
 setInterval(() => {

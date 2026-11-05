@@ -68,6 +68,8 @@ class Fv1Host {
     unsigned Program() const { return program_; }
     unsigned Count() const { return bank_.Count(); }
     bool LocalPrograms() const { return bank_.Local(); }
+    // Bank Select + Program Change -> program index (groups of the local table); read-only.
+    bool Resolve(unsigned bank, unsigned program, unsigned& index) const { return bank_.Resolve(bank, program, index); }
     bool Bypass() const { return bypass_; }
   private:
     static float Limit(float x) { return x > 1.f ? 1.f : x < -1.f ? -1.f : x; }

@@ -62,6 +62,38 @@ class GeneratorTest(unittest.TestCase):
             self.assertTrue(js.startswith('// GENERATED') and 'window.FV1VM_PROGRAMS = ' in js)
             self.assertIn('"name": "Demo \\"one\\""', js)
             self.assertIn('"category": "Test"', js)
+            self.assertIn('kGroupCount = 0;', out.read_text())
+            path.write_bytes(b'\0' * 100)
+            with self.assertRaises(ValueError):
+                gen.main(['--out', str(out), str(path)])
+
+    def test_groups(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            files = []
+            for stem in ('a1', 'a2', 'b1', 'c1'):
+                f = pathlib.Path(tmp) / f'{stem}.bin'
+                f.write_bytes(struct.pack('>128I', *([0x11] * 128)))
+                files.append(str(f))
+            names = pathlib.Path(tmp) / 'names.csv'
+            names.write_text('id,name,group,group_title,ref\na1,One,A,Group A,7\na2,Two,A,Group A,3\n'
+                             'b1,Three,B,Group B,1\nc1,Four,A,Group A,2\n', encoding='utf-8')
+            out = pathlib.Path(tmp) / 'out.h'
+            with self.assertRaises(ValueError):  # A reappears after B
+                gen.main(['--out', str(out), '--names', str(names), '--groups', *files])
+            self.assertEqual(gen.main(['--out', str(out), '--names', str(names), '--groups', *files[:3]]), 0)
+            header = out.read_text()
+            self.assertIn('kGroupCount = 2;', header)
+            self.assertIn('kGroupOffset[] = {0, 2};', header)
+            self.assertIn('kGroupSize[] = {2, 1};', header)
+            js = out.with_suffix('.js').read_text()
+            self.assertIn('"title": "Group B"', js)
+            self.assertIn('"bank": 1', js)
+            self.assertIn('"ref": "7"', js)
+
+    def test_generator_rejects_short_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / 'p.bin'
+            out = pathlib.Path(tmp) / 'out.h'
             path.write_bytes(b'\0' * 100)
             with self.assertRaises(ValueError):
                 gen.main(['--out', str(out), str(path)])

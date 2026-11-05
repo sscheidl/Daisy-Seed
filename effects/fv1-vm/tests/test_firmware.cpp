@@ -72,6 +72,26 @@ static void TestLocalBank() {
     CHECK(StepIndex(5, 1, 0) == 0, "empty bank");
 }
 
+// Groups: Bank Select = group, Program Change = position; out-of-range requests are ignored.
+static void TestGroups() {
+    static const uint32_t table[7][fv1::kProgramWords] = {{10u}, {11u}, {12u}, {20u}, {21u}, {30u}, {31u}};
+    static const uint16_t offset[3] = {0, 3, 5}, size[3] = {3, 2, 2};
+    ProgramBank bank; bank.Init({table, 7, offset, size, 3});
+    unsigned index = 99, g = 9, p = 9;
+    CHECK(bank.Groups() == 3, "three groups");
+    CHECK(bank.Resolve(1, 1, index) && index == 4 && bank.Words(index)[0] == 21u, "bank 1 program 1");
+    CHECK(bank.Resolve(2, 0, index) && index == 5, "bank 2 program 0");
+    CHECK(!bank.Resolve(1, 2, index) && !bank.Resolve(3, 0, index), "out of range ignored");
+    bank.Locate(6, g, p);
+    CHECK(g == 2 && p == 1, "locate");
+    CHECK(bank.StepGroup(4, 1) == 5 && bank.StepGroup(6, 1) == 0 && bank.StepGroup(0, -1) == 5, "step group");
+    static const uint16_t bad_offset[2] = {0, 4}, bad_size[2] = {3, 4};
+    ProgramBank broken; broken.Init({table, 7, bad_offset, bad_size, 2});
+    CHECK(broken.Groups() == 0 && broken.Resolve(0, 9, index) && index == 2, "gapped groups ignored, flat fallback");
+    ProgramBank flat; flat.Init({});
+    CHECK(flat.Resolve(1, 0, index) && index == 0 && flat.StepGroup(1, 1) == 1, "built-in: flat banks, +10 wraps");
+}
+
 static void TestRemote() {
     Remote r;
     CHECK(r.Handle(0, 23, 5).command == Command::None, "other channel ignored");
@@ -85,13 +105,15 @@ static void TestRemote() {
     CHECK(r.Handle(15, 119, 2).command == Command::Telemetry && r.Handle(15, 119, 3).command == Command::None, "telemetry");
     // Standard Program Change on any channel, bank 0 by default.
     a = r.HandleProgramChange(0, 5);
-    CHECK(a.command == Command::Program && a.value == 5, "program change, bank 0");
+    CHECK(a.command == Command::BankProgram && a.value == 5 && a.index == 0, "program change, bank 0");
     CHECK(r.Handle(3, 32, 1).command == Command::None, "bank LSB latched on any channel");
-    CHECK(r.HandleProgramChange(3, 71).value == 199, "bank 1 via LSB");
+    a = r.HandleProgramChange(3, 71);
+    CHECK(a.value == 71 && a.index == 1, "bank 1 via LSB");
     r.Handle(0, 0, 2);
-    CHECK(r.HandleProgramChange(0, 0).value == 256, "MSB wins over LSB");
+    CHECK(r.HandleProgramChange(0, 0).index == 2, "MSB wins over LSB");
     r.Handle(0, 0, 0); r.Handle(0, 32, 0);
-    CHECK(r.HandleProgramChange(9, 127).value == 127, "bank reset");
+    a = r.HandleProgramChange(9, 127);
+    CHECK(a.value == 127 && a.index == 0, "bank reset");
     CHECK(r.HandleProgramChange(16, 1).command == Command::None && r.HandleProgramChange(0, 128).command == Command::None,
           "invalid program change");
     CHECK(r.Handle(0, 25, 64).command == Command::None, "remote CCs stay on channel 16");
@@ -120,6 +142,7 @@ int main() {
     TestBuiltinThru();
     TestBuiltinEcho();
     TestLocalBank();
+    TestGroups();
     TestRemote();
     TestTelemetryPacket();
     if(failures) { std::printf("%d failure(s)\n", failures); return 1; }
