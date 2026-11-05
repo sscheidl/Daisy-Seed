@@ -60,6 +60,8 @@ test:
 	./build/host/test_firmware
 	"$(HOST_CXX)" $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_fx48.cpp -o build/host/test_fx48
 	./build/host/test_fx48
+	"$(HOST_CXX)" $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_fxvar.cpp -o build/host/test_fxvar
+	./build/host/test_fxvar
 	"$(PYTHON)" -m unittest discover -s tests -p test_probe.py
 
 test-sanitize:

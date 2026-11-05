@@ -1,5 +1,12 @@
 # Changelog: fv1-vm
 
+## Component addition, toy-piano-fv1 0.5.0 (2026-11-05, unreleased)
+
+* `fv1vm/fv1_fxvar.h`: `FxVar<T>`, variable-rate 48 kHz adapter (8–32 kHz internal rate, band-limited fractional
+  resamplers with a fixed down lead so that rate glides keep the up side in step); `tests/test_fxvar.cpp`.
+* toy-piano-fv1 0.5.0 (owner decision): VR1 piano transposition ±24 semitones with centre detent, VR2 attack,
+  VR3 decay, VR4..VR6 FV-1 POT0..POT2, VR7 dry/wet, VR8 rate (32 kHz left, 8 kHz right), SW17 bypass.
+
 ## Firmware 0.3.0, toy-piano-fv1 0.4.0 (2026-11-05, unreleased)
 
 * Program groups: `gen_programs.py --groups` writes a group table (offset and size per group) into the local header

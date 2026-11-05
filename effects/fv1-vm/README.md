@@ -16,7 +16,7 @@ serves as a reference for later native ports. Composition: Toy Piano with this c
 | Project | Content | Status |
 | --- | --- | --- |
 | `fv1-vm-fx` | Stereo line input (or internal noise) → FV-1 interpreter at 32 kHz → output, CPU telemetry | Host tests and ARM build passed; hardware NOT MEASURED |
-| `toy-piano-fv1` | Toy Piano → 48 kHz adapter → FV-1 interpreter at 32 kHz → output | Host tests and ARM build passed; hardware NOT MEASURED |
+| `toy-piano-fv1` | Toy Piano → variable-rate adapter → FV-1 interpreter at 8–32 kHz (VR8) → output | Host tests and ARM build passed; hardware NOT MEASURED |
 
 ## Contract
 
@@ -28,7 +28,8 @@ serves as a reference for later native ports. Composition: Toy Piano with this c
 | Parameters | `SetParameters(Parameters)`: POT0..POT2 in 0..1 |
 | Processing | `Process(StereoBlock)`: wet only; bounded (128 instructions per sample); no allocation, locks or I/O |
 | Rate | FV-1 programs assume 32 768 Hz. `Vm` runs at the host rate; the standalone firmware uses 32 kHz (`SAI_32KHZ`, 2.3 % slow) |
-| 48 kHz hosts | `include/fv1vm/fv1_fx48.h`: `Fx48<T>` runs the program at 32 kHz between two 3:2 polyphase FIR resamplers (96 taps, Kaiser β 7, cutoff 14.5 kHz); blocks must be multiples of 3 |
+| 48 kHz hosts, variable rate | `include/fv1vm/fv1_fxvar.h`: `FxVar<T>` runs the program at 8–32 kHz (`SetRate`) between two Kaiser-windowed-sinc fractional resamplers (12 zero crossings, cutoff 0.82 × internal Nyquist); used by `toy-piano-fv1` since 0.5.0 |
+| 48 kHz hosts, fixed 32 kHz | `include/fv1vm/fv1_fx48.h`: `Fx48<T>` runs the program at 32 kHz between two 3:2 polyphase FIR resamplers (96 taps, Kaiser β 7, cutoff 14.5 kHz); blocks must be multiples of 3 |
 | Test programs | `include/fv1vm/fv1_asm.h` encoders; own demo programs in `src/fv1_firmware.h` (0 thru, 1 echo) |
 
 The interpreter implements the assumptions A1–A7 and A5b of the L2A model (`fv1_model.py` in the case), for example
@@ -114,7 +115,7 @@ Measurement variants, each with its own build directory and the same image name:
 ## Build and tests
 
 ```bash
-make -C effects/fv1-vm test                 # interpreter, firmware logic, 48 kHz adapter, Python tools
+make -C effects/fv1-vm test                 # interpreter, firmware logic, both 48 kHz adapters, Python tools
 make PROJECT=fv1-vm-fx -j4                  # ARM image effects/fv1-vm/build/Fv1VmFx-v0.2.0.bin
 make PROJECT=fv1-vm-fx manifest
 make PROJECT=toy-piano-fv1 test             # composed end-to-end host test
@@ -133,6 +134,10 @@ Windows host, llvm-mingw clang++ 23.1.3 (host), xPack arm-none-eabi-gcc 13.2.1-1
   enters this repository): 240 programs × 2 pot settings × 6000 samples, identical LCG noise input;
   `double` interpreter vs model **0 failures, worst |Δ| 4.4e-16**; `float` vs `double`: 162 programs below 1e-4,
   40 above 1e-2 (up to 1.87), programs whose noise or branching depends on exact bits.
+* **Variable-rate adapter** (thru program, `tests/test_fxvar.cpp`): 32 kHz flat within 0.002 dB to 9 kHz, 20 kHz
+  rejected by 88 dB; 8 kHz flat within 0.03 dB to 2.5 kHz, 6 kHz rejected by 97 dB; steady-state residual −87 to
+  −98 dB at 8–32 kHz; the demo echo at 16 kHz lasts exactly 3 × 16 383 host samples; a 32 → 8 → 32 kHz sweep shows no
+  output step larger than the sine slope.
 * **48 kHz adapter** (thru program): gain 1.0002 at 1 kHz, 0.9999 at 10 kHz, 1.0006 at 12 kHz; rejection
   −80.4 dB at 20 kHz and −80.1 dB at 17.5 kHz; the demo echo keeps its 16 383-sample 32 kHz length
   (24 574 samples at 48 kHz); added latency 48 samples (1 ms).

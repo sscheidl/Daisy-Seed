@@ -114,8 +114,9 @@ std::atomic<int32_t> fv1_program_request{-1}, fv1_telemetry_request{-1};
 fv1_fw::Meter fv1_meter;
 fv1_fw::Snapshot fv1_snapshot;
 std::atomic<bool> fv1_snapshot_ready{false};
-// Piano first (0.3.0): VR1 attack and VR2 decay as in the regular Toy Piano.
-toy_piano::PotFilter attack_pot, decay_pot;
+// Piano first (0.5.0): VR1 transposition (+-24 semitones), VR2 attack and VR3 decay.
+toy_piano::PotFilter pitch_pot, attack_pot, decay_pot;
+float fv1_transpose = 1.f; // audio thread only; exactly 1 in the centre detent
 bool InitializeFx() {
     std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
     fv1 = new(fx_storage) toy_piano::Fv1Host{};
@@ -195,6 +196,30 @@ void ModulateVoices(size_t size) {
         }
         piano.Modulate(v, ratio, gain, toy_piano::HarmonicWeight(harmonic), size);
     }
+#elif TOY_PIANO_FV1
+    // VR1 transposition times the matrix pitch. Without transposition and without an active matrix the
+    // voices render exactly as in the regular Toy Piano.
+    if(!engine.Active() && fv1_transpose == 1.f) {
+        if(modulating)
+            piano.ClearModulation(size);
+        modulating = false;
+        return;
+    }
+    modulating = true;
+    for(size_t v = 0; v < toy_piano::kNumVoices; ++v) {
+        const int note = v < toy_piano::kNumKeys ? -1 : piano.MidiVoiceNote(v - toy_piano::kNumKeys);
+        const float p = voice_pressure[v].Process(engine, note);
+        float ratio = fv1_transpose * toy_piano::PitchRatio(engine.ApplyVoice(toy_piano::ModPitch, toy_piano::kPitchBase, p));
+        const float level = engine.ApplyVoice(toy_piano::ModLevel, toy_piano::kLevelBase, p);
+        const float harmonic = engine.ApplyVoice(toy_piano::ModHarmonic, toy_piano::kHarmonicBase, p);
+        float gain = toy_piano::LevelGain(level);
+        const float increment = piano.BaseIncrement(v);
+        if(increment * ratio >= .5f) {
+            ratio = .49f / increment;
+            gain = 0; // Notes transposed beyond Nyquist fade silent instead of folding.
+        }
+        piano.Modulate(v, ratio, gain, toy_piano::HarmonicWeight(harmonic), size);
+    }
 #else
     if(!engine.Active()) {
         if(modulating)
@@ -267,13 +292,16 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
 #elif TOY_PIANO_FV1
     std::array<float, 8> raw{};
     for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
-    fv1->ReadControls(raw, hw.tog_sw17.Pressed()); // VR3..VR5 POT0..2, VR6 dry/wet, SW17 bypass
+    fv1->ReadControls(raw, hw.tog_sw17.Pressed()); // VR4..VR6 POT0..2, VR7 dry/wet, VR8 rate, SW17 bypass
     const int32_t fv1_program = fv1_program_request.exchange(-1, std::memory_order_acquire);
     const bool fv1_changed = fv1_program >= 0;
     if(fv1_changed) fv1->Select(unsigned(fv1_program));
-    // Piano first: VR1 attack and VR2 decay exactly as in the regular Toy Piano.
-    const float attack_base = attack_pot.Process(raw[0]);
-    const float decay_base = decay_pot.Process(raw[1]);
+    // Piano first: VR1 transposition +-24 semitones (centre detent as in toy-piano-ambient), VR2 attack and
+    // VR3 decay with the ranges of the regular Toy Piano.
+    const float pitch_x = pitch_pot.Process(raw[0]);
+    fv1_transpose = std::fabs(pitch_x - .5f) < .005f ? 1.f : std::exp2((pitch_x - .5f) * 4.f);
+    const float attack_base = attack_pot.Process(raw[1]);
+    const float decay_base = decay_pot.Process(raw[2]);
     const float attack = modulation.engine.Apply(toy_piano::ModAttack, attack_base);
     const float decay = modulation.engine.Apply(toy_piano::ModDecay, decay_base);
     modulation.engine.ReportBase(toy_piano::ModPitch, toy_piano::kPitchBase);

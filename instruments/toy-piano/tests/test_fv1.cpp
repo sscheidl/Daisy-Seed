@@ -25,15 +25,17 @@ static unsigned allocations = 0;
 constexpr std::size_t kN = toy_piano::kBlockSize;
 float left[kN]{}, right[kN]{};
 // Reference VR1/VR2 filters, fed with the same pot values as the firmware in every block.
-toy_piano::PotFilter ref_attack_pot, ref_decay_pot;
+toy_piano::PotFilter ref_pitch_pot, ref_attack_pot, ref_decay_pot;
+float ref_pitch = .5f;
 float ref_attack = 0, ref_decay = 0;
 float RefAttack() { return toy_piano::LogTime(ref_attack, toy_piano::kAttackMin, toy_piano::kAttackMax); }
 float RefDecay() { return toy_piano::LogTime(ref_decay, toy_piano::kDecayMin, toy_piano::kDecayMax); }
 void Tick(unsigned count = 1) {
     float* output[]{left, right};
     for(unsigned block = 0; block < count; ++block) {
-        ref_attack = ref_attack_pot.Process(hw.pot[0].value);
-        ref_decay = ref_decay_pot.Process(hw.pot[1].value);
+        ref_pitch = ref_pitch_pot.Process(hw.pot[0].value);
+        ref_attack = ref_attack_pot.Process(hw.pot[1].value);
+        ref_decay = ref_decay_pot.Process(hw.pot[2].value);
         in_audio = true;
         AudioCallback(nullptr, output, kN);
         in_audio = false;
@@ -61,7 +63,7 @@ void SendProgramChange(unsigned channel, unsigned program) {
 // Keys -> piano (VR1 attack, VR2 decay) -> Fv1Host (program 1 = own echo; VR3..VR5, VR6 mix) -> output,
 // bit-identical to the components.
 void TestExactComposition() {
-    const float pots[8] = {.3f, .55f, .2f, .6f, .9f, .7f, 0.f, 0.f};
+    const float pots[8] = {.5f, .3f, .55f, .2f, .6f, .9f, .7f, 0.f}; // VR1 centre, VR8 left = 32 kHz
     for(unsigned i = 0; i < 8; ++i) hw.pot[i].value = pots[i];
     SendCc(15, 22, 0); SendCc(15, 23, 1); // program index 1 (echo)
     ServiceUsbMidi();
@@ -96,7 +98,7 @@ void TestExactComposition() {
         }
     }
     assert(fv1->Program() == 1 && energy > 1 && wet_difference > 10);
-    std::puts("PASS: Toy Piano (VR1/VR2) -> fv1-vm (echo, VR3..VR5, mix VR6 0.7) -> output bit-identical to the components");
+    std::puts("PASS: Toy Piano (VR2/VR3) -> fv1-vm (echo, VR4..VR6, mix VR7 0.7, VR8 32 kHz) -> output bit-identical to the components");
 }
 
 // Exact dry piano with VR6 = 0 and with SW17 bypass; VR1/VR2 still set the piano times.
@@ -104,9 +106,9 @@ void TestDryMixAndBypass() {
     for(unsigned mode = 0; mode < 2; ++mode) {
         hw.pressed.fill(false);
         Tick(3000);
-        hw.pot[0].value = mode ? .8f : .1f; // attack
-        hw.pot[1].value = mode ? .2f : .9f; // decay
-        hw.pot[5].value = mode ? 1.f : 0.f; // VR6: dry only, or full wet behind the bypass
+        hw.pot[1].value = mode ? .8f : .1f; // VR2 attack
+        hw.pot[2].value = mode ? .2f : .9f; // VR3 decay
+        hw.pot[6].value = mode ? 1.f : 0.f; // VR7: dry only, or full wet behind the bypass
         hw.tog_sw17.value = mode == 1;
         Tick(50);
         assert(fv1->Bypass() == (mode == 1));
@@ -134,9 +136,9 @@ void TestDryMixAndBypass() {
         Tick(10);
     }
     hw.tog_sw17.value = false;
-    hw.pot[5].value = 0.f;
+    hw.pot[6].value = 0.f;
     Tick(2);
-    std::puts("PASS: VR6 = 0 and SW17 bypass give the exact dry Toy Piano with VR1/VR2 attack and decay");
+    std::puts("PASS: VR7 = 0 and SW17 bypass give the exact dry Toy Piano with VR2/VR3 attack and decay");
 }
 
 void TestTelemetryAndProgramChange() {
@@ -188,7 +190,7 @@ void TestStandardProgramChange() {
     note.type = daisy::NoteOn; note.channel = 0; note.data[0] = 60; note.data[1] = 100;
     usb_midi.incoming.push_back(note);
     ServiceUsbMidi();
-    hw.pot[5].value = 0.f; // VR6 dry: the note must sound
+    hw.pot[6].value = 0.f; // VR7 dry: the note must sound
     double energy = 0;
     for(unsigned b = 0; b < 50; ++b) {
         Tick();
@@ -198,6 +200,50 @@ void TestStandardProgramChange() {
     std::puts("PASS: Program Change (any channel) with Bank Select CC0/CC32; notes still play");
 }
 
+// VR1 transposes all voices (+24 semitones at the right stop) bit-exactly like ToyPiano::Modulate;
+// VR8 sets the interpreter rate (32 kHz left, 16 kHz centre, 8 kHz right).
+void TestTransposeAndRate() {
+    hw.pressed.fill(false);
+    hw.tog_sw17.value = false;
+    hw.pot[6].value = 0.f; // dry: compare the piano
+    hw.pot[0].value = 1.f;
+    Tick(3000);
+    piano.Init();
+    toy_piano::ToyPiano reference;
+    reference.Init();
+    hw.pressed[3] = true;
+    uint32_t previous = 0;
+    for(unsigned block = 0; block < 300; ++block) {
+        if(block == 20) hw.pressed[3] = false;
+        Tick();
+        const uint32_t held = led_mask.load();
+        for(unsigned key = 0; key < 16; ++key)
+            if((held & (1u << key)) && !(previous & (1u << key))) reference.Trigger(key, RefAttack(), RefDecay());
+        previous = held;
+        const float transpose = std::fabs(ref_pitch - .5f) < .005f ? 1.f : std::exp2((ref_pitch - .5f) * 4.f);
+        for(size_t v = 0; v < toy_piano::kNumVoices; ++v) {
+            float ratio = transpose, gain = 1.f;
+            if(reference.BaseIncrement(v) * ratio >= .5f) { ratio = .49f / reference.BaseIncrement(v); gain = 0; }
+            reference.Modulate(v, ratio, gain, toy_piano::HarmonicWeight(toy_piano::kHarmonicBase), kN);
+        }
+        for(unsigned i = 0; i < kN; ++i) {
+            const float expected = reference.Process();
+            assert(left[i] == expected && right[i] == expected);
+        }
+    }
+    assert(std::fabs(ref_pitch - 1.f) < 1e-3f && fv1_transpose > 3.99f);
+    for(float x : {0.f, .5f, 1.f}) {
+        hw.pot[7].value = x;
+        Tick(100);
+        const float want = 32000.f * std::exp2(-2.f * x);
+        assert(std::fabs(fv1->Rate() - want) < 1.f);
+    }
+    hw.pot[0].value = .5f; hw.pot[7].value = 0.f;
+    Tick(100);
+    assert(fv1_transpose == 1.f);
+    std::puts("PASS: VR1 +24 semitones bit-exact to ToyPiano::Modulate; VR8 rate 32/16/8 kHz; centre detent restores pitch");
+}
+
 int main() {
     hw.Init(); piano.Init(); assert(InitializeFx()); InitModulation(48000);
     assert(std::strcmp(toy_piano::MakeModInfo().key, "toy-piano-fv1") == 0);
@@ -205,6 +251,7 @@ int main() {
     TestDryMixAndBypass();
     TestTelemetryAndProgramChange();
     TestStandardProgramChange();
+    TestTransposeAndRate();
     assert(allocations == 0);
     std::puts("PASS composed Toy Piano + fv1-vm; no allocation in the audio callback");
 }
