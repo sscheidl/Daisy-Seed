@@ -31,9 +31,11 @@ the v0.3 controls below still describe the original `toy-piano` target.
 S1–S8 form the first row; S9–S16 form the second. S8 and S9 intentionally play
 C5 using independent voices. Edit [src/config.h](src/config.h) to change the mapping.
 
-* **VR1:** attack, 2–300 ms; left is shorter.
-* **VR2:** decay, 50–3000 ms; left is shorter.
-* Both mappings are logarithmic. The ADC uses 32× oversampling; PotFilter adds
+* **VR1 (since 0.5):** transposition of all voices, continuous −24 to +24 semitones; the centre has a small
+  detent at the original pitch. Turning it also bends notes that are sounding.
+* **VR2:** attack, 2–300 ms; left is shorter (VR1 before 0.5).
+* **VR3:** decay, 50–3000 ms; left is shorter (VR2 before 0.5).
+* Attack and decay mappings are logarithmic. The ADC uses 32× oversampling; PotFilter adds
   20 ms smoothing and hysteresis. Changes apply to the next strike. Active
   envelopes retain their times to avoid parameter jumps.
 * Each press triggers a one-shot AD envelope. Releasing does not interrupt it;
@@ -41,10 +43,12 @@ C5 using independent voices. Edit [src/config.h](src/config.h) to change the map
   about 7 ms after audio starts.
 * LEDs D1–D16 follow the debounced keys independently of the envelope.
 * **USB-MIDI over J7:** incoming notes use 16 additional voices with velocity;
-  S1–S16 transmit notes on channel 1. See [USB-MIDI](docs/MIDI.md).
+  S1–S16 transmit notes on channel 1. See [MIDI](docs/MIDI.md).
+* **DIN MIDI in (since 0.5):** notes, CC1, aftertouch and clock from the 5-pin MIDI input are handled like USB;
+  SysEx (editor, bootloader request) works only over USB. Keys are not sent to DIN.
 * **Modulation (v0.3):** the [Mod on Daisy](../../modules/mod-on-daisy/) 8×8
   matrix modulates the targets below; see [Modulation](#modulation-v03).
-* VR3–VR8, toggle switches, DIN MIDI, SD and audio inputs have no musical function.
+* VR4–VR8, toggle switches, SD and audio inputs have no musical function.
   CV 1/2 and Gate 1/2 are matrix sources and sync inputs. **RV1** is the separate
   analog headphone volume control, not VR1.
 
@@ -128,9 +132,12 @@ appropriate bootloader does not need reinstalling. No hardware was flashed from 
 
 1. Connect headphones to J5 or a line-level amplifier/interface to the outputs.
    Start at low volume, power through J7 and flash the firmware.
-2. Turn VR1/VR2 left; test each key and matching LED. S8/S9 should have equal pitch.
-3. Turn VR2 right, strike briefly, then release: the LED goes off while sound decays.
-4. Turn VR1 right and strike again: the onset should be noticeably slower.
+2. Set VR1 to the centre detent and turn VR2/VR3 left; test each key and matching LED. S8/S9 should have
+   equal pitch.
+3. Turn VR3 right, strike briefly, then release: the LED goes off while sound decays.
+4. Turn VR2 right and strike again: the onset should be noticeably slower.
+4a. Turn VR1 fully left and right: the pitch moves two octaves down and up; back in the centre it is the original.
+4b. Play a DIN MIDI keyboard into the 5-pin input: notes sound like USB notes.
 5. Play chords and S8/S9 separately. Hold a key longer than 3.3 seconds: sound ends,
    but its LED remains on until release.
 6. Compare outputs; test quick repetitions and knob movement for clicks/dropouts.

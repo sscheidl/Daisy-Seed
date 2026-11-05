@@ -26,6 +26,8 @@
 #endif
 #endif
 #define TOY_PIANO_MODULATION 1 // tests: call InitModulation() before the callback
+// Regular Toy Piano (0.5) and toy-piano-fv1: VR1 transposition and DIN MIDI input. Ambient and tape keep their own panel.
+#define TOY_PIANO_PITCH_AND_DIN (!TOY_PIANO_FX && !TOY_PIANO_TAPE)
 
 // libDaisy's USB device state for the external port (J7 on the carrier).
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
@@ -116,7 +118,7 @@ fv1_fw::Snapshot fv1_snapshot;
 std::atomic<bool> fv1_snapshot_ready{false};
 // Piano first (0.5.0): VR1 transposition (+-24 semitones), VR2 attack and VR3 decay.
 toy_piano::PotFilter pitch_pot, attack_pot, decay_pot;
-float fv1_transpose = 1.f; // audio thread only; exactly 1 in the centre detent
+float piano_transpose = 1.f; // audio thread only; exactly 1 in the centre detent
 bool InitializeFx() {
     std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
     fv1 = new(fx_storage) toy_piano::Fv1Host{};
@@ -128,7 +130,9 @@ bool InitializeFx() {
 #endif
 }
 #else
-toy_piano::PotFilter attack_pot, decay_pot;
+// 0.5: VR1 transposition, VR2 attack, VR3 decay.
+toy_piano::PotFilter pitch_pot, attack_pot, decay_pot;
+float piano_transpose = 1.f; // audio thread only; exactly 1 in the centre detent
 #endif
 std::atomic<uint32_t> led_mask{0};
 daisy::MidiUsbHandler usb_midi;
@@ -196,10 +200,10 @@ void ModulateVoices(size_t size) {
         }
         piano.Modulate(v, ratio, gain, toy_piano::HarmonicWeight(harmonic), size);
     }
-#elif TOY_PIANO_FV1
+#elif TOY_PIANO_PITCH_AND_DIN
     // VR1 transposition times the matrix pitch. Without transposition and without an active matrix the
     // voices render exactly as in the regular Toy Piano.
-    if(!engine.Active() && fv1_transpose == 1.f) {
+    if(!engine.Active() && piano_transpose == 1.f) {
         if(modulating)
             piano.ClearModulation(size);
         modulating = false;
@@ -209,7 +213,7 @@ void ModulateVoices(size_t size) {
     for(size_t v = 0; v < toy_piano::kNumVoices; ++v) {
         const int note = v < toy_piano::kNumKeys ? -1 : piano.MidiVoiceNote(v - toy_piano::kNumKeys);
         const float p = voice_pressure[v].Process(engine, note);
-        float ratio = fv1_transpose * toy_piano::PitchRatio(engine.ApplyVoice(toy_piano::ModPitch, toy_piano::kPitchBase, p));
+        float ratio = piano_transpose * toy_piano::PitchRatio(engine.ApplyVoice(toy_piano::ModPitch, toy_piano::kPitchBase, p));
         const float level = engine.ApplyVoice(toy_piano::ModLevel, toy_piano::kLevelBase, p);
         const float harmonic = engine.ApplyVoice(toy_piano::ModHarmonic, toy_piano::kHarmonicBase, p);
         float gain = toy_piano::LevelGain(level);
@@ -299,7 +303,7 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     // Piano first: VR1 transposition +-24 semitones (centre detent as in toy-piano-ambient), VR2 attack and
     // VR3 decay with the ranges of the regular Toy Piano.
     const float pitch_x = pitch_pot.Process(raw[0]);
-    fv1_transpose = std::fabs(pitch_x - .5f) < .005f ? 1.f : std::exp2((pitch_x - .5f) * 4.f);
+    piano_transpose = std::fabs(pitch_x - .5f) < .005f ? 1.f : std::exp2((pitch_x - .5f) * 4.f);
     const float attack_base = attack_pot.Process(raw[1]);
     const float decay_base = decay_pot.Process(raw[2]);
     const float attack = modulation.engine.Apply(toy_piano::ModAttack, attack_base);
@@ -310,8 +314,11 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     modulation.engine.ReportBase(toy_piano::ModAttack, attack_base);
     modulation.engine.ReportBase(toy_piano::ModDecay, decay_base);
 #else
-    const float attack_base = attack_pot.Process(hw.pot[0].Value());
-    const float decay_base = decay_pot.Process(hw.pot[1].Value());
+    // 0.5: VR1 transposition +-24 semitones (centre detent), VR2 attack, VR3 decay.
+    const float pitch_x = pitch_pot.Process(hw.pot[0].Value());
+    piano_transpose = std::fabs(pitch_x - .5f) < .005f ? 1.f : std::exp2((pitch_x - .5f) * 4.f);
+    const float attack_base = attack_pot.Process(hw.pot[1].Value());
+    const float decay_base = decay_pot.Process(hw.pot[2].Value());
     const float attack = modulation.engine.Apply(toy_piano::ModAttack, attack_base);
     const float decay = modulation.engine.Apply(toy_piano::ModDecay, decay_base);
     // Column values before modulation for the editor (extended monitor): fixed bases
@@ -418,8 +425,12 @@ void SendKeyChanges(uint32_t mask, bool connected) {
 // Main loop only: USB parsing happens in the USB interrupt, but sending blocks.
 void ServiceUsbMidi() {
     usb_midi.Listen(); // Restarts reception after an overflow.
+#if TOY_PIANO_PITCH_AND_DIN
+    hw.midi.Listen(); // DIN MIDI in (5-pin), handled like USB below
+#endif
 #if TOY_PIANO_FV1
-    static fv1_fw::Remote fv1_remote;
+    // One remote state per input, so a Bank Select on one input never combines with a Program Change on the other.
+    static fv1_fw::Remote fv1_remote_usb, fv1_remote_din;
 #endif
 #if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
     static bool pending = false;
@@ -429,11 +440,25 @@ void ServiceUsbMidi() {
             if(!midi_in.Push(next)) break;
             pending = false;
         }
+#if !TOY_PIANO_FV1
         if(!usb_midi.HasEvents()) break;
+#endif
+#elif TOY_PIANO_PITCH_AND_DIN
+    for(;;) {
 #else
     while(usb_midi.HasEvents()) {
 #endif
+#if TOY_PIANO_PITCH_AND_DIN
+        // USB first, then DIN MIDI (input only): notes, CC1 and aftertouch (and in toy-piano-fv1 Program
+        // Change/Bank Select and the channel-16 CCs). SysEx (bootloader request, editors) is accepted only
+        // over USB, which carries the replies.
+        const bool from_usb = usb_midi.HasEvents();
+        if(!from_usb && !hw.midi.HasEvents()) break;
+        auto event = from_usb ? usb_midi.PopEvent() : hw.midi.PopEvent();
+        if(!from_usb && event.type == daisy::SystemCommon) continue;
+#else
         auto event = usb_midi.PopEvent();
+#endif
         if(bootloader::IsRequest(event)) {
             boot_request.Set(bootloader::Request::kSysEx);
             continue;
@@ -441,6 +466,7 @@ void ServiceUsbMidi() {
 #if TOY_PIANO_FV1
         // Program Change (+ Bank Select CC0/CC32) on any channel; channel 16 CC22/23 program and CC119
         // telemetry. The other channel-16 remote commands are standalone-only and ignored here.
+        fv1_fw::Remote& fv1_remote = from_usb ? fv1_remote_usb : fv1_remote_din;
         if(event.type == daisy::ProgramChange) {
             const fv1_fw::Action action = fv1_remote.HandleProgramChange(event.channel, event.data[0]);
             unsigned index; // groups of the local table: bank = group, program = position
@@ -537,6 +563,9 @@ int main() {
     usb_config.transport_config.periph = daisy::MidiUsbTransport::Config::EXTERNAL;
     usb_midi.Init(usb_config);
     usb_midi.StartReceive();
+#if TOY_PIANO_PITCH_AND_DIN
+    hw.midi.StartReceive(); // DIN MIDI in; the UART is set up by hw.Init()
+#endif
     hw.seed.StartAudio(AudioCallback);
     uint32_t last_led_update = daisy::System::GetNow();
     uint32_t previous_mask = 0;

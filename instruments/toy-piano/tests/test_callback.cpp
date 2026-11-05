@@ -190,20 +190,20 @@ void TestBootloader() {
     hw.pressed.fill(false);
     Tick(8);
     ServiceBootloader();
-    assert(System::bootloader_resets == 0);
+    assert(daisy::System::bootloader_resets == 0);
 
     // With a third key held the pair never fires; once alone, it takes 5 s.
     hw.pressed[8] = hw.pressed[15] = hw.pressed[0] = true;
     Tick(6000);
     ServiceBootloader();
-    assert(System::bootloader_resets == 0);
+    assert(daisy::System::bootloader_resets == 0);
     hw.pressed[0] = false;
     Tick(4990);
     ServiceBootloader();
-    assert(System::bootloader_resets == 0);
+    assert(daisy::System::bootloader_resets == 0);
     Tick(20);
     ServiceBootloader();
-    assert(System::bootloader_resets == 1);
+    assert(daisy::System::bootloader_resets == 1);
     assert(System::bootloader_mode == System::DAISY_INFINITE_TIMEOUT);
     assert(usb_midi.sent.empty()); // nobody asked: no reply
     hw.pressed.fill(false);
@@ -213,11 +213,11 @@ void TestBootloader() {
     hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
     usb_midi.incoming.push_back(SysEx(bootloader::kRequestBody, sizeof(bootloader::kRequestBody)));
     ServiceUsbMidi();
-    assert(usb_midi.sent.empty() && System::bootloader_resets == 1);
+    assert(usb_midi.sent.empty() && daisy::System::bootloader_resets == 1);
     ServiceBootloader();
     assert((usb_midi.sent == std::vector<Message>{
         Message(std::begin(bootloader::kAck), std::end(bootloader::kAck))}));
-    assert(System::bootloader_resets == 2);
+    assert(daisy::System::bootloader_resets == 2);
 
     // The reply echoed back by a DAW, or a truncated request, does nothing.
     usb_midi.sent.clear();
@@ -225,16 +225,42 @@ void TestBootloader() {
     usb_midi.incoming.push_back(SysEx(bootloader::kRequestBody, sizeof(bootloader::kRequestBody) - 1));
     ServiceUsbMidi();
     ServiceBootloader();
-    assert(usb_midi.sent.empty() && System::bootloader_resets == 2);
+    assert(usb_midi.sent.empty() && daisy::System::bootloader_resets == 2);
     hUsbDeviceHS.dev_state = 0;
+}
+
+// 0.5: DIN MIDI notes play like USB notes; SysEx over DIN (e.g. a bootloader request) is ignored;
+// VR1 transposes (centre detent = exactly 1).
+void TestDinMidiAndPitch() {
+    hw.pressed.fill(false);
+    Tick(3400);
+    hw.midi.incoming.push_back(Event(daisy::NoteOn, 69, 100));
+    ServiceUsbMidi();
+    Tick(2);
+    bool sounding = false;
+    for(std::size_t v = 0; v < toy_piano::kNumMidiVoices; ++v)
+        sounding = sounding || (piano.MidiVoiceNote(v) == 69 && piano.MidiEnvelope(v).Active());
+    assert(sounding && hw.midi.incoming.empty());
+    const unsigned resets = daisy::System::bootloader_resets;
+    hw.midi.incoming.push_back(SysEx(bootloader::kRequestBody, sizeof(bootloader::kRequestBody) - 1));
+    ServiceUsbMidi();
+    ServiceBootloader();
+    assert(daisy::System::bootloader_resets == resets && hw.midi.incoming.empty());
+    hw.pot[0].value = 1.f;
+    Tick(200);
+    assert(piano_transpose > 3.99f && piano_transpose <= 4.f);
+    hw.pot[0].value = .5f;
+    Tick(200);
+    assert(piano_transpose == 1.f);
 }
 }
 
 int main() {
     hw.Init();
+    hw.pot[0].value = .5f; // VR1 transposition at the centre detent (0.5): original pitch
     piano.Init();
     InitModulation(48000.0f); // v0.3: empty matrix, the v0.2 behavior below is unchanged
-    hw.pot[1].value = 1.0f; // Long decay exposes unintended retriggers.
+    hw.pot[2].value = 1.0f; // Long decay exposes unintended retriggers.
 
     // Held at audio startup: exactly the same seven-sample press qualification.
     hw.pressed[0] = true;
@@ -294,5 +320,6 @@ int main() {
     TestUsbMidi();
     assert(hw.led_transfers == 0); // No LED I2C transfer in audio callback.
     TestBootloader();
-    std::cout << "PASS: production callback + pinned debounce, 16 keys, 1-6 ms dropouts, release/repress, startup, hold, stereo, USB MIDI in/out, bootloader entry\n";
+    TestDinMidiAndPitch();
+    std::cout << "PASS: production callback + pinned debounce, 16 keys, 1-6 ms dropouts, release/repress, startup, hold, stereo, USB MIDI in/out, bootloader entry, DIN MIDI in, VR1 transposition\n";
 }

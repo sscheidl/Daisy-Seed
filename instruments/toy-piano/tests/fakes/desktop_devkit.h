@@ -108,6 +108,7 @@ struct Hardware {
         void Process() {}
     };
     std::array<Pot, 8> pot{};
+    MidiUsbHandler midi; // DIN MIDI in (MidiUartHandler on the kit): same scripted event queue
     std::array<Pot, 2> cv{};          // bipolar -1..+1 in the real AnalogControl
     struct Toggle { bool value = false; bool Pressed() const { return value; } } tog_sw17;
     struct Toggle3 { int value = 1; int Read() const { return value; } } tog_sw18;

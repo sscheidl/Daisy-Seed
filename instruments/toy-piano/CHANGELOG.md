@@ -2,6 +2,17 @@
 
 The version is defined in [src/version.h](src/version.h).
 
+## 0.5 — 2026-11-05 (unreleased)
+
+* **VR1 transposition** of all voices, −24 to +24 semitones, with a centre detent (owner decision 2026-11-05, as
+  toy-piano-fv1). **Attack moves to VR2, decay to VR3.**
+* **DIN MIDI in:** the 5-pin input is handled like USB (notes, CC1, aftertouch, clock); SysEx only over USB.
+  See [MIDI](docs/MIDI.md) for both inputs at once.
+* **Sound unchanged with VR1 in the centre:** the golden performance (tests with VR1 at 0.5, attack/decay on
+  VR2/VR3) gives the same hash as before on the same host compiler (E34CE1F8D2676D39 on llvm-mingw, before and
+  after). The pinned Linux hash is not checked on this host. Toy Piano Tape and Ambient images are byte-identical.
+* Hardware: NOT MEASURED.
+
 ## 0.4 — 2026-10-25
 
 * **Echo guard for Mod on Daisy.** SysEx frames whose command has the reply bit

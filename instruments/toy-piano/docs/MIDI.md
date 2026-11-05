@@ -1,4 +1,4 @@
-# USB-MIDI
+# MIDI (USB and DIN)
 
 Through **J7 on the Desktop carrier**, the kit enumerates as the class-compliant
 USB-MIDI device **Daisy Seed External**. This is the same connector used for power
@@ -10,12 +10,28 @@ and firmware updates. The USB connector on the Seed3 module is unused by the app
 | --- | --- |
 | Input | Note On on any channel, notes 0–127. Frequency follows the note; velocity 1–127 scales amplitude linearly. |
 | Input voices | 16 MIDI voices independent of the 16 key voices. A full pool steals the oldest voice; repeating a still-active note retriggers its existing voice. |
-| Envelope | VR1/VR2 set attack/decay at the strike. Note Off, sustain, pitch bend and program changes are ignored: these are one-shot AD notes. |
+| Envelope | VR2/VR3 (VR1/VR2 before 0.5) set attack/decay at the strike. Note Off, sustain, pitch bend and program changes are ignored: these are one-shot AD notes. |
 | Modulation (v0.3) | CC1 (mod wheel), channel aftertouch and polyphonic aftertouch are sources of the Mod on Daisy matrix. SysEx `F0 7D 4D 44 …` configures it ([protocol](../../../modules/mod-on-daisy/docs/PROTOCOL.md)); replies go back on the same port, at most one per millisecond. From v0.4, frames that are themselves replies (a DAW echoing the port back, e.g. Studio One input monitoring) are ignored. MIDI clock and Start sync the LFOs. Other CCs remain ignored. |
 | Output | S1–S16 send Note On on channel 1 with velocity 100 at debounced press, and Note Off at release. |
 | Bundling | Up to eight simultaneous key changes per transfer; the remainder follows at the next main-loop service, normally 1 ms later. There is no output event queue. |
 | Duplicate C5 | S8/S9 both send note 72: holding both produces two Note Ons, releasing them produces two Note Offs. |
 | Connection | Transmission requires a configured USB host. Keys always play locally; received MIDI is not echoed. |
+
+## DIN MIDI in (since 0.5; also toy-piano-fv1)
+
+The kit's 5-pin MIDI input is read with the same rules as USB: notes on any channel, CC1, channel and polyphonic
+aftertouch, MIDI clock/Start (LFO sync) and, in toy-piano-fv1, Program Change with Bank Select and the channel-16
+CCs. SysEx (Mod on Daisy editor, bootloader request) is accepted only over USB, because the replies go there.
+Nothing is sent to a DIN output.
+
+**USB and DIN at the same time:** both inputs are merged. Each main-loop pass (about every 1 ms) handles the waiting
+USB events first, then the DIN events.
+* Notes from both play; they share the 16 MIDI voices (the oldest is stolen when all are busy).
+* CC1 and aftertouch feed the same matrix sources: the last value received wins, so two controllers moving at the
+  same time alternate.
+* Two clocks would both drive the LFO sync; use one clock source.
+* toy-piano-fv1: each input keeps its own Bank Select and CC22 state, so a bank chosen on one input never combines
+  with a Program Change from the other; the last program change wins.
 
 Envelope level and phase are preserved during stealing/retriggering. One documented
 exception remains: switching to or from **note 127** changes the second-harmonic

@@ -231,7 +231,7 @@ void TestTransposeAndRate() {
             assert(left[i] == expected && right[i] == expected);
         }
     }
-    assert(std::fabs(ref_pitch - 1.f) < 1e-3f && fv1_transpose > 3.99f);
+    assert(std::fabs(ref_pitch - 1.f) < 1e-3f && piano_transpose > 3.99f);
     for(float x : {0.f, .5f, 1.f}) {
         hw.pot[7].value = x;
         Tick(100);
@@ -240,8 +240,36 @@ void TestTransposeAndRate() {
     }
     hw.pot[0].value = .5f; hw.pot[7].value = 0.f;
     Tick(100);
-    assert(fv1_transpose == 1.f);
+    assert(piano_transpose == 1.f);
     std::puts("PASS: VR1 +24 semitones bit-exact to ToyPiano::Modulate; VR8 rate 32/16/8 kHz; centre detent restores pitch");
+}
+
+// DIN MIDI: notes and Program Change work like USB; SysEx over DIN is ignored.
+void TestDinMidi() {
+    hw.pot[6].value = 0.f;
+    hw.pressed.fill(false);
+    Tick(3400);
+    daisy::MidiEvent note;
+    note.type = daisy::NoteOn; note.channel = 3; note.data[0] = 72; note.data[1] = 90;
+    hw.midi.incoming.push_back(note);
+    daisy::MidiEvent pc;
+    pc.type = daisy::ProgramChange; pc.channel = 0; pc.data[0] = 1;
+    hw.midi.incoming.push_back(pc);
+    ServiceUsbMidi();
+    Tick();
+    assert(fv1->Program() == 1 && hw.midi.incoming.empty());
+    double energy = 0;
+    for(unsigned b = 0; b < 30; ++b) {
+        Tick();
+        for(unsigned i = 0; i < kN; ++i) energy += double(left[i]) * left[i];
+    }
+    assert(energy > 1e-3);
+    daisy::MidiEvent sysex;
+    sysex.type = daisy::SystemCommon; sysex.sc_type = daisy::SystemExclusive;
+    hw.midi.incoming.push_back(sysex);
+    ServiceUsbMidi();
+    assert(hw.midi.incoming.empty());
+    std::puts("PASS: DIN MIDI note and Program Change; SysEx over DIN ignored");
 }
 
 int main() {
@@ -252,6 +280,7 @@ int main() {
     TestTelemetryAndProgramChange();
     TestStandardProgramChange();
     TestTransposeAndRate();
+    TestDinMidi();
     assert(allocations == 0);
     std::puts("PASS composed Toy Piano + fv1-vm; no allocation in the audio callback");
 }

@@ -1,5 +1,10 @@
 # Changelog: fv1-vm
 
+## toy-piano-fv1 0.6.0 (2026-11-05, unreleased)
+
+* DIN MIDI in, handled like USB (notes, Program Change/Bank Select, CC1, aftertouch, channel-16 CCs); SysEx only
+  over USB; separate Bank Select/CC22 state per input. Shared with the regular Toy Piano 0.5.
+
 ## Component addition, toy-piano-fv1 0.5.0 (2026-11-05, unreleased)
 
 * `fv1vm/fv1_fxvar.h`: `FxVar<T>`, variable-rate 48 kHz adapter (8–32 kHz internal rate, band-limited fractional
