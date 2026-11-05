@@ -200,8 +200,9 @@ template <typename T> class Vm {
                     acc = T(v) / T(8388608); break;
                 }
                 case Op::Skp: {
-                    if(in.cond && in.n) {
-                        bool take = false; // only single flags occur in the catalogue (A3); several flags OR-ed here
+                    if(in.n) {
+                        // An empty mask jumps unconditionally (SKP 0,n); SKP 0,0 is the NOP. Several flags are OR-ed.
+                        bool take = in.cond == 0;
                         if(in.cond & 0x10) take |= run_;
                         if(in.cond & 0x08) take |= ((acc < 0) != (pacc < 0));
                         if(in.cond & 0x04) take |= acc == 0;

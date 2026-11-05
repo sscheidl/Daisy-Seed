@@ -1,5 +1,10 @@
 # Changelog: fv1-vm
 
+## Interpreter fix (2026-11-05, unreleased)
+
+* `SKP 0,n` with n > 0 is an unconditional jump; it was treated as a no-op. `SKP 0,0` stays the NOP. Found by review on
+  the PR; regression test added. Programs without such a skip are unaffected.
+
 ## toy-piano-fv1 0.8.0 (2026-11-05, unreleased)
 
 * `FxVar`: 8 zero crossings, cutoff 0.87, Kaiser beta 7; precomputed unity-gain rows on the up side, a full symmetric

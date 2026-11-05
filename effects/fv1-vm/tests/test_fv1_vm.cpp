@@ -68,6 +68,11 @@ int main() {
     // 6 SKP RUN skips only after the first sample
     { Rig g({Skp(RUN, 1), Sof(0, 0.5), Wrax(DACL, 0)}); std::vector<double> l(3, 0.0); g.Run(l, l, ol, orr);
       CHECK(Near(ol[0], 0.5) && Near(ol[1], 0.0), "skp run"); }
+    // 6b SKP with an empty condition mask: unconditional jump; SKP 0,0 stays a no-op
+    { Rig g({Sof(0, 0.5), Skp(0, 1), Sof(0, 0.25), Wrax(DACL, 0)}); std::vector<double> l(2, 0.0); g.Run(l, l, ol, orr);
+      CHECK(Near(ol[0], 0.5) && Near(ol[1], 0.5), "SKP 0,1 jumps unconditionally"); }
+    { Rig g({Sof(0, 0.5), Skp(0, 0), Sof(0, 0.25), Wrax(DACL, 0)}); std::vector<double> l(2, 0.0); g.Run(l, l, ol, orr);
+      CHECK(Near(ol[0], 0.25), "SKP 0,0 is a no-op"); }
     // 7 SKP NEG/GEZ on the input sign
     { Rig g({Rdax(ADCL, 1.0), Skp(NEG, 1), Sof(0, 0.25), Wrax(DACL, 0)}); std::vector<double> l = {0.5, -0.5}; g.Run(l, l, ol, orr);
       CHECK(Near(ol[0], 0.25) && Near(ol[1], -0.5), "skp neg"); }
