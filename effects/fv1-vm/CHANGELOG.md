@@ -1,5 +1,15 @@
 # Changelog: fv1-vm
 
+## toy-piano-fv1 0.8.0 (2026-11-05, unreleased)
+
+* `FxVar`: 8 zero crossings, cutoff 0.87, Kaiser beta 7; precomputed unity-gain rows on the up side, a full symmetric
+  table on the down side, no per-tap range check, absolute value or normalisation. Reason (MEASURED 2026-11-05, 0.7.1):
+  at 32 kHz about 30 % of the block budget was fixed cost against about 15 % with `Fx48`, and the heaviest programs
+  overran with 16 voices (peak up to 108.8 %).
+* `Fv1Host` including the delay RAM moved from SDRAM to AXI SRAM (`ld/toy_piano_axi.lds`).
+* Correction: the 0.7.1 entry below blames VR1. The later status-packet measurements refute that; the difference
+  was the VR8 rate. The 0.7.1 change itself is harmless and stays.
+
 ## toy-piano-fv1 0.7.1 (2026-11-05, unreleased)
 
 * Transposition without an active matrix no longer runs the per-voice matrix path. With VR1 off centre that path

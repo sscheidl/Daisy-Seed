@@ -7,9 +7,11 @@
 //
 // Contract: seed::audio FX interface 1.0 at 48 kHz. Prepare({48000, max_block <= 48}, storage); Process is
 // wet-only, bounded (at most kMaxVmBlock interpreter samples per block) and allocation-free.
-// Resampler: Kaiser-windowed sinc, kZeros zero crossings per side, cutoff kCutoff x the internal Nyquist,
-// linear interpolation in a table of kPhases points per zero crossing. Down: the kernel is stretched by
-// q = 48000 / rate (anti-aliasing); up: unit spacing at the internal rate (anti-imaging).
+// Resampler: Kaiser-windowed sinc, kZeros zero crossings per side, cutoff kCutoff x the internal Nyquist.
+// Down: the kernel is stretched by q = 48000 / rate (anti-aliasing), read from a full symmetric table with linear
+// interpolation. Up: unit spacing at the internal rate (anti-imaging), so the 2 * kZeros taps of one fractional
+// position are a precomputed, unity-gain row; two neighbouring rows are interpolated. The hot loops hold no
+// range checks, no absolute values and no per-tap normalisation (the Seed3 budget is what limits this adapter).
 #include "fv1_vm.h"
 #include <cmath>
 #include <cstdint>
@@ -21,14 +23,14 @@ template <typename T> class FxVar {
     static constexpr unsigned kHostRate = 48000;
     static constexpr float kMinRate = 8000.f, kMaxRate = 32000.f;
     static constexpr std::size_t kMaxBlock = 48;
-    static constexpr unsigned kZeros = 12, kPhases = 64;
-    static constexpr float kCutoff = .82f, kBeta = 8.f;
+    static constexpr unsigned kZeros = 8, kPhases = 64;
+    static constexpr float kCutoff = .87f, kBeta = 7.f;
     static constexpr std::size_t kMaxVmBlock = kMaxBlock * 2 / 3 + 2; // 34 at 32 kHz
 
     bool Prepare(const seed::audio::Config& config, Storage<T>& storage) {
         if(config.sample_rate != kHostRate || config.max_block == 0 || config.max_block > kMaxBlock) return false;
         config_ = config;
-        BuildTable();
+        BuildTables();
         rate_ = target_rate_ = kMaxRate;
         ResetResamplers();
         return vm_.Prepare({unsigned(kMaxRate), kMaxVmBlock}, storage);
@@ -51,17 +53,19 @@ template <typename T> class FxVar {
         rate_ += (target_rate_ - rate_) * .2f;
         if(std::fabs(rate_ - target_rate_) < .5f) rate_ = target_rate_;
         const double q = double(kHostRate) / double(rate_); // host samples per interpreter sample
+        const double inv_q = 1.0 / q;
         // 1) Down: append the host block, emit interpreter input samples whose kernels are complete.
         float vl[kMaxVmBlock], vr[kMaxVmBlock], ol[kMaxVmBlock], orr[kMaxVmBlock];
         std::size_t m = 0;
         for(std::size_t i = 0; i < b.frames; ++i) {
-            in_l_[in_count_ & kInMask] = b.left[i];
-            in_r_[in_count_ & kInMask] = b.right[i];
-            const double newest = double(in_count_++);
+            in_l_[in_pos_ & kInMask] = b.left[i];
+            in_r_[in_pos_ & kInMask] = b.right[i];
+            ++in_pos_;
+            newest_ += 1.0;
             // Fixed lead (not kZeros * q): production and the up side's read position then advance by
             // exactly the same 1/q per host sample, so their distance stays constant through rate changes.
-            while(center_ + kDownLead <= newest && m < kMaxVmBlock) {
-                Down(center_, q, 1.0 / q, vl[m], vr[m]);
+            while(center_ + kDownLead <= newest_ && m < kMaxVmBlock) {
+                Down(q, inv_q, vl[m], vr[m]);
                 ++m;
                 center_ += q;
             }
@@ -69,14 +73,15 @@ template <typename T> class FxVar {
         // 2) Interpreter at the internal rate.
         if(m && !vm_.Process({vl, vr, ol, orr, m})) return false;
         for(std::size_t k = 0; k < m; ++k) {
-            vm_l_[vm_count_ & kVmMask] = ol[k];
-            vm_r_[vm_count_ & kVmMask] = orr[k];
-            ++vm_count_;
+            vm_l_[vm_pos_ & kVmMask] = ol[k];
+            vm_r_[vm_pos_ & kVmMask] = orr[k];
+            ++vm_pos_;
         }
+        vm_count_ += m;
         // 3) Up: one host output per frame, kZeros + kUpMargin interpreter samples behind production.
         for(std::size_t i = 0; i < b.frames; ++i) {
-            Up(sigma_, b.out_left[i], b.out_right[i]);
-            sigma_ += 1.0 / q;
+            Up(b.out_left[i], b.out_right[i]);
+            sigma_ += inv_q;
         }
         return true;
     }
@@ -86,94 +91,96 @@ template <typename T> class FxVar {
   private:
     static constexpr unsigned kInSize = 512, kInMask = kInSize - 1;  // > 2 * kDownLead + kMaxBlock
     static constexpr unsigned kVmSize = 128, kVmMask = kVmSize - 1;  // > 2 * kZeros + kUpMargin + kMaxVmBlock
-    static constexpr unsigned kTable = kZeros * kPhases;
+    static constexpr unsigned kTaps = 2 * kZeros;
+    static constexpr unsigned kCentre = kZeros * kPhases;  // table index of kernel argument 0
+    static constexpr unsigned kTable = 2 * kCentre + 2;    // +-kZeros, plus one guard point for the interpolation
     // Down emits an interpreter sample once kDownLead host samples past its centre exist (the widest
     // kernel, at kMinRate). Up starts kZeros + kUpMargin samples behind the newest produced sample.
     static constexpr double kDownLead = kZeros * (double(kHostRate) / double(kMinRate));
     static constexpr unsigned kUpMargin = 2;
 
-    void BuildTable() {
+    static double KernelValue(double u) {
         constexpr double kPi = 3.14159265358979323846;
+        if(std::fabs(u) >= kZeros) return 0;
         auto i0 = [](double x) {
             double sum = 1, term = 1;
             for(int k = 1; k < 40; ++k) { term *= (x / (2 * k)) * (x / (2 * k)); sum += term; }
             return sum;
         };
-        for(unsigned j = 0; j <= kTable; ++j) {
-            const double u = double(j) / kPhases; // 0..kZeros
-            const double x = kPi * kCutoff * u;
-            const double sinc = j == 0 ? 1.0 : std::sin(x) / x;
-            const double r = u / kZeros;
-            const double w = i0(kBeta * std::sqrt(std::fmax(0.0, 1 - r * r))) / i0(kBeta);
-            table_[j] = float(kCutoff * sinc * w);
-        }
+        const double x = kPi * kCutoff * u;
+        const double sinc = u == 0 ? 1.0 : std::sin(x) / x;
+        const double r = u / kZeros;
+        return kCutoff * sinc * i0(kBeta * std::sqrt(std::fmax(0.0, 1 - r * r))) / i0(kBeta);
     }
-    // Hot loops run in float with 32-bit ring indices; double and 64-bit arithmetic (library calls on the
-    // Cortex-M7) happen once per output sample, not per tap.
-    float Kernel(float u) const { // symmetric, zero outside +-kZeros
-        const float x = std::fabs(u) * float(kPhases);
-        if(x >= float(kTable)) return 0.f;
-        const unsigned j = unsigned(x);
-        const float f = x - float(j);
-        return table_[j] + f * (table_[j + 1] - table_[j]);
+    void BuildTables() {
+        for(unsigned j = 0; j < kTable; ++j) table_[j] = float(KernelValue((double(j) - kCentre) / kPhases));
+        // One row per fractional position f = r / kPhases: taps d = 1 - kZeros .. kZeros, argument f - d, unity sum.
+        for(unsigned r = 0; r <= kPhases; ++r) {
+            double sum = 0, h[kTaps];
+            for(unsigned t = 0; t < kTaps; ++t) {
+                const int d = int(t) + 1 - int(kZeros);
+                h[t] = KernelValue(double(r) / kPhases - d);
+                sum += h[t];
+            }
+            for(unsigned t = 0; t < kTaps; ++t) rows_[r][t] = float(h[t] / sum);
+        }
     }
     void ResetResamplers() {
         for(auto& x : in_l_) x = 0;
         for(auto& x : in_r_) x = 0;
         for(auto& x : vm_l_) x = 0;
         for(auto& x : vm_r_) x = 0;
-        in_count_ = vm_count_ = 0;
+        in_pos_ = vm_pos_ = 0;
+        newest_ = -1;
         center_ = 0;
         // Distance between production and the up side's read position (kept from now on): kZeros + kUpMargin.
         const double q = double(kHostRate) / double(rate_);
         sigma_ = -(kDownLead / q + kZeros + kUpMargin);
     }
-    void Down(double center, double q, double inv_q, float& l, float& r) const {
+    // Interpreter input at center_. Ring slots before the start hold zeros, so no start-up case is needed.
+    void Down(double q, double inv_q, float& l, float& r) const {
         const double reach = kZeros * q;
-        const int64_t first = int64_t(std::ceil(center - reach));
-        const int count = int(int64_t(std::floor(center + reach)) - first) + 1;
-        const int k0 = first < 0 ? int(-first) : 0; // only right after a reset
-        const float du = float(inv_q);
-        float u = float((center - double(first)) * inv_q) - float(k0) * du; // kernel argument, falls by du per tap
-        uint32_t idx = uint32_t(first + k0);
-        float sl = 0, sr = 0, norm = 0;
-        for(int k = k0; k < count; ++k, u -= du, ++idx) {
-            const float h = Kernel(u);
+        const double first_d = std::ceil(center_ - reach);
+        const int count = int(std::floor(center_ + reach) - first_d) + 1;
+        const float step = float(inv_q * kPhases);
+        float x = float((center_ - first_d) * inv_q * kPhases) + float(kCentre); // table position, falls per tap
+        uint32_t idx = uint32_t(int32_t(int64_t(first_d)));
+        float sl = 0, sr = 0;
+        for(int k = 0; k < count; ++k, x -= step, ++idx) {
+            const unsigned j = unsigned(x);
+            const float h = table_[j] + (x - float(j)) * (table_[j + 1] - table_[j]);
             sl += h * in_l_[idx & kInMask];
             sr += h * in_r_[idx & kInMask];
-            norm += h;
         }
-        // Exact unity gain at DC for every q (the stretched kernel's sum differs from 1 by its sampling).
-        const float g = norm > 1e-6f ? 1.f / norm : 0.f;
+        const float g = float(inv_q); // the stretched kernel sums to q
         l = sl * g; r = sr * g;
     }
-    void Up(double sigma, float& l, float& r) const {
-        const double floor_sigma = std::floor(sigma);
-        const int64_t base = int64_t(floor_sigma);
-        const float f = float(sigma - floor_sigma); // taps base + d, kernel argument f - d
-        const int64_t newest = int64_t(vm_count_) - 1;
-        // Taps outside 0..newest count in the normalisation only (start-up and, by design, never later).
-        const int d_lo = base + (1 - int(kZeros)) < 0 ? int(-base) : 1 - int(kZeros);
-        const int d_hi = base + int(kZeros) > newest ? int(newest - base) : int(kZeros);
-        float sl = 0, sr = 0, norm = 0;
-        uint32_t idx = uint32_t(base + (1 - int(kZeros)));
-        for(int d = 1 - int(kZeros); d <= int(kZeros); ++d, ++idx) {
-            const float h = Kernel(f - float(d));
-            norm += h;
-            if(d < d_lo || d > d_hi) continue;
+    // Host output at sigma_.
+    void Up(float& l, float& r) const {
+        const double floor_sigma = std::floor(sigma_);
+        const float x = float(sigma_ - floor_sigma) * float(kPhases);
+        const unsigned row = unsigned(x);
+        const float a = x - float(row);
+        const float* lo = rows_[row];
+        const float* hi = rows_[row + 1];
+        uint32_t idx = uint32_t(int32_t(int64_t(floor_sigma))) + 1u - kZeros;
+        float sl = 0, sr = 0;
+        for(unsigned t = 0; t < kTaps; ++t, ++idx) {
+            const float h = lo[t] + a * (hi[t] - lo[t]);
             sl += h * vm_l_[idx & kVmMask];
             sr += h * vm_r_[idx & kVmMask];
         }
-        const float g = norm > 1e-6f ? 1.f / norm : 0.f;
-        l = sl * g; r = sr * g;
+        l = sl; r = sr;
     }
 
     seed::audio::Config config_{};
     Vm<T> vm_;
-    float table_[kTable + 1] = {};
+    float table_[kTable] = {};
+    float rows_[kPhases + 1][kTaps] = {};
     float in_l_[kInSize] = {}, in_r_[kInSize] = {}, vm_l_[kVmSize] = {}, vm_r_[kVmSize] = {};
-    uint64_t in_count_ = 0, vm_count_ = 0;
-    double center_ = 0, sigma_ = 0;
+    uint32_t in_pos_ = 0, vm_pos_ = 0; // ring write positions (wrap harmlessly)
+    uint64_t vm_count_ = 0;            // interpreter samples since Prepare (diagnostic)
+    double newest_ = -1, center_ = 0, sigma_ = 0;
     float rate_ = kMaxRate, target_rate_ = kMaxRate;
 };
 

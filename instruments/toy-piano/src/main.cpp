@@ -106,8 +106,12 @@ bool InitializeFx() {
     return tape->Prepare();
 }
 #elif TOY_PIANO_FV1
-// Host incl. the 128 KiB FV-1 delay RAM in SDRAM: default .bss would be the nearly full DTCM.
-alignas(toy_piano::Fv1Host) unsigned char DSY_SDRAM_BSS fx_storage[sizeof(toy_piano::Fv1Host)];
+// Host incl. the 128 KiB FV-1 delay RAM in AXI SRAM behind the image (NOLOAD, cleared in InitializeFx; needs
+// ld/toy_piano_axi.lds): the interpreter and the resamplers read it every sample, and SDRAM is much slower.
+#if defined(__arm__)
+__attribute__((section(".tp_axi_bss"), aligned(32)))
+#endif
+alignas(toy_piano::Fv1Host) unsigned char fx_storage[sizeof(toy_piano::Fv1Host)];
 toy_piano::Fv1Host* fv1 = nullptr;
 mod::adapter::CallbackDiagnostics callback_diagnostics;
 // Main loop -> audio thread: program and telemetry requests (-1 none; fv1_firmware.h protocol).

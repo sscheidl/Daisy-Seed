@@ -1,15 +1,15 @@
-# Toy Piano + FV-1 interpreter v0.7.1 (research / feasibility study)
+# Toy Piano + FV-1 interpreter v0.8.0 (research / feasibility study)
 
 Own test product `toy-piano-fv1`: Toy Piano → [fv1-vm](../../../effects/fv1-vm/) (48 kHz adapter, program at
 32 kHz) → stereo output. Composition by build flag `FV1=1`; the regular Toy Piano, `toy-piano-tape` and
-`toy-piano-ambient` stay unchanged (ARM images byte-identical, 2026-11-05 for 0.1.0 to 0.7.1). Board results:
+`toy-piano-ambient` stay unchanged (ARM images byte-identical, 2026-11-05 for 0.1.0 to 0.8.0). Board results:
 [fv1-vm README](../../../effects/fv1-vm/README.md#hardware-results).
 
 ```bash
 make PROJECT=toy-piano-fv1 test
 make PROJECT=toy-piano-fv1 -j4
 make PROJECT=toy-piano-fv1 manifest
-python3 scripts/check-firmware.py instruments/toy-piano/build/fv1/ToyPianoFv1-v0.7.1.bin
+python3 scripts/check-firmware.py instruments/toy-piano/build/fv1/ToyPianoFv1-v0.8.0.bin
 # Local catalogue (never committed or released): FV1_PROGRAMS=local, see effects/fv1-vm/README.md
 make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local -j4
 ```
@@ -46,6 +46,6 @@ separate clock or gate on one channel do not get one (not measured in this produ
 
 ## Notes
 
-* The whole `Fv1Host` (interpreter, resamplers, 128 KiB delay RAM) lives in SDRAM; DTCM is 91.3 % used.
+* The whole `Fv1Host` (interpreter, resamplers, 128 KiB delay RAM) lives in AXI SRAM behind the image (since 0.8.0); DTCM is 91.4 % used.
 * CPU load of all 240 local programs with 16 voices sounding: MEASURED 2026-11-05 with 0.1.0, no overrun, peak
   ≤ 92.7 %. Sound and listening: NOT MEASURED ([test plan](../../../effects/fv1-vm/docs/HARDWARE_TEST.md)).

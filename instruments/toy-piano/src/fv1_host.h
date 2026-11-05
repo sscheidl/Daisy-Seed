@@ -1,7 +1,7 @@
 #pragma once
 // MIT. Board-independent Toy Piano -> FV-1 interpreter routing for the toy-piano-fv1 product
 // (research / feasibility study). The piano renders mono; the same signal feeds both FX inputs.
-// The fv1-vm component runs the program at 32 kHz behind its 48 kHz adapter (fv1vm/fv1_fx48.h).
+// The fv1-vm component runs the program at 8-32 kHz behind its variable-rate adapter (fv1vm/fv1_fxvar.h).
 // Mapping owned here (0.5.0, piano first): VR1..VR3 stay with the piano (main.cpp: pitch, attack, decay),
 // VR4..VR6 = POT0..POT2, VR7 = dry/wet, VR8 = internal rate (left 32 kHz, right 8 kHz, exponential),
 // SW17 = bypass (exact dry piano). The program comes from MIDI (Program Change or channel 16 CC22/CC23,

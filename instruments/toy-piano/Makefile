@@ -72,6 +72,10 @@ ifeq ($(AMBIENT)-$(AMB_COMPACT),1-1)
 LDSCRIPT := ld/toy_piano_axi.lds
 $(BUILD_DIR)/$(TARGET).elf: $(LDSCRIPT)
 endif
+ifeq ($(FV1),1)
+LDSCRIPT := ld/toy_piano_axi.lds
+$(BUILD_DIR)/$(TARGET).elf: $(LDSCRIPT)
+endif
 ifeq ($(AMBIENT),1)
 # Prevent the official flattened VPATH from finding the standalone FX's main.cpp.
 $(BUILD_DIR)/main.o: src/main.cpp Makefile | $(BUILD_DIR)
