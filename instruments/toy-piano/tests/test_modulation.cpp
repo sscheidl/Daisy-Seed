@@ -176,7 +176,7 @@ void TestModWheelLevelAndPolyAt() {
 
 void TestLatchedAttack() {
     // Channel AT lengthens the attack of the next strike, not of a sounding note.
-    hw.pot[0].value = 0.0f; // shortest attack
+    hw.pot[1].value = 0.0f; // shortest attack
     Tick(50);
     usb_midi.incoming.push_back(Event(daisy::NoteOn, 72, 127));
     ServiceUsbMidi();
@@ -268,8 +268,8 @@ void TestPanelExtensions() {
     Request(mod::proto::SetSource, {mod::Lfo1, mod::ParamFm, 150 & 127, 150 >> 7});
     Request(mod::proto::SetSource, {mod::Lfo1, mod::ParamFm, 100, 0});
     modulation.engine.EnableMonitor(true);
-    hw.pot[0].value = 0.25f;
-    hw.pot[1].value = 0.8f;
+    hw.pot[1].value = 0.25f;
+    hw.pot[2].value = 0.8f;
     Tick(400); // PotFilter smoothing and hysteresis
     assert(modulation.engine.Monitor().Fetch());
     const mod::MonitorSnapshot& m = modulation.engine.Monitor().Front();
@@ -280,7 +280,7 @@ void TestPanelExtensions() {
     assert(std::fabs(m.base[toy_piano::ModDecay] - 0.8f) < 0.01f);
     for(std::size_t t = 5; t < mod::kTargets; ++t)
         assert(m.base[t] == -1.0f);
-    hw.pot[1].value = 1.0f;
+    hw.pot[2].value = 1.0f;
     std::printf("panel: attack base %.3f, decay base %.3f\n", double(m.base[toy_piano::ModAttack]),
                 double(m.base[toy_piano::ModDecay]));
 }
@@ -288,9 +288,10 @@ void TestPanelExtensions() {
 
 int main() {
     hw.Init();
+    hw.pot[0].value = .5f; // VR1 transposition at the centre detent (0.5): original pitch
     piano.Init();
     InitModulation(48000.0f);
-    hw.pot[1].value = 1.0f; // 3 s decay: notes keep sounding during each test
+    hw.pot[2].value = 1.0f; // 3 s decay: notes keep sounding during each test
     hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
     Tick(10);
     TestIdentifyAndColumns();

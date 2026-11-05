@@ -17,8 +17,17 @@
 #include "tape_host.h"
 #include "callback_diagnostics.h"
 #include <new>
+#elif TOY_PIANO_FV1
+#include "fv1_host.h"
+#include "callback_diagnostics.h"
+#include <new>
+#if FV1VM_LOCAL_PROGRAMS
+#include "fv1vm_programs.local.h" // generated, git-ignored (effects/fv1-vm/tools/gen_programs.py)
+#endif
 #endif
 #define TOY_PIANO_MODULATION 1 // tests: call InitModulation() before the callback
+// Regular Toy Piano (0.5) and toy-piano-fv1: VR1 transposition and DIN MIDI input. Ambient and tape keep their own panel.
+#define TOY_PIANO_PITCH_AND_DIN (!TOY_PIANO_FX && !TOY_PIANO_TAPE)
 
 // libDaisy's USB device state for the external port (J7 on the carrier).
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
@@ -30,6 +39,13 @@ namespace {
 const char kFirmwareId[] = "TOYPIANO-AMBIENT-FW-VERSION=" TOY_PIANO_AMBIENT_VERSION;
 #elif TOY_PIANO_TAPE
 const char kFirmwareId[] = "TOYPIANO-TAPE-FW-VERSION=" TOY_PIANO_TAPE_VERSION;
+#elif TOY_PIANO_FV1
+const char kFirmwareId[] = "TOYPIANO-FV1-FW-VERSION=" TOY_PIANO_FV1_VERSION;
+#if FV1VM_LOCAL_PROGRAMS
+const char kProgramSource[] = "FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE";
+#else
+const char kProgramSource[] = "FV1VM-PROGRAMS=BUILTIN";
+#endif
 #else
 const char kFirmwareId[] = "TOYPIANO-FW-VERSION=" TOY_PIANO_VERSION;
 #endif
@@ -89,8 +105,39 @@ bool InitializeFx() {
     tape = new(fx_storage) toy_piano::TapeHost{};
     return tape->Prepare();
 }
+#elif TOY_PIANO_FV1
+// Host incl. the 128 KiB FV-1 delay RAM in AXI SRAM behind the image (NOLOAD, cleared in InitializeFx; needs
+// ld/toy_piano_axi.lds): the interpreter and the resamplers read it every sample, and SDRAM is much slower.
+#if defined(__arm__)
+__attribute__((section(".tp_axi_bss"), aligned(32)))
+#endif
+alignas(toy_piano::Fv1Host) unsigned char fx_storage[sizeof(toy_piano::Fv1Host)];
+toy_piano::Fv1Host* fv1 = nullptr;
+mod::adapter::CallbackDiagnostics callback_diagnostics;
+// Main loop -> audio thread: program and telemetry requests (-1 none; fv1_firmware.h protocol).
+std::atomic<int32_t> fv1_program_request{-1}, fv1_telemetry_request{-1};
+// Audio thread -> main loop: one telemetry snapshot (release/acquire hand-off).
+fv1_fw::Meter fv1_meter;
+fv1_fw::Snapshot fv1_snapshot;
+fv1_fw::Status fv1_status; // live controls, taken with the snapshot (same hand-off)
+std::atomic<bool> fv1_snapshot_ready{false};
+// Piano first (0.5.0): VR1 transposition (+-24 semitones), VR2 attack and VR3 decay.
+toy_piano::PotFilter pitch_pot, attack_pot, decay_pot;
+float piano_transpose = 1.f; // audio thread only; exactly 1 in the centre detent
+bool InitializeFx() {
+    std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
+    fv1 = new(fx_storage) toy_piano::Fv1Host{};
+#if FV1VM_LOCAL_PROGRAMS
+    return fv1->Prepare({fv1vm_local::kPrograms, fv1vm_local::kCount, fv1vm_local::kGroupOffset,
+                         fv1vm_local::kGroupSize, fv1vm_local::kGroupCount});
 #else
-toy_piano::PotFilter attack_pot, decay_pot;
+    return fv1->Prepare({});
+#endif
+}
+#else
+// 0.5: VR1 transposition, VR2 attack, VR3 decay.
+toy_piano::PotFilter pitch_pot, attack_pot, decay_pot;
+float piano_transpose = 1.f; // audio thread only; exactly 1 in the centre detent
 #endif
 std::atomic<uint32_t> led_mask{0};
 daisy::MidiUsbHandler usb_midi;
@@ -126,7 +173,7 @@ void InitModulation(float sample_rate) {
     callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
     modulation.EnableExtensions({true, true, true});
-#elif TOY_PIANO_TAPE
+#elif TOY_PIANO_TAPE || TOY_PIANO_FV1
     callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
     modulation.EnableExtensions({true, true, false});
@@ -158,6 +205,45 @@ void ModulateVoices(size_t size) {
         }
         piano.Modulate(v, ratio, gain, toy_piano::HarmonicWeight(harmonic), size);
     }
+#elif TOY_PIANO_PITCH_AND_DIN
+    // VR1 transposition times the matrix pitch. Without transposition and without an active matrix the
+    // voices render exactly as in the regular Toy Piano.
+    if(!engine.Active() && piano_transpose == 1.f) {
+        if(modulating)
+            piano.ClearModulation(size);
+        modulating = false;
+        return;
+    }
+    modulating = true;
+    if(!engine.Active()) {
+        // Transposition only. The matrix path below costs about 130 000 cycles per block on the Seed3 for 32
+        // voices (MEASURED 2026-11-05: 28 % of the budget without a sounding voice), so skip it while it is empty.
+        const float harmonic = toy_piano::HarmonicWeight(toy_piano::kHarmonicBase);
+        for(size_t v = 0; v < toy_piano::kNumVoices; ++v) {
+            float ratio = piano_transpose, gain = toy_piano::LevelGain(toy_piano::kLevelBase);
+            const float increment = piano.BaseIncrement(v);
+            if(increment * ratio >= .5f) {
+                ratio = .49f / increment;
+                gain = 0; // Notes transposed beyond Nyquist fade silent instead of folding.
+            }
+            piano.Modulate(v, ratio, gain, harmonic, size);
+        }
+        return;
+    }
+    for(size_t v = 0; v < toy_piano::kNumVoices; ++v) {
+        const int note = v < toy_piano::kNumKeys ? -1 : piano.MidiVoiceNote(v - toy_piano::kNumKeys);
+        const float p = voice_pressure[v].Process(engine, note);
+        float ratio = piano_transpose * toy_piano::PitchRatio(engine.ApplyVoice(toy_piano::ModPitch, toy_piano::kPitchBase, p));
+        const float level = engine.ApplyVoice(toy_piano::ModLevel, toy_piano::kLevelBase, p);
+        const float harmonic = engine.ApplyVoice(toy_piano::ModHarmonic, toy_piano::kHarmonicBase, p);
+        float gain = toy_piano::LevelGain(level);
+        const float increment = piano.BaseIncrement(v);
+        if(increment * ratio >= .5f) {
+            ratio = .49f / increment;
+            gain = 0; // Notes transposed beyond Nyquist fade silent instead of folding.
+        }
+        piano.Modulate(v, ratio, gain, toy_piano::HarmonicWeight(harmonic), size);
+    }
 #else
     if(!engine.Active()) {
         if(modulating)
@@ -180,7 +266,10 @@ void ModulateVoices(size_t size) {
 
 void AudioCallback(daisy::AudioHandle::InputBuffer,
                    daisy::AudioHandle::OutputBuffer out, size_t size) {
-#if TOY_PIANO_FX || TOY_PIANO_TAPE
+#if TOY_PIANO_FV1
+    const uint32_t fv1_start = DWT->CYCCNT;
+#endif
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
     if(size != toy_piano::kBlockSize) {
         for(size_t i = 0; i < std::min(size, toy_piano::kBlockSize); ++i) out[0][i] = out[1][i] = 0;
         return;
@@ -224,9 +313,32 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     modulation.engine.ReportBase(toy_piano::ModHarmonic, toy_piano::kHarmonicBase);
     modulation.engine.ReportBase(toy_piano::ModAttack, 0.f);
     modulation.engine.ReportBase(toy_piano::ModDecay, toy_piano::kTapeDecayBase);
+#elif TOY_PIANO_FV1
+    std::array<float, 8> raw{};
+    for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
+    fv1->ReadControls(raw, hw.tog_sw17.Pressed()); // VR4..VR6 POT0..2, VR7 dry/wet, VR8 rate, SW17 bypass
+    const int32_t fv1_program = fv1_program_request.exchange(-1, std::memory_order_acquire);
+    const bool fv1_changed = fv1_program >= 0;
+    if(fv1_changed) fv1->Select(unsigned(fv1_program));
+    // Piano first: VR1 transposition +-24 semitones (centre detent as in toy-piano-ambient), VR2 attack and
+    // VR3 decay with the ranges of the regular Toy Piano.
+    const float pitch_x = pitch_pot.Process(raw[0]);
+    piano_transpose = std::fabs(pitch_x - .5f) < .005f ? 1.f : std::exp2((pitch_x - .5f) * 4.f);
+    const float attack_base = attack_pot.Process(raw[1]);
+    const float decay_base = decay_pot.Process(raw[2]);
+    const float attack = modulation.engine.Apply(toy_piano::ModAttack, attack_base);
+    const float decay = modulation.engine.Apply(toy_piano::ModDecay, decay_base);
+    modulation.engine.ReportBase(toy_piano::ModPitch, toy_piano::kPitchBase);
+    modulation.engine.ReportBase(toy_piano::ModLevel, toy_piano::kLevelBase);
+    modulation.engine.ReportBase(toy_piano::ModHarmonic, toy_piano::kHarmonicBase);
+    modulation.engine.ReportBase(toy_piano::ModAttack, attack_base);
+    modulation.engine.ReportBase(toy_piano::ModDecay, decay_base);
 #else
-    const float attack_base = attack_pot.Process(hw.pot[0].Value());
-    const float decay_base = decay_pot.Process(hw.pot[1].Value());
+    // 0.5: VR1 transposition +-24 semitones (centre detent), VR2 attack, VR3 decay.
+    const float pitch_x = pitch_pot.Process(hw.pot[0].Value());
+    piano_transpose = std::fabs(pitch_x - .5f) < .005f ? 1.f : std::exp2((pitch_x - .5f) * 4.f);
+    const float attack_base = attack_pot.Process(hw.pot[1].Value());
+    const float decay_base = decay_pot.Process(hw.pot[2].Value());
     const float attack = modulation.engine.Apply(toy_piano::ModAttack, attack_base);
     const float decay = modulation.engine.Apply(toy_piano::ModDecay, decay_base);
     // Column values before modulation for the editor (extended monitor): fixed bases
@@ -280,6 +392,25 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     for(size_t i = 0; i < size; ++i) mono[i] = piano.Process();
     tape->Process(mono.data(), out[0], out[1], size);
     callback_diagnostics.End();
+#elif TOY_PIANO_FV1
+    std::array<float, toy_piano::kBlockSize> mono{};
+    for(size_t i = 0; i < size; ++i) mono[i] = piano.Process();
+    fv1->Process(mono.data(), out[0], out[1], size);
+    callback_diagnostics.End();
+    // Whole-callback cycles; a program-change block (delay-RAM clear) is not measured.
+    int32_t fv1_request = fv1_telemetry_request.load(std::memory_order_relaxed);
+    if(fv1_request == 2 || fv1_changed) fv1_meter.Reset();
+    if(!fv1_changed) fv1_meter.Add(DWT->CYCCNT - fv1_start);
+    if(fv1_request > 0 && !fv1_snapshot_ready.load(std::memory_order_acquire) &&
+       fv1_telemetry_request.compare_exchange_strong(fv1_request, -1, std::memory_order_relaxed)) {
+        fv1_snapshot = fv1_meter.Take(uint16_t(fv1->Program()),
+                                      fv1->LocalPrograms() ? uint8_t(fv1_fw::kLocalPrograms) : uint8_t(0));
+        fv1_status.rate_hz = fv1->Rate();
+        fv1_status.transpose_cents = 1200.f * std::log2(piano_transpose);
+        fv1_status.mix = fv1->Mix();
+        fv1_status.bypass = fv1->Bypass();
+        fv1_snapshot_ready.store(true, std::memory_order_release);
+    }
 #else
     for(size_t i = 0; i < size; ++i) {
         const float sample = piano.Process();
@@ -318,7 +449,14 @@ void SendKeyChanges(uint32_t mask, bool connected) {
 // Main loop only: USB parsing happens in the USB interrupt, but sending blocks.
 void ServiceUsbMidi() {
     usb_midi.Listen(); // Restarts reception after an overflow.
-#if TOY_PIANO_FX || TOY_PIANO_TAPE
+#if TOY_PIANO_PITCH_AND_DIN
+    hw.midi.Listen(); // DIN MIDI in (5-pin), handled like USB below
+#endif
+#if TOY_PIANO_FV1
+    // One remote state per input, so a Bank Select on one input never combines with a Program Change on the other.
+    static fv1_fw::Remote fv1_remote_usb, fv1_remote_din;
+#endif
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
     static bool pending = false;
     static NoteIn next{};
     for(unsigned batch = 0; batch < 64; ++batch) {
@@ -326,15 +464,49 @@ void ServiceUsbMidi() {
             if(!midi_in.Push(next)) break;
             pending = false;
         }
+#if !TOY_PIANO_FV1
         if(!usb_midi.HasEvents()) break;
+#endif
+#elif TOY_PIANO_PITCH_AND_DIN
+    for(;;) {
 #else
     while(usb_midi.HasEvents()) {
 #endif
+#if TOY_PIANO_PITCH_AND_DIN
+        // USB first, then DIN MIDI (input only): notes, CC1 and aftertouch (and in toy-piano-fv1 Program
+        // Change/Bank Select and the channel-16 CCs). SysEx (bootloader request, editors) is accepted only
+        // over USB, which carries the replies.
+        const bool from_usb = usb_midi.HasEvents();
+        if(!from_usb && !hw.midi.HasEvents()) break;
+        auto event = from_usb ? usb_midi.PopEvent() : hw.midi.PopEvent();
+        if(!from_usb && event.type == daisy::SystemCommon) continue;
+#else
         auto event = usb_midi.PopEvent();
+#endif
         if(bootloader::IsRequest(event)) {
             boot_request.Set(bootloader::Request::kSysEx);
             continue;
         }
+#if TOY_PIANO_FV1
+        // Program Change (+ Bank Select CC0/CC32) on any channel; channel 16 CC22/23 program and CC119
+        // telemetry. The other channel-16 remote commands are standalone-only and ignored here.
+        fv1_fw::Remote& fv1_remote = from_usb ? fv1_remote_usb : fv1_remote_din;
+        if(event.type == daisy::ProgramChange) {
+            const fv1_fw::Action action = fv1_remote.HandleProgramChange(event.channel, event.data[0]);
+            unsigned index; // groups of the local table: bank = group, program = position
+            if(action.command == fv1_fw::Command::BankProgram && fv1->Resolve(action.index, action.value, index))
+                fv1_program_request.store(int32_t(index), std::memory_order_release);
+            continue;
+        }
+        if(event.type == daisy::ControlChange) {
+            const fv1_fw::Action action = fv1_remote.Handle(event.channel, event.data[0], event.data[1]);
+            if(action.command == fv1_fw::Command::Program)
+                fv1_program_request.store(int32_t(action.value), std::memory_order_release);
+            else if(action.command == fv1_fw::Command::Telemetry)
+                fv1_telemetry_request.store(int32_t(action.value), std::memory_order_relaxed);
+            if(event.channel == 15 && (action.command != fv1_fw::Command::None || event.data[0] == 22)) continue;
+        }
+#endif
 #if TOY_PIANO_FX
         if(event.type == daisy::SystemCommon && event.sc_type == daisy::SystemExclusive &&
            fx_rate.HandleBody(event.sysex_data, event.sysex_message_len, daisy::System::GetNow()))
@@ -346,7 +518,7 @@ void ServiceUsbMidi() {
         if(event.type == daisy::NoteOn) {
             const auto note = event.AsNoteOn();
             if(note.velocity > 0) {
-#if TOY_PIANO_FX || TOY_PIANO_TAPE
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
                 if(!midi_in.Push({note.note, note.velocity})) {
                     next = {note.note, note.velocity};
                     pending = true;
@@ -365,6 +537,17 @@ void ServiceUsbMidi() {
 #if TOY_PIANO_FX
     fx_rate.Service(daisy::System::GetNow(), connected);
 #endif
+#if TOY_PIANO_FV1
+    if(fv1_snapshot_ready.load(std::memory_order_acquire)) {
+        auto packet = fv1_fw::Encode(fv1_snapshot);
+        auto status = fv1_fw::EncodeStatus(fv1_status); // CC80..89 right after the CPU packet
+        fv1_snapshot_ready.store(false, std::memory_order_release);
+        if(connected) {
+            usb_midi.SendMessage(packet.data(), packet.size());
+            usb_midi.SendMessage(status.data(), status.size());
+        }
+    }
+#endif
 }
 
 // Main loop only: replies over USB if a host asked, then resets into the bootloader.
@@ -378,6 +561,9 @@ void ServiceBootloader() {
 
 int main() {
     asm volatile("" : : "r"(kFirmwareId)); // Keep the version string in the image.
+#if TOY_PIANO_FV1
+    asm volatile("" : : "r"(kProgramSource));
+#endif
     hw.Init();
 #if TOY_PIANO_FX && AMBIENT_SDRAM_WRITE_ALLOCATE && defined(__arm__)
     EnableSdramWriteAllocate(); // Before any SDRAM content is initialized.
@@ -385,8 +571,14 @@ int main() {
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(toy_piano::kBlockSize);
     piano.Init(hw.seed.AudioSampleRate());
-#if TOY_PIANO_FX || TOY_PIANO_TAPE
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
     if(!InitializeFx()) while(true) daisy::System::Delay(100);
+#endif
+#if TOY_PIANO_FV1
+    fv1_meter.Init((SystemCoreClock / 48000u) * uint32_t(toy_piano::kBlockSize));
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 #endif
     InitModulation(hw.seed.AudioSampleRate());
     // Let the mux ADC settle and populate AnalogControl values before use.
@@ -399,6 +591,9 @@ int main() {
     usb_config.transport_config.periph = daisy::MidiUsbTransport::Config::EXTERNAL;
     usb_midi.Init(usb_config);
     usb_midi.StartReceive();
+#if TOY_PIANO_PITCH_AND_DIN
+    hw.midi.StartReceive(); // DIN MIDI in; the UART is set up by hw.Init()
+#endif
     hw.seed.StartAudio(AudioCallback);
     uint32_t last_led_update = daisy::System::GetNow();
     uint32_t previous_mask = 0;

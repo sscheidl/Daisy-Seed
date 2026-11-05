@@ -6,11 +6,37 @@ ifneq ($(filter-out undefined,$(origin AMB_GATE) $(origin AMB_WET32)),)
 $(error AMB_GATE/AMB_WET32 are obsolete; shared Ambient 0.4 always uses gating and 32-12 kHz)
 endif
 TAPE ?= 0
+FV1 ?= 0
+ifeq ($(FV1),1)
+$(if $(filter 1,$(TAPE) $(AMBIENT)),$(error FV1=1 cannot be combined with TAPE=1 or AMBIENT=1))
+endif
 ifeq ($(TAPE),1)
 VERSION := $(shell sed -n 's/.*TOY_PIANO_TAPE_VERSION "\(.*\)".*/\1/p' src/composed_version.h | head -n 1)
 TARGET = ToyPianoTape-v$(VERSION)
 override BUILD_DIR = build/tape
 FX_DEFS = -DTOY_PIANO_TAPE=1 -DMOD_ON_DAISY_EXTENSIONS=1
+C_DEFS = $(FX_DEFS)
+else ifeq ($(FV1),1)
+# Research / feasibility study: Toy Piano -> fv1-vm. PROGRAMS=local uses the git-ignored table of
+# effects/fv1-vm/generated (tools/gen_programs.py); such images are LOCAL ONLY, never released.
+FV1_DIR = ../../effects/fv1-vm
+FV1_PROGRAMS ?= builtin
+$(if $(filter $(FV1_PROGRAMS),builtin local),,$(error FV1_PROGRAMS must be builtin or local))
+VERSION := $(shell sed -n 's/.*TOY_PIANO_FV1_VERSION "\(.*\)".*/\1/p' src/composed_version.h | head -n 1)
+ifeq ($(FV1_PROGRAMS),local)
+$(if $(wildcard $(FV1_DIR)/generated/fv1vm_programs.local.h),,$(error $(FV1_DIR)/generated/fv1vm_programs.local.h is missing))
+TARGET = ToyPianoFv1Local-v$(VERSION)
+override BUILD_DIR = build/fv1-local
+FX_DEFS = -DTOY_PIANO_FV1=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DFV1VM_LOCAL_PROGRAMS=1
+FV1_INCLUDES = -I$(FV1_DIR)/include -I$(FV1_DIR)/src -I$(FV1_DIR)/generated
+C_INCLUDES = $(FV1_INCLUDES)
+else
+TARGET = ToyPianoFv1-v$(VERSION)
+override BUILD_DIR = build/fv1
+FX_DEFS = -DTOY_PIANO_FV1=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DFV1VM_LOCAL_PROGRAMS=0
+FV1_INCLUDES = -I$(FV1_DIR)/include -I$(FV1_DIR)/src
+C_INCLUDES = $(FV1_INCLUDES)
+endif
 C_DEFS = $(FX_DEFS)
 else ifeq ($(AMBIENT),1)
 VERSION := $(shell sed -n 's/.*TOY_PIANO_AMBIENT_VERSION "\(.*\)".*/\1/p' src/composed_version.h | head -n 1)
@@ -46,6 +72,10 @@ ifeq ($(AMBIENT)-$(AMB_COMPACT),1-1)
 LDSCRIPT := ld/toy_piano_axi.lds
 $(BUILD_DIR)/$(TARGET).elf: $(LDSCRIPT)
 endif
+ifeq ($(FV1),1)
+LDSCRIPT := ld/toy_piano_axi.lds
+$(BUILD_DIR)/$(TARGET).elf: $(LDSCRIPT)
+endif
 ifeq ($(AMBIENT),1)
 # Prevent the official flattened VPATH from finding the standalone FX's main.cpp.
 $(BUILD_DIR)/main.o: src/main.cpp Makefile | $(BUILD_DIR)
@@ -61,7 +91,13 @@ HOST_INCLUDES = $(MOD_DEFS) -Isrc -I$(BOOTLOADER_DIR) -I$(DAISYSP_DIR)/Source -I
 ifeq ($(AMBIENT),1)
 HOST_INCLUDES += -I../../sequencers/step-seq/include
 endif
-ifeq ($(TAPE),1)
+ifeq ($(FV1),1)
+HOST_INCLUDES += $(FV1_INCLUDES)
+test:
+	mkdir -p build/host/fv1
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(FX_DEFS) tests/test_fv1.cpp src/toy_piano.cpp -o build/host/fv1/test_fv1
+	./build/host/fv1/test_fv1
+else ifeq ($(TAPE),1)
 test:
 	mkdir -p build/host/tape
 	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(FX_DEFS) tests/test_tape.cpp src/toy_piano.cpp -o build/host/tape/test_tape

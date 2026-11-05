@@ -35,6 +35,12 @@ ACID_SEQ = {
     'Streichwurst-v': ('instruments/streichwurst/src/version.h', 'STREICHWURST_VERSION', 'STREICHWURST-FW-VERSION='),
     'StreichwurstFx-v': ('effects/streichwurst-fx/src/version.h', 'STREICHWURST_FX_FIRMWARE_VERSION',
                          'STREICHWURST-FX-VERSION='),
+    # FV-1 interpreter FX firmware; the Local image (local program table) is never released.
+    'Fv1VmFx-v': ('effects/fv1-vm/src/version.h', 'FV1VM_FIRMWARE_VERSION', 'FV1VM-FX-VERSION='),
+    'Fv1VmFxLocal-v': ('effects/fv1-vm/src/version.h', 'FV1VM_FIRMWARE_VERSION', 'FV1VM-FX-VERSION='),
+    'ToyPianoFv1-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION', 'TOYPIANO-FV1-FW-VERSION='),
+    'ToyPianoFv1Local-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION',
+                           'TOYPIANO-FV1-FW-VERSION='),
 }
 acid = next((prefix for prefix in ACID_SEQ if path.name.startswith(prefix)), None)
 if acid:
