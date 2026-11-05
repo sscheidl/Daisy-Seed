@@ -1,8 +1,7 @@
 # FV-1 interpreter FX component (`fv1-vm`)
 
-**Status: phase 1 (host only), version 0.1.0, 2026-11-05.**
-* Research / feasibility study.
-* No firmware build and no Toy Piano composition yet.
+**Status: version 0.1.0, 2026-11-05, research / feasibility study.**
+* Component, standalone firmware `fv1-vm-fx` and the composed `toy-piano-fv1` are built and host-tested.
 * Hardware, CPU load and sound: **NOT MEASURED**.
 
 ## Purpose
@@ -10,51 +9,133 @@
 Executes a 128-word Spin FV-1 program per sample as an FX component behind the
 [FX interface 1.0](../../common/audio/fx_contract.h). It exists to measure on the Seed3 whether FV-1-class effects,
 here the FX AID catalogue analysed in the owner's L2A case `fx-aid-catalog`, fit next to an instrument. It also
-serves as a reference for later native ports. Planned product composition: Toy Piano with this component as its
-stereo FX (owner decision 2026-11-05, modular policy).
+serves as a reference for later native ports. Composition: Toy Piano with this component as its stereo FX
+(owner decision 2026-11-05, modular policy), see [docs/FV1.md](../../instruments/toy-piano/docs/FV1.md).
+
+| Project | Content | Status |
+| --- | --- | --- |
+| `fv1-vm-fx` | Stereo line input (or internal noise) → FV-1 interpreter at 32 kHz → output, CPU telemetry | Host tests and ARM build passed; hardware NOT MEASURED |
+| `toy-piano-fv1` | Toy Piano → 48 kHz adapter → FV-1 interpreter at 32 kHz → output | Host tests and ARM build passed; hardware NOT MEASURED |
 
 ## Contract
 
 | Item | Value |
 | --- | --- |
-| Startup | `Prepare(Config, Storage<T>&)`; the host provides `Storage<T>`, 32 768 words (128 KiB as `float`; SDRAM placement intended) |
-| Program | `LoadProgram(const uint32_t words[128])` at startup or on an explicit program change |
+| Core | `include/fv1vm/fv1_vm.h`: `Vm<T>`, `T` = `float` (board) or `double` (reference) |
+| Startup | `Prepare(Config, Storage<T>&)`; the host provides `Storage<T>`, 32 768 words (128 KiB as `float`) |
+| Program | `LoadProgram(const uint32_t words[128])`; `Reset()` clears state and delay RAM (not real-time cheap) |
 | Parameters | `SetParameters(Parameters)`: POT0..POT2 in 0..1 |
 | Processing | `Process(StereoBlock)`: wet only; bounded (128 instructions per sample); no allocation, locks or I/O |
-| Rate | the program's own rate. FV-1 programs assume 32 768 Hz; run the FX at 32 kHz (`SAI_32KHZ`, about 2.3 % slow) or resample in the host |
-
-## Semantics
+| Rate | FV-1 programs assume 32 768 Hz. `Vm` runs at the host rate; the standalone firmware uses 32 kHz (`SAI_32KHZ`, 2.3 % slow) |
+| 48 kHz hosts | `include/fv1vm/fv1_fx48.h`: `Fx48<T>` runs the program at 32 kHz between two 3:2 polyphase FIR resamplers (96 taps, Kaiser β 7, cutoff 14.5 kHz); blocks must be multiples of 3 |
+| Test programs | `include/fv1vm/fv1_asm.h` encoders; own demo programs in `src/fv1_firmware.h` (0 thru, 1 echo) |
 
 The interpreter implements the assumptions A1–A7 and A5b of the L2A model (`fv1_model.py` in the case), for example
 saturating ACC, PACC as the ACC before the current instruction, WLDR keeping the ramp phase, and LOG(0) → −16.
-Delay-RAM compression, MULX truncation and silicon LFO details are **not** modelled. The template parameter
-selects `float` (board) or `double` (reference).
+Delay-RAM compression, MULX truncation and silicon LFO details are **not** modelled.
 
 ## Programs and licensing
 
-**This component contains no program data.** FX AID programs are used under the owner's decision of 2026-11-05
-(research / feasibility study only; no products, releases or redistribution). Their binaries and any generated
-program tables stay outside this repository and must not be committed, released or uploaded as CI artifacts.
-Openly licensed FV-1 programs (Spin free programs with attribution, Otherworld MIT) may be used for public test
-material.
+**This repository contains no FV-1 program data except the two own demo programs.** FX AID programs are used under
+the owner's decision of 2026-11-05 (research / feasibility study only; no products, releases or redistribution).
+They enter a build only as a local, git-ignored table:
 
-## Validation (MEASURED 2026-11-05, host)
+```bash
+python effects/fv1-vm/tools/gen_programs.py --label "..." <512-byte program files ...>   # -> effects/fv1-vm/generated/
+make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.1.0.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
+make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.1.0.bin
+```
 
-* `make test HOST_CXX=clang++` (llvm-mingw from `.tools/`): 16 hand-encoded instruction tests pass. They cover the
-  decoder, gain, delay, saturation, WRHX/WRLX PACC, SKP RUN/NEG, LOG/EXP incl. zero, AND mask, WLDR phase, JAM, RMPA,
-  static CHO interpolation, WRAP allpass, MULX and block-contract checks.
+Local tables and images built from them must never be committed, released or uploaded as CI artifacts. Openly
+licensed FV-1 programs (Spin free programs with attribution, Otherworld MIT) may be used for public test material.
+
+## Standalone firmware `fv1-vm-fx`
+
+| Control | Function |
+| --- | --- |
+| VR1..VR3 | POT0..POT2 |
+| S1 / S2 | program −1 / +1 (wraps) |
+| S3 / S4 | program −10 / +10 |
+| S5 | bypass (input copied to the output) |
+| S6 | input: line ↔ internal noise (the LCG of the host runner, amplitude 0.3) |
+| LEDs S1..S8 | program number, binary, 1-based |
+| LEDs S13 / S14 / S15 / S16 | noise input / bypass / double build / a block over budget since the last telemetry reset |
+| S9 + S16 for 5 s | Daisy bootloader (shared `common/bootloader`) |
+
+A program change loads the program, clears the delay RAM and mutes that one block; that block is not measured.
+
+**Remote control and telemetry** (USB-MIDI on J7, channel 16): CC22/CC23 program index (high/low 7 bits, 0-based),
+CC24 input (0 line, 1 noise), CC25..27 POT0..2 (value/127, held until a panel pot moves by more than 0.03),
+CC28 bypass, CC119 = 1 read / 2 reset and read. The reply is twenty channel-16 CCs, CC100..119, protocol id 2
+(the physical-modeling decoder ignores it): average and peak cycles per block in 1/10 000 of the block budget,
+blocks, overruns, program index and flags. `tools/fv1vm_probe.py` decodes it and can sweep all programs:
+
+```bash
+python effects/fv1-vm/tools/fv1vm_probe.py --list
+python effects/fv1-vm/tools/fv1vm_probe.py --input "..." --output "..." --noise --pots 64 64 64 --sweep 240 --seconds 3 --csv fv1-cpu.csv
+```
+
+Measurement variants, each with its own build directory and the same image name:
+
+| Variable | Values | Effect |
+| --- | --- | --- |
+| `PRECISION` | `float` (default), `double` | interpreter sample type |
+| `MEMORY` | `sdram` (default), `axi` | delay RAM in SDRAM or in AXI SRAM behind the image (generated linker script from libDaisy's pinned BOOT_SRAM script) |
+| `PROGRAMS` | `builtin` (default), `local` | demo programs or the local table |
+
+`PROGRAMS=local PRECISION=double MEMORY=axi` does not fit: the linker stops with "insufficient AXI reserve"
+(image 240 KiB + 256 KiB delay RAM > 480 KiB).
+
+## Build and tests
+
+```bash
+make -C effects/fv1-vm test                 # interpreter, firmware logic, 48 kHz adapter, Python tools
+make PROJECT=fv1-vm-fx -j4                  # ARM image effects/fv1-vm/build/Fv1VmFx-v0.1.0.bin
+make PROJECT=fv1-vm-fx manifest
+make PROJECT=toy-piano-fv1 test             # composed end-to-end host test
+make PROJECT=toy-piano-fv1 -j4
+python3 scripts/check-firmware.py effects/fv1-vm/build/Fv1VmFx-v0.1.0.bin
+python3 scripts/check-elf-placement.py effects/fv1-vm/build/Fv1VmFx-v0.1.0.elf --sdram vm_memory:131072
+make -C effects/fv1-vm tool                 # host runner for cross-checks with an external reference
+```
+
+## Validation (MEASURED 2026-11-05, host and build only)
+
+Windows host, llvm-mingw clang++ 23.1.3 (host), xPack arm-none-eabi-gcc 13.2.1-1.1 (ARM):
+
+* `make test`: 16 interpreter tests, 5 firmware-logic tests, 4 adapter tests and 3 Python tests pass.
 * **Cross-check with the L2A reference model** (run locally from the case folder with `make tool`; vendor data never
-  enters this repository):
-  * 240 programs × 2 pot settings × 6000 samples, identical LCG noise input;
-  * `double` interpreter vs model: **0 failures, worst |Δ| 4.4e-16**;
-  * `float` vs `double`: 162 programs below 1e-4, but 40 above 1e-2 (up to 1.87). These are programs whose noise or
-    branching depends on exact bits (bit-op random generators, clocked/sync logic, random modulation); their
-    sample-exact equality is lost in float32, while sound equivalence is not assessed.
-* Not run: `test-sanitize` (llvm-mingw on Windows has no ASan/UBSan runtime); ARM build; hardware.
+  enters this repository): 240 programs × 2 pot settings × 6000 samples, identical LCG noise input;
+  `double` interpreter vs model **0 failures, worst |Δ| 4.4e-16**; `float` vs `double`: 162 programs below 1e-4,
+  40 above 1e-2 (up to 1.87), programs whose noise or branching depends on exact bits.
+* **48 kHz adapter** (thru program): gain 1.0002 at 1 kHz, 0.9999 at 10 kHz, 1.0006 at 12 kHz; rejection
+  −80.4 dB at 20 kHz and −80.1 dB at 17.5 kHz; the demo echo keeps its 16 383-sample 32 kHz length
+  (24 574 samples at 48 kHz); added latency 48 samples (1 ms).
+* **Composed `toy-piano-fv1`**: keys → piano → `Fv1Host` → output bit-identical to the separately run components
+  over 2500 blocks; VR4 = 0 gives the exact dry piano; CC22/23 program change and CC119 telemetry; no allocation
+  in the audio callback.
+* **ARM builds** (all pass `check-firmware.py` and `check-elf-placement.py`):
 
-## Next (phase 2)
+  | Image | AXI SRAM | DTCM | SDRAM |
+  | --- | --- | --- | --- |
+  | `Fv1VmFx` float, SDRAM | 119 184 B | 111 016 B (84.7 %) | 128 KiB |
+  | `Fv1VmFx` double, SDRAM | 124 756 B | 112 344 B | 256 KiB |
+  | `Fv1VmFx` float, AXI | 250 272 B | 111 016 B | 0 |
+  | `Fv1VmFx` double, AXI | 386 912 B | 112 344 B | 0 |
+  | `Fv1VmFxLocal` float, SDRAM (240 programs) | 242 088 B | 111 016 B | 128 KiB |
+  | `ToyPianoFv1` | 172 632 B | 119 664 B (91.3 %) | 139 684 B |
+  | `ToyPianoFv1Local` | 295 536 B | 119 664 B | 139 684 B |
 
-* Standalone FX firmware: a FV-1 program from a git-ignored generated header, 32 kHz, DWT cycle telemetry per block.
-* Toy Piano composition flag; telemetry via the existing CC-packet pattern (`instruments/physical-modeling/src/cpu_telemetry.h`).
-* Board measurements: cost of `float` vs `double`, SDRAM vs AXI SRAM placement, worst case over the 240 programs.
-  Flashing only after the owner has put the kit into update mode and asked for it.
+  The standalone interpreter object (decoded program) is in DTCM; in `toy-piano-fv1` the whole host lives in
+  SDRAM because DTCM has no room (cache behaviour NOT MEASURED).
+* Regular `toy-piano`, `toy-piano-tape` and `toy-piano-ambient` ARM images are byte-identical with and without
+  this change (SHA-256 compared).
+* Not run: `test-sanitize` and `test-thread` (llvm-mingw on Windows has no sanitizer runtimes); Linux CI does not
+  run these tests (no workflow change without the owner's approval); hardware.
+* The Toy Piano golden test fails with this Windows host compiler also on unmodified sources (hash pinned for the
+  Linux toolchain); it is unaffected by this change.
+
+## Next
+
+Board measurements (owner's kit, flashing only after the owner has put it into update mode and asked):
+[docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md).

@@ -82,6 +82,18 @@
       },
       "provenance": "effects/tape-fx/tests/reference/UPSTREAM.md"
     },
+    "fv1-vm": {
+      "kind": "effect",
+      "source": "effects/fv1-vm/include",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/fv1-vm/include/fv1vm/fv1_vm.h",
+        "name": "SEED_FV1VM_VERSION"
+      }
+    },
     "fx-contract": {
       "kind": "contract",
       "source": "common/audio",
@@ -469,6 +481,22 @@
       ],
       "panels": []
     },
+    "fv1-vm-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/fv1-vm/src/version.h",
+        "name": "FV1VM_FIRMWARE_VERSION"
+      },
+      "directory": "effects/fv1-vm/build",
+      "image": "Fv1VmFx",
+      "marker": "FV1VM-FX-VERSION=",
+      "components": [
+        "fv1-vm",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
     "toy-piano-tape": {
       "version": {
         "type": "macro",
@@ -481,6 +509,29 @@
       "components": [
         "toy-piano",
         "tape-fx",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "toy-piano-fv1": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_FV1_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/fv1",
+      "image": "ToyPianoFv1",
+      "marker": "TOYPIANO-FV1-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "fv1-vm",
         "mod-on-daisy",
         "callback-diagnostics",
         "fx-contract",

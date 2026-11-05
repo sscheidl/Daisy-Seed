@@ -4,7 +4,7 @@
 // for experiments and are greyed out in the editor.
 #include "config.h"
 #include "version.h"
-#if TOY_PIANO_FX || TOY_PIANO_TAPE
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
 #include "composed_version.h"
 #endif
 #include "mod_on_daisy/types.h"
@@ -43,6 +43,10 @@ inline mod::InstrumentInfo MakeModInfo() {
     // The five Toy Piano columns; the tape is played from the pots only.
     info.key = "toy-piano-tape";
     info.version = TOY_PIANO_TAPE_VERSION;
+#elif TOY_PIANO_FV1
+    // The five Toy Piano columns; the FV-1 program is played from VR1..VR4 and MIDI CC.
+    info.key = "toy-piano-fv1";
+    info.version = TOY_PIANO_FV1_VERSION;
 #else
     info.key = "toy-piano";
     info.version = TOY_PIANO_VERSION;

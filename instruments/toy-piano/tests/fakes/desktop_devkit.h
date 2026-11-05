@@ -26,6 +26,22 @@ struct System {
 }
 #include "hid/digital_control.h"
 
+// Cortex-M7 cycle counter (toy-piano-fv1 telemetry). Each CYCCNT read advances it by `step`.
+struct FakeCycles {
+    uint32_t value = 0, step = 0;
+    operator uint32_t() { return value += step; }
+    FakeCycles& operator=(uint32_t v) { value = v; return *this; }
+};
+struct FakeCounter { FakeCycles CYCCNT; uint32_t CTRL = 0; };
+struct FakeCoreDebug { uint32_t DEMCR = 0; };
+inline FakeCounter fakeDwt;
+inline FakeCoreDebug fakeCoreDebug;
+inline FakeCounter* DWT = &fakeDwt;
+inline FakeCoreDebug* CoreDebug = &fakeCoreDebug;
+inline constexpr uint32_t DWT_CTRL_CYCCNTENA_Msk = 1;
+inline constexpr uint32_t CoreDebug_DEMCR_TRCENA_Msk = 1;
+inline uint32_t SystemCoreClock = 480000000;
+
 namespace daisy {
 struct AudioHandle {
     using InputBuffer = const float* const*;

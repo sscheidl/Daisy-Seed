@@ -76,3 +76,16 @@ PROJECTS += streichwurst-fx
 BUILDABLE_PROJECTS += streichwurst-fx
 PROJECT_DIR_streichwurst-fx := effects/streichwurst-fx
 PROJECT_STATUS_streichwurst-fx := buildable
+# FV-1 interpreter FX (research / feasibility study, L2A case fx-aid-catalog): standalone
+# firmware with own demo programs; ARM build verified 2026-11-05. PROGRAMS=local images are local only.
+PROJECTS += fv1-vm-fx
+BUILDABLE_PROJECTS += fv1-vm-fx
+PROJECT_DIR_fv1-vm-fx := effects/fv1-vm
+PROJECT_STATUS_fv1-vm-fx := buildable
+# Toy Piano -> fv1-vm (composed test product, owner decision 2026-11-05); ARM build verified 2026-11-05.
+# FV1_PROGRAMS=local images are local only.
+PROJECTS += toy-piano-fv1
+BUILDABLE_PROJECTS += toy-piano-fv1
+PROJECT_DIR_toy-piano-fv1 := instruments/toy-piano
+PROJECT_ARGS_toy-piano-fv1 := FV1=1
+PROJECT_STATUS_toy-piano-fv1 := buildable

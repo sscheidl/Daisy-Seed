@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Host tests for the FV-1 interpreter with hand-encoded programs (no vendor program data).
 #include "fv1vm/fv1_vm.h"
+#include "fv1vm/fv1_asm.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -15,30 +16,8 @@ static int failures = 0;
         if(!(cond)) { std::printf("FAIL %s:%d %s\n", __FILE__, __LINE__, msg); ++failures; }          \
     } while(0)
 
-// ---- Encoders (field layout of the FV-1 machine word) -------------------------------------------------
-static uint32_t S(int v, unsigned bits) { return uint32_t(v) & ((1u << bits) - 1u); }
-static uint32_t Rda(unsigned addr, double c) { return (S(int(std::lround(c * 512)), 11) << 21) | ((addr & 0x7FFF) << 5) | 0; }
-static uint32_t Wra(unsigned addr, double c) { return (S(int(std::lround(c * 512)), 11) << 21) | ((addr & 0x7FFF) << 5) | 2; }
-static uint32_t Wrap(unsigned addr, double c) { return (S(int(std::lround(c * 512)), 11) << 21) | ((addr & 0x7FFF) << 5) | 3; }
-static uint32_t Rmpa(double c) { return (S(int(std::lround(c * 512)), 11) << 21) | 1; }
-static uint32_t RegOp(unsigned op, unsigned reg, double c) { return (S(int(std::lround(c * 16384)), 16) << 16) | ((reg & 0x3F) << 5) | op; }
-static uint32_t Rdax(unsigned reg, double c) { return RegOp(4, reg, c); }
-static uint32_t Rdfx(unsigned reg, double c) { return RegOp(5, reg, c); }
-static uint32_t Wrax(unsigned reg, double c) { return RegOp(6, reg, c); }
-static uint32_t Wrhx(unsigned reg, double c) { return RegOp(7, reg, c); }
-static uint32_t Wrlx(unsigned reg, double c) { return RegOp(8, reg, c); }
-static uint32_t Mulx(unsigned reg) { return ((reg & 0x3F) << 5) | 10; }
-static uint32_t Sof(double c, double d) { return (S(int(std::lround(c * 16384)), 16) << 16) | (S(int(std::lround(d * 1024)), 11) << 5) | 13; }
-static uint32_t Log(double c, double d) { return (Sof(c, d) & ~0x1Fu) | 11; }
-static uint32_t Exp(double c, double d) { return (Sof(c, d) & ~0x1Fu) | 12; }
-static uint32_t And(uint32_t m) { return ((m & 0xFFFFFF) << 8) | 14; }
-static uint32_t Skp(unsigned cond, unsigned n) { return ((cond & 0x1F) << 27) | ((n & 0x3F) << 21) | 17; }
-static uint32_t Wlds(unsigned lfo, unsigned f, unsigned a) { return ((lfo & 1) << 29) | ((f & 0x1FF) << 20) | ((a & 0x7FFF) << 5) | 18; }
-static uint32_t Wldr(unsigned lfo, int f, unsigned code) { return (1u << 30) | ((lfo & 1) << 29) | (S(f, 16) << 13) | ((code & 3) << 5) | 18; }
-static uint32_t Jam(unsigned lfo) { return (1u << 7) | ((lfo & 1) << 6) | 19; }
-static uint32_t Cho(unsigned type, unsigned lfo, unsigned flags, unsigned addr) { return (type << 30) | ((flags & 0x3F) << 24) | ((lfo & 3) << 21) | ((addr & 0xFFFF) << 5) | 20; }
-enum { ADCL = 20, ADCR = 21, DACL = 22, DACR = 23, ADDR_PTR = 24, REG0 = 32, RMP0_RATE = 4 };
-enum { RUN = 0x10, ZRC = 0x08, ZRO = 0x04, GEZ = 0x02, NEG = 0x01 };
+// Encoders: fv1vm/fv1_asm.h (shared with the firmware demo programs).
+using namespace seed::fx::fv1::assemble;
 
 struct Rig {
     std::unique_ptr<Storage<double>> st = std::make_unique<Storage<double>>();

@@ -17,6 +17,13 @@
 #include "tape_host.h"
 #include "callback_diagnostics.h"
 #include <new>
+#elif TOY_PIANO_FV1
+#include "fv1_host.h"
+#include "callback_diagnostics.h"
+#include <new>
+#if FV1VM_LOCAL_PROGRAMS
+#include "fv1vm_programs.local.h" // generated, git-ignored (effects/fv1-vm/tools/gen_programs.py)
+#endif
 #endif
 #define TOY_PIANO_MODULATION 1 // tests: call InitModulation() before the callback
 
@@ -30,6 +37,13 @@ namespace {
 const char kFirmwareId[] = "TOYPIANO-AMBIENT-FW-VERSION=" TOY_PIANO_AMBIENT_VERSION;
 #elif TOY_PIANO_TAPE
 const char kFirmwareId[] = "TOYPIANO-TAPE-FW-VERSION=" TOY_PIANO_TAPE_VERSION;
+#elif TOY_PIANO_FV1
+const char kFirmwareId[] = "TOYPIANO-FV1-FW-VERSION=" TOY_PIANO_FV1_VERSION;
+#if FV1VM_LOCAL_PROGRAMS
+const char kProgramSource[] = "FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE";
+#else
+const char kProgramSource[] = "FV1VM-PROGRAMS=BUILTIN";
+#endif
 #else
 const char kFirmwareId[] = "TOYPIANO-FW-VERSION=" TOY_PIANO_VERSION;
 #endif
@@ -89,6 +103,26 @@ bool InitializeFx() {
     tape = new(fx_storage) toy_piano::TapeHost{};
     return tape->Prepare();
 }
+#elif TOY_PIANO_FV1
+// Host incl. the 128 KiB FV-1 delay RAM in SDRAM: default .bss would be the nearly full DTCM.
+alignas(toy_piano::Fv1Host) unsigned char DSY_SDRAM_BSS fx_storage[sizeof(toy_piano::Fv1Host)];
+toy_piano::Fv1Host* fv1 = nullptr;
+mod::adapter::CallbackDiagnostics callback_diagnostics;
+// Main loop -> audio thread: program and telemetry requests (-1 none; fv1_firmware.h protocol).
+std::atomic<int32_t> fv1_program_request{-1}, fv1_telemetry_request{-1};
+// Audio thread -> main loop: one telemetry snapshot (release/acquire hand-off).
+fv1_fw::Meter fv1_meter;
+fv1_fw::Snapshot fv1_snapshot;
+std::atomic<bool> fv1_snapshot_ready{false};
+bool InitializeFx() {
+    std::fill_n(fx_storage, sizeof(fx_storage), static_cast<unsigned char>(0));
+    fv1 = new(fx_storage) toy_piano::Fv1Host{};
+#if FV1VM_LOCAL_PROGRAMS
+    return fv1->Prepare({fv1vm_local::kPrograms, fv1vm_local::kCount});
+#else
+    return fv1->Prepare({});
+#endif
+}
 #else
 toy_piano::PotFilter attack_pot, decay_pot;
 #endif
@@ -126,7 +160,7 @@ void InitModulation(float sample_rate) {
     callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
     modulation.EnableExtensions({true, true, true});
-#elif TOY_PIANO_TAPE
+#elif TOY_PIANO_TAPE || TOY_PIANO_FV1
     callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
     modulation.EnableExtensions({true, true, false});
@@ -180,7 +214,10 @@ void ModulateVoices(size_t size) {
 
 void AudioCallback(daisy::AudioHandle::InputBuffer,
                    daisy::AudioHandle::OutputBuffer out, size_t size) {
-#if TOY_PIANO_FX || TOY_PIANO_TAPE
+#if TOY_PIANO_FV1
+    const uint32_t fv1_start = DWT->CYCCNT;
+#endif
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
     if(size != toy_piano::kBlockSize) {
         for(size_t i = 0; i < std::min(size, toy_piano::kBlockSize); ++i) out[0][i] = out[1][i] = 0;
         return;
@@ -224,6 +261,21 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     modulation.engine.ReportBase(toy_piano::ModHarmonic, toy_piano::kHarmonicBase);
     modulation.engine.ReportBase(toy_piano::ModAttack, 0.f);
     modulation.engine.ReportBase(toy_piano::ModDecay, toy_piano::kTapeDecayBase);
+#elif TOY_PIANO_FV1
+    std::array<float, 8> raw{};
+    for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
+    fv1->ReadControls(raw);
+    const int32_t fv1_program = fv1_program_request.exchange(-1, std::memory_order_acquire);
+    const bool fv1_changed = fv1_program >= 0;
+    if(fv1_changed) fv1->Select(unsigned(fv1_program));
+    // VR1..VR4 belong to the FV-1 program and its mix; the piano times are fixed bases.
+    const float attack = modulation.engine.Apply(toy_piano::ModAttack, 0.f);
+    const float decay = modulation.engine.Apply(toy_piano::ModDecay, toy_piano::kFv1DecayBase);
+    modulation.engine.ReportBase(toy_piano::ModPitch, toy_piano::kPitchBase);
+    modulation.engine.ReportBase(toy_piano::ModLevel, toy_piano::kLevelBase);
+    modulation.engine.ReportBase(toy_piano::ModHarmonic, toy_piano::kHarmonicBase);
+    modulation.engine.ReportBase(toy_piano::ModAttack, 0.f);
+    modulation.engine.ReportBase(toy_piano::ModDecay, toy_piano::kFv1DecayBase);
 #else
     const float attack_base = attack_pot.Process(hw.pot[0].Value());
     const float decay_base = decay_pot.Process(hw.pot[1].Value());
@@ -280,6 +332,21 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     for(size_t i = 0; i < size; ++i) mono[i] = piano.Process();
     tape->Process(mono.data(), out[0], out[1], size);
     callback_diagnostics.End();
+#elif TOY_PIANO_FV1
+    std::array<float, toy_piano::kBlockSize> mono{};
+    for(size_t i = 0; i < size; ++i) mono[i] = piano.Process();
+    fv1->Process(mono.data(), out[0], out[1], size);
+    callback_diagnostics.End();
+    // Whole-callback cycles; a program-change block (delay-RAM clear) is not measured.
+    int32_t fv1_request = fv1_telemetry_request.load(std::memory_order_relaxed);
+    if(fv1_request == 2 || fv1_changed) fv1_meter.Reset();
+    if(!fv1_changed) fv1_meter.Add(DWT->CYCCNT - fv1_start);
+    if(fv1_request > 0 && !fv1_snapshot_ready.load(std::memory_order_acquire) &&
+       fv1_telemetry_request.compare_exchange_strong(fv1_request, -1, std::memory_order_relaxed)) {
+        fv1_snapshot = fv1_meter.Take(uint16_t(fv1->Program()),
+                                      fv1->LocalPrograms() ? uint8_t(fv1_fw::kLocalPrograms) : uint8_t(0));
+        fv1_snapshot_ready.store(true, std::memory_order_release);
+    }
 #else
     for(size_t i = 0; i < size; ++i) {
         const float sample = piano.Process();
@@ -318,7 +385,10 @@ void SendKeyChanges(uint32_t mask, bool connected) {
 // Main loop only: USB parsing happens in the USB interrupt, but sending blocks.
 void ServiceUsbMidi() {
     usb_midi.Listen(); // Restarts reception after an overflow.
-#if TOY_PIANO_FX || TOY_PIANO_TAPE
+#if TOY_PIANO_FV1
+    static fv1_fw::Remote fv1_remote;
+#endif
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
     static bool pending = false;
     static NoteIn next{};
     for(unsigned batch = 0; batch < 64; ++batch) {
@@ -335,6 +405,17 @@ void ServiceUsbMidi() {
             boot_request.Set(bootloader::Request::kSysEx);
             continue;
         }
+#if TOY_PIANO_FV1
+        // Channel 16 CC22/23 program, CC119 telemetry; the other remote commands are standalone-only.
+        if(event.type == daisy::ControlChange && event.channel == 15) {
+            const fv1_fw::Action action = fv1_remote.Handle(event.channel, event.data[0], event.data[1]);
+            if(action.command == fv1_fw::Command::Program)
+                fv1_program_request.store(int32_t(action.value), std::memory_order_release);
+            else if(action.command == fv1_fw::Command::Telemetry)
+                fv1_telemetry_request.store(int32_t(action.value), std::memory_order_relaxed);
+            if(action.command != fv1_fw::Command::None || event.data[0] == 22) continue;
+        }
+#endif
 #if TOY_PIANO_FX
         if(event.type == daisy::SystemCommon && event.sc_type == daisy::SystemExclusive &&
            fx_rate.HandleBody(event.sysex_data, event.sysex_message_len, daisy::System::GetNow()))
@@ -346,7 +427,7 @@ void ServiceUsbMidi() {
         if(event.type == daisy::NoteOn) {
             const auto note = event.AsNoteOn();
             if(note.velocity > 0) {
-#if TOY_PIANO_FX || TOY_PIANO_TAPE
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
                 if(!midi_in.Push({note.note, note.velocity})) {
                     next = {note.note, note.velocity};
                     pending = true;
@@ -365,6 +446,13 @@ void ServiceUsbMidi() {
 #if TOY_PIANO_FX
     fx_rate.Service(daisy::System::GetNow(), connected);
 #endif
+#if TOY_PIANO_FV1
+    if(fv1_snapshot_ready.load(std::memory_order_acquire)) {
+        auto packet = fv1_fw::Encode(fv1_snapshot);
+        fv1_snapshot_ready.store(false, std::memory_order_release);
+        if(connected) usb_midi.SendMessage(packet.data(), packet.size());
+    }
+#endif
 }
 
 // Main loop only: replies over USB if a host asked, then resets into the bootloader.
@@ -378,6 +466,9 @@ void ServiceBootloader() {
 
 int main() {
     asm volatile("" : : "r"(kFirmwareId)); // Keep the version string in the image.
+#if TOY_PIANO_FV1
+    asm volatile("" : : "r"(kProgramSource));
+#endif
     hw.Init();
 #if TOY_PIANO_FX && AMBIENT_SDRAM_WRITE_ALLOCATE && defined(__arm__)
     EnableSdramWriteAllocate(); // Before any SDRAM content is initialized.
@@ -385,8 +476,14 @@ int main() {
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(toy_piano::kBlockSize);
     piano.Init(hw.seed.AudioSampleRate());
-#if TOY_PIANO_FX || TOY_PIANO_TAPE
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
     if(!InitializeFx()) while(true) daisy::System::Delay(100);
+#endif
+#if TOY_PIANO_FV1
+    fv1_meter.Init((SystemCoreClock / 48000u) * uint32_t(toy_piano::kBlockSize));
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 #endif
     InitModulation(hw.seed.AudioSampleRate());
     // Let the mux ADC settle and populate AnalogControl values before use.
