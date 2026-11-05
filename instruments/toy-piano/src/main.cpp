@@ -115,6 +115,7 @@ std::atomic<int32_t> fv1_program_request{-1}, fv1_telemetry_request{-1};
 // Audio thread -> main loop: one telemetry snapshot (release/acquire hand-off).
 fv1_fw::Meter fv1_meter;
 fv1_fw::Snapshot fv1_snapshot;
+fv1_fw::Status fv1_status; // live controls, taken with the snapshot (same hand-off)
 std::atomic<bool> fv1_snapshot_ready{false};
 // Piano first (0.5.0): VR1 transposition (+-24 semitones), VR2 attack and VR3 decay.
 toy_piano::PotFilter pitch_pot, attack_pot, decay_pot;
@@ -385,6 +386,10 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
        fv1_telemetry_request.compare_exchange_strong(fv1_request, -1, std::memory_order_relaxed)) {
         fv1_snapshot = fv1_meter.Take(uint16_t(fv1->Program()),
                                       fv1->LocalPrograms() ? uint8_t(fv1_fw::kLocalPrograms) : uint8_t(0));
+        fv1_status.rate_hz = fv1->Rate();
+        fv1_status.transpose_cents = 1200.f * std::log2(piano_transpose);
+        fv1_status.mix = fv1->Mix();
+        fv1_status.bypass = fv1->Bypass();
         fv1_snapshot_ready.store(true, std::memory_order_release);
     }
 #else
@@ -516,8 +521,12 @@ void ServiceUsbMidi() {
 #if TOY_PIANO_FV1
     if(fv1_snapshot_ready.load(std::memory_order_acquire)) {
         auto packet = fv1_fw::Encode(fv1_snapshot);
+        auto status = fv1_fw::EncodeStatus(fv1_status); // CC80..89 right after the CPU packet
         fv1_snapshot_ready.store(false, std::memory_order_release);
-        if(connected) usb_midi.SendMessage(packet.data(), packet.size());
+        if(connected) {
+            usb_midi.SendMessage(packet.data(), packet.size());
+            usb_midi.SendMessage(status.data(), status.size());
+        }
     }
 #endif
 }

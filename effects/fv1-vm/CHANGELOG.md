@@ -1,5 +1,10 @@
 # Changelog: fv1-vm
 
+## toy-piano-fv1 0.7.0 (2026-11-05, unreleased)
+
+* Status packet after each telemetry reply (channel-16 CC80..89): internal rate, VR1 transposition, dry/wet, bypass
+  (`fv1_fw::Status`, `EncodeStatus`, host-tested). The control page shows these live values under "Now".
+
 ## toy-piano-fv1 0.6.1 (2026-11-05, unreleased)
 
 * `FxVar` hot loops in float with 32-bit ring indices: per-tap double arithmetic and 64-bit conversions (library

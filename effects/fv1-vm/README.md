@@ -72,6 +72,9 @@ CC24 input (0 line, 1 noise), CC25..27 POT0..2 (value/127, held until a panel po
 CC28 bypass, CC119 = 1 read / 2 reset and read. The reply is twenty channel-16 CCs, CC100..119, protocol id 2
 (the physical-modeling decoder ignores it): average and peak cycles per block in 1/10 000 of the block budget,
 blocks, overruns, program index and flags. `tools/fv1vm_probe.py` decodes it and can sweep all programs.
+toy-piano-fv1 (0.7.0+) follows each reply with a **status packet**, channel-16 CC80..89 (id 1): internal rate in
+10 Hz units (CC81-82), VR1 transposition in cents + 2400 (CC83-84), dry/wet % (CC85), bypass (CC86 bit 0),
+CC89 = 64. The control page shows it; the probe ignores it.
 
 **Standard MIDI program selection** (both firmwares, any channel): Bank Select MSB (CC0) or, if the MSB is 0,
 LSB (CC32) sets *bank*; Program Change *n* then selects a program.

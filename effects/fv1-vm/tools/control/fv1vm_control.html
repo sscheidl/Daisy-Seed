@@ -111,6 +111,12 @@ section + section { margin-top: 16px; }
       <h2>Now</h2>
       <div class="now" id="now-name">–</div>
       <div class="now-sub" id="now-sub">no program sent yet</div>
+      <dl id="live" hidden>
+        <dt>Rate (VR8)</dt><dd id="live-rate">–</dd>
+        <dt>Pitch (VR1)</dt><dd id="live-pitch">–</dd>
+        <dt>Dry/wet (VR7)</dt><dd id="live-mix">–</dd>
+        <dt>Bypass (SW17)</dt><dd id="live-bypass">–</dd>
+      </dl>
       <div class="row">
         <button id="chord">Play test chord</button>
         <span class="note">4 notes on channel 1 (Toy Piano)</span>
@@ -191,9 +197,26 @@ function makeDecoder() {
 }
 window.fv1vmDecoder = makeDecoder; // exposed for checks in the browser console
 
+// Status packet of products with live controls (toy-piano-fv1 0.7.0+): channel-16 CC80..89, id 1, sent right after
+// the CPU packet. CC81-82 rate in 10 Hz, CC83-84 transposition in cents + 2400, CC85 dry/wet %, CC86 bit 0 bypass.
+function makeStatusDecoder() {
+  let values = [];
+  return function feed(status, control, value) {
+    if (status !== 0xBF || control < 80 || control > 89 || value > 127) return null;
+    if (control === 80) { values = value === 1 ? [value] : []; return null; }
+    if (!values.length || control !== 80 + values.length) { values = []; return null; }
+    values.push(value);
+    if (control !== 89) return null;
+    const v = values; values = [];
+    if (v[9] !== 64) return null;
+    return { rate: (v[1] + v[2] * 128) * 10, cents: v[3] + v[4] * 128 - 2400, mix: v[5], bypass: (v[6] & 1) === 1 };
+  };
+}
+window.fv1vmStatusDecoder = makeStatusDecoder;
+
 // ---- MIDI ----------------------------------------------------------------------------------------------
 let access = null, input = null, output = null, lastReply = 0;
-const feed = makeDecoder();
+const feed = makeDecoder(), feedStatus = makeStatusDecoder();
 const $ = id => document.getElementById(id);
 function setStatus(text, cls) { const s = $('status'); s.textContent = text; s.className = 'status' + (cls ? ' ' + cls : ''); }
 function send(bytes) { if (output) output.send(bytes); }
@@ -216,6 +239,8 @@ function bindPorts() {
     const [s, c, v] = e.data;
     const t = feed(s, c, v);
     if (t) showTelemetry(t);
+    const st = feedStatus(s, c, v);
+    if (st) showStatus(st);
   };
   setStatus(input && output ? `connected: ${output.name}` : 'choose ports', input && output ? 'on' : '');
 }
@@ -332,6 +357,14 @@ function showTelemetry(t) {
   $('blocks').textContent = t.blocks; $('overruns').textContent = t.overruns;
   $('tprog').textContent = programs[t.program - 1] ? code(programs[t.program - 1]) : t.program; $('flags').textContent = t.flags.join(', ') || 'none';
   if (t.program - 1 !== current && t.program - 1 < programs.length) { current = t.program - 1; markCurrent(false); }
+}
+function showStatus(st) {
+  $('live').hidden = false;
+  $('live-rate').textContent = `${(st.rate / 1000).toFixed(st.rate % 1000 ? 2 : 0)} kHz`;
+  const semis = st.cents / 100;
+  $('live-pitch').textContent = st.cents === 0 ? '0 (centre)' : `${semis > 0 ? '+' : ''}${semis.toFixed(2)} semitones`;
+  $('live-mix').textContent = `${st.mix} %`;
+  $('live-bypass').textContent = st.bypass ? 'on (dry piano)' : 'off';
 }
 setInterval(() => {
   if ($('poll').checked && output) cc16(119, 1);

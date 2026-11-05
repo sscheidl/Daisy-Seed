@@ -217,4 +217,30 @@ inline std::array<uint8_t, 60> Encode(const Snapshot& s) {
     return p;
 }
 
+// ---- Status packet (products with live controls, e.g. toy-piano-fv1) ------------------------------------
+// Sent right after the CPU packet: ten channel-16 CCs, CC80..89.
+// CC80 = 1 (status id), CC81-82 internal rate in 10 Hz units, CC83-84 transposition in cents + 2400
+// (0..4800 = -24..+24 semitones), CC85 dry/wet 0..100 %, CC86 flags (bit 0 bypass), CC87-88 0, CC89 = 64.
+struct Status {
+    float rate_hz = 32000.f, transpose_cents = 0.f, mix = 1.f;
+    bool bypass = false;
+};
+inline std::array<uint8_t, 30> EncodeStatus(const Status& s) {
+    std::array<uint8_t, 30> p{};
+    for(unsigned i = 0; i < 10; ++i) { p[3 * i] = 0xBF; p[3 * i + 1] = uint8_t(80 + i); }
+    auto put = [&](unsigned cc, long number, unsigned digits) {
+        const long limit = (1L << (7 * digits)) - 1;
+        number = number < 0 ? 0 : number > limit ? limit : number;
+        for(unsigned i = 0; i < digits; ++i) p[3 * (cc - 80 + i) + 2] = uint8_t((number >> (7 * i)) & 127);
+    };
+    auto round = [](float x) { return long(x < 0 ? x - .5f : x + .5f); };
+    put(80, 1, 1);
+    put(81, round(s.rate_hz / 10.f), 2);
+    put(83, round(s.transpose_cents) + 2400, 2);
+    put(85, round(s.mix * 100.f), 1);
+    put(86, s.bypass ? 1 : 0, 1);
+    put(89, 64, 1);
+    return p;
+}
+
 } // namespace fv1_fw

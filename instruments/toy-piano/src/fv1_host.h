@@ -81,6 +81,7 @@ class Fv1Host {
     bool Resolve(unsigned bank, unsigned program, unsigned& index) const { return bank_.Resolve(bank, program, index); }
     bool Bypass() const { return bypass_; }
     float Rate() const { return fx_.Rate(); }
+    float Mix() const { return target_mix_; }
   private:
     static float Limit(float x) { return x > 1.f ? 1.f : x < -1.f ? -1.f : x; }
     seed::fx::fv1::FxVar<float> fx_;

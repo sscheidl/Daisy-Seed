@@ -150,7 +150,14 @@ void TestTelemetryAndProgramChange() {
     Tick(5);
     usb_midi.sent.clear();
     ServiceUsbMidi();
-    assert(usb_midi.sent.size() == 1 && usb_midi.sent[0].size() == 60);
+    assert(usb_midi.sent.size() == 2 && usb_midi.sent[0].size() == 60 && usb_midi.sent[1].size() == 30);
+    {   // status packet: rate 32 kHz (VR8 left), transposition 0 (VR1 centre), mix and bypass as set
+        const auto& st = usb_midi.sent[1];
+        auto v = [&](unsigned cc) { return unsigned(st[3 * (cc - 80) + 2]); };
+        for(unsigned i = 0; i < 10; ++i) assert(st[3 * i] == 0xBF && st[3 * i + 1] == 80 + i);
+        assert(v(80) == 1 && v(89) == 64 && (v(81) | v(82) << 7) == 3200 && (v(83) | v(84) << 7) == 2400);
+        assert(v(85) == unsigned(std::lround(fv1->Mix() * 100)) && v(86) == (fv1->Bypass() ? 1u : 0u));
+    }
     const auto& p = usb_midi.sent[0];
     auto value = [&](unsigned cc) { return unsigned(p[3 * (cc - 100) + 2]); };
     for(unsigned i = 0; i < 20; ++i) assert(p[3 * i] == 0xBF && p[3 * i + 1] == 100 + i);
@@ -168,7 +175,7 @@ void TestTelemetryAndProgramChange() {
     Tick(3);
     usb_midi.sent.clear();
     ServiceUsbMidi();
-    assert(usb_midi.sent.size() == 1);
+    assert(usb_midi.sent.size() == 2);
     const unsigned blocks2 = usb_midi.sent[0][3 * 7 + 2];
     assert(blocks2 == 1); // only the block after the change
     fakeDwt.CYCCNT.step = 0;

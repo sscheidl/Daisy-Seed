@@ -138,6 +138,20 @@ static void TestTelemetryPacket() {
     CHECK(q[3 * 4 + 2] == 127 && q[3 * 5 + 2] == 127 && q[3 * 6 + 2] == 127, "peak saturates at 21 bits");
 }
 
+static void TestStatusPacket() {
+    Status s; s.rate_hz = 16000.f; s.transpose_cents = -1200.4f; s.mix = .7f; s.bypass = true;
+    const auto p = EncodeStatus(s);
+    // rate 1600 = 64 + 12 * 128; cents 1200 = 48 + 9 * 128; mix 70; bypass 1.
+    const uint8_t expected[10] = {1, 64, 12, 48, 9, 70, 1, 0, 0, 64};
+    bool ok = true;
+    for(unsigned i = 0; i < 10; ++i) ok = ok && p[3 * i] == 0xBF && p[3 * i + 1] == 80 + i && p[3 * i + 2] == expected[i];
+    CHECK(ok, "status packet bytes");
+    Status extreme; extreme.transpose_cents = 9999.f; extreme.rate_hz = -5.f; extreme.mix = 2.f;
+    const auto q = EncodeStatus(extreme);
+    const unsigned cents = q[3 * 3 + 2] | q[3 * 4 + 2] << 7;
+    CHECK(cents == 12399 && q[3 * 1 + 2] == 0 && q[3 * 2 + 2] == 0 && q[3 * 5 + 2] == 127, "status values clamp to their fields");
+}
+
 int main() {
     TestBuiltinThru();
     TestBuiltinEcho();
@@ -145,6 +159,7 @@ int main() {
     TestGroups();
     TestRemote();
     TestTelemetryPacket();
+    TestStatusPacket();
     if(failures) { std::printf("%d failure(s)\n", failures); return 1; }
     std::printf("fv1-vm firmware host tests: all passed\n");
     return 0;
