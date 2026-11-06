@@ -192,6 +192,7 @@ static void PendingRestartOwnership() {
         for(bool blocked_tx : {false, true}) {
             Rig r;
             r.Host("HELLO proto=1");
+            r.port.in.card = true;  // SHARE must fail on the pending restart, not on the card
             r.port.busy = blocked_tx;
             r.Host(command);
             r.Host("READER a=SHARE");

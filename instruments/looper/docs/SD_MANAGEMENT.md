@@ -91,6 +91,15 @@ the answer is SAVING (at most 180 s; the write speed of the card is NICHT GEMESS
 87 s loop is about 33 MB). Only when saving is impossible does the firmware answer
 CONFIRM_REQUIRED.
 
+ACCEPTED is final (since v0.6.1). An undo, redo or erase moves the content version only
+after its 10 ms ramp, and a key or CC press reaches the engine only in the next audio
+block, so a first "saved and idle" can be out of date. The firmware therefore counts a
+busy engine as unsaved, fades out, holds every key and CC press, waits for one whole
+audio block under the hold (about 2 ms, at most 50 ms) and decides again before it
+replies. If an edit turned up, it answers SAVING, the output comes back and the held
+presses are applied. A press that arrives after ACCEPTED is dropped. STATUS can show
+`unsaved` briefly while the engine is busy; the protocol is unchanged.
+
 On ACCEPTED the main loop runs PREPARE_SHARE: fade the output to exactly zero within one
 48-frame block, stop audio, stop any running save (the temporary file is removed,
 `loop.wav` stays as it is), close and unmount FatFs, reset SDMMC1 (RCC reset), all LEDs
@@ -176,5 +185,6 @@ unchanged (two 87 s buffers).
 | `tests/test_admin.cpp` | DDP session, HELLO/caps, READER ownership, LOOPER STATUS/PERFORM only from LOCAL, BOOT, interruption quarantine, S4 gesture, LEDs (same cases as Nebulae's admin test) |
 | `tests/test_store.cpp` | `SaveSoon` skips the 2 s delay but waits for an idle engine and after a failed save; `Halt` stops a save and keeps `loop.wav` |
 | `tests/test_callback.cpp` | production `main.cpp`, both builds: STATUS bytes, BUSY while overdubbing, SAVING then a save within 100 ms, NO_CARD, CONFIRM_REQUIRED after a failed save, recovery after the 10 s retry, malformed requests, ACCEPTED → PREPARE_SHARE (audio stopped, card released, boot intent, `DAISY_SKIP_TIMEOUT` reset, LEDs off), output exactly zero at the end of the fade block |
+| `tests/test_share_race.cpp` | production `main.cpp`, both builds: ACCEPTED holds every later press; undo or erase during the ramp, CC erase ahead of SHARE in one USB batch and a key edge inside the hold all answer SAVING and the edit survives; a CC behind SHARE in the batch changes nothing |
 | `tests/test_golden.cpp` | regular and MOD output hash unchanged (`2A2DBCEC41A54F57`) |
 | `diagnostics/tests/python/test_looper.py`, `test_gui_looper.py` | panel codec, profile probe (looper and Nebulae on one port), save-then-share, confirmation, cancel, timeouts, refusals, return; GUI |

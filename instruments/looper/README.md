@@ -2,14 +2,15 @@
 
 For the 0.5.1 handover fixes, see the
 [integration report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md); for 0.6.0, the
-[rebuild report](../../docs/SD_WRITABLE_REBUILD_2026-11-06.md). Local loop storage works on
+[rebuild report](../../docs/SD_WRITABLE_REBUILD_2026-11-06.md); 0.6.1 closes a window in which
+an edit just before SHARE could be lost ([SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md)). Local loop storage works on
 FAT32 and exFAT (shared writable `common/sd` profile, FatFs R0.16); Windows sharing uses the
 shared raw-block reader.
 
-**Status: v0.6.0 with all four loop modes, Slice/Skip, loop persistence and WAV
+**Status: v0.6.1 with all four loop modes, Slice/Skip, loop persistence and WAV
 import on the microSD card, MIDI CC control over USB, and Windows access to the card
-through the control panel (SD management, new in v0.5); host tests and ARM build
-pass; no hardware run yet.** Project ID: `looper`. The goal is an original
+through the control panel (SD management, new in v0.5); host tests pass, the ARM
+build last ran for 0.6.0; no hardware run yet.** Project ID: `looper`. The goal is an original
 stereo tape looper for the Seed3 Desktop Dev Kit, using the Qu-Bit Stardust as the
 behavioral reference. Validation details: [docs/VALIDATION.md](docs/VALIDATION.md); checklist for the
 first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md). A separate
@@ -17,8 +18,8 @@ build with the Mod on Daisy modulation matrix: [docs/MODULATION.md](docs/MODULAT
 Windows access to the card: [docs/SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.6.0.bin
-make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.6.0.bin
+make PROJECT=looper -j4            # firmware: build/Looper-v0.6.1.bin
+make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.6.1.bin
 make PROJECT=looper test           # host tests of both builds, incl. production callback
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```
@@ -283,7 +284,7 @@ ignored, and the looper sends nothing back except the bootloader reply.
 ## Mod on Daisy build (MOD=1)
 
 `make PROJECT=looper MOD=1` (or `PROJECT=looper-mod`) builds a second image,
-`build/mod/LooperMod-v0.6.0.bin`, with the
+`build/mod/LooperMod-v0.6.1.bin`, with the
 [Mod on Daisy](../../modules/mod-on-daisy/README.md) 8×8 modulation matrix. The
 editors (browser, JUCE, VST3) connect over J7 and read its eight looper columns from
 the device: **Speed** (±12 semitones at depth 100), **Start**, **Size**, **Slice**,

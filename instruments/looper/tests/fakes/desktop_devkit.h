@@ -10,7 +10,14 @@ namespace daisy {
 struct System {
     inline static uint32_t now = 0;
     static uint32_t GetNow() { return now; }
-    static void Delay(uint32_t ms) { now += ms; }
+    inline static void (*on_delay)() = nullptr;  // one audio block per millisecond, if set
+    static void Delay(uint32_t ms) {
+        for (uint32_t i = 0; i < ms; ++i) {
+            ++now;
+            if (on_delay)
+                on_delay();
+        }
+    }
     // libDaisy's System::ResetToBootloader(); the fake records the request.
     enum BootloaderMode { STM = 0, DAISY, DAISY_SKIP_TIMEOUT, DAISY_INFINITE_TIMEOUT };
     inline static unsigned bootloader_resets = 0;
