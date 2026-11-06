@@ -53,4 +53,7 @@ version headers; the product `streichwurst` (version `src/version.h`) additional
 Mod on Daisy, the SQ device and the queues from `step-seq` as well as the bootloader entry.
 The three panels depend on the Streichwurst parameter contract.
 
+**Filter** (2026-11-06): `filter-core` (kind `dsp`, header-only, `modules/filter-core`). Its test
+product is `toy-piano-filter`: Toy Piano with a filter per voice, no effects.
+
 Audio contract and exact limits: [MODULAR_COMPONENTS.md](../docs/MODULAR_COMPONENTS.md).

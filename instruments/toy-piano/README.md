@@ -13,8 +13,8 @@ The hardware diagnostic suite is maintained separately in
 
 Separate modular products: [Toy Piano + Ambient Reverb](docs/AMBIENT.md),
 `make PROJECT=toy-piano-ambient`, [Toy Piano + Tape FX](docs/TAPE.md),
-`make PROJECT=toy-piano-tape`, and the research build [Toy Piano + FV-1 interpreter](docs/FV1.md),
-`make PROJECT=toy-piano-fv1`. Each has its own version, controls and image;
+`make PROJECT=toy-piano-tape`, the research build [Toy Piano + FV-1 interpreter](docs/FV1.md),
+`make PROJECT=toy-piano-fv1`, and the [filter test build](docs/FILTER.md), `make PROJECT=toy-piano-filter`. Each has its own version, controls and image;
 the v0.3 controls below still describe the original `toy-piano` target.
 
 | Button | Note | MIDI note | Button | Note | MIDI note |

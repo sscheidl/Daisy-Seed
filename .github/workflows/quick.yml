@@ -81,6 +81,10 @@ jobs:
           make PROJECT=toy-piano test
           make PROJECT=toy-piano-ambient test
           make PROJECT=toy-piano-tape test
+          make PROJECT=toy-piano-filter test
+      - name: Filter core host tests
+        if: steps.changes.outputs.filter == 'true'
+        run: make -C modules/filter-core test
       - name: Physical Modeling host tests (base and MOD)
         if: steps.changes.outputs.physical == 'true'
         run: |
