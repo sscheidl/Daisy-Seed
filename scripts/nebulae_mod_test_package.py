@@ -145,6 +145,8 @@ def main():
     run(sys.executable, ROOT / 'scripts' / 'component_manifest.py', '--project', 'granular-mod', '--built')
 
     out = args.out
+    if running_clients():  # before anything is deleted: a running app locks its exe
+        raise SystemExit(f'Close these first: {", ".join(running_clients())}')
     if out.exists():
         for name in ('firmware', 'windows'):
             shutil.rmtree(out / name, ignore_errors=True)
