@@ -37,7 +37,7 @@ def copy_version_sources(data, root):
     return registry
 
 
-ACID_SEQ_SUITES = ('stepseq', 'acid303', 'drive', 'delay', 'acidseq', 'filter')
+ACID_SEQ_SUITES = ('stepseq', 'acid303', 'drive', 'delay', 'acidseq')
 
 
 class ComponentTests(unittest.TestCase):
@@ -153,8 +153,6 @@ class ComponentTests(unittest.TestCase):
             self.assertRegex(manifest.read_version(data['components'][key]['version']), r'^\d+\.\d+\.\d+$')
         self.assertIn('saturation', data['components']['drive']['depends'])
         self.assertIn('fx-contract', data['components']['stereo-delay']['depends'])
-        self.assertIn('drive', data['components']['filter-fx']['depends'])
-        self.assertIn('filter-core', data['products']['filter-fx']['components'])
         self.assertEqual(data['components']['saturation']['version']['path'], 'common/dsp/saturation.h')
         mk = (ROOT / 'projects.mk').read_text()
         for project in ('step-seq', 'acid-303', 'drive-fx', 'delay-fx', 'acid-seq'):
@@ -203,18 +201,13 @@ class ComponentTests(unittest.TestCase):
             'sequencers/step-seq/src/main.cpp': ('stepseq', 'acidseq'),
             'instruments/acid-303/include/acid303/voice.h': ('acid303', 'acidseq'),
             # New effect cores and adapters also run the shared FX contract test.
-            'effects/drive/include/drive/drive.h': ('drive', 'fx', 'acidseq', 'filter'),
+            'effects/drive/include/drive/drive.h': ('drive', 'fx', 'acidseq'),
             'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'acidseq', 'streichwurst'),
             'sequencers/acid-seq/src/main.cpp': ('acidseq',),
-            # Filter core and Filter FX; the contract also regenerates the editor labels.
-            'modules/filter-core/include/filter_core/ladder.h': ('filter', 'fx'),
-            'effects/filter-fx/include/filter_fx/filter_fx.h': ('filter', 'fx'),
-            'effects/filter-fx/contracts/parameters.json': ('filter', 'fx', 'editor'),
             # Shared saturation: its consumers only, no longer every suite.
-            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
-            'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
-            'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst',
-                                           'filter'),
+            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
+            'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
+            'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst'),
             'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             'tests/fixtures/acid-seq/manifest.json': ('acid303', 'drive', 'delay', 'acidseq'),

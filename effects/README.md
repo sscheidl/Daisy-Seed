@@ -10,7 +10,6 @@ Dev Kit:
 | [Tape FX](tape-fx/) | `tape-fx` | Buildable TapeVibe/MixForge port as reusable component and stereo effect; also used by `toy-piano-tape`; hardware test pending |
 | [Drive](drive/) | `drive-fx` | v0.1.0: saturation curves shared with Tape FX, tone, auto level; buildable, hardware test pending |
 | [Stereo Delay](stereo-delay/) | `delay-fx` | v0.1.0: ping-pong and stereo L/R delay, sync up to 12 s; buildable, hardware test pending |
-| [Filter FX](filter-fx/) | `filter-fx` | v0.1.0: Drive into the [filter core](../modules/filter-core/), eight modes, LFO and envelope follower; buildable, control mapping proposed, hardware test pending |
 | [FV-1 interpreter](fv1-vm/) | `fv1-vm-fx` | Research / feasibility study: runs 128-word FV-1 programs at 32 kHz; own demo programs, local program tables never committed; also used by `toy-piano-fv1`; host tests and ARM build passed, hardware test pending |
 | [Granular / Freeze](granular/) | `granular-fx` | Planned |
 

@@ -7,7 +7,6 @@
 // simulators. No timing: Advance() plays the sequencer's step position for the monitor.
 #include "step_seq/device.h"
 #include "step_seq/param_table.h"
-#include "../../../../effects/filter-fx/include/filter_fx/param_table.h"
 #include <functional>
 #include <string>
 #include <vector>
@@ -26,12 +25,12 @@ class SqSimulator : private sq::Host {
 
     explicit SqSimulator(const std::string& product = "acid-seq") : device_(*this) {
         const sq::ComponentParams* tables[] = {&sq::kStepSeqComponent, &sq::kAcid303Component, &sq::kDriveComponent,
-                                               &sq::kStereoDelayComponent, &sq::kFilterFxComponent};
-        const uint8_t kinds[] = {sq::KindSequencer, sq::KindInstrument, sq::KindEffect, sq::KindEffect, sq::KindEffect};
-        for(int i = 0; i < 5; ++i) {
-            const bool wanted = (product == "acid-seq" && i < 4) || (product == "step-seq" && i == 0) ||
+                                               &sq::kStereoDelayComponent};
+        const uint8_t kinds[] = {sq::KindSequencer, sq::KindInstrument, sq::KindEffect, sq::KindEffect};
+        for(int i = 0; i < 4; ++i) {
+            const bool wanted = product == "acid-seq" || (product == "step-seq" && i == 0) ||
                                 (product == "acid-303" && i == 1) || (product == "drive-fx" && i == 2) ||
-                                (product == "delay-fx" && i == 3) || (product == "filter-fx" && i == 4);
+                                (product == "delay-fx" && i == 3);
             if(!wanted)
                 continue;
             values_.emplace_back(tables[i]->count, 0);

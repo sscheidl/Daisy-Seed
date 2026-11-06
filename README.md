@@ -31,8 +31,6 @@ developed independently and reintegrated through their documented contracts.
 | [Acid 303 v0.1.0](instruments/acid-303/) | `instruments/acid-303/` | Monophonic TB-303-style voice (DaisySP PolyBLEP and ladder filter with self-oscillation, accent, slide, two-source note stack) and standalone firmware `acid-303` with MIDI USB+DIN and CC plan; golden tests; host/sanitizer/ARM checks pass, hardware untested |
 | [Drive v0.1.0](effects/drive/) | `effects/drive/` | Soft/Hard/Tape/Fold saturation shared with Tape FX (`common/dsp/saturation.h`, Tape FX images byte-identical after the move), tone, auto level within 1 dB, wet-only FX contract; standalone `drive-fx` firmware; host/sanitizer/ARM checks pass, hardware untested |
 | [Stereo Delay v0.1.0](effects/stereo-delay/) | `effects/stereo-delay/` | Ping-pong and stereo L/R delay, free or synced up to 12 s (dotted whole at 30 BPM, 4.6 MB in SDRAM), feedback 95 % bounded, damping, host tail handling; standalone `delay-fx` firmware with MIDI clock; host/sanitizer/ARM checks pass, hardware untested |
-| [Filter core v0.1.0](modules/filter-core/) | `modules/filter-core/` | Reusable zero-delay-feedback ladder: closed-form solve, one rational limiter, eight modes by tap mixing, self-oscillation calibrated to within 1 dB over cutoff and mode, audio-rate cutoff input, cheaper held path; host/sanitizer checks pass, hardware untested |
-| [Filter FX v0.1.0](effects/filter-fx/) | `effects/filter-fx/` | Stereo effect on the filter core with the Drive component, LFO and envelope follower, wet-only FX contract; standalone `filter-fx` firmware; host/sanitizer/ARM checks pass, control mapping proposed, hardware untested |
 | [Acid Seq v0.1.0](sequencers/acid-seq/) | `sequencers/acid-seq/` | Product firmware `acid-seq` composed of the four components above: sequencer → voice → Drive → Delay → soft limiter, voice shared with MIDI channel 2, delay synced to the sequencer, all components over SQ; end-to-end golden; host/sanitizer/ARM checks pass, hardware untested, no release ([work order](docs/acid-seq/ARBEITSAUFTRAG.md)) |
 | [Hardware diagnostics v0.3.2](diagnostics/) | `diagnostics/` | Implemented SD diagnostics, Windows SD reader and CV/gate tests. **MEASURED 31 October 2026:** SD reader 0.3.2 normal I/O and write-interruption recovery; both CV and gate channels 0.3.1 functional loopbacks. [Scope, remaining checks and binary downloads](diagnostics/README.md#hardware-validation) |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
@@ -59,10 +57,8 @@ Daisy-Seed/
 │   ├── tape-fx/            # Tape FX component (TapeVibe/MixForge port) and standalone firmware
 │   ├── drive/              # planned Drive effect (Acid Seq)
 │   ├── stereo-delay/       # planned Stereo Delay effect (Acid Seq)
-│   ├── filter-fx/          # Filter FX on modules/filter-core, standalone firmware
 │   └── granular/           # effect plan
 ├── modules/
-│   ├── filter-core/        # reusable multimode ladder filter: include, tests, tools
 │   └── mod-on-daisy/       # reusable modulation matrix: include, tests, bench firmware, tools
 ├── editors/
 │   └── mod-on-daisy/       # grid editor: JUCE standalone (src/), browser variant (web/)

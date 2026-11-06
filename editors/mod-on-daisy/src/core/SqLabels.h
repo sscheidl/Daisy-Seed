@@ -31,9 +31,6 @@ inline constexpr const char* kSqEnumStreichwurstInstrument8[] = {"Decay to level
 inline constexpr const char* kSqEnumStreichwurstInstrument12[] = {"Layer", "Split"};
 inline constexpr const char* kSqEnumStreichwurstFx4[] = {"Mode 0 (3 taps)", "Mode 1 (dry + 5)", "Mode 2 (dry + 3)"};
 inline constexpr const char* kSqEnumStreichwurst4[] = {"Main", "Solo", "FX"};
-inline constexpr const char* kSqEnumFilterFx2[] = {"LP 6 dB", "LP 12 dB", "LP 18 dB", "LP 24 dB", "Band-pass", "High-pass", "Notch", "Phaser"};
-inline constexpr const char* kSqEnumFilterFx9[] = {"Sine", "Triangle", "Saw", "Sample & hold"};
-inline constexpr const char* kSqEnumFilterFx13[] = {"Off", "Half", "Full"};
 
 inline constexpr SqLabel kSqLabels[] = {
     {"step-seq", "tempo", "Tempo", nullptr, 0, ""},
@@ -114,19 +111,6 @@ inline constexpr SqLabel kSqLabels[] = {
     {"streichwurst", "midi_channel", "MIDI channel (0 = omni)", nullptr, 0, "global"},
     {"streichwurst", "pot_page", "Pot page on the kit", kSqEnumStreichwurst4, 3, "global"},
     {"streichwurst", "preset", "RAM preset (last recalled)", nullptr, 0, "global"},
-    {"filter-fx", "enabled", "Filter on", nullptr, 0, ""},
-    {"filter-fx", "mode", "Mode", kSqEnumFilterFx2, 8, ""},
-    {"filter-fx", "cutoff", "Cutoff (note)", nullptr, 0, ""},
-    {"filter-fx", "resonance", "Resonance", nullptr, 0, ""},
-    {"filter-fx", "drive", "Drive", nullptr, 0, ""},
-    {"filter-fx", "mix", "Mix", nullptr, 0, ""},
-    {"filter-fx", "lfo_rate", "LFO rate", nullptr, 0, ""},
-    {"filter-fx", "lfo_depth", "LFO depth", nullptr, 0, ""},
-    {"filter-fx", "lfo_shape", "LFO shape", kSqEnumFilterFx9, 4, ""},
-    {"filter-fx", "lfo_stereo", "LFO stereo", nullptr, 0, ""},
-    {"filter-fx", "env_amount", "Envelope amount", nullptr, 0, ""},
-    {"filter-fx", "env_release", "Envelope release", nullptr, 0, ""},
-    {"filter-fx", "bass_comp", "Bass compensation", kSqEnumFilterFx13, 3, ""},
 };
 
 inline const SqLabel* FindSqLabel(const char* component, const char* key) {

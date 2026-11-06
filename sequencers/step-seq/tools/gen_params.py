@@ -23,8 +23,6 @@ EXTRA_SOURCES = [
      ROOT / 'effects' / 'reverb' / 'src' / 'param_table.h', 'Ambient Reverb'),
     (ROOT / 'instruments' / 'streichwurst' / 'contracts' / 'parameters.json',
      ROOT / 'instruments' / 'streichwurst' / 'include' / 'streichwurst' / 'param_table.h', 'Streichwurst'),
-    (ROOT / 'effects' / 'filter-fx' / 'contracts' / 'parameters.json',
-     ROOT / 'effects' / 'filter-fx' / 'include' / 'filter_fx' / 'param_table.h', 'Filter FX'),
 ]
 
 
