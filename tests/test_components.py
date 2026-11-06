@@ -90,9 +90,13 @@ class ComponentTests(unittest.TestCase):
 
     def test_shared_control_consumers(self):
         suites = selection.select_suites(['modules/mod-on-daisy/include/mod_on_daisy/engine.h'])
-        for key in ('toy', 'physical', 'looper', 'mod', 'editor', 'submodules'):
+        for key in ('toy', 'physical', 'granular', 'looper', 'mod', 'editor', 'submodules'):
             self.assertTrue(suites[key], key)
-        self.assertFalse(suites['granular'])
+
+    def test_nebulae_columns_reach_their_readers(self):
+        suites = selection.select_suites(['instruments/granular/src/modulation.h'])
+        for key in ('granular', 'mod', 'editor'):
+            self.assertTrue(suites[key], key)
 
     def test_fx_consumers(self):
         suites = selection.select_suites(['common/audio/fx_contract.h'])

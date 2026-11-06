@@ -55,6 +55,7 @@ as before. The host keeps the existing dry/wet mix and output protection.
 | `physical-modeling-fx-torus` | Torus + Mod core + Torus FX adapter | `0.2.0` |
 | `physical-modeling-fx-ambient` | Torus + Mod core + Ambient FX adapter | `0.2.0` |
 | `reverb-fx` | existing Ambient FX with external audio inputs | unchanged `0.2` |
+| `granular-mod` | Nebulae + Mod core (`MOD=1`) | Nebulae version, `0.2.1`, for firmware, IDENTIFY and manifest |
 | `looper-mod` | Looper + Mod core (`MOD=1`) | Looper version, e.g. `0.4.0`, for file name, marker `LOOPER-MOD-VERSION` and IDENTIFY |
 
 The new products have their own build directories and markers; file name and

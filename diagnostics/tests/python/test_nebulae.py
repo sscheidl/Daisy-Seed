@@ -99,6 +99,24 @@ def test_full_round_trip_share_eject_return():
     assert "rescanned" in r.wf.message
 
 
+def test_mod_build_traffic_on_the_port_does_not_disturb_the_workflow():
+    # Nebulae MOD streams monitor frames for up to 3 s after the editor closes, and a
+    # keyboard may be playing. Only NB replies count; the rest is skipped, not an error.
+    monitor = bytes([0xF0, 0x7D, 0x4D, 0x44, 1, 0, 0x7E, 0, 2, 0, 0, 0x7E, 0xF7])
+    assert n.NEBULAE.parse_reply is n.parse_reply
+    with pytest.raises(n.NebulaeError):
+        n.parse_reply(monitor)
+    r = Rig()
+    r.run(1.5)
+    assert r.wf.phase == n.Phase.PERFORMANCE
+    original = r.wf._link.poll
+    r.wf._link.poll = lambda: [monitor, *original(), monitor]
+    r.run(1.5)
+    assert r.wf.phase == n.Phase.PERFORMANCE and not r.wf.error
+    assert r.wf.request_share()
+    assert r.until(lambda: r.wf.phase == n.Phase.RESTARTING, 1)
+
+
 def test_live_loop_needs_confirmation_and_cancel_keeps_playing():
     r = Rig()
     r.dev.live = True

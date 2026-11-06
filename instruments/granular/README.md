@@ -42,6 +42,14 @@ unsupported; Linux CI has a `test-thread` target. The workflow uploads BIN, ELF,
 MAP and SHA256SUMS after a push. See validation for executed CI evidence.
 Generated outputs and toolchains are not tracked.
 
+## Mod on Daisy build
+
+`make PROJECT=granular-mod` builds a separate image with the shared modulation matrix:
+eight global targets (Start, Speed, Size, Density, Pitch, Overlap, Blend, Window), edited
+with the shared Mod on Daisy editor, with the card still shared through the panel. The
+regular image is unchanged. See [MODULATION.md](docs/MODULATION.md) and the
+[hardware test sheet](docs/MOD_HARDWARE_TEST.md); hardware is **NOT MEASURED**.
+
 ## Eight fixed pots
 
 | Pot | Primary | Hold SOURCE: secondary |

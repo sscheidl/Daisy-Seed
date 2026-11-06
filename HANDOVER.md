@@ -64,6 +64,13 @@ Open: hardware tests ([run sheet](sequencers/acid-seq/docs/HARDWARE_TEST.md), al
 NOT MEASURED) and the release draft `acid-seq-v0.1.0-test1` (draft, not
 published). The user decides both.
 
+**Addendum 2026-11-06 (Nebulae MOD):** New product `granular-mod`
+(`NebulaeMod-v0.2.1.bin`): Mod on Daisy on the eight primaries, with Windows SD sharing
+unchanged. The regular image stays byte-identical. The matrix ticks on the control timer,
+not in the 256-frame callback, so offsets cross to audio through a triple buffer.
+[Modulation](instruments/granular/docs/MODULATION.md),
+[test sheet](instruments/granular/docs/MOD_HARDWARE_TEST.md). Hardware **NOT MEASURED**.
+
 **Integration 2026-10-25/26:** Branch `integration/shimmer-bootloader` combines PR #40
 (bootloader entry), #38 (modular FX) and #41 (Toy Piano + Ambient with Shimmer).
 Test images: `toy-piano-ambient 0.1.2` and `reverb-fx 0.3.1`; component

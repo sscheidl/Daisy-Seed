@@ -39,7 +39,21 @@ class Engine : public Sink {
     float SmoothedClockSeconds() const {return smooth_clock_;}
     float LastGrainMs() const {return last_grain_ms_;}
     unsigned PlayingBank() const {return playing_bank_;}
+#if NEBULAE_MOD
+    // Mod on Daisy build: normalized offsets on the primaries, read once per block. The
+    // register ui.params stays the unmodulated base, so pickup, CC and reset act on it.
+    void SetControlOffsets(const float* offsets) {for(unsigned i=0;i<8;++i) offset_[i]=offsets[i];}
+    float Smoothed(unsigned i) const {return smoothed_[i];}
+#endif
   private:
+    // What the smoothing and the parameter laws follow.
+    float ControlTarget(unsigned i) const {
+#if NEBULAE_MOD
+        return Unit(ui.params.primary[i]+offset_[i]);
+#else
+        return ui.params.primary[i];
+#endif
+    }
     void ResetDsp();
     void Transition();
     void PublishLive(bool resume=false);
@@ -64,6 +78,9 @@ class Engine : public Sink {
     float tail_[2]{},fade_from_[2]{};
     uint32_t reset_light_=0;
     float smoothed_[8]{},alt_[8]{},bend_[16]{},pitch_=1,speed_=1;
+#if NEBULAE_MOD
+    float offset_[8]{};
+#endif
     Mincer vocoder_[2]; RmsLimiter limiter_[2];
     Grain grains_[2][MAX_GRAINS]{};
     float bank_windows_[W_BANK][WIN_LEN+1]{},window_[WIN_LEN+1]{};

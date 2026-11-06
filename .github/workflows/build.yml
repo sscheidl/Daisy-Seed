@@ -18,6 +18,7 @@ on:
           - toy-piano-tape
           - tape-fx
           - granular
+          - granular-mod
           - looper
           - looper-mod
           - reverb-fx
@@ -52,6 +53,7 @@ jobs:
               {"project":"physical-modeling-fx-torus","directory":"instruments/physical-modeling","image":"PhysicalModelingFxTorus","build":"build/fx-torus"},
               {"project":"physical-modeling-fx-ambient","directory":"instruments/physical-modeling","image":"PhysicalModelingFxAmbient","build":"build/fx-ambient"},
               {"project":"granular","directory":"instruments/granular","image":"NebulaeOnDaisy","build":"build"},
+              {"project":"granular-mod","directory":"instruments/granular","image":"NebulaeMod","build":"build/mod"},
               {"project":"looper","directory":"instruments/looper","image":"Looper","build":"build"},
               {"project":"looper-mod","directory":"instruments/looper","image":"LooperMod","build":"build/mod"},
               {"project":"mod-bench","directory":"modules/mod-on-daisy/bench","image":"ModBench","build":"build"},
@@ -87,7 +89,7 @@ jobs:
       - name: Test DSP and callback with ASan and UBSan
         run: make PROJECT=${{ matrix.project }} test-sanitize
       - name: Test lock-free MIDI queues with ThreadSanitizer
-        if: matrix.project == 'toy-piano' || matrix.project == 'physical-modeling' || matrix.project == 'granular' || matrix.project == 'mod-bench'
+        if: matrix.project == 'toy-piano' || matrix.project == 'physical-modeling' || matrix.project == 'granular' || matrix.project == 'granular-mod' || matrix.project == 'mod-bench'
         run: make PROJECT=${{ matrix.project }} test-thread
       - name: Cross-compile firmware
         run: make PROJECT=${{ matrix.project }} -j4
@@ -103,8 +105,8 @@ jobs:
         if: matrix.project == 'tape-fx' || matrix.project == 'toy-piano-tape'
         run: python3 scripts/check-tape-elf.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
       - name: Check Nebulae ARM memory, SD DMA and dynamic WAV capacities
-        if: matrix.project == 'granular'
-        run: python3 scripts/check-granular-elf.py ${{ matrix.directory }}/${{ matrix.build }}/NebulaeOnDaisy-v${{ steps.version.outputs.value }}.elf --host-test
+        if: matrix.project == 'granular' || matrix.project == 'granular-mod'
+        run: python3 scripts/check-granular-elf.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf --host-test
       - name: Build Mod on Daisy bench variants (block 256, 64 active cells)
         if: matrix.project == 'mod-bench'
         run: |

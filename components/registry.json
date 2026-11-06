@@ -452,6 +452,22 @@
       ],
       "panels": []
     },
+    "granular-mod": {
+      "version_component": "nebulae",
+      "directory": "instruments/granular/build/mod",
+      "image": "NebulaeMod",
+      "marker": "NEBULAE-MOD-VERSION=",
+      "components": [
+        "nebulae",
+        "mod-on-daisy",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
     "looper": {
       "version_component": "looper",
       "directory": "instruments/looper/build",

@@ -4,6 +4,7 @@
 //
 //   node tests/e2e.cjs <path to mod_sim> [screenshot dir]
 // Needs Playwright with Chromium (preinstalled in the cloud environment).
+// E2E_ONLY=nebulae runs one test, for a quick check of a single instrument.
 'use strict';
 const assert = require('assert');
 const fs = require('fs');
@@ -26,7 +27,7 @@ function startSim(instrument) {
     buffer += chunk;
     let i;
     while ((i = buffer.indexOf('\n')) >= 0) {
-      const line = buffer.slice(0, i);
+      const line = buffer.slice(0, i).replace(/\r$/, ''); // text-mode stdout on Windows
       buffer = buffer.slice(i + 1);
       if (line === 'OK') { waiting.shift()(collected); collected = []; } else collected.push(line);
     }
@@ -228,7 +229,7 @@ async function testToyPiano(browser) {
     await new Promise((r) => setTimeout(r, 600));
     return { result, sent: sent.length, current: link.current };
   });
-  assert.deepStrictEqual(late, { result: 'getrennt', sent: 1, current: null });
+  assert.deepStrictEqual(late, { result: 'disconnected', sent: 1, current: null });
 
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'editor-toy-piano.png'), fullPage: true });
   await page.close();
@@ -403,6 +404,37 @@ async function testCorrections(browser) {
   console.log('PASS corrections: port release (taken input, handshake timeout, disconnect), FM, ranges, aftertouch, clock state, health, zero/clear/default patch, compatibility dialog');
 }
 
+// Nebulae MOD: the page is built from the device description alone.
+async function testNebulae(browser) {
+  const sim = startSim('nebulae');
+  const page = await openEditor(browser, sim);
+  await page.click('#connect');
+  await page.waitForFunction(() => document.getElementById('status').textContent.includes('nebulae'));
+  const headers = await page.$$eval('#grid thead th .name', (els) => els.map((e) => e.textContent));
+  assert.deepStrictEqual(headers, ['Start', 'Speed', 'Size', 'Density', 'Pitch', 'Overlap', 'Blend', 'Window']);
+  assert.strictEqual(await page.locator('td.cell.blocked').count(), 0, 'all 64 cells are allowed');
+  assert(await page.locator('.source[data-src="0"] .fmRow').isVisible(), 'LFO cross modulation is on');
+  assert.strictEqual(await page.evaluate(() => state.patch.format), 2);
+  // LFO 1 -> Pitch through the real controller.
+  await cell(page, 0, 4).click();
+  await page.focus('#grid');
+  for (let i = 0; i < 3; ++i) await page.keyboard.press('PageUp');
+  await settle(page);
+  const d = await dump(sim);
+  assert.deepStrictEqual(d.active, [[0, 4, 30]]);
+  assert.strictEqual(d.crc, await pageCrc(page));
+  // The white line sits on the reported base, not on the modulated value.
+  const stop = pumpTime(page, sim);
+  await page.waitForFunction(() => document.querySelectorAll('.meter.based').length === 8);
+  const left = await page.$$eval('.meter.based b', (els) => els.map((e) => parseFloat(e.style.left)));
+  stop();
+  [0, 50, 100, 40, 50, 50, 0, 0].forEach((v, i) => assert(Math.abs(left[i] - v) < 0.1, `base of column ${i}: ${left[i]}`));
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'editor-nebulae.png'), fullPage: true });
+  await page.close();
+  sim.proc.kill();
+  console.log('PASS nebulae: columns, all cells, LFO FM, route confirmed by the device, unmodulated bases');
+}
+
 async function testOffline(browser) {
   // No device: the editor still edits and saves files.
   const page = await browser.newPage();
@@ -427,10 +459,15 @@ async function testOffline(browser) {
   assert(SIM && fs.existsSync(SIM), 'usage: node tests/e2e.cjs <mod_sim> [screenshot dir]');
   const browser = await chromium.launch();
   try {
-    await testToyPiano(browser);
-    await testPhysicalModeling(browser);
-    await testCorrections(browser);
-    await testOffline(browser);
+    if (process.env.E2E_ONLY === 'nebulae') {
+      await testNebulae(browser);
+    } else {
+      await testToyPiano(browser);
+      await testPhysicalModeling(browser);
+      await testCorrections(browser);
+      await testNebulae(browser);
+      await testOffline(browser);
+    }
   } finally {
     await browser.close();
   }
