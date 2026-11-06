@@ -80,9 +80,13 @@ static void Tick() {
     fw::Command c;
     while(commands.Pop(c))
         ApplyCommand(c);
-    if(silence_all.exchange(false, std::memory_order_acquire))
+    // Consume both overflow flags every tick, so a pending release never lingers into the next
+    // one. All Sound Off wins when both are set: it already clears the notes.
+    const bool silence = silence_all.exchange(false, std::memory_order_acquire);
+    const bool release = release_all.exchange(false, std::memory_order_acquire);
+    if(silence)
         control.AllSoundOff(); // closes a drone too; also clears the notes
-    else if(release_all.exchange(false, std::memory_order_acquire))
+    else if(release)
         control.AllNotesOff();
     audrey::PanelFrame frame;
     for(int i = 0; i < 8; ++i)
