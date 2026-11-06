@@ -86,6 +86,12 @@ def expect(out, action, active):
     return f'{action}: {text.splitlines()[-1]}'
 
 
+def running_clients():
+    """Independent of the entry point: what Windows itself lists."""
+    tasks = subprocess.run(['tasklist', '/fo', 'csv', '/nh'], capture_output=True, text=True, check=True).stdout
+    return [name for name in (EDITOR_NAME, PANEL_NAME) if f'"{name}"' in tasks]
+
+
 def smoke(out):
     """Simulation only: MOD_ON_DAISY_NO_AUTOCONNECT and --sim keep a connected kit untouched."""
     lines = []
@@ -105,12 +111,14 @@ def smoke(out):
         lines.append(expect(out, 'Modulation', 'Active: Modulation'))
         lines.append(expect(out, 'SdCard', 'Active: SD card'))
         lines.append(expect(out, 'Modulation', 'Active: Modulation'))
+        # A client that is still starting must count as open: close it straight away.
+        lines.append(expect(out, 'SdCard', 'Active: SD card'))
     finally:
         launcher(out, '-Action', 'Close')
     code, text = launcher(out, '-Action', 'Status')
-    if code != 0 or 'Active: none' not in text:
-        raise SystemExit(f'Entry point left a client open: {text}')
-    lines.append('Close: Active: none')
+    if code != 0 or 'Active: none' not in text or running_clients():
+        raise SystemExit(f'Entry point left a client open: {text} {running_clients()}')
+    lines.append('Close during start-up: Active: none, tasklist agrees')
     return lines
 
 
@@ -179,7 +187,8 @@ def main():
     listing = []
     for path in sorted(p for p in out.rglob('*') if p.is_file() and p.name != 'SHA256SUMS'):
         listing.append(f'{sha256(path)}  {path.relative_to(out).as_posix()}')
-    (out / 'SHA256SUMS').write_text('\n'.join(listing) + '\n', encoding='utf-8')
+    # LF on every platform: sha256sum -c reads a CR as part of the file name.
+    (out / 'SHA256SUMS').write_bytes(('\n'.join(listing) + '\n').encode('utf-8'))
     for line in smoke_lines:
         print('PASS', line)
     print(f'Package: {out}')

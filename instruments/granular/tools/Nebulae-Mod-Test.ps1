@@ -55,10 +55,11 @@ Editor is open and connects by itself.
 After a restart the matrix on the kit is empty: click "Open file ..." and choose your saved .modpatch. Save the patch before you go to SD card.
 '@
 
+# By name, not by path: any copy of the app can hold J7, and Process.Path can fail on a
+# process that is still starting, which would make a starting client look closed.
 function Get-Client([string]$Path) {
-    @(Get-Process | Where-Object {
-        try { $_.Path -eq $Path } catch { $false }
-    })
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($Path)
+    @(Get-Process -Name $name -ErrorAction SilentlyContinue)
 }
 
 # Asks the windows to close and waits for the processes. Never kills: the panel may be in
