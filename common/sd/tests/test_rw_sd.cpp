@@ -224,6 +224,11 @@ int main(int argc, char** argv) {
     const std::vector<uint8_t> fat32((std::istreambuf_iterator<char>(a)), {});
     const std::vector<uint8_t> exfat((std::istreambuf_iterator<char>(b)), {});
     CHECK(!fat32.empty() && !exfat.empty());
+    {   // A writer needs a bounded abort: HAL_SD_Abort's own waits are not bounded.
+        RoSdConfig c{};
+        c.bounce = bounce; c.bounce_bytes = 1024; c.transfer_timeout_ms = 20;
+        CHECK(ro_sd_init(&c) == -1);
+    }
     FileOperations(fat32, FS_FAT32);
     FileOperations(exfat, FS_EXFAT);
     DiskLayer(fat32);

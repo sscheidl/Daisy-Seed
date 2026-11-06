@@ -1,9 +1,9 @@
 /* Shared microSD access for Seed3 Desktop firmware (SDMMC1 + FatFs R0.16). Read-only by
- * default; the writable configuration (rw/ffconf.h, SD_WRITABLE = 1 in sd.mk) adds
- * disk_write for firmware that saves files itself (Looper).
+ * default (FF_FS_READONLY 1: no write, create, rename, delete or format function exists);
+ * the writable profile (rw/ffconf.h, SD_WRITABLE = 1 in sd.mk) adds disk_write and the file
+ * write API for firmware that saves files itself (Looper), never formatting.
  * One FatFs volume "0:", used from the main loop only; never from an interrupt or
- * the audio callback. The FatFs build is read-only (FF_FS_READONLY 1), so no write,
- * create, rename, delete or format function exists. See common/sd/README.md.
+ * the audio callback. See common/sd/README.md.
  */
 #pragma once
 #include <stdint.h>
@@ -32,7 +32,8 @@ typedef struct {
     /* Stops a failed or timed-out transfer. NULL = HAL_SD_Abort(). Firmware that must
      * not wait for an unresponsive card passes the RCC-reset abort from
      * reader/reader_abort.h (hardware-tested in the Diagnostics card reader 0.3.2);
-     * the next ro_sd_mount() re-initializes the interface either way. */
+     * the next ro_sd_mount() re-initializes the interface either way. The writable build
+     * requires this hook: ro_sd_init() rejects NULL there. */
     void (*abort)(void);
 #if !FF_FS_READONLY
     /* Writable build only (rw/ffconf.h): bound for one write transfer including the

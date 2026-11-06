@@ -77,6 +77,10 @@ int ro_sd_init(const RoSdConfig* c) {
     if(!c || !c->bounce || ((uintptr_t)c->bounce & 31u) || c->bounce_bytes < RO_SD_SECTOR
        || c->bounce_bytes % RO_SD_SECTOR || !c->transfer_timeout_ms)
         return -1;
+#if !FF_FS_READONLY
+    /* HAL_SD_Abort waits up to SDMMC_DATATIMEOUT (49 days) for the card: never in a writer. */
+    if(!c->abort) return -1;
+#endif
     config = *c;
     configured = 1;
     status = STA_NOINIT | RO_SD_PROTECT;

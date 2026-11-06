@@ -21,20 +21,24 @@ C_INCLUDES += -I$(SD_DIR)/rw
 endif
 C_INCLUDES += -I$(SD_DIR) -I$(SD_DIR)/fatfs
 
-# ELF policy check: make sd-check after the firmware build.
+# ELF policy check: make sd-check after the firmware build. It applies the policy of the
+# image's profile (sd_policy.mk) and then injects each writer of SD_CHECK_PROBES into the
+# same check, which must reject it.
+include $(SD_DIR)/sd_policy.mk
 SD_CHECK_NM ?= arm-none-eabi-nm
+SD_CHECK_CC ?= arm-none-eabi-gcc
 SD_CHECK_PYTHON ?= python3
-# Comma-separated names removed from the ban list, e.g. for a card-reader image.
-# A writable image may write blocks with IDMA and use the FatFs file API; formatting,
-# erase, lock, labels, polling/IT writes and libDaisy's FatFs stay banned.
-SD_WRITE_ALLOW = disk_write,f_write,f_unlink,f_rename,f_mkdir,f_truncate,f_sync,BSP_SD_WriteBlocks_DMA,HAL_SD_WriteBlocks_DMA,SDMMC_CmdWriteSingleBlock,SDMMC_CmdWriteMultiBlock
 ifeq ($(SD_WRITABLE),1)
 SD_CHECK_ALLOW ?= $(SD_WRITE_ALLOW)
 SD_CHECK_REQUIRE ?= disk_read,disk_write,f_mount,f_readdir,f_write,SDMMC_CmdReadSingleBlock
+SD_CHECK_PROBES ?= $(SD_WRITE_PROBES)
 endif
+# Comma-separated names removed from the ban list, e.g. for a card-reader image.
 SD_CHECK_ALLOW ?=
 SD_CHECK_REQUIRE ?= disk_read,f_mount,f_readdir,SDMMC_CmdReadSingleBlock
+SD_CHECK_PROBES ?= $(SD_READONLY_PROBES)
 .PHONY: sd-check
 sd-check: $(BUILD_DIR)/$(TARGET).elf
 	$(SD_CHECK_PYTHON) $(DAISY_ROOT)/scripts/check-sd-symbols.py --nm $(SD_CHECK_NM) \
-		--require $(SD_CHECK_REQUIRE) $(if $(SD_CHECK_ALLOW),--allow $(SD_CHECK_ALLOW)) $<
+		--require $(SD_CHECK_REQUIRE) $(if $(SD_CHECK_ALLOW),--allow $(SD_CHECK_ALLOW)) \
+		--probe $(SD_CHECK_PROBES) --probe-cc $(SD_CHECK_CC) $<
