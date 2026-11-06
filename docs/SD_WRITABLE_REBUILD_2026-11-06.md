@@ -3,7 +3,7 @@
 Date 2026-11-06. Branch `claude/sd-rw-rebuild` from `origin/main` @ `edea2ba`. Not merged,
 not pushed, nothing flashed. Replaces the usable part of PR #94 (`claude/new-session-fqack4`,
 head `0e44e28`), per [SD_WRITE_EXFAT_CLAUDE.md](SD_WRITE_EXFAT_CLAUDE.md) and part B of the
-review order `docs/REVIEW_ORDER_SD_2026-11-06.md` on that branch.
+review order [`docs/REVIEW_ORDER_SD_2026-11-06.md`](REVIEW_ORDER_SD_2026-11-06.md).
 
 All software results below are **MEASURED 2026-11-06** on Windows 11 with the repository's
 xPack ARM GCC 13.2.1-1.1, xPack make 4.4.1 and llvm-mingw 20261006 (clang 23.1.3) as `g++`.
