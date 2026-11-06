@@ -532,6 +532,262 @@ static void TestGolden() {
     CHECK(hash == 0x150EB967u);
 }
 
+// Amplitude of a tone and of its odd harmonics in the driven filter.
+struct Harmonics {
+    double fundamental, h3, h5, h7;
+};
+static Harmonics Measure(Parameters p, double hz, double amplitude) {
+    Ladder filter;
+    filter.Set(p);
+    std::vector<float> in(kBlock), out(kBlock), tail;
+    const std::size_t total = std::size_t(kFs), keep = std::size_t(kFs / 2.);
+    for(std::size_t n = 0; n < total; n += kBlock) {
+        for(std::size_t i = 0; i < kBlock; ++i)
+            in[i] = float(amplitude * std::sin(2. * kPi * hz / kFs * double(n + i)));
+        filter.Process(in.data(), out.data(), kBlock);
+        if(n + keep >= total)
+            tail.insert(tail.end(), out.begin(), out.end());
+    }
+    return {Amplitude(tail, hz), Amplitude(tail, 3. * hz), Amplitude(tail, 5. * hz), Amplitude(tail, 7. * hz)};
+}
+
+static void TestDrive() {
+    // Drive 0 is the clean core, bit for bit, in every model.
+    for(Model model : {Model::Sum, Model::Stages}) {
+        Ladder clean, driven;
+        Parameters a = Settings(800., 0.7, Mode::Lp24), b = a;
+        a.model = Model::Clean;
+        b.model = model;
+        clean.Set(a);
+        driven.Set(b);
+        std::vector<float> in(kBlock), x(kBlock), y(kBlock);
+        for(int block = 0; block < 500; ++block) {
+            for(std::size_t i = 0; i < kBlock; ++i)
+                in[i] = 0.4f * float(std::sin(2. * kPi * 311. / kFs * double(block * 48 + int(i))));
+            clean.Process(in.data(), x.data(), kBlock);
+            driven.Process(in.data(), y.data(), kBlock);
+            CHECK(std::equal(x.begin(), x.end(), y.begin()));
+        }
+    }
+    // Model Clean ignores drive.
+    {
+        Parameters p = Settings(2000., 0.45, Mode::Lp24, 0.);
+        p.model = Model::Clean;
+        const Harmonics zero = Measure(p, 220., 0.5);
+        p.drive = 1.f;
+        const Harmonics one = Measure(p, 220., 0.5);
+        CHECK(std::fabs(zero.fundamental - one.fundamental) < 1e-6);
+    }
+    // Harmonic content rises with drive, and the Stages model reaches further up.
+    for(Model model : {Model::Sum, Model::Stages}) {
+        double last = -200., h7_at_full = 0., h3_at_full = 0.;
+        for(double drive : {0., 0.25, 0.5, 0.75, 1.}) {
+            Parameters p = Settings(2000., 0.45, Mode::Lp24, 0.);
+            p.model = model;
+            p.drive = float(drive);
+            const Harmonics h = Measure(p, 220., 0.5);
+            const double h3 = Db(h.h3 / h.fundamental), h5 = Db(h.h5 / h.fundamental), h7 = Db(h.h7 / h.fundamental);
+            std::printf("%s drive %.2f: fundamental %.1f dB, H3 %.1f, H5 %.1f, H7 %.1f dB\n",
+                        model == Model::Sum ? "Sum   " : "Stages", drive, Db(h.fundamental), h3, h5, h7);
+            CHECK(h3 > last);
+            last = h3;
+            h7_at_full = h7;
+            h3_at_full = h3;
+        }
+        CHECK(h3_at_full > -20.); // audibly changed at the top
+        CHECK(h7_at_full > (model == Model::Sum ? -40. : -30.));
+    }
+    // Harder input pushes back on resonance: the gain at the cutoff falls with the level.
+    for(Model model : {Model::Clean, Model::Sum, Model::Stages}) {
+        Parameters p = Settings(1000., 0.82, Mode::Lp24, 0.);
+        p.model = model;
+        p.drive = 0.5f;
+        const double quiet = Db(Measure(p, 1000., 0.003).fundamental / 0.003);
+        const double loud = Db(Measure(p, 1000., 1.).fundamental);
+        std::printf("pushback %d: %.1f dB quiet, %.1f dB at full scale\n", int(model), quiet, loud);
+        CHECK(quiet - loud > (model == Model::Clean ? 5. : 20.));
+    }
+    // Self-oscillation keeps its level at high drive, in every mode that oscillates.
+    double lo = 1e9, hi = -1e9;
+    for(Model model : {Model::Sum, Model::Stages})
+        for(double drive : {0.03, 0.25, 1.})
+            for(double hz : {125., 1000., 8000.})
+                for(Mode mode : {Mode::Lp24, Mode::Lp12, Mode::Bp, Mode::Hp}) {
+                    Ladder filter;
+                    Parameters p = Settings(hz, 1., mode);
+                    p.model = model;
+                    p.drive = float(drive);
+                    filter.Set(p);
+                    std::vector<float> in(kBlock, 0.f), out(kBlock);
+                    double energy = 0.;
+                    const std::size_t total = std::size_t(kFs * 4.), keep = std::size_t(kFs / 2.);
+                    for(std::size_t n = 0; n < total; n += kBlock) {
+                        filter.Process(in.data(), out.data(), kBlock);
+                        if(n + keep >= total)
+                            for(float v : out)
+                                energy += double(v) * v;
+                    }
+                    const double level = Db(std::sqrt(2. * energy / double(keep)) / double(kOscLevel));
+                    lo = std::min(lo, level);
+                    hi = std::max(hi, level);
+                    CHECK(level > -4. && level < 6.);
+                }
+    std::printf("self-oscillation with drive: %.2f .. %.2f dB around %.2f peak\n", lo, hi, double(kOscLevel));
+    // The cheap and the full path agree when nothing moves.
+    Ladder ramped, held;
+    Parameters p = Settings(900., 0.6, Mode::Lp24);
+    p.drive = 0.6f;
+    ramped.Set(p);
+    held.Set(p);
+    std::vector<float> in(kBlock), a(kBlock), b(kBlock);
+    double difference = 0.;
+    for(int block = 0; block < 200; ++block) {
+        for(std::size_t i = 0; i < kBlock; ++i)
+            in[i] = 0.5f * float(std::sin(2. * kPi * 200. / kFs * double(block * 48 + int(i))));
+        ramped.Process(in.data(), a.data(), kBlock);
+        held.ProcessHeld(in.data(), b.data(), kBlock);
+        for(std::size_t i = 0; i < kBlock; ++i)
+            difference = std::max(difference, std::fabs(double(a[i]) - double(b[i])));
+    }
+    CHECK(difference < 1e-3);
+}
+
+// Runs noise through a filter of `seed` and hashes the output.
+static uint32_t Render(uint32_t seed, double age, double drive, Model model) {
+    Ladder filter(seed);
+    Parameters p = Settings(900., 0.8, Mode::Lp24);
+    p.age = float(age);
+    p.drive = float(drive);
+    p.model = model;
+    filter.Set(p);
+    uint32_t hash = 2166136261u, rng = 7u;
+    std::vector<float> in(kBlock), out(kBlock);
+    for(int block = 0; block < 2000; ++block) {
+        for(float& x : in) {
+            rng = rng * 1664525u + 1013904223u;
+            x = float(int32_t(rng)) / 4294967296.f;
+        }
+        filter.Process(in.data(), out.data(), kBlock);
+        for(float v : out) {
+            uint32_t bits;
+            std::memcpy(&bits, &v, sizeof(bits));
+            hash = (hash ^ bits) * 16777619u;
+        }
+    }
+    return hash;
+}
+
+// Note offset that drift and jitter produce, read through a self-oscillating filter would
+// be noisy; the tolerance and pitch spread are measured on the peak of a resonant response.
+static double PeakCents(uint32_t seed, double age) {
+    Parameters p = Settings(1000., 0.85, Mode::Lp24, 0.);
+    p.age = float(age);
+    Ladder filter(seed);
+    filter.Set(p);
+    double best = 0., best_hz = 1000.;
+    for(double cents = -700.; cents <= 700.; cents += 25.) {
+        const double hz = 1000. * std::exp2(cents / 1200.);
+        Ladder probe(seed);
+        probe.Set(p);
+        std::vector<float> in(kBlock), out(kBlock), tail;
+        for(std::size_t n = 0; n < 9600; n += kBlock) {
+            for(std::size_t i = 0; i < kBlock; ++i)
+                in[i] = 0.01f * float(std::sin(2. * kPi * hz / kFs * double(n + i)));
+            probe.Process(in.data(), out.data(), kBlock);
+            if(n >= 4800)
+                tail.insert(tail.end(), out.begin(), out.end());
+        }
+        const double level = Amplitude(tail, hz);
+        if(level > best) {
+            best = level;
+            best_hz = hz;
+        }
+    }
+    return 1200. * std::log2(best_hz / 1000.);
+}
+
+static void TestAge() {
+    // Age 0 is the same filter, bit for bit, in every model and at every seed.
+    for(uint32_t seed : {1u, 77u, 123456u})
+        for(Model model : {Model::Clean, Model::Sum, Model::Stages}) {
+            Ladder plain(seed), aged(seed);
+            Parameters p = Settings(1500., 0.7, Mode::Bp);
+            p.model = model;
+            p.drive = model == Model::Clean ? 0.f : 0.4f;
+            plain.Set(p);
+            p.age = 0.f;
+            aged.Set(p);
+            CHECK(Render(seed, 0., 0.4, model) == Render(seed, 0., 0.4, model));
+        }
+    CHECK(Render(5u, 0., 0., Model::Stages) == Render(5u, 0., 0., Model::Clean));
+    // A seed reproduces the run; another seed is another filter.
+    CHECK(Render(42u, 0.7, 0.3, Model::Stages) == Render(42u, 0.7, 0.3, Model::Stages));
+    CHECK(Render(42u, 0.7, 0.3, Model::Stages) != Render(43u, 0.7, 0.3, Model::Stages));
+    // Tolerances are fixed per instance and differ between instances.
+    Ladder one(1u), two(2u);
+    CHECK(one.Tolerance(0) != two.Tolerance(0));
+    for(unsigned i = 0; i < 4; ++i)
+        CHECK(std::fabs(one.Tolerance(i)) <= 1.f);
+    // The useful range: subtle up to 30 %, worn at 60 %, far out at 100 %.
+    for(double age : {0.3, 0.6, 1.}) {
+        double spread = 0.;
+        for(uint32_t seed = 1; seed <= 8; ++seed)
+            spread = std::max(spread, std::fabs(PeakCents(seed * 977u, age)));
+        std::printf("age %.0f %%: resonance peak up to %.0f cents off over eight instances\n", age * 100., spread);
+        if(age < 0.4)
+            CHECK(spread <= 50.);
+        else if(age < 0.7)
+            CHECK(spread <= 350.);
+    }
+    // Age 100 % stays stable at maximum resonance and drive, on every path.
+    uint32_t rng = 3u;
+    double peak = 0.;
+    std::vector<float> in(kBlock), out(kBlock);
+    for(Model model : {Model::Clean, Model::Sum, Model::Stages})
+        for(Mode mode : kAll)
+            for(int path = 0; path < 2; ++path) {
+                Ladder filter(rng);
+                Parameters p = Settings(1000., 1., mode);
+                p.drive = 1.f;
+                p.age = 1.f;
+                p.model = model;
+                for(int block = 0; block < 6000; ++block) {
+                    rng = rng * 1664525u + 1013904223u;
+                    p.cutoff_note = 20.f + float(rng >> 8) * (115.f / 16777216.f);
+                    filter.Set(p);
+                    for(float& x : in) {
+                        rng = rng * 1664525u + 1013904223u;
+                        x = float(int32_t(rng)) / 2147483648.f;
+                    }
+                    if(path)
+                        filter.ProcessHeld(in.data(), out.data(), kBlock);
+                    else
+                        filter.Process(in.data(), out.data(), kBlock);
+                    for(float v : out) {
+                        CHECK(std::isfinite(v));
+                        peak = std::max(peak, double(std::fabs(v)));
+                    }
+                }
+            }
+    std::printf("age 100 %%, drive 100 %%, resonance 100 %%, full-scale noise: largest output %.1f\n", peak);
+    CHECK(peak < 200.);
+    // Silence at age 100 %: the feedback noise starts the oscillation without an input.
+    Ladder filter(9u);
+    Parameters p = Settings(1000., 1., Mode::Lp24);
+    p.age = 1.f;
+    filter.Set(p);
+    std::fill(in.begin(), in.end(), 0.f);
+    double late = 0.;
+    for(int block = 0; block < 300; ++block) {
+        filter.Process(in.data(), out.data(), kBlock);
+        if(block > 200)
+            for(float v : out)
+                late = std::max(late, double(std::fabs(v)));
+    }
+    std::printf("age 100 %%: oscillation from silence reaches %.3f after 300 ms\n", late);
+    CHECK(late > 0.1);
+}
+
 int main() {
     TestTable();
     TestResponse();
@@ -541,6 +797,8 @@ int main() {
     TestDenormalsAndNan();
     TestRamping();
     TestPaths();
+    TestDrive();
+    TestAge();
     TestGolden();
     if(failures) {
         std::printf("%d failures\n", failures);

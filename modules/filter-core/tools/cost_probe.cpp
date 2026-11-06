@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: MIT
-// The core's two paths as plain functions, compiled by tools/arm_cost.py for Cortex-M7.
+// The core's sample steps as plain functions without a loop, compiled by tools/arm_cost.py for
+// Cortex-M7, so that the function length is the cost of one sample. Plus the per-call work.
+#define FILTER_CORE_COST_PROBE 1
 #include "filter_core/ladder.h"
 
-using seed::dsp::filter::Ladder;
+using namespace seed::dsp::filter;
 
-extern "C" [[gnu::flatten]] void cost_ladder_ramped(Ladder& f, const float* in, float* out, unsigned n) { f.Process(in, out, n); }
-extern "C" [[gnu::flatten]] void cost_ladder_fm(Ladder& f, const float* in, float* out, unsigned n, const float* fm) {
-    f.Process(in, out, n, fm);
+extern "C" [[gnu::flatten]] float cost_sample_clean(Ladder& f, float x, const float* c) { return f.CleanForCost(x, c); }
+extern "C" [[gnu::flatten]] float cost_sample_age(Ladder& f, float x, const float* c) {
+    return f.GeneralForCost<Model::Clean>(x, c);
 }
-extern "C" [[gnu::flatten]] void cost_ladder_held(Ladder& f, const float* in, float* out, unsigned n) { f.ProcessHeld(in, out, n); }
+extern "C" [[gnu::flatten]] float cost_sample_sum(Ladder& f, float x, const float* c) {
+    return f.GeneralForCost<Model::Sum>(x, c);
+}
+extern "C" [[gnu::flatten]] float cost_sample_stages(Ladder& f, float x, const float* c) {
+    return f.GeneralForCost<Model::Stages>(x, c);
+}
+extern "C" [[gnu::flatten]] void cost_call(Ladder& f, unsigned n) { f.AdvanceForCost(n); }
+extern "C" [[gnu::flatten]] void cost_call_setup(Ladder& f) { f.SetupForCost(); }

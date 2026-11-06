@@ -23,6 +23,7 @@ struct NoteRow {
     float G;      // g / (1 + g), g = tan(pi f / fs)
     float inv_a2; // 1 / a^2 of the limiter for an output level of 1 at the fourth stage
     float half_a; // a / 2, the limiter's ceiling for the same level
+    float g;      // tan(pi f / fs), for the general path with its per-stage values
 };
 
 namespace detail {
@@ -60,7 +61,7 @@ constexpr NoteRow MakeRow(double frequency) {
     // Amplitude of the limited state when the fourth stage has amplitude 1.
     const double state = 2. * Sqrt(2.) * Sqrt(one_g2);
     const double a = state / LimiterRatio(1. - leak);
-    return {float(g / (1. + g)), float(1. / (a * a)), float(0.5 * a)};
+    return {float(g / (1. + g)), float(1. / (a * a)), float(0.5 * a), float(g)};
 }
 struct Table {
     NoteRow rows[kRows];
@@ -87,7 +88,7 @@ inline NoteRow LookUp(float note) {
     const NoteRow& lo = kNoteTable.rows[index];
     const NoteRow& hi = kNoteTable.rows[index + 1];
     return {lo.G + fraction * (hi.G - lo.G), lo.inv_a2 + fraction * (hi.inv_a2 - lo.inv_a2),
-            lo.half_a + fraction * (hi.half_a - lo.half_a)};
+            lo.half_a + fraction * (hi.half_a - lo.half_a), lo.g + fraction * (hi.g - lo.g)};
 }
 
 } // namespace seed::dsp::filter

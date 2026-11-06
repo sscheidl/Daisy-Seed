@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Static cost estimate of filter code on Cortex-M7, from the ARM compiler's own output.
 
-Compiles a probe file with the firmware's flags, disassembles it and counts, per
-`cost_*` function, the instructions inside its per-sample loop. Both sides of a branch
-are counted, so rarely taken paths add to the total.
+Compiles a probe file with the firmware's flags, disassembles it and counts the instructions
+of every `cost_*` function, which is one sample or the work of one call. Both sides of a
+branch are counted, so rarely taken paths add to the total.
 
     python modules/filter-core/tools/arm_cost.py modules/filter-core/tools/cost_probe.cpp -I...
 
@@ -63,7 +63,8 @@ def sample_loop(code):
                    for _, op, args in body(span))
 
     storing = [s for s in spans if stores(s)]
-    return body(min(storing, key=lambda s: s[1] - s[0])) if storing else []
+    # A probe without a loop is one sample, or the work of one call.
+    return body(min(storing, key=lambda s: s[1] - s[0])) if storing else code
 
 
 def main():
@@ -77,7 +78,7 @@ def main():
                        check=True)
         listing = subprocess.run(['arm-none-eabi-objdump', '-d', str(obj)], check=True, capture_output=True,
                                  text=True).stdout
-    print(f'{"function":24}{"instr":>7}{"div":>5}{"low":>7}{"high":>7}  cycles per pass of the sample loop')
+    print(f'{"function":24}{"instr":>7}{"div":>5}{"low":>7}{"high":>7}')
     for name, code in sorted(functions(listing).items()):
         loop = sample_loop(code)
         divides = sum(1 for _, op, _ in loop if op.startswith(('vdiv', 'vsqrt')))
