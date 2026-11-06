@@ -380,12 +380,20 @@ static void TestBridge() {
     CHECK(!bridge.Post(NoteOn(61, 100))); // notes can be lost and are counted
     CHECK(bridge.Overflows() == 1);
     CHECK(bridge.Post(NoteOff(60)));      // a flood of notes does not block a release
-    CHECK(!bridge.TakeAllOff());
-    for(std::size_t i = 1; i < ControlBridge::kReleases; ++i)
+    CHECK(bridge.Post(NoteOn(60, 0)));    // nor one written as a note-on with velocity 0
+    CHECK(bridge.LostRelease() == 0);
+    for(std::size_t i = 2; i < ControlBridge::kReleases; ++i)
         CHECK(bridge.Post(NoteOff(60)));
     CHECK(!bridge.Post(NoteOff(62)));
-    CHECK(bridge.TakeAllOff());
-    CHECK(!bridge.TakeAllOff());
+    const uint32_t lost = bridge.LostRelease();
+    CHECK(lost != 0);
+    // Later than every event that got in, so older events can be told from newer ones.
+    CHECK(!bridge.Post(NoteOff(63)));
+    CHECK(int32_t(bridge.LostRelease() - lost) > 0);
+    bridge.ClearLostRelease(lost); // a newer loss must survive clearing the older one
+    CHECK(bridge.LostRelease() != 0);
+    bridge.ClearLostRelease(bridge.LostRelease());
+    CHECK(bridge.LostRelease() == 0);
 }
 
 int main() {

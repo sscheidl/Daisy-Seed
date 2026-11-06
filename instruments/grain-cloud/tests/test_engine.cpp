@@ -929,6 +929,140 @@ static void TestNoHangingNotes() {
     CHECK(rig->ActiveVoices() == 0);
 }
 
+static void FillReleases(Rig& rig) {
+    for(std::size_t i = 0; i < ControlBridge::kReleases; ++i)
+        CHECK(rig.engine.Post(NoteOff(100)));
+}
+
+// A lost release acts after the events before it and before the events after it.
+static void TestLostReleaseOrder() {
+    const auto data = DcSample(48000);
+    auto rig = std::make_unique<Rig>();
+    CHECK(rig->Start(ViewOf(data), Cfg(4)));
+    rig->Set(Param::Release, 0.f);
+    rig->Block();
+    FillReleases(*rig);
+    CHECK(rig->engine.Post(NoteOn(60, 100))); // still queued when its release is lost
+    CHECK(!rig->engine.Post(NoteOff(60)));
+    CHECK(rig->engine.Post(NoteOn(62, 100))); // after the loss: this note really is held
+    rig->Blocks(8);                           // 16 events per block: all are through
+    const Voice* lost = FindNote(*rig, 60);
+    const Voice* kept = FindNote(*rig, 62);
+    CHECK(!lost || !lost->held);
+    CHECK(kept && kept->held);
+    rig->Blocks(100);
+    CHECK(!FindNote(*rig, 60)); // the note ended
+    CHECK(FindNote(*rig, 62) != nullptr);
+
+    // A lost pedal-up must not leave the pedal down for later notes.
+    auto pedal = std::make_unique<Rig>();
+    CHECK(pedal->Start(ViewOf(data), Cfg(4)));
+    pedal->Set(Param::Release, 0.f);
+    pedal->Block();
+    pedal->engine.Post(Sustain(true));
+    pedal->engine.Post(NoteOn(60, 100));
+    pedal->Block();
+    FillReleases(*pedal);
+    CHECK(!pedal->engine.Post(Sustain(false)));
+    pedal->Blocks(8);
+    pedal->engine.Post(NoteOn(64, 100));
+    pedal->Blocks(20);
+    pedal->engine.Post(NoteOff(64));
+    pedal->Blocks(100);
+    CHECK(pedal->ActiveVoices() == 0);
+}
+
+// A note-on with velocity 0 is a release, also when the ordinary queue is full.
+static void TestZeroVelocityRelease() {
+    const auto data = DcSample(48000);
+    auto rig = std::make_unique<Rig>();
+    CHECK(rig->Start(ViewOf(data), Cfg(4)));
+    rig->Set(Param::Release, 0.f);
+    rig->Block();
+    rig->engine.Post(NoteOn(60, 100));
+    rig->Blocks(5);
+    CHECK(FindNote(*rig, 60) != nullptr);
+    for(std::size_t i = 0; i < ControlBridge::kEvents; ++i)
+        CHECK(rig->engine.Post(PitchBend(0.f)));
+    CHECK(!rig->engine.Post(PitchBend(0.f)));
+    CHECK(rig->engine.Post(NoteOn(60, 0)));
+    rig->Blocks(100);
+    CHECK(!FindNote(*rig, 60));
+}
+
+// R7: the cloud uses the parameters posted with its note, at either tick rate.
+static void TestCloudUsesCurrentParams() {
+    const auto data = DcSample(48000);
+    { // The whole batch straight after Prepare().
+        auto rig = std::make_unique<Rig>();
+        CHECK(rig->Start(ViewOf(data), Cfg(4)));
+        rig->Set(Param::Density, 1.f);
+        rig->Set(Param::Size, 1.f);
+        rig->Set(Param::Start, StartModeValue(StartMode::FullCloud));
+        rig->engine.Post(NoteOn(60, 100));
+        rig->Block();
+        const Voice* v = FindNote(*rig, 60);
+        CHECK(v != nullptr);
+        if(!v)
+            return;
+        CHECK_MSG(v->count_smooth > 250.f, "count law sees %f", double(v->count_smooth));
+        rig->Blocks(int(kMaxGrains / kMaxBirthsPerBlock) + 1);
+        CHECK_MSG(rig->engine.Pool().Active() == kMaxGrains, "active %zu", rig->engine.Pool().Active());
+    }
+    { // In a block without a tick at 250 Hz: the tick comes forward, for count and grain size.
+        auto rig = std::make_unique<Rig>();
+        CHECK(rig->Start(ViewOf(data), Cfg(4, 4)));
+        rig->Set(Param::Start, StartModeValue(StartMode::FullCloud));
+        rig->Set(Param::Density, 0.f);
+        rig->Set(Param::Size, 0.f);
+        rig->Blocks(2); // the next tick is two blocks away
+        const uint32_t ticks = rig->engine.Diagnostics().ticks;
+        rig->Set(Param::Density, DensityFor(200.f));
+        rig->Set(Param::Size, SizeFor(0.1f));
+        rig->engine.Post(NoteOn(60, 100));
+        rig->Block();
+        CHECK(rig->engine.Diagnostics().ticks == ticks + 1);
+        const Voice* v = FindNote(*rig, 60);
+        CHECK(v && v->count + v->cloud_left >= 19);
+        rig->EachGrain([&](const Voice&, const Grain& g) {
+            CHECK(Near(float(g.win_step), 4294967296.f / 4800.f, 4294967296.f / 4800.f * 0.01f));
+        });
+    }
+    { // Nothing changed: the note does not move the tick.
+        auto rig = std::make_unique<Rig>();
+        CHECK(rig->Start(ViewOf(data), Cfg(4, 4)));
+        rig->Set(Param::Start, StartModeValue(StartMode::FullCloud));
+        rig->Blocks(2);
+        const uint32_t ticks = rig->engine.Diagnostics().ticks;
+        rig->engine.Post(NoteOn(60, 100));
+        rig->Block();
+        CHECK(rig->engine.Diagnostics().ticks == ticks);
+        const Voice* v = FindNote(*rig, 60);
+        CHECK(v && v->count >= 1); // and it still starts at once
+    }
+    { // A chord in one block shares the pool evenly, and a note released at once has no cloud.
+        auto rig = std::make_unique<Rig>();
+        CHECK(rig->Start(ViewOf(data), Cfg(4)));
+        rig->Set(Param::Density, 1.f);
+        rig->Set(Param::Size, 1.f);
+        rig->Set(Param::Start, StartModeValue(StartMode::FullCloud));
+        rig->Block();
+        rig->engine.Post(NoteOn(60, 100));
+        rig->engine.Post(NoteOn(64, 100));
+        rig->engine.Post(NoteOn(67, 100));
+        rig->engine.Post(NoteOff(67));
+        rig->Block();
+        const Voice* a = FindNote(*rig, 60);
+        const Voice* b = FindNote(*rig, 64);
+        const Voice* c = FindNote(*rig, 67);
+        CHECK(a && b && c);
+        if(a && b && c) {
+            CHECK(a->cloud_left + a->count >= 80 && b->cloud_left + b->count >= 80);
+            CHECK(c->cloud_left == 0 && c->count <= 1);
+        }
+    }
+}
+
 // Spec lifetime rule: a sample stays until the last grain has left it.
 static void TestSampleHandOver() {
     const auto second = DcSample(48000, 1000);
@@ -1161,6 +1295,9 @@ int main() {
     TestGrainStealing();
     TestStolenGrainEndsInTime();
     TestNoHangingNotes();
+    TestLostReleaseOrder();
+    TestZeroVelocityRelease();
+    TestCloudUsesCurrentParams();
     TestSampleHandOver();
     TestTinySamples();
     TestDeterminism();

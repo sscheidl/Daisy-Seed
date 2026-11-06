@@ -33,6 +33,7 @@ struct Voice {
     bool active = false;
     bool tail = false; // stolen: spawns nothing and is no longer a note
     bool held = false, sustained = false, control_now = false;
+    bool cloud_wanted = false; // sized after this block's control update
     uint8_t note = 0;
     StartMode mode = StartMode::Grow;
     uint16_t generation = 0;
@@ -102,6 +103,7 @@ class Engine {
         rotate_ = 0;
         hungry_ = -1;
         rates_dirty_ = true;
+        params_changed_ = cloud_requested_ = false;
         modulation_.Tick(base_, 0, live_); // no matrix attached yet: the base values
         Derive();
         prepared_ = true;
@@ -141,10 +143,13 @@ class Engine {
         }
         AdoptSample();
         DrainEvents();
-        if(--blocks_to_tick_ == 0) {
+        // A start cloud must see the parameters posted with its note, so it brings the tick
+        // forward when any changed. Otherwise a note never waits for the tick.
+        if(--blocks_to_tick_ == 0 || (cloud_requested_ && params_changed_)) {
             blocks_to_tick_ = config_.tick_blocks;
             ControlTick();
         } else {
+            SizeStartClouds();
             for(Voice& v : voices_)
                 if(v.active && v.control_now)
                     VoiceControl(v); // a note never waits for the tick
@@ -192,7 +197,9 @@ class Engine {
         modulation_.Tick(base_, tick_frames_, live_); // R8: the only write of modulated values
         ++stats_.modulation_writes;
         ++stats_.ticks;
+        params_changed_ = false;
         Derive();
+        SizeStartClouds();
         window_.SetTarget(live_[Param::Window]);
         const uint32_t points = uint32_t(window_.Tick());
         if(points > stats_.window_points_peak)
@@ -243,7 +250,8 @@ class Engine {
     void VoiceControl(Voice& v) {
         v.control_now = false;
         v.ratio = PitchRatio(float(v.note) - 60.f + derived_.pitch + bend_);
-        v.count_smooth += count_coeff_ * (float(v.count) - v.count_smooth);
+        if(!v.cloud_left) // a cloud being born already has its count, see SizeStartClouds
+            v.count_smooth += count_coeff_ * (float(v.count) - v.count_smooth);
         // A cloud that spreads over blocks enters mid-window, so the attack waits until it is all
         // there and shapes it whole (R7). The wait is cloud size / kMaxBirthsPerBlock blocks.
         const float level = v.cloud_left ? v.env.Level() : v.env.Step(rates_);
@@ -271,10 +279,15 @@ class Engine {
 
     // ---- events ----
     void DrainEvents() {
-        if(bridge_.TakeAllOff())
-            ReleaseAll();
         for(uint32_t n = 0; n < kMaxEventsPerBlock; ++n) {
+            const uint32_t lost = bridge_.LostRelease(); // before Peek, see ControlBridge
             const Event* event = bridge_.Peek();
+            // A lost release acts where it stood: after all older events, before any newer one.
+            if(lost && (!event || int32_t(event->sequence - lost) > 0)) {
+                sustain_down_ = false; // the lost event may have been the pedal
+                ReleaseAll();
+                bridge_.ClearLostRelease(lost);
+            }
             if(!event)
                 return;
             if(!Apply(*event)) {
@@ -310,6 +323,7 @@ class Engine {
             case EventType::SetParam:
                 if(e.value == e.value) {
                     base_[std::size_t(e.param)] = Clamp01(e.value);
+                    params_changed_ = true;
                     rates_dirty_ = rates_dirty_ || kParamInfo[std::size_t(e.param)].timing == Timing::Note;
                 }
                 break;
@@ -449,16 +463,30 @@ class Engine {
         v.scan = 0.f;
         v.birth_phase = kOne; // the first grain starts in this block
         v.cloud_left = 0;
+        v.cloud_wanted = mode == StartMode::FullCloud || mode == StartMode::FullCloudAtStart;
+        cloud_requested_ = cloud_requested_ || v.cloud_wanted;
         v.count_smooth = 0.f;
         v.env.Reset();
         v.gain.Reset(0.f);
         v.env.NoteOn();
         v.control_now = true;
-        if(mode == StartMode::FullCloud || mode == StartMode::FullCloudAtStart) {
-            // Density x duration, bounded by what the voice may hold (R7).
-            const float wanted = derived_.rate_hz * derived_.size_frames / config_.sample_rate + 0.5f;
-            const std::size_t share = FairShare();
-            const std::size_t cloud = wanted >= float(share) ? share : std::size_t(wanted);
+    }
+
+    // Density x duration, bounded by what the voice may hold (R7). Runs after the control
+    // update and after all of the block's notes, so it sees their parameters and their number.
+    void SizeStartClouds() {
+        if(!cloud_requested_)
+            return;
+        cloud_requested_ = false;
+        const float wanted = derived_.rate_hz * derived_.size_frames / config_.sample_rate + 0.5f;
+        const std::size_t share = FairShare();
+        const std::size_t cloud = wanted >= float(share) ? share : std::size_t(wanted);
+        for(Voice& v : voices_) {
+            if(!v.active || !v.cloud_wanted)
+                continue;
+            v.cloud_wanted = false;
+            if(v.tail || !v.held)
+                continue; // released in the same block: the cloud lapses with the note
             v.cloud_left = uint16_t(cloud);
             v.count_smooth = float(cloud); // the law must not see a full cloud as one grain
         }
@@ -678,6 +706,7 @@ class Engine {
     Derived derived_;
     EnvelopeRates rates_;
     bool rates_dirty_ = true;
+    bool params_changed_ = false, cloud_requested_ = false;
     std::size_t limit_ = kMaxGrains;
     float bend_ = 0.f;
     bool sustain_down_ = false;

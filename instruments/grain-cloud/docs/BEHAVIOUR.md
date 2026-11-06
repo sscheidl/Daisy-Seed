@@ -21,7 +21,7 @@ All of this runs in the audio context, in this order, so nothing needs a lock:
 
 | Rule | How the core does it | Test |
 | --- | --- | --- |
-| R1 Control tick | `ControlTick()` runs before rendering in the same context. Default `tick_blocks = 1`, 1 kHz at 48 frames; 4 gives 250 Hz. Note events are taken every block, and a new voice gets its first gain target at once | `TestControlTick`, `TestOneWriter` |
+| R1 Control tick | `ControlTick()` runs before rendering in the same context. Default `tick_blocks = 1`, 1 kHz at 48 frames; 4 gives 250 Hz. Note events are taken every block, and a new voice gets its first gain target at once. One exception moves the tick: a full-cloud note posted with parameter changes brings it forward, so the cloud sees them | `TestControlTick`, `TestOneWriter` |
 | R2 Effects after the sum | No effect in the core. One stereo point between `RenderSum()` and `Output()`, usable with FX contract 1.0 | `TestEffectPoint` |
 | R3 Expensive work at control rate | Period, window step, pitch ratio, count law and envelope coefficients are computed per tick. `grain_renderer.h` has no transcendental call and no division | `make test-rt-scan` |
 | R4 Ramps | Voice gain and master gain ramp linearly to the tick's target. The window moves by a slew limit | `TestRamps`, `TestRamp`, `TestWindowSweep` |
@@ -52,6 +52,8 @@ All of this runs in the audio context, in this order, so nothing needs a lock:
 | `FullCloudAtStart` | The same number and ages, the position is not advanced. Spray still applies | Same |
 | `Keep` | Like `Grow` for a new note | Same voice, same generation. Running grains go on under the new envelope, which continues from its current level |
 
+* The cloud is sized after the block's control update and after all of the block's notes. Parameters
+  posted with the note count, and a chord in one block shares the pool evenly (`TestCloudUsesCurrentParams`).
 * The cloud is limited by the voice's fair share, the active limit and the pool.
 * It is spread at 16 births per block. The rest is a counter on the voice. It lapses at note-off.
 * **The attack waits for the cloud.** A grain that enters a rising attack mid-window would step, so
@@ -115,8 +117,11 @@ Grain length is at least 2 ms by the Size law.
 * `PublishSample()` hands over at a block boundary. New grains read the new sample; old grains
   finish on the old one. `SampleRetired(id)` turns true when the last one has left, and only then
   may the owner reuse the memory (`TestSampleHandOver`, under ASan a late read fails).
-* Note-offs and other releases have their own queue. If that overflows too, a sticky all-notes-off
-  takes over, so a note cannot hang (`TestNoHangingNotes`, `TestBridge`).
+* Note-offs and other releases, including a note-on with velocity 0, have their own queue
+  (`TestZeroVelocityRelease`). If that overflows too, an all-notes-off takes over, so a note cannot
+  hang. It acts where the lost release stood: after all older events, before any newer one. It also
+  clears the pedal, since the lost event may have been the pedal-up. A lost All Sound Off becomes this
+  normal release (`TestNoHangingNotes`, `TestLostReleaseOrder`, `TestBridge`).
 
 ## Paper cost
 

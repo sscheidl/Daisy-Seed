@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: MIT
 // Typed events into the audio callback, on the shared SPSC queue of Step Seq. Note-offs and
 // other releases have their own queue, so a flood of notes cannot hang a note: if even that
-// queue is full, a sticky all-notes-off request takes over. Sequence numbers keep the input
-// order between the two queues. The MIDI/control engine of a product translates MIDI into
-// these events; the core has no parser.
+// queue is full, a sticky all-notes-off request takes over. It carries the sequence number
+// of the lost release, because it must act after every older event and before every newer
+// one. Sequence numbers also keep the input order between the two queues. The MIDI/control
+// engine of a product translates MIDI into these events; the core has no parser.
 #include "params.h"
 #include "step_seq/spsc.h"
 #include <atomic>
@@ -65,21 +66,27 @@ inline Event AllSoundOff() {
     return e;
 }
 
+// Everything that ends a note. A note-on with velocity 0 is a note-off.
+inline bool IsRelease(const Event& e) {
+    return e.type == EventType::NoteOff || e.type == EventType::AllNotesOff || e.type == EventType::AllSoundOff ||
+           (e.type == EventType::NoteOn && e.velocity == 0) || (e.type == EventType::Sustain && e.velocity < 64);
+}
+
 class ControlBridge {
   public:
     static constexpr std::size_t kEvents = 128, kReleases = 64;
 
     // Main loop only. false: the event was lost; a lost release falls back to all notes off.
     bool Post(Event event) {
-        event.sequence = ++sequence_;
-        const bool release = event.type == EventType::NoteOff || event.type == EventType::AllNotesOff ||
-                             event.type == EventType::AllSoundOff ||
-                             (event.type == EventType::Sustain && event.velocity < 64);
+        if(++sequence_ == 0)
+            ++sequence_; // 0 means "no lost release"
+        event.sequence = sequence_;
+        const bool release = IsRelease(event);
         if(release ? releases_.Push(event) : events_.Push(event))
             return true;
         overflows_.fetch_add(1, std::memory_order_relaxed);
         if(release)
-            all_off_.store(true, std::memory_order_release);
+            lost_release_.store(sequence_, std::memory_order_release); // the newest covers older ones
         return false;
     }
 
@@ -100,13 +107,19 @@ class ControlBridge {
         else if(b)
             releases_.Pop(ignored);
     }
-    bool TakeAllOff() { return all_off_.exchange(false, std::memory_order_acq_rel); }
+    // Audio only. Sequence of the newest lost release, 0 if none. Read this before Peek():
+    // the acquire makes every older event visible there.
+    uint32_t LostRelease() const { return lost_release_.load(std::memory_order_acquire); }
+    // Keeps a newer loss that arrived after `sequence` was read.
+    void ClearLostRelease(uint32_t sequence) {
+        lost_release_.compare_exchange_strong(sequence, 0, std::memory_order_acq_rel);
+    }
     uint32_t Overflows() const { return overflows_.load(std::memory_order_relaxed); }
 
   private:
     step_seq::SpscQueue<Event, kEvents> events_;
     step_seq::SpscQueue<Event, kReleases> releases_;
-    std::atomic<bool> all_off_{false};
+    std::atomic<uint32_t> lost_release_{0};
     std::atomic<uint32_t> overflows_{0};
     uint32_t sequence_ = 0; // main loop only
 };
