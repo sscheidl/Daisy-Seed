@@ -3,7 +3,8 @@
 Date: 2026-10-20, updated 2026-10-25 for v0.3.2 (44.1 kHz import) and v0.4.0
 (MIDI CC control), 2026-10-26 for the separate Mod on Daisy build (`MOD=1`),
 2026-11-01 for v0.5.0 (SD management, see the section below), 2026-11-06 for v0.6.0
-(writable `common/sd` profile, [report](../../../docs/SD_WRITABLE_REBUILD_2026-11-06.md)).
+(writable `common/sd` profile, [report](../../../docs/SD_WRITABLE_REBUILD_2026-11-06.md)),
+2026-11-06 for v0.6.1 (SHARE handoff, see the section below).
 Hardware validation: **PENDING — no run on the Seed3 yet.**
 
 | Gate | Status | Evidence |
@@ -123,6 +124,19 @@ Not measured (needs the kit and Windows): whether the bootloader keeps the boot 
 in backup SRAM (R1), enumeration of `Looper SD` on Windows, copy speed, time to save an
 87 s loop before the share, the S4 return, recovery after a pulled cable. Checklist:
 [HARDWARE_TEST.md, section 10](HARDWARE_TEST.md#10-sd-management-windows-access-v05).
+
+## SHARE handoff (v0.6.1, 2026-11-06)
+
+Local Windows run with MSVC 19.44 (no g++ or ARM toolchain on that machine), `/std:c++17`.
+The only source difference to the repository build is the `asm volatile` line in
+`main()`, removed in a scratch copy because MSVC x64 has no inline assembly.
+
+| Check | Result |
+| --- | --- |
+| Before the fix: undo or erase during the ramp, CC erase ahead of SHARE, key edge in the fade | MEASURED: ACCEPTED, the edit lost; after the restart the erase was undone |
+| `tests/test_share_race.cpp`, `test_callback`, `test_golden` (`2A2DBCEC41A54F57`), regular and MOD; `test_admin`, Looper and Nebulae | MEASURED: PASS |
+| ARM build, `check-firmware.py`, `sd-check` of 0.6.1 | NOT MEASURED |
+| A refused share returning the output without a fade-in (possible click) | NOT MEASURED, needs hardware |
 
 ## Memory and image
 

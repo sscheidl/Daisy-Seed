@@ -203,7 +203,7 @@ and a FAT32 or exFAT card that already holds `looper/loop.wav` from section 7. B
 (card reader or this test's end result), so nothing is lost if a step fails.
 
 - [ ] Panel, tab **SD share**: the looper is found on USB-MIDI ("Performance"),
-      instrument `Looper`, firmware `0.6.0`, loop length matches the loop, "saved in
+      instrument `Looper`, firmware `0.6.1`, loop length matches the loop, "saved in
       looper/loop.wav".
 - [ ] Overdub a short layer, then press **Share SD card with Windows** within 2 s: the
       panel shows "Saving the loop before sharing …", the S8 LED blinks, then the kit
@@ -227,6 +227,9 @@ and a FAT32 or exFAT card that already holds `looper/loop.wav` from section 7. B
       does nothing. Acknowledge in the panel, return; the looper starts and loads
       `loop.wav` (if Windows damaged the file system, note what the looper does; the
       card can be checked on the PC).
+- [ ] Press S5 (erase) and **Share** as close together as you can, a few times: after
+      the restart the loop is either erased or the share did not happen, never an erase
+      that came undone. Note any click when a share is refused.
 - [ ] Refusals: while recording, **Share** is disabled (and the firmware answers BUSY);
       without a card the panel shows "no card".
 - [ ] Power-cycle the kit while it is in SD management: it starts in performance.

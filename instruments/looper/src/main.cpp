@@ -139,6 +139,9 @@ static std::atomic<bool> cardPresent{false}, importRequested{false};
 // silence within one block, then the main loop restarts into the card reader.
 static std::atomic<bool> fadeOut{false}, faded{false};
 static int32_t fadeLeft = -1;  // audio callback only: samples left, -1 before the fade
+// Key and CC presses held back while a SHARE is decided (HandleControl): a refused share
+// releases them, an accepted one drops them.
+static std::atomic<uint32_t> heldPresses{0};
 static bool shareRequested = false, restarting = false;  // main loop only
 
 // Engine state for the main loop, published by the audio callback under a
@@ -281,6 +284,11 @@ static void Controls() {
 #else
     presses |= midiIn.TakePresses();  // CC presses act like key presses
 #endif
+    presses |= heldPresses.exchange(0, std::memory_order_relaxed);
+    if (fadeOut.load(std::memory_order_acquire)) {  // never set while performing
+        heldPresses.store(presses, std::memory_order_relaxed);
+        presses = 0;
+    }
     if (presses & (1u << keys::Record))
         engine.PressRecord();
     if (presses & (1u << keys::Play))
@@ -410,6 +418,9 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
         }
         if (fadeLeft == 0)
             faded.store(true, std::memory_order_release);
+    } else if (fadeLeft >= 0) {  // the share was refused after the re-check
+        fadeLeft = -1;
+        faded.store(false, std::memory_order_relaxed);
     }
     const uint32_t elapsed = DWT->CYCCNT - start;
     if (elapsed > maximumCycles.load(std::memory_order_relaxed))
@@ -468,7 +479,10 @@ static looper::sysex::Status CurrentStatus() {
     st.loop = s.length > 0;
     st.recording = flags & (ui::Recording | ui::RecordPending);
     if (storageReady && store.VersionKnown()) {
-        st.unsaved = s.version != store.SavedVersion();
+        // A pending undo, redo or erase moves the version only after its ramp, and a
+        // held press has not reached the engine yet: neither is on the card.
+        st.unsaved = s.version != store.SavedVersion() || !s.idle ||
+                     heldPresses.load(std::memory_order_relaxed) != 0;
         st.save_failed = store.SaveFailed() || !store.CardReady();
     } else {  // the card was never usable: the loop cannot be saved
         st.unsaved = st.loop;
@@ -487,6 +501,20 @@ static looper::sysex::Status CurrentStatus() {
     return st;
 }
 
+// Main loop: fades out and holds every edit, then waits until one whole callback has
+// run under the hold, so that the next snapshot is final. Returns after 50 ms at most.
+static void HoldEdits() {
+    fadeOut.store(true, std::memory_order_release);
+    const uint32_t seen = snapshotSequence.load(std::memory_order_acquire);
+    for (unsigned i = 0; i < 50; ++i) {
+        // Two per callback; the first may have passed Controls() before the hold.
+        if (faded.load(std::memory_order_acquire) &&
+            snapshotSequence.load(std::memory_order_acquire) - seen >= 4)
+            return;
+        System::Delay(1);
+    }
+}
+
 // Main loop: answers STATUS and SHARE at once. SAVING starts the save without the
 // usual 2 s delay; ACCEPTED restarts into SD management after this iteration.
 static void HandleControl(const MidiEvent& event) {
@@ -495,6 +523,15 @@ static void HandleControl(const MidiEvent& event) {
     if (!looper::sysex::Handle(event.sysex_data, event.sysex_message_len, CurrentStatus(), reply,
                                result))
         return;
+    if (result == looper::sysex::kAccepted) {
+        // ACCEPTED is final, so it is decided again with the edits held. A refusal is an
+        // ordinary reply: the panel asks again, and the output comes back.
+        HoldEdits();
+        looper::sysex::Handle(event.sysex_data, event.sysex_message_len, CurrentStatus(), reply,
+                              result);
+        if (result != looper::sysex::kAccepted)
+            fadeOut.store(false, std::memory_order_release);
+    }
     const uint8_t* bytes = reply.Finish();
     SendMidi(const_cast<uint8_t*>(bytes), reply.Size());
     if (result == looper::sysex::kSaving)
@@ -585,9 +622,7 @@ static void ShowLeds(uint32_t now, uint32_t& shown) {
 // unmount and reset the SD interface, then restart this image into SD management.
 // Never returns on the board. The loop comes back from loop.wav after the return.
 static void PrepareShare() {
-    fadeOut.store(true, std::memory_order_release);
-    for (unsigned i = 0; i < 50 && !faded.load(std::memory_order_acquire); ++i)
-        System::Delay(1);
+    HoldEdits();  // already held by HandleControl: costs two more blocks on the board
     hw.seed.StopAudio();
     store.Halt();  // only a confirmed share can interrupt a save; loop.wav stays intact
     looper::ReleaseCard();

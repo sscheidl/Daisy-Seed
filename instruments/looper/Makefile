@@ -96,6 +96,10 @@ test: test-card
 	./build/host/test_callback
 	$(HOST_CXX) $(HOST_FLAGS) $(CALLBACK_FLAGS) $(MOD_FLAGS) tests/test_callback.cpp $(CALLBACK_SOURCES) -o build/host/test_callback_mod
 	./build/host/test_callback_mod
+	$(HOST_CXX) $(HOST_FLAGS) $(CALLBACK_FLAGS) tests/test_share_race.cpp $(CALLBACK_SOURCES) -o build/host/test_share_race
+	./build/host/test_share_race
+	$(HOST_CXX) $(HOST_FLAGS) $(CALLBACK_FLAGS) $(MOD_FLAGS) tests/test_share_race.cpp $(CALLBACK_SOURCES) -o build/host/test_share_race_mod
+	./build/host/test_share_race_mod
 	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) -Isrc tests/test_columns.cpp src/looper_engine.cpp -o build/host/test_columns
 	./build/host/test_columns
 	$(HOST_CXX) $(HOST_FLAGS) $(CALLBACK_FLAGS) $(MOD_FLAGS) tests/test_modulation.cpp $(CALLBACK_SOURCES) -o build/host/test_modulation
