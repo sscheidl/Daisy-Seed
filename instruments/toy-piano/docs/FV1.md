@@ -1,4 +1,4 @@
-# Toy Piano + FV-1 interpreter v0.8.0 (research / feasibility study)
+# Toy Piano + FV-1 interpreter v0.10.0 (research / feasibility study)
 
 Own test product `toy-piano-fv1`: Toy Piano → [fv1-vm](../../../effects/fv1-vm/) (48 kHz adapter, program at
 32 kHz) → stereo output. Composition by build flag `FV1=1`; the regular Toy Piano, `toy-piano-tape` and
@@ -27,10 +27,10 @@ effect follows from VR4, VR8 the internal rate. History: before 0.3.0 VR1..VR3 w
 | VR1 | piano transposition, continuous −24 to +24 semitones, centre detent = original pitch |
 | VR2 | piano attack, 2–300 ms (as in the regular Toy Piano) |
 | VR3 | piano decay, 50–3000 ms (as in the regular Toy Piano) |
-| VR4 · VR5 · VR6 | parameter 1 · 2 · 3 of the FV-1 program (POT0 · POT1 · POT2) |
+| VR4 · VR5 · VR6 | parameter 1 · 2 · 3 of the FV-1 program (POT0 · POT1 · POT2), low-passed in the interpreter (since 0.10.0): time constant 4096 program samples, 125 ms at 32 kHz and 0.5 s at 8 kHz |
 | VR7 | dry/wet (0 = exact dry piano) |
 | VR8 | rate: the program's internal sample rate, 32 kHz at the left stop, 16 kHz centre, 8 kHz right (exponential, glides like tape speed; longer delays, lower generator pitch, less CPU) |
-| SW18 | unused |
+| SW18 | override of parameter 1 (POT0): up = full, centre = VR4, down = zero (since 0.9.0). Applies to every program. Meant for programs with a Gate on parameter 1, which record below 0.5 and hold above it: leave SW18 at the centre or down to record, flip it up to hold |
 | SW17 | FX bypass: exact dry piano; the effect keeps running in the background |
 | MIDI Program Change, any channel | Bank Select (CC0 or CC32) = group, Program Change = position in the group (local grouped table, since 0.4.0); without groups bank × 128 + n |
 | MIDI channel 16 CC22/CC23 | program index (high/low 7 bits, 0-based, wraps); the change mutes one block |

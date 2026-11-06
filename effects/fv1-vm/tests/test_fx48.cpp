@@ -28,6 +28,7 @@ struct Rig {
         fx.LoadProgram(words);
         Parameters p; p.pot[1] = p1; p.pot[2] = p2;
         fx.SetParameters(p);
+        fx.Reset(); // pots settled
     }
     std::vector<float> Run(const std::vector<float>& in) {
         std::vector<float> out(in.size()), right(in.size());

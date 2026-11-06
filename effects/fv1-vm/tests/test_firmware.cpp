@@ -23,6 +23,7 @@ struct Rig {
         vm.LoadProgram(words);
         fv1::Parameters p; p.pot[0] = p0; p.pot[1] = p1; p.pot[2] = p2;
         vm.SetParameters(p);
+        vm.Reset(); // pots settled
     }
     // Block processing as in the firmware.
     void Run(const std::vector<float>& l, const std::vector<float>& r, std::vector<float>& ol, std::vector<float>& orr) {

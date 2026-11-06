@@ -22,6 +22,10 @@ namespace seed::fx::fv1 {
 inline constexpr unsigned kProgramWords = 128;
 inline constexpr unsigned kMemWords = 32768; // FV-1 delay RAM
 inline constexpr unsigned kMemMask = kMemWords - 1;
+// The FV-1 low-passes its POT inputs. Programs written for it compensate with a shelving pot filter (one-pole 2^-10, gain 4
+// between its poles); without the low-pass that filter overshoots four times. 2^-12 per sample (125 ms at 32 768 Hz) is the
+// value that filter cancels exactly; it is inferred from the programs, not from a datasheet.
+inline constexpr double kPotSmooth = 1.0 / 4096.0;
 
 enum class Op : uint8_t {
     Rda, Rmpa, Wra, Wrap, Rdax, Rdfx, Wrax, Wrhx, Wrlx, Maxx, Mulx, Log, Exp, Sof, And, Or, Xor, Skp,
@@ -121,6 +125,7 @@ template <typename T> class Vm {
         if(mem_) for(unsigned i = 0; i < kMemWords; ++i) mem_[i] = 0;
         acc_ = pacc_ = lr_ = 0;
         head_ = 0; run_ = false;
+        r_[16] = pot_[0]; r_[17] = pot_[1]; r_[18] = pot_[2]; // a new program starts settled
         ss_[0] = ss_[1] = 0; cc_[0] = cc_[1] = -1; rp_[0] = rp_[1] = 0;
     }
     // Startup / program change only (not real-time safe w.r.t. state continuity: call Reset as needed).
@@ -137,8 +142,8 @@ template <typename T> class Vm {
     }
     bool Process(const seed::audio::StereoBlock& b) {
         if(!seed::audio::Valid(config_, b) || !mem_) return false;
-        r_[16] = pot_[0]; r_[17] = pot_[1]; r_[18] = pot_[2];
         for(std::size_t t = 0; t < b.frames; ++t) {
+            for(unsigned i = 0; i < 3; ++i) r_[16 + i] += (pot_[i] - r_[16 + i]) * T(kPotSmooth);
             const T inl = T(b.left[t]), inr = T(b.right[t]);
             T outl, outr;
             Step(inl, inr, outl, outr);

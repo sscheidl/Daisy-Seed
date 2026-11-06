@@ -11,6 +11,7 @@ extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }
 #include <cstring>
 #include <memory>
 #include <new>
+#include <vector>
 
 static bool in_audio = false;
 static unsigned allocations = 0;
@@ -81,7 +82,7 @@ void TestExactComposition() {
         for(unsigned k = 0; k < 16; ++k) hw.pressed[k] = false;
         if(step < std::size(pattern) && block % 200 < 30) hw.pressed[pattern[step]] = true;
         Tick();
-        host->ReadControls(raw, false);
+        host->ReadControls(raw, false, 0);
         if(block == 0) host->Select(1);
         const uint32_t held = led_mask.load();
         for(unsigned key = 0; key < 16; ++key)
@@ -279,8 +280,48 @@ void TestDinMidi() {
     std::puts("PASS: DIN MIDI note and Program Change; SysEx over DIN ignored");
 }
 
+// SW18 overrides POT0: the callback passes the switch on, and up/down sound exactly like VR4 at its stops.
+void TestGateSwitch() {
+    hw.pot[3].value = .2f; // VR4
+    for(int sw18 : {toy_piano::kFv1Sw18Up, 0, toy_piano::kFv1Sw18Down}) {
+        hw.tog_sw18.value = sw18;
+        Tick();
+        assert(fv1->Pot0() == toy_piano::Fv1Pot0(.2f, sw18));
+    }
+    assert(toy_piano::Fv1Pot0(.2f, toy_piano::kFv1Sw18Up) == 1.f && toy_piano::Fv1Pot0(.2f, 0) == .2f);
+    assert(toy_piano::Fv1Pot0(.2f, toy_piano::kFv1Sw18Down) == 0.f);
+    hw.tog_sw18.value = 0;
+    // A program that outputs POT0: up and down must sound exactly like VR4 at its stops.
+    static uint32_t words[1][seed::fx::fv1::kProgramWords];
+    using namespace seed::fx::fv1::assemble;
+    for(auto& w : words[0]) w = Nop();
+    words[0][0] = Rdax(POT0, 1.0); words[0][1] = Wrax(DACL, 0.0);
+    auto run = [](float vr4, int sw18) {
+        auto host = std::make_unique<toy_piano::Fv1Host>();
+        assert(host->Prepare({words, 1}));
+        std::array<float, 8> raw{};
+        raw[3] = vr4; raw[6] = 1.f; // VR7 full wet
+        host->ReadControls(raw, false, sw18);
+        host->Select(0); // pots settled
+        const float mono[kN]{};
+        float l[kN], r[kN];
+        std::vector<float> out;
+        for(unsigned block = 0; block < 100; ++block) {
+            host->ReadControls(raw, false, sw18);
+            assert(host->Process(mono, l, r, kN));
+            out.insert(out.end(), l, l + kN);
+        }
+        return out;
+    };
+    const auto up = run(.2f, toy_piano::kFv1Sw18Up), down = run(.2f, toy_piano::kFv1Sw18Down), centre = run(.2f, 0);
+    assert(up == run(1.f, 0) && down == run(0.f, 0));
+    assert(std::fabs(up.back() - 1.f) < .01f && std::fabs(centre.back() - .2f) < .01f && std::fabs(down.back()) < .01f);
+    std::puts("PASS: SW18 up and down equal VR4 at its stops, centre leaves VR4 in charge");
+}
+
 int main() {
     hw.Init(); piano.Init(); assert(InitializeFx()); InitModulation(48000);
+    hw.tog_sw18.value = 0; // centre (the fake starts up)
     assert(std::strcmp(toy_piano::MakeModInfo().key, "toy-piano-fv1") == 0);
     TestExactComposition();
     TestDryMixAndBypass();
@@ -288,6 +329,7 @@ int main() {
     TestStandardProgramChange();
     TestTransposeAndRate();
     TestDinMidi();
+    TestGateSwitch();
     assert(allocations == 0);
     std::puts("PASS composed Toy Piano + fv1-vm; no allocation in the audio callback");
 }

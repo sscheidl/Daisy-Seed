@@ -25,7 +25,7 @@ serves as a reference for later native ports. Composition: Toy Piano with this c
 | Core | `include/fv1vm/fv1_vm.h`: `Vm<T>`, `T` = `float` (board) or `double` (reference) |
 | Startup | `Prepare(Config, Storage<T>&)`; the host provides `Storage<T>`, 32 768 words (128 KiB as `float`) |
 | Program | `LoadProgram(const uint32_t words[128])`; `Reset()` clears state and delay RAM (not real-time cheap) |
-| Parameters | `SetParameters(Parameters)`: POT0..POT2 in 0..1 |
+| Parameters | `SetParameters(Parameters)`: POT0..POT2 in 0..1, low-passed in `Process` with 2^-12 per sample as a stand-in for the FV-1's POT filter |
 | Processing | `Process(StereoBlock)`: wet only; bounded (128 instructions per sample); no allocation, locks or I/O |
 | Rate | FV-1 programs assume 32 768 Hz. `Vm` runs at the host rate; the standalone firmware uses 32 kHz (`SAI_32KHZ`, 2.3 % slow) |
 | 48 kHz hosts, variable rate | `include/fv1vm/fv1_fxvar.h`: `FxVar<T>` runs the program at 8–32 kHz (`SetRate`) between two Kaiser-windowed-sinc fractional resamplers (12 zero crossings, cutoff 0.82 × internal Nyquist); used by `toy-piano-fv1` since 0.5.0 |
@@ -44,7 +44,7 @@ local, git-ignored table:
 
 ```bash
 python effects/fv1-vm/tools/gen_programs.py --label "..." <512-byte program files ...>   # -> effects/fv1-vm/generated/
-make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.3.0.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
+make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.4.0.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
 make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.4.0.bin
 ```
 

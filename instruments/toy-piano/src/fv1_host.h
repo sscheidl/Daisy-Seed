@@ -4,7 +4,8 @@
 // The fv1-vm component runs the program at 8-32 kHz behind its variable-rate adapter (fv1vm/fv1_fxvar.h).
 // Mapping owned here (0.5.0, piano first): VR1..VR3 stay with the piano (main.cpp: pitch, attack, decay),
 // VR4..VR6 = POT0..POT2, VR7 = dry/wet, VR8 = internal rate (left 32 kHz, right 8 kHz, exponential),
-// SW17 = bypass (exact dry piano). The program comes from MIDI (Program Change or channel 16 CC22/CC23,
+// SW17 = bypass (exact dry piano), SW18 = POT0 override (up full, centre VR4, down zero: a hand-free Gate for programs
+// that record below POT0 0.5 and hold above it). The program comes from MIDI (Program Change or channel 16 CC22/CC23,
 // see effects/fv1-vm/src/fv1_firmware.h). The interpreter runs behind the variable-rate adapter.
 #include "toy_piano.h"
 #include "fv1vm/fv1_fxvar.h"
@@ -16,6 +17,11 @@ namespace toy_piano {
 constexpr unsigned kFv1FirstPot = 3; // VR4
 constexpr unsigned kFv1MixPot = 6;   // VR7
 constexpr unsigned kFv1RatePot = 7;  // VR8
+// SW18 positions as read from the board (daisy::Switch3).
+constexpr int kFv1Sw18Up = 1;
+constexpr int kFv1Sw18Down = 2;
+// SW18 overrides VR4 for every program; the host knows nothing about what a program does with POT0.
+inline float Fv1Pot0(float vr4, int sw18) { return sw18 == kFv1Sw18Up ? 1.f : sw18 == kFv1Sw18Down ? 0.f : vr4; }
 // VR8: 32 kHz at the left stop, halving per half turn: 16 kHz at the centre, 8 kHz at the right stop.
 inline float Fv1Rate(float pot) {
     const float x = pot < 0.f ? 0.f : pot > 1.f ? 1.f : pot;
@@ -32,10 +38,11 @@ class Fv1Host {
         mix_ = target_mix_ = 1.f;
         return true;
     }
-    // Control rate (once per block), audio thread: VR4..VR6, VR7, VR8 and SW17.
-    void ReadControls(const std::array<float, 8>& pots, bool bypass) {
+    // Control rate (once per block), audio thread: VR4..VR6, VR7, VR8, SW17 and SW18.
+    void ReadControls(const std::array<float, 8>& pots, bool bypass, int sw18) {
         seed::fx::fv1::Parameters p;
         for(unsigned i = 0; i < 3; ++i) p.pot[i] = pots[kFv1FirstPot + i];
+        p.pot[0] = pot0_ = Fv1Pot0(p.pot[0], sw18);
         fx_.SetParameters(p);
         const float mix = pots[kFv1MixPot];
         target_mix_ = mix < 0.f ? 0.f : mix > 1.f ? 1.f : mix;
@@ -82,13 +89,14 @@ class Fv1Host {
     bool Bypass() const { return bypass_; }
     float Rate() const { return fx_.Rate(); }
     float Mix() const { return target_mix_; }
+    float Pot0() const { return pot0_; }
   private:
     static float Limit(float x) { return x > 1.f ? 1.f : x < -1.f ? -1.f : x; }
     seed::fx::fv1::FxVar<float> fx_;
     seed::fx::fv1::Storage<float> storage_;
     fv1_fw::ProgramBank bank_;
     unsigned program_ = 0;
-    float mix_ = 1.f, target_mix_ = 1.f;
+    float mix_ = 1.f, target_mix_ = 1.f, pot0_ = 0.f;
     bool muted_ = false, bypass_ = false;
 };
 } // namespace toy_piano
