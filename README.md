@@ -30,6 +30,7 @@ developed independently and reintegrated through their documented contracts.
 | [Step Seq v0.1.0](sequencers/step-seq/) | `sequencers/step-seq/` | KORG SQ-1-style 2 × 8-step sequencer, firmware `step-seq`: CV/Gate (own DAC register path, calibration, enable), MIDI USB+DIN with note tracking, three play modes, internal/Gate/MIDI/Auto clock, SQ protocol and `sq_probe.py`; host/sanitizer/ARM checks pass, hardware untested |
 | [Acid 303 v0.1.0](instruments/acid-303/) | `instruments/acid-303/` | Monophonic TB-303-style voice (DaisySP PolyBLEP and ladder filter with self-oscillation, accent, slide, two-source note stack) and standalone firmware `acid-303` with MIDI USB+DIN and CC plan; golden tests; host/sanitizer/ARM checks pass, hardware untested |
 | [Audrey 3 v0.1.0](instruments/audrey-3/) | `instruments/audrey-3/` | Port of the Synthux Academy Audrey II feedback synth (MIT), bit-identical to upstream in a host render, with a second pot page and MIDI notes and CCs. Links ReverbSc and Tone from DaisySP-LGPL (LGPL-2.1). Hardware NOT MEASURED |
+| [Grain Cloud v0.1.0](instruments/grain-cloud/) | `instruments/grain-cloud/` | New independent granular engine, separate from the Nebulae port: offline host core only, with a global grain pool, four note starts, a shared window morph and Mod on Daisy as its matrix. No firmware yet. Hardware NOT MEASURED |
 | [Drive v0.1.0](effects/drive/) | `effects/drive/` | Soft/Hard/Tape/Fold saturation shared with Tape FX (`common/dsp/saturation.h`, Tape FX images byte-identical after the move), tone, auto level within 1 dB, wet-only FX contract; standalone `drive-fx` firmware; host/sanitizer/ARM checks pass, hardware untested |
 | [Stereo Delay v0.1.0](effects/stereo-delay/) | `effects/stereo-delay/` | Ping-pong and stereo L/R delay, free or synced up to 12 s (dotted whole at 30 BPM, 4.6 MB in SDRAM), feedback 95 % bounded, damping, host tail handling; standalone `delay-fx` firmware with MIDI clock; host/sanitizer/ARM checks pass, hardware untested |
 | [Echo Delay v0.1.0](effects/echo-delay/) | `effects/echo-delay/` | The tape-like echo of the Audrey II, 5 s per side, firmware `echo-delay-fx`, used by Audrey 3. Hardware NOT MEASURED |
@@ -53,6 +54,7 @@ Daisy-Seed/
 │   ├── toy-piano/          # Makefile, README, src, tests, docs, generated build
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
 │   ├── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
+│   ├── grain-cloud/        # new independent granular engine, host core
 │   └── looper/             # Stardust analysis and buildable engine core
 ├── sequencers/             # step-seq core and contracts, acid-seq product
 ├── effects/

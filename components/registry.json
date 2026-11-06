@@ -291,6 +291,21 @@
         "fx-contract"
       ]
     },
+    "grain-cloud": {
+      "kind": "instrument",
+      "source": "instruments/grain-cloud/include/grain_cloud",
+      "version": {
+        "type": "macro",
+        "path": "instruments/grain-cloud/include/grain_cloud/version.h",
+        "name": "GRAIN_CLOUD_VERSION"
+      },
+      "depends": [
+        "mod-on-daisy",
+        "step-seq",
+        "fast-math"
+      ],
+      "provenance": "instruments/grain-cloud/docs/PROVENANCE.md"
+    },
     "audrey-dsp": {
       "kind": "dsp",
       "source": "common/dsp/audrey-ii",
