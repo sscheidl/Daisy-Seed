@@ -216,7 +216,7 @@ DaisySP `2c72eaf`. Nothing was flashed or listened to. Hardware checklist:
 | Regular ARM image | byte-identical to `main`: 183,740 B, SHA-256 `cbc4c376...e381ff`; no matrix symbol |
 | MOD ARM image | 211,360 B, SHA-256 `02e52f88...97a727` |
 | `check-firmware.py`, `check-granular-elf.py --host-test` | PASS on both images; MOD capacity 41,695,296 B, DTCM reserve 29,396 B |
-| `check-sd-symbols.py` with the `sd-check` flags | PASS on both ELFs: 36 banned, 6 required |
+| `make sd-check`, regular and `MOD=1` | PASS on both ELFs: 36 banned, 6 required, 12 injected writers rejected |
 | `component_manifest.py --project granular-mod --built` | PASS: nebulae 0.2.1, mod-on-daisy 0.1.0, bootloader-entry 1.0.0 |
 | `python -m pytest diagnostics/tests/python -q` | 335 passed |
 | `tests/test_components.py`, `tests/test_firmware_checker.py` | PASS |
@@ -225,6 +225,9 @@ DaisySP `2c72eaf`. Nothing was flashed or listened to. Hardware checklist:
 | JUCE `--selftest`, `mod_editor_core_tests` | PASS |
 | New host code under `arm-none-eabi-g++ -Wall -Wextra -Werror` | clean; stands in for Linux g++ |
 | Packaged apps and entry point in simulation (`nebulae_mod_test_package.py --smoke`) | PASS; the window's buttons also driven through UI Automation |
+
+All of this was repeated after merging `main` at `7e7b02c` (Grain Cloud 0.1.0, Looper 0.6.0),
+with a regular image built from that `main` as the comparison: same hashes for both images.
 
 Not run: `make test-thread` (ThreadSanitizer is unsupported on Windows). `test_mod_thread`
 runs without TSan in `make test`. The whole quick CI result is in the PR.
