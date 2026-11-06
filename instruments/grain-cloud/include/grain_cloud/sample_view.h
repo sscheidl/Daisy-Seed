@@ -1,7 +1,7 @@
 #pragma once
 // SPDX-License-Identifier: MIT
 // A prepared mono PCM16 sample the engine may read. The owner keeps the data valid until
-// Engine::SampleRetired() confirms that no grain reads it any more.
+// Engine::ConsumeSampleRetired() confirms that no grain reads it any more.
 #include <cstdint>
 
 namespace grain_cloud {

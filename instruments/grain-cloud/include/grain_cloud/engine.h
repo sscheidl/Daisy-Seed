@@ -114,16 +114,22 @@ class Engine {
 
     // ---- main loop ----
     bool Post(const Event& event) { return bridge_.Post(event); }
-    // Hands a sample over at the next free block boundary. false: the last one is still waiting.
+    // Hands a sample over at the next free block boundary. false: the last one is still
+    // waiting, or the owner has not consumed a retirement yet. One sample is replaced at a
+    // time: a staged sample also waits for that consumption, so no retirement is ever lost.
     bool PublishSample(const SampleView& view) {
-        if(!view.Valid() || staged_ready_.load(std::memory_order_acquire))
+        if(!view.Valid() || staged_ready_.load(std::memory_order_acquire) ||
+           retired_id_.load(std::memory_order_acquire) != 0)
             return false;
         staged_ = view;
         staged_ready_.store(true, std::memory_order_release);
         return true;
     }
-    // True once no grain reads the replaced sample: its memory may be reused.
-    bool SampleRetired(uint32_t id) const { return retired_id_.load(std::memory_order_acquire) == id; }
+    // True exactly once, when no grain reads the replaced sample `id` any more: its memory may
+    // be reused. The owner must call this to go on replacing samples.
+    bool ConsumeSampleRetired(uint32_t id) {
+        return id != 0 && retired_id_.compare_exchange_strong(id, 0, std::memory_order_acq_rel);
+    }
     // Latest counters of the last tick. false: nothing new.
     bool ReadStats(Stats& out) {
         if(!published_.Update())
@@ -268,7 +274,9 @@ class Engine {
             samples_[other] = SampleView{};
             retiring_id_ = 0;
         }
-        if(retiring_id_ || !staged_ready_.load(std::memory_order_acquire))
+        // Waiting for the consumption keeps retired_id_ free for the next retirement.
+        if(retiring_id_ || retired_id_.load(std::memory_order_acquire) != 0 ||
+           !staged_ready_.load(std::memory_order_acquire))
             return;
         retiring_id_ = samples_[current_sample_].id;
         samples_[other] = staged_;

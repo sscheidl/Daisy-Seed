@@ -115,13 +115,18 @@ Grain length is at least 2 ms by the Size law.
 ## Samples and events
 
 * `PublishSample()` hands over at a block boundary. New grains read the new sample; old grains
-  finish on the old one. `SampleRetired(id)` turns true when the last one has left, and only then
-  may the owner reuse the memory (`TestSampleHandOver`, under ASan a late read fails).
+  finish on the old one. `ConsumeSampleRetired(id)` returns true once, after the last one has left, and
+  only then may the owner reuse the memory (`TestSampleHandOver`, under ASan a late read fails).
+* One sample is replaced at a time. `PublishSample()` returns false while a retirement is waiting
+  to be consumed, and a sample staged just before that waits too. The owner must consume every
+  retirement to go on, so none can be lost (`TestRetirementsKept`).
 * Note-offs and other releases, including a note-on with velocity 0, have their own queue
   (`TestZeroVelocityRelease`). If that overflows too, an all-notes-off takes over, so a note cannot
   hang. It acts where the lost release stood: after all older events, before any newer one. It also
   clears the pedal, since the lost event may have been the pedal-up. A lost All Sound Off becomes this
   normal release (`TestNoHangingNotes`, `TestLostReleaseOrder`, `TestBridge`).
+* Events leave both queues strictly in input order, also while the producer posts during the read
+  (`TestBridgeInterleavings`, `TestBridgeThreads`).
 
 ## Paper cost
 

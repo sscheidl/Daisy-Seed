@@ -1077,15 +1077,17 @@ static void TestSampleHandOver() {
     uint8_t old_slot = 0;
     rig->EachGrain([&](const Voice&, const Grain& g) { old_slot = g.flags & kGrainSampleSlot; });
     CHECK(rig->engine.PublishSample(ViewOf(second, 2)));
-    CHECK(!rig->engine.SampleRetired(1));
+    CHECK(!rig->engine.ConsumeSampleRetired(1));
     rig->Block();
-    CHECK(!rig->engine.SampleRetired(1)); // grains still read it
+    CHECK(!rig->engine.ConsumeSampleRetired(1)); // grains still read it
     int blocks = 1;
-    while(!rig->engine.SampleRetired(1) && blocks < 400) {
+    bool retired = false;
+    while(!(retired = rig->engine.ConsumeSampleRetired(1)) && blocks < 400) {
         rig->Block();
         ++blocks;
     }
-    CHECK(rig->engine.SampleRetired(1));
+    CHECK(retired);
+    CHECK(!rig->engine.ConsumeSampleRetired(1)); // once
     CHECK_MSG(blocks >= 90 && blocks <= 120, "retired after %d blocks", blocks);
     first.reset(); // under ASan any later read of the old sample fails the test
     rig->Blocks(200);
@@ -1103,6 +1105,35 @@ static void TestSampleHandOver() {
     half->engine.Post(NoteOn(60, 100));
     half->Blocks(4);
     half->EachGrain([&](const Voice&, const Grain& g) { CHECK(g.inc == (int64_t(1) << 31)); });
+}
+
+// An owner that polls late still gets every retirement, in order.
+static void TestRetirementsKept() {
+    const auto a = DcSample(100), b = DcSample(100), c = DcSample(100), d = DcSample(100);
+    auto rig = std::make_unique<Rig>();
+    CHECK(rig->Start(ViewOf(a, 1), Cfg(1)));
+    rig->Block();                                  // sample 1 sounds
+    CHECK(rig->engine.PublishSample(ViewOf(b, 2)));
+    rig->Block();                                  // sample 2 adopted, 1 is retiring
+    CHECK(rig->engine.PublishSample(ViewOf(c, 3))); // staged before the retirement exists
+    rig->Blocks(50);                               // nobody polls for a long time
+    CHECK(!rig->engine.PublishSample(ViewOf(d, 4))); // backpressure instead of a lost retirement
+    CHECK(!rig->engine.ConsumeSampleRetired(2));   // sample 2 is still the current one
+    CHECK(!rig->engine.ConsumeSampleRetired(3));
+    CHECK(rig->engine.ConsumeSampleRetired(1));
+    CHECK(!rig->engine.ConsumeSampleRetired(1));
+    rig->Blocks(3);                                // now 3 is adopted and 2 retires
+    CHECK(!rig->engine.PublishSample(ViewOf(d, 4))); // nothing staged, the retirement alone refuses
+    CHECK(rig->engine.ConsumeSampleRetired(2));
+    CHECK(rig->engine.PublishSample(ViewOf(d, 4)));
+    rig->Blocks(3);
+    CHECK(rig->engine.ConsumeSampleRetired(3));
+    CHECK(!rig->engine.ConsumeSampleRetired(0));   // 0 means none, never a retirement
+    // The first sample replaces nothing, so it needs no consumption.
+    auto first = std::make_unique<Rig>();
+    CHECK(first->Start(ViewOf(a, 7), Cfg(1)));
+    first->Blocks(3);
+    CHECK(first->engine.PublishSample(ViewOf(b, 8)));
 }
 
 // Edge samples in the engine: wraps, clamps and tiny files survive every setting.
@@ -1251,8 +1282,10 @@ static void TestThreads() {
     std::atomic<bool> stop{false};
     std::thread control([&] {
         Stats stats;
-        uint32_t next = 2;
+        uint32_t next = 2, oldest = 1;
         while(!stop.load(std::memory_order_relaxed)) {
+            if(engine->ConsumeSampleRetired(oldest))
+                ++oldest;
             engine->Post(NoteOn(60, 100));
             engine->Post(SetParam(Param::Density, 0.7f));
             engine->Post(NoteOff(60));
@@ -1299,6 +1332,7 @@ int main() {
     TestZeroVelocityRelease();
     TestCloudUsesCurrentParams();
     TestSampleHandOver();
+    TestRetirementsKept();
     TestTinySamples();
     TestDeterminism();
     TestStress();

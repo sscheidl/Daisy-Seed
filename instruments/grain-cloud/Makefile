@@ -39,9 +39,9 @@ test-modulation:
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
 
-# One producer thread against the audio side, on the shared queue and triple buffer.
+# One producer thread against the audio side: the bridge alone, then the whole engine.
 test-thread:
-	"$(MAKE)" test-engine HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread -fsanitize=thread"
+	"$(MAKE)" test-units test-engine HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread -fsanitize=thread"
 
 # Operation counts and assumed cycles. Every cycle figure is NOT MEASURED.
 cost:

@@ -72,7 +72,9 @@ inline bool IsRelease(const Event& e) {
            (e.type == EventType::NoteOn && e.velocity == 0) || (e.type == EventType::Sustain && e.velocity < 64);
 }
 
-class ControlBridge {
+// Queue is a template so a test can stop the producer exactly between two queue reads.
+template <template <class, std::size_t> class Queue>
+class BasicControlBridge {
   public:
     static constexpr std::size_t kEvents = 128, kReleases = 64;
 
@@ -90,22 +92,27 @@ class ControlBridge {
         return false;
     }
 
-    // Audio only: the oldest event of both queues, or nullptr.
-    const Event* Peek() const {
-        const Event* a = events_.Peek();
-        const Event* b = releases_.Peek();
-        if(!a || !b)
-            return a ? a : b;
-        return int32_t(a->sequence - b->sequence) < 0 ? a : b;
+    // Audio only: the oldest event of both queues, or nullptr. The producer may post during
+    // this call, so the read order matters. Seeing an item also makes every older item of the
+    // other queue visible. A release read first therefore cannot pass an older event, and an
+    // event found with no release seen needs one more look for an older release.
+    const Event* Peek() {
+        const Event* release = releases_.Peek();
+        const Event* event = events_.Peek();
+        if(event && !release)
+            release = releases_.Peek();
+        const bool take_event = event && (!release || int32_t(event->sequence - release->sequence) < 0);
+        selected_ = take_event ? Selected::Event : (release ? Selected::Release : Selected::None);
+        return take_event ? event : release;
     }
+    // Audio only: removes exactly the item the last Peek() returned, whatever arrived since.
     void Drop() {
-        const Event* a = events_.Peek();
-        const Event* b = releases_.Peek();
         Event ignored;
-        if(a && (!b || int32_t(a->sequence - b->sequence) < 0))
+        if(selected_ == Selected::Event)
             events_.Pop(ignored);
-        else if(b)
+        else if(selected_ == Selected::Release)
             releases_.Pop(ignored);
+        selected_ = Selected::None;
     }
     // Audio only. Sequence of the newest lost release, 0 if none. Read this before Peek():
     // the acquire makes every older event visible there.
@@ -117,11 +124,16 @@ class ControlBridge {
     uint32_t Overflows() const { return overflows_.load(std::memory_order_relaxed); }
 
   private:
-    step_seq::SpscQueue<Event, kEvents> events_;
-    step_seq::SpscQueue<Event, kReleases> releases_;
+    enum class Selected : uint8_t { None, Event, Release };
+
+    Queue<Event, kEvents> events_;
+    Queue<Event, kReleases> releases_;
+    Selected selected_ = Selected::None; // audio only
     std::atomic<uint32_t> lost_release_{0};
     std::atomic<uint32_t> overflows_{0};
     uint32_t sequence_ = 0; // main loop only
 };
+
+using ControlBridge = BasicControlBridge<step_seq::SpscQueue>;
 
 } // namespace grain_cloud

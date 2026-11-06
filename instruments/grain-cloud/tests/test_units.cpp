@@ -2,6 +2,9 @@
 // Module tests of Grain Cloud: control laws, random generator, window table, envelope,
 // output stage, grain renderer and the event bridge. Engine rules are in test_engine.cpp.
 #include "test_util.h"
+#include <atomic>
+#include <memory>
+#include <thread>
 
 using namespace grain_cloud;
 using namespace testing;
@@ -396,6 +399,122 @@ static void TestBridge() {
     CHECK(bridge.LostRelease() == 0);
 }
 
+// A queue that can run the producer between two reads of the consumer.
+static void (*peek_hook)() = nullptr;
+template <class T, std::size_t N>
+class HookedQueue : public step_seq::SpscQueue<T, N> {
+  public:
+    const T* Peek() const {
+        if(peek_hook)
+            peek_hook();
+        return step_seq::SpscQueue<T, N>::Peek();
+    }
+};
+using HookedBridge = BasicControlBridge<HookedQueue>;
+
+static HookedBridge* hooked = nullptr;
+static int peeks_until_post = 0, post_pattern = 0;
+static void PostAtPeek() {
+    if(peeks_until_post-- != 0)
+        return;
+    switch(post_pattern) {
+        case 0: // the note and its end
+            hooked->Post(NoteOn(60, 100));
+            hooked->Post(NoteOff(60));
+            break;
+        case 1: // the end of one note and the next note
+            hooked->Post(NoteOff(60));
+            hooked->Post(NoteOn(60, 100));
+            break;
+        default:
+            hooked->Post(NoteOn(60, 100));
+            hooked->Post(NoteOff(60));
+            hooked->Post(NoteOn(62, 100));
+            hooked->Post(NoteOff(62));
+            break;
+    }
+}
+
+// Every point at which the producer can post during Peek() and Drop(): nothing is lost,
+// nothing comes twice, and the order holds. The queue may hold older items or be empty.
+static void TestBridgeInterleavings() {
+    for(int pattern = 0; pattern < 3; ++pattern) {
+        for(int preload = 0; preload < 3; ++preload) {
+            for(int at = 0; at < 8; ++at) {
+                auto bridge = std::make_unique<HookedBridge>();
+                hooked = bridge.get();
+                uint32_t total = 0;
+                if(preload == 1)
+                    total += bridge->Post(NoteOn(50, 100));
+                if(preload == 2)
+                    total += bridge->Post(NoteOff(50));
+                peeks_until_post = at;
+                post_pattern = pattern;
+                peek_hook = PostAtPeek;
+                total += pattern == 2 ? 4u : 2u;
+                uint32_t last = 0, seen = 0;
+                for(int round = 0; round < 32; ++round) {
+                    const Event* e = bridge->Peek();
+                    if(!e)
+                        continue;
+                    const uint32_t sequence = e->sequence;
+                    CHECK_MSG(sequence > last, "pattern %d preload %d at %d: %u after %u", pattern, preload, at,
+                              sequence, last);
+                    last = sequence;
+                    ++seen;
+                    bridge->Drop();
+                }
+                peek_hook = nullptr;
+                CHECK_MSG(seen == total, "pattern %d preload %d at %d: %u of %u", pattern, preload, at, seen, total);
+            }
+        }
+    }
+    // Drop() without a selected item, or a second time, removes nothing.
+    ControlBridge bridge;
+    bridge.Post(NoteOn(60, 100));
+    bridge.Post(NoteOn(62, 100));
+    bridge.Drop();
+    const Event* first = bridge.Peek();
+    CHECK(first && first->note == 60);
+    bridge.Drop();
+    bridge.Drop();
+    const Event* second = bridge.Peek();
+    CHECK(second && second->note == 62);
+}
+
+// The same with real threads, for TSan and for what the interleaving test cannot reach.
+static void TestBridgeThreads() {
+    auto bridge = std::make_unique<ControlBridge>();
+    constexpr uint32_t kPairs = 1000000;
+    std::atomic<uint32_t> received{0};
+    std::atomic<uint32_t> posted{0};
+    std::thread producer([&] {
+        for(uint32_t i = 0; i < kPairs; ++i) {
+            while(posted.load(std::memory_order_relaxed) - received.load(std::memory_order_relaxed) > 32)
+                std::this_thread::yield();
+            bridge->Post(NoteOn(60, 100));
+            bridge->Post(NoteOff(60));
+            posted.fetch_add(2, std::memory_order_relaxed);
+        }
+    });
+    uint32_t last = 0, disorder = 0;
+    while(received.load(std::memory_order_relaxed) < kPairs * 2) {
+        const Event* e = bridge->Peek();
+        if(!e) {
+            std::this_thread::yield();
+            continue;
+        }
+        disorder += e->sequence != last + 1;
+        last = e->sequence;
+        bridge->Drop();
+        received.fetch_add(1, std::memory_order_relaxed);
+    }
+    producer.join();
+    CHECK(bridge->Overflows() == 0);
+    CHECK_MSG(disorder == 0, "%u events out of order", disorder);
+    CHECK(last == kPairs * 2);
+}
+
 int main() {
     TestDensityLaw();
     TestCountLaw();
@@ -407,6 +526,8 @@ int main() {
     TestOutputStage();
     TestRenderer();
     TestBridge();
+    TestBridgeInterleavings();
+    TestBridgeThreads();
     if(failures) {
         std::printf("test_units: %d failures\n", failures);
         return 1;
