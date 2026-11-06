@@ -275,6 +275,15 @@
         "path": "effects/reverb/src/control_version.h",
         "name": "AMBIENT_CONTROL_VERSION"
       }
+    },
+    "audrey-3": {
+      "kind": "instrument",
+      "source": "instruments/audrey-3",
+      "version": {
+        "type": "macro",
+        "path": "instruments/audrey-3/src/version.h",
+        "name": "AUDREY_3_VERSION"
+      }
     }
   },
   "products": {
@@ -694,6 +703,21 @@
         "mod-editor-juce",
         "mod-editor-vst3"
       ]
+    },
+    "audrey-3": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/audrey-3/src/version.h",
+        "name": "AUDREY_3_FIRMWARE_VERSION"
+      },
+      "directory": "instruments/audrey-3/build",
+      "image": "Audrey3",
+      "marker": "AUDREY-3-FW-VERSION=",
+      "components": [
+        "audrey-3",
+        "bootloader-entry"
+      ],
+      "panels": []
     }
   }
 }

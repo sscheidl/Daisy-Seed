@@ -13,6 +13,7 @@ CHECKER = ROOT / 'scripts' / 'check-firmware.py'
 IMAGES = [
     ('StepSeq-v', 'sequencers/step-seq/src/version.h', 'STEP_SEQ_FIRMWARE_VERSION', 'STEP-SEQ-FW-VERSION='),
     ('Acid303-v', 'instruments/acid-303/src/version.h', 'ACID_303_FIRMWARE_VERSION', 'ACID-303-FW-VERSION='),
+    ('Audrey3-v', 'instruments/audrey-3/src/version.h', 'AUDREY_3_FIRMWARE_VERSION', 'AUDREY-3-FW-VERSION='),
     ('DriveFx-v', 'effects/drive/src/version.h', 'DRIVE_FIRMWARE_VERSION', 'DRIVE-FX-VERSION='),
     ('DelayFx-v', 'effects/stereo-delay/src/version.h', 'STEREO_DELAY_FIRMWARE_VERSION', 'DELAY-FX-VERSION='),
     ('AcidSeq-v', 'sequencers/acid-seq/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
