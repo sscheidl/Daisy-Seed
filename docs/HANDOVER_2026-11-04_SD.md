@@ -10,6 +10,7 @@ and this page first. State as of 2026-11-03 22:00 UTC.
 | `main` @ `bf08bb3` | Contains PR #76 (Nebulae 0.2.0, Claude) and **PR #78** (Codex integration, merged 2026-11-03 19:50 UTC). Candidates: **Nebulae 0.2.1**, **Looper / Looper MOD 0.5.1**, control panel **0.6.0**. Report: [SD_CARD_INTEGRATION_2026-11-03.md](SD_CARD_INTEGRATION_2026-11-03.md) |
 | Hardware test 2026-11-04 | Run sheet: [HARDWARE_TEST_SESSION_2026-11-04.md](HARDWARE_TEST_SESSION_2026-11-04.md). Tests the `main` candidates. All results NOT MEASURED until the human reports them |
 | **PR #94** (branch `claude/new-session-fqack4`, head `17c4bfe` before this handover) | **Open, conflicts with `main`** (mergeable_state `dirty`). Built in parallel with PR #78 from the same base `53927d2`. Its Looper SD management duplicates PR #78 with a different protocol. **Do not merge as is** (section 3) |
+| Review order (2026-11-06) | [REVIEW_ORDER_SD_2026-11-06.md](REVIEW_ORDER_SD_2026-11-06.md): part A now (Looper 0.5.1 share handoff on `main`), part B after the PR #94 rework |
 | Follow-up order for Claude | [SD_WRITE_EXFAT_CLAUDE.md](SD_WRITE_EXFAT_CLAUDE.md): writable shared SD profile + Looper exFAT, on a branch from current `main`, without replacing the test candidates |
 
 ### `main` in short
