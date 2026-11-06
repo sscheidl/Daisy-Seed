@@ -131,12 +131,12 @@ class ComponentTests(unittest.TestCase):
             self.assertTrue(suites[key], key)
 
     def test_sd_driver_consumers(self):
-        # Nebulae 0.2 links the shared read-only driver and the card reader; the
-        # Diagnostics card-reader image and the looper's SD management link only the
-        # reader. Nothing else runs.
+        # Nebulae links the read-only profile and the card reader, the looper the writable
+        # profile and the reader; the Diagnostics card-reader image links only the reader.
+        # Nothing else runs.
         suites = selection.select_suites(['common/sd/ro_sd.c'])
-        self.assertTrue(suites['sd'] and suites['granular'] and suites['submodules'])
-        for key in ('toy', 'physical', 'looper', 'reverb', 'tape', 'bootloader', 'diagnostics'):
+        self.assertTrue(suites['sd'] and suites['granular'] and suites['looper'] and suites['submodules'])
+        for key in ('toy', 'physical', 'reverb', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
         reader = selection.select_suites(['common/sd/reader/msc_bot.cpp'])
         self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'] and reader['looper'])
@@ -145,6 +145,19 @@ class ComponentTests(unittest.TestCase):
         self.assertTrue(ddp['granular'] and ddp['looper'])
         self.assertFalse(selection.select_suites(['diagnostics/windows/daisy_diag/looper.py'])['looper'])
         self.assertTrue(selection.select_suites(['Makefile'])['sd'])
+
+    def test_sd_compositions(self):
+        # Every SD image records its driver, exactly one filesystem profile and the reader.
+        data = manifest.load_registry()
+        for key in ('sd-driver', 'sd-fs-readonly', 'sd-fs-writable', 'sd-reader'):
+            self.assertEqual(data['components'][key]['kind'], 'storage')
+            self.assertTrue(manifest.read_version(data['components'][key]['version']))
+        expected = {'granular': 'sd-fs-readonly', 'looper': 'sd-fs-writable', 'looper-mod': 'sd-fs-writable'}
+        for project, profile in expected.items():
+            components = data['products'][project]['components']
+            self.assertIn('sd-driver', components)
+            self.assertIn('sd-reader', components)
+            self.assertEqual([c for c in components if c.startswith('sd-fs-')], [profile])
 
     def test_acid_seq_components(self):
         # Components are registered with their version sources; products follow only

@@ -113,7 +113,7 @@ Then choose "More info" and "Run anyway".
 ### Operation
 
 1. Connect the Daisy with Mod on Daisy firmware to J7, for example `ToyPiano-v0.3.1.bin`,
-   `PhysicalModelingMod-v0.1.1.bin`, `LooperMod-v0.5.1.bin` or `NebulaeMod-v0.2.1.bin`.
+   `PhysicalModelingMod-v0.1.1.bin`, `LooperMod-v0.6.0.bin` or `NebulaeMod-v0.2.1.bin`.
 2. **Close Studio One** or deactivate the port "Daisy Seed External" there.
    On Windows only one application can open the port. If it is in use, the
    editor says so.

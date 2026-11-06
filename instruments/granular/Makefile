@@ -44,8 +44,10 @@ all: $(BUILD_DIR)/SHA256SUMS
 $(BUILD_DIR)/SHA256SUMS: $(BUILD_DIR)/$(TARGET).bin
 	cd $(BUILD_DIR) && sha256sum $(TARGET).bin > SHA256SUMS
 # MSC may write single blocks with IDMA (the card reader's hardware-tested path); every
-# FatFs mutation, erase, lock, PIO/IT writes and multi-buffer DMA stay banned.
-SD_CHECK_ALLOW = SDMMC_CmdWriteSingleBlock,SDMMC_CmdWriteMultiBlock,HAL_SD_WriteBlocks_DMA
+# FatFs mutation, erase, lock, PIO/IT writes and multi-buffer DMA stay banned, and make
+# sd-check injects those writers to prove it.
+SD_CHECK_ALLOW = $(SD_READER_ALLOW)
+SD_CHECK_PROBES = $(SD_READER_PROBES)
 SD_CHECK_REQUIRE = disk_read,f_mount,f_readdir,f_opendir,SDMMC_CmdReadSingleBlock,HAL_SD_WriteBlocks_DMA
 
 HOST_CXX ?= g++

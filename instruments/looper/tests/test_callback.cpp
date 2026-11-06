@@ -453,7 +453,7 @@ int main() {
     std::vector<uint8_t> st = control({0x01, 0x01});
     CHECK(st.size() == 20 && st[0] == 0xF0 && st[1] == 0x7D && st[2] == 0x4C && st[3] == 0x50 &&
           st[5] == 0x41 && st[19] == 0xF7);
-    CHECK(st.size() == 20 && st[6] == 0 && st[7] == 5 && st[8] == 1 && st[9] == 0);  // 0.5.1, performance
+    CHECK(st.size() == 20 && st[6] == 0 && st[7] == 6 && st[8] == 0 && st[9] == 0);  // 0.6.0, performance
     CHECK(st.size() == 20 && (st[10] & 0x07) == 0x03 && !(st[10] & 0x38));  // card, loop, saved, idle
     const uint32_t loopMs = st.size() == 20 ? st[13] | st[14] << 7 | st[15] << 14 : 0;
     CHECK(loopMs == engine.Length() / 48);

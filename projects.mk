@@ -92,6 +92,11 @@ PROJECTS += streichwurst-fx
 BUILDABLE_PROJECTS += streichwurst-fx
 PROJECT_DIR_streichwurst-fx := effects/streichwurst-fx
 PROJECT_STATUS_streichwurst-fx := buildable
+# Grain Cloud: new independent granular engine, host core only (instruments/grain-cloud/README.md).
+# Joins BUILDABLE_PROJECTS with its first validated firmware build (stage 3).
+PROJECTS += grain-cloud
+PROJECT_DIR_grain-cloud := instruments/grain-cloud
+PROJECT_STATUS_grain-cloud := planned
 # FV-1 interpreter FX (research / feasibility study): standalone
 # firmware with own demo programs; ARM build verified 2026-11-05. PROGRAMS=local images are local only.
 PROJECTS += fv1-vm-fx

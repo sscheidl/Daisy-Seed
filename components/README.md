@@ -26,6 +26,11 @@ working tree status as well as BIN size and SHA-256. Panels are listed separatel
 the embedded components: the VST3 editor is not audio DSP in the Daisy BIN.
 The manual firmware workflow stores the manifest next to the BIN/ELF and checksum.
 
+`common/sd` is split the way it is linked: `sd-driver` (disk layer and vendored FatFs),
+one filesystem profile per image (`sd-fs-readonly` for Nebulae, `sd-fs-writable` for the
+Looper) and `sd-reader` (USB card reader); kind `storage`, versions in
+`common/sd/sd_version.h` and `common/sd/reader/reader_version.h`.
+
 New components and product variants use three-part SemVer. Existing
 values such as Toy Piano `0.3` and Ambient Reverb `0.2` are kept for accepted images.
 A change in sound semantics requires a justified version bump
