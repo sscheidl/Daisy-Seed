@@ -12,4 +12,6 @@ First port of the Audrey II to the Seed3 Desktop Dev Kit. Hardware NOT MEASURED.
 * **Controls:** eight pots with a second page on SW17 and pick-up, play modes on SW18, echo warp on S1.
 * **MIDI:** notes with last-note priority, CC 20–31 for all eleven parameters and the warp, over USB and DIN.
 * **Note gate:** new in the engine; at 1 the output is exactly unchanged.
+* **Effects as components:** reverb and echo are `sc-reverb` and `echo-delay` under FX contract 1.0 with their own firmwares,
+  reached through the one-frame adapter `FrameStage`. The engine no longer sets their parameters.
 * **Licence:** links ReverbSc and Tone from DaisySP-LGPL (LGPL-2.1).

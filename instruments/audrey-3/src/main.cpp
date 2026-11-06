@@ -35,11 +35,13 @@ struct Command {
 
 using Stages = audrey::Stages;
 alignas(32) static unsigned char engine_memory[sizeof(audrey::Engine)] __attribute__((section(".audrey_axi")));
-alignas(32) static unsigned char DSY_SDRAM_BSS reverb_memory[sizeof(Stages::Reverb)];
-alignas(32) static unsigned char DSY_SDRAM_BSS echo_memory[2][sizeof(Stages::Echo)];
+static DSY_SDRAM_BSS Stages::Reverb::Storage reverb_memory;
+static DSY_SDRAM_BSS Stages::Echo::Storage echo_memory;
 
 static desktop_devkit::Hardware hw;
 static audrey::Engine* engine = nullptr;
+static Stages::Reverb reverb;
+static Stages::Echo echo;
 static audrey::Control control;
 static daisysp::Limiter limiter[2];
 static step_seq::PotFilter pot_filter[8];
@@ -115,7 +117,7 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
         tick_blocks = 0;
         Tick();
     }
-    audrey::EngineSink<audrey::Engine> sink(*engine);
+    audrey::EngineSink<Stages> sink(*engine, reverb, echo);
     control.Bank().Process(sink);
     for(size_t i = 0; i < n; ++i)
         engine->Process(in[0][i], out[0][i], out[1][i]);
@@ -212,7 +214,7 @@ static void ServiceBootloader() {
 }
 } // namespace fw
 
-static void Initialize() {
+static bool Initialize() {
     hw.Init();
     hw.seed.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(fw::kBlockSize);
@@ -220,9 +222,10 @@ static void Initialize() {
     for(auto& p : hw.pot)
         p.SetSampleRate(sample_rate / float(fw::kBlockSize * fw::kBlocksPerTick));
     // SDRAM is up only after hw.Init(): everything in it is constructed here.
+    if(!reverb.Prepare({48000, fw::kBlockSize}, reverb_memory) || !echo.Prepare({48000, fw::kBlockSize}, echo_memory))
+        return false;
     engine = new(engine_memory) audrey::Engine();
-    engine->Init(sample_rate, new(reverb_memory) Stages::Reverb(), new(echo_memory[0]) Stages::Echo(),
-                 new(echo_memory[1]) Stages::Echo());
+    engine->Init(sample_rate, &reverb, &echo);
     control.Init(sample_rate / float(fw::kBlockSize));
     for(auto& l : limiter)
         l.Init();
@@ -235,11 +238,14 @@ static void Initialize() {
     usb_midi.Init(usb_config);
     usb_midi.StartReceive();
     hw.midi.StartReceive();
+    return true;
 }
 
 int main() {
     asm volatile("" : : "r"(audrey_3_firmware_version)); // Keep the version in the BIN.
-    Initialize();
+    if(!Initialize())
+        while(true)
+            System::Delay(100);
     hw.seed.StartAudio(AudioCallback);
     while(true) {
         fw::ServiceInput();

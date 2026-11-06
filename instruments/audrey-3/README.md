@@ -53,15 +53,25 @@ releases all notes, so it leaves a drone sounding. All Sound Off also closes a d
 
 | Part | Path | Contract |
 | --- | --- | --- |
-| Feedback engine | `third_party/audrey-ii/` | `Engine<Stages>`: `Reverb`, `Echo` and `Damper` are template parameters; the host gives the reverb and echoes their memory |
+| Feedback engine | `third_party/audrey-ii/` | `Engine<Stages>`: `Reverb`, `Echo` and `Damper` are template parameters; the engine routes and mixes them |
+| Reverb | [`effects/sc-reverb/`](../../effects/sc-reverb/), component `sc-reverb` 0.1.0 | FX contract 1.0, own firmware `sc-reverb-fx` |
+| Echo | [`effects/echo-delay/`](../../effects/echo-delay/), component `echo-delay` 0.1.0 | FX contract 1.0, own firmware `echo-delay-fx` |
+| Shared filters | [`common/dsp/audrey-ii/`](../../common/dsp/audrey-ii/), component `audrey-dsp` 0.1.0 | Used by the engine and the echo |
 | Parameters and controls | `include/audrey/params.h`, `control.h` | One table for pots and CCs; no hardware access |
-| Product composition | `include/audrey/composition.h`, `src/main.cpp` | Selects the stages, owns memory, audio, MIDI and LEDs |
+| Product composition | `include/audrey/composition.h`, `src/main.cpp` | Selects the stages, maps parameters, owns memory, audio, MIDI and LEDs |
 
-To replace the reverb, change `Stages::Reverb` in `composition.h`; `tests/test_audrey.cpp` does this with a pass-through.
-The reverb sits inside the feedback loop, so it does not use the FX interface of `common/audio/fx_contract.h`.
+**Adapter.** The reverb sits inside the feedback loop, so the engine cannot work in blocks. `FrameStage` in `composition.h`
+hands the FX contract a block of one frame, so any effect under FX contract 1.0 fits unchanged. The echo uses the same path.
+The feedback overdrive stays in the engine: it is part of the voice, not an effect of its own.
 
-Not included yet: a control panel page, the Mod on Daisy matrix, the CV and gate inputs, and `effects/` components for the
-echo and reverb.
+To replace a stage, change `Stages` in `composition.h`. `tests/test_audrey.cpp` does this with a pass-through, and with the
+echo in the reverb slot. The sink maps Reverb Decay to the stage's `feedback` parameter, so a stage without one needs a line
+there too.
+
+Effects are accepted on their own first: their hardware tests are in their folders, and all are NOT MEASURED yet. The CPU load
+and sound of Audrey 3 are a separate acceptance.
+
+Not included yet: a control panel page, the Mod on Daisy matrix, and the CV and gate inputs.
 
 ## Memory
 

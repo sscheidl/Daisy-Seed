@@ -10,6 +10,8 @@ Dev Kit:
 | [Tape FX](tape-fx/) | `tape-fx` | Buildable TapeVibe/MixForge port as reusable component and stereo effect; also used by `toy-piano-tape`; hardware test pending |
 | [Drive](drive/) | `drive-fx` | v0.1.0: saturation curves shared with Tape FX, tone, auto level; buildable, hardware test pending |
 | [Stereo Delay](stereo-delay/) | `delay-fx` | v0.1.0: ping-pong and stereo L/R delay, sync up to 12 s; buildable, hardware test pending |
+| [Echo Delay](echo-delay/) | `echo-delay-fx` | v0.1.0: the tape-like echo of the Audrey II, up to 5 s per side; also used by `audrey-3`; host tests and ARM build passed, hardware test pending |
+| [SC Reverb](sc-reverb/) | `sc-reverb-fx` | v0.1.0: ReverbSc from DaisySP-LGPL (LGPL-2.1) under the FX contract; also used by `audrey-3`; host tests and ARM build passed, hardware test pending |
 | [FV-1 interpreter](fv1-vm/) | `fv1-vm-fx` | Research / feasibility study: runs 128-word FV-1 programs at 32 kHz; own demo programs, local program tables never committed; also used by `toy-piano-fv1`; host tests and ARM build passed, hardware test pending |
 | [Granular / Freeze](granular/) | `granular-fx` | Planned |
 

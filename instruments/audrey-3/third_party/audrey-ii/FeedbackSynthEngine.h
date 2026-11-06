@@ -10,9 +10,9 @@
 namespace infrasonic {
 namespace FeedbackSynth {
 
-// Stages supplies the types Reverb (ReverbSc interface), Echo (EchoDelay interface) and
-// Damper (Tone interface). Init() takes the reverb and echoes from the host, which owns
-// their memory; they must be constructed first.
+// Stages supplies the types Reverb and Echo, stereo stages called once per sample through
+// Process(left, right, out_left, out_right), and Damper (Tone interface). The host prepares
+// both stages, owns their memory and sets their parameters; the engine only routes and mixes.
 template <class Stages>
 class Engine {
 
@@ -23,7 +23,7 @@ class Engine {
         using Reverb = typename Stages::Reverb;
         using Echo = typename Stages::Echo;
 
-        void Init(const float sample_rate, Reverb *verb, Echo *echo_left, Echo *echo_right);
+        void Init(const float sample_rate, Reverb *verb, Echo *echo);
 
         void SetStringPitch(const float nn);
 
@@ -33,13 +33,10 @@ class Engine {
         void SetFeedbackLPFCutoff(const float cutoff_hz);
         void SetFeedbackHPFCutoff(const float cutoff_hz);
 
-        void SetEchoDelayTime(const float echo_time);
-        void SetEchoDelayFeedback(const float echo_fb);
         void SetEchoDelaySendAmount(const float echo_send);
 
-        // Both range 0-1
+        // Range 0-1
         void SetReverbMix(const float mix);
-        void SetReverbFeedback(const float time);
 
         void SetOutputLevel(const float level);
 
@@ -77,7 +74,7 @@ class Engine {
         HPF12 fb_hpf_;
 
         Reverb *verb_ = nullptr;
-        Echo *echo_delay_[2] = {nullptr, nullptr};
+        Echo *echo_ = nullptr;
 
         Engine(const Engine &other) = delete;
         Engine(Engine &&other) = delete;
@@ -88,9 +85,8 @@ class Engine {
 using namespace daisysp;
 
 template <class Stages>
-void Engine<Stages>::Init(const float sample_rate, Reverb *verb, Echo *echo_left, Echo *echo_right) {
-  echo_delay_[0] = echo_left;
-  echo_delay_[1] = echo_right;
+void Engine<Stages>::Init(const float sample_rate, Reverb *verb, Echo *echo) {
+  echo_ = echo;
   verb_ = verb;
 
   sample_rate_ = sample_rate;
@@ -110,18 +106,9 @@ void Engine<Stages>::Init(const float sample_rate, Reverb *verb, Echo *echo_left
 
     fb_delayline_[i].Init();
 
-    echo_delay_[i]->Init(sample_rate);
-    echo_delay_[i]->SetDelayTime(5.0f, true);
-    echo_delay_[i]->SetFeedback(0.5f);
-    echo_delay_[i]->SetLagTime(0.5f);
-
     overdrive_[i].Init();
     overdrive_[i].SetDrive(0.4);
   }
-
-  verb_->Init(sample_rate);
-  verb_->SetFeedback(0.85f);
-  verb_->SetLpFreq(12000.0f);
 
   fb_lpf_.Init(sample_rate);
   fb_lpf_.SetQ(0.9f);
@@ -162,18 +149,6 @@ void Engine<Stages>::SetFeedbackHPFCutoff(const float cutoff_hz) {
 }
 
 template <class Stages>
-void Engine<Stages>::SetEchoDelayTime(const float echo_time) {
-  echo_delay_[0]->SetDelayTime(echo_time);
-  echo_delay_[1]->SetDelayTime(echo_time);
-}
-
-template <class Stages>
-void Engine<Stages>::SetEchoDelayFeedback(const float echo_fb) {
-  echo_delay_[0]->SetFeedback(echo_fb);
-  echo_delay_[1]->SetFeedback(echo_fb);
-}
-
-template <class Stages>
 void Engine<Stages>::SetEchoDelaySendAmount(const float echo_send) {
   echo_send_ = echo_send;
 }
@@ -182,9 +157,6 @@ template <class Stages>
 void Engine<Stages>::SetReverbMix(const float mix) {
   verb_mix_ = fclamp(mix, 0.0f, 1.0f);
 }
-
-template <class Stages>
-void Engine<Stages>::SetReverbFeedback(const float time) { verb_->SetFeedback(time); }
 
 template <class Stages>
 void Engine<Stages>::SetOutputLevel(const float level) { output_level_ = level; }
@@ -197,7 +169,7 @@ void Engine<Stages>::Process(float in, float &outL, float &outR) {
 
   // --- Process Samples ---
 
-  float inL, inR, sampL, sampR, echoL, echoR, verbL, verbR;
+  float inL, inR, sampL, sampR, echoL = 0.f, echoR = 0.f, verbL = 0.f, verbR = 0.f;
   const float noise_samp = noise_.Process();
 
   // ---> Feedback Loop
@@ -221,7 +193,7 @@ void Engine<Stages>::Process(float in, float &outL, float &outR) {
 
   // ---> Reverb
 
-  verb_->Process(sampL, sampR, &verbL, &verbR);
+  verb_->Process(sampL, sampR, verbL, verbR);
 
   //       (sampL * (1.0f - verb_mix_)) + verbL * verb_mix_;
   //       sampL - sampL * verb_mix + verbL * verb_mix_;
@@ -243,8 +215,7 @@ void Engine<Stages>::Process(float in, float &outL, float &outR) {
 
   // ---> Echo Delay
 
-  echoL = echo_delay_[0]->Process(sampL * echo_send_);
-  echoR = echo_delay_[1]->Process(sampR * echo_send_);
+  echo_->Process(sampL * echo_send_, sampR * echo_send_, echoL, echoR);
 
   sampL = 0.5f * (sampL + echoL);
   sampR = 0.5f * (sampR + echoR);

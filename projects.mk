@@ -55,6 +55,13 @@ PROJECTS += audrey-3
 BUILDABLE_PROJECTS += audrey-3
 PROJECT_DIR_audrey-3 := instruments/audrey-3
 PROJECT_STATUS_audrey-3 := buildable
+# The two effects of Audrey 3 as components with standalone firmwares.
+PROJECTS += echo-delay-fx sc-reverb-fx
+BUILDABLE_PROJECTS += echo-delay-fx sc-reverb-fx
+PROJECT_DIR_echo-delay-fx := effects/echo-delay
+PROJECT_STATUS_echo-delay-fx := buildable
+PROJECT_DIR_sc-reverb-fx := effects/sc-reverb
+PROJECT_STATUS_sc-reverb-fx := buildable
 PROJECT_DIR_step-seq := sequencers/step-seq
 PROJECT_STATUS_step-seq := buildable
 BUILDABLE_PROJECTS += step-seq

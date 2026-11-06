@@ -31,6 +31,8 @@ ACID_SEQ = {
     'Audrey3-v': ('instruments/audrey-3/src/version.h', 'AUDREY_3_FIRMWARE_VERSION', 'AUDREY-3-FW-VERSION='),
     'DriveFx-v': ('effects/drive/src/version.h', 'DRIVE_FIRMWARE_VERSION', 'DRIVE-FX-VERSION='),
     'DelayFx-v': ('effects/stereo-delay/src/version.h', 'STEREO_DELAY_FIRMWARE_VERSION', 'DELAY-FX-VERSION='),
+    'EchoDelayFx-v': ('effects/echo-delay/src/version.h', 'ECHO_DELAY_FIRMWARE_VERSION', 'ECHO-DELAY-FX-VERSION='),
+    'ScReverbFx-v': ('effects/sc-reverb/src/version.h', 'SC_REVERB_FIRMWARE_VERSION', 'SC-REVERB-FX-VERSION='),
     'AcidSeq-v': ('sequencers/acid-seq/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
     # Streichwurst product (same scheme: one product version for name and marker).
     'Streichwurst-v': ('instruments/streichwurst/src/version.h', 'STREICHWURST_VERSION', 'STREICHWURST-FW-VERSION='),

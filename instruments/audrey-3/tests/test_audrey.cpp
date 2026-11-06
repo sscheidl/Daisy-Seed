@@ -239,16 +239,22 @@ static void TestMidi() {
 template <class StagesType> struct Rig {
     using E = infrasonic::FeedbackSynth::Engine<StagesType>;
     std::unique_ptr<E> engine = std::make_unique<E>();
-    std::unique_ptr<typename StagesType::Reverb> reverb = std::make_unique<typename StagesType::Reverb>();
-    std::unique_ptr<typename StagesType::Echo> echo[2] = {std::make_unique<typename StagesType::Echo>(),
-                                                          std::make_unique<typename StagesType::Echo>()};
+    using Reverb = typename StagesType::Reverb;
+    using Echo = typename StagesType::Echo;
+    std::unique_ptr<typename Reverb::Storage> reverb_memory = std::make_unique<typename Reverb::Storage>();
+    std::unique_ptr<typename Echo::Storage> echo_memory = std::make_unique<typename Echo::Storage>();
+    Reverb reverb;
+    Echo echo;
     Control control;
     Rig() {
-        engine->Init(kSampleRate, reverb.get(), echo[0].get(), echo[1].get());
+        CHECK(reverb.Prepare({48000, 4}, *reverb_memory));
+        CHECK(echo.Prepare({48000, 4}, *echo_memory));
+        engine->Init(kSampleRate, &reverb, &echo);
         control.Init(kControlRate);
     }
+    EngineSink<StagesType> Sink() { return EngineSink<StagesType>(*engine, reverb, echo); }
     void Render(std::vector<float>& left, std::vector<float>& right, std::size_t blocks) {
-        EngineSink<E> sink(*engine);
+        auto sink = Sink();
         for(std::size_t b = 0; b < blocks; ++b) {
             control.Bank().Process(sink);
             for(int i = 0; i < 4; ++i) {
@@ -358,7 +364,7 @@ static void TestGolden() {
     p.SetNorm(kEchoTime, 0.1f);
     p.SetNorm(kEchoFeedback, 0.5f);
     p.SetNorm(kOutputVolume, 1.f);
-    EngineSink<Rig<Stages>::E> sink(*rig.engine);
+    auto sink = rig.Sink();
     p.Process(sink);
     static const float expected[8] = {3.6482916e-03f, 1.9441841e-02f, -8.2759367e-04f, 9.3128551e-03f,
                                       1.2815709e-03f, -7.2225723e-03f, 1.8671565e-03f, 1.6843195e-03f};
@@ -375,29 +381,78 @@ static void TestGolden() {
     }
 }
 
-// A different reverb needs a change of the Stages type only (modular policy).
-struct PassThrough {
-    int Init(float) { return 0; }
-    void SetFeedback(float) {}
-    void SetLpFreq(float) {}
-    int Process(float l, float r, float* out_l, float* out_r) {
-        *out_l = l;
-        *out_r = r;
-        return 0;
+// The adapter hands one frame to the FX contract: same result as a block.
+static void TestFrameStage() {
+    auto memory = std::make_unique<seed::fx::StereoEcho::Storage>();
+    auto block_memory = std::make_unique<seed::fx::StereoEcho::Storage>();
+    FrameStage<seed::fx::StereoEcho> frames;
+    seed::fx::StereoEcho blocks;
+    CHECK(frames.Prepare({48000, 4}, *memory));
+    CHECK(blocks.Prepare({48000, 4}, *block_memory));
+    seed::fx::echo::Parameters p;
+    p.time_s = 0.02f;
+    p.feedback = 0.7f;
+    frames.SetParameters(p);
+    blocks.SetParameters(p);
+    bool same = true;
+    for(int b = 0; b < 2000; ++b) {
+        float l[4], r[4], block_l[4], block_r[4], frame_l[4], frame_r[4];
+        for(int i = 0; i < 4; ++i) {
+            l[i] = b == 0 && i == 0 ? 1.f : 0.f;
+            r[i] = b == 1 && i == 0 ? -1.f : 0.f;
+            frames.Process(l[i], r[i], frame_l[i], frame_r[i]);
+        }
+        blocks.Process(seed::audio::StereoBlock{l, r, block_l, block_r, 4});
+        for(int i = 0; i < 4; ++i)
+            same = same && frame_l[i] == block_l[i] && frame_r[i] == block_r[i];
     }
+    CHECK(same);
+}
+
+// Replacing a stage changes the Stages type only (modular policy). The sink needs a
+// `feedback` parameter from the reverb slot; everything else stays as it is.
+struct PassThrough {
+    struct Storage {};
+    struct Parameters {
+        float feedback = 0.f;
+    };
+    bool Prepare(seed::audio::Config, Storage&) { return true; }
+    const Parameters& Requested() const { return parameters; }
+    void SetParameters(const Parameters& p) { parameters = p; }
+    void Process(const seed::audio::StereoBlock& block) {
+        for(std::size_t i = 0; i < block.frames; ++i) {
+            block.out_left[i] = block.left[i];
+            block.out_right[i] = block.right[i];
+        }
+    }
+    Parameters parameters;
 };
 struct DryStages {
-    using Reverb = PassThrough;
+    using Reverb = FrameStage<PassThrough>;
+    using Echo = Stages::Echo;
+    using Damper = Stages::Damper;
+};
+struct EchoInReverbSlot { // a real, different effect in the loop
+    using Reverb = FrameStage<seed::fx::StereoEcho>;
     using Echo = Stages::Echo;
     using Damper = Stages::Damper;
 };
 
-static void TestReplaceableReverb() {
-    Rig<DryStages> rig;
+template <class StagesType> static void CheckSings() {
+    Rig<StagesType> rig;
     SetSinging(rig);
     std::vector<float> l, r;
     rig.Render(l, r, 12000);
+    bool finite = true;
+    for(float x : l)
+        finite = finite && std::isfinite(x);
+    CHECK(finite);
     CHECK(Rms(l, l.size() / 2, l.size()) > 0.001f);
+}
+
+static void TestReplaceableStages() {
+    CheckSings<DryStages>();
+    CheckSings<EchoInReverbSlot>();
 }
 
 int main() {
@@ -409,7 +464,8 @@ int main() {
     TestEngine();
     TestGate();
     TestGolden();
-    TestReplaceableReverb();
+    TestFrameStage();
+    TestReplaceableStages();
     if(failures) {
         std::printf("%d failure(s)\n", failures);
         return 1;

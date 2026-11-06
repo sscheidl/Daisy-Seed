@@ -17,7 +17,7 @@ implementation status. Each project owns its sources, tests and output directory
 
 This libDaisy version includes Desktop Dev Kit and Seed3 codec support. Older
 DaisyExamples dependency pins are not automatically suitable. Fetch libDaisy's
-own submodules recursively at their pinned commits. DaisySP-LGPL is required only by Audrey 3:
+own submodules recursively at their pinned commits. DaisySP-LGPL is required only by Audrey 3 and SC Reverb:
 `git -C DaisySP submodule update --init DaisySP-LGPL`.
 
 The Linux x86_64 installer downloads xPack `v13.2.1-1.1`, verifies the published

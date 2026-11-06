@@ -32,6 +32,8 @@ developed independently and reintegrated through their documented contracts.
 | [Audrey 3 v0.1.0](instruments/audrey-3/) | `instruments/audrey-3/` | Port of the Synthux Academy Audrey II feedback synth (MIT), bit-identical to upstream in a host render, with a second pot page and MIDI notes and CCs. Links ReverbSc and Tone from DaisySP-LGPL (LGPL-2.1). Hardware NOT MEASURED |
 | [Drive v0.1.0](effects/drive/) | `effects/drive/` | Soft/Hard/Tape/Fold saturation shared with Tape FX (`common/dsp/saturation.h`, Tape FX images byte-identical after the move), tone, auto level within 1 dB, wet-only FX contract; standalone `drive-fx` firmware; host/sanitizer/ARM checks pass, hardware untested |
 | [Stereo Delay v0.1.0](effects/stereo-delay/) | `effects/stereo-delay/` | Ping-pong and stereo L/R delay, free or synced up to 12 s (dotted whole at 30 BPM, 4.6 MB in SDRAM), feedback 95 % bounded, damping, host tail handling; standalone `delay-fx` firmware with MIDI clock; host/sanitizer/ARM checks pass, hardware untested |
+| [Echo Delay v0.1.0](effects/echo-delay/) | `effects/echo-delay/` | The tape-like echo of the Audrey II, 5 s per side, firmware `echo-delay-fx`, used by Audrey 3. Hardware NOT MEASURED |
+| [SC Reverb v0.1.0](effects/sc-reverb/) | `effects/sc-reverb/` | ReverbSc from DaisySP-LGPL (LGPL-2.1) under the FX contract, firmware `sc-reverb-fx`, used by Audrey 3. Hardware NOT MEASURED |
 | [Acid Seq v0.1.0](sequencers/acid-seq/) | `sequencers/acid-seq/` | Product firmware `acid-seq` composed of the four components above: sequencer → voice → Drive → Delay → soft limiter, voice shared with MIDI channel 2, delay synced to the sequencer, all components over SQ; end-to-end golden; host/sanitizer/ARM checks pass, hardware untested, no release ([work order](docs/acid-seq/ARBEITSAUFTRAG.md)) |
 | [Hardware diagnostics v0.3.2](diagnostics/) | `diagnostics/` | Implemented SD diagnostics, Windows SD reader and CV/gate tests. **MEASURED 31 October 2026:** SD reader 0.3.2 normal I/O and write-interruption recovery; both CV and gate channels 0.3.1 functional loopbacks. [Scope, remaining checks and binary downloads](diagnostics/README.md#hardware-validation) |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
@@ -58,6 +60,8 @@ Daisy-Seed/
 │   ├── tape-fx/            # Tape FX component (TapeVibe/MixForge port) and standalone firmware
 │   ├── drive/              # planned Drive effect (Acid Seq)
 │   ├── stereo-delay/       # planned Stereo Delay effect (Acid Seq)
+│   ├── echo-delay/         # Audrey II echo component and standalone firmware
+│   ├── sc-reverb/          # ReverbSc component (LGPL-2.1) and standalone firmware
 │   └── granular/           # effect plan
 ├── modules/
 │   └── mod-on-daisy/       # reusable modulation matrix: include, tests, bench firmware, tools
@@ -165,7 +169,7 @@ Open source, decided on October 24, 2026:
 | --- | --- |
 | Everything of our own unless stated otherwise: firmware, the Mod on Daisy module, the browser editor (`editors/mod-on-daisy/web/`), `mod_probe.py`, scripts, docs | **MIT**, see [LICENSE](LICENSE) |
 | JUCE editor and VST3 plugin (`editors/mod-on-daisy/src/`, `tests/`, `CMakeLists.txt`) | **AGPLv3**, see [COPYING.AGPL-3.0.txt](editors/mod-on-daisy/COPYING.AGPL-3.0.txt). JUCE 9 is used under its AGPLv3 option; the MIT parts it includes stay MIT |
-| Audrey 3 | MIT, including the Audrey II code in `instruments/audrey-3/third_party/audrey-ii/`. Its builds also link ReverbSc and Tone from the DaisySP-LGPL submodule under **LGPL-2.1**, see [its notes](instruments/audrey-3/third_party/README.md) |
+| Audrey 3, Echo Delay, SC Reverb | MIT, including the Audrey II code in `instruments/audrey-3/third_party/audrey-ii/`, `effects/echo-delay/third_party/audrey-ii/` and `common/dsp/audrey-ii/`. Builds of Audrey 3 and SC Reverb also link code from the DaisySP-LGPL submodule under **LGPL-2.1**, see [the notes](instruments/audrey-3/third_party/README.md) |
 | Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT, `instruments/physical-modeling/third_party/stmlib/LICENSE`, `instruments/physical-modeling/torus/UPSTREAM.md`), a patched copy of libDaisy's `midi_parser.cpp` (MIT, notice in the file, `instruments/physical-modeling/src/`), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/fatfs/LICENSE.txt`), Ambient Reverb (`effects/reverb/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
 
 The repository is public on GitHub; until this license was added it had none. Material
