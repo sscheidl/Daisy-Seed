@@ -13,8 +13,11 @@ CHECKER = ROOT / 'scripts' / 'check-firmware.py'
 IMAGES = [
     ('StepSeq-v', 'sequencers/step-seq/src/version.h', 'STEP_SEQ_FIRMWARE_VERSION', 'STEP-SEQ-FW-VERSION='),
     ('Acid303-v', 'instruments/acid-303/src/version.h', 'ACID_303_FIRMWARE_VERSION', 'ACID-303-FW-VERSION='),
+    ('Audrey3-v', 'instruments/audrey-3/src/version.h', 'AUDREY_3_FIRMWARE_VERSION', 'AUDREY-3-FW-VERSION='),
     ('DriveFx-v', 'effects/drive/src/version.h', 'DRIVE_FIRMWARE_VERSION', 'DRIVE-FX-VERSION='),
     ('DelayFx-v', 'effects/stereo-delay/src/version.h', 'STEREO_DELAY_FIRMWARE_VERSION', 'DELAY-FX-VERSION='),
+    ('EchoDelayFx-v', 'effects/echo-delay/src/version.h', 'ECHO_DELAY_FIRMWARE_VERSION', 'ECHO-DELAY-FX-VERSION='),
+    ('ScReverbFx-v', 'effects/sc-reverb/src/version.h', 'SC_REVERB_FIRMWARE_VERSION', 'SC-REVERB-FX-VERSION='),
     ('AcidSeq-v', 'sequencers/acid-seq/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
     ('Streichwurst-v', 'instruments/streichwurst/src/version.h', 'STREICHWURST_VERSION', 'STREICHWURST-FW-VERSION='),
     ('StreichwurstFx-v', 'effects/streichwurst-fx/src/version.h', 'STREICHWURST_FX_FIRMWARE_VERSION',

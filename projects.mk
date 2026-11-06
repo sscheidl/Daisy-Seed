@@ -50,6 +50,18 @@ PROJECT_STATUS_toy-piano-tape := buildable
 # Acid Seq (docs/acid-seq/ARBEITSAUFTRAG.md): components with standalone test firmwares
 # and the composed product. Each joins BUILDABLE_PROJECTS with its first validated build.
 PROJECTS += step-seq acid-303 drive-fx delay-fx acid-seq
+# Audrey 3: Audrey II port; also needs the DaisySP-LGPL submodule (instruments/audrey-3/README.md).
+PROJECTS += audrey-3
+BUILDABLE_PROJECTS += audrey-3
+PROJECT_DIR_audrey-3 := instruments/audrey-3
+PROJECT_STATUS_audrey-3 := buildable
+# The two effects of Audrey 3 as components with standalone firmwares.
+PROJECTS += echo-delay-fx sc-reverb-fx
+BUILDABLE_PROJECTS += echo-delay-fx sc-reverb-fx
+PROJECT_DIR_echo-delay-fx := effects/echo-delay
+PROJECT_STATUS_echo-delay-fx := buildable
+PROJECT_DIR_sc-reverb-fx := effects/sc-reverb
+PROJECT_STATUS_sc-reverb-fx := buildable
 PROJECT_DIR_step-seq := sequencers/step-seq
 PROJECT_STATUS_step-seq := buildable
 BUILDABLE_PROJECTS += step-seq
