@@ -27,7 +27,7 @@ constexpr float kLimiterGain = 0.7f;
 constexpr int kLedWarp = 0, kLedGate = 1, kLedOverrun = 15;
 
 struct Command {
-    enum class Kind : uint8_t { NoteOn, NoteOff, Cc, AllOff, Mute };
+    enum class Kind : uint8_t { NoteOn, NoteOff, Cc, AllOff, SoundOff, Mute };
     Kind kind = Kind::Cc;
     uint8_t a = 0, b = 0;
 };
@@ -63,6 +63,7 @@ static void ApplyCommand(const fw::Command& c) {
         case K::NoteOff: control.NoteOff(c.a); break;
         case K::Cc: control.ControlChange(c.a, c.b); break;
         case K::AllOff: control.AllNotesOff(); break;
+        case K::SoundOff: control.AllSoundOff(); break;
         case K::Mute:
             muted = true;
             mute_ack.fetch_add(1, std::memory_order_release);
@@ -133,11 +134,11 @@ static void SendUsb(uint8_t* bytes, std::size_t size) {
         usb_midi.SendMessage(bytes, size);
 }
 
-// A full queue drops Note-Ons and CCs; a lost Note-Off releases everything instead.
+// A full queue drops Note-Ons and CCs; a lost Note-Off or all-off releases all notes instead.
 static void Push(const Command& c) {
     if(commands.Push(c))
         return;
-    if(c.kind == Command::Kind::NoteOff || c.kind == Command::Kind::AllOff)
+    if(c.kind == Command::Kind::NoteOff || c.kind == Command::Kind::AllOff || c.kind == Command::Kind::SoundOff)
         release_all.store(true, std::memory_order_release);
 }
 
@@ -162,7 +163,7 @@ static void HandleEvent(MidiEvent e, bool usb) {
             break;
         case ChannelMode:
             if(e.cm_type == AllNotesOff || e.cm_type == AllSoundOff) {
-                c.kind = Command::Kind::AllOff;
+                c.kind = e.cm_type == AllSoundOff ? Command::Kind::SoundOff : Command::Kind::AllOff;
                 Push(c);
             }
             break;

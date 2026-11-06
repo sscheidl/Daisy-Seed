@@ -183,6 +183,23 @@ static void TestMidi() {
     CHECK(c.GateTarget() == 1.f);
     CHECK(c.Bank().TargetValue(kFrequency) == 45.f);
 
+    // All Notes Off leaves the drone; All Sound Off closes it until a note or SW18 reopens it.
+    c.AllNotesOff();
+    CHECK(c.GateTarget() == 1.f);
+    c.AllSoundOff();
+    CHECK(c.GateTarget() == 0.f);
+    c.Panel(f);
+    CHECK(c.GateTarget() == 0.f); // the unchanged panel does not reopen it
+    c.NoteOn(45);
+    CHECK(c.GateTarget() == 1.f);
+    c.NoteOff(45);
+    c.AllSoundOff();
+    f.sw18 = 1;
+    c.Panel(f);
+    f.sw18 = 0;
+    c.Panel(f);
+    CHECK(c.GateTarget() == 1.f);
+
     // More notes than the stack holds: the oldest goes, nothing breaks.
     NoteStack stack;
     for(uint8_t i = 0; i < 20; ++i)

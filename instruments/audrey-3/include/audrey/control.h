@@ -64,11 +64,13 @@ class Control {
         bank_.Init(control_rate);
         notes_.Clear();
         mode_ = PlayMode::Drone;
+        silenced_ = false;
         started_ = false;
         held_ = 0;
     }
 
     void NoteOn(uint8_t note) {
+        silenced_ = false;
         notes_.Push(note);
         bank_.SetNote(note, mode_ == PlayMode::PlayNoGlide);
     }
@@ -79,6 +81,11 @@ class Control {
             bank_.SetNote(notes_.Top(), mode_ == PlayMode::PlayNoGlide);
     }
     void AllNotesOff() { notes_.Clear(); }
+    // MIDI All Sound Off: also closes the drone, until the next note or SW18 move.
+    void AllSoundOff() {
+        notes_.Clear();
+        silenced_ = true;
+    }
 
     void ControlChange(uint8_t cc, uint8_t value) {
         if(cc >= kFirstParamCc && cc < kFirstParamCc + kParamCount)
@@ -119,13 +126,21 @@ class Control {
             }
         }
         started_ = true;
-        mode_ = frame.sw18 == 0 ? PlayMode::Drone : (frame.sw18 == 1 ? PlayMode::Play : PlayMode::PlayNoGlide);
+        const PlayMode mode =
+            frame.sw18 == 0 ? PlayMode::Drone : (frame.sw18 == 1 ? PlayMode::Play : PlayMode::PlayNoGlide);
+        if(mode != mode_)
+            silenced_ = false;
+        mode_ = mode;
         if((frame.keys & 1u) && !(held_ & 1u))
             bank_.SetWarp(!bank_.Warp());
         held_ = frame.keys;
     }
 
-    float GateTarget() const { return mode_ == PlayMode::Drone || !notes_.Empty() ? 1.f : 0.f; }
+    float GateTarget() const {
+        if(mode_ == PlayMode::Drone)
+            return silenced_ ? 0.f : 1.f;
+        return notes_.Empty() ? 0.f : 1.f;
+    }
     PlayMode Mode() const { return mode_; }
     bool Waiting(int paged_pot) const { return waiting_[paged_pot]; }
     ParamBank& Bank() { return bank_; }
@@ -147,7 +162,7 @@ class Control {
     PlayMode mode_ = PlayMode::Drone;
     float last_[8] = {};
     bool waiting_[kPagedPots] = {}, below_[kPagedPots] = {};
-    bool page_b_ = false, started_ = false;
+    bool page_b_ = false, started_ = false, silenced_ = false;
     uint16_t held_ = 0;
 };
 

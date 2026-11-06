@@ -37,8 +37,8 @@ the output in 5 ms and closes it in 150 ms, before the echo send, so echoes ring
 
 ## MIDI
 
-Omni, over USB and DIN. Notes use last-note priority across the full MIDI range, which reaches beyond VR1. All Notes Off and
-All Sound Off close the output.
+Omni, over USB and DIN. Notes use last-note priority across the full MIDI range, which reaches beyond VR1. All Notes Off
+releases all notes, so it leaves a drone sounding. All Sound Off also closes a drone, until the next note or a move of SW18.
 
 | CC | Parameter | CC | Parameter |
 | --- | --- | --- | --- |
