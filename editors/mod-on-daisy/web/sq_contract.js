@@ -1190,6 +1190,215 @@
       ]
      }
     ]
+   },
+   "filter-fx": {
+    "schema": 1,
+    "parameters": [
+     {
+      "id": 1,
+      "key": "enabled",
+      "label": "Filter on",
+      "type": "bool",
+      "unit": "none",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "cc": 20,
+      "control": "SW17"
+     },
+     {
+      "id": 2,
+      "key": "mode",
+      "label": "Mode",
+      "type": "enum",
+      "unit": "none",
+      "min": 0,
+      "max": 7,
+      "default": 3,
+      "cc": 21,
+      "control": "S1-S8",
+      "enum": [
+       "lp6",
+       "lp12",
+       "lp18",
+       "lp24",
+       "bp",
+       "hp",
+       "notch",
+       "phaser"
+      ],
+      "enum_labels": [
+       "LP 6 dB",
+       "LP 12 dB",
+       "LP 18 dB",
+       "LP 24 dB",
+       "Band-pass",
+       "High-pass",
+       "Notch",
+       "Phaser"
+      ]
+     },
+     {
+      "id": 3,
+      "key": "cutoff",
+      "label": "Cutoff (note)",
+      "type": "float",
+      "unit": "semitones",
+      "min": 24,
+      "max": 135,
+      "default": 100,
+      "cc": 74,
+      "control": "VR1"
+     },
+     {
+      "id": 4,
+      "key": "resonance",
+      "label": "Resonance",
+      "type": "float",
+      "unit": "percent",
+      "min": 0,
+      "max": 100,
+      "default": 30,
+      "cc": 71,
+      "control": "VR2"
+     },
+     {
+      "id": 5,
+      "key": "drive",
+      "label": "Drive",
+      "type": "float",
+      "unit": "percent",
+      "min": 0,
+      "max": 100,
+      "default": 0,
+      "cc": 22,
+      "control": "VR3"
+     },
+     {
+      "id": 6,
+      "key": "mix",
+      "label": "Mix",
+      "type": "float",
+      "unit": "percent",
+      "min": 0,
+      "max": 100,
+      "default": 100,
+      "cc": 23,
+      "control": "VR4"
+     },
+     {
+      "id": 7,
+      "key": "lfo_rate",
+      "label": "LFO rate",
+      "type": "float",
+      "unit": "hz",
+      "min": 0.05,
+      "max": 20,
+      "default": 1,
+      "cc": 24,
+      "flags": [
+       "log"
+      ],
+      "control": "VR5"
+     },
+     {
+      "id": 8,
+      "key": "lfo_depth",
+      "label": "LFO depth",
+      "type": "float",
+      "unit": "semitones",
+      "min": 0,
+      "max": 48,
+      "default": 0,
+      "cc": 25,
+      "control": "VR6"
+     },
+     {
+      "id": 9,
+      "key": "lfo_shape",
+      "label": "LFO shape",
+      "type": "enum",
+      "unit": "none",
+      "min": 0,
+      "max": 3,
+      "default": 0,
+      "cc": 26,
+      "control": "S10-S13",
+      "enum": [
+       "sine",
+       "triangle",
+       "saw",
+       "sample_hold"
+      ],
+      "enum_labels": [
+       "Sine",
+       "Triangle",
+       "Saw",
+       "Sample & hold"
+      ]
+     },
+     {
+      "id": 10,
+      "key": "lfo_stereo",
+      "label": "LFO stereo",
+      "type": "bool",
+      "unit": "none",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "cc": 27,
+      "control": "S14"
+     },
+     {
+      "id": 11,
+      "key": "env_amount",
+      "label": "Envelope amount",
+      "type": "float",
+      "unit": "semitones",
+      "min": -48,
+      "max": 48,
+      "default": 0,
+      "cc": 28,
+      "control": "VR7"
+     },
+     {
+      "id": 12,
+      "key": "env_release",
+      "label": "Envelope release",
+      "type": "float",
+      "unit": "ms",
+      "min": 10,
+      "max": 2000,
+      "default": 200,
+      "cc": 29,
+      "flags": [
+       "log"
+      ],
+      "control": "VR8"
+     },
+     {
+      "id": 13,
+      "key": "bass_comp",
+      "label": "Bass compensation",
+      "type": "enum",
+      "unit": "none",
+      "min": 0,
+      "max": 2,
+      "default": 2,
+      "cc": 30,
+      "control": "SW18",
+      "enum": [
+       "off",
+       "half",
+       "full"
+      ],
+      "enum_labels": [
+       "Off",
+       "Half",
+       "Full"
+      ]
+     }
+    ]
    }
   };
   if (typeof module === 'object' && module.exports) module.exports = contract;
