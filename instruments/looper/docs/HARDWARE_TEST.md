@@ -94,7 +94,7 @@ Record: board revision, binary SHA-256, source, input level, monitoring.
 
 ## 7. microSD
 
-Use a FAT32 card. Put a few WAV files (48 kHz; 16/24-bit or float; mono or
+Run this section once with a FAT32 card and once with an exFAT card (v0.6). Put a few WAV files (48 kHz; 16/24-bit or float; mono or
 stereo; one longer than 87 s; one at 96 kHz) into a folder `looper/loops/`, plus
 the same short loop once at 48 kHz and once at 44.1 kHz, and one 44.1 kHz file
 of about 80 s.
@@ -120,6 +120,23 @@ of about 80 s.
       next change is saved.
 - [ ] Check `looper/loop.wav` on a computer: it plays as a 32-bit float stereo
       WAV at 48 kHz.
+
+### 7a. Writable SD driver (v0.6)
+
+Use test cards without anything you need. Background:
+[SD_PERSISTENCE.md](SD_PERSISTENCE.md). The multi-block IDMA write path is new; the
+hardware-tested card reader only writes single blocks.
+
+- [ ] An SDXC card as delivered (exFAT, 64 GB or larger) mounts: S8 LED dim after boot.
+- [ ] Full 87 s save on FAT32 and on exFAT: note the time for each. Audio stays clean and
+      D16 stays off. The 0.5.1 figure for the same card, if you have one, for comparison.
+- [ ] Power off during a save, several times at different moments: after boot the old or the
+      new loop plays, never noise, and the next save works.
+- [ ] Afterwards check the card in Windows (`chkdsk X:`, read-only): note any lost clusters.
+- [ ] Pull the card during a save and during an import: no hang; the kit keeps playing; the
+      card works again after reinsertion.
+- [ ] Unusable card (full, or write-protected adapter) with unsaved audio: Share asks for
+      confirmation instead of reporting Saving forever.
 
 ## 8. MIDI control
 
@@ -181,12 +198,12 @@ close the DAW or disable its port while `P` runs.
 ## 10. SD management (Windows access, v0.5)
 
 Needs Windows with the control panel 0.6.0 (`diagnostics/windows`, with python-rtmidi)
-and a **FAT32** card that already holds `looper/loop.wav` from section 7. Background:
+and a FAT32 or exFAT card that already holds `looper/loop.wav` from section 7. Background:
 [SD_MANAGEMENT.md](SD_MANAGEMENT.md). Copy the card's `looper` folder to the PC first
 (card reader or this test's end result), so nothing is lost if a step fails.
 
 - [ ] Panel, tab **SD share**: the looper is found on USB-MIDI ("Performance"),
-      instrument `Looper`, firmware `0.5.0`, loop length matches the loop, "saved in
+      instrument `Looper`, firmware `0.6.0`, loop length matches the loop, "saved in
       looper/loop.wav".
 - [ ] Overdub a short layer, then press **Share SD card with Windows** within 2 s: the
       panel shows "Saving the loop before sharing …", the S8 LED blinks, then the kit

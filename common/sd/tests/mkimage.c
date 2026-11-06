@@ -1,6 +1,6 @@
 /* Host tool: builds small FAT32/exFAT card images for the read-only driver tests.
  * Built with tests/mkfs/ffconf.h (writable FatFs); never part of a firmware build.
- * Usage: mkimage fat32|exfat <out.img>
+ * Usage: mkimage fat32|exfat|exfat-32k <out.img>
  */
 #include "ff.h"
 #include "diskio.h"
@@ -48,12 +48,14 @@ static int Put(const char* path, unsigned seed, unsigned size) {
 int main(int argc, char** argv) {
     static BYTE work[32768];
     static FATFS fs;
-    if(argc != 3) { fprintf(stderr, "usage: mkimage fat32|exfat out.img\n"); return 2; }
-    const int exfat = !strcmp(argv[1], "exfat");
+    if(argc != 3) { fprintf(stderr, "usage: mkimage fat32|exfat|exfat-32k out.img\n"); return 2; }
+    /* exfat-32k: 32 KB clusters like real SDXC cards, so 32 KB writes are contiguous. */
+    const int big = !strcmp(argv[1], "exfat-32k");
+    const int exfat = big || !strcmp(argv[1], "exfat");
     MKFS_PARM opt = {0};
     opt.fmt = exfat ? FM_EXFAT : FM_FAT32;
-    opt.au_size = exfat ? 4096 : 512;
-    sectors = exfat ? 16384 : 70000; /* FAT32 needs more than 65525 clusters */
+    opt.au_size = big ? 32768 : exfat ? 4096 : 512;
+    sectors = big ? 65536 : exfat ? 16384 : 70000; /* FAT32 needs more than 65525 clusters */
     disk = calloc((size_t)sectors, 512);
     if(!disk || f_mkfs("0:", &opt, work, sizeof work) != FR_OK || f_mount(&fs, "0:", 1) != FR_OK) {
         fprintf(stderr, "mkfs/mount failed\n"); return 1;

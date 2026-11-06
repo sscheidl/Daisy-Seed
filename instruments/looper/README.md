@@ -1,10 +1,12 @@
 # Looper — Instrument Project
 
-For the 0.5.1 handover fixes and current test binaries, see the
-[integration report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md). Local loop
-storage still requires FAT32; Windows sharing uses the shared raw-block reader.
+For the 0.5.1 handover fixes, see the
+[integration report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md); for 0.6.0, the
+[rebuild report](../../docs/SD_WRITABLE_REBUILD_2026-11-06.md). Local loop storage works on
+FAT32 and exFAT (shared writable `common/sd` profile, FatFs R0.16); Windows sharing uses the
+shared raw-block reader.
 
-**Status: v0.5.1 with all four loop modes, Slice/Skip, loop persistence and WAV
+**Status: v0.6.0 with all four loop modes, Slice/Skip, loop persistence and WAV
 import on the microSD card, MIDI CC control over USB, and Windows access to the card
 through the control panel (SD management, new in v0.5); host tests and ARM build
 pass; no hardware run yet.** Project ID: `looper`. The goal is an original
@@ -15,8 +17,8 @@ build with the Mod on Daisy modulation matrix: [docs/MODULATION.md](docs/MODULAT
 Windows access to the card: [docs/SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.5.1.bin
-make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.5.1.bin
+make PROJECT=looper -j4            # firmware: build/Looper-v0.6.0.bin
+make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.6.0.bin
 make PROJECT=looper test           # host tests of both builds, incl. production callback
 make PROJECT=looper test-sanitize  # the same with ASan and UBSan
 ```
@@ -110,7 +112,7 @@ independently from those descriptions.
   switching never steps the output; where a loop has no such region (up to 1,344
   frames), the post-roll crossfade switches in under a 384-frame jump crossfade.
 
-Not in v0.5: effects, input saturation and mix curves, Freeze, clock-synced
+Not in v0.6: effects, input saturation and mix curves, Freeze, clock-synced
 slices, 1V/Oct and CV, the encoder range modes, WAV export, MIDI notes, clock and
 feedback to the controller. J7 is a USB-MIDI device for CC control, the
 firmware update request and the control panel's SD SysEx; in SD management it is a
@@ -164,8 +166,8 @@ The physical orientation of keys and pots still needs a check on the board.
 
 ## microSD (v0.3)
 
-A FAT32 card holds a folder `looper/` (created when missing). Since v0.5 the card can
-stay in the kit: the [control panel](../../diagnostics/docs/LOOPER_PROFILE.md) hands it
+A FAT32 or exFAT card (since v0.6, so SDXC cards work as delivered) holds a folder
+`looper/` (created when missing). Since v0.5 the card can stay in the kit: the [control panel](../../diagnostics/docs/LOOPER_PROFILE.md) hands it
 to Windows as a USB drive and back ([SD management](#sd-management-v05)).
 
 * **`loop.wav`, persistence.** Two seconds after the loop last changed and once
@@ -178,7 +180,8 @@ to Windows as a USB drive and back ([SD management](#sd-management-v05)).
   deleted. At power-up the firmware loads `loop.wav` (or a complete `loop.tmp`
   left by a power loss between delete and rename) before audio starts. Only the
   current loop is kept: undo starts empty after a power cycle. 87 s take about
-  33 MB.
+  33 MB. No step of this is atomic on FAT or exFAT; each failure boundary, including
+  the failed rename, is in [docs/SD_PERSISTENCE.md](docs/SD_PERSISTENCE.md).
 * **`loops/`, import.** S8 loads the next `*.wav` file, sorted by name ignoring
   case (at most 32 files, names shorter than 96 characters, hidden files
   skipped). Accepted: 16- or 24-bit PCM or 32-bit float, also
@@ -202,9 +205,10 @@ to Windows as a USB drive and back ([SD management](#sd-management-v05)).
 
 All card access runs in the main loop. The audio callback only publishes a
 snapshot of the engine state (sequence lock) and answers import requests, so
-file I/O never runs in the callback. The FatFS objects and the 32 KB transfer
-buffer live in SDRAM, because the SDMMC1 IDMA cannot reach DTCM. The SD
-interrupt runs below the audio DMA. The original fades audio out and pauses it
+file I/O never runs in the callback. The SDMMC1 IDMA cannot reach DTCM, so it only
+ever sees a separate 32 KB bounce buffer in SDRAM; the 32 KB transfer buffer lives in
+SDRAM too, the FatFs objects in DTCM. Every card wait is bounded per transfer (250 ms
+read, 1 s write including programming). The SD interrupt runs below the audio DMA. The original fades audio out and pauses it
 for imports and reloads its undo state from the card; this firmware does neither
 (analysis sections 3 and 9).
 
@@ -226,8 +230,7 @@ back up `looper/loop.wav`:
 Undo/redo, loop and seam mode and play/reverse start fresh after the return, as after a
 power cycle. A power cycle in SD management always starts the looper. If the loop
 cannot be saved (card write error), the panel asks before the unsaved changes are given
-up. The card must be FAT32 (exFAT for the looper itself is a later step). Protocol,
-ownership rules, LEDs and memory: [docs/SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md).
+up. Protocol, ownership rules, LEDs and memory: [docs/SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md).
 Hardware behaviour: NICHT GEMESSEN.
 
 ## MIDI control (v0.4)
@@ -280,7 +283,7 @@ ignored, and the looper sends nothing back except the bootloader reply.
 ## Mod on Daisy build (MOD=1)
 
 `make PROJECT=looper MOD=1` (or `PROJECT=looper-mod`) builds a second image,
-`build/mod/LooperMod-v0.5.1.bin`, with the
+`build/mod/LooperMod-v0.6.0.bin`, with the
 [Mod on Daisy](../../modules/mod-on-daisy/README.md) 8×8 modulation matrix. The
 editors (browser, JUCE, VST3) connect over J7 and read its eight looper columns from
 the device: **Speed** (±12 semitones at depth 100), **Start**, **Size**, **Slice**,
@@ -356,7 +359,6 @@ The steps follow the gates of the feasibility study, adapted to this repository:
 5. **microSD and controls:** file access outside the audio callback, WAV
    validation with bounds checks and power-cycle persistence in v0.3 (host-tested
    with an in-memory card; the card itself is untested). Windows access through the
-   shared card reader in v0.5 (host- and simulation-tested). Open: exFAT and the
-   patched FatFs R0.16 for the looper's own writes (path 1 in
-   [SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md#plan)), WAV export, the mapping of the
+   shared card reader in v0.5 (host- and simulation-tested); exFAT and the patched
+   FatFs R0.16 for the looper's own writes in v0.6 (host-tested). Open: WAV export, the mapping of the
    remaining Stardust controls onto the kit's switches and MIDI.

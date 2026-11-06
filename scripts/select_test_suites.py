@@ -61,9 +61,8 @@ def select_suites(changed):
         # Nebulae 0.2 links common/sd (read-only FatFs, card reader) and the DDP framing.
         'granular': shared or touched('instruments/granular/', 'common/sd/', 'diagnostics/protocol/',
                                       'diagnostics/firmware/src/ring_buffer.h'),
-        # The looper's SD management links the card reader and the DDP framing (not the
-        # read-only driver; it keeps libDaisy's writable FatFs for loop.wav).
-        'looper': shared or touched('instruments/looper/', 'common/sd/reader/', 'diagnostics/protocol/',
+        # The looper links common/sd in its writable profile, the card reader and the DDP framing.
+        'looper': shared or touched('instruments/looper/', 'common/sd/', 'diagnostics/protocol/',
                                     'diagnostics/firmware/src/ring_buffer.h') or mod_api,
         'reverb': shared or touched('effects/reverb/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),

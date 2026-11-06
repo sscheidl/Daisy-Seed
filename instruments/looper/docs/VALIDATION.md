@@ -1,8 +1,9 @@
-# Validation — Looper v0.5
+# Validation — Looper v0.6
 
 Date: 2026-10-20, updated 2026-10-25 for v0.3.2 (44.1 kHz import) and v0.4.0
 (MIDI CC control), 2026-10-26 for the separate Mod on Daisy build (`MOD=1`),
-2026-11-01 for v0.5.0 (SD management, see the section below).
+2026-11-01 for v0.5.0 (SD management, see the section below), 2026-11-06 for v0.6.0
+(writable `common/sd` profile, [report](../../../docs/SD_WRITABLE_REBUILD_2026-11-06.md)).
 Hardware validation: **PENDING — no run on the Seed3 yet.**
 
 | Gate | Status | Evidence |
@@ -21,6 +22,8 @@ Hardware validation: **PENDING — no run on the Seed3 yet.**
 | MOD ARM build | PASS | `make PROJECT=looper MOD=1`, image check with `scripts/check-firmware.py` |
 | SD management (v0.5) | PASS (host) | `tests/test_control.cpp`, `tests/test_admin.cpp`, SaveSoon/Halt in `tests/test_store.cpp`, share part of `tests/test_callback.cpp` (both builds), panel tests in `diagnostics/tests/python` |
 | Golden after v0.5 | PASS | `2A2DBCEC41A54F57` for both builds, the same hash as v0.4.0 |
+| Card stack on FAT32/exFAT images (v0.6) | PASS (host) | `tests/test_card.cpp`: production `LoopStore`, `FatVolume`, `ro_sd.c`, FatFs R0.16; save, recall, import, power-loss campaign |
+| Golden after v0.6 | PASS | `2A2DBCEC41A54F57` for both builds, unchanged |
 | Hardware | PENDING | see the list at the end |
 
 ## Toolchain
@@ -196,11 +199,11 @@ Step-by-step checklist: [HARDWARE_TEST.md](HARDWARE_TEST.md).
    repeat starts in window mode).
 4. Key and pot orientation, LED brightness, debounce feel.
 5. Input level and soft limit with a line source; mono/stereo jack detection.
-6. microSD: card detect, mount, FAT32 cards of different sizes and speeds, the
+6. microSD: card detect, mount, FAT32 and exFAT cards of different sizes and speeds, the
    time a full 87 s save takes, no audio dropouts or D16 events while saving or
    importing, recall after a power cycle, removal during a save. The SDMMC/FatFS
-   path, the cache handling and the SD interrupt priority are untested on the
-   board.
+   path, the multi-block IDMA writes, the cache handling and the SD interrupt priority
+   are untested on the board.
 7. Mod on Daisy build: the editors find the device and show the eight columns,
    the callback peak with eight connections (`maximumCycles`, D16), LFO on Speed
    and Mix without zipper noise, the sound of fast Start/Size modulation (jump

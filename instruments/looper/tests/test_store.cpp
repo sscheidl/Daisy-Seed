@@ -574,9 +574,54 @@ static void TestSaveSoonAndHalt() {
     PASS("save soon: no delay before a share, idle engine and retry delay kept; halt keeps loop.wav\n");
 }
 
+// The gap documented in docs/SD_PERSISTENCE.md. After a failed rename loop.wav is gone and
+// loop.tmp is the only copy on the card. The retry opens that same file for writing, so
+// until it completes the card holds no complete loop, and a failed retry removes the file.
+// Pinned here so that a change of this behaviour is a decision, not an accident.
+static void TestRenameFailureGap() {
+    MemoryVolume card;
+    auto rig = std::make_unique<Rig>(card, 4 * kSecond);
+    Rig& r = *rig;
+    r.Run(10);
+    r.engine.PressRecord();
+    r.Run(500, .5f);
+    r.engine.PressRecord();
+    RunUntilSaved(r, 1);
+    CHECK(r.store.Saves() == 1 && card.files.count(kLoop));
+    r.engine.PressRecord();
+    r.Run(300, .3f, 330.0);
+    r.engine.PressRecord();
+    card.failRename = true;
+    for (int m = 0; m < 10000 && r.store.LastFault() != LoopStore::Fault::Write; ++m)
+        r.Run(1);
+    card.failRename = false;
+    const auto take = Snapshot(r.engine);
+    CHECK(!card.files.count(kLoop));
+    CHECK(FileHolds(card, kTemp, take, r.engine.Length(), r.engine.TailLength()));
+    auto boot = std::make_unique<Rig>(card, 4 * kSecond);
+    CHECK(boot->store.Recall(boot->engine) && SameFrames(Snapshot(boot->engine), take));
+    // The retry cuts the only copy down to nothing, and its write failure removes the file.
+    const size_t complete = card.files[kTemp].size();
+    card.failWriteAfter = card.written + 20000;
+    bool cut = false;
+    for (uint32_t m = 0; m < 2 * LoopStore::kRetryDelayMs && card.files.count(kTemp); ++m) {
+        r.Run(1);
+        cut = cut || (card.files.count(kTemp) && card.files[kTemp].size() < complete);
+    }
+    CHECK(cut && !card.files.count(kTemp) && !card.files.count(kLoop));
+    auto nothing = std::make_unique<Rig>(card, 4 * kSecond);
+    CHECK(!nothing->store.Recall(nothing->engine));
+    // The loop is still in RAM: the next retry that works puts it back.
+    card.failWriteAfter = -1;
+    RunUntilSaved(r, 2, 30000);
+    CHECK(r.store.Saves() == 2 && FileHolds(card, kLoop, take, r.engine.Length(), r.engine.TailLength()));
+    PASS("rename failure: loop.tmp is the only copy; the retry truncates it, RAM holds the loop\n");
+}
+
 int main() {
     TestSaveAndRecall();
     TestSaveSoonAndHalt();
+    TestRenameFailureGap();
     TestAbortAndFaults();
     TestTornLastChunk();
     TestImport();
