@@ -103,6 +103,48 @@
         "name": "SEED_FX_CONTRACT_VERSION"
       }
     },
+    "sd-driver": {
+      "kind": "storage",
+      "source": "common/sd",
+      "version": {
+        "type": "macro",
+        "path": "common/sd/sd_version.h",
+        "name": "SD_DRIVER_VERSION"
+      }
+    },
+    "sd-fs-readonly": {
+      "kind": "storage",
+      "source": "common/sd/ffconf.h",
+      "depends": [
+        "sd-driver"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "common/sd/sd_version.h",
+        "name": "SD_FS_READONLY_VERSION"
+      }
+    },
+    "sd-fs-writable": {
+      "kind": "storage",
+      "source": "common/sd/rw/ffconf.h",
+      "depends": [
+        "sd-driver"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "common/sd/sd_version.h",
+        "name": "SD_FS_WRITABLE_VERSION"
+      }
+    },
+    "sd-reader": {
+      "kind": "storage",
+      "source": "common/sd/reader",
+      "version": {
+        "type": "macro",
+        "path": "common/sd/reader/reader_version.h",
+        "name": "SD_READER_VERSION"
+      }
+    },
     "bootloader-entry": {
       "kind": "control",
       "source": "common/bootloader",
@@ -463,6 +505,9 @@
       "marker": "NEBULAE-FW-VERSION=",
       "components": [
         "nebulae",
+        "sd-driver",
+        "sd-fs-readonly",
+        "sd-reader",
         "bootloader-entry"
       ],
       "panels": []
@@ -474,6 +519,9 @@
       "marker": "LOOPER-VERSION=",
       "components": [
         "looper",
+        "sd-driver",
+        "sd-fs-writable",
+        "sd-reader",
         "bootloader-entry"
       ],
       "panels": []
@@ -486,6 +534,9 @@
       "components": [
         "looper",
         "mod-on-daisy",
+        "sd-driver",
+        "sd-fs-writable",
+        "sd-reader",
         "bootloader-entry"
       ],
       "panels": [

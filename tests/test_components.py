@@ -142,6 +142,19 @@ class ComponentTests(unittest.TestCase):
         self.assertFalse(selection.select_suites(['diagnostics/windows/daisy_diag/looper.py'])['looper'])
         self.assertTrue(selection.select_suites(['Makefile'])['sd'])
 
+    def test_sd_compositions(self):
+        # Every SD image records its driver, exactly one filesystem profile and the reader.
+        data = manifest.load_registry()
+        for key in ('sd-driver', 'sd-fs-readonly', 'sd-fs-writable', 'sd-reader'):
+            self.assertEqual(data['components'][key]['kind'], 'storage')
+            self.assertTrue(manifest.read_version(data['components'][key]['version']))
+        expected = {'granular': 'sd-fs-readonly', 'looper': 'sd-fs-writable', 'looper-mod': 'sd-fs-writable'}
+        for project, profile in expected.items():
+            components = data['products'][project]['components']
+            self.assertIn('sd-driver', components)
+            self.assertIn('sd-reader', components)
+            self.assertEqual([c for c in components if c.startswith('sd-fs-')], [profile])
+
     def test_acid_seq_components(self):
         # Components are registered with their version sources; products follow only
         # with their first validated build (BUILDABLE_PROJECTS == products above).
