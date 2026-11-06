@@ -287,6 +287,67 @@
         "path": "effects/reverb/src/control_version.h",
         "name": "AMBIENT_CONTROL_VERSION"
       }
+    },
+    "audrey-3": {
+      "kind": "instrument",
+      "source": "instruments/audrey-3",
+      "version": {
+        "type": "macro",
+        "path": "instruments/audrey-3/src/version.h",
+        "name": "AUDREY_3_VERSION"
+      },
+      "depends": [
+        "echo-delay",
+        "sc-reverb",
+        "audrey-dsp",
+        "fx-contract"
+      ]
+    },
+    "audrey-dsp": {
+      "kind": "dsp",
+      "source": "common/dsp/audrey-ii",
+      "version": {
+        "type": "macro",
+        "path": "common/dsp/audrey-ii/version.h",
+        "name": "AUDREY_DSP_VERSION"
+      }
+    },
+    "wet-host": {
+      "kind": "dsp",
+      "source": "common/audio/wet_host.h",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "common/audio/wet_host.h",
+        "name": "SEED_WET_HOST_VERSION"
+      }
+    },
+    "echo-delay": {
+      "kind": "effect",
+      "source": "effects/echo-delay/include",
+      "depends": [
+        "audrey-dsp",
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/echo-delay/src/version.h",
+        "name": "ECHO_DELAY_VERSION"
+      }
+    },
+    "sc-reverb": {
+      "kind": "effect",
+      "source": "effects/sc-reverb/include",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/sc-reverb/src/version.h",
+        "name": "SC_REVERB_VERSION"
+      }
     }
   },
   "products": {
@@ -728,6 +789,60 @@
         "mod-editor-juce",
         "mod-editor-vst3"
       ]
+    },
+    "audrey-3": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/audrey-3/src/version.h",
+        "name": "AUDREY_3_FIRMWARE_VERSION"
+      },
+      "directory": "instruments/audrey-3/build",
+      "image": "Audrey3",
+      "marker": "AUDREY-3-FW-VERSION=",
+      "components": [
+        "audrey-3",
+        "echo-delay",
+        "sc-reverb",
+        "audrey-dsp",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "echo-delay-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/echo-delay/src/version.h",
+        "name": "ECHO_DELAY_FIRMWARE_VERSION"
+      },
+      "directory": "effects/echo-delay/build",
+      "image": "EchoDelayFx",
+      "marker": "ECHO-DELAY-FX-VERSION=",
+      "components": [
+        "echo-delay",
+        "audrey-dsp",
+        "wet-host",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "sc-reverb-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/sc-reverb/src/version.h",
+        "name": "SC_REVERB_FIRMWARE_VERSION"
+      },
+      "directory": "effects/sc-reverb/build",
+      "image": "ScReverbFx",
+      "marker": "SC-REVERB-FX-VERSION=",
+      "components": [
+        "sc-reverb",
+        "wet-host",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
     }
   }
 }
