@@ -301,6 +301,8 @@ void TestGateSwitch() {
         assert(host->Prepare({words, 1}));
         std::array<float, 8> raw{};
         raw[3] = vr4; raw[6] = 1.f; // VR7 full wet
+        host->ReadControls(raw, false, sw18);
+        host->Select(0); // pots settled
         const float mono[kN]{};
         float l[kN], r[kN];
         std::vector<float> out;

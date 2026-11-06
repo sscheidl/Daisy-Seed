@@ -27,6 +27,7 @@ struct Rig {
         fx->LoadProgram(words);
         Parameters p; p.pot[1] = p1; p.pot[2] = p2;
         fx->SetParameters(p);
+        fx->Reset(); // pots settled
         fx->SetRate(rate);
         float z[48] = {}, o1[48], o2[48];
         for(int i = 0; i < 100; ++i) fx->Process({z, z, o1, o2, 48}); // let the rate glide settle (silence)

@@ -1,5 +1,14 @@
 # Changelog: fv1-vm
 
+## toy-piano-fv1 0.10.0, fv1-vm-fx 0.4.0 (2026-11-05, unreleased)
+
+* The interpreter low-passes POT0..2 (2^-12 per sample, 125 ms at 32 768 Hz). The FV-1 filters its POT inputs, and the
+  interpreter did not. Programs therefore got 1 kHz pot steps and ADC noise. Their shelving pot filter, which compensates
+  for the chip's lag, overshot four times; programs without it took the steps straight into the sound. Owner report: cutoff,
+  drive and symmetry pots "bubble". The time constant is inferred from that filter, not from a datasheet.
+* `Reset` sets the POT registers to the current pots, so a new program starts settled. `Step` and `SetPotsExact` are
+  unchanged, so the cross-check against the reference model is unaffected.
+
 ## toy-piano-fv1 0.9.0 (2026-11-05, unreleased)
 
 * SW18 overrides POT0: up = full, centre = VR4, down = zero. Owner decision: programs with a Gate on POT0 record below

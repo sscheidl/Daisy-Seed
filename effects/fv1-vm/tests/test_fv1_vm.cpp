@@ -116,6 +116,24 @@ int main() {
       float l[8] = {1, 1, 1, 1, 1, 1, 1, 1}, r[8] = {1, 1, 1, 1, 1, 1, 1, 1}, a[8], b[8];
       CHECK(!v.Process({l, r, a, b, 9}), "reject oversize block");
       CHECK(v.Process({l, r, a, b, 8}) && a[7] == 0.5f && b[7] == 0.25f, "process block"); delete stf; }
+    { // POT low-pass: 2^-12 per sample, a new program starts settled, and the shelving pot filter does not overshoot.
+      uint32_t w[kProgramWords]; for(auto& x : w) x = Nop();
+      unsigned n = 0;
+      w[n++] = Rdax(POT0, 1.0); w[n++] = Wrax(DACR, 1.0);
+      w[n++] = Rdfx(REG0, 1.0 / 1024); w[n++] = Wrhx(REG0, -0.75);
+      w[n++] = Rdax(REG0 + 1, 0.75); w[n++] = Wrax(REG0 + 1, 1.0); w[n++] = Wrax(DACL, 0.0);
+      auto stp = std::make_unique<Storage<double>>(); Vm<double> v;
+      seed::audio::Config c; c.sample_rate = 32768; c.max_block = 1;
+      v.Prepare(c, *stp); v.LoadProgram(w);
+      Parameters p; p.pot[0] = .3f; v.SetParameters(p); v.Reset();
+      const float z = 0.f; float l = 0.f, r = 0.f;
+      for(int i = 0; i < 40000; ++i) v.Process({&z, &z, &l, &r, 1}); // the shelf settles on the constant pot
+      CHECK(std::fabs(r - .3f) < 1e-6f, "pot starts settled");
+      p.pot[0] = .7f; v.SetParameters(p);
+      float peak = 0.f, at_tau = 0.f;
+      for(int i = 0; i < 60000; ++i) { v.Process({&z, &z, &l, &r, 1}); peak = std::fmax(peak, l); if(i == 4095) at_tau = r; }
+      CHECK(std::fabs(at_tau - (.7f - .4f * .3679f)) < 1e-3f, "pot time constant 4096 samples");
+      CHECK(peak < .701f && l > .69f, "no overshoot through the shelving pot filter"); }
     if(failures) { std::printf("%d failure(s)\n", failures); return 1; }
     std::printf("fv1-vm host tests: all passed\n");
     return 0;
