@@ -134,6 +134,28 @@ static void TestPotsAndPages() {
     CHECK(Near(c.Bank().Norm(kEchoSend), 0.49f, 1e-6f));
 }
 
+// A MIDI CC that moves a paged parameter while its pot waits for pickup must not be mistaken for
+// the pot crossing the stored value (Codex, control.h:123). The pot takes over only once it
+// reaches the target frozen at the page switch; the CC value stands until then.
+static void TestPickupVsCc() {
+    Control c;
+    c.Init(kControlRate);
+    PanelFrame f = Pots(0.5f);
+    c.Panel(f);      // page A established
+    f.page_b = true; // VR7 (pots[6]) -> Echo Time, stored 0.30151, pot at 0.5 above it
+    c.Panel(f);
+    CHECK(c.Waiting(1));
+    const float target = Spec(kEchoTime).initial_norm;
+    c.ControlChange(kFirstParamCc + kEchoTime, 114); // ~0.898, drives Echo Time up past the pot
+    c.Panel(f);
+    CHECK(c.Waiting(1));                     // still waiting: no spurious pickup
+    CHECK(c.Bank().Norm(kEchoTime) > 0.8f);  // the CC value stands
+    f.pots[6] = target;                      // the pot reaches the frozen target and takes over
+    c.Panel(f);
+    CHECK(!c.Waiting(1));
+    CHECK(Near(c.Bank().Norm(kEchoTime), target, 1e-6f));
+}
+
 static void TestMidi() {
     Control c;
     c.Init(kControlRate);
@@ -459,6 +481,7 @@ int main() {
     TestParameterTable();
     TestSmoothing();
     TestPotsAndPages();
+    TestPickupVsCc();
     TestMidi();
     TestDcBlock();
     TestEngine();

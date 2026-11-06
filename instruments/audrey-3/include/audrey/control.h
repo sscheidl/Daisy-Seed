@@ -100,8 +100,12 @@ class Control {
         const bool first = !started_;
         if(!first && frame.page_b != page_b_)
             for(int i = 0; i < kPagedPots; ++i) {
+                // Freeze the pickup target at the switch, so a MIDI CC that moves the stored value
+                // while the pot waits cannot be mistaken for the pot crossing it.
+                const float target = bank_.Norm(PagedParam(i, frame.page_b));
                 waiting_[i] = true;
-                below_[i] = frame.pots[5 + i] < bank_.Norm(PagedParam(i, frame.page_b));
+                pickup_[i] = target;
+                below_[i] = frame.pots[5 + i] < target;
             }
         page_b_ = frame.page_b;
         for(int i = 0; i < 8; ++i) {
@@ -116,8 +120,8 @@ class Control {
             const int paged = i - 5;
             const uint8_t id = PagedParam(paged, page_b_);
             if(waiting_[paged]) {
-                const float stored = bank_.Norm(id);
-                if(std::fabs(v - stored) >= kPickupDistance && (v < stored) == below_[paged])
+                const float target = pickup_[paged];
+                if(std::fabs(v - target) >= kPickupDistance && (v < target) == below_[paged])
                     continue;
                 waiting_[paged] = false;
                 bank_.SetNorm(id, v);
@@ -160,7 +164,7 @@ class Control {
     ParamBank bank_;
     NoteStack notes_;
     PlayMode mode_ = PlayMode::Drone;
-    float last_[8] = {};
+    float last_[8] = {}, pickup_[kPagedPots] = {};
     bool waiting_[kPagedPots] = {}, below_[kPagedPots] = {};
     bool page_b_ = false, started_ = false, silenced_ = false;
     uint16_t held_ = 0;

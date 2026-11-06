@@ -55,6 +55,7 @@ static uint32_t tick_blocks = fw::kBlocksPerTick - 1; // the first block reads t
 static uint32_t control_ms = 0;
 static bool muted = false;
 static std::atomic<bool> release_all{false}; // Note-Off lost to a full queue: never a hanging gate
+static std::atomic<bool> silence_all{false}; // Sound-Off lost to a full queue: also closes a drone
 static std::atomic<uint32_t> mute_ack{0}, led_state{0};
 
 // ----- audio callback ---------------------------------------------------------------------
@@ -79,7 +80,9 @@ static void Tick() {
     fw::Command c;
     while(commands.Pop(c))
         ApplyCommand(c);
-    if(release_all.exchange(false, std::memory_order_acquire))
+    if(silence_all.exchange(false, std::memory_order_acquire))
+        control.AllSoundOff(); // closes a drone too; also clears the notes
+    else if(release_all.exchange(false, std::memory_order_acquire))
         control.AllNotesOff();
     audrey::PanelFrame frame;
     for(int i = 0; i < 8; ++i)
@@ -140,7 +143,11 @@ static void SendUsb(uint8_t* bytes, std::size_t size) {
 static void Push(const Command& c) {
     if(commands.Push(c))
         return;
-    if(c.kind == Command::Kind::NoteOff || c.kind == Command::Kind::AllOff || c.kind == Command::Kind::SoundOff)
+    // A dropped Sound-Off must still close a drone, so it keeps its stronger meaning; a dropped
+    // Note-Off or All-Notes-Off only releases the notes.
+    if(c.kind == Command::Kind::SoundOff)
+        silence_all.store(true, std::memory_order_release);
+    else if(c.kind == Command::Kind::NoteOff || c.kind == Command::Kind::AllOff)
         release_all.store(true, std::memory_order_release);
 }
 
