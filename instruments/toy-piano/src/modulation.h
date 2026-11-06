@@ -4,7 +4,7 @@
 // for experiments and are greyed out in the editor.
 #include "config.h"
 #include "version.h"
-#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1 || TOY_PIANO_FILTER
 #include "composed_version.h"
 #endif
 #include "mod_on_daisy/types.h"
@@ -18,6 +18,11 @@ inline constexpr mod::ModeInfo kFxModes[] = {
     {"Cloud", "A / SW18 up"}, {"Halo", "A / SW18 center"}, {"Scatter", "A / SW18 down"},
     {"Abyss", "B / SW18 up"}, {"Bloom", "B / SW18 center"}, {"Shimmer", "B / SW18 down"},
 };
+#endif
+#if TOY_PIANO_FILTER
+// Age stays a direct control on VR8, not a matrix target (owner decision 2026-11-06).
+constexpr unsigned ModCutoff = 5, ModResonance = 6, ModDrive = 7;
+constexpr float kModCutoffSpan = 48.0f / 111.0f; // depth 100 = +-48 semitones of the cutoff range
 #endif
 
 // Normalized bases. They map exactly to the v0.2 values (ratio 1, gain 1,
@@ -47,6 +52,12 @@ inline mod::InstrumentInfo MakeModInfo() {
     // The five Toy Piano columns (VR2 attack, VR3 decay; VR1 transposes); the FV-1 program uses VR4..VR8 and MIDI.
     info.key = "toy-piano-fv1";
     info.version = TOY_PIANO_FV1_VERSION;
+#elif TOY_PIANO_FILTER
+    info.key = "toy-piano-filter";
+    info.version = TOY_PIANO_FILTER_VERSION;
+    info.targets[ModCutoff] = {"Cutoff", "+-48 st", kModCutoffSpan, true, false};
+    info.targets[ModResonance] = {"Resonance", "100%", 1.f, false, false};
+    info.targets[ModDrive] = {"Drive", "100%", 1.f, false, false};
 #else
     info.key = "toy-piano";
     info.version = TOY_PIANO_VERSION;

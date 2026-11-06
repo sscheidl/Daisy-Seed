@@ -89,3 +89,10 @@ BUILDABLE_PROJECTS += toy-piano-fv1
 PROJECT_DIR_toy-piano-fv1 := instruments/toy-piano
 PROJECT_ARGS_toy-piano-fv1 := FV1=1
 PROJECT_STATUS_toy-piano-fv1 := buildable
+# Toy Piano with a filter per voice (test product for the filter models, owner decision 2026-11-06);
+# ARM build verified 2026-11-06. No effects.
+PROJECTS += toy-piano-filter
+BUILDABLE_PROJECTS += toy-piano-filter
+PROJECT_DIR_toy-piano-filter := instruments/toy-piano
+PROJECT_ARGS_toy-piano-filter := FILTER=1
+PROJECT_STATUS_toy-piano-filter := buildable

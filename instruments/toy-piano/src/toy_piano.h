@@ -57,6 +57,13 @@ class ToyPiano {
     float BaseIncrement(std::size_t voice) const { return voices_[voice].base_increment; }
     float VoiceLevel(std::size_t voice) const { return voices_[voice].level; }
     float VoiceHarmonic(std::size_t voice) const { return voices_[voice].harmonic; }
+#if TOY_PIANO_FILTER
+    // toy-piano-filter: one voice at a time, at full level, so that a filter can sit behind
+    // each voice. `wave` crossfades from the regular sine to a band-limited saw.
+    bool VoiceActive(std::size_t voice) const { return voices_[voice].envelope.Active(); }
+    float VoiceEnvelope(std::size_t voice) const { return voices_[voice].envelope.Level(); }
+    void RenderVoice(std::size_t voice, float wave, float* out, std::size_t frames);
+#endif
   private:
     static constexpr std::size_t kTableSize = 2048;
     struct Voice {

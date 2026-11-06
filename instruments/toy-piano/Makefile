@@ -7,10 +7,18 @@ $(error AMB_GATE/AMB_WET32 are obsolete; shared Ambient 0.4 always uses gating a
 endif
 TAPE ?= 0
 FV1 ?= 0
+FILTER ?= 0
 ifeq ($(FV1),1)
 $(if $(filter 1,$(TAPE) $(AMBIENT)),$(error FV1=1 cannot be combined with TAPE=1 or AMBIENT=1))
 endif
-ifeq ($(TAPE),1)
+ifeq ($(FILTER),1)
+$(if $(filter 1,$(TAPE) $(AMBIENT) $(FV1)),$(error FILTER=1 stands alone: the test build has no effects))
+VERSION := $(shell sed -n 's/.*TOY_PIANO_FILTER_VERSION "\(.*\)".*/\1/p' src/composed_version.h | head -n 1)
+TARGET = ToyPianoFilter-v$(VERSION)
+override BUILD_DIR = build/filter
+FX_DEFS = -DTOY_PIANO_FILTER=1 -DMOD_ON_DAISY_EXTENSIONS=1
+C_DEFS = $(FX_DEFS)
+else ifeq ($(TAPE),1)
 VERSION := $(shell sed -n 's/.*TOY_PIANO_TAPE_VERSION "\(.*\)".*/\1/p' src/composed_version.h | head -n 1)
 TARGET = ToyPianoTape-v$(VERSION)
 override BUILD_DIR = build/tape
@@ -76,6 +84,10 @@ ifeq ($(FV1),1)
 LDSCRIPT := ld/toy_piano_axi.lds
 $(BUILD_DIR)/$(TARGET).elf: $(LDSCRIPT)
 endif
+ifeq ($(FILTER),1)
+LDSCRIPT := ld/toy_piano_axi.lds
+$(BUILD_DIR)/$(TARGET).elf: $(LDSCRIPT)
+endif
 ifeq ($(AMBIENT),1)
 # Prevent the official flattened VPATH from finding the standalone FX's main.cpp.
 $(BUILD_DIR)/main.o: src/main.cpp Makefile | $(BUILD_DIR)
@@ -91,7 +103,12 @@ HOST_INCLUDES = $(MOD_DEFS) -Isrc -I$(BOOTLOADER_DIR) -I$(DAISYSP_DIR)/Source -I
 ifeq ($(AMBIENT),1)
 HOST_INCLUDES += -I../../sequencers/step-seq/include
 endif
-ifeq ($(FV1),1)
+ifeq ($(FILTER),1)
+test:
+	mkdir -p build/host/filter
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(FX_DEFS) tests/test_filter.cpp src/toy_piano.cpp -o build/host/filter/test_filter
+	./build/host/filter/test_filter
+else ifeq ($(FV1),1)
 HOST_INCLUDES += $(FV1_INCLUDES)
 test:
 	mkdir -p build/host/fv1

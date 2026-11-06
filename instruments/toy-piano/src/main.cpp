@@ -24,6 +24,10 @@
 #if FV1VM_LOCAL_PROGRAMS
 #include "fv1vm_programs.local.h" // generated, git-ignored (effects/fv1-vm/tools/gen_programs.py)
 #endif
+#elif TOY_PIANO_FILTER
+#include "filter_host.h"
+#include "callback_diagnostics.h"
+#include <new>
 #endif
 #define TOY_PIANO_MODULATION 1 // tests: call InitModulation() before the callback
 // Regular Toy Piano (0.5) and toy-piano-fv1: VR1 transposition and DIN MIDI input. Ambient and tape keep their own panel.
@@ -46,6 +50,8 @@ const char kProgramSource[] = "FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE";
 #else
 const char kProgramSource[] = "FV1VM-PROGRAMS=BUILTIN";
 #endif
+#elif TOY_PIANO_FILTER
+const char kFirmwareId[] = "TOYPIANO-FILTER-FW-VERSION=" TOY_PIANO_FILTER_VERSION;
 #else
 const char kFirmwareId[] = "TOYPIANO-FW-VERSION=" TOY_PIANO_VERSION;
 #endif
@@ -134,6 +140,24 @@ bool InitializeFx() {
     return fv1->Prepare({});
 #endif
 }
+#elif TOY_PIANO_FILTER
+// VR1 pitch, VR2 wave, VR3 attack, VR4 decay; the rest is in filter_host.h.
+// 32 filters do not fit into the nearly full DTCM: AXI SRAM behind the image (NOLOAD, needs
+// ld/toy_piano_axi.lds), like the FV-1 delay RAM. Cached, so the running voices stay fast.
+#if defined(__arm__)
+__attribute__((section(".tp_axi_bss"), aligned(32)))
+#endif
+alignas(toy_piano::FilterHost) unsigned char filter_storage[sizeof(toy_piano::FilterHost)];
+toy_piano::FilterHost* filter_host = nullptr;
+void InitializeFilter() {
+    filter_host = new(filter_storage) toy_piano::FilterHost{};
+    filter_host->Prepare();
+}
+mod::adapter::CallbackDiagnostics callback_diagnostics;
+float piano_transpose = 1.f; // audio thread only; exactly 1 in the centre detent
+std::array<float, toy_piano::kNumVoices> voice_pressure_now{}; // audio thread only, for the cutoff column
+unsigned test_setting = ~0u; // audio thread only: load test settings; a change starts a new peak
+std::atomic<uint32_t> test_leds{0}; // audio -> main: page 2 shows the load test instead of the keys
 #else
 // 0.5: VR1 transposition, VR2 attack, VR3 decay.
 toy_piano::PotFilter pitch_pot, attack_pot, decay_pot;
@@ -173,7 +197,7 @@ void InitModulation(float sample_rate) {
     callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
     modulation.EnableExtensions({true, true, true});
-#elif TOY_PIANO_TAPE || TOY_PIANO_FV1
+#elif TOY_PIANO_TAPE || TOY_PIANO_FV1 || TOY_PIANO_FILTER
     callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
     modulation.EnableExtensions({true, true, false});
@@ -233,6 +257,9 @@ void ModulateVoices(size_t size) {
     for(size_t v = 0; v < toy_piano::kNumVoices; ++v) {
         const int note = v < toy_piano::kNumKeys ? -1 : piano.MidiVoiceNote(v - toy_piano::kNumKeys);
         const float p = voice_pressure[v].Process(engine, note);
+#if TOY_PIANO_FILTER
+        voice_pressure_now[v] = p;
+#endif
         float ratio = piano_transpose * toy_piano::PitchRatio(engine.ApplyVoice(toy_piano::ModPitch, toy_piano::kPitchBase, p));
         const float level = engine.ApplyVoice(toy_piano::ModLevel, toy_piano::kLevelBase, p);
         const float harmonic = engine.ApplyVoice(toy_piano::ModHarmonic, toy_piano::kHarmonicBase, p);
@@ -269,7 +296,7 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
 #if TOY_PIANO_FV1
     const uint32_t fv1_start = DWT->CYCCNT;
 #endif
-#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1 || TOY_PIANO_FILTER
     if(size != toy_piano::kBlockSize) {
         for(size_t i = 0; i < std::min(size, toy_piano::kBlockSize); ++i) out[0][i] = out[1][i] = 0;
         return;
@@ -334,6 +361,22 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     modulation.engine.ReportBase(toy_piano::ModHarmonic, toy_piano::kHarmonicBase);
     modulation.engine.ReportBase(toy_piano::ModAttack, attack_base);
     modulation.engine.ReportBase(toy_piano::ModDecay, decay_base);
+#elif TOY_PIANO_FILTER
+    std::array<float, 8> raw{};
+    for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
+    filter_host->ReadControls(raw, hw.tog_sw17.Pressed(), hw.tog_sw18.Read());
+    const toy_piano::FilterControls& panel = filter_host->Controls();
+    piano_transpose = std::fabs(panel.pitch - .5f) < .005f ? 1.f : std::exp2((panel.pitch - .5f) * 4.f);
+    const float attack = modulation.engine.Apply(toy_piano::ModAttack, panel.attack);
+    const float decay = modulation.engine.Apply(toy_piano::ModDecay, panel.decay);
+    modulation.engine.ReportBase(toy_piano::ModPitch, toy_piano::kPitchBase);
+    modulation.engine.ReportBase(toy_piano::ModLevel, toy_piano::kLevelBase);
+    modulation.engine.ReportBase(toy_piano::ModHarmonic, toy_piano::kHarmonicBase);
+    modulation.engine.ReportBase(toy_piano::ModAttack, panel.attack);
+    modulation.engine.ReportBase(toy_piano::ModDecay, panel.decay);
+    modulation.engine.ReportBase(toy_piano::ModCutoff, panel.cutoff);
+    modulation.engine.ReportBase(toy_piano::ModResonance, panel.resonance);
+    modulation.engine.ReportBase(toy_piano::ModDrive, panel.drive);
 #else
     // 0.5: VR1 transposition +-24 semitones (centre detent), VR2 attack, VR3 decay.
     const float pitch_x = pitch_pot.Process(hw.pot[0].Value());
@@ -412,6 +455,25 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
         fv1_status.bypass = fv1->Bypass();
         fv1_snapshot_ready.store(true, std::memory_order_release);
     }
+#elif TOY_PIANO_FILTER
+    filter_host->HoldLoad(piano);
+    // Matrix columns 5 to 7. The cutoff column reaches every voice; only it needs the loop.
+    const mod::Engine& engine = modulation.engine;
+    std::array<float, toy_piano::kNumVoices> cutoff;
+    for(size_t v = 0; v < cutoff.size(); ++v)
+        cutoff[v] = engine.Active() ? engine.ApplyVoice(toy_piano::ModCutoff, panel.cutoff, voice_pressure_now[v]) : panel.cutoff;
+    filter_host->SetFilter(cutoff, engine.Apply(toy_piano::ModResonance, panel.resonance),
+                          engine.Apply(toy_piano::ModDrive, panel.drive));
+    filter_host->Process(piano, out[0], size);
+    for(size_t i = 0; i < size; ++i) out[1][i] = out[0][i];
+    // A new load test setting starts a new peak, so the LEDs and `stats` show this setting alone.
+    const unsigned setting = panel.load_voices * 16 + unsigned(panel.model) * 2 + (panel.shared ? 1 : 0) + (panel.page2 ? 4096 : 0);
+    if(setting != test_setting) {
+        test_setting = setting;
+        callback_diagnostics.ResetStats();
+    }
+    callback_diagnostics.End();
+    test_leds.store(panel.page2 ? (panel.load_voices / 4) | 0x100u : 0u, std::memory_order_relaxed);
 #else
     for(size_t i = 0; i < size; ++i) {
         const float sample = piano.Process();
@@ -551,6 +613,19 @@ void ServiceUsbMidi() {
 #endif
 }
 
+#if TOY_PIANO_FILTER
+// Main loop only. Page 1 shows the keys. Page 2 shows the load test: D1-D8 count the voices in
+// fours, D9-D16 the peak callback load in steps of 12.5 %. All of D9-D16 means overrun territory.
+uint32_t LedMask() {
+    const uint32_t test = test_leds.load(std::memory_order_relaxed);
+    if(!(test & 0x100u))
+        return led_mask.load(std::memory_order_relaxed);
+    const auto stats = callback_diagnostics.GetStats();
+    const uint32_t bars = stats.overruns ? 8u : std::min<uint32_t>(8u, (uint32_t(stats.load_max) + 1249u) / 1250u);
+    return ((1u << (test & 0xFFu)) - 1u) | (((1u << bars) - 1u) << 8);
+}
+#endif
+
 // Main loop only: replies over USB if a host asked, then resets into the bootloader.
 void ServiceBootloader() {
     bootloader::Service(boot_request, hw, [](uint8_t* bytes, size_t size) {
@@ -574,6 +649,9 @@ int main() {
     piano.Init(hw.seed.AudioSampleRate());
 #if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
     if(!InitializeFx()) while(true) daisy::System::Delay(100);
+#endif
+#if TOY_PIANO_FILTER
+    InitializeFilter();
 #endif
 #if TOY_PIANO_FV1
     fv1_meter.Init((SystemCoreClock / 48000u) * uint32_t(toy_piano::kBlockSize));
@@ -604,7 +682,11 @@ int main() {
         const uint32_t now = daisy::System::GetNow();
         if(now - last_led_update >= toy_piano::kLedIntervalMs) {
             last_led_update = now;
+#if TOY_PIANO_FILTER
+            const uint32_t mask = LedMask();
+#else
             const uint32_t mask = led_mask.load(std::memory_order_relaxed);
+#endif
             if(mask != previous_mask) {
                 for(size_t key = 0; key < toy_piano::kNumKeys; ++key)
                     hw.SetLed(key, (mask & (1u << key)) ? 1.0f : 0.0f);
