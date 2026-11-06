@@ -156,7 +156,7 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
     const float smooth=1-std::exp(-float(n)/(kRate*.02f));
     for(unsigned i=0;i<8;++i) {
         if(!(recording && !circular && (i==Start||i==Size||i==Speed)))
-            smoothed_[i]+=(i==Window?1-std::exp(-float(n)/(kRate*.1f)):smooth)*(ui.params.primary[i]-smoothed_[i]);
+            smoothed_[i]+=(i==Window?1-std::exp(-float(n)/(kRate*.1f)):smooth)*(ControlTarget(i)-smoothed_[i]);
         alt_[i]+=smooth*(ui.params.secondary[i]-alt_[i]);
     }
     const PcmView src=live?PcmView{bank_[active_bank_],live_length_,kRate,2}:file_view_;

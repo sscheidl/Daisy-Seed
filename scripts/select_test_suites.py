@@ -60,15 +60,16 @@ def select_suites(changed):
         'physical': shared or touched('instruments/physical-modeling/') or mod_api or fx,
         # Nebulae 0.2 links common/sd (read-only FatFs, card reader) and the DDP framing.
         'granular': shared or touched('instruments/granular/', 'common/sd/', 'diagnostics/protocol/',
-                                      'diagnostics/firmware/src/ring_buffer.h'),
+                                      'diagnostics/firmware/src/ring_buffer.h') or mod_api,
         # The looper links common/sd in its writable profile, the card reader and the DDP framing.
         'looper': shared or touched('instruments/looper/', 'common/sd/', 'diagnostics/protocol/',
                                     'diagnostics/firmware/src/ring_buffer.h') or mod_api,
         'reverb': shared or touched('effects/reverb/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),
-        'mod': shared or touched('modules/mod-on-daisy/'),
+        'mod': shared or touched('modules/mod-on-daisy/', 'instruments/granular/src/modulation.h'),
         # The editor's Streichwurst simulator and patch use the product register and tables.
-        'editor': shared or touched('editors/mod-on-daisy/', 'instruments/streichwurst/contracts/',
+        'editor': shared or touched('editors/mod-on-daisy/', 'instruments/granular/src/modulation.h',
+                                    'instruments/streichwurst/contracts/',
                                     'instruments/streichwurst/src/register.h', 'instruments/streichwurst/src/mod_targets.h',
                                     'instruments/streichwurst/include/streichwurst/param_table.h',
                                     'instruments/streichwurst/include/streichwurst/params.h',

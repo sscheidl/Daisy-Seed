@@ -2,6 +2,12 @@
 // the dispatch into SD management (hw_glue.cpp) by the boot intent. Host-tested by
 // tests/test_callback.cpp, which includes this file with fakes.
 #include "desktop_devkit.h"
+#if NEBULAE_MOD
+// Before the SD headers: on a Windows host they bring in windows.h and its SendMessage macro.
+#include "mod_on_daisy_desktop.h"
+#include "mod_bridge.h"
+#include "modulation.h"
+#endif
 #include "bootloader_daisy.h"
 #include "engine.h"
 #include "banks.h"
@@ -17,7 +23,11 @@
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
 extern "C" uint8_t __neb_file_start[],__neb_file_end[];
 namespace {
+#if NEBULAE_MOD
+const char firmware_id[]="NEBULAE-MOD-VERSION=" NEBULAE_VERSION;
+#else
 const char firmware_id[]="NEBULAE-FW-VERSION=" NEBULAE_VERSION;
+#endif
 daisy::desktop_devkit::Hardware hw;
 daisy::MidiUsbTransport usb;
 neb::MidiParser usb_parser;
@@ -48,6 +58,65 @@ bootloader::KeyCombo boot_keys;     // control timer only
 bootloader::SysExMatcher boot_sysex; // USB interrupt only
 bootloader::Request boot_request;
 neb::sysex::Collector control_sysex; // USB interrupt fills, main answers
+#if NEBULAE_MOD
+// Mod on Daisy (separate build, docs/MODULATION.md). One owner per state:
+//   mod::Engine         control timer (PollControls): Tick, CV/gate, base report
+//   controller, live    main loop: SysEx, compile, replies, monitor
+//   ui.params           audio callback, as in the regular build
+// The timer can be interrupted by audio mid-Tick, so audio never calls Engine::Apply;
+// it takes a complete frame from mod_offsets. Bases travel the other way.
+mod::Module modulation;
+const mod::InstrumentInfo mod_info=neb::columns::MakeModInfo();
+neb::modbridge::MidiTap mod_tap;                // USB interrupt fills, main drains
+neb::modbridge::TickClock mod_clock;            // control timer only
+mod::TripleBuffer<neb::columns::Frame> mod_offsets; // control timer -> audio
+mod::TripleBuffer<neb::columns::Frame> mod_bases;   // audio -> control timer
+class ModSender final : public mod::MidiSender {
+  public:
+    bool Send(const uint8_t* bytes,size_t size) override {
+        if(hUsbDeviceHS.dev_state!=USBD_STATE_CONFIGURED) return false;
+        usb.Tx(const_cast<uint8_t*>(bytes),size);
+        return true;
+    }
+};
+ModSender mod_sender;
+void InitModulation() {
+    modulation.Init(mod_info,float(neb::kRate),neb::columns::kTickFrames);
+    // Extended monitor (base values) and LFO cross modulation; Nebulae reports no modes.
+    modulation.EnableExtensions({true,true,false});
+    mod_clock.Start(daisy::System::GetNow());
+}
+// Control timer, after hw.UpdateAllControls(). hw.gate_in[].State() reads the pin and
+// leaves the edge memory of Trig() alone, so the gate 1 grain trigger keeps its pulses.
+void TickModulation(uint32_t now) {
+    if(mod_bases.Fetch()) neb::columns::ReportBases(modulation.engine,mod_bases.Front());
+    mod::adapter::ReadHardware(modulation.engine,hw);
+    const uint32_t due=mod_clock.Due(now);
+    if(!due) return;
+    for(uint32_t i=0;i<due;++i) modulation.engine.Tick(neb::columns::kTickFrames);
+    neb::columns::Frame& frame=mod_offsets.Back();
+    for(size_t t=0;t<mod::kTargets;++t) frame.value[t]=modulation.engine.Offset(t);
+    mod_offsets.Publish();
+}
+// Main loop only, bounded per pass. Everything the matrix sees is also still parsed by
+// the instrument, so nothing here can change note priority or the CC20-27 path.
+void ServiceModulation(uint32_t now) {
+    neb::modbridge::LiveEvent event;
+    for(unsigned i=0;i<32 && mod_tap.Pop(event);++i) {
+        mod::MidiMessage m;
+        m.status=event.status;m.data0=event.data0;m.data1=event.data1;
+        modulation.controller.HandleMidi(m);
+    }
+    neb::modbridge::SysExFrame frame;
+    for(unsigned i=0;i<2 && mod_tap.Pop(frame);++i) {
+        mod::MidiMessage m;
+        m.status=0xF0;m.sysex=frame.body;m.sysex_size=frame.size;
+        modulation.controller.HandleMidi(m);
+    }
+    if(mod_tap.Overflowed()) modulation.live.AllNotesOff();  // a Note Off may be among the lost
+    modulation.controller.Service(now,mod_sender);
+}
+#endif
 
 // ---- SD: one owner (main loop), read-only FatFs R0.16 from common/sd ----
 FATFS fs;
@@ -65,6 +134,9 @@ void ReceiveUsb(uint8_t* bytes,size_t size,void*) {
     for(size_t i=0;i<size;++i) {
         if(boot_sysex.Byte(bytes[i])) boot_request.Set(bootloader::Request::kSysEx);
         control_sysex.Byte(bytes[i]);
+#if NEBULAE_MOD
+        mod_tap.Byte(bytes[i]);
+#endif
         if(usb_parser.Byte(bytes[i],event) && !usb_events.Push(event))
             usb_overflow.store(true,std::memory_order_release);
     }
@@ -87,6 +159,9 @@ void PollControls(void*) {
     if(!controls.Push(f)) control_panic.store(true,std::memory_order_release);
     card.store(hw.sd_detect.Pressed(),std::memory_order_relaxed);
     if(hw.gate_in[0].Trig()) gate_pulse.store(true,std::memory_order_relaxed);
+#if NEBULAE_MOD
+    TickModulation(f.ms);
+#endif
 }
 void Audio(daisy::AudioHandle::InputBuffer in,daisy::AudioHandle::OutputBuffer out,size_t n) {
     const uint32_t start=DWT->CYCCNT;
@@ -102,7 +177,15 @@ void Audio(daisy::AudioHandle::InputBuffer in,daisy::AudioHandle::OutputBuffer o
     if(gate_pulse.exchange(false,std::memory_order_relaxed) && engine->trigger_mode) engine->TriggerGrain();
     engine->occupied=uint16_t(occupied.load(std::memory_order_relaxed));
     engine->selected_bank=shown_bank.load(std::memory_order_relaxed);
+#if NEBULAE_MOD
+    if(mod_offsets.Fetch()) engine->SetControlOffsets(mod_offsets.Front().value);
+#endif
     engine->Process(in[0],in[1],out[0],out[1],unsigned(n));
+#if NEBULAE_MOD
+    neb::columns::Frame& bases=mod_bases.Back();
+    for(size_t t=0;t<mod::kTargets;++t) bases.value[t]=engine->ui.params.primary[t];
+    mod_bases.Publish();
+#endif
     // SD management requested: fade to silence within one block, then stay silent.
     if(fade_out.load(std::memory_order_acquire)) {
         const float step=1.f/float(n?n:1);
@@ -132,7 +215,12 @@ void ServiceUsb() {
     if(usb_overflow.exchange(false,std::memory_order_acquire)) panic();
     const bool connected=hUsbDeviceHS.dev_state==USBD_STATE_CONFIGURED;
     static bool was_connected=false;
-    if(was_connected && !connected) {panic();for(auto& v:sent_notes) v=false;}
+    if(was_connected && !connected) {
+        panic();for(auto& v:sent_notes) v=false;
+#if NEBULAE_MOD
+        modulation.live.AllNotesOff();
+#endif
+    }
     was_connected=connected;
     neb::Midi v;
     if(recovering) {
@@ -259,6 +347,11 @@ void PerformanceStep(uint32_t now) {
     ServiceBootloader();
     ServiceControl();
     if(perf.share) {perf.share=false;PrepareShare();return;}
+#if NEBULAE_MOD
+    // After the NB and BL replies, and never during PREPARE_SHARE: a monitor frame must
+    // not hold the transmit path while the host's note offs go out.
+    ServiceModulation(now);
+#endif
     const unsigned selected=request.exchange(0,std::memory_order_acquire);
     if(selected) perf.pending=selected; // latest wins
     // Card insertion/removal. Removal clears the tables; Live keeps working.
@@ -322,6 +415,12 @@ void PerformanceStep(uint32_t now) {
     }
 }
 
+// The bank and slot a restart brought back from SD management; the first scan loads them.
+void ArmRestore(const neb::BootIntent& intent) {
+    shown_bank.store(intent.bank);
+    perf.restore_slot=intent.slot;
+    perf.mount_pending=CardPresent();perf.initial=true;
+}
 void InitPerformance(const neb::BootIntent& intent) {
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(neb::kBlock);
@@ -342,9 +441,10 @@ void InitPerformance(const neb::BootIntent& intent) {
     ro.service=[] {ServiceUsb();};  // USB MIDI between sectors; never re-enters FatFs
     ro.abort=neb_sd_abort;          // RCC-reset abort, hardware-tested in the card reader
     if(ro_sd_init(&ro)!=0) while(true) {}
-    shown_bank.store(intent.bank);
-    perf.restore_slot=intent.slot;
-    perf.mount_pending=CardPresent();perf.initial=true;
+    ArmRestore(intent);
+#if NEBULAE_MOD
+    InitModulation();  // before USB and the control timer start
+#endif
     daisy::MidiUsbTransport::Config cfg;cfg.periph=daisy::MidiUsbTransport::Config::EXTERNAL;
     usb.Init(cfg);usb.StartRx(ReceiveUsb,nullptr);usb_ready=true;
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;DWT->CYCCNT=0;DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
