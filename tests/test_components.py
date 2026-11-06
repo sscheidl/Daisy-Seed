@@ -153,6 +153,7 @@ class ComponentTests(unittest.TestCase):
             self.assertRegex(manifest.read_version(data['components'][key]['version']), r'^\d+\.\d+\.\d+$')
         self.assertIn('saturation', data['components']['drive']['depends'])
         self.assertIn('fx-contract', data['components']['stereo-delay']['depends'])
+        self.assertIn('filter-core', data['products']['toy-piano-filter']['components'])
         self.assertEqual(data['components']['saturation']['version']['path'], 'common/dsp/saturation.h')
         mk = (ROOT / 'projects.mk').read_text()
         for project in ('step-seq', 'acid-303', 'drive-fx', 'delay-fx', 'acid-seq'):
@@ -204,9 +205,11 @@ class ComponentTests(unittest.TestCase):
             'effects/drive/include/drive/drive.h': ('drive', 'fx', 'acidseq'),
             'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'acidseq', 'streichwurst'),
             'sequencers/acid-seq/src/main.cpp': ('acidseq',),
+            # The filter core and its test product.
+            'modules/filter-core/include/filter_core/ladder.h': ('filter', 'toy'),
             # Shared saturation: its consumers only, no longer every suite.
-            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
-            'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
+            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
+            'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
             'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst'),
             'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor', 'streichwurst'),

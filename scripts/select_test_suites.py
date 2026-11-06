@@ -56,7 +56,7 @@ def select_suites(changed):
     delay = acid_common or dsp or fx_contract or fixtures or touched('effects/stereo-delay/')
     suites = {
         'bootloader': shared or touched('common/bootloader/'),
-        'toy': shared or touched('instruments/toy-piano/') or mod_api or fx or dsp,
+        'toy': shared or touched('instruments/toy-piano/', 'modules/filter-core/') or mod_api or fx or dsp,
         'physical': shared or touched('instruments/physical-modeling/') or mod_api or fx,
         # Nebulae 0.2 links common/sd (read-only FatFs, card reader) and the DDP framing.
         'granular': shared or touched('instruments/granular/', 'common/sd/', 'diagnostics/protocol/',
@@ -78,6 +78,7 @@ def select_suites(changed):
         'diagnostics': shared or touched('diagnostics/', 'common/sd/reader/'),
         'fx': shared or fx or dsp or acid_fx,
         'sd': shared or touched('common/sd/', 'scripts/check-sd-symbols.py'),
+        'filter': shared or dsp or touched('modules/filter-core/'),
         'stepseq': stepseq,
         'acid303': acid303,
         'drive': drive,

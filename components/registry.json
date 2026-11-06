@@ -235,6 +235,18 @@
         "name": "STEREO_DELAY_VERSION"
       }
     },
+    "filter-core": {
+      "kind": "dsp",
+      "source": "modules/filter-core/include",
+      "depends": [
+        "fast-math"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "modules/filter-core/include/filter_core/version.h",
+        "name": "FILTER_CORE_VERSION"
+      }
+    },
     "fast-math": {
       "kind": "dsp",
       "source": "common/dsp/fastmath.h",
@@ -573,6 +585,28 @@
         "mod-on-daisy",
         "callback-diagnostics",
         "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "toy-piano-filter": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_FILTER_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/filter",
+      "image": "ToyPianoFilter",
+      "marker": "TOYPIANO-FILTER-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "filter-core",
+        "mod-on-daisy",
+        "callback-diagnostics",
         "bootloader-entry"
       ],
       "panels": [

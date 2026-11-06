@@ -32,6 +32,7 @@ developed independently and reintegrated through their documented contracts.
 | [Audrey 3 v0.1.0](instruments/audrey-3/) | `instruments/audrey-3/` | Port of the Synthux Academy Audrey II feedback synth (MIT), bit-identical to upstream in a host render, with a second pot page and MIDI notes and CCs. Links ReverbSc and Tone from DaisySP-LGPL (LGPL-2.1). Hardware NOT MEASURED |
 | [Drive v0.1.0](effects/drive/) | `effects/drive/` | Soft/Hard/Tape/Fold saturation shared with Tape FX (`common/dsp/saturation.h`, Tape FX images byte-identical after the move), tone, auto level within 1 dB, wet-only FX contract; standalone `drive-fx` firmware; host/sanitizer/ARM checks pass, hardware untested |
 | [Stereo Delay v0.1.0](effects/stereo-delay/) | `effects/stereo-delay/` | Ping-pong and stereo L/R delay, free or synced up to 12 s (dotted whole at 30 BPM, 4.6 MB in SDRAM), feedback 95 % bounded, damping, host tail handling; standalone `delay-fx` firmware with MIDI clock; host/sanitizer/ARM checks pass, hardware untested |
+| [Filter core v0.1.0](modules/filter-core/) | `modules/filter-core/` | Reusable zero-delay-feedback ladder: closed-form solve, eight modes by tap mixing, self-oscillation calibrated to within 1 dB over cutoff and mode, saturation inside the loop with resonance pushback, Age (seeded tolerance, drift, jitter), audio-rate cutoff input, cheaper held path; host/sanitizer checks pass, hardware untested |
 | [Echo Delay v0.1.0](effects/echo-delay/) | `effects/echo-delay/` | The tape-like echo of the Audrey II, 5 s per side, firmware `echo-delay-fx`, used by Audrey 3. Hardware NOT MEASURED |
 | [SC Reverb v0.1.0](effects/sc-reverb/) | `effects/sc-reverb/` | ReverbSc from DaisySP-LGPL (LGPL-2.1) under the FX contract, firmware `sc-reverb-fx`, used by Audrey 3. Hardware NOT MEASURED |
 | [Acid Seq v0.1.0](sequencers/acid-seq/) | `sequencers/acid-seq/` | Product firmware `acid-seq` composed of the four components above: sequencer → voice → Drive → Delay → soft limiter, voice shared with MIDI channel 2, delay synced to the sequencer, all components over SQ; end-to-end golden; host/sanitizer/ARM checks pass, hardware untested, no release ([work order](docs/acid-seq/ARBEITSAUFTRAG.md)) |
@@ -64,6 +65,7 @@ Daisy-Seed/
 │   ├── sc-reverb/          # ReverbSc component (LGPL-2.1) and standalone firmware
 │   └── granular/           # effect plan
 ├── modules/
+│   ├── filter-core/        # reusable multimode ladder filter: include, tests, tools
 │   └── mod-on-daisy/       # reusable modulation matrix: include, tests, bench firmware, tools
 ├── editors/
 │   └── mod-on-daisy/       # grid editor: JUCE standalone (src/), browser variant (web/)
