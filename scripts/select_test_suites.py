@@ -22,7 +22,7 @@ def select_suites(changed):
     # Shared saturation curves (common/dsp/): Tape FX, its Toy Piano build and Drive.
     dsp = touched('common/dsp/')
     # Acid Seq effects: their wet-only cores and adapters run in the shared FX test.
-    acid_fx = touched('effects/drive/', 'effects/stereo-delay/')
+    acid_fx = touched('effects/drive/', 'effects/stereo-delay/', 'effects/filter-fx/', 'modules/filter-core/')
     fx_contract = touched('common/audio/', 'tests/fx/')
     # The SQ protocol contract (vectors, parameter IDs) is shared by the firmware cores,
     # the product and the editor; the reference fixtures by Drive, Delay and the product.
@@ -54,6 +54,9 @@ def select_suites(changed):
     acid303 = acid_common or fixtures or touched('instruments/acid-303/') # renders the 303 fixture
     drive = acid_common or dsp or fx_contract or fixtures or touched('effects/drive/')
     delay = acid_common or dsp or fx_contract or fixtures or touched('effects/stereo-delay/')
+    # Filter core and Filter FX: the effect embeds Drive and the LFO shapes of Mod on Daisy.
+    filter_fx = (acid_common or dsp or fx_contract or mod_api or
+                 touched('modules/filter-core/', 'effects/filter-fx/', 'effects/drive/'))
     suites = {
         'bootloader': shared or touched('common/bootloader/'),
         'toy': shared or touched('instruments/toy-piano/') or mod_api or fx or dsp,
@@ -70,6 +73,7 @@ def select_suites(changed):
         'mod': shared or touched('modules/mod-on-daisy/'),
         # The editor's Streichwurst simulator and patch use the product register and tables.
         'editor': shared or touched('editors/mod-on-daisy/', 'instruments/streichwurst/contracts/',
+                                    'effects/filter-fx/contracts/', 'effects/filter-fx/include/filter_fx/param_table.h',
                                     'instruments/streichwurst/src/register.h', 'instruments/streichwurst/src/mod_targets.h',
                                     'instruments/streichwurst/include/streichwurst/param_table.h',
                                     'instruments/streichwurst/include/streichwurst/params.h',
@@ -82,6 +86,7 @@ def select_suites(changed):
         'acid303': acid303,
         'drive': drive,
         'delay': delay,
+        'filter': filter_fx,
         # Any change to one of its cores also tests the composed product.
         'acidseq': stepseq or acid303 or drive or delay or touched('sequencers/acid-seq/'),
         'streichwurst': streichwurst,
@@ -91,7 +96,7 @@ def select_suites(changed):
         suites = {key: True for key in suites}
     suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape',
                                                     'stepseq', 'acid303', 'drive', 'delay', 'acidseq',
-                                                    'streichwurst'))
+                                                    'streichwurst', 'filter'))
     return suites
 
 

@@ -67,6 +67,17 @@ function connect(sim, { drop = 0 } = {}) {
     ambientSim.proc.stdin.write('Q\n');
   }
   console.log('PASS Ambient browser client: FX and Toy Piano identities, device-first read and rate endpoints');
+  const filterSim = startSim('filter-fx');
+  const { client: filterClient } = connect(filterSim);
+  await filterClient.readAll();
+  assert.strictEqual(filterClient.identity.product, 'filter-fx');
+  assert.strictEqual(filterClient.components.length, 1);
+  const cutoff = () => filterClient.component('filter-fx').parameters.find((p) => p.key === 'cutoff');
+  assert.strictEqual(cutoff().value, 100);
+  assert.strictEqual(await filterClient.setParam('filter-fx', 'cutoff', 60.5), 60.5);
+  assert.strictEqual(cutoff().value, 60.5);
+  filterSim.proc.stdin.write('Q\n');
+  console.log('PASS Filter FX browser client: identity, device-first read and parameter write');
   const sim = startSim('acid-seq');
   const { client, sent } = connect(sim, { drop: 1 }); // the first request is lost: retried
   await client.readAll();

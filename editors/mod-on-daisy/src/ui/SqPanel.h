@@ -158,10 +158,12 @@ class SqPanel : public juce::Component {
                              : U("This device has no CV outputs."),
                           juce::dontSendNotification);
         const bool ambient = s_.HasComponent("ambient-reverb");
-        const Tab* tabs = ambient ? kAmbientTabs : (sw ? kStreichwurstTabs : kAcidTabs);
-        if(sw != showing_streichwurst_ || ambient != showing_ambient_) {
+        const bool filter = s_.HasComponent("filter-fx");
+        const Tab* tabs = filter ? kFilterTabs : (ambient ? kAmbientTabs : (sw ? kStreichwurstTabs : kAcidTabs));
+        if(sw != showing_streichwurst_ || ambient != showing_ambient_ || filter != showing_filter_) {
             showing_streichwurst_ = sw;
             showing_ambient_ = ambient;
+            showing_filter_ = filter;
             tab_ = 0;
             rebuild_ = true;
         }
@@ -327,8 +329,11 @@ class SqPanel : public juce::Component {
                                                  {"Global", "streichwurst", ""}};
     static constexpr Tab kAmbientTabs[5] = {{"Ambient FX", "ambient-reverb", ""},
         {"", "", ""}, {"", "", ""}, {"", "", ""}, {"", "", ""}};
+    static constexpr Tab kFilterTabs[5] = {{"Filter FX", "filter-fx", ""},
+        {"", "", ""}, {"", "", ""}, {"", "", ""}, {"", "", ""}};
     const Tab& Current() const {
-        return (showing_ambient_ ? kAmbientTabs : (showing_streichwurst_ ? kStreichwurstTabs : kAcidTabs))[tab_];
+        return (showing_filter_ ? kFilterTabs
+                                : (showing_ambient_ ? kAmbientTabs : (showing_streichwurst_ ? kStreichwurstTabs : kAcidTabs)))[tab_];
     }
     static constexpr const char* kCalDefaults[6] = {"2048", "-409.6", "2048", "410", "0", "4095"};
     static bool MidiKey(const std::string& k) {
@@ -506,7 +511,7 @@ class SqPanel : public juce::Component {
     std::optional<AcidPatch> pending_;
     std::unique_ptr<juce::FileChooser> chooser_;
     int selected_ = 0, tab_ = 0;
-    bool rebuild_ = true, showing_streichwurst_ = false, showing_ambient_ = false;
+    bool rebuild_ = true, showing_streichwurst_ = false, showing_ambient_ = false, showing_filter_ = false;
 };
 
 } // namespace editor::ui

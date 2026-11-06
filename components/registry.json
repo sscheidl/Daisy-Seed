@@ -235,6 +235,34 @@
         "name": "STEREO_DELAY_VERSION"
       }
     },
+    "filter-core": {
+      "kind": "dsp",
+      "source": "modules/filter-core/include",
+      "depends": [
+        "fast-math"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "modules/filter-core/include/filter_core/version.h",
+        "name": "FILTER_CORE_VERSION"
+      }
+    },
+    "filter-fx": {
+      "kind": "effect",
+      "source": "effects/filter-fx/include",
+      "depends": [
+        "filter-core",
+        "drive",
+        "mod-on-daisy",
+        "fast-math",
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/filter-fx/src/version.h",
+        "name": "FILTER_FX_VERSION"
+      }
+    },
     "fast-math": {
       "kind": "dsp",
       "source": "common/dsp/fastmath.h",
@@ -615,6 +643,28 @@
       "device_id": "delay-fx",
       "components": [
         "stereo-delay",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "filter-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/filter-fx/src/version.h",
+        "name": "FILTER_FX_FIRMWARE_VERSION"
+      },
+      "directory": "effects/filter-fx/build",
+      "image": "FilterFx",
+      "marker": "FILTER-FX-VERSION=",
+      "device_id": "filter-fx",
+      "components": [
+        "filter-fx",
+        "filter-core",
+        "drive",
         "bootloader-entry"
       ],
       "panels": [

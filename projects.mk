@@ -89,3 +89,8 @@ BUILDABLE_PROJECTS += toy-piano-fv1
 PROJECT_DIR_toy-piano-fv1 := instruments/toy-piano
 PROJECT_ARGS_toy-piano-fv1 := FV1=1
 PROJECT_STATUS_toy-piano-fv1 := buildable
+# Filter FX: filter core (modules/filter-core) and Drive as a stereo effect; ARM build verified 2026-11-06.
+PROJECTS += filter-fx
+BUILDABLE_PROJECTS += filter-fx
+PROJECT_DIR_filter-fx := effects/filter-fx
+PROJECT_STATUS_filter-fx := buildable

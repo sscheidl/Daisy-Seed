@@ -3,6 +3,7 @@
 #include "../../effects/reverb/src/fx_adapter.h"
 #include "../../effects/tape-fx/src/tape_fx.h"
 #include "../../effects/drive/include/drive/drive.h"
+#include "../../effects/filter-fx/include/filter_fx/filter_fx.h"
 #include "../../effects/stereo-delay/include/stereo_delay/delay.h"
 #include <cassert>
 #include <cstdio>
@@ -89,6 +90,7 @@ int main() {
     Contract<seed::fx::AmbientReverb>();
     Contract<seed::fx::TapeFx>();
     Contract<seed::fx::Drive>(false);
+    Contract<seed::fx::FilterFx>(false);
     Contract<seed::fx::StereoDelay>();
     TorusReference();
     {
@@ -102,5 +104,5 @@ int main() {
         assert(fx.Process({&left, &right, &out_left, &out_right, 1}));
         assert(out_left == 0 && out_right == 0);
     }
-    std::puts("PASS: all five FX adapters (Torus, Ambient, Tape, Drive, Stereo Delay), wet-only routing, bounds, tails, zero audio allocations and exact Torus reference");
+    std::puts("PASS: all six FX adapters (Torus, Ambient, Tape, Drive, Filter FX, Stereo Delay), wet-only routing, bounds, tails, zero audio allocations and exact Torus reference");
 }

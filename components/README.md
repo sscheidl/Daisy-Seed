@@ -53,4 +53,8 @@ version headers; the product `streichwurst` (version `src/version.h`) additional
 Mod on Daisy, the SQ device and the queues from `step-seq` as well as the bootloader entry.
 The three panels depend on the Streichwurst parameter contract.
 
+**Filter** (2026-11-06): `filter-core` (kind `dsp`, header-only, `modules/filter-core`) and
+`filter-fx` (kind `effect`). The effect depends on `filter-core`, `drive` and the LFO shapes of
+`mod-on-daisy`. The product `filter-fx` embeds them and the bootloader entry.
+
 Audio contract and exact limits: [MODULAR_COMPONENTS.md](../docs/MODULAR_COMPONENTS.md).
