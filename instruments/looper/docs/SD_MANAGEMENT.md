@@ -16,17 +16,16 @@ GEMESSEN 2026-10-31). Use it to copy WAV files into `looper/loops/` or to back u
 | Path | Content | State |
 | --- | --- | --- |
 | 2 (this step) | Second boot personality with the shared card reader; loop persistence unchanged on libDaisy's FatFs R0.12c (FAT32) | **done in v0.5.0**, NICHT GEMESSEN |
-| 1 (later, separate PR) | Writable variant of the shared driver in `common/sd` (FatFs R0.16 with the patch-2 CVE fixes, exFAT, long names) for `loop.wav`, with its own symbol policy and power-loss tests | open; needs a decision on `common/sd/PLAN.md` S1/S4, because that driver is read-only by design |
+| 1 | Writable profile of the shared driver in `common/sd` (FatFs R0.16 with the patch-2 CVE fixes, exFAT, long names) for `loop.wav`, with its own symbol policy and power-loss tests | **done in v0.6.0**, host-tested, NOT MEASURED on hardware |
 
-Until path 1 is done the card must be **FAT32**. SDXC cards (64 GB and larger) come as
-exFAT and have to be reformatted to FAT32 for the looper; Windows itself can read and
-write both through the card reader.
+Since v0.6.0 the card can be **FAT32 or exFAT**, for the looper as for Windows through the
+card reader. SD management itself did not change.
 
 ## Two boot personalities, one image
 
 | Personality | USB on J7 | Card owner | Audio |
 | --- | --- | --- | --- |
-| PERFORMANCE (power-on, reset, any error) | USB-MIDI: CCs, bootloader request, control SysEx | the looper (libDaisy FatFs, `loop.wav`, `loops/`) | running |
+| PERFORMANCE (power-on, reset, any error) | USB-MIDI: CCs, bootloader request, control SysEx | the looper (`common/sd` writable profile, `loop.wav`, `loops/`) | running |
 | SD MANAGEMENT | USB CDC (DDP v1) + USB mass storage, product `Looper SD`, bcdDevice 4.00, serial suffix `L` | the card reader, Windows only after an explicit `READER a=SHARE` | stopped |
 
 The switch is a software reset of the same image, never a USB re-initialisation at run

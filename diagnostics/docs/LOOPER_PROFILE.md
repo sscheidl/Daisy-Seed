@@ -33,7 +33,7 @@ Protocol: [instruments/looper/docs/SD_MANAGEMENT.md](../../instruments/looper/do
 | Refused while | recording, sample loading | recording, overdub, resample, WAV import |
 | Info rows | bank / sample | loop length and save state ("saved in looper/loop.wav", "not saved yet", "saving …", last card write failure) |
 | Return | `NEB a=PERFORM`, banks rescanned | `LOOPER a=PERFORM`, `loop.wav` reloaded |
-| Card format | FAT32 or exFAT | FAT32 (exFAT for the looper's own writes is a later firmware step) |
+| Card format | FAT32 or exFAT | FAT32 or exFAT (firmware 0.6.0 and later; 0.5.x: FAT32 only) |
 
 The saved report contains `looper` (LOOPER status line in SD management) and
 `nebulae_workflow` with `"profile": "Looper"` (the key keeps its 0.5.0 name).

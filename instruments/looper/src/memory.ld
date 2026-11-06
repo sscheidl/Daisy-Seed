@@ -7,7 +7,8 @@ SECTIONS
        management responder. */
     .looper_axi (NOLOAD) : ALIGN(32) { *(.looper_axi) } > SRAM
 }
-/* Main stack: DTCM above .bss. v0.4.0 left 14.7 KiB; keep at least 12 KiB. */
+/* Main stack: DTCM above .bss. v0.4.0 left 14.7 KiB, v0.6.0 (FatFs objects and buffers in
+   .bss) leaves 15.9 KiB, 13.3 KiB in the MOD build; keep at least 12 KiB. */
 ASSERT(_ebss <= 0x20020000 - 12K, "DTCM stack reserve below 12 KiB")
 /* Boot intent (src/boot_intent.h) lives at a fixed backup SRAM address above
    libDaisy's boot_info, which the external bootloader reads. */
