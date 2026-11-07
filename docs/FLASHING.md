@@ -6,6 +6,11 @@ substitute `PROJECT=reverb-fx` for Ambient Reverb.
 Each project has its own BIN; the last flashed application runs on the kit.
 Runtime switching between instruments is not implemented.
 
+**Which file to flash:** images handed out for hardware or listening tests are taken from
+the firmware store `firmware/<product-id>/<version>+<commit>/` in the main checkout
+([FIRMWARE_BINARIES.md](FIRMWARE_BINARIES.md)); compare the SHA-256 with the test report.
+The `build/` paths below are what a local `make` produces and may be stale or deleted.
+
 ## Two USB-C connectors
 
 * **Seed3 module:** used for STM32 ROM DFU and the one-time Daisy bootloader installation.
