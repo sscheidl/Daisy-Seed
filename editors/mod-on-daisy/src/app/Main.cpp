@@ -1,7 +1,8 @@
-// Mod on Daisy Editor, JUCE standalone (GUI.md § 3, D6: Windows first, VST3 later).
-//   ModOnDaisyEditor                      normal start, MIDI ports only
-//   ModOnDaisyEditor --simulators         also lists the simulators (development, no Daisy)
-//   ModOnDaisyEditor --selftest <dir>     drives the window against the simulator, checks
+// Daisy Control Panel, JUCE standalone (GUI.md § 3; docs/dcp/SD_PAGE_WORK_ORDER.md): the
+// modulation matrix page and the SD card page in one app.
+//   "Daisy Control Panel"                 normal start, MIDI ports only
+//   "Daisy Control Panel" --simulators    also lists the simulators (development, no Daisy)
+//   "Daisy Control Panel" --selftest <dir> drives the window against the simulators, checks
 //                                         the device CRC after every step, writes screenshots
 #include "../ui/EditorComponent.h"
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -9,15 +10,16 @@
 namespace {
 using namespace editor;
 using editor::ui::EditorComponent;
+constexpr const char* kAppName = "Daisy Control Panel";
 
 class MainWindow : public juce::DocumentWindow {
   public:
     MainWindow(const juce::String& name, bool with_simulators)
         : DocumentWindow(name, ui::colour::bg, DocumentWindow::allButtons) {
         setUsingNativeTitleBar(true);
-        setContentOwned(new EditorComponent(with_simulators), true);
+        setContentOwned(new EditorComponent(with_simulators, true), true);
         setResizable(true, true);
-        setResizeLimits(1100, 860, 4000, 3000);
+        setResizeLimits(1200, 860, 4000, 3000);
         centreWithSize(getWidth(), getHeight());
     }
     EditorComponent& Editor() { return *static_cast<EditorComponent*>(getContentComponent()); }
@@ -34,6 +36,7 @@ class SelfTest {
         dir_.createDirectory();
         log_ = dir_.getChildFile("selftest.txt");
         log_.replaceWithText({});
+        e_.sd_autosave_dir = dir_.getChildFile("autosave");
         ToyPiano();
         PhysicalModeling();
         Corrections();
@@ -41,10 +44,18 @@ class SelfTest {
         ProjectPatch();
         AcidSeq();
         Streichwurst();
+        SdNoInstrument();
+        SdCycle("Simulator: Nebulae MOD", true, true, "dcp-nebulae-mod");
+        SdCycle("Simulator: Looper MOD", true, false, "dcp-looper-mod");
+        SdCycle("Simulator: Nebulae", false, false, "dcp-nebulae");
+        SdCycle("Simulator: Looper", false, false, "dcp-looper");
+        SdLooperSaving();
+        SdInterruption();
+        SdPluginNote();
         if(failures_)
             Say("FAIL: " + juce::String(failures_) + " checks");
         else
-            Say("PASS: JUCE editor against the simulated device (screenshots in " + dir_.getFullPathName() + ")");
+            Say("PASS: Daisy Control Panel against the simulated devices (screenshots in " + dir_.getFullPathName() + ")");
         return failures_ ? 1 : 0;
     }
 
@@ -428,6 +439,205 @@ class SelfTest {
         Say("PASS Streichwurst: SQ pages by contract page, matrix alongside, edits, song patch with matrix");
     }
 
+    // ------------------------------------------------------------------ SD card page
+    // Steps the manual clock until the predicate holds; false after max_ms of simulated time.
+    bool Wait(const std::function<bool()>& pred, uint32_t max_ms) {
+        for(uint32_t t = 0; t < max_ms; t += 10) {
+            if(pred())
+                return true;
+            e_.Step(10);
+            e_.RefreshNow();
+        }
+        return pred();
+    }
+
+    // A Toy Piano has no SD card protocol: the page says so and offers nothing.
+    void SdNoInstrument() {
+        e_.ConnectTo(PortIndex("Simulator: Toy Piano"));
+        SELFTEST_CHECK(Settle());
+        e_.Step(2500); // the probe (1 s) and its backoff
+        e_.RefreshNow();
+        sd::SdShareWorkflow& wf = e_.GetSdShare();
+        SELFTEST_CHECK(wf.GetPhase() == sd::Phase::NotFound && !e_.SdPageShown() && e_.NoMatrixText().isEmpty());
+        e_.ShowSdPage(true);
+        e_.RefreshNow();
+        ui::SdSharePanel& page = e_.GetSdPanel();
+        SELFTEST_CHECK(page.Heading().startsWith("No Nebulae or Looper found"));
+        SELFTEST_CHECK(!page.ShareButton().isEnabled() && !page.ReturnButton().isEnabled() && !page.AckButton().isEnabled());
+        SELFTEST_CHECK(page.RowText(0) == juce::String::fromUTF8("–") && page.AllVisibleInside());
+        Shot("dcp-sd-page-idle.png");
+        e_.ShowSdPage(false);
+        e_.Disconnect();
+        Say("PASS SD page: Toy Piano shows no instrument, matrix page unchanged");
+    }
+
+    // Connect, SHARE (with CONFIRM where the instrument needs it), SHARED, eject, RETURN,
+    // patch restored, matrix live again. `matrix`: a MOD build with the matrix on the port.
+    void SdCycle(const char* port, bool matrix, bool confirm_case, const char* shot) {
+        sd::SdShareWorkflow& wf = e_.GetSdShare();
+        ui::SdSharePanel& page = e_.GetSdPanel();
+        e_.ConnectTo(PortIndex(port));
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
+        sd::SimInstrument* sim = e_.GetSdSimulator();
+        SELFTEST_CHECK(sim != nullptr);
+        if(!sim)
+            return;
+        if(confirm_case)
+            sim->live = true; // Nebulae: a Live loop only in RAM
+        uint32_t before = 0;
+        if(matrix) {
+            SELFTEST_CHECK(Settle() && e_.GetSession().Connected());
+            e_.GetSession().EditDepth(0 * 8 + 1, 40, true); // LFO 1 -> second column
+            SELFTEST_CHECK(Settle() && InSync());
+            before = e_.GetModel().Crc();
+            SELFTEST_CHECK(!e_.SdPageShown() && e_.NoMatrixText().isEmpty());
+            e_.ShowSdPage(true);
+        } else {
+            // D4: no matrix on this firmware: the app switches to the SD card page by itself.
+            SELFTEST_CHECK(Wait([&] { return e_.SdPageShown(); }, 4000));
+            SELFTEST_CHECK(!e_.GetSession().Connected() && e_.PortOpen());
+            e_.ShowSdPage(false);
+            e_.RefreshNow();
+            SELFTEST_CHECK(e_.NoMatrixText().contains("has no modulation matrix"));
+            e_.ShowSdPage(true);
+        }
+        e_.Step(1200); // a STATUS poll with the Live loop flag
+        e_.RefreshNow();
+        SELFTEST_CHECK(page.ShareButton().isEnabled() && !page.ReturnButton().isEnabled() && !page.AckButton().isEnabled());
+        SELFTEST_CHECK(!page.EjectHelpButton().isEnabled() && !page.ConfirmButton().isVisible() && !page.CancelButton().isVisible());
+        SELFTEST_CHECK(page.Heading().startsWith("Performance") && page.Heading().contains("SIMULATION"));
+        SELFTEST_CHECK(page.RowText(0) == juce::String(wf.GetProfile().display_name) && page.RowText(2).startsWith("USB-MIDI"));
+        SELFTEST_CHECK(page.RowText(3) == "card inserted" && page.RowText(5).contains("not a bench measurement"));
+        SELFTEST_CHECK(page.AllVisibleInside());
+        if(wf.GetProfile().id == sd::Instrument::Looper)
+            SELFTEST_CHECK(page.RowLabel(4) == "Loop:" && page.RowText(4).contains("saved in looper/loop.wav")
+                           && page.ReturnButton().getButtonText() == "Return to the Looper");
+        else
+            SELFTEST_CHECK(page.RowLabel(4) == "Bank / sample:" && page.RowText(4).contains("bank 1 of 3")
+                           && page.ReturnButton().getButtonText() == "Return to Nebulae");
+        page.ShareButton().onClick();
+        if(confirm_case) {
+            SELFTEST_CHECK(Wait([&] { return wf.NeedsConfirmation(); }, 3000));
+            SELFTEST_CHECK(page.ConfirmButton().isVisible() && page.CancelButton().isVisible() && !page.ShareButton().isEnabled());
+            SELFTEST_CHECK(page.WarningText().contains("LOSES") && page.ConfirmButton().getButtonText() == "Discard Live loop and share");
+            SELFTEST_CHECK(page.AllVisibleInside());
+            Shot((juce::String(shot) + "-confirm.png").toRawUTF8());
+            page.CancelButton().onClick();
+            e_.Step(50);
+            e_.RefreshNow();
+            SELFTEST_CHECK(wf.GetPhase() == sd::Phase::Performance && sim->restarts == 0 && !page.ConfirmButton().isVisible());
+            SELFTEST_CHECK(e_.GetSession().Connected() == matrix); // cancelling kept the matrix
+            page.ShareButton().onClick();
+            SELFTEST_CHECK(Wait([&] { return wf.NeedsConfirmation(); }, 3000));
+            page.ConfirmButton().onClick();
+        }
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Shared; }, 25000));
+        e_.RefreshNow();
+        SELFTEST_CHECK(!e_.GetSession().Connected() && !e_.PortOpen() && sim->restarts == 1);
+        SELFTEST_CHECK(page.Heading().startsWith("SD management") && page.MessageText().contains("Windows owns the card"));
+        SELFTEST_CHECK(page.EjectHelpButton().isEnabled() && !page.ReturnButton().isEnabled() && !page.ShareButton().isEnabled());
+        SELFTEST_CHECK(page.RowText(2).startsWith("USB CDC") && page.RowText(3) == "card reader: SHARED" && page.AllVisibleInside());
+        if(matrix)
+            SELFTEST_CHECK(e_.LastAutosave().existsAsFile() && e_.SdRestorePending());
+        else
+            SELFTEST_CHECK(!e_.SdRestorePending());
+        Shot((juce::String(shot) + "-shared.png").toRawUTF8());
+        sim->Management().ReaderEject(); // Windows "Safely remove"
+        SELFTEST_CHECK(Wait([&] { return page.ReturnButton().isEnabled(); }, 3000));
+        SELFTEST_CHECK(page.MessageText().contains("ejected") && wf.Ejected());
+        page.ReturnButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 25000));
+        SELFTEST_CHECK(sim->restarts == 2 && sim->GetPersonality() == sd::SimInstrument::Personality::Perf);
+        SELFTEST_CHECK(page.MessageText().contains(matrix && wf.GetProfile().id == sd::Instrument::Looper ? "loop.wav" : "Back in performance"));
+        if(matrix) {
+            SELFTEST_CHECK(Wait([&] { return e_.GetSession().Connected() && !e_.SdRestorePending(); }, 5000));
+            SELFTEST_CHECK(Settle() && InSync() && e_.GetModel().Crc() == before && e_.GetModel().Depth(1) == 40);
+            SELFTEST_CHECK(e_.LogText().contains("restored") || e_.LogText().contains("confirmed"));
+        } else {
+            e_.Step(1500);
+            SELFTEST_CHECK(e_.PortOpen() && !e_.GetSession().Connected());
+        }
+        e_.ShowSdPage(false);
+        e_.RefreshNow();
+        Shot((juce::String(shot) + "-matrix.png").toRawUTF8());
+        e_.Disconnect();
+        e_.Step(100);
+        SELFTEST_CHECK(e_.GetSdSimulator() && e_.GetSdSimulator()->Management().reader_state == ddp::ReaderState::Local);
+        Say(juce::String("PASS SD page ") + port + ": connect, share" + (confirm_case ? " (confirm, cancel, confirm)" : "")
+            + ", shared, eject, return" + (matrix ? ", patch restored, matrix live again" : ", no matrix (D4)"));
+    }
+
+    // Looper with an unsaved loop: the firmware saves first (SAVING), the page shows it.
+    void SdLooperSaving() {
+        sd::SdShareWorkflow& wf = e_.GetSdShare();
+        ui::SdSharePanel& page = e_.GetSdPanel();
+        e_.ConnectTo(PortIndex("Simulator: Looper MOD"));
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
+        e_.GetSdSimulator()->unsaved = true;
+        e_.ShowSdPage(true);
+        e_.Step(1200);
+        e_.RefreshNow();
+        SELFTEST_CHECK(page.RowText(4).contains("not saved yet"));
+        page.ShareButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Saving; }, 2000));
+        SELFTEST_CHECK(page.CancelButton().isVisible() && !page.ShareButton().isEnabled() && page.MessageText().contains("loop.wav"));
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Shared; }, 25000));
+        SELFTEST_CHECK(!e_.GetSdSimulator()->unsaved && page.RowText(4).contains("reloaded from looper/loop.wav"));
+        e_.GetSdSimulator()->Management().ReaderEject();
+        SELFTEST_CHECK(Wait([&] { return page.ReturnButton().isEnabled(); }, 3000));
+        page.ReturnButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance && e_.GetSession().Connected(); }, 25000));
+        e_.ShowSdPage(false);
+        e_.Disconnect();
+        Say("PASS SD page Looper MOD: unsaved loop saved before the share (SAVING), shared, back");
+    }
+
+    // Windows access interrupted while SHARED: quarantined until acknowledged (no return,
+    // no reshare), the question is asked, then RETURN works.
+    void SdInterruption() {
+        sd::SdShareWorkflow& wf = e_.GetSdShare();
+        ui::SdSharePanel& page = e_.GetSdPanel();
+        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
+        e_.ShowSdPage(true);
+        e_.RefreshNow();
+        page.ShareButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Shared; }, 25000));
+        e_.GetSdSimulator()->Management().ReaderBusReset();
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Interrupted; }, 3000));
+        SELFTEST_CHECK(page.AckButton().isEnabled() && !page.ReturnButton().isEnabled() && !page.EjectHelpButton().isEnabled());
+        SELFTEST_CHECK(page.MessageText().contains("quarantined") && !wf.Ejected() && page.AllVisibleInside());
+        Shot("dcp-sd-page-interrupted.png");
+        e_.Step(3000);
+        e_.RefreshNow();
+        SELFTEST_CHECK(wf.ReaderState() == ddp::ReaderState::Interrupted); // no automatic reshare or return
+        e_.sd_ack_decision = [] { return false; };
+        page.AckButton().onClick();
+        e_.Step(300);
+        e_.RefreshNow();
+        SELFTEST_CHECK(wf.ReaderState() == ddp::ReaderState::Interrupted);
+        e_.sd_ack_decision = [] { return true; };
+        page.AckButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Local; }, 3000));
+        SELFTEST_CHECK(page.ReturnButton().isEnabled() && e_.LogText().contains("acknowledged"));
+        page.ReturnButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance && e_.GetSession().Connected(); }, 25000));
+        e_.sd_ack_decision = nullptr;
+        e_.ShowSdPage(false);
+        e_.Disconnect();
+        Say("PASS SD page interruption: quarantined, acknowledge asked (no, yes), return after LOCAL");
+    }
+
+    // The VST3 content (D2): the SD card page carries the note only.
+    void SdPluginNote() {
+        EditorComponent plugin(false, false);
+        plugin.ShowSdPage(true);
+        plugin.RefreshNow();
+        SELFTEST_CHECK(plugin.GetSdPanel().NoteText() == juce::String::fromUTF8(ui::SdSharePanel::kUnavailableNote));
+        SELFTEST_CHECK(!plugin.GetSdPanel().ShareButton().isVisible());
+        Say("PASS SD page in the plugin: D2 note only");
+    }
+
     EditorComponent& e_;
     juce::File dir_, log_;
     int failures_ = 0;
@@ -435,7 +645,7 @@ class SelfTest {
 
 class Application : public juce::JUCEApplication {
   public:
-    const juce::String getApplicationName() override { return "Mod on Daisy Editor"; }
+    const juce::String getApplicationName() override { return kAppName; }
     const juce::String getApplicationVersion() override { return MOD_EDITOR_VERSION; }
     bool moreThanOneInstanceAllowed() override { return true; }
 
@@ -444,6 +654,8 @@ class Application : public juce::JUCEApplication {
         const int i = args.indexOf("--selftest");
         window_ = std::make_unique<MainWindow>(getApplicationName() + " " + getApplicationVersion(),
                                                i >= 0 || args.contains("--simulators"));
+        window_->Editor().SetAbout(getApplicationName() + " " + getApplicationVersion()
+                                   + juce::String::fromUTF8(" · AGPL-3.0 · github.com/sscheidl/Daisy-Seed (editors/mod-on-daisy)"));
         if(i >= 0) {
             const juce::File dir = juce::File::getCurrentWorkingDirectory().getChildFile(
                 args[i + 1].isEmpty() ? juce::String("selftest") : args[i + 1].unquoted());

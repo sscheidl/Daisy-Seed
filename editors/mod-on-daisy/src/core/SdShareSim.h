@@ -119,7 +119,7 @@ class SimManagement {
     }
 
     std::string Firmware() const { return std::string(FirmwareOf(profile_)) + "-sim"; }
-    static const char* FirmwareOf(const Profile& p) { return p.id == Instrument::Nebulae ? "0.2.1" : "0.6.1"; }
+    static const char* FirmwareOf(const Profile& p) { return p.id == Instrument::Nebulae ? "0.2.1" : "0.6.0"; }
 
     std::string StatusLine(const char* action) const;
 
@@ -408,12 +408,9 @@ class SimInstrument {
 
   private:
     void AppendStatus(std::vector<uint8_t>& out) const {
-        const char* fw = profile_.id == Instrument::Nebulae ? "0.2.1" : "0.6.1";
-        int major = 0, minor = 0, patch = 0;
-        std::sscanf(fw, "%d.%d.%d", &major, &minor, &patch);
-        out.push_back(uint8_t(major));
-        out.push_back(uint8_t(minor));
-        out.push_back(uint8_t(patch));
+        // NEBULAE_VERSION 0.2.1 / LOOPER_VERSION 0.6.0, the same strings as FirmwareOf().
+        const uint8_t version[3] = {0, uint8_t(profile_.id == Instrument::Nebulae ? 2 : 6), uint8_t(profile_.id == Instrument::Nebulae ? 1 : 0)};
+        out.insert(out.end(), version, version + 3);
         out.push_back(0); // performance personality
         if(profile_.id == Instrument::Nebulae) {
             const uint8_t flags = uint8_t((card ? 1 : 0) | (live ? 2 : 0) | (recording ? 4 : 0) | (loading ? 8 : 0)

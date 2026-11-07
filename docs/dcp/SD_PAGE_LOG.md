@@ -89,3 +89,28 @@ JUCE port, now shared with the workflow (phase 4).
 | 3.3 | `clang++ -fsyntax-only` of `src/ui/SerialPortWin.h` (llvm-mingw Windows headers) | 2026-11-08 | 0 | clean (after adding `<cstdlib>`) |
 
 Phase 3 PASS, no HOLD. Real COM-port behaviour is NOT MEASURED (no kit in this session).
+
+## Phase 4: Daisy Control Panel 0.5.0 with the SD card page (2026-11-08)
+
+Changes: `editors/mod-on-daisy/src/ui/SdSharePanel.h` (the page, § 6 of SD_SHARE_PORT.md),
+`EditorComponent.h/.cpp` (page switch Matrix / SD card, the workflow on the shared MIDI port,
+D4 auto-switch and "has no modulation matrix" notice, D5 autosave and restore, CDC session on
+the Win32 serial ports in the standalone app only), `app/Main.cpp` (name "Daisy Control
+Panel", about line, self-test cycles), `plugin/Plugin.cpp` (D2 note, no COM port code),
+`core/SimInstruments.h` (Nebulae MOD and Looper MOD column tables), `CMakeLists.txt`
+(project 0.5.0, product name, `MOD_EDITOR_SD_PAGE`, setupapi), `.github/workflows/editor.yml`
+(new EXE name; manual workflow, not dispatched).
+
+| # | Command | Date | Exit | Result |
+| --- | --- | --- | --- | --- |
+| 4.1 | `cmake … -B build/editor` (stale `*_resources.rc` deleted first) and `cmake --build build/editor --config Release --parallel` | 2026-11-08 00:36–00:39 | 0 | `Daisy Control Panel.exe` (7,782,912 B), `Mod on Daisy.vst3`, `ModOnDaisyPluginCheck.exe`, three test EXEs. First attempt: the VST3 failed to link SetupAPI symbols; the Win32 serial code is now compiled only with `MOD_EDITOR_SD_PAGE` (standalone), the plugin never touches COM ports (D2) |
+| 4.2 | `"Daisy Control Panel.exe" --selftest .work/phase4/selftest` | 2026-11-08 00:39 | 1 | first run: 62 checks failed. Cause found with a debug line: the shared-port link reported "connection lost" for the SHARE ACK that arrives in the same poll as the kit's restart (the simulated port and the Python link deliver pending replies first), and a port opened by the user was released before the workflow attached. Fixed in `EditorComponent` (link poll semantics, `ScanNow()`, workflow ticks before the port-release rule) |
+| 4.3 | the same, second run | 2026-11-08 00:44 | 0 | 19 PASS: all previous suites plus SD page idle (Toy Piano), Nebulae MOD cycle with CONFIRM/cancel/confirm, Looper MOD cycle, plain Nebulae and plain Looper (D4: auto-switch, "has no modulation matrix"), Looper SAVING, interruption (no/yes), D2 plugin note; screenshots `dcp-*.png` written; then once more after putting the page on top of the matrix (z-order) |
+| 4.4 | `ModOnDaisyPluginCheck.exe "<VST3>" …legacy-reverb.modpatch` | 2026-11-08 00:46 | 0 | PASS |
+| 4.5 | `diff` of `moduleinfo.json` against the phase-0 build without the version lines | 2026-11-08 00:46 | 0 | identity unchanged: name "Mod on Daisy", vendor "Daisy-Seed", both CIDs, Fx/Tools, bundle `Mod on Daisy.vst3`; version 0.5.0 |
+| 4.6 | `ctest -C Release` in `build/editor` (MSVC builds of the three host tests) | 2026-11-08 00:46 | 0 | 3/3 passed |
+| 4.7 | `make -C editors/mod-on-daisy test` | 2026-11-08 00:46 | 0 | all PASS |
+| 4.8 | the same with the sanitizer flags | 2026-11-08 00:46–00:47 | 0 | all PASS |
+| 4.9 | `E2E_ONLY=nebulae node …/e2e.cjs …/mod_sim.exe` | 2026-11-08 00:47 | 0 | PASS |
+
+Phase 4 PASS, no HOLD. The D2 boundary needed no change of the VST3 identity.

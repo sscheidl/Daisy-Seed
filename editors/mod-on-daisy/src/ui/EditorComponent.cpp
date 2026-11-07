@@ -1,10 +1,21 @@
 #include "EditorComponent.h"
+// The standalone app (MOD_EDITOR_SD_PAGE) talks to the kit's COM port; the VST3 does not (D2).
+#if defined(_WIN32) && defined(MOD_EDITOR_SD_PAGE)
+#include "SerialPortWin.h"
+#endif
 
 namespace editor::ui {
 namespace {
 constexpr int kHeader = 56, kCellCard = 300, kSourcesHeight = 250, kFooter = 56, kPad = 14;
 constexpr int kSqSimulator = -2; // Port::simulator of "Acid Seq (Sim)"
 constexpr int kSwSimulator = -3; // Port::simulator of "Streichwurst (Sim)"
+// Instruments that share their SD card, simulated with both USB personalities
+// (core/SdShareSim.h); the MOD variants add the matrix of core/SimInstruments.h.
+constexpr int kSdNebulaeMod = -4, kSdLooperMod = -5, kSdNebulae = -6, kSdLooper = -7;
+constexpr const char* kSdNebulaeLabel = "Simulator: Nebulae", *kSdLooperLabel = "Simulator: Looper";
+bool IsSdSimulator(int id) { return id <= kSdNebulaeMod && id >= kSdLooper; }
+const sd::Profile& SdSimProfile(int id) { return id == kSdNebulaeMod || id == kSdNebulae ? sd::kNebulae : sd::kLooper; }
+int SdSimMatrix(int id) { return id == kSdNebulaeMod ? 0 : id == kSdLooperMod ? 1 : -1; } // index into kSdSimInstruments
 
 juce::Colour LogColour(LogKind k) {
     switch(k) {
@@ -17,10 +28,46 @@ juce::Colour LogColour(LogKind k) {
 }
 }
 
-EditorComponent::EditorComponent(bool with_simulators)
-    : session_(model_, uint32_t(juce::Random::getSystemRandom().nextInt())), grid_(model_, session_),
-      with_simulators_(with_simulators) {
+EditorComponent::EditorComponent(bool with_simulators, bool sd_page)
+    : session_(model_, uint32_t(juce::Random::getSystemRandom().nextInt())), with_simulators_(with_simulators),
+      sd_page_available_(sd_page), sd_panel_(sd_, ddp_session_, sd_page, {}), grid_(model_, session_) {
     setLookAndFeel(&look_);
+    // SD card page (SD_SHARE_PORT.md § 7): the CDC side scans the kit's COM ports on its own;
+    // the MIDI side shares the port of the matrix. The VST3 has neither (D2).
+    if(sd_page_available_) {
+#if defined(_WIN32) && defined(MOD_EDITOR_SD_PAGE)
+        serial_ports_ = ddp::MakeWindowsSerialPorts();
+        ddp_session_.SetPorts(serial_ports_.get());
+#endif
+    }
+    ddp_session_.log = [this](const std::string& text) { Log(LogKind::Info, U(text)); };
+    ddp_session_.changed = [this] { triggerAsyncUpdate(); };
+    sd_.log = [this](const std::string& text) { Log(LogKind::Info, U(text)); };
+    sd_.changed = [this] { triggerAsyncUpdate(); };
+    sd_panel_.request_share = [this](bool confirm) { RequestSdShare(confirm); };
+    sd_panel_.cancel = [this] {
+        sd_.CancelConfirmation();
+        RefreshAll();
+    };
+    sd_panel_.return_to_performance = [this] {
+        if(sd_.ReturnToPerformance())
+            Log(LogKind::Info, U(sd_.Name()) + U(": return to performance requested"));
+        RefreshAll();
+    };
+    sd_panel_.acknowledge = [this] { SdAcknowledge(); };
+    sd_panel_.eject_help = [this] { SdEjectHelp(); };
+    for(juce::TextButton* b : {&page_matrix_, &page_sd_}) {
+        addAndMakeVisible(b);
+        b->setClickingTogglesState(false);
+    }
+    page_matrix_.setTooltip(U("Modulation matrix of the connected instrument"));
+    page_sd_.setTooltip(U("Share the instrument's microSD card with Windows and bring it back (Nebulae on Daisy, Looper)"));
+    page_matrix_.onClick = [this] { ShowSdPage(false); };
+    page_sd_.onClick = [this] { ShowSdPage(true); };
+    addChildComponent(no_matrix_);
+    no_matrix_.setColour(juce::Label::textColourId, colour::warn);
+    no_matrix_.setFont(juce::FontOptions(15.0f, juce::Font::bold));
+    no_matrix_.setJustificationType(juce::Justification::centred);
     session_.changed = [this] { triggerAsyncUpdate(); };
     session_.log = [this](LogKind k, const std::string& text) { Log(k, U(text)); };
     session_.monitor = [this](const MonitorValues& m) {
@@ -141,18 +188,21 @@ EditorComponent::EditorComponent(bool with_simulators)
     addAndMakeVisible(log_);
     log_.setFont(juce::FontOptions(13.0f));
     addChildComponent(sq_panel_); // over the matrix pages while an Acid Seq device is connected
+    addChildComponent(sd_panel_); // over everything while the SD card page is shown (added last: on top)
 
     RefreshPorts();
     RefreshAll();
     Log(LogKind::Info, with_simulators_ ? U("Not connected. Without a device you can edit offline or choose a simulator.")
                                         : U("Not connected. Without a device you can edit offline."));
-    setSize(1220, 920);
+    setSize(1320, 920);
     startTimer(10);
 }
 
 EditorComponent::~EditorComponent() {
     stopTimer();
     session_.Disconnect("");
+    sd_.ReleaseMidi();
+    ddp_session_.Disconnect("Application closed"); // BYE only: closing never returns the card
     setLookAndFeel(nullptr);
 }
 
@@ -166,6 +216,10 @@ void EditorComponent::RefreshPorts() {
     if(with_simulators_) {
         ports.push_back({U("Acid Seq (Sim)"), kSqSimulator, {}, {}});
         ports.push_back({U("Streichwurst (Sim)"), kSwSimulator, {}, {}});
+        ports.push_back({U(kSdSimInstruments[0].label), kSdNebulaeMod, {}, {}});
+        ports.push_back({U(kSdSimInstruments[1].label), kSdLooperMod, {}, {}});
+        ports.push_back({U(kSdNebulaeLabel), kSdNebulae, {}, {}});
+        ports.push_back({U(kSdLooperLabel), kSdLooper, {}, {}});
     }
     for(const auto& out : outs) {
         // The input with the same name, else one that also says "Daisy".
@@ -200,7 +254,7 @@ void EditorComponent::RefreshPorts() {
     const juce::String previous = port_.getText();
     // While offline, a Daisy that appears later replaces a non-Daisy suggestion (the kit is
     // often plugged in or leaves the bootloader after the editor started).
-    const bool keep = midi_ || simulator_ || sq_sim_ || sw_sim_ || previous.containsIgnoreCase("daisy");
+    const bool keep = midi_ || simulator_ || sq_sim_ || sw_sim_ || sd_sim_ || previous.containsIgnoreCase("daisy");
     ports_ = std::move(ports);
     port_.clear(juce::dontSendNotification);
     int same_label = -1, daisy = -1;
@@ -227,7 +281,39 @@ void EditorComponent::ConnectTo(int index) {
     if(index < 0 || index >= int(ports_.size()))
         return Log(LogKind::Warn, U("Please choose a device."));
     const Port& p = ports_[std::size_t(index)];
-    if(p.simulator == kSqSimulator) {
+    if(!IsSdSimulator(p.simulator) && sd_sim_) { // another port: the simulated kit is unplugged
+        ddp_session_.Disconnect("Simulated kit unplugged");
+        ddp_session_.SetPorts(serial_ports_.get());
+        sd_sim_serial_.reset();
+        sd_sim_.reset();
+        sd_sim_port_ = -1;
+    }
+    if(IsSdSimulator(p.simulator)) {
+        if(!sd_sim_ || sd_sim_port_ != p.simulator) {
+            ddp_session_.Disconnect("");
+            sd_sim_ = std::make_unique<sd::SimInstrument>(SdSimProfile(p.simulator), [this] { return now_; });
+            sd_sim_serial_ = std::make_unique<sd::SimSerialPorts>(*sd_sim_);
+            sd_sim_port_ = p.simulator;
+            ddp_session_.SetPorts(sd_sim_serial_.get());
+        }
+        if(!sd_sim_->MidiAlive()) {
+            port_.setSelectedItemIndex(index, juce::dontSendNotification);
+            RefreshAll();
+            return Log(LogKind::Warn, U("The simulated kit has no USB-MIDI port now (SD management or restarting); use the SD card page."));
+        }
+        sd_sim_midi_ = std::make_unique<sd::SimMidiLink>(*sd_sim_); // the port is open
+        const int matrix = SdSimMatrix(p.simulator);
+        if(matrix >= 0) { // the MOD build: the matrix on the same simulated port
+            const SimInstrument& s = kSdSimInstruments[matrix];
+            simulator_ = std::make_unique<Simulator>(s.make(), uint32_t(juce::Random::getSystemRandom().nextInt()));
+            simulator_->bases = s.bases;
+            simulator_->mode = s.mode;
+            simulator_->EnableExtensions(s.extensions);
+            session_.Connect(*simulator_, now_);
+        } else {
+            session_.Disconnect("no matrix");
+        }
+    } else if(p.simulator == kSqSimulator) {
         sq_sim_ = std::make_unique<SqSimulator>("acid-seq");
         sq_sim_->SetOut([this](const uint8_t* b, std::size_t n) { sq_sim_out_.emplace_back(b, b + n); });
         sq_link_.send = [this](const uint8_t* b, std::size_t n) {
@@ -263,6 +349,7 @@ void EditorComponent::ConnectTo(int index) {
     }
     port_.setSelectedItemIndex(index, juce::dontSendNotification);
     last_alert_ = 0; // messages of the previous device are over
+    sd_.ScanNow();   // the SD share workflow probes the new port at once (NB/LP STATUS)
     Log(LogKind::Info, U("Connecting to ") + p.label + U(" …"));
     RefreshAll();
 }
@@ -279,7 +366,17 @@ void EditorComponent::Disconnect() {
     show_matrix_ = false;
     sq_session_.Disconnect();
     session_.Disconnect("");
+    // The SD share workflow loses its MIDI link with the port; the card reader is never
+    // touched by this (its CDC session stays as it is).
+    if(!opening_sd_link_)
+        sd_.ReleaseMidi();
     ReleasePort();
+}
+
+void EditorComponent::ShowSdPage(bool on) {
+    show_sd_ = on;
+    RefreshAll();
+    resized();
 }
 
 // ------------------------------------------------------------------ clock
@@ -389,12 +486,24 @@ void EditorComponent::Advance(uint32_t now_ms) {
     }
     if(midi_)
         for(const std::vector<uint8_t>& m : midi_->Take()) {
+            if(sd::IsSdShareSysEx(m.data(), m.size())) { // Nebulae "NB" / Looper "LP": the SD share workflow
+                if(sd_link_)
+                    sd_link_->Push(m.data(), m.size());
+                continue;
+            }
             boot_.OnMessage(m.data(), m.size());
             if(ClassifySysEx(m.data(), m.size()) == Protocol::Sq)
                 sq_session_.OnMessage(m.data(), m.size(), now_);
             else
                 session_.OnMessage(m.data(), m.size());
         }
+    if(sd_sim_midi_) { // the simulated instrument's control SysEx replies
+        std::vector<std::vector<uint8_t>> replies;
+        if(sd_sim_midi_->Poll(replies))
+            for(const std::vector<uint8_t>& m : replies)
+                if(sd_link_)
+                    sd_link_->Push(m.data(), m.size());
+    }
     sq_session_.Tick(now_);
     // SQ 1.1 with CapModMatrix (Streichwurst): Mod on Daisy alongside on the same port,
     // started once the SQ state has been read; it reads the matrix first as well.
@@ -415,11 +524,183 @@ void EditorComponent::Advance(uint32_t now_ms) {
         for(const std::vector<uint8_t>& m : boot_port_->Take())
             boot_.OnMessage(m.data(), m.size());
     session_.Tick(now_);
+    // SD card page: the CDC session and the workflow (SD_SHARE_PORT.md § 4). They run before
+    // the port-release rule below, so the workflow attaches to a port the user just opened.
+    ddp_session_.Tick(now_);
+    sd_.Tick(now_);
+    if(sd_.GetPhase() != last_sd_phase_) {
+        const sd::Phase before = last_sd_phase_;
+        last_sd_phase_ = sd_.GetPhase();
+        OnSdPhase(before, last_sd_phase_);
+    }
     // The session gave up (no answer to IDENTIFY, refused send, wrong protocol): the
-    // port is released at once, so another application or a new attempt can open it.
-    if(session_.State() == LinkState::Offline && !md_pending_ && !SqActive() && (midi_ || simulator_ || sq_sim_ || sw_sim_))
+    // port is released at once, so another application or a new attempt can open it,
+    // unless the SD share workflow still talks to an instrument without a matrix on it (D4).
+    if(session_.State() == LinkState::Offline && !md_pending_ && !SqActive() && !sd_link_
+       && (midi_ || simulator_ || sq_sim_ || sw_sim_ || sd_sim_midi_))
         ReleasePort();
     FinishFirmwareUpdate(boot_.Poll(now_));
+}
+
+// ------------------------------------------------------------------ SD card page
+bool EditorComponent::SdInstrumentFound() const {
+    const sd::Phase p = sd_.GetPhase();
+    return p != sd::Phase::NotFound && p != sd::Phase::Restarting && p != sd::Phase::Returning;
+}
+
+juce::String EditorComponent::CurrentPortLabel() const { return PortOpen() ? port_.getText() : juce::String(); }
+
+// SD_SHARE_PORT.md § 7: the workflow probes the port the user connected to; while it follows
+// a restart it caused (Restarting: R1 check, Returning) it may open a Daisy port itself.
+std::vector<std::string> EditorComponent::SdPortCandidates() {
+    if(!sd_page_available_)
+        return {};
+    if(PortOpen()) {
+        const juce::String label = CurrentPortLabel();
+        return label.isEmpty() ? std::vector<std::string>{} : std::vector<std::string>{label.toStdString()};
+    }
+    if(!sd_.Following() || user_disconnected_)
+        return {};
+    std::vector<std::string> out;
+    for(const Port& p : ports_) {
+        if(sd_sim_ && p.simulator == sd_sim_port_ && sd_sim_->MidiAlive())
+            out.push_back(p.label.toStdString());
+        if(!sd_sim_ && p.simulator == -1 && p.label.containsIgnoreCase("daisy"))
+            out.push_back(p.label.toStdString());
+    }
+    return out;
+}
+
+std::unique_ptr<sd::MidiLink> EditorComponent::OpenSdLink(const std::string& name, std::string& error) {
+    if(!PortOpen() || CurrentPortLabel().toStdString() != name) {
+        int index = -1;
+        for(std::size_t i = 0; i < ports_.size(); ++i)
+            if(ports_[i].label.toStdString() == name)
+                index = int(i);
+        if(index < 0) {
+            error = "port " + name + " is not listed";
+            return nullptr;
+        }
+        opening_sd_link_ = true;
+        ConnectTo(index); // SQ and Mod on Daisy detection as for a manual Connect
+        opening_sd_link_ = false;
+        if(!PortOpen()) {
+            error = "port " + name + " could not be opened";
+            return nullptr;
+        }
+    }
+    auto link = std::make_unique<SdLink>(*this);
+    sd_link_ = link.get();
+    return link;
+}
+
+bool EditorComponent::SendSdSysEx(const uint8_t* bytes, std::size_t n, SdLink& link) {
+    if(&link != sd_link_)
+        return false;
+    if(sd_sim_midi_)
+        return sd_sim_midi_->Send(bytes, n);
+    return midi_ && midi_->Send(bytes, n);
+}
+
+bool EditorComponent::SdPortAlive() const {
+    if(sd_sim_midi_)
+        return sd_sim_ && sd_sim_->MidiAlive();
+    return midi_ != nullptr;
+}
+
+void EditorComponent::OnSdPhase(sd::Phase before, sd::Phase now) {
+    if(now == sd::Phase::Restarting) {
+        // SHARE accepted (T10): the kit restarts into SD management and its MIDI port
+        // disappears. Release the matrix now, without a "connection lost" error.
+        sd_restore_pending_ = sd_restore_.has_value();
+        Disconnect();
+        Log(LogKind::Info, U(sd_.Name()) + U(" restarts into SD management; the matrix connection is closed until it is back."));
+    }
+    if(now == sd::Phase::NotFound)
+        sd_auto_switched_ = false;
+    if(before == sd::Phase::Returning && now == sd::Phase::Performance)
+        Log(LogKind::Ok, U(sd_.Message()));
+    RefreshAll();
+}
+
+bool EditorComponent::RequestSdShare(bool confirm) {
+    if(!confirm && !sd_.ManagementConnected() && (sd_.GetPhase() == sd::Phase::Performance))
+        SaveBeforeShare(); // D5
+    const bool ok = sd_.RequestShare(confirm);
+    if(ok)
+        Log(LogKind::Info, U(sd_.Name()) + (confirm ? U(": sharing confirmed; unsaved audio in RAM will be lost")
+                                                      : U(": SD card sharing requested")));
+    RefreshAll();
+    return ok;
+}
+
+// D5: the matrix is volatile and the share restarts the kit, so the patch is written to a
+// file first and kept to be sent back after the return.
+bool EditorComponent::SaveBeforeShare() {
+    sd_restore_.reset();
+    sd_restore_pending_ = false;
+    if(!session_.Connected()) {
+        Log(LogKind::Info, U("No modulation matrix on this connection: nothing to save before the share."));
+        return false;
+    }
+    const std::string text = SavePatch(model_, &session_.Device());
+    sd_restore_ = LoadPatch(text, model_);
+    juce::File dir = sd_autosave_dir;
+    if(dir == juce::File()) {
+        const juce::String local = juce::SystemStats::getEnvironmentVariable("LOCALAPPDATA", {});
+        dir = (local.isNotEmpty() ? juce::File(local) : juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory))
+                  .getChildFile("Daisy Control Panel")
+                  .getChildFile("autosave");
+    }
+    dir.createDirectory();
+    const juce::String stamp = juce::Time::getCurrentTime().formatted("%Y%m%d-%H%M%S");
+    sd_autosave_file_ = dir.getChildFile(juce::File::createLegalFileName(U(session_.Device().key)) + "-" + stamp + ".modpatch");
+    if(!sd_autosave_file_.replaceWithText(U(text))) {
+        Log(LogKind::Error, U("Patch could not be saved to ") + sd_autosave_file_.getFullPathName()
+                                + U("; it is kept in memory and sent back after the return."));
+        return true;
+    }
+    Log(LogKind::Info, U("Patch saved to ") + sd_autosave_file_.getFullPathName() + U("; it is sent back after the return."));
+    return true;
+}
+
+void EditorComponent::RestoreAfterShare() {
+    if(!sd_restore_pending_ || !sd_restore_ || !session_.Connected())
+        return;
+    sd_restore_pending_ = false;
+    const Compatibility compat = CheckCompatibility(*sd_restore_, model_, session_.Device());
+    ApplyDecision(*sd_restore_, compat, compat.NeedsDecision() ? CompatChoice::Safe : CompatChoice::Force);
+    Log(LogKind::Ok, U("Patch restored after the share (") + sd_autosave_file_.getFileName() + U(")."));
+}
+
+void EditorComponent::SdEjectHelp() {
+    juce::AlertWindow::showMessageBoxAsync(
+        juce::MessageBoxIconType::InfoIcon, U("Eject the card in Windows"),
+        U("1. Close every file and program that uses the ") + U(sd_.Name())
+            + U(" drive.\n2. Use “Safely Remove Hardware” in the taskbar, or right-click the drive in Explorer and choose "
+                "“Eject”.\n3. Wait until this page shows “Windows ejected the card”. Only the firmware's EJECTED state "
+                "counts; this button does not eject anything."),
+        U("OK"), this);
+}
+
+void EditorComponent::SdAcknowledge() {
+    if(!sd_.CanAcknowledge())
+        return;
+    const auto apply = [this](bool yes) {
+        if(yes && sd_.AcknowledgeInterruption())
+            Log(LogKind::Info, U(sd_.Name()) + U(": interrupted access acknowledged"));
+        RefreshAll();
+    };
+    if(sd_ack_decision) // self-test: answers without a modal window
+        return apply(sd_ack_decision());
+    auto* w = new juce::AlertWindow(U("Interrupted SD access"),
+                                    U("Windows may have lost pending changes. Close all files using this card. Acknowledging "
+                                      "does not recover data and is not a clean eject. Continue?"),
+                                    juce::MessageBoxIconType::WarningIcon, this);
+    w->setLookAndFeel(&look_);
+    w->addButton(U("Yes"), 1);
+    w->addButton(U("No"), 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    w->enterModalState(true, juce::ModalCallbackFunction::create([apply](int result) { apply(result == 1); }), true);
 }
 
 // ------------------------------------------------------------------ firmware update
@@ -487,6 +768,7 @@ void EditorComponent::FinishFirmwareUpdate(BootRequest::Result result) {
 void EditorComponent::ReleasePort() {
     grid_.ClearMonitor();
     simulator_.reset();
+    sd_sim_midi_.reset(); // the simulated kit itself (sd_sim_) stays plugged in
     sq_link_.send = {};
     md_link_.send = {};
     sq_sim_.reset();
@@ -565,7 +847,8 @@ void EditorComponent::RefreshAll() {
     view_.setVisible(matrix_available);
     view_.setEnabled(session_.Connected() || show_matrix_);
     view_.setButtonText(U(show_matrix_ ? "Sound parameters" : "Matrix"));
-    sq_panel_.setVisible(sq_ready && !show_matrix_);
+    RefreshPages();
+    sq_panel_.setVisible(sq_ready && !show_matrix_ && !show_sd_);
     if(sq_ready && !show_matrix_) {
         sq_panel_.Refresh();
         status_.setText(U(sq_session_.Identity().product + " " + sq_session_.Identity().version + " · SQ" +
@@ -589,6 +872,8 @@ void EditorComponent::RefreshAll() {
         pending_project_.reset();
         SendProjectPatch(project);
     }
+    if(connected && !was_connected_)
+        RestoreAfterShare(); // D5: the patch saved before a share, after the kit is back
     was_connected_ = connected;
     if(patch_changed) {
         std::string text = PatchText();
@@ -604,12 +889,21 @@ void EditorComponent::RefreshAll() {
                       s == LinkState::Connected ? (health == Health::Ok ? colour::ok
                                                    : health == Health::NoLiveData ? colour::warn : colour::err)
                                                 : (session_.StatusText() == "offline" ? colour::muted : colour::err));
+    // An instrument the SD share workflow found that has no matrix (plain Nebulae, Looper):
+    // the status says so instead of "error"; in SD management the MIDI side is gone anyway.
+    if(s == LinkState::Offline && !md_pending_ && !SqActive() && SdInstrumentFound()) {
+        const bool mgmt = sd_.GetPhase() == sd::Phase::Management;
+        const juce::String fw = sd_.Status() ? U(" ") + U(sd_.Status()->firmware) : juce::String();
+        status_.setText(U(sd_.GetProfile().display_name) + fw + (mgmt ? U(" · SD management (USB CDC)") : U(" · no matrix, SD card page")),
+                        juce::dontSendNotification);
+        status_.setColour(juce::Label::textColourId, mgmt ? colour::warn : colour::ok);
+    }
     status_.setColour(juce::Label::outlineColourId, status_.findColour(juce::Label::textColourId));
-    const bool busy = s != LinkState::Offline || SqActive() || md_pending_;
+    const bool busy = s != LinkState::Offline || SqActive() || md_pending_ || sd_link_ != nullptr;
     connect_.setButtonText(busy ? "Disconnect" : "Connect");
     RefreshMode();
     port_.setEnabled(!busy);
-    update_.setEnabled(!boot_.Waiting() && !simulator_ && !sq_sim_ && !sw_sim_ && !ports_.empty());
+    update_.setEnabled(!boot_.Waiting() && !simulator_ && !sq_sim_ && !sw_sim_ && !sd_sim_midi_ && !ports_.empty());
     pull_.setEnabled(session_.Connected());
     count_.setText(U("Active connections: ") + juce::String(model_.ActiveCount()) + " / "
                        + juce::String(model_.max_active),
@@ -634,6 +928,34 @@ void EditorComponent::RefreshAll() {
     RefreshCellEditor();
     grid_.repaint();
 }
+
+// The two pages. D4: an instrument the SD share workflow found that has no matrix opens
+// on the SD card page (once per device), and the matrix page says so.
+void EditorComponent::RefreshPages() {
+    const bool mgmt = sd_.GetPhase() == sd::Phase::Management;
+    const bool no_matrix = SdInstrumentFound() && !mgmt && session_.State() == LinkState::Offline && !md_pending_ && !SqActive();
+    if(sd_page_available_ && (no_matrix || mgmt) && !sd_auto_switched_) {
+        sd_auto_switched_ = true;
+        if(!show_sd_) {
+            show_sd_ = true;
+            resized();
+        }
+    }
+    page_matrix_.setToggleState(!show_sd_, juce::dontSendNotification);
+    page_sd_.setToggleState(show_sd_, juce::dontSendNotification);
+    sd_panel_.SetSimulated(sd_sim_ != nullptr);
+    sd_panel_.setVisible(show_sd_);
+    if(show_sd_)
+        sd_panel_.Refresh();
+    if(no_matrix) {
+        const juce::String fw = sd_.Status() ? U(" ") + U(sd_.Status()->firmware) : juce::String();
+        no_matrix_.setText(U(sd_.GetProfile().display_name) + fw + U(" has no modulation matrix. Use the SD card page."),
+                           juce::dontSendNotification);
+    }
+    no_matrix_.setVisible(no_matrix && !show_sd_);
+}
+
+void EditorComponent::SetAbout(const juce::String& text) { sd_panel_.SetAbout(text); }
 
 void EditorComponent::RefreshCellEditor() {
     const int c = model_.selected;
@@ -676,11 +998,19 @@ void EditorComponent::paint(juce::Graphics& g) {
     g.setColour(colour::line);
     g.drawHorizontalLine(header_area_.getBottom() - 1, 0.0f, float(getWidth()));
     g.setFont(juce::FontOptions(18.0f, juce::Font::bold));
-    juce::Rectangle<int> title = header_area_.withTrimmedLeft(kPad).withWidth(170);
-    g.setColour(colour::ink);
-    g.drawText("Mod on", title, juce::Justification::centredLeft);
-    g.setColour(colour::accent);
-    g.drawText("Daisy", title.withTrimmedLeft(66), juce::Justification::centredLeft);
+    if(sd_page_available_) { // the standalone app (D3): "Daisy Control Panel"
+        juce::Rectangle<int> title = header_area_.withTrimmedLeft(kPad).withWidth(200);
+        g.setColour(colour::accent);
+        g.drawText("Daisy", title, juce::Justification::centredLeft);
+        g.setColour(colour::ink);
+        g.drawText("Control Panel", title.withTrimmedLeft(58), juce::Justification::centredLeft);
+    } else { // the VST3 keeps its name
+        juce::Rectangle<int> title = header_area_.withTrimmedLeft(kPad).withWidth(170);
+        g.setColour(colour::ink);
+        g.drawText("Mod on", title, juce::Justification::centredLeft);
+        g.setColour(colour::accent);
+        g.drawText("Daisy", title.withTrimmedLeft(66), juce::Justification::centredLeft);
+    }
     PaintCard(g, grid_card_, "Modulation matrix");
     PaintCard(g, cell_card_, "Connection");
     PaintCard(g, footer_card_, {});
@@ -689,18 +1019,23 @@ void EditorComponent::paint(juce::Graphics& g) {
 void EditorComponent::resized() {
     juce::Rectangle<int> r = getLocalBounds();
     sq_panel_.setBounds(r.withTrimmedTop(kHeader));
+    sd_panel_.setBounds(r.withTrimmedTop(kHeader));
     header_area_ = r.removeFromTop(kHeader);
     {
-        juce::Rectangle<int> h = header_area_.reduced(kPad, 12).withTrimmedLeft(170);
-        port_.setBounds(h.removeFromLeft(300));
+        juce::Rectangle<int> h = header_area_.reduced(kPad, 12).withTrimmedLeft(sd_page_available_ ? 200 : 170);
+        port_.setBounds(h.removeFromLeft(260));
         h.removeFromLeft(8);
-        connect_.setBounds(h.removeFromLeft(110));
+        connect_.setBounds(h.removeFromLeft(100));
+        h.removeFromLeft(12);
+        page_matrix_.setBounds(h.removeFromLeft(72));
+        h.removeFromLeft(4);
+        page_sd_.setBounds(h.removeFromLeft(72));
         update_.setBounds(h.removeFromRight(150));
         h.removeFromRight(8);
         view_.setBounds(h.removeFromRight(130));
         h.removeFromRight(12);
         h.removeFromLeft(12);
-        status_.setBounds(h.removeFromLeft(330));
+        status_.setBounds(h.removeFromLeft(300));
         h.removeFromLeft(12);
         mode_.setBounds(h);
     }
@@ -718,6 +1053,7 @@ void EditorComponent::resized() {
         hint_.setBounds(g.removeFromBottom(20));
         count_.setBounds(g.removeFromBottom(24));
         grid_.setBounds(g);
+        no_matrix_.setBounds(g.withSizeKeepingCentre(g.getWidth() - 40, 60));
     }
     {
         juce::Rectangle<int> c = cell_card_.reduced(kPad, 10).withTrimmedTop(26);

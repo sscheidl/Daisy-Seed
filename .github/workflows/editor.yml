@@ -26,7 +26,7 @@ jobs:
       - name: Self-test the window against the simulator
         run: |
           xvfb-run -a -s "-screen 0 1600x1200x24" \
-            "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor" --selftest build/selftest
+            "build/editor/ModOnDaisyEditor_artefacts/Release/Daisy Control Panel" --selftest build/selftest
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -48,7 +48,7 @@ jobs:
       - name: Self-test the window against the simulator
         shell: pwsh
         run: |
-          $exe = "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor.exe"
+          $exe = "build/editor/ModOnDaisyEditor_artefacts/Release/Daisy Control Panel.exe"
           $p = Start-Process -FilePath $exe -ArgumentList "--selftest", "build/selftest" -Wait -PassThru
           Get-Content build/selftest/selftest.txt
           if ($p.ExitCode -ne 0) { exit 1 }
@@ -56,7 +56,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item "build/editor/ModOnDaisyEditor_artefacts/Release/Mod on Daisy Editor.exe" "dist/ModOnDaisyEditor.exe"
+          Copy-Item "build/editor/ModOnDaisyEditor_artefacts/Release/Daisy Control Panel.exe" "dist/Daisy Control Panel.exe"
           Copy-Item editors/mod-on-daisy/README.md dist/README.md
           # The VST3 plugin is part of the same build (README: VST3-Plugin für Studio One).
           Copy-Item -Recurse "build/editor/ModOnDaisyPlugin_artefacts/Release/VST3/Mod on Daisy.vst3" "dist/Mod on Daisy.vst3"

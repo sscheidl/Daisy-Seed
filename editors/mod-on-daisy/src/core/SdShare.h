@@ -202,6 +202,10 @@ class SdShareWorkflow {
         return SendPerform();
     }
 
+    // A MIDI port was just opened by the user: probe it with the next Tick() instead of
+    // waiting for the scan interval.
+    void ScanNow() { next_scan_ = now_; }
+
     // Drops the MIDI link (user disconnect, application exit). Nothing is sent to the card
     // reader; the CDC session is the caller's business.
     void ReleaseMidi() {
