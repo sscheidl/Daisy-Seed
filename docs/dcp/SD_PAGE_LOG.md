@@ -114,3 +114,48 @@ Panel", about line, self-test cycles), `plugin/Plugin.cpp` (D2 note, no COM port
 | 4.9 | `E2E_ONLY=nebulae node …/e2e.cjs …/mod_sim.exe` | 2026-11-08 00:47 | 0 | PASS |
 
 Phase 4 PASS, no HOLD. The D2 boundary needed no change of the VST3 identity.
+
+## Phase 5: package and store (2026-11-08)
+
+`scripts/dcp_sd_test_package.py` (new): `--store` copies the Release build into
+`apps/daisy-control-panel/<version>+<commit7>/` of the main checkout with `BUILD.txt`,
+`SHA256SUMS` (every file, also inside the `.vst3`), `STATUS.md` (`candidate`) and
+`COPYING.AGPL-3.0.txt` (docs/FIRMWARE_BINARIES.md § 8, PR #105); `--package` assembles
+`build/dcp-sd-test/` only from `apps/` and `firmware/`, verifies every store checksum, runs
+`check-firmware.py` on the four images, copies the test sheet, writes `MANIFEST.json` and
+`SHA256SUMS`; `--selftest` runs the packaged EXE from the package folder.
+
+| # | Command | Date | Exit | Result |
+| --- | --- | --- | --- | --- |
+| 5.1 | `cmake --build build/editor --config Release --parallel` from the committed phase-4 state 5f6280d (clean tree) | 2026-11-08 00:49–00:51 | 0 | `Daisy Control Panel.exe` 7,783,424 B, SHA-256 `56c39565…9276`; VST3 DLL `b58f21ac…3b08` |
+| 5.2 | `python scripts/dcp_sd_test_package.py --store` | 2026-11-08 00:53 | 0 | `apps/daisy-control-panel/0.5.0+5f6280d/` written (EXE, `Mod on Daisy.vst3`, licence, BUILD.txt, SHA256SUMS, STATUS.md `candidate`) |
+| 5.3 | `python scripts/dcp_sd_test_package.py --package --selftest --check-root <origin/main 6e390c7 export>` | 2026-11-08 00:55 | 0 | `build/dcp-sd-test/` with `apps/` (EXE, VST3, licence, BUILD.txt), `firmware/` (the four images), `MANIFEST.json`, `SHA256SUMS`, `TEST_SHEET.md`, `README-Daisy-Control-Panel.md`; every checksum verified against the store; packaged EXE `--selftest` exit 0 with 19 PASS lines; `check-firmware.py` PASS for all four images |
+
+Checker detail: `scripts/check-firmware.py` compares an image name with the version header
+of its own source tree. This branch (base `codex/nebulae-mod-sd`) still carries
+`LOOPER_VERSION "0.6.0"`, the stored Looper images are 0.6.1 from `main` (b7517b5, "make the
+SHARE decision final", protocol unchanged). The two Looper images were therefore checked with
+the checker and instrument sources exported from `origin/main` 6e390c7 (`git archive`), the two
+Nebulae images with this branch's checker (main's has no `NebulaeMod` case yet; PR #102 adds
+it). `MANIFEST.json` records the checker per image. After the rebase onto `main` the branch's
+own checker covers all four.
+
+Package image hashes (identical to the store): NebulaeMod `02e52f88…a727`, NebulaeOnDaisy
+`cbc4c376…81ff`, LooperMod `25543ed0…9484`, Looper `82068473…9939`.
+
+Phase 5 PASS, no HOLD.
+
+## Phase 6: documentation and versions (2026-11-08)
+
+| # | Item | Result |
+| --- | --- | --- |
+| 6.1 | `editors/mod-on-daisy/README.md`: new title and "Daisy Control Panel 0.5.0" section, EXE name, simulators, tests, self-test scope | done |
+| 6.2 | `editors/mod-on-daisy/docs/GUI.md`: English note on the two pages at the top (the German concept text stays) | done |
+| 6.3 | `editors/mod-on-daisy/CHANGELOG.md` (new): 0.5.0 entry | done |
+| 6.4 | `diagnostics/docs/INSTALLATION_AND_USAGE.md`, `NEBULAE_PROFILE.md`, `LOOPER_PROFILE.md`: Daisy Diagnostic stays the diagnostics tool; the SD share tab also exists as the SD card page; one program at a time | done |
+| 6.5 | `components/registry.json`: panel `daisy-control-panel` (cmake version 0.5.0) listed by `granular-mod`, `looper-mod`, `granular`, `looper`; `components/README.md` note | `python scripts/component_manifest.py --validate` PASS (37 components, 27 products); `tests/test_components.py` and `test_firmware_checker.py` OK (12 + 2 tests) in an exported copy of the tree, because `git status` fails inside this junctioned worktree (environment, see phase 0) |
+| 6.6 | `instruments/granular/docs/MODULATION.md`: SD sharing section points to the one-app flow | done |
+| 6.7 | `docs/dcp/SD_SHARE_PORT.md`: § 7 probing and link semantics as implemented, § 9 Looper 0.6.1 row | done |
+| 6.8 | `web/version.js` | unchanged (browser not touched) |
+
+Phase 6 PASS: no German-only new text; the manifest names the actual composition.

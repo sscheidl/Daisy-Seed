@@ -195,6 +195,20 @@
         "path": "editors/mod-on-daisy/CMakeLists.txt"
       }
     },
+    "daisy-control-panel": {
+      "kind": "panel",
+      "source": "editors/mod-on-daisy/src/app",
+      "depends": [
+        "mod-on-daisy",
+        "bootloader-entry",
+        "step-seq",
+        "streichwurst-instrument"
+      ],
+      "version": {
+        "type": "cmake",
+        "path": "editors/mod-on-daisy/CMakeLists.txt"
+      }
+    },
     "mod-editor-web": {
       "kind": "panel",
       "source": "editors/mod-on-daisy/web",
@@ -510,7 +524,9 @@
         "sd-reader",
         "bootloader-entry"
       ],
-      "panels": []
+      "panels": [
+        "daisy-control-panel"
+      ]
     },
     "granular-mod": {
       "version_component": "nebulae",
@@ -525,7 +541,8 @@
       "panels": [
         "mod-editor-web",
         "mod-editor-juce",
-        "mod-editor-vst3"
+        "mod-editor-vst3",
+        "daisy-control-panel"
       ]
     },
     "looper": {
@@ -540,7 +557,9 @@
         "sd-reader",
         "bootloader-entry"
       ],
-      "panels": []
+      "panels": [
+        "daisy-control-panel"
+      ]
     },
     "looper-mod": {
       "version_component": "looper",
@@ -558,7 +577,8 @@
       "panels": [
         "mod-editor-web",
         "mod-editor-juce",
-        "mod-editor-vst3"
+        "mod-editor-vst3",
+        "daisy-control-panel"
       ]
     },
     "reverb-fx": {
