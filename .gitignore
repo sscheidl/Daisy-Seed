@@ -21,3 +21,5 @@ __pycache__/
 /editors/*/build/
 /modules/*/bench/build/
 /sequencers/*/build/
+# Firmware store (docs/FIRMWARE_BINARIES.md): images are never committed
+/firmware/
