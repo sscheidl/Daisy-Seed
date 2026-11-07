@@ -114,6 +114,13 @@ Rules for deleting:
   session's worktree.
 * A worktree is removed once its branch is merged or abandoned, following the junction rule
   (remove junctions first, never `git worktree remove --force` on a worktree with junctions).
+* Before a worktree is removed, check its **ignored** files as well, not only modified,
+  untracked and unpushed state: `git -C <worktree> status --porcelain --ignored` lists them as
+  `!!`. `git worktree remove` deletes ignored files without asking. Anything that is not plain
+  build output (`build/`, toolchain or library folders) — for example `.work/` notes, review
+  logs, measurement results — is shown to the human and copied to
+  `<main checkout>/.work/rescued/<worktree>/` before removal. (On 2026-11-07 the raw logs of a
+  review were lost because only untracked files had been checked.)
 
 ## 6. Releases
 
