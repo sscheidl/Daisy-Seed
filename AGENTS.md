@@ -99,7 +99,8 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   and `STATUS.md`. Never hand out a path inside `build/`, `.work/` or a worktree, and never
   commit images (the repository is public). When adding an image, delete the superseded
   images of the same line; keep the newest, the newest accepted/released fallback and any
-  image still under test, and list what was deleted. Reports quote the SHA-256.
+  image still under test, and list what was deleted. Reports quote the SHA-256. Host apps
+  (control panel EXE, editor EXE, VST3) follow the same rules in `apps/` next to `firmware/`.
 * **No flash writes** for Mod on Daisy storage until the human approves (D8,
   `STORAGE.md`).
 * **Pinned versions**: libDaisy, DaisySP, xPack GCC 13.2.1-1.1 (`docs/BUILD.md`) and
