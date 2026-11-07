@@ -9,10 +9,15 @@ HEADERS = $(wildcard src/core/*.h) $(wildcard ../../sequencers/step-seq/include/
 # Streichwurst register, tables and Mod on Daisy columns (simulator and its tests).
 SQ_INCLUDES = -I../../sequencers/step-seq/include -I../../instruments/streichwurst/include -I../../instruments/streichwurst/src -I../../effects/streichwurst-fx/include -D_USE_MATH_DEFINES
 HEADERS += $(wildcard ../../instruments/streichwurst/src/*.h) $(wildcard ../../instruments/streichwurst/include/streichwurst/*.h)
-test: $(HEADERS) tests/test_core.cpp tests/test_sq.cpp tests/test_streichwurst.cpp
+test: $(HEADERS) tests/test_core.cpp tests/test_sd_share.cpp tests/test_serial_transport.cpp tests/test_sq.cpp tests/test_streichwurst.cpp
 	mkdir -p build/host
 	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) tests/test_core.cpp -o build/host/test_core
 	./build/host/test_core
+	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) tests/test_sd_share.cpp -o build/host/test_sd_share
+	./build/host/test_sd_share
+	python3 tests/sd_vectors.py --check
+	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) tests/test_serial_transport.cpp -o build/host/test_serial_transport
+	./build/host/test_serial_transport
 	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/test_sq.cpp -o build/host/test_sq
 	./build/host/test_sq
 	$(HOST_CXX) $(HOST_FLAGS) $(INCLUDES) $(SQ_INCLUDES) tests/test_streichwurst.cpp -o build/host/test_streichwurst

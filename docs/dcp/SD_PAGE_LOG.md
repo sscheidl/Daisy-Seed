@@ -48,3 +48,44 @@ Phase 0 PASS: every baseline check green; no HOLD.
 | 1.1 | [SD_SHARE_PORT.md](SD_SHARE_PORT.md) written: states, events, transitions (Nebulae and Looper side by side), every message with bytes, every timeout, user texts and button rules, D5 patch save/restore, test mapping | done |
 | 1.2 | Every Python test of `test_nebulae.py`, `test_looper.py`, `test_gui_nebulae.py`, `test_gui_looper.py` mapped or justified as GUI-only (section 11) | done |
 | 1.3 | Every rule of the profile documents assigned to a state (section 10); Python versus documents compared (section 9) | no contradiction, no HOLD |
+
+## Phase 2: C++ core `SdShare` with simulator (2026-11-08)
+
+New in `editors/mod-on-daisy/src/core/`: `SdShareProtocol.h` (NB/LP SysEx codecs, profiles,
+texts), `Ddp.h` (CRC-16 framing, receiver, HELLO/READER/NEB/LOOPER/ST), `DdpSession.h` (CDC
+session with the Python guards), `SdShare.h` (`SdShareWorkflow`, the state machine of
+SD_SHARE_PORT.md § 4), `SdShareSim.h` (both instruments, both personalities, eject, bus reset,
+I/O error, R1, restart that never completes, hung firmware). Tests: `tests/test_sd_share.cpp`
+(27 groups, SD_SHARE_PORT.md § 11), vectors `tests/sd_share_vectors.txt` written by
+`tests/sd_vectors.py` from the Python reference and checked by `--check`.
+
+| # | Command (in `editors/mod-on-daisy`) | Date | Exit | Result |
+| --- | --- | --- | --- | --- |
+| 2.1 | `python tests/sd_vectors.py` then `--check` | 2026-11-08 00:2x | 0 | 54 lines, matches the reference |
+| 2.2 | `clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Wshadow -pthread … tests/test_sd_share.cpp` and run | 2026-11-08 | 0 | all 27 groups PASS (first run: 7 checks failed in hand-written test vectors and a timeout expectation; fixed in the test, not the core) |
+| 2.3 | the same with `-O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all` | 2026-11-08 | 0 | PASS (first run: a use-after-free in the test's own fake port; fixed) |
+| 2.4 | `arm-none-eabi-g++ -mcpu=cortex-m7 -std=c++17 -O2 -Wall -Wextra -Werror -Wshadow -fsyntax-only tests/test_sd_share.cpp` (GCC warning check, no g++ here) | 2026-11-08 | 0 | clean |
+| 2.5 | `make -C editors/mod-on-daisy test` (now with `test_sd_share` and the vector check) | 2026-11-08 00:3x | 0 | all PASS |
+
+Byte cross-check: STATUS, SHARE (confirm 0/1, three tokens), CONFIRM/SAVING/… replies, ERROR,
+`READER a=RETURN`, `NEB a=PERFORM`, `LOOPER a=PERFORM`, HELLO, PING, BYE: identical bytes in
+Python and C++. Every timeout (STATUS 3 s, probe 1 s, SHARE 2 s, restart 20 s, save retry
+0.5 s / 180 s, DDP handshake 1 s, backoff 5 s, reader command 20 s, RX 1.5 s / 5 s) is driven
+by the fake clock in the tests. Phase 2 PASS, no HOLD.
+
+## Phase 3: Windows serial transport and discovery (2026-11-08)
+
+`src/core/SerialTransport.h`: `ThreadedSerialLink` (I/O thread, bounded 64 KiB queues,
+`Close()` cancels and joins) and `ThreadedSerialPorts` around a platform `SerialBackend`.
+`src/ui/SerialPortWin.h`: `Win32SerialBackend` (overlapped `ReadFile`/`WriteFile`,
+`CancelIoEx`, DTR on) and `ListComPorts()` through SetupAPI with VID/PID from the device
+instance id; Windows SDK only, no driver, no admin rights. The MIDI side stays the existing
+JUCE port, now shared with the workflow (phase 4).
+
+| # | Command | Date | Exit | Result |
+| --- | --- | --- | --- | --- |
+| 3.1 | `clang++ … tests/test_serial_transport.cpp` and run | 2026-11-08 | 0 | PASS: open/HELLO over the thread, handshake timeout, port vanishes, reconnect asks STATUS only, GUI-thread calls with a backend blocking 200 ms: open 0.1 ms, write 0.0 ms, read 0.0 ms, close 0.4–15.7 ms, destroy 0.0 ms (all < 50 ms), bounded send queue |
+| 3.2 | the same under ASan/UBSan | 2026-11-08 | 0 | PASS |
+| 3.3 | `clang++ -fsyntax-only` of `src/ui/SerialPortWin.h` (llvm-mingw Windows headers) | 2026-11-08 | 0 | clean (after adding `<cstdlib>`) |
+
+Phase 3 PASS, no HOLD. Real COM-port behaviour is NOT MEASURED (no kit in this session).

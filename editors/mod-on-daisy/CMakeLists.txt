@@ -39,8 +39,21 @@ target_include_directories(mod_editor_core_tests PRIVATE "${MOD_MODULE_INCLUDE}"
 # The simulator sends column base values like the Physical Modeling MOD build.
 target_compile_definitions(mod_editor_core_tests PRIVATE MOD_ON_DAISY_EXTENSIONS=1)
 target_compile_options(mod_editor_core_tests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8 /W4>)
+# SD share core (Nebulae/Looper card sharing) against the simulated instruments; reads
+# tests/sd_share_vectors.txt from the source directory.
+add_executable(mod_editor_sd_share_tests tests/test_sd_share.cpp)
+target_include_directories(mod_editor_sd_share_tests PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}")
+target_compile_options(mod_editor_sd_share_tests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8 /W4>)
 enable_testing()
 add_test(NAME editor_core COMMAND mod_editor_core_tests)
+# Threaded serial transport with a fake OS port (phase 3 of the SD page work order).
+add_executable(mod_editor_serial_tests tests/test_serial_transport.cpp)
+target_include_directories(mod_editor_serial_tests PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}")
+target_compile_options(mod_editor_serial_tests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8 /W4>)
+find_package(Threads REQUIRED)
+target_link_libraries(mod_editor_serial_tests PRIVATE Threads::Threads)
+add_test(NAME editor_sd_share COMMAND mod_editor_sd_share_tests WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+add_test(NAME editor_serial COMMAND mod_editor_serial_tests)
 
 juce_add_gui_app(ModOnDaisyEditor
     PRODUCT_NAME "Mod on Daisy Editor"
