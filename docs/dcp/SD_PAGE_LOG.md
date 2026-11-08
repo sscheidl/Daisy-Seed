@@ -198,4 +198,8 @@ The simulator gained `share_reply_delay_ms` for the pending-action test.
 | 7.5 | `test_serial_transport` three times while the MSVC build ran in parallel | 2026-11-08 01:25 | 0 | close 15.7–40.4 ms (bound 50), uncooperative backend 47.6–76.5 ms (bound 95), BYE 16–64 ms; one earlier run during the full parallel build exceeded a bound with the former 30 ms drain wait, hence 15 ms |
 | 7.6 | `make -C editors/mod-on-daisy test`, the sanitizer run, `E2E_ONLY=nebulae` e2e | 2026-11-08 01:27–01:28 | 0 / 0 / 0 | all PASS |
 | 7.7 | `python -m pytest diagnostics/tests/python -q` | 2026-11-08 01:02 | 0 | 335 passed (Python untouched) |
-| 7.8 | store and package again from the final commit (`scripts/dcp_sd_test_package.py --store --package --selftest --check-root …`) | | | see below |
+| 7.8 | `cmake --build build/editor --config Release --parallel` from the final commit 530b195 (clean tree), then `scripts/dcp_sd_test_package.py --store --package --selftest --check-root <origin/main export>` | 2026-11-08 01:29 | 0 | `apps/daisy-control-panel/0.5.0+530b195/` stored (`candidate`); `build/dcp-sd-test/` rebuilt from the stores, every checksum verified, the four images PASS `check-firmware.py`, the packaged EXE self-test exit 0 with 20 PASS lines |
+| 7.9 | retention: `apps/daisy-control-panel/0.5.0+5f6280d/` (the phase-5 candidate, never handed out) is superseded and deleted once 5f6280d is on GitHub (after the push) | 2026-11-08 | | listed in the PR |
+
+Phase 7 PASS: no open P1/P2 finding; all tests of phases 0–5 green again; the package is ready
+and `apps/` is filled; the PR is opened against `main` (depends on #102, not merged).
