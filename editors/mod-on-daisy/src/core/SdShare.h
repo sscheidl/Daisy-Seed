@@ -222,6 +222,10 @@ class SdShareWorkflow {
     // ------------------------------------------------------------------ polling
     void Tick(uint32_t now_ms) {
         now_ = now_ms;
+        if(!started_) { // the clock may start anywhere (ms since boot): arm the scan now
+            started_ = true;
+            next_scan_ = now_;
+        }
         PollManagement();
         PollMidi();
         if(deadline_ && int32_t(now_ - *deadline_) > 0)
@@ -400,6 +404,8 @@ class SdShareWorkflow {
             probing_ = true;
             last_reply_ = now_;
             SendStatus();
+            if(!link_) // the port refused the probe: back it off like a silent one (T3)
+                failed_ports_[name] = now_ + kFailedPortBackoffMs;
             Changed();
             return;
         }
@@ -563,7 +569,7 @@ class SdShareWorkflow {
     std::optional<PerfStatus> status_;
     std::string port_, message_, error_;
     std::unique_ptr<MidiLink> link_;
-    bool probing_ = false, confirm_ = false, share_after_restart_ = false, perform_after_return_ = false;
+    bool probing_ = false, confirm_ = false, share_after_restart_ = false, perform_after_return_ = false, started_ = false;
     uint32_t now_ = 0, next_scan_ = 0, last_reply_ = 0, last_status_sent_ = 0, save_started_ = 0;
     std::optional<uint32_t> deadline_, resend_at_;
     uint8_t token_[4]{};

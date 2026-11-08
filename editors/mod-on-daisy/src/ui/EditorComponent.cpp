@@ -50,8 +50,7 @@ EditorComponent::EditorComponent(bool with_simulators, bool sd_page)
         RefreshAll();
     };
     sd_panel_.return_to_performance = [this] {
-        if(sd_.ReturnToPerformance())
-            Log(LogKind::Info, U(sd_.Name()) + U(": return to performance requested"));
+        sd_.ReturnToPerformance(); // the workflow logs the request itself
         RefreshAll();
     };
     sd_panel_.acknowledge = [this] { SdAcknowledge(); };
@@ -89,11 +88,10 @@ EditorComponent::EditorComponent(bool with_simulators, bool sd_page)
     addAndMakeVisible(connect_);
     connect_.setColour(juce::TextButton::buttonColourId, colour::accent);
     connect_.onClick = [this] {
-        if(session_.State() != LinkState::Offline || SqActive() || md_pending_) {
+        if(Busy()) {
             user_disconnected_ = true; // the plugin stays offline until "Connect"
             Disconnect();
         } else {
-            user_disconnected_ = false;
             ConnectTo(port_.getSelectedItemIndex());
         }
     };
@@ -278,6 +276,14 @@ juce::StringArray EditorComponent::PortNames() const {
 
 void EditorComponent::ConnectTo(int index) {
     Disconnect();
+    if(!opening_sd_link_) { // the user's choice: not the kit coming back from a share
+        user_disconnected_ = false;
+        if(sd_restore_pending_) {
+            sd_restore_pending_ = false;
+            Log(LogKind::Warn, U("The patch saved before the share is not sent to a device you chose yourself; open it from ")
+                                   + sd_autosave_file_.getFullPathName());
+        }
+    }
     if(index < 0 || index >= int(ports_.size()))
         return Log(LogKind::Warn, U("Please choose a device."));
     const Port& p = ports_[std::size_t(index)];
@@ -361,6 +367,7 @@ void EditorComponent::ShowMatrix(bool on) {
 }
 
 void EditorComponent::Disconnect() {
+    sd_reconnected_ = false;
     md_pending_ = false;
     md_alongside_ = false;
     show_matrix_ = false;
@@ -561,6 +568,8 @@ std::vector<std::string> EditorComponent::SdPortCandidates() {
     }
     if(!sd_.Following() || user_disconnected_)
         return {};
+    // The kit comes back on the port the share started on; only if that name is gone
+    // (another enumeration) every Daisy port is offered.
     std::vector<std::string> out;
     for(const Port& p : ports_) {
         if(sd_sim_ && p.simulator == sd_sim_port_ && sd_sim_->MidiAlive())
@@ -568,7 +577,14 @@ std::vector<std::string> EditorComponent::SdPortCandidates() {
         if(!sd_sim_ && p.simulator == -1 && p.label.containsIgnoreCase("daisy"))
             out.push_back(p.label.toStdString());
     }
+    for(const std::string& name : out)
+        if(name == sd_.Port())
+            return {name};
     return out;
+}
+
+bool EditorComponent::Busy() const {
+    return session_.State() != LinkState::Offline || SqActive() || md_pending_ || sd_link_ != nullptr;
 }
 
 std::unique_ptr<sd::MidiLink> EditorComponent::OpenSdLink(const std::string& name, std::string& error) {
@@ -584,6 +600,7 @@ std::unique_ptr<sd::MidiLink> EditorComponent::OpenSdLink(const std::string& nam
         opening_sd_link_ = true;
         ConnectTo(index); // SQ and Mod on Daisy detection as for a manual Connect
         opening_sd_link_ = false;
+        sd_reconnected_ = true; // this connection is the kit coming back (restore allowed)
         if(!PortOpen()) {
             error = "port " + name + " could not be opened";
             return nullptr;
@@ -616,8 +633,14 @@ void EditorComponent::OnSdPhase(sd::Phase before, sd::Phase now) {
         Disconnect();
         Log(LogKind::Info, U(sd_.Name()) + U(" restarts into SD management; the matrix connection is closed until it is back."));
     }
-    if(now == sd::Phase::NotFound)
+    if(now == sd::Phase::NotFound) {
         sd_auto_switched_ = false;
+        if(sd_restore_pending_) { // the kit never came back (T22, T33): nothing to send it to
+            sd_restore_pending_ = false;
+            Log(LogKind::Warn, U("The kit did not come back; the patch saved before the share stays in ")
+                                   + sd_autosave_file_.getFullPathName());
+        }
+    }
     if(before == sd::Phase::Returning && now == sd::Phase::Performance)
         Log(LogKind::Ok, U(sd_.Message()));
     RefreshAll();
@@ -645,6 +668,7 @@ bool EditorComponent::SaveBeforeShare() {
     }
     const std::string text = SavePatch(model_, &session_.Device());
     sd_restore_ = LoadPatch(text, model_);
+    sd_restore_key_ = session_.Device().key;
     juce::File dir = sd_autosave_dir;
     if(dir == juce::File()) {
         const juce::String local = juce::SystemStats::getEnvironmentVariable("LOCALAPPDATA", {});
@@ -664,10 +688,18 @@ bool EditorComponent::SaveBeforeShare() {
     return true;
 }
 
+// Only for the kit that comes back from the share the workflow caused: the same instrument
+// key on a connection the workflow opened. Any other connection abandons the restore (the
+// file stays). Cleared as well when the kit never comes back (T22, T33).
 void EditorComponent::RestoreAfterShare() {
     if(!sd_restore_pending_ || !sd_restore_ || !session_.Connected())
         return;
     sd_restore_pending_ = false;
+    if(!sd_reconnected_ || session_.Device().key != sd_restore_key_) {
+        Log(LogKind::Warn, U("Patch saved before the share not restored: another device (") + U(session_.Device().key)
+                               + U(" instead of ") + U(sd_restore_key_) + U("); open it from ") + sd_autosave_file_.getFullPathName());
+        return;
+    }
     const Compatibility compat = CheckCompatibility(*sd_restore_, model_, session_.Device());
     ApplyDecision(*sd_restore_, compat, compat.NeedsDecision() ? CompatChoice::Safe : CompatChoice::Force);
     Log(LogKind::Ok, U("Patch restored after the share (") + sd_autosave_file_.getFileName() + U(")."));
@@ -899,7 +931,7 @@ void EditorComponent::RefreshAll() {
         status_.setColour(juce::Label::textColourId, mgmt ? colour::warn : colour::ok);
     }
     status_.setColour(juce::Label::outlineColourId, status_.findColour(juce::Label::textColourId));
-    const bool busy = s != LinkState::Offline || SqActive() || md_pending_ || sd_link_ != nullptr;
+    const bool busy = Busy();
     connect_.setButtonText(busy ? "Disconnect" : "Connect");
     RefreshMode();
     port_.setEnabled(!busy);

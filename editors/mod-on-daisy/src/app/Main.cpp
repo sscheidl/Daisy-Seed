@@ -51,6 +51,7 @@ class SelfTest {
         SdCycle("Simulator: Looper", false, false, "dcp-looper");
         SdLooperSaving();
         SdInterruption();
+        SdRestoreNotToWrongDevice();
         SdPluginNote();
         if(failures_)
             Say("FAIL: " + juce::String(failures_) + " checks");
@@ -455,7 +456,7 @@ class SelfTest {
     void SdNoInstrument() {
         e_.ConnectTo(PortIndex("Simulator: Toy Piano"));
         SELFTEST_CHECK(Settle());
-        e_.Step(2500); // the probe (1 s) and its backoff
+        e_.Step(2500); // the probe: the Toy Piano simulator refuses NB/LP SysEx, the port is backed off 5 s
         e_.RefreshNow();
         sd::SdShareWorkflow& wf = e_.GetSdShare();
         SELFTEST_CHECK(wf.GetPhase() == sd::Phase::NotFound && !e_.SdPageShown() && e_.NoMatrixText().isEmpty());
@@ -560,7 +561,17 @@ class SelfTest {
         e_.ShowSdPage(false);
         e_.RefreshNow();
         Shot((juce::String(shot) + "-matrix.png").toRawUTF8());
-        e_.Disconnect();
+        if(matrix) {
+            e_.Disconnect();
+        } else {
+            // The header button says "Disconnect" while only the SD workflow holds the port,
+            // and clicking it releases the port (review finding 3).
+            SELFTEST_CHECK(e_.Busy() && e_.ConnectButton().getButtonText() == "Disconnect");
+            e_.ConnectButton().onClick();
+            e_.Step(50);
+            e_.RefreshNow();
+            SELFTEST_CHECK(!e_.PortOpen() && wf.GetPhase() == sd::Phase::NotFound && e_.ConnectButton().getButtonText() == "Connect");
+        }
         e_.Step(100);
         SELFTEST_CHECK(e_.GetSdSimulator() && e_.GetSdSimulator()->Management().reader_state == ddp::ReaderState::Local);
         Say(juce::String("PASS SD page ") + port + ": connect, share" + (confirm_case ? " (confirm, cancel, confirm)" : "")
@@ -626,6 +637,49 @@ class SelfTest {
         e_.ShowSdPage(false);
         e_.Disconnect();
         Say("PASS SD page interruption: quarantined, acknowledge asked (no, yes), return after LOCAL");
+    }
+
+    // D5 guard (review finding 1): the patch saved before a share goes only to the kit that
+    // comes back from that share. A kit that never comes back (restart timeout) abandons the
+    // restore; a device the user connects by hand never receives it.
+    void SdRestoreNotToWrongDevice() {
+        sd::SdShareWorkflow& wf = e_.GetSdShare();
+        ui::SdSharePanel& page = e_.GetSdPanel();
+        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
+        SELFTEST_CHECK(Settle() && e_.GetSession().Connected());
+        e_.GetSession().EditDepth(0 * 8 + 1, 40, true);
+        SELFTEST_CHECK(Settle() && InSync());
+        e_.ShowSdPage(true);
+        e_.RefreshNow();
+        page.ShareButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Restarting; }, 3000));
+        SELFTEST_CHECK(e_.SdRestorePending());
+        e_.GetSdSimulator()->never_reenumerates = true; // the kit never comes back (T22)
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::NotFound; }, 25000));
+        SELFTEST_CHECK(!e_.SdRestorePending() && e_.LogText().contains("did not come back"));
+        // A device the user connects now gets nothing.
+        e_.ShowSdPage(false);
+        e_.ConnectTo(PortIndex("Simulator: Toy Piano"));
+        SELFTEST_CHECK(Settle() && e_.GetSession().Connected() && e_.GetModel().Depth(1) == 0 && InSync());
+        e_.Disconnect();
+        // Pending restore, then a manual connect to another device: abandoned with a warning.
+        e_.ConnectTo(PortIndex("Simulator: Looper MOD"));
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
+        SELFTEST_CHECK(Settle() && e_.GetSession().Connected());
+        e_.GetSession().EditDepth(0 * 8 + 2, 33, true);
+        SELFTEST_CHECK(Settle() && InSync());
+        e_.ShowSdPage(true);
+        e_.RefreshNow();
+        page.ShareButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Restarting; }, 3000));
+        SELFTEST_CHECK(e_.SdRestorePending());
+        e_.ShowSdPage(false);
+        e_.ConnectTo(PortIndex("Simulator: Toy Piano")); // the user's own choice
+        SELFTEST_CHECK(!e_.SdRestorePending()); // (the warning line is replaced by "Connecting to …" at once)
+        SELFTEST_CHECK(Settle() && e_.GetSession().Connected() && e_.GetModel().Depth(2) == 0 && InSync());
+        e_.Disconnect();
+        Say("PASS SD page restore guard: abandoned after the restart timeout and on a manual connect; nothing sent to another device");
     }
 
     // The VST3 content (D2): the SD card page carries the note only.

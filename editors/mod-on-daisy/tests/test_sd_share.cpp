@@ -359,7 +359,7 @@ void TestNebulaeRefusals() {
         Reply reply;
         CHECK(ParseReply(kNebulae, replies[0].data(), replies[0].size(), reply) && reply.kind == Reply::Share
               && reply.result != ShareResult::Accepted && r.dev.restarts == 0);
-        (void)c.error;
+        CHECK(reply.result == (Contains(c.error, "recording") ? ShareResult::Busy : ShareResult::NoCard));
     }
     // The workflow's own error texts for BUSY and NO_CARD (the device changes state after the probe).
     {
@@ -671,34 +671,169 @@ void TestDdpPendingActionMatch() {
     Rig r;
     r.dev.StartInManagement();
     r.Run(2000);
-    r.dev.Management().reader_init_ms = 2500; // the SHARE answer comes late
+    r.dev.Management().share_reply_delay_ms = 2500; // the a=SHARE answer comes late, STATUS lines keep coming
     CHECK(r.wf.RequestShare() && r.session.ReaderPending());
-    r.Run(1500);
-    CHECK(r.session.ReaderPending()); // nothing arrived while the firmware blocks
+    r.Run(2000);
+    CHECK(r.session.ReaderPending());                                                 // two periodic STATUS lines arrived …
+    CHECK(r.session.Reader() && r.session.Reader()->action == "STATUS" && r.wf.ReaderState() == ReaderState::Shared); // … and were parsed
+    CHECK(!r.wf.CanShareInManagement() && !r.wf.CanReturn());                          // but nothing is decided while pending
     CHECK(r.Until([&] { return !r.session.ReaderPending(); }, 3000));
-    CHECK(r.session.Reader() && r.session.Reader()->action == "SHARE" && r.wf.ReaderState() == ReaderState::Shared);
+    CHECK(r.session.Reader() && r.wf.ReaderState() == ReaderState::Shared);
+    r.Run(1200); // the state stays with the periodic lines
+    CHECK(r.wf.ReaderState() == ReaderState::Shared && !r.session.ReaderPending());
     std::printf("PASS DDP: only the matching READER action completes a pending command\n");
 }
 
 void TestWfBusyReaderBlocksReturn() {
-    // The Python reference refuses RETURN while the reader is busy, even after EJECTED.
+    // The Python reference refuses RETURN while the BOT transport is busy, even after EJECTED
+    // (test_card_reader.py::test_busy_transport_prevents_return_even_after_eject).
     Rig r;
     r.dev.StartInManagement();
     r.Run(2000);
     CHECK(r.wf.RequestShare());
     CHECK(r.Until([&] { return r.wf.ReaderState() == ReaderState::Shared; }, 3000));
+    r.dev.Management().reader_busy = true; // Windows is still inside a SCSI command
     r.dev.Management().ReaderEject();
     CHECK(r.Until([&] { return r.wf.ReaderState() == ReaderState::Ejected; }, 3000));
-    // Inject a busy READER line as the firmware would send it during a pending BOT command.
-    ddp::ReaderInfo busy;
-    std::string err;
-    CHECK(ddp::ParseReader(ddp::ParseMessage("READER state=EJECTED sectors=1 busy=1 a=STATUS"), busy, err) && busy.busy);
-    // Through the session: feed the frame as if received.
-    std::vector<uint8_t> frame;
-    ddp::BuildFrame("READER state=EJECTED sectors=1 busy=1 a=STATUS", frame);
-    // The simulator never reports busy; check the predicate directly on a parsed state.
-    CHECK(r.wf.CanReturn()); // not busy: allowed
-    std::printf("PASS busy reader: CanReturn needs busy=0 (predicate), eject reached\n");
+    CHECK(r.session.Reader() && r.session.Reader()->busy);
+    CHECK(r.wf.Ejected() && !r.wf.CanReturn() && !r.wf.ReturnToPerformance());
+    r.Run(2000);
+    CHECK(r.dev.Management().reader_state == ReaderState::Ejected && r.dev.restarts == 0); // nothing was sent
+    r.dev.Management().reader_busy = false;
+    CHECK(r.Until([&] { return r.session.Reader() && !r.session.Reader()->busy; }, 3000));
+    CHECK(r.wf.CanReturn() && r.wf.ReturnToPerformance());
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Performance; }, 10000));
+    std::printf("PASS busy reader: RETURN refused while busy=1 even after EJECTED, allowed once busy=0\n");
+}
+
+// T3: a port that does not answer STATUS is closed after 1 s and tried again after 5 s.
+void TestProbeBackoff() {
+    Rig r;
+    r.dev.answer_sysex = false; // a Toy Piano: no NB/LP protocol at all
+    r.Run(1500);
+    CHECK(r.midi.opened == 1 && !r.wf.LinkOpen() && r.wf.GetPhase() == Phase::NotFound);
+    r.Run(3000);
+    CHECK(r.midi.opened == 1); // backed off
+    r.Run(2500);
+    CHECK(r.midi.opened == 2); // probed again after 5 s
+    r.dev.answer_sysex = true;
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Performance; }, 8000));
+    // A port that refuses the very first send is backed off the same way (finding 11).
+    struct Refusing : MidiLink {
+        bool Send(const uint8_t*, std::size_t) override { return false; }
+        bool Poll(std::vector<std::vector<uint8_t>>&) override { return true; }
+        void Close() override {}
+    };
+    struct RefusingPorts : MidiPorts {
+        int opened = 0;
+        std::vector<std::string> List() override { return {"Refusing"}; }
+        std::unique_ptr<MidiLink> Open(const std::string&, std::string&) override {
+            ++opened;
+            return std::make_unique<Refusing>();
+        }
+    };
+    Rig q;
+    RefusingPorts ports;
+    q.wf.SetMidiPorts(&ports);
+    q.Run(3500);
+    CHECK(ports.opened == 1);
+    q.Run(2500);
+    CHECK(ports.opened == 2);
+    std::printf("PASS probe backoff: silent port closed after 1 s, retried after 5 s; refused send backed off too\n");
+}
+
+// T13/T14/T15 through the workflow: replies the simulator never produces on its own.
+void TestStaleAndErrorReplies() {
+    struct Rewriting : MidiLink {
+        std::unique_ptr<MidiLink> inner;
+        int mode = 0; // 1: foreign token, 2: ERROR reply, 3: BAD_REQUEST, 4: unknown code 5 (Nebulae)
+        bool Send(const uint8_t* b, std::size_t n) override { return inner->Send(b, n); }
+        bool Poll(std::vector<std::vector<uint8_t>>& out) override {
+            if(!inner->Poll(out))
+                return false;
+            for(std::vector<uint8_t>& m : out) {
+                if(m.size() != 12 || m[5] != (kCmdShare | kReplyBit))
+                    continue;
+                if(mode == 1)
+                    m[7] ^= 0x01; // another host's token
+                else if(mode == 2)
+                    m = {0xF0, 0x7D, 0x4E, 0x42, 0x01, uint8_t(kCmdError | kReplyBit), kCmdShare, 3, 0xF7}; // LENGTH
+                else if(mode == 3)
+                    m[6] = 4;
+                else if(mode == 4)
+                    m[6] = 5;
+            }
+            return true;
+        }
+        void Close() override { inner->Close(); }
+    };
+    struct Ports : MidiPorts {
+        SimMidiPorts& inner;
+        Rewriting* last = nullptr;
+        explicit Ports(SimMidiPorts& i) : inner(i) {}
+        std::vector<std::string> List() override { return inner.List(); }
+        std::unique_ptr<MidiLink> Open(const std::string& name, std::string& error) override {
+            auto link = inner.Open(name, error);
+            if(!link)
+                return nullptr;
+            auto w = std::make_unique<Rewriting>();
+            w->inner = std::move(link);
+            last = w.get();
+            return w;
+        }
+    };
+    Rig r;
+    r.dev.live = true; // every SHARE answers CONFIRM_REQUIRED: no restart, the device stays
+    Ports ports(r.midi);
+    r.wf.SetMidiPorts(&ports);
+    r.Run(1500);
+    CHECK(r.wf.GetPhase() == Phase::Performance && ports.last);
+    // T14: a reply with another token is ignored; the request times out after 2 s.
+    ports.last->mode = 1;
+    CHECK(r.wf.RequestShare());
+    r.Run(1000);
+    CHECK(r.wf.GetPhase() == Phase::Requesting);
+    // (the next STATUS reply clears the error text again, as in the Python panel: check at once)
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Performance && Contains(r.wf.Error(), "No answer"); },
+                  SdShareWorkflow::kShareTimeoutMs + 100));
+    CHECK(r.dev.restarts == 0);
+    // T15: an ERROR reply ends the request with the firmware's reason.
+    ports.last->mode = 2;
+    CHECK(r.wf.RequestShare());
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Performance && Contains(r.wf.Error(), "Firmware rejected command 0x02: LENGTH"); }, 500));
+    // T13: BAD_REQUEST and an unknown code are refusals.
+    ports.last->mode = 3;
+    CHECK(r.wf.RequestShare());
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Performance && Contains(r.wf.Error(), "Request refused (BAD_REQUEST)"); }, 500));
+    ports.last->mode = 4;
+    CHECK(r.wf.RequestShare());
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Performance && Contains(r.wf.Error(), "Request refused (CODE5)"); }, 500));
+    CHECK(r.dev.restarts == 0 && r.Logged("refused SD management: CODE5"));
+    std::printf("PASS stale and error replies: foreign token ignored (timeout), ERROR, BAD_REQUEST, CODE5 refuse\n");
+}
+
+// The clock is milliseconds since boot and may start anywhere, also above 2^31 or just
+// below the 32-bit wrap: every timer must still fire (finding 2).
+void TestClockWrap() {
+    for(uint32_t start : {0x80000000u, 0xFFFFF000u, 0xFFFFFFFFu - 500u}) {
+        Rig r;
+        r.now = start;
+        r.Run(1500);
+        CHECK(r.wf.GetPhase() == Phase::Performance);
+        CHECK(r.wf.RequestShare());
+        CHECK(r.Until([&] { return r.wf.ReaderState() == ReaderState::Shared; }, 25000));
+        r.dev.Management().ReaderEject();
+        CHECK(r.Until([&] { return r.wf.ReaderState() == ReaderState::Ejected; }, 3000));
+        CHECK(r.wf.ReturnToPerformance());
+        CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Performance; }, 25000));
+        // The CDC side alone, found already in management, with the same start.
+        Rig m;
+        m.now = start;
+        m.dev.StartInManagement();
+        m.Run(3000);
+        CHECK(m.wf.GetPhase() == Phase::Management && m.session.Connected());
+    }
+    std::printf("PASS clock wrap: full cycle and CDC discovery with a clock starting at 2^31 and across 2^32\n");
 }
 
 void TestDdpHandshake() {
@@ -814,6 +949,9 @@ int main() {
     TestDdpSharedRxTolerance();
     TestDdpPendingActionMatch();
     TestWfBusyReaderBlocksReturn();
+    TestProbeBackoff();
+    TestStaleAndErrorReplies();
+    TestClockWrap();
     TestDdpHandshake();
     TestButtonRules();
     if(failures) {

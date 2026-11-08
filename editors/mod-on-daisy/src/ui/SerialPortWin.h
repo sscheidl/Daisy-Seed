@@ -14,6 +14,7 @@
 #endif
 #include <windows.h>
 #include <setupapi.h>
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
@@ -75,7 +76,12 @@ class Win32SerialBackend : public SerialBackend {
             CloseHandle(write_event_);
     }
 
+    // Both calls return promptly after Cancel(): the pending I/O is aborted and the wait
+    // loops check the flag every 20 ms, so a cancel that lands between the check and the
+    // OS call is still honoured within one slice.
     int Read(uint8_t* buffer, std::size_t max, uint32_t timeout_ms) override {
+        if(cancelled_)
+            return 0;
         OVERLAPPED ov{};
         ov.hEvent = read_event_;
         ResetEvent(read_event_);
@@ -85,17 +91,21 @@ class Win32SerialBackend : public SerialBackend {
         if(GetLastError() != ERROR_IO_PENDING)
             return -1;
         // The driver honours the COMMTIMEOUTS; the wait only guards against one that does not.
-        const DWORD waited = WaitForSingleObject(read_event_, timeout_ms + 200);
-        if(waited != WAIT_OBJECT_0)
+        const bool timed_out = !WaitSlices(read_event_, timeout_ms + 200);
+        if(timed_out || cancelled_)
             CancelIoEx(handle_, &ov);
         if(!GetOverlappedResult(handle_, &ov, &n, TRUE)) {
             const DWORD err = GetLastError();
-            return err == ERROR_OPERATION_ABORTED && !cancelled_ ? 0 : (cancelled_ ? 0 : -1);
+            if(cancelled_ || (timed_out && err == ERROR_OPERATION_ABORTED))
+                return 0;
+            return -1; // the device is gone (surprise removal, re-enumeration)
         }
         return int(n);
     }
 
     bool Write(const uint8_t* data, std::size_t n) override {
+        if(cancelled_)
+            return false;
         OVERLAPPED ov{};
         ov.hEvent = write_event_;
         ResetEvent(write_event_);
@@ -103,6 +113,9 @@ class Win32SerialBackend : public SerialBackend {
         if(!WriteFile(handle_, data, DWORD(n), &written, &ov)) {
             if(GetLastError() != ERROR_IO_PENDING)
                 return false;
+            // Bounded like the COMMTIMEOUTS write timeout; a cancel ends the wait early.
+            if(!WaitSlices(write_event_, 600) || cancelled_)
+                CancelIoEx(handle_, &ov);
             if(!GetOverlappedResult(handle_, &ov, &written, TRUE))
                 return false;
         }
@@ -119,9 +132,20 @@ class Win32SerialBackend : public SerialBackend {
         : handle_(h), read_event_(CreateEventA(nullptr, TRUE, FALSE, nullptr)),
           write_event_(CreateEventA(nullptr, TRUE, FALSE, nullptr)) {}
 
+    // Waits for the event in 20 ms slices; false after `total_ms` or once cancelled.
+    bool WaitSlices(HANDLE event, uint32_t total_ms) const {
+        for(uint32_t waited = 0; waited < total_ms; waited += 20) {
+            if(WaitForSingleObject(event, 20) == WAIT_OBJECT_0)
+                return true;
+            if(cancelled_)
+                return false;
+        }
+        return WaitForSingleObject(event, 0) == WAIT_OBJECT_0;
+    }
+
     HANDLE handle_ = INVALID_HANDLE_VALUE;
     HANDLE read_event_ = nullptr, write_event_ = nullptr;
-    volatile bool cancelled_ = false;
+    std::atomic<bool> cancelled_{false};
 };
 
 // Present COM ports with the USB VID/PID of their device instance ("USB\VID_0483&PID_5740&MI_00\...").

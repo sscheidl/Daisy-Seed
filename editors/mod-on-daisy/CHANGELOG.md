@@ -28,6 +28,11 @@ Hardware results are recorded in the test sheets, never here.
   Panel app (the kit restarts, and the DAW loses the Daisy MIDI port)". Window minimum width
   1200 px (the header gained the page buttons).
 * Browser editor unchanged (`web/version.js` stays 0.4.0).
+* Independent review before the PR (docs/dcp/SD_PAGE_LOG.md, phase 7): the saved patch is
+  restored only to the kit that comes back from the share; timers no longer depend on the
+  millisecond counter starting near zero; the Disconnect button releases a port held only by
+  the SD workflow; the Win32 serial backend honours Cancel in reads and writes and Close()
+  is bounded; the simulator sends its periodic READER line.
 
 ## 0.4.0
 

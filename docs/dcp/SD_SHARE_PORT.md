@@ -294,7 +294,17 @@ the Mod on Daisy session, the SQ session, the bootloader request and the SD shar
   the port meanwhile.
 * Messages the shared port delivered together with its disappearance still reach the
   workflow (the SHARE ACK arrives in the same poll as the kit's restart); only an empty poll
-  on a gone port counts as a lost link, as with the Python link and the simulator.
+  on a gone port counts as a lost link, as with the Python link and the simulator. On the CDC
+  side bytes that arrive together with the failure are dropped, as the Python `SerialLink`
+  raises (the session reconnects and asks STATUS).
+* COM port enumeration (SetupAPI) and `CreateFile` run on the message thread once per scan
+  second, as in the Python panel (pyserial `comports()`); they take milliseconds normally and
+  are not bounded by this design. Reads and writes run on the I/O thread with cancel; the
+  serial `Close()` waits at most about 45 ms (15 ms drain of a queued BYE, 30 ms for the thread) and
+  detaches a thread that a driver still holds.
+* D5 restore: the saved patch is sent only to a device with the same instrument key on a
+  connection the workflow itself opened (the kit coming back); a restart timeout (T22, T33)
+  or a connect the user makes by hand abandons the restore with a log line that names the file.
 * The CDC side scans COM ports (VID `0483` / PID `5740`) continuously as the Python panel
   does; a kit found in SD management is shown even if the user never pressed Connect.
 * Instruments without a matrix (D4): when the workflow reaches Performance or Management and
@@ -355,73 +365,83 @@ C++ tests: `editors/mod-on-daisy/tests/test_sd_share.cpp` (core, no JUCE, run by
 
 | Python test | C++ |
 | --- | --- |
-| `test_requests_match_firmware_layout` | `CodecNebulaeRequests` + vector cross-check |
-| `test_parse_status_reply` | `CodecNebulaeStatus` |
-| `test_parse_rejects_foreign_or_malformed` (6 cases) | `CodecNebulaeRejects` |
-| `test_parse_share_and_error` | `CodecNebulaeShareError` |
-| `test_full_round_trip_share_eject_return` | `WfNebulaeRoundTrip` |
-| `test_mod_build_traffic_on_the_port_does_not_disturb_the_workflow` | `WfForeignSysExSkipped` |
-| `test_live_loop_needs_confirmation_and_cancel_keeps_playing` | `WfNebulaeConfirmCancel` |
-| `test_refusals_change_nothing` (recording, no card) | `WfNebulaeRefusals` |
-| `test_share_timeout_and_lost_device` | `WfShareTimeoutAndLost` |
-| `test_restart_that_comes_back_in_performance_is_reported` | `WfWrongPersonalityR1` |
-| `test_restart_timeout` | `WfRestartTimeout` |
-| `test_interruption_is_quarantined_until_acknowledged` | `WfInterruptionQuarantine` |
-| `test_closing_the_link_never_returns_the_card` | `WfCloseNeverReturnsCard` |
-| `test_found_already_in_management_does_not_share` | `WfFoundInManagement` |
-| `test_unsupported_diagnostic_commands_are_rejected_in_management` | diagnostics-only (the panel never sends LED); the part that matters, "an ERR keeps the session", is `DdpErrKeepsSession` |
+| `test_requests_match_firmware_layout` | `TestVectors` (nebulae.status_request / share_request) + `TestCodecs` (7-bit token refused) |
+| `test_parse_status_reply` | `TestVectors` (nebulae.parse.status) + `TestCodecs` |
+| `test_parse_rejects_foreign_or_malformed` (6 cases) | `TestVectors` (`reject` lines, both parsers) |
+| `test_parse_share_and_error` | `TestVectors` (nebulae.parse.share / parse.error) |
+| `test_full_round_trip_share_eject_return` | `TestNebulaeRoundTrip` |
+| `test_mod_build_traffic_on_the_port_does_not_disturb_the_workflow` | `TestForeignSysExSkipped` |
+| `test_live_loop_needs_confirmation_and_cancel_keeps_playing` | `TestNebulaeConfirmCancel` |
+| `test_refusals_change_nothing` (recording, no card) | `TestNebulaeRefusals` |
+| `test_share_timeout_and_lost_device` | `TestShareTimeoutAndLost` |
+| `test_restart_that_comes_back_in_performance_is_reported` | `TestWrongPersonalityR1` |
+| `test_restart_timeout` | `TestRestartTimeout` |
+| `test_interruption_is_quarantined_until_acknowledged` | `TestInterruptionQuarantine` |
+| `test_closing_the_link_never_returns_the_card` | `TestCloseNeverReturnsCard` |
+| `test_found_already_in_management_does_not_share` | `TestFoundInManagement` |
+| `test_unsupported_diagnostic_commands_are_rejected_in_management` | diagnostics-only (the panel never sends LED); the part that matters, "an ERR keeps the session", is `TestDdpErrKeepsSession` |
 
 ### 11.2 `test_looper.py`
 
 | Python test | C++ |
 | --- | --- |
-| `test_requests_match_firmware_layout` | `CodecLooperRequests` + vector cross-check |
-| `test_parse_status_reply` | `CodecLooperStatus` |
-| `test_parse_rejects_foreign_or_malformed` | `CodecLooperRejects` |
-| `test_parse_share_and_error` | `CodecLooperShareError` |
-| `test_management_status_line` | `DdpLooperStatusLine` |
-| `test_probe_finds_the_looper_and_still_finds_nebulae` | `WfProbeProfiles` |
-| `test_full_round_trip_share_eject_return` | `WfLooperRoundTrip` |
-| `test_unsaved_loop_is_saved_before_the_share` | `WfLooperSaving` |
-| `test_save_failure_needs_confirmation_and_cancel_keeps_playing` | `WfLooperSaveFailedConfirm` |
-| `test_saving_can_be_cancelled_and_times_out` | `WfLooperSaveCancelTimeout` |
-| `test_refusals_change_nothing` (recording, importing, no card) | `WfLooperRefusals` |
-| `test_found_already_in_management_does_not_share` | `WfLooperFoundInManagement` |
-| `test_nebulae_message_is_rejected_by_the_looper` | `SimLooperRejectsNeb` |
+| `test_requests_match_firmware_layout` | `TestVectors` (looper.status_request / share_request) + `TestCodecs` |
+| `test_parse_status_reply` | `TestVectors` (looper.parse.status, two vectors) + `TestCodecs` |
+| `test_parse_rejects_foreign_or_malformed` | `TestVectors` (`reject` lines) |
+| `test_parse_share_and_error` | `TestVectors` (looper.parse.share incl. SAVING / parse.error) |
+| `test_management_status_line` | `TestCodecs` (`ParseMgmt` LOOPER cases) |
+| `test_probe_finds_the_looper_and_still_finds_nebulae` | `TestProbeProfiles` |
+| `test_full_round_trip_share_eject_return` | `TestLooperRoundTrip` |
+| `test_unsaved_loop_is_saved_before_the_share` | `TestLooperSaving` |
+| `test_save_failure_needs_confirmation_and_cancel_keeps_playing` | `TestLooperSaveFailedConfirm` |
+| `test_saving_can_be_cancelled_and_times_out` | `TestLooperSaveCancelTimeout` |
+| `test_refusals_change_nothing` (recording, importing, no card) | `TestLooperRefusals` |
+| `test_found_already_in_management_does_not_share` | `TestLooperFoundInManagement` |
+| `test_nebulae_message_is_rejected_by_the_looper` | `TestSimLooperRejectsNeb` |
 
 ### 11.3 `test_gui_nebulae.py` (workflow parts)
 
 | Python test | C++ |
 | --- | --- |
-| `test_performance_profile_shows_status_and_only_supported_actions` | self-test `SdNebulaeMod` (buttons and rows in performance) + `WfButtonRules` |
-| `test_buttons_drive_share_eject_return` | self-test cycle (Nebulae MOD, Nebulae) |
-| `test_live_loop_warning_and_confirmation` | self-test `SdNebulaeMod` with a Live loop (CONFIRM → cancel → confirm) |
-| `test_refusal_and_interruption_messages` | self-test `SdInterruption` + `WfInterruptionQuarantine`, `WfNebulaeRefusals` |
-| `test_long_texts_stay_inside_the_panel` | self-test: long message and error, every visible control inside the page bounds |
+| `test_performance_profile_shows_status_and_only_supported_actions` | self-test `SdCycle` (buttons and rows in performance) + `TestButtonRules` |
+| `test_buttons_drive_share_eject_return` | self-test `SdCycle` (Nebulae MOD, Looper MOD, Nebulae, Looper) |
+| `test_live_loop_warning_and_confirmation` | self-test `SdCycle` for the Nebulae MOD simulator with a Live loop (CONFIRM → cancel → confirm) |
+| `test_refusal_and_interruption_messages` | self-test `SdInterruption` + `TestInterruptionQuarantine`, `TestNebulaeRefusals` |
+| `test_long_texts_stay_inside_the_panel` | self-test: `AllVisibleInside()` after every state with long texts (shared, confirm, interrupted) |
 | `test_report_contains_workflow` | GUI-only: Daisy Diagnostic's JSON report; the control panel has no report |
-| `test_diagnostics_simulation_has_no_nebulae` | GUI-only (diagnostics simulation); the equivalent "Toy Piano simulator shows no instrument" is checked in the self-test |
+| `test_diagnostics_simulation_has_no_nebulae` | GUI-only (diagnostics simulation); the equivalent "Toy Piano simulator shows no instrument" is self-test `SdNoInstrument` |
 
 ### 11.4 `test_gui_looper.py`
 
 | Python test | C++ |
 | --- | --- |
-| `test_looper_profile_in_the_sd_share_tab` | self-test `SdLooperMod` (rows, button texts) |
-| `test_save_then_share_eject_return` | self-test `SdLooperMod` with an unsaved loop |
-| `test_failed_save_warning_and_confirmation` | `WfLooperSaveFailedConfirm` + self-test button text |
+| `test_looper_profile_in_the_sd_share_tab` | self-test `SdCycle` for the Looper MOD simulator (rows, button texts) |
+| `test_save_then_share_eject_return` | self-test `SdLooperSaving` |
+| `test_failed_save_warning_and_confirmation` | `TestLooperSaveFailedConfirm` + self-test confirm button text |
 | `test_report_names_the_profile` | GUI-only (report) |
 
 ### 11.5 Additional DDP session and transport tests (not in the Python workflow files, needed by the port)
 
 | Source | C++ |
 | --- | --- |
-| `test_card_reader.py::test_timeout_never_reports_successful_eject` | `DdpReaderTimeoutUnknown` |
-| `test_card_reader.py::test_app_close_and_reconnect_do_not_revoke_windows_ownership` | `DdpReconnectStatusOnly` |
-| `test_card_reader.py::test_slow_shared_block_operation_has_bounded_receive_tolerance` | `DdpSharedRxTolerance` |
-| `test_card_reader.py::test_periodic_status_cannot_acknowledge_a_different_pending_action` | `DdpPendingActionMatch` |
-| `test_card_reader.py::test_busy_transport_prevents_return_even_after_eject` | `WfBusyReaderBlocksReturn` |
-| `test_session.py` handshake, HELLO retry, backoff, incompatible protocol | `DdpHandshake` |
-| `test_protocol.py` CRC and framing | `DdpFraming` (plus the shared vectors) |
-| phase 3 | `SerialOpenHello`, `SerialTimeout`, `SerialPortVanishes`, `SerialReconnect`, `SerialNeverBlocksMessageThread` (each call < 50 ms measured while the backend blocks 200 ms) |
+| `test_card_reader.py::test_timeout_never_reports_successful_eject` | `TestDdpReaderTimeoutUnknown` |
+| `test_card_reader.py::test_app_close_and_reconnect_do_not_revoke_windows_ownership` | `TestCloseNeverReturnsCard` (BYE, reconnect, pulled cable) |
+| `test_card_reader.py::test_slow_shared_block_operation_has_bounded_receive_tolerance` | `TestDdpSharedRxTolerance` |
+| `test_card_reader.py::test_periodic_status_cannot_acknowledge_a_different_pending_action` | `TestDdpPendingActionMatch` (periodic STATUS lines while a=SHARE is pending) |
+| `test_card_reader.py::test_busy_transport_prevents_return_even_after_eject` | `TestWfBusyReaderBlocksReturn` (READER busy=1 after EJECTED) |
+| `test_session.py` handshake, HELLO retry, backoff, incompatible protocol | `TestDdpHandshake` |
+| `test_protocol.py` CRC and framing | `TestCodecs` (framing, CRC error, resync) plus the `ddp.*` vectors |
+| phase 3 | `TestOpenHello`, `TestHandshakeTimeout`, `TestPortVanishesAndReconnect`, `TestNeverBlocksMessageThread` (each GUI-thread call < 50 ms while a cooperative backend blocks 200 ms), `TestBoundedQueues`, `TestCloseWithUncooperativeBackend` (a backend that ignores the cancel: Close() still returns within its bounded waits, the thread is detached and frees the backend later), `TestByeIsSent` |
+
+### 11.6 Added after the independent review (phase 7)
+
+| Transition / rule | C++ |
+| --- | --- |
+| T3 probe timeout and 5 s backoff; a port that refuses the first send is backed off too | `TestProbeBackoff` |
+| T13 BAD_REQUEST and an unknown result code, T14 reply with another token (ignored, then the 2 s timeout), T15 ERROR reply | `TestStaleAndErrorReplies` |
+| every timer with a clock that starts at 2^31 or just below the 32-bit wrap (ms since boot) | `TestClockWrap` |
+| D5: the saved patch goes only to the kit that comes back from the share; abandoned after the restart timeout and on a manual connect to another device | self-test `SdRestoreNotToWrongDevice` |
+| the Disconnect button releases a port that only the workflow holds (plain Nebulae/Looper) | self-test `SdCycle` (no-matrix cases) |
 
 Phase 2 PASS requires every row above that names a C++ test to be green under the normal
 flags and under ASan/UBSan.

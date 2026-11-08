@@ -159,3 +159,43 @@ Phase 5 PASS, no HOLD.
 | 6.8 | `web/version.js` | unchanged (browser not touched) |
 
 Phase 6 PASS: no German-only new text; the manifest names the actual composition.
+
+## Phase 7: independent review, fixes, PR (2026-11-08)
+
+A fresh subagent (D7) reviewed the C++ against the code, SD_SHARE_PORT.md and the Python
+reference, without this session's conclusions. Result: 0 P1, 5 P2, 9 P3 (three marked unsure).
+The state machine and the DDP session were found to be a faithful port; no path sends SHARE,
+RETURN or PERFORM without the user action the Python requires.
+
+| # | Severity | Finding | Fix | Regression test |
+| --- | --- | --- | --- | --- |
+| 1 | P2 | D5 restore could go to another device (every Daisy port offered while following; flag never cleared after T22/T33 or a manual connect) | `EditorComponent`: the saved patch carries the instrument key and is sent only on a connection the workflow opened to the same key; a user `ConnectTo()` and a restart timeout abandon it with a log line naming the file; while following, only the port the share started on is offered unless it is gone | self-test `SdRestoreNotToWrongDevice` |
+| 2 | P2 | `next_scan_ = 0` with a clock that is ms since boot: no COM scan once uptime ≥ 24.8 days | `DdpSession` and `SdShareWorkflow` arm the scan on their first `Tick()`; the simulator's `busy_until_` starts at boot time | `TestClockWrap` (clock at 2^31 and across 2^32) |
+| 3 | P2 | "Disconnect" button reconnected instead when only the SD workflow held the port (plain Nebulae/Looper) | one `Busy()` for label and handler; `ConnectTo()` clears `user_disconnected_` | self-test `SdCycle` no-matrix cases click the button |
+| 4 | P2 | Win32 `Write()` had no cancel guard; `Close()` could block for the driver's write timeout; the "< 50 ms" test only proved the cooperative fake | `Win32SerialBackend`: `Read`/`Write` return at once after `Cancel()`, wait in 20 ms slices and cancel their overlapped I/O; `ThreadedSerialLink`: shared state owned with the thread, `Close()` drains a queued BYE for ≤ 15 ms, cancels, waits ≤ 30 ms and detaches a thread a driver still holds | `TestCloseWithUncooperativeBackend`, `TestByeIsSent`; `TestNeverBlocksMessageThread` kept |
+| 5 | P2 | `TestWfBusyReaderBlocksReturn` could not fail | simulator `reader_busy` emits `busy=1`; the test refuses RETURN after EJECTED while busy and allows it afterwards | the rewritten test |
+| 6 | P3 | `volatile bool cancelled_` | `std::atomic<bool>` | — |
+| 7 | P3 | unused condition variable | removed; the cv now signals drain and finish | — |
+| 8 | P3 | comment "keep the newest" while the oldest were kept | the receive buffer drops the oldest bytes | — |
+| 9 | P3 | BYE could be discarded at close | drained before stop (see 4) | `TestByeIsSent` |
+| 10 | P3 (unsure) | CDC bytes received together with the failure are dropped | kept (matches the Python `SerialLink`); noted in SD_SHARE_PORT.md § 7 | — |
+| 11 | P3 (unsure) | a port that refuses the first STATUS send was retried every second | backed off 5 s like a silent port | `TestProbeBackoff` |
+| 12 | P3 | test gaps (T3, T13–T15), an unchecked error text, table names that did not match the C++ | `TestProbeBackoff`, `TestStaleAndErrorReplies`, the refusal check, SD_SHARE_PORT.md § 11 renamed to the real test functions, § 11.6 added | those tests |
+| 13 | P3 (unsure) | SetupAPI enumeration and `CreateFile` on the message thread | kept (as the Python panel); documented in § 7 | — |
+| 14 | P3 | duplicate log line on return | removed in the page callback | — |
+
+While fixing, two simulator bugs surfaced and were fixed: the main loop reset the SYS/READER
+period with every ST, so the periodic `READER` line was never sent on its own, and
+`busy_until_ = 0` blocked the simulated firmware with a clock just below the 32-bit wrap.
+The simulator gained `share_reply_delay_ms` for the pending-action test.
+
+| # | Command | Date | Exit | Result |
+| --- | --- | --- | --- | --- |
+| 7.1 | `clang++ … tests/test_sd_share.cpp`, `tests/test_serial_transport.cpp` and run, normal and ASan/UBSan | 2026-11-08 01:1x–01:2x | 0 | PASS after the fixes above (first runs showed the simulator bugs and two tests that read the error text after the next STATUS had cleared it, as the Python panel does) |
+| 7.2 | `cmake --build build/editor --config Release --parallel` | 2026-11-08 01:22 and 01:25 | 0 | rebuilt |
+| 7.3 | `"Daisy Control Panel.exe" --selftest .work/phase7/selftest` | 2026-11-08 01:26 | 0 | 20 PASS lines (new: restore guard; Disconnect button in the no-matrix cycles); the first run failed one check that read the single-line log after it had been replaced; the check was narrowed to the flag |
+| 7.4 | `ModOnDaisyPluginCheck.exe` on the VST3; `ctest -C Release`; `moduleinfo.json` diff | 2026-11-08 01:24–01:26 | 0 | PASS; 3/3; identity unchanged |
+| 7.5 | `test_serial_transport` three times while the MSVC build ran in parallel | 2026-11-08 01:25 | 0 | close 15.7–40.4 ms (bound 50), uncooperative backend 47.6–76.5 ms (bound 95), BYE 16–64 ms; one earlier run during the full parallel build exceeded a bound with the former 30 ms drain wait, hence 15 ms |
+| 7.6 | `make -C editors/mod-on-daisy test`, the sanitizer run, `E2E_ONLY=nebulae` e2e | 2026-11-08 01:27–01:28 | 0 / 0 / 0 | all PASS |
+| 7.7 | `python -m pytest diagnostics/tests/python -q` | 2026-11-08 01:02 | 0 | 335 passed (Python untouched) |
+| 7.8 | store and package again from the final commit (`scripts/dcp_sd_test_package.py --store --package --selftest --check-root …`) | | | see below |

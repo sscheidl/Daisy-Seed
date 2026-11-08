@@ -223,11 +223,63 @@ void TestBoundedQueues() {
     int accepted = 0;
     for(int i = 0; i < 64; ++i)
         accepted += link.Write(chunk.data(), chunk.size()) ? 1 : 0;
-    CHECK(accepted >= 15 && accepted <= 17); // 64 KiB bound, the thread took at most one chunk
+    // 64 KiB queue bound plus whatever the thread had already taken into its blocked write.
+    CHECK(accepted >= 16 && accepted < 64);
     const Clock::time_point t0 = Clock::now();
     link.Close();
     CHECK(ElapsedMs(t0) < 50.0);
     std::printf("PASS serial bounded queues: %d x 4 KiB accepted, then refused; close still fast\n", accepted);
+}
+
+// A driver that ignores the cancel (finding 4): Close() still returns within 50 ms, the
+// thread is detached and finishes on its own, and the backend is freed afterwards.
+void TestCloseWithUncooperativeBackend() {
+    struct Stuck : SerialBackend {
+        std::atomic<int>& closed;
+        std::atomic<bool> cancelled{false};
+        explicit Stuck(std::atomic<int>& c) : closed(c) {}
+        ~Stuck() override { ++closed; }
+        int Read(uint8_t*, std::size_t, uint32_t) override {
+            std::this_thread::sleep_for(std::chrono::milliseconds(300)); // blocks regardless of Cancel()
+            return 0;
+        }
+        bool Write(const uint8_t*, std::size_t) override {
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
+            return true;
+        }
+        void Cancel() override { cancelled = true; }
+    };
+    std::atomic<int> closed{0};
+    {
+        auto link = std::make_unique<ThreadedSerialLink>(std::make_unique<Stuck>(closed));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // the thread is inside Read()
+        std::vector<uint8_t> frame;
+        BuildFrame("BYE", frame);
+        CHECK(link->Write(frame.data(), frame.size()));
+        const Clock::time_point t0 = Clock::now();
+        link->Close();
+        const double close_ms = ElapsedMs(t0);
+        CHECK(close_ms < ThreadedSerialLink::kDrainMs + ThreadedSerialLink::kJoinMs + 50.0); // both waits bounded
+        CHECK(!link->Finished()); // detached: still inside the driver
+        link.reset(); // the destructor must not wait for it either
+        CHECK(ElapsedMs(t0) < 150.0);
+        std::printf("PASS serial uncooperative backend: close %.1f ms, thread detached\n", close_ms);
+    }
+    for(int i = 0; i < 100 && closed == 0; ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    CHECK(closed == 1); // the detached thread ended and freed the backend
+}
+
+// BYE queued right before the close still goes out (finding 9).
+void TestByeIsSent() {
+    Rig r;
+    CHECK(r.RunUntil([&] { return r.session.Connected(); }, 4000));
+    CHECK(r.dev.instrument.Management().Streaming());
+    const Clock::time_point t0 = Clock::now();
+    r.session.Disconnect();
+    CHECK(ElapsedMs(t0) < 100.0);
+    CHECK(!r.dev.instrument.Management().Streaming()); // the simulated firmware received BYE
+    std::printf("PASS serial BYE: sent during Close() (%.1f ms)\n", ElapsedMs(t0));
 }
 }
 
@@ -237,6 +289,8 @@ int main() {
     TestPortVanishesAndReconnect();
     TestNeverBlocksMessageThread();
     TestBoundedQueues();
+    TestCloseWithUncooperativeBackend();
+    TestByeIsSent();
     if(failures) {
         std::fprintf(stderr, "FAIL: %d checks\n", failures);
         return 1;

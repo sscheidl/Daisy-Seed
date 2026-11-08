@@ -4,8 +4,10 @@
 // (SD_PAGE_WORK_ORDER.md phase 3: nothing blocks the message thread longer than 50 ms).
 //
 //   GUI thread:  ThreadedSerialLink::Read() swaps the receive buffer, Write() appends to
-//                the send queue and wakes the thread, Close() asks the thread to stop and
-//                joins it (the backend's Cancel() aborts a pending OS call first).
+//                the send queue, Close() asks the thread to stop, lets it send what is still
+//                queued (BYE) for a few milliseconds, cancels the backend's pending OS call
+//                and waits a bounded time for the thread; a thread that is still stuck in the
+//                driver is detached and finishes on its own (it owns the shared state).
 //   I/O thread:  drains the send queue with backend.Write(), then backend.Read() with a
 //                short timeout; any backend error ends the link (Read()/Write() return
 //                false on the GUI thread afterwards).
@@ -24,7 +26,8 @@
 
 namespace editor::ddp {
 // What a platform has to provide. All calls come from the I/O thread except Cancel(),
-// which the GUI thread uses to abort a pending Read()/Write() before joining.
+// which the GUI thread uses to abort a pending Read()/Write(); after Cancel() every call
+// must return promptly (and may return 0 / false).
 class SerialBackend {
   public:
     virtual ~SerialBackend() = default;
@@ -41,100 +44,140 @@ class ThreadedSerialLink : public SerialLink {
   public:
     static constexpr std::size_t kMaxReceive = 64 * 1024, kMaxSend = 64 * 1024;
     static constexpr uint32_t kReadTimeoutMs = 20;
+    // Close(): wait this long for queued bytes (BYE) to go out, then this long for the thread.
+    static constexpr uint32_t kDrainMs = 15, kJoinMs = 30;
 
     // Takes a backend that is already open.
-    explicit ThreadedSerialLink(std::unique_ptr<SerialBackend> backend) : backend_(std::move(backend)) {
-        thread_ = std::thread([this] { Loop(); });
+    explicit ThreadedSerialLink(std::unique_ptr<SerialBackend> backend) : shared_(std::make_shared<Shared>()) {
+        shared_->backend = std::move(backend);
+        std::shared_ptr<Shared> s = shared_;
+        thread_ = std::thread([s] { Loop(*s); });
     }
     ~ThreadedSerialLink() override { Close(); }
 
     bool Read(std::vector<uint8_t>& out) override {
-        std::lock_guard<std::mutex> lock(mutex_);
-        out.swap(received_);
-        received_.clear();
-        return !failed_;
+        std::lock_guard<std::mutex> lock(shared_->mutex);
+        out.swap(shared_->received);
+        shared_->received.clear();
+        return !shared_->failed;
     }
 
     bool Write(const uint8_t* data, std::size_t n) override {
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            if(failed_)
-                return false;
-            if(send_.size() + n > kMaxSend)
-                return false; // the device stopped taking data: treat as a failed link
-            send_.insert(send_.end(), data, data + n);
-        }
-        wake_.notify_one();
+        std::lock_guard<std::mutex> lock(shared_->mutex);
+        if(shared_->failed || shared_->stop)
+            return false;
+        if(shared_->send.size() + n > kMaxSend)
+            return false; // the device stopped taking data: treat as a failed link
+        shared_->send.insert(shared_->send.end(), data, data + n);
         return true;
     }
 
     void Close() override {
-        bool was_running;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            was_running = !stop_;
-            stop_ = true;
-        }
-        if(!was_running)
+        if(closed_)
             return;
-        wake_.notify_one();
-        if(backend_)
-            backend_->Cancel();
-        if(thread_.joinable())
-            thread_.join();
+        closed_ = true;
+        Shared& s = *shared_;
+        {
+            // Let the thread send what is queued (BYE), bounded; it checks `stop` after that.
+            std::unique_lock<std::mutex> lock(s.mutex);
+            s.cv.wait_for(lock, std::chrono::milliseconds(kDrainMs), [&s] { return s.send.empty() || s.failed || s.finished; });
+            s.stop = true;
+        }
+        s.backend->Cancel();
+        {
+            std::unique_lock<std::mutex> lock(s.mutex);
+            s.cv.wait_for(lock, std::chrono::milliseconds(kJoinMs), [&s] { return s.finished; });
+        }
+        if(thread_.joinable()) {
+            std::lock_guard<std::mutex> lock(s.mutex);
+            if(s.finished)
+                thread_.join();
+            else
+                thread_.detach(); // still inside the driver: it ends on its own and frees the backend
+        }
     }
 
     bool Failed() const {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return failed_;
+        std::lock_guard<std::mutex> lock(shared_->mutex);
+        return shared_->failed;
     }
     std::size_t Dropped() const {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return dropped_;
+        std::lock_guard<std::mutex> lock(shared_->mutex);
+        return shared_->dropped;
+    }
+    // Whether the I/O thread has ended (after Close(): false means it was detached).
+    bool Finished() const {
+        std::lock_guard<std::mutex> lock(shared_->mutex);
+        return shared_->finished;
     }
 
   private:
-    void Loop() {
+    // Everything the I/O thread touches, kept alive by the thread itself after a detach.
+    struct Shared {
+        std::unique_ptr<SerialBackend> backend;
+        std::mutex mutex;
+        std::condition_variable cv;
+        std::deque<uint8_t> send;
+        std::vector<uint8_t> received;
+        bool stop = false, failed = false, finished = false;
+        std::size_t dropped = 0;
+    };
+
+    static void Loop(Shared& s) {
         std::vector<uint8_t> buffer(4096), pending;
         while(true) {
             {
-                std::unique_lock<std::mutex> lock(mutex_);
-                if(stop_)
-                    return;
-                pending.assign(send_.begin(), send_.end());
-                send_.clear();
+                std::unique_lock<std::mutex> lock(s.mutex);
+                pending.assign(s.send.begin(), s.send.end());
+                s.send.clear();
+                if(pending.empty() && s.stop)
+                    break;
             }
-            if(!pending.empty() && !backend_->Write(pending.data(), pending.size()))
-                return Fail();
-            const int n = backend_->Read(buffer.data(), buffer.size(), kReadTimeoutMs);
-            if(n < 0)
-                return Fail();
+            if(!pending.empty()) {
+                const bool ok = s.backend->Write(pending.data(), pending.size());
+                s.cv.notify_all(); // Close() waits for the drain
+                if(!ok) {
+                    Fail(s);
+                    break;
+                }
+                std::lock_guard<std::mutex> lock(s.mutex);
+                if(s.stop)
+                    break;
+            }
+            const int n = s.backend->Read(buffer.data(), buffer.size(), kReadTimeoutMs);
+            if(n < 0) {
+                Fail(s);
+                break;
+            }
             if(n > 0) {
-                std::lock_guard<std::mutex> lock(mutex_);
-                if(received_.size() + std::size_t(n) > kMaxReceive)
-                    dropped_ += std::size_t(n); // the GUI stopped reading: keep the newest, count the loss
-                else
-                    received_.insert(received_.end(), buffer.begin(), buffer.begin() + n);
+                std::lock_guard<std::mutex> lock(s.mutex);
+                s.received.insert(s.received.end(), buffer.begin(), buffer.begin() + n);
+                if(s.received.size() > kMaxReceive) { // the GUI stopped reading: keep the newest
+                    const std::size_t excess = s.received.size() - kMaxReceive;
+                    s.received.erase(s.received.begin(), s.received.begin() + long(excess));
+                    s.dropped += excess;
+                }
             }
+            std::lock_guard<std::mutex> lock(s.mutex);
+            if(s.stop && s.send.empty())
+                break;
         }
+        std::lock_guard<std::mutex> lock(s.mutex);
+        s.finished = true;
+        s.cv.notify_all();
     }
-    void Fail() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        failed_ = true;
+    static void Fail(Shared& s) {
+        std::lock_guard<std::mutex> lock(s.mutex);
+        s.failed = true;
     }
 
-    std::unique_ptr<SerialBackend> backend_;
-    mutable std::mutex mutex_;
-    std::condition_variable wake_;
-    std::deque<uint8_t> send_;
-    std::vector<uint8_t> received_;
-    bool stop_ = false, failed_ = false;
-    std::size_t dropped_ = 0;
+    std::shared_ptr<Shared> shared_;
     std::thread thread_;
+    bool closed_ = false;
 };
 
 // Opens a backend by port name; platform code provides the factory. Open() itself may
-// take a few milliseconds (CreateFile) but never waits for the device.
+// take a few milliseconds (CreateFile) but should not wait for the device.
 using BackendFactory = std::function<std::unique_ptr<SerialBackend>(const std::string& device, std::string& error)>;
 
 class ThreadedSerialPorts : public SerialPorts {

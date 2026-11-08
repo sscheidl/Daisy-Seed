@@ -130,6 +130,10 @@ class DdpSession {
     // ------------------------------------------------------------------ polling
     void Tick(uint32_t now_ms) {
         now_ = now_ms;
+        if(!started_) { // the clock may start anywhere (ms since boot): arm the scan now
+            started_ = true;
+            next_scan_ = now_;
+        }
         if(!link_) {
             if(Elapsed(next_scan_)) {
                 next_scan_ = now_ + kScanIntervalMs;
@@ -381,6 +385,6 @@ class DdpSession {
     uint32_t now_ = 0, next_scan_ = 0, handshake_deadline_ = 0, next_hello_ = 0, last_rx_ = 0, last_ping_ = 0,
              error_until_ = 0, ping_n_ = 0;
     int reconnects_ = 0, frames_ok_ = 0, frame_errors_ = 0, content_errors_ = 0;
-    bool ever_connected_ = false;
+    bool ever_connected_ = false, started_ = false;
 };
 }

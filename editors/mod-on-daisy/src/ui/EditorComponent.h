@@ -96,6 +96,9 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     juce::File sd_autosave_dir;
     juce::File LastAutosave() const { return sd_autosave_file_; }
     bool SdRestorePending() const { return sd_restore_pending_; }
+    juce::TextButton& ConnectButton() { return connect_; }
+    // "Disconnect" is offered while any session or the SD share workflow holds the port.
+    bool Busy() const;
     juce::String NoMatrixText() const { return no_matrix_.isVisible() ? no_matrix_.getText() : juce::String(); }
     // The about line of the SD card page (app name, version, licence), set by the application.
     void SetAbout(const juce::String& text);
@@ -252,6 +255,8 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     bool sd_page_available_ = true;
     bool show_sd_ = false;
     bool opening_sd_link_ = false;                  // ConnectTo() runs for the workflow: keep its state
+    bool sd_reconnected_ = false;                   // the current port was opened by the workflow (kit coming back)
+    std::string sd_restore_key_;                    // instrument key the saved patch belongs to
     bool sd_auto_switched_ = false;                 // D4: switched to the SD page for this device
     sd::Phase last_sd_phase_ = sd::Phase::NotFound;
     std::optional<LoadedPatch> sd_restore_;         // the patch saved before the share (D5)

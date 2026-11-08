@@ -38,6 +38,8 @@ class SimManagement {
     bool responsive = true;          // false: behaves like a hung firmware (no output)
     uint32_t reader_init_ms = 0;     // SHARE blocks the main loop this long (card init)
     bool starting_first = false;     // SHARE reports STARTING once before SHARED (PROTOCOL.md state)
+    bool reader_busy = false;        // the BOT transport is handling a command (READER busy=1)
+    uint32_t share_reply_delay_ms = 0; // the READER a=SHARE answer comes this much later (periodic STATUS lines first)
     int bootloader_entries = 0;
     bool in_bootloader = false;
 
@@ -93,6 +95,8 @@ class SimManagement {
         if(!booted_) {
             booted_ = true;
             boot_time_ = now;
+            busy_until_ = now; // the clock may start anywhere: "not busy" is relative to now
+            last_state_ = last_sys_ = now - 1000;
         }
     }
     uint32_t Uptime(uint32_t now) const { return booted_ ? now - boot_time_ : 0; }
@@ -125,12 +129,13 @@ class SimManagement {
 
     void SendReader(const char* action) {
         char text[96];
-        std::snprintf(text, sizeof(text), "READER state=%s sectors=%u busy=0 a=%s", ddp::ReaderStateName(reader_state),
-                      unsigned(sectors_), action);
+        std::snprintf(text, sizeof(text), "READER state=%s sectors=%u busy=%d a=%s", ddp::ReaderStateName(reader_state),
+                      unsigned(sectors_), reader_busy ? 1 : 0, action);
         Send(text);
     }
 
-    void SendState(uint32_t now) {
+    // ST alone (the main loop's periodic frame, as the firmware sends it).
+    void SendStateOnly(uint32_t now) {
         char text[200];
         std::snprintf(text, sizeof(text),
                       "ST n=%u t=%u b=0000 pc=00000000000000000000000000000000 p=0,0,0,0,0,0,0,0 r=0,0,0,0,0,0,0,0 "
@@ -140,6 +145,10 @@ class SimManagement {
         ++seq_;
         last_state_ = now;
         last_sent_card_ = card_;
+    }
+    // ST plus SYS and the status line (after HELLO and GET, like the Python simulator).
+    void SendState(uint32_t now) {
+        SendStateOnly(now);
         SendSys(now);
     }
 
@@ -158,13 +167,15 @@ class SimManagement {
             return;
         const uint32_t period = 1000 / rate_hz_;
         const bool changed = last_sent_card_ != card_ && now - last_state_ >= 10;
-        if(now - last_state_ >= period || changed) {
-            SendState(now);
-            return; // SendState also sends SYS and the status line
-        }
-        if(now - last_sys_ >= 1000) {
+        if(now - last_state_ >= period || changed)
+            SendStateOnly(now);
+        if(now - last_sys_ >= 1000) { // once per second: SYS, the status line and READER
             SendSys(now);
             SendReader("STATUS");
+        }
+        if(share_reply_at_ && int32_t(now - *share_reply_at_) >= 0) {
+            share_reply_at_.reset();
+            SendReader("SHARE");
         }
     }
 
@@ -176,6 +187,7 @@ class SimManagement {
     uint32_t sectors_ = 0, busy_until_ = 0, boot_time_ = 0, last_rx_ = 0, last_state_ = 0, last_sys_ = 0, seq_ = 0,
              rate_hz_ = 50;
     bool booted_ = false, streaming_ = false, last_sent_card_ = false;
+    std::optional<uint32_t> share_reply_at_;
     std::deque<uint8_t> rx_pending_;
     ddp::FrameParser parser_;
     std::vector<uint8_t> out_;
@@ -509,10 +521,14 @@ inline void SimManagement::Handle(const std::string& body, uint32_t now) {
                 reader_state = starting_first ? ddp::ReaderState::Starting : ddp::ReaderState::Shared;
                 sectors_ = 30436u * 2048u;
                 busy_until_ = now + reader_init_ms;
-                SendReader("SHARE");
-                if(starting_first) {
-                    reader_state = ddp::ReaderState::Shared;
-                    SendReader("STATUS");
+                if(share_reply_delay_ms) {
+                    share_reply_at_ = now + share_reply_delay_ms; // answered from the main loop later
+                } else {
+                    SendReader("SHARE");
+                    if(starting_first) {
+                        reader_state = ddp::ReaderState::Shared;
+                        SendReader("STATUS");
+                    }
                 }
             }
         } else if(*action == "RETURN") {
