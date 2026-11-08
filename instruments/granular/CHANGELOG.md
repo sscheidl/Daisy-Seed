@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.1 diagnostic profile build - first hardware contact, 2026-11-08
+
+Not a release. The first kit test (owner, 2026-11-08) showed the kit freezing as soon
+as a sample plays ([OVERLOAD_DIAGNOSIS.md](docs/OVERLOAD_DIAGNOSIS.md)); hardware
+numbers are **NOT MEASURED** until the owner runs the profile image.
+
+* `make PROFILE=1` (also with `MOD=1`): DWT cycle splits of the callback (vocoder, grains,
+  rest; window fill, FFTs, phase inside a hop), a budget guard that leaves the vocoder out
+  for 8 blocks after an overrun so USB and LEDs stay alive, a boot benchmark of one
+  `Mincer` hop from SDRAM and from AXI SRAM, and the PROFILE SysEx `03`
+  ([protocol](docs/CONTROL_PROTOCOL.md)). `tools/nb_probe.py` reads STATUS and PROFILE
+  from the PC, each probe in its own process with a timeout.
+* Regular and MOD images stay byte-identical (`cbc4c376…`, `02e52f88…`): every hook
+  compiles to nothing without `NEBULAE_PROFILE`. The profile build prints the regular
+  golden hash while the guard does not trip.
+
 ## granular-mod on 0.2.1 - separate Mod on Daisy build, 2026-11-06
 
 Hardware status: **NOT MEASURED**. Nebulae itself stays 0.2.1: the regular image is

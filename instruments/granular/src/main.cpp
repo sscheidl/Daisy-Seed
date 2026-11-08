@@ -18,6 +18,9 @@
 #include "ro_sd.h"
 #include "usbd_core.h"
 #include "version.h"
+#if NEBULAE_PROFILE
+#include "profile.h"
+#endif
 #include <new>
 
 extern "C" USBD_HandleTypeDef hUsbDeviceHS;
@@ -27,6 +30,9 @@ namespace {
 const char firmware_id[]="NEBULAE-MOD-VERSION=" NEBULAE_VERSION;
 #else
 const char firmware_id[]="NEBULAE-FW-VERSION=" NEBULAE_VERSION;
+#endif
+#if NEBULAE_PROFILE
+const char profile_id[]="NEBULAE-PROFILE-BUILD=1";  // the diagnostic image announces itself
 #endif
 daisy::desktop_devkit::Hardware hw;
 daisy::MidiUsbTransport usb;
@@ -118,6 +124,66 @@ void ServiceModulation(uint32_t now) {
 }
 #endif
 
+#if NEBULAE_PROFILE
+// Diagnostic build (docs/OVERLOAD_DIAGNOSIS.md): per-block cycle splits folded into
+// peaks by the audio callback, read by the main loop for the PROFILE reply, plus a boot
+// benchmark that runs the same Mincer hop once from SDRAM and once from AXI SRAM.
+#ifndef NEB_DSP_SRAM
+#define NEB_DSP_SRAM __attribute__((section(".neb_dsp")))
+#endif
+namespace prof {
+constexpr unsigned kGuardBlocks=8;  // vocoder left out after an overrun: main loop time
+volatile uint32_t blocks=0,total_peak=0,vocoder_peak=0,grains_peak=0,other_peak=0;
+volatile uint32_t fill_peak=0,fft_peak=0,phase_peak=0,hop_blocks=0,hop_vocoder_min=0xffffffffu;
+volatile uint32_t skipped=0,last_total=0;
+volatile bool reset_request=false;  // main loop sets, audio callback clears
+uint32_t bench[4]={};               // SDRAM hop, SRAM hop, SDRAM plain, SRAM plain
+alignas(32) uint8_t DSY_SDRAM_BSS bench_sdram[sizeof(neb::Mincer)];
+alignas(32) uint8_t NEB_DSP_SRAM bench_sram[sizeof(neb::Mincer)];
+inline void Peak(volatile uint32_t& peak,uint32_t v) {if(v>peak) peak=v;}
+void Reset() {
+    blocks=total_peak=vocoder_peak=grains_peak=other_peak=0;
+    fill_peak=fft_peak=phase_peak=hop_blocks=skipped=last_total=0;
+    hop_vocoder_min=0xffffffffu;
+}
+// Audio callback, after Engine::Process. `cycles` is the whole callback so far.
+void Record(uint32_t cycles,uint32_t deadline,neb::Engine& engine) {
+    if(reset_request) {Reset();reset_request=false;}
+    const neb::profile::Split& s=neb::profile::block;
+    ++blocks;last_total=cycles;
+    Peak(total_peak,cycles);Peak(vocoder_peak,s.vocoder);Peak(grains_peak,s.grains);
+    Peak(other_peak,cycles-s.vocoder-s.grains);
+    Peak(fill_peak,s.fill);Peak(fft_peak,s.fft);Peak(phase_peak,s.phase);
+    if(s.hops) {++hop_blocks;if(s.vocoder<hop_vocoder_min) hop_vocoder_min=s.vocoder;}
+    if(s.skipped) ++skipped;
+    if(cycles>deadline-deadline/5) engine.ProfileSkip(kGuardBlocks);
+}
+// Boot, before audio starts: eight blocks through a freshly initialised Mincer reading
+// PCM from SDRAM (bank 0, whatever it holds); even blocks compute a hop (cnt_ starts at
+// HOP). Minimum per kind, so cache state after the first run does not matter.
+void Bench(void* storage,const int16_t* pcm,uint32_t& hop,uint32_t& plain) {
+    neb::Mincer* m=new(storage) neb::Mincer;
+    m->Init(float(neb::kRate));
+    const neb::PcmView view{pcm,neb::kLiveFrames,neb::kRate,2};
+    static double positions[neb::kBlock];static float out[neb::kBlock];
+    double pos=100000.0;hop=plain=0xffffffffu;
+    for(unsigned block=0;block<8;++block) {
+        for(unsigned s=0;s<neb::kBlock;++s) {positions[s]=pos;pos+=1.0;}
+        const uint32_t start=DWT->CYCCNT;
+        m->Process(positions,view,0,1.f,1.f,out,int(neb::kBlock));
+        const uint32_t cycles=DWT->CYCCNT-start;
+        uint32_t& slot=block%2?plain:hop;
+        if(cycles<slot) slot=cycles;
+    }
+    asm volatile("" : : "r"(out));  // the output is the point, keep it
+}
+void RunBench(const int16_t* pcm) {
+    Bench(bench_sdram,pcm,bench[0],bench[2]);
+    Bench(bench_sram,pcm,bench[1],bench[3]);
+}
+}
+#endif
+
 // ---- SD: one owner (main loop), read-only FatFs R0.16 from common/sd ----
 FATFS fs;
 neb::BankScanner banks;
@@ -206,6 +272,9 @@ void Audio(daisy::AudioHandle::InputBuffer in,daisy::AudioHandle::OutputBuffer o
     const uint32_t cycles=DWT->CYCCNT-start;
     if(cycles>callback_peak_cycles) callback_peak_cycles=cycles;
     if(cycles>uint32_t((uint64_t(SystemCoreClock)*n)/neb::kRate)) ++callback_overruns;
+#if NEBULAE_PROFILE
+    prof::Record(cycles,uint32_t((uint64_t(SystemCoreClock)*n)/neb::kRate),*engine);
+#endif
 }
 void ServiceUsb() {
     if(!usb_ready) return;
@@ -299,11 +368,37 @@ neb::sysex::Status CurrentStatus() {
     s.peak_load=uint8_t(load>127?127:load);
     return s;
 }
+#if NEBULAE_PROFILE
+neb::sysex::Profile CurrentProfile() {
+    using namespace neb::sysex;
+    Profile p;
+    p.value[kProfClock]=SystemCoreClock;
+    p.value[kProfDeadline]=uint32_t((uint64_t(SystemCoreClock)*neb::kBlock)/neb::kRate);
+    p.value[kProfBlocks]=prof::blocks;p.value[kProfTotalPeak]=prof::total_peak;
+    p.value[kProfVocoderPeak]=prof::vocoder_peak;p.value[kProfGrainsPeak]=prof::grains_peak;
+    p.value[kProfOtherPeak]=prof::other_peak;p.value[kProfFillPeak]=prof::fill_peak;
+    p.value[kProfFftPeak]=prof::fft_peak;p.value[kProfPhasePeak]=prof::phase_peak;
+    p.value[kProfHopBlocks]=prof::hop_blocks;
+    p.value[kProfHopVocoderMin]=prof::hop_blocks?prof::hop_vocoder_min:0;
+    p.value[kProfSkipped]=prof::skipped;p.value[kProfOverruns]=callback_overruns;
+    p.value[kProfBenchSdramHop]=prof::bench[0];p.value[kProfBenchSramHop]=prof::bench[1];
+    p.value[kProfBenchSdramPlain]=prof::bench[2];p.value[kProfBenchSramPlain]=prof::bench[3];
+    p.value[kProfEnginePlacement]=uint32_t(reinterpret_cast<uintptr_t>(engine)>>20);
+    p.value[kProfLastTotal]=prof::last_total;
+    return p;
+}
+#endif
 void ServiceControl() {
     uint8_t body[neb::sysex::kMaxBody];size_t size=0;
     if(!control_sysex.Take(body,size)) return;
     neb::sysex::Reply reply(0);bool share=false;
+#if NEBULAE_PROFILE
+    bool reset=false;
+    if(!neb::sysex::Handle(body,size,CurrentStatus(),reply,share,CurrentProfile(),reset)) return;
+    if(reset) prof::reset_request=true;
+#else
     if(!neb::sysex::Handle(body,size,CurrentStatus(),reply,share)) return;
+#endif
     const uint8_t* bytes=reply.Finish();
     if(hUsbDeviceHS.dev_state==USBD_STATE_CONFIGURED) usb.Tx(const_cast<uint8_t*>(bytes),reply.Size());
     if(share) perf.share=true;
@@ -448,12 +543,21 @@ void InitPerformance(const neb::BootIntent& intent) {
     daisy::MidiUsbTransport::Config cfg;cfg.periph=daisy::MidiUsbTransport::Config::EXTERNAL;
     usb.Init(cfg);usb.StartRx(ReceiveUsb,nullptr);usb_ready=true;
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;DWT->CYCCNT=0;DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+#if NEBULAE_PROFILE
+    prof::RunBench(live_banks[0]);  // before the timer and audio start: nothing interrupts it
+#endif
     hw.StartLowPriorityCallback(PollControls,1000);
     hw.seed.StartAudio(Audio);
 }
 }
+#if NEBULAE_PROFILE
+uint32_t neb::profile::Now() {return DWT->CYCCNT;}
+#endif
 int main() {
     asm volatile("" : : "r"(firmware_id));
+#if NEBULAE_PROFILE
+    asm volatile("" : : "r"(profile_id));
+#endif
     hw.Init();
     // The boot intent is taken (read and cleared) before anything else is decided:
     // without a valid record this is always the performance personality.

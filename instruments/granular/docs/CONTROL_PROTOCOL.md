@@ -60,6 +60,30 @@ Off for every note it sent plus CC 123, stop audio, close/unmount FatFs, power t
 interface down, write the boot intent (`src/boot_intent.h`), wait 20 ms for USB, and
 restart through the external bootloader with `DAISY_SKIP_TIMEOUT`.
 
+### PROFILE `03` [`reset`] -> reply `43`, 100 bytes (diagnostic build only)
+
+Answered only by an image built with `PROFILE=1` ([diagnosis](OVERLOAD_DIAGNOSIS.md));
+the regular and the MOD image reply `7F 03 02` (unknown command). The optional payload
+byte `01` clears the peaks after this reply. Twenty 32-bit counters, each five 7-bit
+bytes least significant first, in this order:
+
+| # | Counter |
+| --- | --- |
+| 0, 1 | core clock in Hz; cycles per 256-frame block (the deadline) |
+| 2 | blocks counted since the last reset |
+| 3 | callback peak |
+| 4, 5, 6 | vocoder (both channels) peak; grains peak; rest of the callback peak |
+| 7, 8, 9 | inside the hops of a block: window fill (interpolated PCM reads); forward and inverse FFTs; phase loops plus overlap-add, each peak |
+| 10, 11 | blocks that computed a hop; vocoder minimum over those blocks |
+| 12 | blocks whose vocoder the budget guard left out |
+| 13 | callback deadline overruns, 32 bit |
+| 14, 15 | boot benchmark, hop block minimum: Mincer in SDRAM; Mincer in AXI SRAM |
+| 16, 17 | boot benchmark, block without hop minimum: SDRAM; AXI SRAM |
+| 18 | Engine address >> 20 (`0xC10` SDRAM, `0x240` AXI SRAM) |
+| 19 | most recent callback |
+
+All counters are DWT cycles of the firmware, not bench measurements.
+
 ### Errors -> reply `7F`
 
 `7F <cmd> <code>`: `01` unsupported version, `02` unknown command, `03` wrong length.

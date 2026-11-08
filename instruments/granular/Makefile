@@ -6,13 +6,25 @@ MOD ?= 0
 MOD_ON_DAISY = ../../modules/mod-on-daisy
 MOD_DEFS = -DNEBULAE_MOD=1 -DMOD_ON_DAISY_EXTENSIONS=1
 MOD_FLAGS = $(MOD_DEFS) -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+# PROFILE=1: diagnostic image with DWT cycle splits, budget guard, boot benchmark and the
+# PROFILE SysEx (docs/OVERLOAD_DIAGNOSIS.md). Never a release; sound is wrong under load.
+PROFILE ?= 0
+PROFILE_FLAGS = -DNEBULAE_PROFILE=1
 ifeq ($(MOD),1)
-TARGET = NebulaeMod-v$(VERSION)
+TARGET := NebulaeMod
+VARIANT := mod
 C_DEFS = $(MOD_DEFS)
 C_INCLUDES += -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 else
-TARGET = NebulaeOnDaisy-v$(VERSION)
+TARGET := NebulaeOnDaisy
+VARIANT :=
 endif
+ifeq ($(PROFILE),1)
+TARGET := $(TARGET)Profile
+VARIANT := $(if $(VARIANT),$(VARIANT)-profile,profile)
+C_DEFS += $(PROFILE_FLAGS)
+endif
+TARGET := $(TARGET)-v$(VERSION)
 SD_DIR = ../../common/sd
 READER_DIR = $(SD_DIR)/reader
 PROTOCOL_DIR = ../../diagnostics/protocol
@@ -27,8 +39,8 @@ C_SOURCES = src/heap.c $(READER_DIR)/reader_ctlreq.c
 # FatFSInterface and SD_Driver are not linked (make sd-check).
 USE_FATFS = 0
 # libDaisy default, set early: sd.mk names the ELF in its sd-check rule.
-ifeq ($(MOD),1)
-override BUILD_DIR = build/mod
+ifneq ($(VARIANT),)
+override BUILD_DIR = build/$(VARIANT)
 else
 BUILD_DIR = build
 endif
@@ -92,6 +104,8 @@ test: e2e
 	./$(H)/test_banks
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(BOOTLOADER_DIR) tests/test_control_sysex.cpp src/control.cpp -o $(H)/test_control_sysex
 	./$(H)/test_control_sysex
+	$(HOST_CXX) $(HOST_FLAGS) $(PROFILE_FLAGS) -Isrc -I$(BOOTLOADER_DIR) tests/test_control_sysex.cpp src/control.cpp -o $(H)/test_control_sysex_profile
+	./$(H)/test_control_sysex_profile
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(READER_DIR) -I$(PROTOCOL_DIR) -I$(RING_DIR) tests/test_admin.cpp src/admin.cpp \
 		$(READER_DIR)/card_reader.cpp $(PROTOCOL_DIR)/ddp.cpp -o $(H)/test_admin
 	./$(H)/test_admin
@@ -112,15 +126,21 @@ test: e2e
 	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) $(PRODUCTION) tests/test_modulation.cpp $(PRODUCTION_LINK) -o $(H)/test_modulation
 	./$(H)/test_modulation $(H)/e2e/fat32-after.img $(H)/e2e/fat32-expected.txt
 	./$(H)/test_modulation $(H)/e2e/exfat-after.img $(H)/e2e/exfat-expected.txt
+	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) $(PROFILE_FLAGS) $(PRODUCTION) tests/test_profile.cpp $(PRODUCTION_LINK) -o $(H)/test_profile
+	./$(H)/test_profile $(H)/e2e/fat32-after.img
 	$(HOST_CXX) $(HOST_FLAGS) $(PRODUCTION) tests/test_golden.cpp $(PRODUCTION_LINK) -o $(H)/test_golden
 	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) $(PRODUCTION) tests/test_golden.cpp $(PRODUCTION_LINK) -o $(H)/test_golden_mod
+	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) $(PROFILE_FLAGS) $(PRODUCTION) tests/test_golden.cpp $(PRODUCTION_LINK) -o $(H)/test_golden_profile
 	./$(H)/test_golden $(H)/e2e/fat32-after.img > $(H)/golden.txt
 	./$(H)/test_golden_mod $(H)/e2e/fat32-after.img > $(H)/golden_mod.txt
 	./$(H)/test_golden_mod $(H)/e2e/fat32-after.img --route > $(H)/golden_route.txt
-	cat $(H)/golden.txt $(H)/golden_mod.txt $(H)/golden_route.txt
+	./$(H)/test_golden_profile $(H)/e2e/fat32-after.img > $(H)/golden_profile.txt
+	cat $(H)/golden.txt $(H)/golden_mod.txt $(H)/golden_route.txt $(H)/golden_profile.txt
 	cmp $(H)/golden.txt $(H)/golden_mod.txt
+	cmp $(H)/golden.txt $(H)/golden_profile.txt
 	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_route.txt)"
 	@echo "PASS golden: the MOD build with an empty matrix sounds bit-identical to the regular build, and one active route changes the hash"
+	@echo "PASS golden: the profile build without a tripped guard sounds bit-identical to the regular build"
 SANITIZE = -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all -fno-omit-frame-pointer
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread $(SANITIZE)" \

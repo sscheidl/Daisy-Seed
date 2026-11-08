@@ -45,6 +45,11 @@ class Engine : public Sink {
     void SetControlOffsets(const float* offsets) {for(unsigned i=0;i<8;++i) offset_[i]=offsets[i];}
     float Smoothed(unsigned i) const {return smoothed_[i];}
 #endif
+#if NEBULAE_PROFILE
+    // Diagnostic build (src/profile.h): leave the vocoder out of the next `blocks` blocks.
+    void ProfileSkip(unsigned blocks) {profile_skip_=blocks;}
+    unsigned ProfileSkipped() const {return profile_skip_;}
+#endif
   private:
     // What the smoothing and the parameter laws follow.
     float ControlTarget(unsigned i) const {
@@ -80,6 +85,9 @@ class Engine : public Sink {
     float smoothed_[8]{},alt_[8]{},bend_[16]{},pitch_=1,speed_=1;
 #if NEBULAE_MOD
     float offset_[8]{};
+#endif
+#if NEBULAE_PROFILE
+    unsigned profile_skip_=0;
 #endif
     Mincer vocoder_[2]; RmsLimiter limiter_[2];
     Grain grains_[2][MAX_GRAINS]{};

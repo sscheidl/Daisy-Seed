@@ -21,6 +21,7 @@
 */
 // Adapted from De-Pattern 073a1ae4; Qu-Bit instrument laws. See LICENSES/.
 #include "reference_dsp.h"
+#include "profile.h"
 #include <cmath>
 #include <cstring>
 #include <algorithm>
@@ -164,14 +165,19 @@ void Mincer::Process(const double* frame_pos, const PcmView& buf, unsigned chann
     for (int s = 0; s < n; ++s) {
         if (cnt_ == HOP) {
             // F1: read position QUANTIZED to hop boundaries
+            NEB_PROFILE_BEGIN(fill);
             double pos = HOP * std::floor(frame_pos[s] / HOP);
             for (int i = 0; i < FFT_N; ++i) {
                 fwin_[i] = buf.Read(pos, channel)*win_[i];
                 bwin_[i] = buf.Read(pos - double(HOP)*pitch, channel)*win_[i];
                 pos += pitch;
             }
+            NEB_PROFILE_ADD(fill, fill);
+            NEB_PROFILE_BEGIN(forward);
             if (packed_) fft_.ForwardPair(bwin_, fwin_);
             else { fft_.Forward(bwin_); fft_.Forward(fwin_); }
+            NEB_PROFILE_ADD(forward, fft);
+            NEB_PROFILE_BEGIN(phase);
             bwin_[FFT_N] = bwin_[1]; bwin_[FFT_N+1] = 0.0f;
             fwin_[FFT_N] = fwin_[1]; fwin_[FFT_N+1] = 0.0f;
             for (int i = 0; i < FFT_N+2; i += 2) {           // phase diff vs prev
@@ -196,11 +202,19 @@ void Mincer::Process(const double* frame_pos, const PcmView& buf, unsigned chann
                 prev_[i] = fwin_[i] = orr; prev_[i+1] = fwin_[i+1] = oi;
             }
             fwin_[1] = fwin_[FFT_N];
+            NEB_PROFILE_ADD(phase, phase);
+            NEB_PROFILE_BEGIN(inverse);
             fft_.Inverse(fwin_);
+            NEB_PROFILE_ADD(inverse, fft);
+            NEB_PROFILE_BEGIN(ola);
             framecnt_[curframe_] = curframe_*FFT_N;
             int base = framecnt_[curframe_];
             for (int i = 0; i < FFT_N; ++i) outframe_[base+i] = win_[i]*fwin_[i];
             cnt_ = 0; curframe_ = (curframe_+1) % DECIM;
+            NEB_PROFILE_ADD(ola, phase);
+#if NEBULAE_PROFILE
+            ++profile::block.hops;
+#endif
         }
         float acc = 0.0f;
         for (int i = 0; i < DECIM; ++i) { acc += outframe_[framecnt_[i]]; framecnt_[i]++; }

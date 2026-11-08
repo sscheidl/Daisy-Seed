@@ -42,6 +42,16 @@ unsupported; Linux CI has a `test-thread` target. The workflow uploads BIN, ELF,
 MAP and SHA256SUMS after a push. See validation for executed CI evidence.
 Generated outputs and toolchains are not tracked.
 
+## Diagnostic build
+
+`make -C instruments/granular MOD=1 PROFILE=1` (or without `MOD=1`) builds
+`build/mod-profile/NebulaeModProfile-v<version>.bin`: the same image plus DWT cycle splits
+of the audio callback, a budget guard that keeps USB and LEDs alive after an overrun, a
+boot benchmark of one vocoder hop from SDRAM and from AXI SRAM, and the PROFILE SysEx
+([protocol](docs/CONTROL_PROTOCOL.md)). `tools/nb_probe.py status|profile` reads the
+counters from the PC. Never a release: with the guard active the sound is wrong. Why it
+exists and what it found: [OVERLOAD_DIAGNOSIS.md](docs/OVERLOAD_DIAGNOSIS.md).
+
 ## Mod on Daisy build
 
 `make PROJECT=granular-mod` builds a separate image with the shared modulation matrix:

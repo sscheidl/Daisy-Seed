@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "profile.h"
 #include <cstring>
 namespace neb {
 void Engine::Init(int16_t* a,int16_t* b,uint32_t cap,int16_t* file,FileBridge& bridge) {
@@ -185,10 +186,23 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
     if(live) LawBlendLive(smoothed_[Blend],&bv,&bd,&bg);
     else {bv=std::sqrt(1-smoothed_[Blend]);bg=std::sqrt(smoothed_[Blend]);}
     const bool read_ok=src.frames && (live || !file_detached_);
+#if NEBULAE_PROFILE
+    profile::block={};
+    if(profile_skip_) {--profile_skip_;profile::block.skipped=true;}
+#endif
     if(read_ok) {
+        NEB_PROFILE_BEGIN(vocoder);
+#if NEBULAE_PROFILE
+        // Budget guard of the diagnostic build: a skipped vocoder keeps the main loop
+        // alive after an overrun, so the counters can still be read out. Sound is wrong.
+        if(profile::block.skipped) {std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);} else
+#endif
         for(unsigned c=0;c<2;++c)
             vocoder_[c].Process(positions_,src,c,pitch_*src.rate/kRate,live?1.f:.8f,voc_[c],int(n));
+        NEB_PROFILE_ADD(vocoder,vocoder);
+        NEB_PROFILE_BEGIN(grains);
         RenderGrains(src,left,right,n,density,pitch_*src.rate/kRate,input_gain);
+        NEB_PROFILE_ADD(grains,grains);
     } else {
         std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);
         std::fill(gran_[0],gran_[0]+n,0);std::fill(gran_[1],gran_[1]+n,0);

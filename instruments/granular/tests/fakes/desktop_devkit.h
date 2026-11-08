@@ -18,7 +18,15 @@ struct System {
 };
 }
 #include "hid/digital_control.h"
-struct FakeDwt {uint32_t CYCCNT=0,CTRL=0;};
+// CYCCNT advances by `step` on every read (0 in the existing tests, so cycles stay 0);
+// the profile test sets a step to get deterministic splits and to trip the budget guard.
+struct FakeCycleCounter {
+    uint32_t value=0,step=0;
+    operator uint32_t() {value+=step;return value;}
+    FakeCycleCounter& operator=(uint32_t v) {value=v;return *this;}
+};
+struct FakeDwt {FakeCycleCounter CYCCNT;uint32_t CTRL=0;};
+#define NEB_DSP_SRAM  // the target's AXI SRAM section attribute (profile build)
 struct FakeCore {uint32_t DEMCR=0;};
 inline FakeDwt fake_dwt;inline FakeCore fake_core;
 #define DWT (&fake_dwt)

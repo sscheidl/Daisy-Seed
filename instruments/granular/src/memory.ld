@@ -2,6 +2,9 @@
 SECTIONS
 {
     .neb_sd (NOLOAD) : ALIGN(32) { *(.neb_sd) . = ALIGN(32); } > SRAM
+    /* AXI SRAM DSP storage: the diagnostic build's benchmark Mincer (src/main.cpp,
+       NEBULAE_PROFILE). Empty, hence absent from the BIN, in the other builds. */
+    .neb_dsp (NOLOAD) : ALIGN(32) { *(.neb_dsp) . = ALIGN(32); } > SRAM
     .neb_heap (NOLOAD) : ALIGN(32)
     {
         __neb_heap_start = .;

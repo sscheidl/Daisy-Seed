@@ -16,7 +16,9 @@ namespace neb::sysex {
 constexpr uint8_t kVersion = 0x01;
 constexpr uint8_t kPrefix[] = {0x7D, 0x4E, 0x42};
 constexpr uint8_t kReplyBit = 0x40;
-enum Command : uint8_t { kStatus = 0x01, kShare = 0x02, kError = 0x7F };
+// PROFILE is answered by the diagnostic build only (make PROFILE=1); the regular and the
+// MOD image reply with kErrUnknown as for any other command they do not know.
+enum Command : uint8_t { kStatus = 0x01, kShare = 0x02, kProfile = 0x03, kError = 0x7F };
 // SHARE results. Only kAccepted is followed by the restart into SD management.
 enum ShareResult : uint8_t {
     kAccepted = 0,
@@ -86,6 +88,39 @@ struct Status {
     uint8_t peak_load = 0;   // percent of the block deadline, saturates at 127
 };
 
+#if NEBULAE_PROFILE
+// Diagnostic build: cycle counters of the audio callback (CONTROL_PROTOCOL.md, PROFILE).
+// Every value is a 32-bit count sent as five 7-bit bytes, least significant first.
+enum ProfileValue : uint8_t {
+    kProfClock = 0,        // core clock in Hz
+    kProfDeadline,         // cycles per 256-frame block
+    kProfBlocks,           // blocks counted since the last reset
+    kProfTotalPeak,        // callback peak
+    kProfVocoderPeak,      // both vocoder channels, peak
+    kProfGrainsPeak,       // grain rendering, peak
+    kProfOtherPeak,        // callback minus vocoder minus grains, peak
+    kProfFillPeak,         // vocoder hop: window fill (interpolated PCM reads), peak
+    kProfFftPeak,          // vocoder hop: forward and inverse FFTs, peak
+    kProfPhasePeak,        // vocoder hop: phase loops and overlap-add, peak
+    kProfHopBlocks,        // blocks that computed hop frames
+    kProfHopVocoderMin,    // vocoder cycles, minimum over hop blocks (steady hop cost)
+    kProfSkipped,          // blocks whose vocoder the budget guard left out
+    kProfOverruns,         // callback deadline overruns, 32 bit
+    kProfBenchSdramHop,    // boot benchmark: Mincer in SDRAM, hop block, minimum
+    kProfBenchSramHop,     // boot benchmark: Mincer in AXI SRAM, hop block, minimum
+    kProfBenchSdramPlain,  // boot benchmark: Mincer in SDRAM, block without hop, minimum
+    kProfBenchSramPlain,   // boot benchmark: Mincer in AXI SRAM, block without hop, minimum
+    kProfEnginePlacement,  // address of the Engine object >> 20 (0xC10 SDRAM, 0x240 AXI SRAM)
+    kProfLastTotal,        // most recent callback
+    kProfileValues
+};
+struct Profile { uint32_t value[kProfileValues] = {}; };
+constexpr size_t kProfilePayload = kProfileValues * 5;
+constexpr size_t kReplyBytes = 8 + kProfilePayload;
+#else
+constexpr size_t kReplyBytes = 48;
+#endif
+
 // Bounded writer for reply frames.
 class Reply {
   public:
@@ -102,9 +137,16 @@ class Reply {
     size_t Size() const { return size_; }
 
   private:
-    uint8_t bytes_[48] = {};
+    uint8_t bytes_[kReplyBytes] = {};
     size_t size_ = 0;
 };
+
+#if NEBULAE_PROFILE
+inline void WriteProfile(Reply& r, const Profile& p) {
+    for(uint32_t v : p.value)
+        for(unsigned k = 0; k < 5; ++k) r.Data(uint8_t(v >> (7 * k)));
+}
+#endif
 
 constexpr size_t kStatusPayload = 19;
 
@@ -128,8 +170,14 @@ inline ShareResult DecideShare(const Status& s, bool confirmed) {
 
 // Handles one request body and builds the reply. Sets `share` only for an accepted
 // SHARE; the caller then stops audio and restarts. Returns false if nothing is sent.
+// Diagnostic build: `profile` answers PROFILE; `profile_reset` is set when the request
+// asked for the peaks to be cleared (after this reply).
 inline bool Handle(const uint8_t* body, size_t size, const Status& status, Reply& reply,
-                   bool& share) {
+                   bool& share
+#if NEBULAE_PROFILE
+                   , const Profile& profile, bool& profile_reset
+#endif
+) {
     share = false;
     if(size < 2) return false;
     const uint8_t cmd = body[1];
@@ -144,6 +192,18 @@ inline bool Handle(const uint8_t* body, size_t size, const Status& status, Reply
         WriteStatus(reply, status);
         return true;
     }
+#if NEBULAE_PROFILE
+    if(cmd == kProfile) {
+        profile_reset = false;
+        if(size > 3 || (size == 3 && body[2] > 1)) {
+            reply = Reply(kError); reply.Data(cmd).Data(kErrLength); return true;
+        }
+        profile_reset = size == 3 && body[2] == 1;
+        reply = Reply(kProfile);
+        WriteProfile(reply, profile);
+        return true;
+    }
+#endif
     if(cmd == kShare) {
         reply = Reply(kShare);
         if(size != 7 || body[2] > 1) {

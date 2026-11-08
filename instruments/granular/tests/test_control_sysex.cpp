@@ -69,15 +69,52 @@ struct Feed {
         }
     }
 };
+#if NEBULAE_PROFILE
+static sysex::Profile test_profile;
+static bool profile_reset = false;
+#endif
+static bool Dispatch(const uint8_t* body, size_t n, const sysex::Status& s, sysex::Reply& r, bool& share) {
+#if NEBULAE_PROFILE
+    return sysex::Handle(body, n, s, r, share, test_profile, profile_reset);
+#else
+    return sysex::Handle(body, n, s, r, share);
+#endif
+}
 static std::vector<uint8_t> Reply(const uint8_t* body, size_t n, const sysex::Status& s, bool& share) {
     sysex::Reply r(0);
-    CHECK(sysex::Handle(body, n, s, r, share));
+    CHECK(Dispatch(body, n, s, r, share));
     const uint8_t* bytes = r.Finish();
     std::vector<uint8_t> v(bytes, bytes + r.Size());
     CHECK(v.front() == 0xF0 && v.back() == 0xF7);
     for(size_t i = 1; i + 1 < v.size(); ++i) CHECK(v[i] < 0x80);  // valid SysEx data
-    CHECK(v.size() <= 48);
+    if(v[5] != (sysex::kProfile | sysex::kReplyBit)) CHECK(v.size() <= 48);
     return v;
+}
+
+// PROFILE 0x03: answered by the diagnostic build, unknown to the others.
+static void ProfileCommand() {
+    sysex::Status s;
+    bool share = false;
+    const uint8_t request[] = {1, 3};
+    auto r = Reply(request, 2, s, share);
+#if NEBULAE_PROFILE
+    for(size_t i = 0; i < sysex::kProfileValues; ++i) test_profile.value[i] = 0x9ABCDEF0u + uint32_t(i);
+    test_profile.value[0] = 480000000u;
+    r = Reply(request, 2, s, share);
+    CHECK(r.size() == 7 + sysex::kProfilePayload && r[5] == 0x43 && !profile_reset && !share);
+    for(size_t i = 0; i < sysex::kProfileValues; ++i) {
+        uint32_t v = 0;
+        for(unsigned k = 0; k < 5; ++k) v |= uint32_t(r[6 + 5 * i + k]) << (7 * k);
+        CHECK(v == test_profile.value[i]);
+    }
+    const uint8_t reset[] = {1, 3, 1}, keep[] = {1, 3, 0}, bad[] = {1, 3, 2}, overlong[] = {1, 3, 1, 1};
+    r = Reply(reset, 3, s, share); CHECK(r[5] == 0x43 && profile_reset);
+    r = Reply(keep, 3, s, share); CHECK(r[5] == 0x43 && !profile_reset);
+    r = Reply(bad, 3, s, share); CHECK(r[5] == 0x7F && r[7] == sysex::kErrLength && !profile_reset);
+    r = Reply(overlong, 4, s, share); CHECK(r[5] == 0x7F && r[7] == sysex::kErrLength);
+#else
+    CHECK(r[5] == 0x7F && r[6] == 3 && r[7] == sysex::kErrUnknown && !share);
+#endif
 }
 
 static void Protocol() {
@@ -154,11 +191,16 @@ static void Protocol() {
     r = Reply(longstatus, 3, s, share);
     CHECK(r[7] == sysex::kErrLength);
     sysex::Reply dummy(0);
-    CHECK(!sysex::Handle(status, 1, s, dummy, share));
+    CHECK(!Dispatch(status, 1, s, dummy, share));
 }
 
 int main() {
     Intent();
     Protocol();
+    ProfileCommand();
+#if NEBULAE_PROFILE
+    std::printf("PASS boot intent and control SysEx (profile build): %u checks\n", checks);
+#else
     std::printf("PASS boot intent and control SysEx: %u checks\n", checks);
+#endif
 }
