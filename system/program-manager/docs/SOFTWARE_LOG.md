@@ -62,3 +62,38 @@ changes the hash although the code is identical.
 Package hashes above are from the builds before the merge with main; the package contents
 of reverb-fx and toy-piano changed with that merge (Ambient 0.5.0) and must be re-packaged
 with `dsy_pack.py` before a card is prepared.
+
+## 2026-11-08: merge of main, committed build output removed (owner's request)
+
+Merged `origin/main` 241f583 (Daisy Control Panel 0.5.0 #106, Nebulae MOD SD sharing #102,
+firmware/apps store rules #104/#105, Audrey 3, Grain Cloud, FV1 and filter products) into the
+branch. Five content conflicts, all additions next to additions; main's content is kept
+unchanged: `components/registry.json` (components `program-manager`, `manager-return` next to
+main's new ones; products `program-manager`, `program-manager-probe`; the looper products keep
+main's SD components plus `manager-return`), `projects.mk` (Program Manager projects appended),
+Looper fake devkit (main's StartAudio/StopAudio tracking), Looper `main.cpp` (return includes
+next to `sd_management.h`, manager-return handler before the control SysEx handler), Toy Piano
+`main.cpp` (manager-return handler before the FV1 block).
+
+The whole `system/program-manager/build/` tree had been committed (host test executables and
+objects, both images with `.elf`/`.hex`, `.dsy` packages, the card template). It is removed from
+git and `/system/*/build/` is ignored; images live in the firmware store of the main checkout
+(`docs/FIRMWARE_BINARIES.md`). The hashes above remain the record of those builds.
+
+Validation after the merge (2026-11-08, Windows 11, xPack GCC 13.2.1, llvm-mingw clang, Python 3.12):
+
+| Check | Result |
+| --- | --- |
+| `make -C system/program-manager test` / `test-sanitize` / `test-python` | 8 suites PASS, ASan/UBSan PASS, Python PASS |
+| `make PROJECT=looper test` | PASS, golden 2A2DBCEC41A54F57, MOD build bit-identical |
+| `make PROJECT=toy-piano test` | unit, production callback and modulation PASS; the golden assertion is the known Windows libm difference: hash E34CE1F8D2676D39 identical on main (7c5af9e) and on this branch with the same compiler |
+| `make PROJECT=toy-piano-fv1 test`, `reverb-fx test`, `step-seq test` | PASS (`gen_params.py --check` run by hand with `python`, the recipe calls `python3`) |
+| `tests/test_components.py` | PASS |
+| ARM: `program-manager-probe` 141 112 B, `program-manager` 156 736 B | built; `check_qspi_image.py` PASS for both; SD symbol policy PASS (run by hand with `python`) |
+| ARM: toy-piano, toy-piano-fv1, toy-piano-ambient, toy-piano-filter, looper, looper-mod, reverb-fx, step-seq | build OK (the merged `main.cpp` files compile) |
+| Hardware | NOT MEASURED, nothing flashed |
+
+The images rebuilt from the final commit are stored as `firmware/program-manager/0.1.0+<commit7>/`
+and `firmware/program-manager-probe/0.1.0+<commit7>/` with `SHA256SUMS`, `BUILD.txt` and
+`STATUS.md` (`candidate`); the hashes are quoted in the PR.
+
