@@ -33,6 +33,18 @@ Hardware results are recorded in the test sheets, never here.
   millisecond counter starting near zero; the Disconnect button releases a port held only by
   the SD workflow; the Win32 serial backend honours Cancel in reads and writes and Close()
   is bounded; the simulator sends its periodic READER line.
+* Codex review of the PR (docs/dcp/CODEX_REVIEW_SD_PAGE.md, 15 findings, all addressed): the
+  share continuation after the restart belongs to the kit that accepted it and expires with
+  the restart window; PERFORM after an eject waits for the confirmed RETURN reply on the same
+  connection; the acknowledge question is bound to its interruption; the restored patch goes
+  only to the port the share started on; Share is blocked while the matrix is still being
+  read and the confirmation re-saves the patch; a kit that power-cycles out of SD management
+  is found again on USB-MIDI; other DDP devices (DaisyDiagnostic) are skipped; COM
+  enumeration, open and configuration, MIDI sends and the autosave file write left the
+  message thread; a failed COM configuration is reported instead of a silent link; READER
+  lines with duplicated fields are rejected; the self-test never opens hardware; BYE is
+  counted by write completion; expired backoff entries are pruned; the GUI self-test gained
+  the no-card, long-text, Looper failed-save, share-gate and acknowledge cases.
 
 ## 0.4.0
 

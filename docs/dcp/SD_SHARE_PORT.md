@@ -269,6 +269,7 @@ Every timeout is driven by the injected clock and tested with a fake clock.
 | **Return to Nebulae** / **Return to the Looper** | enabled: `CanReturn()`; tooltip "Only after Windows ejected the card: the firmware returns it and restarts into performance (Nebulae rescans its banks, the looper reloads looper/loop.wav)." |
 | **Acknowledge interrupted access …** | enabled: `CanAcknowledge()`; confirmation dialog "Windows may have lost pending changes. Close all files using this card. Acknowledging does not recover data and is not a clean eject. Continue?" with Yes/No, default No |
 | Hint | "Performance mode uses USB-MIDI (no COM port); SD management uses USB CDC + mass storage. The card is never returned by closing this window or unplugging: only a Windows eject or an explicit acknowledgement. Power-cycling the kit always starts in performance." |
+| Text heights | Message, error and warning take the wrapped lines they need (JUCE `TextLayout`), capped at 5, 4 and 3 lines; the real texts above need at most three. The hint is shown only when the room left below the buttons holds all of its lines (never clipped). An absurd text is truncated with an ellipsis; the Python panel scrolls instead. |
 | Log lines | "P: SD card sharing requested", "P: sharing confirmed; unsaved audio in RAM will be lost", "P: return to performance requested", "P: interrupted access acknowledged" plus the workflow's own log events |
 
 The VST3 shows instead of the page (D2): "Sharing the SD card needs the Daisy Control Panel app
@@ -294,17 +295,50 @@ the Mod on Daisy session, the SQ session, the bootloader request and the SD shar
   the port meanwhile.
 * Messages the shared port delivered together with its disappearance still reach the
   workflow (the SHARE ACK arrives in the same poll as the kit's restart); only an empty poll
-  on a gone port counts as a lost link, as with the Python link and the simulator. On the CDC
-  side bytes that arrive together with the failure are dropped, as the Python `SerialLink`
-  raises (the session reconnects and asks STATUS).
-* COM port enumeration (SetupAPI) and `CreateFile` run on the message thread once per scan
-  second, as in the Python panel (pyserial `comports()`); they take milliseconds normally and
-  are not bounded by this design. Reads and writes run on the I/O thread with cancel; the
-  serial `Close()` waits at most about 45 ms (15 ms drain of a queued BYE, 30 ms for the thread) and
-  detaches a thread that a driver still holds.
+  on a gone port counts as a lost link, as with the Python link and the simulator. When the
+  port scan finds the endpoint gone, the frames JUCE delivered meanwhile are routed to the
+  workflow first and the port is dropped after (review finding 6). On the CDC side bytes that
+  arrive together with the failure are dropped, as the Python `SerialLink` raises (the
+  session reconnects and asks STATUS).
+* COM port enumeration (SetupAPI) and `CreateFile` with the port configuration run on worker
+  threads (review finding 9): `ThreadedSerialPorts::List()` returns the last enumeration and
+  refreshes it in the background; `Open()` returns a link at once whose own thread opens and
+  configures the port. A failed `GetCommState`, `SetCommState`, `SetCommTimeouts` or
+  `PurgeComm` closes the handle and reports the call with the Win32 error instead of a silent
+  link (finding 10). Reads and writes run on that thread with cancel; the serial `Close()`
+  waits at most about 90 ms (60 ms for a queued BYE to be written, counted by write
+  completion, 30 ms for the thread) and detaches a thread that a driver still holds
+  (finding 13). MIDI sends run on a sender thread with a bounded queue of 256 messages
+  (JUCE's WinMM output can wait seconds for a SysEx completion when the kit vanished); its
+  destructor waits 50 ms and detaches a sender the driver still holds. The autosave file
+  (D5) is written on a JUCE worker thread before SHARE is sent.
 * D5 restore: the saved patch is sent only to a device with the same instrument key on a
-  connection the workflow itself opened (the kit coming back); a restart timeout (T22, T33)
-  or a connect the user makes by hand abandons the restore with a log line that names the file.
+  connection the workflow itself opened (the kit coming back) and only on the port the share
+  started on, identified by the JUCE device identifier (a port with the same label on a
+  different identifier, or two ports with the same label, does not qualify; finding 4). A
+  restart timeout (T22, T33) or a connect the user makes by hand abandons the restore with a
+  log line that names the file.
+* Share is blocked while the matrix of the kit is still being read (button disabled, text
+  "Share SD card with Windows (reading the matrix …)"), because no snapshot exists yet; a
+  request in that state is refused with a log line. The confirmation (T8/T25) re-saves the
+  patch, so edits made while the question was open are the ones that come back (finding 5).
+* The share continuation (T24) belongs to the kit that accepted the SHARE: it runs only on a
+  CDC session whose HELLO app is that instrument, expires with the restart window
+  (`kRestartTimeoutMs`), and is dropped when the management connection is lost or another
+  instrument answers (finding 1). The Python reference carries a bare flag.
+* The return continuation (PERFORM after T27) runs only after the firmware confirmed
+  `READER a=RETURN` with `state=LOCAL busy=0` on the same connection generation; a reader
+  timeout, an ERR, a lost connection or a cancel invalidates it, and the page says
+  "Returning the card to the firmware …" until then (finding 2).
+* The acknowledge question (T30) is bound to the interruption episode and the connection
+  generation it was opened for; answered after either changed, it sends nothing and logs a
+  warning (finding 3).
+* After CDC loss in Management the MIDI side is probed again with STATUS only; a valid STATUS
+  moves the page to Performance ("back on USB-MIDI") while the reader state stays unknown
+  until the firmware reports it (finding 7).
+* The DDP session accepts only a HELLO whose app is Nebulae or Looper with `sdmsc` and the
+  instrument's capability; another DDP device (DaisyDiagnostic) is closed, backed off and the
+  scan continues with the next port (finding 8).
 * The CDC side scans COM ports (VID `0483` / PID `5740`) continuously as the Python panel
   does; a kit found in SD management is shown even if the user never pressed Connect.
 * Instruments without a matrix (D4): when the workflow reaches Performance or Management and
@@ -338,8 +372,13 @@ the Mod on Daisy session, the SQ session, the bootloader request and the SD shar
 | `STARTING` | text only; Python simulator never produces it | PROTOCOL.md lists it | text ported; simulator may be told to produce it for a test |
 | Nebulae mgmt rejects `LOOPER` | `ERR c=LOOPER e=UNKNOWN` (generic unknown) | not specified | simulator same |
 | Looper 0.6.1 (`main` b7517b5, "make the SHARE decision final") | reference written for 0.6.0 | a busy engine answers SAVING, a first ACCEPTED is decided again under a hold; "the protocol is unchanged" | same: the workflow repeats SHARE on SAVING |
+| Duplicate keys in a READER line | last value wins (`protocol.py`) | not specified | **deviation**: a READER line with a duplicated field is rejected and the cached reader state is cleared (review finding 11) |
+| Share continuation after the restart | bare `share_after_restart` flag | T24 "continuation of the user's request" | **deviation**: bound to the accepting instrument and the restart window, dropped on a lost session (finding 1) |
+| Return continuation | PERFORM on the next LOCAL without a pending command | T27/T28 | **deviation**: only after the confirmed `a=RETURN state=LOCAL busy=0` reply on the same connection (finding 2) |
+| Other DDP devices on a COM port | the first protocol-1 HELLO is kept | work order phase 3: identify by HELLO app and capability | **deviation**: unmatched devices are backed off, the scan continues (finding 8) |
 
-No contradiction that matters for card safety was found. No HOLD.
+No contradiction that matters for card safety was found. No HOLD. The four deviations above
+tighten the Python behaviour; none loosens a card-safety rule.
 
 ## 10. Card-safety rules and the state that enforces them
 
@@ -347,13 +386,14 @@ No contradiction that matters for card safety was found. No HOLD.
 | --- | --- |
 | "ejected" only for firmware state EJECTED | `Ejected()`; texts.ejected only in T26 for EJECTED |
 | a timeout means "ownership unknown" | DDP `kReaderCommandTimeoutMs` → reader unknown, T26 "Waiting for the card-reader status …"; T31 for a lost session |
-| INTERRUPTED and ERROR need an explicit acknowledge | `CanReturn()` excludes them; `CanAcknowledge()` and T30 |
+| INTERRUPTED and ERROR need an explicit acknowledge | `CanReturn()` excludes them; `CanAcknowledge()` and T30; the question is bound to the interruption episode and connection generation |
 | closing the app, a reconnect or BYE never returns or reshares the card | T34; DDP connect sends `READER a=STATUS` only; T24 runs once and only after a user-requested share |
-| SHARE only by an explicit request | T7/T8/T25 need a user call; T24 is the continuation of that call |
-| PERFORM only from LOCAL | T28/T29 require reader == LOCAL; EJECTED goes through RETURN first (T27) |
+| SHARE only by an explicit request | T7/T8/T25 need a user call; T24 is the continuation of that call, only for the kit that accepted it, only within the restart window |
+| PERFORM only from LOCAL | T28/T29 require reader == LOCAL; EJECTED goes through RETURN first (T27) and PERFORM follows only the confirmed RETURN reply |
 | a lost Live loop / unsaved loop needs confirmation | T12 → Confirm; T9 refuses an unconfirmed retry |
 | R1 (wrong personality) is reported | T21 |
-| no automatic reshare after an interruption | T24 only with `share_after_restart`, which T10 sets and T21/T22 clear; INTERRUPTED never sets it |
+| no automatic reshare after an interruption | T24 only with `share_after_restart`, which T10 sets and T21/T22, the expiry, a lost session and another instrument's HELLO clear; INTERRUPTED never sets it |
+| Share only with a saved patch (D5) | the page blocks Share while the matrix is being read; the confirmation re-saves |
 
 ## 11. Test mapping (Python → C++)
 
@@ -406,8 +446,8 @@ C++ tests: `editors/mod-on-daisy/tests/test_sd_share.cpp` (core, no JUCE, run by
 | `test_performance_profile_shows_status_and_only_supported_actions` | self-test `SdCycle` (buttons and rows in performance) + `TestButtonRules` |
 | `test_buttons_drive_share_eject_return` | self-test `SdCycle` (Nebulae MOD, Looper MOD, Nebulae, Looper) |
 | `test_live_loop_warning_and_confirmation` | self-test `SdCycle` for the Nebulae MOD simulator with a Live loop (CONFIRM → cancel → confirm) |
-| `test_refusal_and_interruption_messages` | self-test `SdInterruption` + `TestInterruptionQuarantine`, `TestNebulaeRefusals` |
-| `test_long_texts_stay_inside_the_panel` | self-test: `AllVisibleInside()` after every state with long texts (shared, confirm, interrupted) |
+| `test_refusal_and_interruption_messages` | self-test `SdInterruption` (interruption texts) and `SdNoCardAndLongTexts` (no card: Share disabled, row "no card"); `TestInterruptionQuarantine`, `TestNebulaeRefusals` (core) |
+| `test_long_texts_stay_inside_the_panel` | self-test `SdNoCardAndLongTexts` at 1200×860 (the smallest window): a message and an error about twice as long as the longest real texts (18 and 13 repetitions) are shown completely (`AllVisibleInside()`: every visible control has a non-empty rectangle inside the page and every label's text fits its rectangle without squeeze or ellipsis); the Python test's lengths (40 and 30 repetitions) keep every control inside the page (`AllVisibleInside(false)`, the Python assertion) while the texts are truncated. `AllVisibleInside()` also runs after every state of the cycles |
 | `test_report_contains_workflow` | GUI-only: Daisy Diagnostic's JSON report; the control panel has no report |
 | `test_diagnostics_simulation_has_no_nebulae` | GUI-only (diagnostics simulation); the equivalent "Toy Piano simulator shows no instrument" is self-test `SdNoInstrument` |
 
@@ -417,21 +457,21 @@ C++ tests: `editors/mod-on-daisy/tests/test_sd_share.cpp` (core, no JUCE, run by
 | --- | --- |
 | `test_looper_profile_in_the_sd_share_tab` | self-test `SdCycle` for the Looper MOD simulator (rows, button texts) |
 | `test_save_then_share_eject_return` | self-test `SdLooperSaving` |
-| `test_failed_save_warning_and_confirmation` | `TestLooperSaveFailedConfirm` + self-test confirm button text |
+| `test_failed_save_warning_and_confirmation` | `TestLooperSaveFailedConfirm` (core) + self-test `SdLooperFailedSave` (warning text, row "last card write failed", confirm label "Share without the unsaved changes", cancel keeps playing, confirm shares) |
 | `test_report_names_the_profile` | GUI-only (report) |
 
 ### 11.5 Additional DDP session and transport tests (not in the Python workflow files, needed by the port)
 
 | Source | C++ |
 | --- | --- |
-| `test_card_reader.py::test_timeout_never_reports_successful_eject` | `TestDdpReaderTimeoutUnknown` |
+| `test_card_reader.py::test_timeout_never_reports_successful_eject` | `TestDdpReaderTimeoutUnknown` (a SHARE from LOCAL times out) + `TestReaderTimeoutAfterShared` (SHARED first, then the STATUS times out: ownership unknown, no eject inferred, STATUS only on reconnect) |
 | `test_card_reader.py::test_app_close_and_reconnect_do_not_revoke_windows_ownership` | `TestCloseNeverReturnsCard` (BYE, reconnect, pulled cable) |
 | `test_card_reader.py::test_slow_shared_block_operation_has_bounded_receive_tolerance` | `TestDdpSharedRxTolerance` |
 | `test_card_reader.py::test_periodic_status_cannot_acknowledge_a_different_pending_action` | `TestDdpPendingActionMatch` (periodic STATUS lines while a=SHARE is pending) |
 | `test_card_reader.py::test_busy_transport_prevents_return_even_after_eject` | `TestWfBusyReaderBlocksReturn` (READER busy=1 after EJECTED) |
 | `test_session.py` handshake, HELLO retry, backoff, incompatible protocol | `TestDdpHandshake` |
-| `test_protocol.py` CRC and framing | `TestCodecs` (framing, CRC error, resync) plus the `ddp.*` vectors |
-| phase 3 | `TestOpenHello`, `TestHandshakeTimeout`, `TestPortVanishesAndReconnect`, `TestNeverBlocksMessageThread` (each GUI-thread call < 50 ms while a cooperative backend blocks 200 ms), `TestBoundedQueues`, `TestCloseWithUncooperativeBackend` (a backend that ignores the cancel: Close() still returns within its bounded waits, the thread is detached and frees the backend later), `TestByeIsSent` |
+| `test_protocol.py` CRC and framing | `TestCodecs` (framing, CRC error, resync) plus the `ddp.*` vectors; `TestFrameParserLimits` (a 400-byte body through the receive parser is accepted, 401 bytes overflow) |
+| phase 3 | `TestOpenHello`, `TestHandshakeTimeout`, `TestPortVanishesAndReconnect`, `TestNeverBlocksMessageThread` (each GUI-thread call bounded while a cooperative backend blocks 200 ms; close within `kDrainMs + kJoinMs` plus margin), `TestBoundedQueues`, `TestCloseWithUncooperativeBackend` (a backend that ignores the cancel: Close() still returns within its bounded waits, the thread is detached and frees the backend later), `TestByeIsSent` (the fake refuses writes after the cancel and counts the writes that reached it), `TestOpenOnWorker` (a 300 ms open and a slow enumeration never stall the caller; the session connects when the open completes) |
 
 ### 11.6 Added after the independent review (phase 7)
 
@@ -439,9 +479,39 @@ C++ tests: `editors/mod-on-daisy/tests/test_sd_share.cpp` (core, no JUCE, run by
 | --- | --- |
 | T3 probe timeout and 5 s backoff; a port that refuses the first send is backed off too | `TestProbeBackoff` |
 | T13 BAD_REQUEST and an unknown result code, T14 reply with another token (ignored, then the 2 s timeout), T15 ERROR reply | `TestStaleAndErrorReplies` |
-| every timer with a clock that starts at 2^31 or just below the 32-bit wrap (ms since boot) | `TestClockWrap` |
-| D5: the saved patch goes only to the kit that comes back from the share; abandoned after the restart timeout and on a manual connect to another device | self-test `SdRestoreNotToWrongDevice` |
+| a full cycle and CDC discovery with a clock that starts at 2^31 or just below the 32-bit wrap (ms since boot); the reader-command timeout, the probe backoff and the Looper save timeout across the wrap | `TestClockWrap` |
+| D5: the saved patch goes only to the kit that comes back from the share; abandoned after the restart timeout and on a manual connect to another device | self-test `SdRestoreNotToWrongDevice`. The port-identifier rule (finding 4) is enforced in `EditorComponent::SdPortCandidates()`; the simulator has one identifier per port, so an automatic reconnect to a second kit with the same product key is NOT covered by a test |
 | the Disconnect button releases a port that only the workflow holds (plain Nebulae/Looper) | self-test `SdCycle` (no-matrix cases) |
+
+### 11.7 Added after the Codex review of PR #106 at 4b65faf (2026-11-08)
+
+`docs/dcp/CODEX_REVIEW_SD_PAGE.md` numbers the findings.
+
+| Finding | Rule / transition | C++ |
+| --- | --- | --- |
+| 1 (P1) share continuation scope | T24 only for the accepting kit, within the restart window | `TestShareIntentBoundAndExpiring`: (a) management starts without a card, a card inserted after the window is not shared; (b) the CDC session is lost before LOCAL, the intent dies; (c) another instrument answers HELLO, the intent is dropped |
+| 2 (P1) return continuation | PERFORM only after the confirmed RETURN reply | `TestReturnContinuationInvalidated` (reply on the same connection → PERFORM; lost link and reader timeout → no PERFORM) |
+| 3 (P1) acknowledge binding | T30 bound to episode and generation | self-test `SdAckEpisode` (the question is answered after a second interruption: nothing is sent, warning logged; a fresh question releases) |
+| 4 (P1) restore identity | D5 only on the share port's identifier | `EditorComponent::SdPortCandidates()`; self-test `SdRestoreNotToWrongDevice` (manual connect to another product); two kits with one product key: NOT covered (see 11.6) |
+| 5 (P1) share gate | Share blocked until the matrix is read; snapshot at the confirmation | self-test `SdShareGate` |
+| 6 (P2) frames before the port drop | § 7 | code path in `EditorComponent::RefreshPorts()`; the simulator bypasses enumeration: NOT covered by a test |
+| 7 (P2) recovery after CDC loss | § 7 | `TestRecoveryAfterCdcLoss` |
+| 8 (P2) foreign DDP devices | HELLO app and capability | `TestForeignDdpDeviceSkipped` |
+| 9 (P2) message-thread work | § 7 workers | `TestOpenOnWorker`, `TestNeverBlocksMessageThread`; MIDI sender thread and autosave worker are JUCE code without a host test; real driver latency NOT MEASURED |
+| 10 (P2) Win32 open errors | § 7 | code in `SerialPortWin.h`; no injected failure test (needs a real handle); the real open path passed the hardware probe |
+| 11 (P2) duplicate READER fields | § 9 | `TestDuplicateReaderFields` |
+| 12 (P2) self-test and real ports | the self-test never opens hardware | `Main.cpp`: `DisableHardwareSerial()` before the first test, `!HardwareSerialActive()` asserted first and last |
+| 13 (P3) BYE drain | § 7 | `TestByeIsSent` |
+| 14 (P3) stale backoff entries | expired entries pruned while the port is absent | `TestBackoffPruneAcrossHalfCycle` (MIDI and CDC, 24.8 days later) |
+| 15 (P3) test map | the rows narrowed above | `SdNoCardAndLongTexts`, `SdLooperFailedSave`, `TestReaderTimeoutAfterShared`, `TestFrameParserLimits`, `TestClockWrap` extended |
+
+### 11.8 Hardware probe
+
+`editors/mod-on-daisy/tests/hw_probe.cpp` (CMake target `DcpHardwareProbe`, Windows only, not in
+CI) drives the app's own classes against the real kit: `status`, `boot` (bootloader request) and
+`cycle [--confirm] [--no-matrix] [--out <log>]` (STATUS, matrix edit, SHARE, CDC session, Windows
+drive, root listing read-only, eject verb, RETURN, STATUS, matrix reconnect and patch upload as
+`RestoreAfterShare()` does). Results belong in `docs/dcp/SD_PAGE_LOG.md`, marked MEASURED.
 
 Phase 2 PASS requires every row above that names a C++ test to be green under the normal
 flags and under ASan/UBSan.

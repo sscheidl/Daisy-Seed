@@ -203,3 +203,80 @@ The simulator gained `share_reply_delay_ms` for the pending-action test.
 
 Phase 7 PASS: no open P1/P2 finding; all tests of phases 0–5 green again; the package is ready
 and `apps/` is filled; the PR is opened against `main` (depends on #102, not merged).
+
+## Hardware probe (MEASURED 2026-11-08, owner-requested, after the PR was opened)
+
+The owner put the kit into the Daisy bootloader and asked for flashing and own tests. A new
+console tool `editors/mod-on-daisy/tests/hw_probe.cpp` (CMake target `DcpHardwareProbe`,
+Windows only, not in CI) drives the same core classes as the app (`MidiPort`, `SdShareWorkflow`,
+`DdpSession` on `SerialPortWin.h`, the Mod on Daisy `Session`) through a scripted cycle: STATUS,
+matrix edit, SHARE, wait for the CDC session and the Windows drive, list the drive root
+(read-only, nothing written), eject through the Windows shell verb, RETURN, STATUS again, matrix
+reconnect and patch upload as `RestoreAfterShare()` does. Logs: `.work/hw/hw-probe-*.log`.
+Flashing: `dfu-util -a 0 -s 0x90040000:leave -D <image> -d ,0483:df11` (`.tools/dfu-util-0.11`),
+bootloader entry between images through the app's own request (`DcpHardwareProbe boot`).
+
+| # | Image (SHA-256 prefix) | Date / time | Result |
+| --- | --- | --- | --- |
+| H1 | NebulaeMod-v0.2.1 (`02e52f88`) | 16:54 flash, 16:57 status | STATUS 0.16 s: Nebulae 0.2.1, card, bank 0/0 (card has no NEBULAE folder), peak 6 %; matrix connected 0.16 s, columns Start … Window |
+| H2 | NebulaeMod-v0.2.1, cycle 1 | 16:57 | PASS: SHARE accepted 0.01 s; CDC COM16 after 2.69 s; SHARED; drive G: 2.8 s after the click; root "System Volume Information"; eject verb; EJECTED 0.78 s later; RETURN → PERFORM; USB-MIDI back 3.1 s; matrix reconnected, patch CRC BE2E4801 restored |
+| H3 | NebulaeMod-v0.2.1, cycle 2 | 16:58 | PASS, same sequence; drive 1.7 s, MIDI back 3.1 s |
+| H4 | LooperMod-v0.6.1 (`25543ed0`) | 16:59 boot + flash, 17:00 cycle | PASS: Looper 0.6.1, loop=0; matrix columns Speed … Mix; CDC COM17 2.0 s; drive 1.9 s; root now "looper" (created by the firmware); EJECTED; MIDI back 3.1 s; patch restored |
+| H5 | Looper-v0.6.1 (`82068473`), `--no-matrix` | 17:00–17:01 | PASS: drive 1.9 s, EJECTED, MIDI back 3.1 s |
+| H6 | NebulaeOnDaisy-v0.2.1 (`cbc4c376`), `--no-matrix` | 17:01 | PASS: drive 1.9 s, EJECTED, MIDI back 3.1 s |
+| H7 | NebulaeMod-v0.2.1 flashed back, status | 17:01–17:02 | PASS: STATUS and matrix as H1; the kit is left in this state |
+
+Every bootloader request was acknowledged within 0.01 s and the DFU device appeared. Not
+measured: the GUI itself on hardware, listening, CONFIRM with a Live loop (none recorded),
+Looper SAVING (no unsaved loop), the pulled cable, exFAT (card format not checked), the VST3.
+
+## HOLD 2026-11-08 (owner): Codex review of PR #106 at 4b65faf
+
+`docs/dcp/CODEX_REVIEW_SD_PAGE.md` (committed in 07fbdda): 5 P1, 7 P2, 3 P3. Nothing was
+pushed after 4b65faf until the owner's instruction "Fix all" (below). The hardware probe tool
+and its CMake target were committed with the report.
+
+## Codex review fixes (2026-11-08, owner: "Fix all")
+
+All 15 findings were addressed; `docs/dcp/SD_SHARE_PORT.md` § 7, § 9, § 10 and § 11.7 record
+the rules and the tests. Commits: 07fbdda (probe tool, report), fcc6110 (core and transport),
+2e4d9a0 (app, UI, self-test), the docs commit after this section.
+
+| # | Prio | Finding (short) | Fix | Test |
+| --- | --- | --- | --- | --- |
+| 1 | P1 | an accepted SHARE could expose another kit's card (bare continuation flag) | the continuation is bound to the accepting instrument's HELLO app, expires with the restart window, dies with the CDC session and another instrument's HELLO | `TestShareIntentBoundAndExpiring` |
+| 2 | P1 | a failed RETURN could leave PERFORM armed for a later LOCAL | PERFORM only after `a=RETURN state=LOCAL busy=0` on the same connection generation; timeout, ERR, loss, cancel invalidate; "Returning the card to the firmware …" meanwhile | `TestReturnContinuationInvalidated` |
+| 3 | P1 | the acknowledge dialog could release a later interruption | bound to the interruption episode and generation; a stale answer sends nothing and logs a warning | self-test `SdAckEpisode` |
+| 4 | P1 | D5 could restore to another kit with the same product key | only the port the share started on, by JUCE device identifier; no fallback to every Daisy port | `SdPortCandidates()`; `SdRestoreNotToWrongDevice`; two kits with one key NOT covered by a test (one identifier per simulator port) |
+| 5 | P1 | SHARE before the matrix was read; stale snapshot under the confirmation | Share disabled with "(reading the matrix …)" while detection or the first read is pending; `RequestSdShare` refuses; the confirmation re-saves | self-test `SdShareGate` |
+| 6 | P2 | a SHARE reply could be discarded with the vanished port | received frames are routed to the workflow before the port is dropped | code path; the simulator bypasses enumeration: NOT covered by a test |
+| 7 | P2 | a kit power-cycled out of management stayed undiscoverable | MIDI STATUS probing in Management after CDC loss; a valid STATUS returns to Performance ("back on USB-MIDI") | `TestRecoveryAfterCdcLoss` |
+| 8 | P2 | another DDP device could starve discovery | `DdpSession` accepts only the instrument app with `sdmsc` and its capability; others are backed off | `TestForeignDdpDeviceSkipped` |
+| 9 | P2 | enumeration, open, MIDI send and the autosave write on the message thread | `ThreadedSerialPorts` lists in the background and opens on the link's thread; `MidiPort` sender thread with a bounded queue; autosave on a JUCE worker | `TestOpenOnWorker`, `TestNeverBlocksMessageThread`; MIDI/autosave threads are JUCE code without a host test; real driver latency NOT MEASURED |
+| 10 | P2 | a failed COM configuration looked like a silent device | `GetCommState`/`SetCommState`/`SetCommTimeouts`/`PurgeComm` failures close the handle and report the call with the Win32 error | no injected-failure test (needs a real handle); the real open path passed the probe cycles below |
+| 11 | P2 | duplicate READER fields took the first value | a duplicated field rejects the line and clears the cached reader state (the Python parser takes the last value) | `TestDuplicateReaderFields` |
+| 12 | P2 | the self-test could open a real CDC port | `DisableHardwareSerial()` before the first test; `!HardwareSerialActive()` asserted first and last | self-test |
+| 13 | P3 | the BYE drain waited for queue removal, not the write | write completion counters; `kDrainMs` 60, `kJoinMs` 30; the fake refuses writes after the cancel | `TestByeIsSent` |
+| 14 | P3 | expired backoff entries came back after half a clock cycle | pruned on every scan while the port is absent; `ScanNow()` is a request for the next tick | `TestBackoffPruneAcrossHalfCycle` |
+| 15 | P3 | § 11 overstated coverage | rows narrowed; missing scenarios added at the claimed layer | `SdNoCardAndLongTexts`, `SdLooperFailedSave`, `TestReaderTimeoutAfterShared`, `TestFrameParserLimits`, `TestClockWrap` extended |
+
+Found while fixing: the simulated HELLO advertised the capability of the configured profile
+instead of the app it claimed; `SdSharePanel` laid its texts out for at most three lines
+(message, error and warning now take the wrapped lines they need, caps 5/4/3; the hint is hidden
+when no room is left); `AllVisibleInside()` names the failing control.
+
+| # | Command | Date | Exit | Result |
+| --- | --- | --- | --- | --- |
+| C.1 | `make -C editors/mod-on-daisy test` (core, SD share, vectors, serial transport, SQ, browser codec) | 2026-11-08 17:2x | 0 | all PASS |
+| C.2 | the same with `-fsanitize=address,undefined` (`HOST_FLAGS` of `test-sanitize`) | 2026-11-08 17:40 | 0 | all PASS, no sanitizer report |
+| C.3 | `cmake --build build/editor --config Release` (all targets) | 2026-11-08 17:33, app-only rebuilds 17:36–17:39 | 0 | rebuilt; one earlier build failed on a macro used before its definition (fixed) |
+| C.4 | `"Daisy Control Panel.exe" --selftest build/selftest-codex` | 2026-11-08 17:39 | 0 | 24 PASS lines (new: share gate, acknowledge episode, no card + long texts, Looper failed save); the first runs with the stricter layout check reported empty labels and the three-line caps, see above |
+| C.5 | `ctest -C Release` in build/editor | 2026-11-08 17:34 | 0 | 3/3 |
+| C.6 | `ModOnDaisyPluginCheck.exe` on the VST3 (`MOD_ON_DAISY_NO_AUTOCONNECT=1`); plugin block diff against origin/main | 2026-11-08 17:40 and after the final build | 0 | PASS; identity unchanged (only the standalone's product name, bundle id and the project version differ) |
+| C.7 | `DcpHardwareProbe status`, then `cycle` twice (kit on NebulaeMod 0.2.1, card inserted) | 2026-11-08 17:41 | 0 | **MEASURED**: STATUS 0.15 s, matrix 0.15 s; SHARE answered 0.01 s; CDC COM16 after 2.70/2.71 s; READER SHARED; drive letter 2.8 s after the click; Return disabled while Windows owns the card; eject verb → EJECTED after 0.64/0.71 s; RETURN → PERFORM 0.03 s; USB-MIDI back 3.11/3.12 s; matrix reconnected 0.24 s; patch CRC BE2E4801 restored in both cycles (logs `.work/hw/hw-probe-20261108-1741*.log`) |
+| C.8 | final build from the code commit 2e4d9a0, `scripts/dcp_sd_test_package.py --store --package --selftest --check-root <origin/main export>` | 2026-11-08 17:4x | 0 | first run from the tree with the uncommitted docs of this section: store named `-dirty`, package rebuilt from the stores, every checksum verified, the four images PASS `check-firmware.py`, the packaged EXE self-test exit 0 with 24 PASS lines; the dirty store was deleted and the store repeated from the clean tree after this docs commit (C.10) |
+| C.9 | retention: `apps/daisy-control-panel/0.5.0+530b195/` (the phase-7 candidate, never handed out) is superseded by `the clean store named in C.10` and deleted after the push | 2026-11-08 | | |
+
+Not re-run (components untouched by the fixes): the browser editor e2e and the diagnostics
+`pytest`; both passed in phase 7. Not measured: the GUI itself on hardware, CONFIRM with a Live
+loop, Looper SAVING, the pulled cable, a second kit, the VST3 in a DAW.
