@@ -81,7 +81,7 @@ int main(int argc,char** argv) {
     usb.sent.clear();
     Send({0xf0,0x7d,0x4e,0x42,0x01,0x01,0xf7});Main();
     auto r=LastReply();
-    CHECK(r.size()==26 && r[5]==0x41 && r[6]==0 && r[7]==2 && r[8]==1 && r[9]==0);
+    CHECK(r.size()==26 && r[5]==0x41 && r[6]==kVersion[0] && r[7]==kVersion[1] && r[8]==kVersion[2] && r[9]==0);
     CHECK((r[10]&1) && !(r[10]&2) && r[11]==3 && r[12]==3 && r[13]==3 && r[14]==1);
     // SHARE: with a Live loop it needs confirmation, while recording it is busy.
     engine->live=true;
