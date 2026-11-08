@@ -92,6 +92,15 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     bool RequestSdShare(bool confirm);
     // Set by the self-test instead of the "Interrupted SD access" question: true = continue.
     std::function<bool()> sd_ack_decision;
+    // Self-test: receives the question's continuation instead of a dialog, to answer it later.
+    std::function<void(std::function<void(bool)>)> sd_ack_prompt;
+    // Self-test and simulators only: no Windows COM port is ever opened (review finding 12).
+    void DisableHardwareSerial();
+    bool HardwareSerialActive() const { return serial_ports_ != nullptr; }
+    // The matrix of the connected kit is still being detected or read (Share waits, D5).
+    bool MatrixDetectionPending() const;
+    // Autosave written synchronously (self-test with a manual clock) instead of on a worker.
+    bool sd_autosave_sync = false;
     // Where the patch is saved before a share; default %LOCALAPPDATA%\Daisy Control Panel\autosave.
     juce::File sd_autosave_dir;
     juce::File LastAutosave() const { return sd_autosave_file_; }
@@ -201,6 +210,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     void SdEjectHelp();
     void SdAcknowledge();
     juce::String CurrentPortLabel() const;
+    void RouteMidiFrames();
 
     // Sends to whatever carries the SQ conversation: the MIDI port or the SQ simulator.
     struct SqLink : Transport {
@@ -256,7 +266,10 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     bool show_sd_ = false;
     bool opening_sd_link_ = false;                  // ConnectTo() runs for the workflow: keep its state
     bool sd_reconnected_ = false;                   // the current port was opened by the workflow (kit coming back)
+    bool sd_ambiguous_logged_ = false;              // "several ports with this name" said once per share
     std::string sd_restore_key_;                    // instrument key the saved patch belongs to
+    juce::String sd_share_port_id_;                 // JUCE identifier of the port the share started on
+    juce::String sd_open_identifier_;               // OpenSdLink(): the exact port entry to connect to
     bool sd_auto_switched_ = false;                 // D4: switched to the SD page for this device
     sd::Phase last_sd_phase_ = sd::Phase::NotFound;
     std::optional<LoadedPatch> sd_restore_;         // the patch saved before the share (D5)

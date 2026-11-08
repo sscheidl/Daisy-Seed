@@ -22,6 +22,9 @@ class SdSharePanel : public juce::Component {
     // Actions, wired by the editor component (nullptr = disabled).
     std::function<void(bool confirm)> request_share;
     std::function<void()> cancel, return_to_performance, acknowledge, eject_help;
+    // True while the matrix of the connected kit is still being detected or read: Share
+    // waits, so the patch can be saved before the restart (D5, review finding 5).
+    std::function<bool()> share_blocked;
 
     SdSharePanel(sd::SdShareWorkflow& workflow, ddp::DdpSession& session, bool available, const juce::String& about)
         : wf_(workflow), session_(session), available_(available) {
@@ -177,7 +180,9 @@ class SdSharePanel : public juce::Component {
                                      "reloaded from the card.")
                                  : U(""),
                              juce::dontSendNotification);
-        share_.setEnabled((wf_.CanShare() && !wf_.NeedsConfirmation()) || wf_.CanShareInManagement());
+        const bool blocked = share_blocked && share_blocked() && !wf_.ManagementConnected();
+        share_.setEnabled(((wf_.CanShare() && !wf_.NeedsConfirmation()) || wf_.CanShareInManagement()) && !blocked);
+        share_.setButtonText(blocked ? U("Share SD card with Windows (reading the matrix …)") : U("Share SD card with Windows"));
         share_.setColour(juce::TextButton::buttonColourId, share_.isEnabled() ? colour::accent : colour::raised);
         confirm_.setVisible(wf_.NeedsConfirmation());
         cancel_.setVisible(wf_.NeedsConfirmation() || phase == Phase::Saving);
@@ -202,15 +207,37 @@ class SdSharePanel : public juce::Component {
     juce::String ErrorText() const { return error_.getText(); }
     juce::String WarningText() const { return warning_.getText(); }
     juce::String NoteText() const { return note_.isVisible() ? note_.getText() : juce::String(); }
-    // Every visible control lies inside the page (test_long_texts_stay_inside_the_panel).
-    bool AllVisibleInside() const {
+    // Every visible control lies inside the page (test_long_texts_stay_inside_the_panel),
+    // has a size, and every visible label has room for its text.
+    // Every visible control lies inside the page with a non-empty rectangle; with `text_fit`
+    // every label also shows all of its text (no squeeze, no ellipsis). Labels without text
+    // are laid out with zero height and do not count.
+    bool AllVisibleInside(bool text_fit = true) const {
+        layout_failure_.clear();
         for(int i = 0; i < getNumChildComponents(); ++i) {
             const juce::Component* c = getChildComponent(i);
-            if(c->isVisible() && !getLocalBounds().contains(c->getBounds()))
+            if(!c->isVisible())
+                continue;
+            const auto* l = dynamic_cast<const juce::Label*>(c);
+            const auto* b = dynamic_cast<const juce::Button*>(c);
+            if(l && l->getText().isEmpty())
+                continue;
+            const juce::String what = l ? "label \"" + l->getText().substring(0, 40) + "\""
+                                        : b ? "button \"" + b->getButtonText() + "\"" : juce::String("control");
+            if(!getLocalBounds().contains(c->getBounds()) || c->getWidth() <= 0 || c->getHeight() <= 0) {
+                layout_failure_ = what + " outside the page or empty: " + c->getBounds().toString();
                 return false;
+            }
+            if(text_fit && l && Lines(*l, l->getWidth(), 100) - 4 > l->getHeight()) {
+                layout_failure_ = what + " does not fit its " + juce::String(l->getHeight()) + " px (needs "
+                    + juce::String(Lines(*l, l->getWidth(), 100) - 4) + ")";
+                return false;
+            }
         }
         return true;
     }
+    // Why the last AllVisibleInside() returned false (self-test diagnostics).
+    const juce::String& LayoutFailure() const { return layout_failure_; }
 
     void paint(juce::Graphics& g) override {
         g.fillAll(colour::bg);
@@ -234,11 +261,13 @@ class SdSharePanel : public juce::Component {
             rows_[i].setBounds(row);
         }
         c.removeFromTop(8);
-        message_.setBounds(c.removeFromTop(Lines(message_, c.getWidth(), 3)));
+        // The texts take the lines they need (caps hold the page together with an absurd text,
+        // which is then truncated with an ellipsis; the real texts of § 6 need at most three).
+        message_.setBounds(c.removeFromTop(Lines(message_, c.getWidth(), 5)));
         c.removeFromTop(4);
-        error_.setBounds(c.removeFromTop(Lines(error_, c.getWidth(), 3)));
+        error_.setBounds(c.removeFromTop(Lines(error_, c.getWidth(), 4)));
         c.removeFromTop(4);
-        warning_.setBounds(c.removeFromTop(Lines(warning_, c.getWidth(), 2)));
+        warning_.setBounds(c.removeFromTop(Lines(warning_, c.getWidth(), 3)));
         c.removeFromTop(8);
         share_.setBounds(c.removeFromTop(32));
         c.removeFromTop(6);
@@ -253,7 +282,9 @@ class SdSharePanel : public juce::Component {
         c.removeFromTop(6);
         ack_.setBounds(c.removeFromTop(32));
         c.removeFromTop(10);
-        hint_.setBounds(c.removeFromTop(juce::jmin(c.getHeight(), 64)));
+        const int hint = Lines(hint_, c.getWidth(), 3);
+        hint_.setVisible(hint > 0 && hint <= c.getHeight()); // dropped when the window is too low, never clipped
+        hint_.setBounds(c.removeFromTop(juce::jmin(c.getHeight(), hint)));
     }
 
   private:
@@ -266,8 +297,13 @@ class SdSharePanel : public juce::Component {
         if(l.getText().isEmpty() || width <= 0)
             return 0;
         const juce::Font font(l.getFont());
-        const float text_width = juce::GlyphArrangement::getStringWidth(font, l.getText());
-        const int lines = juce::jlimit(1, max_lines, int(text_width / float(width)) + 1);
+        juce::AttributedString text;
+        text.setText(l.getText());
+        text.setFont(font);
+        text.setWordWrap(juce::AttributedString::byWord);
+        juce::TextLayout layout;
+        layout.createLayout(text, float(juce::jmax(1, width - l.getBorderSize().getLeftAndRight())));
+        const int lines = juce::jlimit(1, max_lines, layout.getNumLines());
         return int(font.getHeight() * 1.25f) * lines + 4;
     }
     std::vector<juce::Component*> Controls() {
@@ -284,6 +320,7 @@ class SdSharePanel : public juce::Component {
     ddp::DdpSession& session_;
     bool available_, simulated_ = false;
     juce::Label heading_, message_, error_, warning_, hint_, about_, note_;
+    mutable juce::String layout_failure_;
     std::array<juce::Label, kRows> row_labels_, rows_;
     juce::TextButton share_, confirm_, cancel_, eject_help_, return_, ack_;
     juce::Rectangle<int> card_;

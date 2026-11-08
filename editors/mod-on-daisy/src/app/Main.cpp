@@ -27,16 +27,20 @@ class MainWindow : public juce::DocumentWindow {
 };
 
 // ------------------------------------------------------------------ self-test
+#define SELFTEST_CHECK(cond) Check((cond), #cond)
 class SelfTest {
   public:
     SelfTest(EditorComponent& e, juce::File dir) : e_(e), dir_(std::move(dir)) {}
 
     int Run() {
         e_.UseManualClock();
+        e_.DisableHardwareSerial(); // simulated cables only (review finding 12)
+        e_.sd_autosave_sync = true; // the manual clock has no message loop for the file worker
         dir_.createDirectory();
         log_ = dir_.getChildFile("selftest.txt");
         log_.replaceWithText({});
         e_.sd_autosave_dir = dir_.getChildFile("autosave");
+        SELFTEST_CHECK(!e_.HardwareSerialActive());
         ToyPiano();
         PhysicalModeling();
         Corrections();
@@ -52,7 +56,12 @@ class SelfTest {
         SdLooperSaving();
         SdInterruption();
         SdRestoreNotToWrongDevice();
+        SdShareGate();
+        SdAckEpisode();
+        SdNoCardAndLongTexts();
+        SdLooperFailedSave();
         SdPluginNote();
+        SELFTEST_CHECK(!e_.HardwareSerialActive()); // still none at the end
         if(failures_)
             Say("FAIL: " + juce::String(failures_) + " checks");
         else
@@ -73,7 +82,14 @@ class SelfTest {
             ++failures_;
         }
     }
-#define SELFTEST_CHECK(cond) Check((cond), #cond)
+
+    // The page's layout check, with the reason in the log when it fails.
+    bool Visible(const ui::SdSharePanel& page) {
+        const bool ok = page.AllVisibleInside();
+        if(!ok)
+            Say("layout: " + page.LayoutFailure() + " at " + juce::String(e_.getWidth()) + "x" + juce::String(e_.getHeight()));
+        return ok;
+    }
 
     bool Settle(uint32_t max_ms = 5000) {
         for(uint32_t i = 0; i < max_ms; ++i) {
@@ -465,7 +481,7 @@ class SelfTest {
         ui::SdSharePanel& page = e_.GetSdPanel();
         SELFTEST_CHECK(page.Heading().startsWith("No Nebulae or Looper found"));
         SELFTEST_CHECK(!page.ShareButton().isEnabled() && !page.ReturnButton().isEnabled() && !page.AckButton().isEnabled());
-        SELFTEST_CHECK(page.RowText(0) == juce::String::fromUTF8("–") && page.AllVisibleInside());
+        SELFTEST_CHECK(page.RowText(0) == juce::String::fromUTF8("–") && Visible(page));
         Shot("dcp-sd-page-idle.png");
         e_.ShowSdPage(false);
         e_.Disconnect();
@@ -509,7 +525,7 @@ class SelfTest {
         SELFTEST_CHECK(page.Heading().startsWith("Performance") && page.Heading().contains("SIMULATION"));
         SELFTEST_CHECK(page.RowText(0) == juce::String(wf.GetProfile().display_name) && page.RowText(2).startsWith("USB-MIDI"));
         SELFTEST_CHECK(page.RowText(3) == "card inserted" && page.RowText(5).contains("not a bench measurement"));
-        SELFTEST_CHECK(page.AllVisibleInside());
+        SELFTEST_CHECK(Visible(page));
         if(wf.GetProfile().id == sd::Instrument::Looper)
             SELFTEST_CHECK(page.RowLabel(4) == "Loop:" && page.RowText(4).contains("saved in looper/loop.wav")
                            && page.ReturnButton().getButtonText() == "Return to the Looper");
@@ -521,7 +537,7 @@ class SelfTest {
             SELFTEST_CHECK(Wait([&] { return wf.NeedsConfirmation(); }, 3000));
             SELFTEST_CHECK(page.ConfirmButton().isVisible() && page.CancelButton().isVisible() && !page.ShareButton().isEnabled());
             SELFTEST_CHECK(page.WarningText().contains("LOSES") && page.ConfirmButton().getButtonText() == "Discard Live loop and share");
-            SELFTEST_CHECK(page.AllVisibleInside());
+            SELFTEST_CHECK(Visible(page));
             Shot((juce::String(shot) + "-confirm.png").toRawUTF8());
             page.CancelButton().onClick();
             e_.Step(50);
@@ -537,7 +553,7 @@ class SelfTest {
         SELFTEST_CHECK(!e_.GetSession().Connected() && !e_.PortOpen() && sim->restarts == 1);
         SELFTEST_CHECK(page.Heading().startsWith("SD management") && page.MessageText().contains("Windows owns the card"));
         SELFTEST_CHECK(page.EjectHelpButton().isEnabled() && !page.ReturnButton().isEnabled() && !page.ShareButton().isEnabled());
-        SELFTEST_CHECK(page.RowText(2).startsWith("USB CDC") && page.RowText(3) == "card reader: SHARED" && page.AllVisibleInside());
+        SELFTEST_CHECK(page.RowText(2).startsWith("USB CDC") && page.RowText(3) == "card reader: SHARED" && Visible(page));
         if(matrix)
             SELFTEST_CHECK(e_.LastAutosave().existsAsFile() && e_.SdRestorePending());
         else
@@ -609,7 +625,7 @@ class SelfTest {
         sd::SdShareWorkflow& wf = e_.GetSdShare();
         ui::SdSharePanel& page = e_.GetSdPanel();
         e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
-        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000) && Settle());
         e_.ShowSdPage(true);
         e_.RefreshNow();
         page.ShareButton().onClick();
@@ -617,7 +633,7 @@ class SelfTest {
         e_.GetSdSimulator()->Management().ReaderBusReset();
         SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Interrupted; }, 3000));
         SELFTEST_CHECK(page.AckButton().isEnabled() && !page.ReturnButton().isEnabled() && !page.EjectHelpButton().isEnabled());
-        SELFTEST_CHECK(page.MessageText().contains("quarantined") && !wf.Ejected() && page.AllVisibleInside());
+        SELFTEST_CHECK(page.MessageText().contains("quarantined") && !wf.Ejected() && Visible(page));
         Shot("dcp-sd-page-interrupted.png");
         e_.Step(3000);
         e_.RefreshNow();
@@ -680,6 +696,164 @@ class SelfTest {
         SELFTEST_CHECK(Settle() && e_.GetSession().Connected() && e_.GetModel().Depth(2) == 0 && InSync());
         e_.Disconnect();
         Say("PASS SD page restore guard: abandoned after the restart timeout and on a manual connect; nothing sent to another device");
+    }
+
+    // Finding 5: Share waits until the matrix of the kit has been read, so the patch can be
+    // saved; the confirmation takes a fresh snapshot.
+    void SdShareGate() {
+        sd::SdShareWorkflow& wf = e_.GetSdShare();
+        ui::SdSharePanel& page = e_.GetSdPanel();
+        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        e_.ShowSdPage(true);
+        // The NB STATUS answers before the matrix is read: Share must still be blocked.
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
+        SELFTEST_CHECK(e_.MatrixDetectionPending() || e_.GetSession().Connected());
+        if(e_.MatrixDetectionPending()) {
+            SELFTEST_CHECK(!page.ShareButton().isEnabled() && page.ShareButton().getButtonText().contains("reading the matrix"));
+            SELFTEST_CHECK(!e_.RequestSdShare(false) && e_.GetSdSimulator()->restarts == 0);
+            SELFTEST_CHECK(e_.LogText().contains("still being read"));
+        }
+        SELFTEST_CHECK(Settle() && e_.GetSession().Connected());
+        e_.RefreshNow();
+        SELFTEST_CHECK(!e_.MatrixDetectionPending() && page.ShareButton().isEnabled()
+                       && page.ShareButton().getButtonText() == "Share SD card with Windows");
+        // The snapshot is taken at the confirmation too: an edit made while the question is
+        // open is what comes back.
+        e_.GetSdSimulator()->live = true;
+        e_.GetSession().EditDepth(0 * 8 + 3, 25, true);
+        SELFTEST_CHECK(Settle() && InSync());
+        e_.Step(1200);
+        page.ShareButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.NeedsConfirmation(); }, 3000));
+        e_.GetSession().EditDepth(0 * 8 + 3, 77, true); // edited while the question is open
+        SELFTEST_CHECK(Settle() && InSync());
+        const uint32_t crc = e_.GetModel().Crc();
+        page.ConfirmButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Shared; }, 25000));
+        SELFTEST_CHECK(e_.SdRestorePending());
+        e_.GetSdSimulator()->Management().ReaderEject();
+        SELFTEST_CHECK(Wait([&] { return page.ReturnButton().isEnabled(); }, 3000));
+        page.ReturnButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance && e_.GetSession().Connected() && !e_.SdRestorePending(); }, 25000));
+        SELFTEST_CHECK(Settle() && InSync() && e_.GetModel().Crc() == crc && e_.GetModel().Depth(3) == 77);
+        e_.ShowSdPage(false);
+        e_.Disconnect();
+        Say("PASS SD page share gate: blocked until the matrix is read, snapshot refreshed at the confirmation");
+    }
+
+    // Finding 3: the acknowledge question belongs to one interruption; answered after the
+    // interruption changed, it sends nothing.
+    void SdAckEpisode() {
+        sd::SdShareWorkflow& wf = e_.GetSdShare();
+        ui::SdSharePanel& page = e_.GetSdPanel();
+        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000) && Settle());
+        e_.ShowSdPage(true);
+        e_.RefreshNow();
+        page.ShareButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Shared; }, 25000));
+        e_.GetSdSimulator()->Management().ReaderBusReset();
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Interrupted; }, 3000));
+        const int episode = wf.InterruptionEpisode();
+        std::function<void(bool)> answer;
+        e_.sd_ack_prompt = [&answer](std::function<void(bool)> apply) { answer = std::move(apply); };
+        page.AckButton().onClick();
+        SELFTEST_CHECK(bool(answer)); // the question is open
+        // Meanwhile the interruption is released by the kit (S4 on the kit) and happens again.
+        e_.GetSdSimulator()->Management().reader_state = ddp::ReaderState::Local;
+        e_.Step(1500);
+        e_.RefreshNow();
+        SELFTEST_CHECK(wf.ReaderState() == ddp::ReaderState::Local);
+        e_.GetSdSimulator()->Management().reader_state = ddp::ReaderState::Shared;
+        e_.GetSdSimulator()->Management().ReaderBusReset();
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Interrupted; }, 3000));
+        SELFTEST_CHECK(wf.InterruptionEpisode() == episode + 1);
+        answer(true); // Yes to the old question: nothing is sent
+        e_.Step(500);
+        e_.RefreshNow();
+        SELFTEST_CHECK(wf.ReaderState() == ddp::ReaderState::Interrupted && e_.LogText().contains("changed while the question was open"));
+        // A fresh question for the current interruption works.
+        answer = nullptr;
+        page.AckButton().onClick();
+        SELFTEST_CHECK(bool(answer));
+        answer(true);
+        SELFTEST_CHECK(Wait([&] { return wf.ReaderState() == ddp::ReaderState::Local; }, 3000));
+        e_.sd_ack_prompt = nullptr;
+        page.ReturnButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 25000));
+        e_.ShowSdPage(false);
+        e_.Disconnect();
+        Say("PASS SD page acknowledge episode: an old question releases nothing, a fresh one does");
+    }
+
+    // § 11.3: no card disables Share and says so; long texts stay inside the page.
+    void SdNoCardAndLongTexts() {
+        sd::SdShareWorkflow& wf = e_.GetSdShare();
+        ui::SdSharePanel& page = e_.GetSdPanel();
+        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000) && Settle());
+        e_.GetSdSimulator()->card = false;
+        e_.ShowSdPage(true);
+        e_.Step(1500);
+        e_.RefreshNow();
+        SELFTEST_CHECK(!page.ShareButton().isEnabled() && page.RowText(3) == "no card");
+        e_.GetSdSimulator()->card = true;
+        e_.Step(1500);
+        e_.RefreshNow();
+        SELFTEST_CHECK(page.ShareButton().isEnabled() && page.RowText(3) == "card inserted");
+        // Long texts at the smallest window the app allows: texts twice as long as the longest
+        // real ones (§ 6) are shown completely; the Python test's absurd lengths (40 and 30
+        // repetitions) keep every control inside the page and are truncated with an ellipsis.
+        const int w = e_.getWidth(), h = e_.getHeight();
+        e_.setSize(1200, 860);
+        std::string error, message;
+        for(int i = 0; i < 13; ++i)
+            error += "Very long firmware error ";
+        for(int i = 0; i < 18; ++i)
+            message += "Very long instruction ";
+        wf.SetDebugTexts(message, error);
+        e_.RefreshNow();
+        SELFTEST_CHECK(Visible(page));
+        Shot("dcp-sd-page-long-texts.png");
+        for(int i = 13; i < 30; ++i)
+            error += "Very long firmware error ";
+        for(int i = 18; i < 40; ++i)
+            message += "Very long instruction ";
+        wf.SetDebugTexts(message, error);
+        e_.RefreshNow();
+        SELFTEST_CHECK(page.AllVisibleInside(false) && page.ShareButton().getBottom() < page.getHeight());
+        e_.setSize(w, h);
+        e_.ShowSdPage(false);
+        e_.Disconnect();
+        Say("PASS SD page: no card disables Share, long texts stay inside the page");
+    }
+
+    // § 11.4: the Looper's failed save in the GUI: warning, confirm label, cancel, confirm.
+    void SdLooperFailedSave() {
+        sd::SdShareWorkflow& wf = e_.GetSdShare();
+        ui::SdSharePanel& page = e_.GetSdPanel();
+        e_.ConnectTo(PortIndex("Simulator: Looper MOD"));
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000) && Settle());
+        e_.GetSdSimulator()->unsaved = true;
+        e_.GetSdSimulator()->save_fails = true;
+        e_.ShowSdPage(true);
+        e_.Step(1200);
+        e_.RefreshNow();
+        page.ShareButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.NeedsConfirmation(); }, 6000));
+        SELFTEST_CHECK(page.ConfirmButton().isVisible() && page.ConfirmButton().getButtonText() == "Share without the unsaved changes");
+        SELFTEST_CHECK(page.WarningText().contains("LOSES the unsaved changes") && page.RowText(4).contains("last card write failed"));
+        page.CancelButton().onClick();
+        e_.Step(100);
+        e_.RefreshNow();
+        SELFTEST_CHECK(!page.ConfirmButton().isVisible() && e_.GetSdSimulator()->restarts == 0);
+        page.ShareButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.NeedsConfirmation(); }, 6000));
+        page.ConfirmButton().onClick();
+        SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Management; }, 25000));
+        e_.ShowSdPage(false);
+        e_.Disconnect();
+        Say("PASS SD page Looper failed save: warning, confirm label, cancel keeps playing, confirm shares");
     }
 
     // The VST3 content (D2): the SD card page carries the note only.

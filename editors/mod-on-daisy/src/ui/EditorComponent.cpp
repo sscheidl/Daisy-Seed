@@ -55,6 +55,7 @@ EditorComponent::EditorComponent(bool with_simulators, bool sd_page)
     };
     sd_panel_.acknowledge = [this] { SdAcknowledge(); };
     sd_panel_.eject_help = [this] { SdEjectHelp(); };
+    sd_panel_.share_blocked = [this] { return MatrixDetectionPending(); };
     for(juce::TextButton* b : {&page_matrix_, &page_sd_}) {
         addAndMakeVisible(b);
         b->setClickingTogglesState(false);
@@ -242,6 +243,7 @@ void EditorComponent::RefreshPorts() {
         for(const auto& in : ins)
             in_present = in_present || in.identifier == midi_->Input().identifier;
         if(!out_present || !in_present) {
+            RouteMidiFrames(); // the last replies (a SHARE ACK just before the restart) still count
             Disconnect();
             session_.Disconnect(U("device disconnected").toStdString());
             Log(LogKind::Error, U("The connection to the Daisy was lost. Editing continues offline."));
@@ -491,19 +493,7 @@ void EditorComponent::Advance(uint32_t now_ms) {
                 session_.OnMessage(m.data(), m.size());
         }
     }
-    if(midi_)
-        for(const std::vector<uint8_t>& m : midi_->Take()) {
-            if(sd::IsSdShareSysEx(m.data(), m.size())) { // Nebulae "NB" / Looper "LP": the SD share workflow
-                if(sd_link_)
-                    sd_link_->Push(m.data(), m.size());
-                continue;
-            }
-            boot_.OnMessage(m.data(), m.size());
-            if(ClassifySysEx(m.data(), m.size()) == Protocol::Sq)
-                sq_session_.OnMessage(m.data(), m.size(), now_);
-            else
-                session_.OnMessage(m.data(), m.size());
-        }
+    RouteMidiFrames();
     if(sd_sim_midi_) { // the simulated instrument's control SysEx replies
         std::vector<std::vector<uint8_t>> replies;
         if(sd_sim_midi_->Poll(replies))
@@ -549,6 +539,39 @@ void EditorComponent::Advance(uint32_t now_ms) {
     FinishFirmwareUpdate(boot_.Poll(now_));
 }
 
+// Everything the MIDI input queued since the last call, to the conversation it belongs to.
+void EditorComponent::RouteMidiFrames() {
+    if(!midi_)
+        return;
+    for(const std::vector<uint8_t>& m : midi_->Take()) {
+        if(sd::IsSdShareSysEx(m.data(), m.size())) { // Nebulae "NB" / Looper "LP": the SD share workflow
+            if(sd_link_)
+                sd_link_->Push(m.data(), m.size());
+            continue;
+        }
+        boot_.OnMessage(m.data(), m.size());
+        if(ClassifySysEx(m.data(), m.size()) == Protocol::Sq)
+            sq_session_.OnMessage(m.data(), m.size(), now_);
+        else
+            session_.OnMessage(m.data(), m.size());
+    }
+}
+
+bool EditorComponent::MatrixDetectionPending() const {
+    if(md_pending_ || session_.State() == LinkState::Connecting)
+        return true;
+    if(sq_session_.GetPhase() == SqSession::Phase::Reading)
+        return true;
+    return sq_session_.Ready() && sq_session_.Identity().HasModMatrix() && !session_.Connected();
+}
+
+void EditorComponent::DisableHardwareSerial() {
+    ddp_session_.Disconnect("");
+    if(!sd_sim_serial_)
+        ddp_session_.SetPorts(nullptr);
+    serial_ports_.reset();
+}
+
 // ------------------------------------------------------------------ SD card page
 bool EditorComponent::SdInstrumentFound() const {
     const sd::Phase p = sd_.GetPhase();
@@ -568,19 +591,32 @@ std::vector<std::string> EditorComponent::SdPortCandidates() {
     }
     if(!sd_.Following() || user_disconnected_)
         return {};
-    // The kit comes back on the port the share started on; only if that name is gone
-    // (another enumeration) every Daisy port is offered.
-    std::vector<std::string> out;
+    // Only the kit that left: the port with the identifier the share started on, or, for
+    // ports without one (simulators), the single entry with that name. Two entries with the
+    // same name or a vanished port mean the identity is unknown: no automatic connection,
+    // the patch saved before the share stays in its file (D5, review finding 4).
+    sd_open_identifier_.clear();
+    const juce::String wanted = U(sd_.Port());
+    int same_label = 0;
     for(const Port& p : ports_) {
-        if(sd_sim_ && p.simulator == sd_sim_port_ && sd_sim_->MidiAlive())
-            out.push_back(p.label.toStdString());
-        if(!sd_sim_ && p.simulator == -1 && p.label.containsIgnoreCase("daisy"))
-            out.push_back(p.label.toStdString());
+        const bool candidate = sd_sim_ ? (p.simulator == sd_sim_port_ && sd_sim_->MidiAlive()) : (p.simulator == -1);
+        if(!candidate || p.label != wanted)
+            continue;
+        if(sd_share_port_id_.isNotEmpty() && p.out.identifier == sd_share_port_id_) {
+            sd_open_identifier_ = p.out.identifier;
+            return {p.label.toStdString()};
+        }
+        ++same_label;
     }
-    for(const std::string& name : out)
-        if(name == sd_.Port())
-            return {name};
-    return out;
+    if(same_label == 1 && sd_share_port_id_.isEmpty())
+        return {wanted.toStdString()};
+    if(same_label > 1 && !sd_ambiguous_logged_) {
+        sd_ambiguous_logged_ = true;
+        Log(LogKind::Warn, U("Several MIDI ports are called “") + wanted + U("”; connect to the kit yourself. ")
+                               + (sd_restore_ ? U("The patch saved before the share stays in ") + sd_autosave_file_.getFullPathName()
+                                              : juce::String()));
+    }
+    return {};
 }
 
 bool EditorComponent::Busy() const {
@@ -589,12 +625,15 @@ bool EditorComponent::Busy() const {
 
 std::unique_ptr<sd::MidiLink> EditorComponent::OpenSdLink(const std::string& name, std::string& error) {
     if(!PortOpen() || CurrentPortLabel().toStdString() != name) {
-        int index = -1;
+        int index = -1, matches = 0;
         for(std::size_t i = 0; i < ports_.size(); ++i)
-            if(ports_[i].label.toStdString() == name)
+            if(ports_[i].label.toStdString() == name
+               && (sd_open_identifier_.isEmpty() || ports_[i].out.identifier == sd_open_identifier_)) {
                 index = int(i);
-        if(index < 0) {
-            error = "port " + name + " is not listed";
+                ++matches;
+            }
+        if(index < 0 || matches != 1) {
+            error = matches > 1 ? "several ports are called " + name : "port " + name + " is not listed";
             return nullptr;
         }
         opening_sd_link_ = true;
@@ -635,6 +674,7 @@ void EditorComponent::OnSdPhase(sd::Phase before, sd::Phase now) {
     }
     if(now == sd::Phase::NotFound) {
         sd_auto_switched_ = false;
+        sd_ambiguous_logged_ = false;
         if(sd_restore_pending_) { // the kit never came back (T22, T33): nothing to send it to
             sd_restore_pending_ = false;
             Log(LogKind::Warn, U("The kit did not come back; the patch saved before the share stays in ")
@@ -647,8 +687,16 @@ void EditorComponent::OnSdPhase(sd::Phase before, sd::Phase now) {
 }
 
 bool EditorComponent::RequestSdShare(bool confirm) {
-    if(!confirm && !sd_.ManagementConnected() && (sd_.GetPhase() == sd::Phase::Performance))
-        SaveBeforeShare(); // D5
+    if(!sd_.ManagementConnected() && MatrixDetectionPending()) {
+        Log(LogKind::Warn, U("The matrix of this kit is still being read; wait a moment so the patch can be saved before "
+                             "the share."));
+        RefreshAll();
+        return false;
+    }
+    // D5: the snapshot is taken right before the request that can restart the kit, also on
+    // the confirmation (the user may have edited while the question was open).
+    if(!sd_.ManagementConnected() && (sd_.GetPhase() == sd::Phase::Performance || (confirm && sd_.GetPhase() == sd::Phase::Confirm)))
+        SaveBeforeShare();
     const bool ok = sd_.RequestShare(confirm);
     if(ok)
         Log(LogKind::Info, U(sd_.Name()) + (confirm ? U(": sharing confirmed; unsaved audio in RAM will be lost")
@@ -669,6 +717,8 @@ bool EditorComponent::SaveBeforeShare() {
     const std::string text = SavePatch(model_, &session_.Device());
     sd_restore_ = LoadPatch(text, model_);
     sd_restore_key_ = session_.Device().key;
+    sd_share_port_id_ = midi_ ? midi_->Output().identifier : juce::String();
+    sd_ambiguous_logged_ = false;
     juce::File dir = sd_autosave_dir;
     if(dir == juce::File()) {
         const juce::String local = juce::SystemStats::getEnvironmentVariable("LOCALAPPDATA", {});
@@ -679,12 +729,28 @@ bool EditorComponent::SaveBeforeShare() {
     dir.createDirectory();
     const juce::String stamp = juce::Time::getCurrentTime().formatted("%Y%m%d-%H%M%S");
     sd_autosave_file_ = dir.getChildFile(juce::File::createLegalFileName(U(session_.Device().key)) + "-" + stamp + ".modpatch");
-    if(!sd_autosave_file_.replaceWithText(U(text))) {
-        Log(LogKind::Error, U("Patch could not be saved to ") + sd_autosave_file_.getFullPathName()
-                                + U("; it is kept in memory and sent back after the return."));
+    const juce::File file = sd_autosave_file_;
+    const juce::String content = U(text);
+    if(sd_autosave_sync) {
+        if(!file.replaceWithText(content))
+            Log(LogKind::Error, U("Patch could not be saved to ") + file.getFullPathName() + U("; it is kept in memory and sent back after the return."));
+        else
+            Log(LogKind::Info, U("Patch saved to ") + file.getFullPathName() + U("; it is sent back after the return."));
         return true;
     }
-    Log(LogKind::Info, U("Patch saved to ") + sd_autosave_file_.getFullPathName() + U("; it is sent back after the return."));
+    // The disk write runs on a worker (review finding 9); the in-memory copy is what the
+    // restore uses, so a slow drive never delays the request.
+    juce::Component::SafePointer<EditorComponent> safe(this);
+    juce::Thread::launch([file, content, safe] {
+        const bool ok = file.replaceWithText(content);
+        juce::MessageManager::callAsync([file, ok, safe] {
+            if(EditorComponent* self = safe.getComponent())
+                self->Log(ok ? LogKind::Info : LogKind::Error,
+                          ok ? U("Patch saved to ") + file.getFullPathName() + U("; it is sent back after the return.")
+                             : U("Patch could not be saved to ") + file.getFullPathName() + U("; it is kept in memory and sent back after the return."));
+        });
+    });
+    Log(LogKind::Info, U("Saving the patch to ") + file.getFullPathName() + U(" …"));
     return true;
 }
 
@@ -718,11 +784,26 @@ void EditorComponent::SdEjectHelp() {
 void EditorComponent::SdAcknowledge() {
     if(!sd_.CanAcknowledge())
         return;
-    const auto apply = [this](bool yes) {
-        if(yes && sd_.AcknowledgeInterruption())
-            Log(LogKind::Info, U(sd_.Name()) + U(": interrupted access acknowledged"));
-        RefreshAll();
+    // The question is about this interruption on this CDC connection; if either changed
+    // while it was open, nothing is sent (review finding 3).
+    const int episode = sd_.InterruptionEpisode(), generation = ddp_session_.Generation();
+    juce::Component::SafePointer<EditorComponent> safe(this);
+    const std::function<void(bool)> apply = [safe, episode, generation](bool yes) {
+        EditorComponent* self = safe.getComponent();
+        if(!self)
+            return;
+        if(yes) {
+            if(self->sd_.InterruptionEpisode() != episode || self->ddp_session_.Generation() != generation
+               || !self->sd_.CanAcknowledge())
+                self->Log(LogKind::Warn, U("The interrupted access changed while the question was open; nothing was "
+                                           "acknowledged. Check the card reader state and acknowledge again."));
+            else if(self->sd_.AcknowledgeInterruption())
+                self->Log(LogKind::Info, U(self->sd_.Name()) + U(": interrupted access acknowledged"));
+        }
+        self->RefreshAll();
     };
+    if(sd_ack_prompt) // self-test: answers later, after the state may have changed
+        return sd_ack_prompt(apply);
     if(sd_ack_decision) // self-test: answers without a modal window
         return apply(sd_ack_decision());
     auto* w = new juce::AlertWindow(U("Interrupted SD access"),

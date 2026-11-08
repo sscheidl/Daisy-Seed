@@ -32,31 +32,41 @@ class Win32SerialBackend : public SerialBackend {
             error = "CreateFile failed (" + std::to_string(GetLastError()) + ")";
             return nullptr;
         }
+        // Every configuration call is checked (review finding 10): a port that is not
+        // configured would look like a silent device, because the firmware sends only with DTR.
+        auto fail = [&](const char* call) {
+            error = std::string(call) + " failed (" + std::to_string(GetLastError()) + ")";
+            CloseHandle(h);
+            return std::unique_ptr<SerialBackend>();
+        };
         DCB dcb{};
         dcb.DCBlength = sizeof(dcb);
-        if(GetCommState(h, &dcb)) {
-            dcb.BaudRate = CBR_115200; // irrelevant for USB CDC, set like pyserial does
-            dcb.ByteSize = 8;
-            dcb.Parity = NOPARITY;
-            dcb.StopBits = ONESTOPBIT;
-            dcb.fBinary = TRUE;
-            dcb.fDtrControl = DTR_CONTROL_ENABLE; // the firmware sends only while DTR is set
-            dcb.fRtsControl = RTS_CONTROL_ENABLE;
-            dcb.fOutxCtsFlow = FALSE;
-            dcb.fOutxDsrFlow = FALSE;
-            dcb.fDsrSensitivity = FALSE;
-            dcb.fOutX = FALSE;
-            dcb.fInX = FALSE;
-            SetCommState(h, &dcb);
-        }
+        if(!GetCommState(h, &dcb))
+            return fail("GetCommState");
+        dcb.BaudRate = CBR_115200; // irrelevant for USB CDC, set like pyserial does
+        dcb.ByteSize = 8;
+        dcb.Parity = NOPARITY;
+        dcb.StopBits = ONESTOPBIT;
+        dcb.fBinary = TRUE;
+        dcb.fDtrControl = DTR_CONTROL_ENABLE; // the firmware sends only while DTR is set
+        dcb.fRtsControl = RTS_CONTROL_ENABLE;
+        dcb.fOutxCtsFlow = FALSE;
+        dcb.fOutxDsrFlow = FALSE;
+        dcb.fDsrSensitivity = FALSE;
+        dcb.fOutX = FALSE;
+        dcb.fInX = FALSE;
+        if(!SetCommState(h, &dcb))
+            return fail("SetCommState");
         // Return as soon as any byte is there, or after the constant; writes bounded too.
         COMMTIMEOUTS timeouts{};
         timeouts.ReadIntervalTimeout = MAXDWORD;
         timeouts.ReadTotalTimeoutMultiplier = MAXDWORD;
         timeouts.ReadTotalTimeoutConstant = 20;
         timeouts.WriteTotalTimeoutConstant = 500;
-        SetCommTimeouts(h, &timeouts);
-        PurgeComm(h, PURGE_RXCLEAR | PURGE_TXCLEAR);
+        if(!SetCommTimeouts(h, &timeouts))
+            return fail("SetCommTimeouts");
+        if(!PurgeComm(h, PURGE_RXCLEAR | PURGE_TXCLEAR))
+            return fail("PurgeComm");
         std::unique_ptr<Win32SerialBackend> backend(new Win32SerialBackend(h));
         if(!backend->read_event_ || !backend->write_event_) {
             error = "CreateEvent failed";
