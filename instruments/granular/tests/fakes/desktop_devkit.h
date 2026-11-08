@@ -25,6 +25,18 @@ inline FakeDwt fake_dwt;inline FakeCore fake_core;
 #define CoreDebug (&fake_core)
 constexpr unsigned CoreDebug_DEMCR_TRCENA_Msk=1,DWT_CTRL_CYCCNTENA_Msk=1,SystemCoreClock=480000000;
 namespace daisy {
+// Names as in libDaisy's MidiEvent.h, so the real Mod on Daisy adapter compiles (MOD build).
+enum MidiMessageType {NoteOff,NoteOn,PolyphonicKeyPressure,ControlChange,ProgramChange,
+                      ChannelPressure,PitchBend,SystemCommon,SystemRealTime,ChannelMode,MessageLast};
+enum SystemCommonType {SystemExclusive,MTCQuarterFrame,SongPositionPointer,SongSelect};
+enum SystemRealTimeType {TimingClock,SRTUndefined0,Start,Continue,Stop};
+enum ChannelModeType {AllSoundOff,ResetAllControllers,LocalControl,AllNotesOff};
+struct MidiEvent {
+    MidiMessageType type=NoteOn;int channel=0;uint8_t data[2]={0,0};
+    uint8_t sysex_data[128]={};uint8_t sysex_message_len=0;
+    SystemCommonType sc_type=SystemExclusive;SystemRealTimeType srt_type=TimingClock;ChannelModeType cm_type=AllSoundOff;
+};
+struct MidiUsbHandler {void SendMessage(uint8_t*,size_t) {}};
 struct AudioHandle {using InputBuffer=const float* const*;using OutputBuffer=float**;};
 struct SaiHandle {struct Config {enum class SampleRate {SAI_48KHZ};};};
 struct MidiUsbTransport {
@@ -53,8 +65,10 @@ struct Hardware {
     struct Switch {bool state=true;bool Pressed() const {return state;}} sd_detect;
     struct Switch3 {unsigned value=0;unsigned Read() const {return value;}} tog_sw18;
     Switch tog_sw17{false};
-    struct Gate {bool pulse=false;bool Trig() {bool p=pulse;pulse=false;return p;}} gate_in[2];
+    // Like libDaisy: State() reads the pin, Trig() keeps its own edge memory.
+    struct Gate {bool pulse=false,high=false;bool Trig() {bool p=pulse;pulse=false;return p;}bool State() const {return high;}} gate_in[2];
     std::array<Pot,8> pot;
+    std::array<Pot,2> cv;  // read by the Mod on Daisy adapter (MOD build)
     std::array<DigitalControl,16> button;
     std::array<bool,16> pressed{};
     void Init() {for(auto& b:button) b.Init(true);}

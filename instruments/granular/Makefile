@@ -1,6 +1,18 @@
 .DEFAULT_GOAL := all
 VERSION := $(shell sed -n 's/.*NEBULAE_VERSION "\(.*\)".*/\1/p' src/version.h | head -n 1)
+# MOD=1: the separate Mod on Daisy build (docs/MODULATION.md), own image and build
+# directory; the default build compiles exactly the sources without the matrix.
+MOD ?= 0
+MOD_ON_DAISY = ../../modules/mod-on-daisy
+MOD_DEFS = -DNEBULAE_MOD=1 -DMOD_ON_DAISY_EXTENSIONS=1
+MOD_FLAGS = $(MOD_DEFS) -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+ifeq ($(MOD),1)
+TARGET = NebulaeMod-v$(VERSION)
+C_DEFS = $(MOD_DEFS)
+C_INCLUDES += -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
+else
 TARGET = NebulaeOnDaisy-v$(VERSION)
+endif
 SD_DIR = ../../common/sd
 READER_DIR = $(SD_DIR)/reader
 PROTOCOL_DIR = ../../diagnostics/protocol
@@ -15,7 +27,11 @@ C_SOURCES = src/heap.c $(READER_DIR)/reader_ctlreq.c
 # FatFSInterface and SD_Driver are not linked (make sd-check).
 USE_FATFS = 0
 # libDaisy default, set early: sd.mk names the ELF in its sd-check rule.
+ifeq ($(MOD),1)
+override BUILD_DIR = build/mod
+else
 BUILD_DIR = build
+endif
 include $(SD_DIR)/sd.mk
 C_INCLUDES += -Isrc -I$(READER_DIR) -I$(PROTOCOL_DIR) -I$(RING_DIR) -fstack-usage
 C_INCLUDES += -I../../libDaisy/Middlewares/Patched/ST/STM32_USB_Device_Library/Class/CDC/Inc
@@ -40,6 +56,9 @@ HOST_FLAGS ?= -std=c++17 -O2 -Wall -Wextra -Werror -pthread
 HOST_CFLAGS ?= -std=gnu11 -O2
 H = build/host
 SD_FAKES = -I$(SD_DIR)/tests/fakes
+# The production main.cpp with fakes and the real read-only SD stack (production_harness.h).
+PRODUCTION = -Itests/fakes $(SD_FAKES) -Isrc -I$(BOOTLOADER_DIR) -I../../libDaisy/src -I$(SD_DIR) -I$(SD_DIR)/fatfs
+PRODUCTION_LINK = $(DSP_SOURCES) src/banks.cpp src/sd_files.cpp $(H)/e2e/ro_sd.o $(H)/e2e/ff_ro.o $(H)/e2e/ffu_ro.o
 .PHONY: version test test-sanitize test-thread e2e
 version:
 	@echo $(VERSION)
@@ -76,15 +95,32 @@ test: e2e
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(READER_DIR) -I$(PROTOCOL_DIR) -I$(RING_DIR) tests/test_admin.cpp src/admin.cpp \
 		$(READER_DIR)/card_reader.cpp $(PROTOCOL_DIR)/ddp.cpp -o $(H)/test_admin
 	./$(H)/test_admin
-	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(SD_FAKES) -Isrc -I$(BOOTLOADER_DIR) -I../../libDaisy/src -I$(SD_DIR) \
-		-I$(SD_DIR)/fatfs tests/test_callback.cpp $(DSP_SOURCES) src/banks.cpp src/sd_files.cpp \
-		$(H)/e2e/ro_sd.o $(H)/e2e/ff_ro.o $(H)/e2e/ffu_ro.o -o $(H)/test_callback
+	$(HOST_CXX) $(HOST_FLAGS) $(PRODUCTION) tests/test_callback.cpp $(PRODUCTION_LINK) -o $(H)/test_callback
 	./$(H)/test_callback $(H)/e2e/fat32-after.img
 	./$(H)/test_callback $(H)/e2e/exfat-after.img
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_queue.cpp -o $(H)/test_queue
 	./$(H)/test_queue
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_bridge.cpp $(DSP_SOURCES) -o $(H)/test_bridge
 	./$(H)/test_bridge
+	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) -Isrc tests/test_mod_bridge.cpp -o $(H)/test_mod_bridge
+	./$(H)/test_mod_bridge
+	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) -Isrc tests/test_mod_thread.cpp -o $(H)/test_mod_thread
+	./$(H)/test_mod_thread
+	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) $(PRODUCTION) tests/test_callback.cpp $(PRODUCTION_LINK) -o $(H)/test_callback_mod
+	./$(H)/test_callback_mod $(H)/e2e/fat32-after.img
+	./$(H)/test_callback_mod $(H)/e2e/exfat-after.img
+	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) $(PRODUCTION) tests/test_modulation.cpp $(PRODUCTION_LINK) -o $(H)/test_modulation
+	./$(H)/test_modulation $(H)/e2e/fat32-after.img $(H)/e2e/fat32-expected.txt
+	./$(H)/test_modulation $(H)/e2e/exfat-after.img $(H)/e2e/exfat-expected.txt
+	$(HOST_CXX) $(HOST_FLAGS) $(PRODUCTION) tests/test_golden.cpp $(PRODUCTION_LINK) -o $(H)/test_golden
+	$(HOST_CXX) $(HOST_FLAGS) $(MOD_FLAGS) $(PRODUCTION) tests/test_golden.cpp $(PRODUCTION_LINK) -o $(H)/test_golden_mod
+	./$(H)/test_golden $(H)/e2e/fat32-after.img > $(H)/golden.txt
+	./$(H)/test_golden_mod $(H)/e2e/fat32-after.img > $(H)/golden_mod.txt
+	./$(H)/test_golden_mod $(H)/e2e/fat32-after.img --route > $(H)/golden_route.txt
+	cat $(H)/golden.txt $(H)/golden_mod.txt $(H)/golden_route.txt
+	cmp $(H)/golden.txt $(H)/golden_mod.txt
+	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_route.txt)"
+	@echo "PASS golden: the MOD build with an empty matrix sounds bit-identical to the regular build, and one active route changes the hash"
 SANITIZE = -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all -fno-omit-frame-pointer
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread $(SANITIZE)" \
@@ -98,3 +134,5 @@ test-thread:
 	$(HOST_CXX) -std=c++17 -O1 -g -pthread -fsanitize=thread -Isrc -I$(BOOTLOADER_DIR) tests/test_sysex_thread.cpp \
 		src/control.cpp -o $(H)/test_sysex_thread
 	./$(H)/test_sysex_thread
+	$(HOST_CXX) -std=c++17 -O1 -g -pthread -fsanitize=thread $(MOD_FLAGS) -Isrc tests/test_mod_thread.cpp -o $(H)/test_mod_thread_tsan
+	./$(H)/test_mod_thread_tsan

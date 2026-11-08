@@ -6,7 +6,8 @@ Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
 Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
 effects/tape-fx/build/TapeFx-v<version>.bin, build/tape/ToyPianoTape-v<version>.bin,
 PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
-instruments/looper/build/Looper-v<version>.bin, build/mod/LooperMod-v<version>.bin and
+instruments/looper/build/Looper-v<version>.bin, build/mod/LooperMod-v<version>.bin,
+instruments/granular/build/mod/NebulaeMod-v<version>.bin and
 modules/mod-on-daisy/bench/build/ModBench-v<version>.bin and the composed images in
 ACID_SEQ (sequencers/step-seq/build/StepSeq-v<version>.bin, ...,
 instruments/streichwurst/build/Streichwurst-v<version>.bin, effects/streichwurst-fx/build/StreichwurstFx-v<version>.bin).
@@ -81,6 +82,13 @@ elif path.name.startswith('NebulaeOnDaisy-v'):
     version = match.group(1)
     expected_name = f'NebulaeOnDaisy-v{version}.bin'
     marker = rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('NebulaeMod-v'):
+    granular = root / 'instruments' / 'granular'
+    match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Nebulae version"
+    version = match.group(1)
+    expected_name = f'NebulaeMod-v{version}.bin'
+    marker = rb'NEBULAE-MOD-VERSION=([0-9.]+)\x00'
 elif path.name.startswith(('PhysicalModelingFxTorus-v', 'PhysicalModelingFxAmbient-v')):
     physical = root / 'instruments' / 'physical-modeling'
     match = re.search(r'PHYSICAL_MODELING_COMPOSED_VERSION\s+"([^"]+)"',

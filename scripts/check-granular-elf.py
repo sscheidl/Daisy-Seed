@@ -74,10 +74,11 @@ report = {'bin_bytes': len(image), 'file_start': hex(start), 'file_end': hex(end
           'file_capacity_bytes': end-start, 'used_region_bytes': used, 'limits': limits}
 print(json.dumps(report, indent=2))
 if '--host-test' in sys.argv[2:]:
-    binary = path.parent / 'host' / 'test_nebulae'
-    if not binary.is_file():
-        binary = binary.with_suffix('.exe')
-    assert binary.is_file(), 'Build host tests before --host-test'
+    # build/ for the regular image, build/mod/ for the Mod on Daisy image.
+    candidates = [folder / 'host' / name for folder in (path.parent, path.parent.parent)
+                  for name in ('test_nebulae', 'test_nebulae.exe')]
+    binary = next((c for c in candidates if c.is_file()), None)
+    assert binary, 'Build host tests before --host-test'
     subprocess.run([str(binary.resolve()), '--wav-capacity', str(end-start)], check=True)
     print(f'PASS production WAV boundary tests with actual ELF capacity {end-start} bytes')
 print('PASS ARM hard-float, byte-identical BIN/ELF, isolated AXI SD DMA, 16 KiB stack floor and 8 MiB physical SDRAM reserve')

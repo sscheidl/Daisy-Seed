@@ -2,7 +2,7 @@
 // instrument's column table, driven over stdin/stdout. Used by the browser
 // editor's end-to-end test; no hardware involved. Built with MOD_ON_DAISY_EXTENSIONS=1.
 //
-//   mod_sim [toy-piano|physical-modeling|looper|bench]
+//   mod_sim [toy-piano|physical-modeling|looper|nebulae|bench]
 //   stdin:  "S <hex>"  MIDI message (SysEx F0 … F7 or a short message)
 //           "T <ms>"   advance time: one engine tick (48 samples) and Service() per ms
 //           "D"        dump: patch CRC and the active cells
@@ -11,6 +11,7 @@
 #include "../../../instruments/toy-piano/src/modulation.h"
 #include "../../../instruments/physical-modeling/src/modulation.h"
 #include "../../../instruments/looper/src/modulation.h"
+#include "../../../instruments/granular/src/modulation.h"
 #include "../bench/src/scenarios.h"
 #include <cstdio>
 #include <cstring>
@@ -47,6 +48,8 @@ int main(int argc, char** argv) {
         info = physical_modeling::MakeModInfo();
     else if(which == "looper")
         info = looper::columns::MakeModInfo();
+    else if(which == "nebulae")
+        info = neb::columns::MakeModInfo();
     else if(which == "bench")
         info = bench::MakeInfo();
     else {
@@ -62,6 +65,8 @@ int main(int argc, char** argv) {
     const bool extensions = which == "physical-modeling" || which == "looper";
     if(extensions)
         module.EnableExtensions({true, true, true});
+    if(which == "nebulae") // like the firmware: base values and LFO FM, no modes
+        module.EnableExtensions({true, true, false});
     // Physical Modeling MOD=1 reports its pot positions (power-on defaults here) as
     // column base values; Toy Piano v0.3 and the bench report none (PROTOCOL.md § 3.3).
     float bases[mod::kTargets] = {-1, -1, -1, -1, -1, -1, -1, -1};
@@ -75,6 +80,11 @@ int main(int argc, char** argv) {
                                          looper::kDefaultDecay, looper::columns::kMixBase};
         for(std::size_t t = 0; t < mod::kTargets; ++t)
             bases[t] = lp[t];
+    }
+    if(which == "nebulae") { // power-on register of neb::Parameters
+        const float nb[mod::kTargets] = {0.0f, 0.5f, 1.0f, 0.4f, 0.5f, 0.5f, 0.0f, 0.0f};
+        for(std::size_t t = 0; t < mod::kTargets; ++t)
+            bases[t] = nb[t];
     }
     Stdout out;
     uint32_t now = 1;

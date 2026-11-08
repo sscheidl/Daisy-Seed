@@ -1,6 +1,6 @@
 # One catalogue for local selection and future project additions.
-PROJECTS := toy-piano physical-modeling physical-modeling-mod granular looper looper-mod reverb-fx granular-fx mod-bench
-BUILDABLE_PROJECTS := toy-piano reverb-fx physical-modeling physical-modeling-mod granular looper looper-mod mod-bench
+PROJECTS := toy-piano physical-modeling physical-modeling-mod granular granular-mod looper looper-mod reverb-fx granular-fx mod-bench
+BUILDABLE_PROJECTS := toy-piano reverb-fx physical-modeling physical-modeling-mod granular granular-mod looper looper-mod mod-bench
 PROJECTS += physical-modeling-fx-torus physical-modeling-fx-ambient
 # Added to BUILDABLE_PROJECTS only after cross-compilation is validated.
 BUILDABLE_PROJECTS += physical-modeling-fx-torus physical-modeling-fx-ambient
@@ -22,6 +22,9 @@ PROJECT_DIR_physical-modeling := instruments/physical-modeling
 PROJECT_DIR_physical-modeling-mod := instruments/physical-modeling
 PROJECT_ARGS_physical-modeling-mod := MOD=1
 PROJECT_DIR_granular := instruments/granular
+# Separate Mod on Daisy build of Nebulae (own image and build/mod directory).
+PROJECT_DIR_granular-mod := instruments/granular
+PROJECT_ARGS_granular-mod := MOD=1
 PROJECT_DIR_looper := instruments/looper
 # Separate Mod on Daisy build of the looper (own image and build/mod directory).
 PROJECT_DIR_looper-mod := instruments/looper
@@ -34,6 +37,7 @@ PROJECT_STATUS_toy-piano := buildable
 PROJECT_STATUS_physical-modeling := buildable
 PROJECT_STATUS_physical-modeling-mod := buildable
 PROJECT_STATUS_granular := buildable
+PROJECT_STATUS_granular-mod := buildable
 PROJECT_STATUS_looper := buildable
 PROJECT_STATUS_looper-mod := buildable
 PROJECT_STATUS_reverb-fx := buildable

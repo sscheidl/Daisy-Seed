@@ -5,6 +5,7 @@
 #include "../src/core/PatchFile.h"
 #include "../src/core/SimInstruments.h"
 #include "../src/core/Simulator.h"
+#include "../../../instruments/granular/src/modulation.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -327,6 +328,43 @@ void TestPhysicalModeling() {
     CHECK(rig.last_monitor.offset[1] > 0.45f && rig.last_monitor.Result(1) == 1.0f); // clipped at the top
     CHECK(std::fabs(rig.last_monitor.base[6] - 0.5f) < 1e-3f);
     std::printf("PASS physical-modeling: 8 columns, Poly AT per voice, Excitation latched\n");
+}
+
+// Nebulae MOD: eight global columns described by the device, no client change. The editor
+// must see the unmodulated register as the base and accept all 64 cells.
+void TestNebulae() {
+    Rig rig(neb::columns::MakeModInfo());
+    rig.sim.bases = {0.2f, 0.5f, 1.0f, 0.4f, 0.5f, 0.5f, 0.0f, 0.0f};
+    rig.sim.EnableExtensions({true, true, false});
+    CHECK(rig.Connect());
+    CHECK(rig.session.Device().key == "nebulae" && rig.session.Device().tick_hz == 1000);
+    const char* names[] = {"Start", "Speed", "Size", "Density", "Pitch", "Overlap", "Blend", "Window"};
+    for(std::size_t t = 0; t < mod::kTargets; ++t) {
+        CHECK(rig.model.columns[t].name == names[t]);
+        CHECK(!rig.model.columns[t].per_voice && !rig.model.columns[t].latched);
+    }
+    CHECK(rig.model.columns[1].SpanLabel() == "\xC2\xB1" "50%");
+    CHECK(rig.model.allowed == ~uint64_t(0));
+    CHECK(rig.model.Allowed(Cell(mod::PolyAt, 7)));
+    CHECK((rig.session.Device().caps & 0x70) == 0x70);  // bases, ranges, LFO FM
+    rig.session.EditDepth(Cell(mod::ModWheel, 0), 100);
+    rig.sim.Midi(0xB0, 1, 127);
+    CHECK(rig.RunUntilIdle() && rig.InSync());
+    rig.Run(300);
+    CHECK(rig.last_monitor.HasBase(0) && std::fabs(rig.last_monitor.base[0] - 0.2f) < 1e-3f);
+    CHECK(rig.last_monitor.offset[0] > 0.95f && rig.last_monitor.Result(0) == 1.0f);  // clipped at the top
+    // Save, a restart that empties the device, reconnect, reload: the patch comes back.
+    const std::string saved = SavePatch(rig.model, &rig.session.Device());
+    Rig back(neb::columns::MakeModInfo());
+    back.sim.EnableExtensions({true, true, false});
+    CHECK(back.Connect());
+    CHECK(back.sim.Device().CurrentCrc() != rig.sim.Device().CurrentCrc());
+    const LoadedPatch loaded = LoadPatch(saved, back.model);
+    CHECK(loaded.ok && loaded.instrument_key == "nebulae");
+    back.session.Upload(loaded.patch);
+    CHECK(back.RunUntilIdle() && back.InSync());
+    CHECK(back.sim.Device().CurrentCrc() == rig.sim.Device().CurrentCrc());
+    std::printf("PASS nebulae: 8 global columns from the device, bases, all cells\n");
 }
 
 // Hardware test 2026-10-24: the active model in the connection area and the current value
@@ -847,6 +885,7 @@ int main() {
     TestNoAnswer();
     TestFaults();
     TestPhysicalModeling();
+    TestNebulae();
     TestModeAndValueLabels();
     TestPatchFile();
     TestExtendedMonitor();

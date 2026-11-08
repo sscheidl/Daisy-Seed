@@ -11,7 +11,7 @@ manufacturer ID `0x7D`, kept apart from the other users of that ID by two bytes:
 | Bytes after `F0 7D` | Owner |
 | --- | --- |
 | `42 4C` ("BL") | bootloader entry ([common/bootloader](../../../common/bootloader/README.md)), unchanged and active in every mode |
-| `4D 44` ("MD") | Mod on Daisy |
+| `4D 44` ("MD") | Mod on Daisy; answered by the separate `granular-mod` build only ([modulation](MODULATION.md)), ignored by the regular image |
 | `4E 42` ("NB") | **this protocol** |
 
 ```text
