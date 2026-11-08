@@ -74,6 +74,11 @@ byte-identical to `main` (`cbc4c376…`, `02e52f88…`).
 Readout from the PC (each probe in its own process with a timeout, so a stalled kit
 cannot hang the tool): `python instruments/granular/tools/nb_probe.py profile`.
 
+Image handed to the owner on 2026-11-08: `NebulaeModProfile-v0.2.1.bin`, 217,572 B,
+SHA-256 `be1296fbadb2e737c2d73ee507eb92da7ac936d187d398faed9898c24671f919`, built from
+commit `e6ad1e5` (store line `granular-mod`, variant `-profile`, status `candidate`).
+Its `.neb_dsp` benchmark storage ends at 0x2404f640 of the 0x24078000 AXI SRAM limit.
+
 ## 5. Procedure for the owner
 
 1. Flash `NebulaeModProfile-v0.2.1.bin` (from the firmware store, SHA-256 in `SHA256SUMS`).
