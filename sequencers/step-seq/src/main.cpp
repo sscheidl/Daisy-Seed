@@ -8,6 +8,8 @@ const char step_seq_firmware_version[] = "STEP-SEQ-FW-VERSION=" STEP_SEQ_FIRMWAR
 #include "desktop_devkit.h"
 #include "bootloader_daisy.h"
 #include "bootloader_midi.h"
+#include "return_daisy.h"
+#include "return_midi.h"
 #include "usbd_core.h"
 #include "step_seq/controls.h"
 #include "step_seq/cv.h"
@@ -68,6 +70,9 @@ static step_seq::TripleBuffer<fw::Snapshot> snapshots;
 static std::atomic<uint32_t> led_state{0};
 static std::atomic<uint32_t> panic_ack{0};
 static bootloader::Request boot_request;
+// Return to the program manager: S1+S16 for 3 s, or SysEx "PM" OPEN over USB.
+static manager_return::KeyCombo return_keys; // audio callback only
+static manager_return::Request return_request;
 static MidiUsbHandler usb_midi;
 static step_seq::DacWriter<DAC_TypeDef> dac(DAC1);
 static bool gate1_last = false, gate2_last = false;
@@ -156,6 +161,10 @@ static void AudioCallback(AudioHandle::InputBuffer, AudioHandle::OutputBuffer ou
     if(controls.Process(frame, engine)) {
         engine.Panic(); // gates and notes are released before the bootloader (4.1)
         boot_request.Set(bootloader::Request::kKeys);
+    }
+    if(return_keys.Process(frame.keys, frame.ms)) {
+        engine.Panic(); // same release before the return to the program manager
+        return_request.Set(manager_return::Request::kKeys);
     }
 
     step_seq::TickInput in;
@@ -303,6 +312,10 @@ static void ServiceInput() {
                 boot_request.Set(bootloader::Request::kSysEx);
                 continue;
             }
+            if(manager_return::IsRequest(e)) {
+                return_request.Set(manager_return::Request::kSysEx);
+                continue;
+            }
             uint8_t frame[sq::kMaxFrame + 16];
             const std::size_t n = sq::FromSysExBody(e.sysex_data, e.sysex_message_len, frame, sizeof(frame));
             if(n)
@@ -422,10 +435,8 @@ static void ServiceLeds(uint32_t now) {
     shown = leds;
 }
 
-static void ServiceBootloader() {
-    if(!boot_request.Pending())
-        return;
-    // Release gates and notes on every active output before the reset (4.1).
+// Release gates and notes on every active output before a reset (4.1).
+static void ReleaseOutputs() {
     const uint32_t before = panic_ack.load(std::memory_order_acquire);
     RequestPanic();
     const uint32_t start = System::GetNow();
@@ -434,7 +445,22 @@ static void ServiceBootloader() {
     System::Delay(kPanicSettleMs);
     usb_port.Panic(last_channel);
     din_port.Panic(last_channel);
+}
+
+static void ServiceBootloader() {
+    if(!boot_request.Pending())
+        return;
+    ReleaseOutputs();
     bootloader::Service(boot_request, hw, [](uint8_t* bytes, size_t size) { SendUsb(bytes, size); });
+}
+
+// Return to the program manager: same release of gates and notes, then DAISY_SKIP_TIMEOUT.
+// The CV outputs keep their last code until the MCU reset (electrical state NICHT GEMESSEN).
+static void ServiceReturn() {
+    if(!return_request.Pending())
+        return;
+    ReleaseOutputs();
+    manager_return::Service(return_request, hw, [](uint8_t* bytes, size_t size) { SendUsb(bytes, size); });
 }
 
 
@@ -490,6 +516,7 @@ static void ServiceMain() {
     fw::device.Service(now);
     fw::ServiceLeds(now);
     fw::ServiceBootloader();
+    fw::ServiceReturn();
 }
 
 int main() {

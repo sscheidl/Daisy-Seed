@@ -344,6 +344,27 @@
         "name": "AMBIENT_CONTROL_VERSION"
       }
     },
+    "program-manager": {
+      "kind": "control",
+      "source": "system/program-manager",
+      "version": {
+        "type": "macro",
+        "path": "system/program-manager/src/version.h",
+        "name": "PROGRAM_MANAGER_VERSION"
+      }
+    },
+    "manager-return": {
+      "kind": "control",
+      "source": "common/bootloader/return_entry.h",
+      "depends": [
+        "bootloader-entry"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "common/bootloader/return_entry.h",
+        "name": "MANAGER_RETURN_VERSION"
+      }
+    },
     "audrey-3": {
       "kind": "instrument",
       "source": "instruments/audrey-3",
@@ -430,7 +451,8 @@
       "components": [
         "toy-piano",
         "mod-on-daisy",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -555,7 +577,8 @@
         "sd-driver",
         "sd-fs-writable",
         "sd-reader",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "daisy-control-panel"
@@ -572,7 +595,8 @@
         "sd-driver",
         "sd-fs-writable",
         "sd-reader",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -589,7 +613,8 @@
       "components": [
         "ambient-reverb",
         "bootloader-entry",
-        "ambient-reverb-control"
+        "ambient-reverb-control",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -632,7 +657,8 @@
         "callback-diagnostics",
         "fx-contract",
         "bootloader-entry",
-        "ambient-reverb-control"
+        "ambient-reverb-control",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -687,7 +713,8 @@
         "mod-on-daisy",
         "callback-diagnostics",
         "fx-contract",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -752,7 +779,8 @@
       "device_id": "step-seq",
       "components": [
         "step-seq",
-        "bootloader-entry"
+        "bootloader-entry",
+        "manager-return"
       ],
       "panels": [
         "mod-editor-web",
@@ -892,6 +920,21 @@
         "mod-editor-vst3"
       ]
     },
+    "program-manager": {
+      "version": {
+        "type": "macro",
+        "path": "system/program-manager/src/version.h",
+        "name": "PROGRAM_MANAGER_VERSION"
+      },
+      "directory": "system/program-manager/build/manager",
+      "image": "DaisyProgramManager",
+      "marker": "PROGRAM-MANAGER-FW-VERSION=",
+      "components": [
+        "program-manager",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
     "audrey-3": {
       "version": {
         "type": "macro",
@@ -907,6 +950,21 @@
         "sc-reverb",
         "audrey-dsp",
         "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "program-manager-probe": {
+      "version": {
+        "type": "macro",
+        "path": "system/program-manager/src/version.h",
+        "name": "PROGRAM_MANAGER_VERSION"
+      },
+      "directory": "system/program-manager/build/probe",
+      "image": "DaisyProgramManagerProbe",
+      "marker": "PROGRAM-MANAGER-FW-VERSION=",
+      "components": [
+        "program-manager",
         "bootloader-entry"
       ],
       "panels": []

@@ -3,6 +3,7 @@
 /instruments/*/build/
 /effects/*/build/
 /common/*/build/
+/system/*/build/
 /.tools/
 *.wav
 __pycache__/

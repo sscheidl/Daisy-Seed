@@ -242,15 +242,18 @@ bool Session::HostActive(uint32_t now_ms) {
 }
 
 void Session::WriteHello(ddp::Writer& out) const {
+    static const Identity kDefault;
+    const Identity& id = identity_ ? *identity_ : kDefault;
     out.Str("HELLO proto=").U32(ddp::kProtocolVersion)
-        .Str(" fw=").Str(kFirmwareVersion)
-        .Str(" app=").Str(kAppName)
-        .Str(" dev=seed3-desktop boot=BOOT_SRAM bl=").Str(bootloader_)
+        .Str(" fw=").Str(id.fw)
+        .Str(" app=").Str(id.app)
+        .Str(" dev=seed3-desktop boot=").Str(id.boot).Str(" bl=").Str(bootloader_)
         .Str(" libdaisy=").Str(kLibDaisyCommit)
         .Str(" caps=btn,pot,potraw,sw17,sw18,sd,sdread,jack,led,boot,cvin,gate,cvout,audio");
 #ifdef DIAG_CARD_READER
     out.Str(",sdmsc");
 #endif
+    out.Str(id.extra_caps);
 }
 
 uint32_t Session::Handle(const char* body, uint32_t now_ms, ddp::Writer& reply) {

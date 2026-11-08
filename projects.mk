@@ -117,3 +117,12 @@ BUILDABLE_PROJECTS += toy-piano-filter
 PROJECT_DIR_toy-piano-filter := instruments/toy-piano
 PROJECT_ARGS_toy-piano-filter := FILTER=1
 PROJECT_STATUS_toy-piano-filter := buildable
+# Daisy Program Manager (system/program-manager): BOOT_QSPI application behind the
+# installed bootloader; the probe profile is the first hardware candidate (LED/CDC/service).
+PROJECTS += program-manager program-manager-probe
+BUILDABLE_PROJECTS += program-manager program-manager-probe
+PROJECT_DIR_program-manager := system/program-manager
+PROJECT_STATUS_program-manager := buildable
+PROJECT_DIR_program-manager-probe := system/program-manager
+PROJECT_ARGS_program-manager-probe := PROFILE=probe
+PROJECT_STATUS_program-manager-probe := buildable

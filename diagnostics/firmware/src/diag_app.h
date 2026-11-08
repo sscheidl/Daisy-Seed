@@ -58,6 +58,20 @@ class Board {
     ~Board() = default;
 };
 
+// A hosting firmware (the program manager) sees every valid frame before the Session:
+// it can add its own commands and refuse diagnostic ones in its other operating modes.
+// Returning true consumes the frame: `reply` (possibly empty) is sent and `requests`
+// is merged into the step's request mask. `session_active` is the host session state
+// before this frame. The hook must not block.
+class CommandHook {
+  public:
+    virtual bool Handle(const char* body, const char* type, bool session_active, uint32_t now_ms,
+                        ddp::Writer& reply, uint32_t& requests) = 0;
+
+  protected:
+    ~CommandHook() = default;
+};
+
 // Frames waiting for the CDC IN endpoint. The driver reads a submitted buffer until
 // its transfer completes, so new frames are collected in the other buffer; a
 // successful Send() implies the previous transfer has finished.
@@ -86,7 +100,11 @@ class App {
     static constexpr uint32_t kToneKeepAliveMs = 1000;  // callback mutes after this silence
     static constexpr uint32_t kToneRefreshMs = 200;
 
-    App(Board& board, UsbSink& usb, const char* bootloader_name, uint32_t now_ms);
+    App(Board& board, UsbSink& usb, const char* bootloader_name, uint32_t now_ms,
+        const Identity* identity = nullptr);
+
+    // Optional command hook (see CommandHook); nullptr removes it. Main loop only.
+    void SetHook(CommandHook* hook) { hook_ = hook; }
 
     // USB receive interrupt: copy only.
     void OnUsbReceive(const uint8_t* data, uint32_t len) { rx_.Push(data, len); }
@@ -105,6 +123,7 @@ class App {
 
     Board& board_;
     UsbSink& usb_;
+    CommandHook* hook_ = nullptr;
     Session session_;
     ddp::FrameParser parser_;
     SpscRing<kRxSize> rx_;
