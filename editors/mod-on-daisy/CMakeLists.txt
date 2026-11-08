@@ -143,3 +143,28 @@ target_link_libraries(ModOnDaisyPluginCheck
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
+
+# Hardware probe (Windows): the SD card page's core against the real kit from the command
+# line, with the same MIDI port, Win32 serial transport and session classes as the app.
+# Never built by CI; run it by hand with a kit on J7 (docs/dcp/SD_PAGE_LOG.md).
+if(WIN32)
+    juce_add_console_app(DcpHardwareProbe PRODUCT_NAME "Daisy Control Panel Hardware Probe")
+    target_sources(DcpHardwareProbe PRIVATE tests/hw_probe.cpp)
+    target_include_directories(DcpHardwareProbe PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}" "${SQ_INCLUDE}")
+    target_compile_definitions(DcpHardwareProbe PRIVATE
+        MOD_ON_DAISY_EXTENSIONS=1
+        MOD_EDITOR_SD_PAGE=1
+        JUCE_MODAL_LOOPS_PERMITTED=1
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0)
+    target_compile_options(DcpHardwareProbe PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
+    target_link_libraries(DcpHardwareProbe
+        PRIVATE
+            juce::juce_gui_basics
+            juce::juce_audio_basics
+            juce::juce_audio_devices
+            setupapi
+        PUBLIC
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags)
+endif()
