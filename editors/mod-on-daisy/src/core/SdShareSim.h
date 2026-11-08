@@ -79,7 +79,7 @@ class SimManagement {
         Boot(now);
         if(!card_ && reader_state == ddp::ReaderState::Shared)
             reader_state = ddp::ReaderState::Interrupted;
-        if(int32_t(now - busy_until_) < 0)
+        if(Busy(now))
             return {}; // main loop blocked in the SD driver: nothing is sent
         ProcessRx(now);
         if(responsive)
@@ -91,6 +91,8 @@ class SimManagement {
 
   private:
     static constexpr std::size_t kRxRing = 1024;
+    // Busy spans are short (card init); anything longer is a test clock that jumped.
+    bool Busy(uint32_t now) const { return busy_until_ - now - 1u < (1u << 30); }
     void Boot(uint32_t now) {
         if(!booted_) {
             booted_ = true;
@@ -102,7 +104,7 @@ class SimManagement {
     uint32_t Uptime(uint32_t now) const { return booted_ ? now - boot_time_ : 0; }
 
     void ProcessRx(uint32_t now) {
-        while(!rx_pending_.empty() && int32_t(now - busy_until_) >= 0) {
+        while(!rx_pending_.empty() && !Busy(now)) {
             const uint8_t byte = rx_pending_.front();
             rx_pending_.pop_front();
             for(const std::string& body : parser_.Feed(&byte, 1))
@@ -263,6 +265,7 @@ class SimInstrument {
     SimInstrument(const Profile& profile, std::function<uint32_t()> clock)
         : profile_(profile), clock_(std::move(clock)),
           cable_([this] { return std::make_unique<SimManagement>(*this, profile_, card); }) {
+        mgmt_app = profile_.app;
         if(profile_.id == Instrument::Looper)
             loop = true;
     }
@@ -285,6 +288,7 @@ class SimInstrument {
     bool answer_sysex = true;                     // false: the firmware stops answering control SysEx
     bool wrong_personality_on_restart = false;    // R1: the boot intent is lost, the kit boots performance
     bool never_reenumerates = false;              // the restart never completes
+    std::string mgmt_app;                         // HELLO app= of the SD management personality (default: the profile's)
 
     const Profile& GetProfile() const { return profile_; }
     Personality GetPersonality() const { return personality_; }
@@ -296,6 +300,17 @@ class SimInstrument {
         personality_ = Personality::Mgmt;
         cable_.Plug();
     }
+    // Power off and on: performance personality, fresh RAM, no COM port, reader state gone.
+    void PowerCycle() {
+        switch_at_.reset();
+        restarting_ = false;
+        personality_ = Personality::Perf;
+        live = recording = false;
+        saving_until_.reset();
+        cable_.Unplug();
+        ++restarts;
+    }
+    const std::string& MgmtApp() const { return mgmt_app; }
 
     // ---- time and personality ---------------------------------------------------------
     void Advance() {
@@ -475,9 +490,10 @@ inline void SimManagement::Handle(const std::string& body, uint32_t now) {
             return;
         }
         streaming_ = true;
-        Send("HELLO proto=1 fw=" + Firmware() + " app=" + profile_.app
+        const Profile* claimed = ProfileForApp(owner_.MgmtApp());
+        Send("HELLO proto=1 fw=" + Firmware() + " app=" + owner_.MgmtApp()
              + " dev=seed3-desktop boot=BOOT_SRAM bl=v6_1 libdaisy=f715e48 caps=btn,pot,potraw,sw17,sw18,sd,boot,sdmsc,"
-             + profile_.capability + " sim=1");
+             + (claimed ? claimed->capability : profile_.capability) + " sim=1");
         SendState(now);
         SendReader("STATUS");
         return;

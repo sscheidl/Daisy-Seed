@@ -10,6 +10,7 @@
 // connecting only asks for STATUS, never SHARE or RETURN; Disconnect sends BYE and nothing else.
 #include "Ddp.h"
 #include <functional>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <optional>
@@ -67,6 +68,10 @@ class DdpSession {
 
     std::function<void(const std::string&)> log;
     std::function<void()> changed;
+    // Which DDP devices this session stays with. A device that answers HELLO but is not
+    // accepted (another app's firmware) is closed and backed off, so the next candidate port
+    // gets its turn (SD_SHARE_PORT.md § 7). Default: every protocol-1 device.
+    std::function<bool(const DeviceInfo&)> accept;
 
     explicit DdpSession(SerialPorts* ports) : ports_(ports) {}
     // The port provider may be swapped (real COM ports or a simulated cable).
@@ -84,6 +89,13 @@ class DdpSession {
     bool ReaderSupported() const { return Connected() && device_ && device_->Has("sdmsc"); }
     bool ReaderPending() const { return reader_deadline_.has_value(); }
     int Reconnects() const { return reconnects_; }
+    // Counts connections; a continuation bound to a connection checks it did not change.
+    int Generation() const { return generation_; }
+    // READER commands that ended without their reply (timeout, ERR), and completed ones with
+    // the action of the last reply that completed a command.
+    int ReaderFailures() const { return reader_failures_; }
+    int ReaderCompletions() const { return reader_completions_; }
+    const std::string& LastCompletedAction() const { return last_completed_; }
     int FramesOk() const { return frames_ok_; }
     int FrameErrors() const { return frame_errors_; }
     int ContentErrors() const { return content_errors_; }
@@ -117,6 +129,9 @@ class DdpSession {
         return true;
     }
 
+    // Scan at the next Tick() (tests that move the clock by a jump).
+    void ScanNow() { scan_requested_ = true; }
+
     // BYE while connected, then the link is dropped. Never returns or reshares the card.
     void Disconnect(const std::string& reason = "Disconnected by user") {
         if(link_ && state_ == ConnState::Connected) {
@@ -135,7 +150,8 @@ class DdpSession {
             next_scan_ = now_;
         }
         if(!link_) {
-            if(Elapsed(next_scan_)) {
+            if(scan_requested_ || Elapsed(next_scan_)) {
+                scan_requested_ = false;
                 next_scan_ = now_ + kScanIntervalMs;
                 TryConnect();
             }
@@ -173,6 +189,7 @@ class DdpSession {
                 reader_deadline_.reset();
                 reader_action_.clear();
                 reader_.reset(); // state unknown; do not infer ownership or a clean eject
+                ++reader_failures_;
                 Log("Card reader command timed out; ownership is unknown");
                 Changed();
             }
@@ -223,6 +240,8 @@ class DdpSession {
     }
 
     void TryConnect() {
+        for(auto it = failed_ports_.begin(); it != failed_ports_.end();) // expired entries go (finding 14)
+            it = Elapsed(it->second) ? failed_ports_.erase(it) : std::next(it);
         const std::vector<PortInfo> candidates = Candidates();
         for(const PortInfo& p : candidates) {
             auto backoff = failed_ports_.find(p.device);
@@ -302,9 +321,15 @@ class DdpSession {
             }
             if(state_ == ConnState::Connected)
                 return; // answer to a repeated HELLO
+            if(accept && !accept(info)) { // another app's DDP device: leave it, try the next port
+                failed_ports_[port_] = now_ + kFailedPortBackoffMs;
+                DropLink(port_ + ": " + info.app + " is not an instrument in SD management; skipped", ConnState::Searching);
+                return;
+            }
             if(ever_connected_)
                 ++reconnects_;
             ever_connected_ = true;
+            ++generation_;
             last_ping_ = now_;
             SetState(ConnState::Connected, port_);
             Log("Connected to " + port_ + ": " + info.app + " " + info.firmware + ", protocol "
@@ -333,6 +358,8 @@ class DdpSession {
             if(reader_deadline_ && info.action == reader_action_) { // only the matching action completes the command
                 reader_deadline_.reset();
                 reader_action_.clear();
+                ++reader_completions_;
+                last_completed_ = info.action;
             }
             Changed();
         } else if(msg.type == "NEB" || msg.type == "LOOPER") {
@@ -350,6 +377,8 @@ class DdpSession {
             const std::string* c = msg.Get("c");
             const std::string* e = msg.Get("e");
             if(c && *c == "READER") {
+                if(reader_deadline_)
+                    ++reader_failures_;
                 reader_deadline_.reset();
                 reader_action_.clear();
                 reader_.reset();
@@ -381,10 +410,13 @@ class DdpSession {
     std::optional<bool> sd_card_;
     std::optional<uint32_t> reader_deadline_;
     std::string reader_action_;
+    bool scan_requested_ = false;
     std::map<std::string, uint32_t> failed_ports_;
     uint32_t now_ = 0, next_scan_ = 0, handshake_deadline_ = 0, next_hello_ = 0, last_rx_ = 0, last_ping_ = 0,
              error_until_ = 0, ping_n_ = 0;
     int reconnects_ = 0, frames_ok_ = 0, frame_errors_ = 0, content_errors_ = 0;
+    int generation_ = 0, reader_failures_ = 0, reader_completions_ = 0;
+    std::string last_completed_;
     bool ever_connected_ = false, started_ = false;
 };
 }

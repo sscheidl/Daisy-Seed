@@ -11,6 +11,7 @@
 #include "DdpSession.h"
 #include "SdShareProtocol.h"
 #include <functional>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <optional>
@@ -86,6 +87,12 @@ class SdShareWorkflow {
     // `token_source` fills four bytes; they are masked to 7 bit. Default: std::random_device.
     SdShareWorkflow(ddp::DdpSession& session, MidiPorts* midi, std::function<void(uint8_t*)> token_source = {})
         : session_(session), midi_(midi), tokens_(std::move(token_source)) {
+        // Only an instrument in SD management is a partner; another app's DDP device (the
+        // diagnostic firmware) is skipped so the next port gets its turn.
+        session_.accept = [](const ddp::DeviceInfo& d) {
+            const Profile* p = ProfileForApp(d.app);
+            return p != nullptr && d.Has("sdmsc") && d.Has(p->capability);
+        };
         if(!tokens_) {
             auto rng = std::make_shared<std::mt19937>(std::random_device{}());
             tokens_ = [rng](uint8_t* t) {
@@ -109,8 +116,19 @@ class SdShareWorkflow {
     // The workflow follows the kit through a restart it caused: the control panel then
     // offers its Daisy MIDI ports to Open() instead of only the connected one.
     bool Following() const { return phase_ == Phase::Restarting || phase_ == Phase::Returning; }
-    // A share the user requested will continue after the restart (set by ACCEPTED only).
+    // A share the user requested will continue after the restart (set by ACCEPTED only; it
+    // expires with the restart timeout and dies with a lost CDC session or another instrument).
     bool ShareAfterRestart() const { return share_after_restart_; }
+    // A RETURN from EJECTED whose confirmation is still awaited before PERFORM.
+    bool PerformAfterReturn() const { return perform_after_return_; }
+    // Counts entries into INTERRUPTED/ERROR; an acknowledge dialog belongs to one episode.
+    int InterruptionEpisode() const { return interruption_episode_; }
+    // Test hook (the GUI's long-text check): texts as the page shows them.
+    void SetDebugTexts(const std::string& message, const std::string& error) {
+        message_ = message;
+        error_ = error;
+        Changed();
+    }
 
     const Profile* ManagementProfile() const {
         if(!(session_.Connected() && session_.Device()))
@@ -194,8 +212,12 @@ class SdShareWorkflow {
         if(ReaderState() == ddp::ReaderState::Ejected) {
             if(!session_.RequestReader("RETURN"))
                 return false;
+            // PERFORM follows only the matching RETURN reply on this very connection (T27/T29).
             perform_after_return_ = true;
-            message_ = "Card returned by the firmware; restarting into performance …";
+            return_generation_ = session_.Generation();
+            return_failures_ = session_.ReaderFailures();
+            return_completions_ = session_.ReaderCompletions();
+            message_ = "Returning the card to the firmware …";
             Changed();
             return true;
         }
@@ -204,7 +226,7 @@ class SdShareWorkflow {
 
     // A MIDI port was just opened by the user: probe it with the next Tick() instead of
     // waiting for the scan interval.
-    void ScanNow() { next_scan_ = now_; }
+    void ScanNow() { scan_requested_ = true; }
 
     // Drops the MIDI link (user disconnect, application exit). Nothing is sent to the card
     // reader; the CDC session is the caller's business.
@@ -271,6 +293,13 @@ class SdShareWorkflow {
         if(!profile)
             return;
         if(phase_ == Phase::NotFound || phase_ == Phase::Restarting || phase_ == Phase::Performance) {
+            if(share_after_restart_ && profile != profile_) {
+                // Another instrument answered on CDC: the share the user asked for belonged
+                // to the kit found on MIDI, not to this one.
+                share_after_restart_ = false;
+                Log(std::string(profile->name) + " answered in SD management instead of " + Name()
+                    + "; the share request is dropped. Use Share again on this connection if you mean it.");
+            }
             profile_ = profile;
             if(phase_ == Phase::Restarting)
                 Log(Name() + ": SD management connected over USB CDC");
@@ -285,15 +314,36 @@ class SdShareWorkflow {
         if(phase_ != Phase::Management)
             return;
         const std::optional<ddp::ReaderState> state = ReaderState();
+        if(share_after_restart_ && int32_t(now_ - intent_until_) > 0) {
+            // The kit did not become ready within the restart window: the request is over.
+            share_after_restart_ = false;
+            Log(Name() + ": the share request expired before the card was ready (no card?); use Share again.");
+        }
         if(share_after_restart_ && state == ddp::ReaderState::Local && CanShareInManagement()) {
             // The user asked for the share before the restart; continue it exactly once.
             share_after_restart_ = false;
             if(session_.RequestReader("SHARE"))
                 message_ = "Opening the card for Windows …";
         }
-        if(perform_after_return_ && state == ddp::ReaderState::Local && !session_.ReaderPending()) {
-            SendPerform();
-            return;
+        if(perform_after_return_) {
+            const ddp::ReaderInfo* reader = session_.Reader() ? &*session_.Reader() : nullptr;
+            if(session_.Generation() != return_generation_ || session_.ReaderFailures() != return_failures_) {
+                perform_after_return_ = false;
+                Log(Name() + ": the return was not confirmed by the firmware; nothing is restarted. Check the card "
+                             "reader state and use Return again.");
+                Changed();
+            } else if(session_.ReaderCompletions() > return_completions_ && session_.LastCompletedAction() == "RETURN"
+                      && reader && reader->state == ddp::ReaderState::Local && !reader->busy && !session_.ReaderPending()) {
+                message_ = "Card returned by the firmware; restarting into performance …";
+                SendPerform();
+                return;
+            }
+        }
+        if(state) {
+            const bool quarantined = *state == ddp::ReaderState::Interrupted || *state == ddp::ReaderState::Error;
+            if(quarantined && !last_quarantined_)
+                ++interruption_episode_;
+            last_quarantined_ = quarantined;
         }
         const Texts& t = profile_->texts;
         std::string next = message_;
@@ -322,22 +372,28 @@ class SdShareWorkflow {
 
     void PollMidi() {
         if(phase_ == Phase::Management) {
-            if(!session_.Connected()) {
-                // CDC gone without a requested return: ownership unknown, keep looking.
-                const std::string lost = "SD management connection lost; card ownership is unknown.";
-                if(message_ != lost) {
-                    message_ = lost;
-                    Changed();
-                }
+            if(session_.Connected())
+                return; // the kit is on CDC: no MIDI traffic
+            // CDC gone without a requested return: ownership unknown. The intents die with
+            // the connection (T31). The MIDI side is probed again so a kit that was
+            // power-cycled back into performance is found (finding 7); the reader state
+            // stays unknown until the firmware reports it.
+            const std::string lost = "SD management connection lost; card ownership is unknown.";
+            if(message_ != lost) {
+                message_ = lost;
+                if(share_after_restart_ || perform_after_return_)
+                    Log(Name() + ": the pending request is dropped with the lost connection.");
+                share_after_restart_ = perform_after_return_ = false;
+                Changed();
             }
-            return;
         }
         if(!link_) {
             // While RESTARTING keep scanning: a device that comes back on USB-MIDI did not
             // enter SD management (boot intent lost, risk R1) and is reported.
             if(phase_ == Phase::Requesting)
                 return;
-            if(Elapsed(next_scan_)) {
+            if(scan_requested_ || Elapsed(next_scan_)) {
+                scan_requested_ = false;
                 next_scan_ = now_ + kScanIntervalMs;
                 TryOpen();
             }
@@ -387,6 +443,8 @@ class SdShareWorkflow {
     void TryOpen() {
         if(!midi_)
             return;
+        for(auto it = failed_ports_.begin(); it != failed_ports_.end();) // expired entries go (finding 14)
+            it = Elapsed(it->second) ? failed_ports_.erase(it) : std::next(it);
         for(const std::string& name : midi_->List()) {
             auto backoff = failed_ports_.find(name);
             if(backoff != failed_ports_.end() && !Elapsed(backoff->second))
@@ -434,10 +492,14 @@ class SdShareWorkflow {
             probing_ = false;
             status_ = r.status;
             error_.clear();
-            if(phase_ == Phase::NotFound || phase_ == Phase::Returning || phase_ == Phase::Restarting) {
+            if(phase_ == Phase::NotFound || phase_ == Phase::Returning || phase_ == Phase::Restarting
+               || (phase_ == Phase::Management && !session_.Connected())) {
                 if(phase_ == Phase::Returning) {
                     message_ = profile_->texts.back;
                     Log(Name() + " is back in performance");
+                } else if(phase_ == Phase::Management) {
+                    message_ = Name() + " is back on USB-MIDI after the lost SD management connection.";
+                    Log(message_);
                 } else if(phase_ == Phase::Restarting) {
                     // R1: the device came back in performance instead of SD management.
                     error_ = Name() + " restarted but did not enter SD management (boot intent not kept). Nothing was shared.";
@@ -464,6 +526,7 @@ class SdShareWorkflow {
                     phase_ = Phase::Restarting;
                     share_after_restart_ = true;
                     deadline_ = now_ + kRestartTimeoutMs;
+                    intent_until_ = now_ + kRestartTimeoutMs; // the continuation expires with the restart window
                     message_ = Name() + " stops audio and restarts into SD management; Windows will install/open the drive …";
                     Log(Name() + " accepted SD management; restarting");
                     CloseLink();
@@ -570,9 +633,12 @@ class SdShareWorkflow {
     std::string port_, message_, error_;
     std::unique_ptr<MidiLink> link_;
     bool probing_ = false, confirm_ = false, share_after_restart_ = false, perform_after_return_ = false, started_ = false;
-    uint32_t now_ = 0, next_scan_ = 0, last_reply_ = 0, last_status_sent_ = 0, save_started_ = 0;
+    bool last_quarantined_ = false;
+    int interruption_episode_ = 0, return_generation_ = 0, return_failures_ = 0, return_completions_ = 0;
+    uint32_t now_ = 0, next_scan_ = 0, last_reply_ = 0, last_status_sent_ = 0, save_started_ = 0, intent_until_ = 0;
     std::optional<uint32_t> deadline_, resend_at_;
     uint8_t token_[4]{};
+    bool scan_requested_ = false;
     std::map<std::string, uint32_t> failed_ports_;
 };
 }

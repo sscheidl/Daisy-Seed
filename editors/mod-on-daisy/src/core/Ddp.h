@@ -146,12 +146,15 @@ class FrameParser {
 struct Message {
     std::string type;
     std::vector<std::pair<std::string, std::string>> fields;
+    bool duplicate_keys = false; // a key appeared twice: the ownership parsers reject such a message
 
+    // The last occurrence wins, as the Python reference's dict does.
     const std::string* Get(const std::string& key) const {
+        const std::string* found = nullptr;
         for(const auto& [k, v] : fields)
             if(k == key)
-                return &v;
-        return nullptr;
+                found = &v;
+        return found;
     }
     bool Has(const std::string& key) const { return Get(key) != nullptr; }
     // Strict decimal field: 1–10 digits only (the protocol has no sign, space or '_'),
@@ -187,8 +190,12 @@ inline Message ParseMessage(const std::string& body) {
             continue;
         }
         const std::size_t eq = token.find('=');
-        if(eq != std::string::npos)
-            m.fields.emplace_back(token.substr(0, eq), token.substr(eq + 1));
+        if(eq != std::string::npos) {
+            const std::string key = token.substr(0, eq);
+            if(m.Has(key))
+                m.duplicate_keys = true;
+            m.fields.emplace_back(key, token.substr(eq + 1));
+        }
     }
     return m;
 }
@@ -279,6 +286,10 @@ struct ReaderInfo {
 
 inline bool ParseReader(const Message& m, ReaderInfo& out, std::string& error) {
     out = ReaderInfo{};
+    if(m.duplicate_keys) { // a contradictory ownership message is not interpreted at all
+        error = "READER: duplicate field";
+        return false;
+    }
     const std::string* state = m.Get("state");
     if(!state || !ReaderStateFromName(*state, out.state)) {
         error = "READER: invalid state";
@@ -331,6 +342,10 @@ struct MgmtInfo {
 
 inline bool ParseMgmt(const Message& m, bool nebulae, MgmtInfo& out, std::string& error) {
     out = MgmtInfo{};
+    if(m.duplicate_keys) {
+        error = m.type + ": duplicate field";
+        return false;
+    }
     const std::string* mode = m.Get("mode");
     if(!mode || *mode != "SDMGMT") {
         error = m.type + ": unknown mode";

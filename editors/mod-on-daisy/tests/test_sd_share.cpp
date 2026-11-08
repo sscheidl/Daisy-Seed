@@ -812,6 +812,305 @@ void TestStaleAndErrorReplies() {
     std::printf("PASS stale and error replies: foreign token ignored (timeout), ERROR, BAD_REQUEST, CODE5 refuse\n");
 }
 
+
+// Finding 1: the share continuation is bound to the kit that left and to the restart window.
+void TestShareIntentBoundAndExpiring() {
+    // (a) The kit comes up in management without a card: the intent expires with the restart
+    // window; a card inserted later is not shared without a new Share.
+    Rig r;
+    r.Run(1500);
+    r.dev.card = false; // the card falls out right before the request is answered
+    CHECK(r.wf.RequestShare()); // CanShare still true from the last STATUS
+    r.Run(200);
+    CHECK(r.wf.GetPhase() == Phase::Performance && Contains(r.wf.Error(), "No microSD")); // the firmware refused
+    r.dev.card = true;
+    r.Run(1200);
+    CHECK(r.wf.RequestShare());
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Restarting; }, 1000));
+    r.dev.card = false; // removed while the kit restarts: management starts without a card
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Management; }, kSimRestartMs + 5000));
+    CHECK(r.wf.ShareAfterRestart());
+    r.Run(SdShareWorkflow::kRestartTimeoutMs + 1000);
+    CHECK(!r.wf.ShareAfterRestart() && r.Logged("share request expired"));
+    r.dev.card = true;
+    r.dev.Management().SetCard(true);
+    r.Run(3000);
+    CHECK(r.wf.ReaderState() == ReaderState::Local); // nothing shared on its own
+    CHECK(r.wf.RequestShare() && r.Until([&] { return r.wf.ReaderState() == ReaderState::Shared; }, 3000));
+    // (b) The CDC session is lost before the card was shared: the intent dies with it.
+    Rig c;
+    c.Run(1500);
+    c.dev.Management().reader_init_ms = 0;
+    CHECK(c.wf.RequestShare());
+    CHECK(c.Until([&] { return c.wf.GetPhase() == Phase::Restarting; }, 1000));
+    c.dev.card = false;
+    CHECK(c.Until([&] { return c.wf.GetPhase() == Phase::Management; }, kSimRestartMs + 5000));
+    CHECK(c.wf.ShareAfterRestart());
+    c.dev.Cable().Unplug();
+    c.Run(2500);
+    CHECK(!c.session.Connected() && !c.wf.ShareAfterRestart() && c.Logged("pending request is dropped"));
+    c.dev.card = true;
+    c.dev.Cable().Plug();
+    c.dev.Management().SetCard(true);
+    CHECK(c.Until([&] { return c.session.Connected(); }, 5000));
+    c.Run(3000);
+    CHECK(c.wf.ReaderState() == ReaderState::Local); // reconnect asked STATUS only
+    // (c) Another instrument answers in SD management: not the kit that left, intent dropped.
+    Rig o;
+    o.Run(1500);
+    CHECK(o.wf.GetProfile().id == Instrument::Nebulae);
+    o.dev.mgmt_app = kLooper.app; // a Looper's management personality shows up on CDC
+    CHECK(o.wf.RequestShare());
+    CHECK(o.Until([&] { return o.wf.GetPhase() == Phase::Management; }, kSimRestartMs + 5000));
+    CHECK(!o.wf.ShareAfterRestart() && o.Logged("share request is dropped"));
+    o.Run(3000);
+    CHECK(o.wf.ReaderState() == ReaderState::Local && o.dev.Management().reader_state == ReaderState::Local);
+    std::printf("PASS share intent: expires with the restart window, dies with the CDC session, dropped for another instrument\n");
+}
+
+// Finding 2: PERFORM follows only the matching RETURN reply on the same connection.
+void TestReturnContinuationInvalidated() {
+    Rig r;
+    r.Run(1500);
+    CHECK(r.wf.RequestShare());
+    CHECK(r.Until([&] { return r.wf.ReaderState() == ReaderState::Shared; }, 10000));
+    r.dev.Management().ReaderEject();
+    CHECK(r.Until([&] { return r.wf.ReaderState() == ReaderState::Ejected; }, 3000));
+    r.dev.Management().responsive = false; // the firmware hangs: RETURN gets no reply
+    CHECK(r.wf.ReturnToPerformance() && r.wf.PerformAfterReturn());
+    CHECK(Contains(r.wf.Message(), "Returning the card"));
+    r.Run(1000);
+    r.dev.Cable().Unplug(); // and the connection is lost
+    r.Run(2500);
+    CHECK(!r.wf.PerformAfterReturn()); // dropped with the connection, nothing restarted
+    r.dev.Management().responsive = true;
+    r.dev.Cable().Plug(); // a fresh management session, LOCAL (the simulated power-cycle of the reader)
+    CHECK(r.Until([&] { return r.session.Connected() && r.wf.ReaderState() == ReaderState::Local; }, 6000));
+    r.Run(3000);
+    CHECK(r.wf.GetPhase() == Phase::Management && r.dev.restarts == 1); // no PERFORM from a LOCAL that was not our RETURN
+    // The timeout of the RETURN command on the same session also invalidates the continuation.
+    Rig t;
+    t.Run(1500);
+    CHECK(t.wf.RequestShare());
+    CHECK(t.Until([&] { return t.wf.ReaderState() == ReaderState::Shared; }, 10000));
+    t.dev.Management().ReaderEject();
+    CHECK(t.Until([&] { return t.wf.ReaderState() == ReaderState::Ejected; }, 3000));
+    t.dev.Management().responsive = false;
+    CHECK(t.wf.ReturnToPerformance() && t.wf.PerformAfterReturn());
+    t.Run(ddp::DdpSession::kReaderCommandTimeoutMs + 200); // the session drops the link right after the timeout
+    CHECK(!t.wf.PerformAfterReturn() && (t.Logged("not confirmed by the firmware") || t.Logged("pending request is dropped")));
+    t.dev.Management().responsive = true;
+    CHECK(t.Until([&] { return t.session.Connected() && t.wf.ReaderState().has_value(); }, 8000));
+    t.Run(2000);
+    CHECK(t.dev.restarts == 1 && t.wf.GetPhase() == Phase::Management);
+    // The normal path still works: RETURN reply, then PERFORM.
+    if(t.wf.ReaderState() == ReaderState::Ejected) {
+        CHECK(t.wf.ReturnToPerformance());
+        CHECK(t.Until([&] { return t.wf.GetPhase() == Phase::Performance; }, 25000));
+        CHECK(t.dev.restarts == 2);
+    }
+    std::printf("PASS return continuation: PERFORM only after the matching RETURN reply; lost link and timeout invalidate it\n");
+}
+
+// Finding 7: after a lost CDC session the MIDI side is probed again; a kit that was
+// power-cycled back into performance is found while the reader state stays unknown.
+void TestRecoveryAfterCdcLoss() {
+    Rig r;
+    r.Run(1500);
+    CHECK(r.wf.RequestShare());
+    CHECK(r.Until([&] { return r.wf.ReaderState() == ReaderState::Shared; }, 10000));
+    r.dev.PowerCycle(); // the user pulled the power: performance personality, no COM port
+    CHECK(r.Until([&] { return !r.session.Connected(); }, 3000));
+    CHECK(r.wf.GetPhase() == Phase::Management && !r.wf.ReaderState() && !r.wf.CanReturn() && !r.wf.CanAcknowledge());
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Performance; }, 5000));
+    CHECK(r.Logged("back on USB-MIDI") && r.wf.CanShare());
+    std::printf("PASS recovery after CDC loss: ownership unknown, STATUS on MIDI brings the page back to performance\n");
+}
+
+// Finding 8: a DDP device of another app on the first port must not hold the session.
+void TestForeignDdpDeviceSkipped() {
+    struct Diag : ddp::SerialLink {
+        bool pending = false, hello = false;
+        bool Read(std::vector<uint8_t>& out) override {
+            out.clear();
+            if(pending) {
+                pending = false;
+                ddp::BuildFrame("HELLO proto=1 fw=0.4.1 app=DaisyDiagnostic dev=seed3-desktop caps=btn,pot,led,sdmsc sim=1", out);
+            }
+            return true;
+        }
+        bool Write(const uint8_t* d, std::size_t n) override {
+            if(std::string(d, d + n).find("HELLO") != std::string::npos)
+                pending = hello = true;
+            return true;
+        }
+        void Close() override {}
+    };
+    struct TwoPorts : ddp::SerialPorts {
+        SimSerialPorts& sim;
+        int diag_opens = 0;
+        explicit TwoPorts(SimSerialPorts& s) : sim(s) {}
+        std::vector<ddp::PortInfo> List() override {
+            std::vector<ddp::PortInfo> out = {{"COM3", ddp::kUsbVid, ddp::kUsbPid, "Daisy Diagnostic"}};
+            for(const ddp::PortInfo& p : sim.List())
+                out.push_back(p);
+            return out;
+        }
+        std::unique_ptr<ddp::SerialLink> Open(const std::string& device, std::string& error) override {
+            if(device == "COM3") {
+                ++diag_opens;
+                return std::make_unique<Diag>();
+            }
+            return sim.Open(device, error);
+        }
+    };
+    Rig r;
+    r.dev.StartInManagement();
+    TwoPorts ports(r.serial);
+    r.session.SetPorts(&ports);
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Management; }, 8000));
+    CHECK(r.session.Port() == kSimComPort && ports.diag_opens == 1 && r.Logged("is not an instrument in SD management"));
+    r.Run(6000);
+    CHECK(r.session.Connected() && r.session.Port() == kSimComPort); // stays with the instrument
+    std::printf("PASS foreign DDP device: DaisyDiagnostic on the first port is skipped and backed off\n");
+}
+
+// Finding 11: a READER line with a repeated ownership field is not interpreted.
+void TestDuplicateReaderFields() {
+    ddp::ReaderInfo info;
+    std::string err;
+    CHECK(!ddp::ParseReader(ddp::ParseMessage("READER state=EJECTED state=INTERRUPTED sectors=1 busy=0 a=STATUS"), info, err));
+    CHECK(Contains(err, "duplicate"));
+    CHECK(!ddp::ParseReader(ddp::ParseMessage("READER state=EJECTED sectors=1 busy=0 busy=1 a=STATUS"), info, err));
+    ddp::MgmtInfo mgmt;
+    CHECK(!ddp::ParseMgmt(ddp::ParseMessage("NEB mode=SDMGMT fw=1 card=1 ret=1 ret=0 bank=1 slot=1 a=STATUS"), true, mgmt, err));
+    // Last value wins for ordinary fields, as in the Python dict.
+    CHECK(*ddp::ParseMessage("X a=1 b=2 a=3").Get("a") == "3");
+    // Through the session: the cached state is not replaced by the contradictory line.
+    Rig r;
+    r.dev.StartInManagement();
+    r.Run(2000);
+    CHECK(r.wf.RequestShare() && r.Until([&] { return r.wf.ReaderState() == ReaderState::Shared; }, 3000));
+    // Feed the frame as the simulated firmware would send it (through its output buffer).
+    struct Injector : ddp::SerialLink {
+        std::unique_ptr<ddp::SerialLink> inner;
+        bool inject = true;
+        bool Read(std::vector<uint8_t>& out) override {
+            if(!inner->Read(out))
+                return false;
+            if(inject) {
+                inject = false;
+                std::vector<uint8_t> frame;
+                ddp::BuildFrame("READER state=EJECTED state=INTERRUPTED sectors=1 busy=0 a=STATUS", frame);
+                out.insert(out.end(), frame.begin(), frame.end());
+            }
+            return true;
+        }
+        bool Write(const uint8_t* d, std::size_t n) override { return inner->Write(d, n); }
+        void Close() override { inner->Close(); }
+    };
+    struct Ports : ddp::SerialPorts {
+        SimSerialPorts& sim;
+        explicit Ports(SimSerialPorts& s) : sim(s) {}
+        std::vector<ddp::PortInfo> List() override { return sim.List(); }
+        std::unique_ptr<ddp::SerialLink> Open(const std::string& device, std::string& error) override {
+            auto l = std::make_unique<Injector>();
+            l->inner = sim.Open(device, error);
+            return l->inner ? std::move(l) : nullptr;
+        }
+    };
+    Rig d;
+    d.dev.StartInManagement();
+    Ports ports(d.serial);
+    d.session.SetPorts(&ports);
+    CHECK(d.Until([&] { return d.session.Connected(); }, 5000));
+    d.Run(500);
+    CHECK(d.session.ContentErrors() >= 1 && d.Logged("duplicate field"));
+    CHECK(d.wf.ReaderState() != ReaderState::Ejected && !d.wf.CanReturn() == (d.wf.ReaderState() != ReaderState::Local));
+    std::printf("PASS duplicate fields: contradictory READER rejected, Return not enabled by it\n");
+}
+
+// Finding 14: an expired backoff entry is pruned while its port is absent, so it cannot
+// come back after half a clock cycle (the signed comparison turns around after 24.8 days).
+// Real time never jumps, so the scan is re-armed by hand after the jump.
+void TestBackoffPruneAcrossHalfCycle() {
+    struct Hiding : MidiPorts {
+        SimMidiPorts& inner;
+        bool hidden = false;
+        explicit Hiding(SimMidiPorts& i) : inner(i) {}
+        std::vector<std::string> List() override { return hidden ? std::vector<std::string>{} : inner.List(); }
+        std::unique_ptr<MidiLink> Open(const std::string& n, std::string& e) override { return inner.Open(n, e); }
+    };
+    Rig r;
+    Hiding ports(r.midi);
+    r.wf.SetMidiPorts(&ports);
+    r.dev.answer_sysex = false;
+    r.Run(1500); // probe fails, port backed off until now + 5 s
+    CHECK(r.midi.opened == 1);
+    ports.hidden = true; // the kit is unplugged while the entry expires and is pruned
+    r.Run(7000);
+    CHECK(r.midi.opened == 1);
+    r.now += 0x80000000u + 100000u; // 24.8 days later, plugged in again
+    ports.hidden = false;
+    r.dev.answer_sysex = true;
+    r.wf.ScanNow();
+    CHECK(r.Until([&] { return r.wf.GetPhase() == Phase::Performance; }, 3000));
+    // CDC side: a port whose handshake failed is not blocked half a cycle later either.
+    struct HidingSerial : ddp::SerialPorts {
+        SimSerialPorts& inner;
+        bool hidden = false;
+        explicit HidingSerial(SimSerialPorts& i) : inner(i) {}
+        std::vector<ddp::PortInfo> List() override { return hidden ? std::vector<ddp::PortInfo>{} : inner.List(); }
+        std::unique_ptr<ddp::SerialLink> Open(const std::string& d, std::string& e) override { return inner.Open(d, e); }
+    };
+    Rig c;
+    c.dev.StartInManagement();
+    HidingSerial serial(c.serial);
+    c.session.SetPorts(&serial);
+    c.dev.Management().responsive = false;
+    c.Run(3000); // HELLO fails, port backed off
+    serial.hidden = true;
+    c.Run(7000);
+    c.now += 0x80000000u + 100000u;
+    serial.hidden = false;
+    c.dev.Management().responsive = true;
+    c.session.ScanNow();
+    CHECK(c.Until([&] { return c.session.Connected(); }, 4000));
+    std::printf("PASS backoff prune: expired entries are pruned while the port is absent; nothing blocks it 24.8 days later\n");
+}
+
+// § 11.5 as the Python test has it: SHARED first, then the firmware stops answering.
+void TestReaderTimeoutAfterShared() {
+    Rig r;
+    r.dev.StartInManagement();
+    r.Run(2000);
+    CHECK(r.wf.RequestShare() && r.Until([&] { return r.wf.ReaderState() == ReaderState::Shared; }, 3000));
+    r.dev.Management().responsive = false; // Windows I/O blocks the main loop forever
+    r.Run(ddp::DdpSession::kReaderIoRxTimeoutMs + 1000);
+    CHECK(!r.session.Connected() && !r.wf.ReaderState() && !r.wf.Ejected() && !r.wf.CanReturn());
+    CHECK(Contains(r.wf.Message(), "ownership is unknown"));
+    r.dev.Management().responsive = true;
+    CHECK(r.Until([&] { return r.session.Connected() && r.wf.ReaderState().has_value(); }, 8000));
+    CHECK(r.wf.ReaderState() == ReaderState::Shared); // still Windows' card; nothing was returned
+    std::printf("PASS timeout after SHARED: ownership unknown, no eject inferred, STATUS only on reconnect\n");
+}
+
+// DDP receive parser at its body limit: 400 bytes pass, 401 overflow.
+void TestFrameParserLimits() {
+    std::string body400(400, 'A'), body401(401, 'A');
+    std::vector<uint8_t> ok, too_long;
+    CHECK(ddp::BuildFrame(body400, ok) && !ddp::BuildFrame(body401, too_long));
+    ddp::FrameParser parser;
+    CHECK(parser.Feed(ok.data(), ok.size()).size() == 1 && parser.overflow == 0);
+    // A 401-byte body on the wire (built by hand with a valid CRC) overflows the receiver.
+    const uint16_t crc = ddp::Crc16(reinterpret_cast<const uint8_t*>(body401.data()), body401.size());
+    char hex[8];
+    std::snprintf(hex, sizeof(hex), "*%04X\n", unsigned(crc));
+    const std::string wire = "$" + body401 + hex;
+    CHECK(parser.Feed(reinterpret_cast<const uint8_t*>(wire.data()), wire.size()).empty() && parser.overflow == 1);
+    std::printf("PASS frame limits: 400-byte body accepted, 401 bytes overflow\n");
+}
+
 // The clock is milliseconds since boot and may start anywhere, also above 2^31 or just
 // below the 32-bit wrap: every timer must still fire (finding 2).
 void TestClockWrap() {
@@ -832,6 +1131,35 @@ void TestClockWrap() {
         m.dev.StartInManagement();
         m.Run(3000);
         CHECK(m.wf.GetPhase() == Phase::Management && m.session.Connected());
+        // Reader command timeout across the wrap.
+        m.dev.Management().responsive = false;
+        CHECK(m.wf.RequestShare() && m.session.ReaderPending());
+        m.Run(ddp::DdpSession::kReaderCommandTimeoutMs + 200);
+        CHECK(!m.session.ReaderPending() && !m.wf.ReaderState());
+        // Probe backoff across the wrap.
+        Rig b;
+        b.now = start;
+        b.dev.answer_sysex = false;
+        b.Run(1500);
+        CHECK(b.midi.opened == 1);
+        b.Run(3000);
+        CHECK(b.midi.opened == 1);
+        b.Run(2500);
+        CHECK(b.midi.opened == 2);
+        // Looper save timeout across the wrap.
+        Rig l(kLooper);
+        l.now = start;
+        l.dev.unsaved = true;
+        l.Run(1500);
+        CHECK(l.wf.RequestShare());
+        CHECK(l.Until([&] { return l.wf.GetPhase() == Phase::Saving; }, 1000));
+        uint32_t elapsed = 0;
+        while(elapsed < SdShareWorkflow::kSaveTimeoutMs + 2000 && l.wf.GetPhase() == Phase::Saving) {
+            l.dev.unsaved = true;
+            l.Run(100);
+            elapsed += 100;
+        }
+        CHECK(l.wf.GetPhase() == Phase::Performance && Contains(l.wf.Error(), "not saved"));
     }
     std::printf("PASS clock wrap: full cycle and CDC discovery with a clock starting at 2^31 and across 2^32\n");
 }
@@ -951,6 +1279,14 @@ int main() {
     TestWfBusyReaderBlocksReturn();
     TestProbeBackoff();
     TestStaleAndErrorReplies();
+    TestShareIntentBoundAndExpiring();
+    TestReturnContinuationInvalidated();
+    TestRecoveryAfterCdcLoss();
+    TestForeignDdpDeviceSkipped();
+    TestDuplicateReaderFields();
+    TestBackoffPruneAcrossHalfCycle();
+    TestReaderTimeoutAfterShared();
+    TestFrameParserLimits();
     TestClockWrap();
     TestDdpHandshake();
     TestButtonRules();

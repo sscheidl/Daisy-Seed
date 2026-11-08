@@ -39,7 +39,8 @@ struct FakeDevice {
     sd::SimInstrument instrument{sd::kNebulae, [] { return NowMs(); }};
     std::atomic<bool> vanished{false};
     std::atomic<int> block_ms{0}; // every Read()/Write() sleeps this long first
-    std::atomic<int> backends{0}, closed{0};
+    std::atomic<int> backends{0}, closed{0}, writes{0};
+    std::atomic<int> open_delay_ms{0}; // the OS takes this long to open the port
     FakeDevice() { instrument.StartInManagement(); }
 };
 
@@ -78,10 +79,11 @@ struct FakeBackend : SerialBackend {
     }
     bool Write(const uint8_t* data, std::size_t n) override {
         Block();
-        if(dev.vanished)
+        if(dev.vanished || cancelled) // a real driver takes nothing after the cancel either
             return false;
         std::lock_guard<std::mutex> lock(dev.mutex);
         dev.instrument.Management().Receive(data, n, NowMs());
+        ++dev.writes;
         return true;
     }
     void Cancel() override { cancelled = true; }
@@ -95,6 +97,8 @@ struct Rig {
                                       error = "cannot open " + device;
                                       return nullptr;
                                   }
+                                  if(dev.open_delay_ms > 0)
+                                      std::this_thread::sleep_for(std::chrono::milliseconds(int(dev.open_delay_ms)));
                                   return std::make_unique<FakeBackend>(dev);
                               }};
     DdpSession session{&ports};
@@ -146,8 +150,9 @@ void TestOpenHello() {
 void TestHandshakeTimeout() {
     Rig r;
     r.dev.instrument.Management().responsive = false;
-    CHECK(!r.RunUntil([&] { return r.session.Connected(); }, 1600));
-    CHECK(r.Logged("no DDP reply to HELLO") && r.dev.backends == 1 && r.dev.closed == 1);
+    CHECK(!r.RunUntil([&] { return r.session.Connected(); }, 2800)); // async scan (≤ 1 s) + 1 s handshake
+    CHECK(r.RunUntil([&] { return r.Logged("no DDP reply to HELLO"); }, 1500) && r.dev.backends == 1);
+    CHECK(r.RunUntil([&] { return r.dev.closed == 1; }, 500));
     CHECK(r.max_tick_ms < 50.0);
     std::printf("PASS serial timeout: HELLO without reply closes the port after 1 s (max tick %.1f ms)\n", r.max_tick_ms);
 }
@@ -198,7 +203,8 @@ void TestNeverBlocksMessageThread() {
     t0 = Clock::now();
     link.reset();
     const double destroy_ms = ElapsedMs(t0);
-    CHECK(open_ms < 50.0 && write_ms < 50.0 && read_ms < 50.0 && close_ms < 50.0 && destroy_ms < 50.0);
+    const double close_bound = ThreadedSerialLink::kDrainMs + ThreadedSerialLink::kJoinMs + 20.0;
+    CHECK(open_ms < 50.0 && write_ms < 50.0 && read_ms < 50.0 && close_ms < close_bound && destroy_ms < 50.0);
     CHECK(dev.closed == 1);
     // A failed backend makes Read()/Write() report the loss at once, without waiting.
     FakeDevice gone;
@@ -227,8 +233,8 @@ void TestBoundedQueues() {
     CHECK(accepted >= 16 && accepted < 64);
     const Clock::time_point t0 = Clock::now();
     link.Close();
-    CHECK(ElapsedMs(t0) < 50.0);
-    std::printf("PASS serial bounded queues: %d x 4 KiB accepted, then refused; close still fast\n", accepted);
+    CHECK(ElapsedMs(t0) < ThreadedSerialLink::kDrainMs + ThreadedSerialLink::kJoinMs + 20.0);
+    std::printf("PASS serial bounded queues: %d x 4 KiB accepted, then refused; close still bounded\n", accepted);
 }
 
 // A driver that ignores the cancel (finding 4): Close() still returns within 50 ms, the
@@ -270,16 +276,73 @@ void TestCloseWithUncooperativeBackend() {
     CHECK(closed == 1); // the detached thread ended and freed the backend
 }
 
-// BYE queued right before the close still goes out (finding 9).
+// BYE queued right before the close still goes out (finding 9), as a completed write
+// before the cancel (finding 13): the fake refuses writes after Cancel().
 void TestByeIsSent() {
     Rig r;
     CHECK(r.RunUntil([&] { return r.session.Connected(); }, 4000));
     CHECK(r.dev.instrument.Management().Streaming());
+    const int writes_before = r.dev.writes;
     const Clock::time_point t0 = Clock::now();
     r.session.Disconnect();
-    CHECK(ElapsedMs(t0) < 100.0);
+    CHECK(ElapsedMs(t0) < ThreadedSerialLink::kDrainMs + ThreadedSerialLink::kJoinMs + 20.0);
+    CHECK(r.dev.writes == writes_before + 1);                // exactly the BYE frame, written before the cancel
     CHECK(!r.dev.instrument.Management().Streaming()); // the simulated firmware received BYE
-    std::printf("PASS serial BYE: sent during Close() (%.1f ms)\n", ElapsedMs(t0));
+    std::printf("PASS serial BYE: written before the cancel during Close() (%.1f ms)\n", ElapsedMs(t0));
+}
+
+// Opening runs on the link's thread and enumeration on a worker (finding 9): a port that
+// takes 300 ms to open or to list never holds the message thread.
+void TestOpenOnWorker() {
+    Rig r;
+    r.dev.open_delay_ms = 300;
+    double max_list_ms = 0, open_ms = 0;
+    std::string error;
+    Clock::time_point t0 = Clock::now();
+    std::vector<PortInfo> first = r.ports.List(); // starts the worker, returns the last result (none yet)
+    max_list_ms = ElapsedMs(t0);
+    CHECK(first.empty());
+    for(int i = 0; i < 50 && r.ports.Refreshes() == 0; ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    t0 = Clock::now();
+    const std::vector<PortInfo> second = r.ports.List();
+    max_list_ms = std::max(max_list_ms, ElapsedMs(t0));
+    CHECK(second.size() == 1 && second[0].device == sd::kSimComPort);
+    t0 = Clock::now();
+    std::unique_ptr<SerialLink> link = r.ports.Open(sd::kSimComPort, error);
+    open_ms = ElapsedMs(t0);
+    CHECK(link && open_ms < 50.0 && max_list_ms < 50.0);
+    auto* threaded = dynamic_cast<ThreadedSerialLink*>(link.get());
+    CHECK(threaded && !threaded->Opened());
+    std::vector<uint8_t> frame, received;
+    BuildFrame("HELLO proto=1", frame);
+    CHECK(link->Write(frame.data(), frame.size())); // queued before the port is open
+    for(int i = 0; i < 100 && !(threaded && threaded->Opened()); ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    CHECK(threaded && threaded->Opened());
+    bool answered = false;
+    for(int i = 0; i < 100 && !answered; ++i) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        CHECK(link->Read(received));
+        answered = std::string(received.begin(), received.end()).find("HELLO") != std::string::npos;
+    }
+    CHECK(answered);
+    t0 = Clock::now();
+    link->Close();
+    CHECK(ElapsedMs(t0) < ThreadedSerialLink::kDrainMs + ThreadedSerialLink::kJoinMs + 20.0);
+    // The whole session over the slow port: connect, SHARE, as before.
+    Rig s;
+    s.dev.open_delay_ms = 300;
+    CHECK(s.RunUntil([&] { return s.session.Connected(); }, 6000));
+    CHECK(s.max_tick_ms < 50.0);
+    // A port whose open fails is reported through the link and backed off; the session keeps scanning.
+    Rig f;
+    f.dev.vanished = true;
+    f.RunUntil([] { return false; }, 1200);
+    f.dev.vanished = false;
+    CHECK(f.RunUntil([&] { return f.session.Connected(); }, 6000));
+    std::printf("PASS serial open on worker: list %.1f ms, open %.1f ms, HELLO answered after the 300 ms open, session connects\n",
+                max_list_ms, open_ms);
 }
 }
 
@@ -291,6 +354,7 @@ int main() {
     TestBoundedQueues();
     TestCloseWithUncooperativeBackend();
     TestByeIsSent();
+    TestOpenOnWorker();
     if(failures) {
         std::fprintf(stderr, "FAIL: %d checks\n", failures);
         return 1;
