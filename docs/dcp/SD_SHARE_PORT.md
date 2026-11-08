@@ -288,9 +288,13 @@ the Mod on Daisy session, the SQ session, the bootloader request and the SD shar
   matrix unless the workflow closed it because the kit restarts (T10): then the component
   disconnects the matrix session and releases the port.
 * The workflow probes only a port the user connected to (or that it reconnects to itself
-  while Restarting or Returning). It does not open ports on its own while idle, so a plain
-  Toy Piano is never probed more than once per connection attempt (1 s, two STATUS requests,
-  which every firmware without `NB`/`LP` ignores).
+  while Restarting or Returning). It does not open ports on its own while idle. A port that
+  does not answer (a Toy Piano) is probed again at most every 5 s as in the Python panel
+  (two STATUS requests, which every firmware without `NB`/`LP` ignores); the matrix keeps
+  the port meanwhile.
+* Messages the shared port delivered together with its disappearance still reach the
+  workflow (the SHARE ACK arrives in the same poll as the kit's restart); only an empty poll
+  on a gone port counts as a lost link, as with the Python link and the simulator.
 * The CDC side scans COM ports (VID `0483` / PID `5740`) continuously as the Python panel
   does; a kit found in SD management is shown even if the user never pressed Connect.
 * Instruments without a matrix (D4): when the workflow reaches Performance or Management and
@@ -323,6 +327,7 @@ the Mod on Daisy session, the SQ session, the bootloader request and the SD shar
 | Nebulae result code 5 | reported as `CODE5`, treated as a refusal | not defined for Nebulae | same |
 | `STARTING` | text only; Python simulator never produces it | PROTOCOL.md lists it | text ported; simulator may be told to produce it for a test |
 | Nebulae mgmt rejects `LOOPER` | `ERR c=LOOPER e=UNKNOWN` (generic unknown) | not specified | simulator same |
+| Looper 0.6.1 (`main` b7517b5, "make the SHARE decision final") | reference written for 0.6.0 | a busy engine answers SAVING, a first ACCEPTED is decided again under a hold; "the protocol is unchanged" | same: the workflow repeats SHARE on SAVING |
 
 No contradiction that matters for card safety was found. No HOLD.
 

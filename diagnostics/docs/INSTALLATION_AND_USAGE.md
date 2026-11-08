@@ -66,6 +66,17 @@ Options: `--sim`, `--port COMx`, `--selftest SECONDS` (exit 0 only if device dat
 was received), and `--screenshot FILE` (save a window image before the selftest exits).
 Use `--help` for the English command-line reference.
 
+### Daisy Control Panel and the SD share tab
+
+Daisy Diagnostic stays the diagnostics tool (buttons, pots, CV, audio, card reader of the
+diagnostic firmware). Its **SD share** tab for Nebulae on Daisy and the Looper also exists,
+with the same texts, buttons and card-safety rules, as the **SD card** page of the
+**Daisy Control Panel** 0.5.0 (`editors/mod-on-daisy`, [README](../../editors/mod-on-daisy/README.md)),
+which holds the kit's MIDI port for the modulation matrix and its COM port for the card in
+one app. Do not run both programs against the kit at the same time: in SD management both
+would open the same COM port. The port of the tab is documented in
+[docs/dcp/SD_SHARE_PORT.md](../../docs/dcp/SD_SHARE_PORT.md).
+
 ## 5. Operation
 
 ### Connection

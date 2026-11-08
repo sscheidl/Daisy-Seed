@@ -7,7 +7,8 @@ reproducible product compositions.
 
 `registry.json` assigns stable IDs to all implemented instruments, the two reverb
 components, the Tape FX component (`tape-fx`), Mod on Daisy, the shared bootloader entry (`bootloader-entry`,
-in every firmware product) and the three control panels. The
+in every firmware product) and the control panels (browser, VST3, and the JUCE standalone
+`daisy-control-panel`, since 0.5.0 with the SD card page for Nebulae and the Looper). The
 versions are read from their own headers or CMake. The registry contains
 no second copy of these version numbers. The browser shows its own
 version from `editors/mod-on-daisy/web/version.js`.
@@ -62,3 +63,8 @@ The three panels depend on the Streichwurst parameter contract.
 product is `toy-piano-filter`: Toy Piano with a filter per voice, no effects.
 
 Audio contract and exact limits: [MODULAR_COMPONENTS.md](../docs/MODULAR_COMPONENTS.md).
+
+**Daisy Control Panel** (2026-11-08): the JUCE standalone is registered as `daisy-control-panel`
+(kind `panel`, version from `editors/mod-on-daisy/CMakeLists.txt`, 0.5.0). `granular-mod` and
+`looper-mod` list it next to the editor panels; `granular` and `looper` list it as their only
+panel, because its SD card page serves those images too (no matrix).
