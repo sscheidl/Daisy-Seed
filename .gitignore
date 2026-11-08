@@ -23,3 +23,5 @@ __pycache__/
 /sequencers/*/build/
 # Firmware store (docs/FIRMWARE_BINARIES.md): images are never committed
 /firmware/
+# App store (docs/FIRMWARE_BINARIES.md section 8): host programs are never committed
+/apps/

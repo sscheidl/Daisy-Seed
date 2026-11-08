@@ -3,8 +3,9 @@
 **Mandatory for all agents and sessions (user decision 2026-11-07).** Applies to every
 firmware image (`.bin`, with its `.elf`) built from this repository for the Seed3 Desktop
 Kit: instruments, effects, sequencers, composed products, diagnostics and benches.
-Not covered: the libDaisy bootloader images, third-party images (for example Stardust under
-`instruments/looper/`) and host programs (editor EXE, VST3).
+Host programs (control panel EXE, editor EXE, VST3) follow the same rules in a second store,
+`apps/` (section 8). Not covered: the libDaisy bootloader images and third-party images (for
+example Stardust under `instruments/looper/`).
 
 Why: before this rule, 161 firmware files with 98 different contents were spread over
 `build/` folders, `.work/` and 19 worktrees. Twelve file names existed with several different
@@ -137,3 +138,39 @@ as it is.
   `.work/*` test folders and stale `build/` images are removed.
 * Follow-up: `scripts/hardware_test_package.py` still writes to `build/hardware-test/`; it is to
   be switched to the store, together with a helper script for section 2 and section 4.
+
+## 8. Host apps: the `apps/` store
+
+Added 2026-11-07 (user decision: a folder next to `firmware/`; to be revised if it proves
+awkward). Windows programs that the human runs against the kit follow sections 1 to 5 in a
+second store, **`apps/` at the root of the main checkout**, next to `firmware/` and git-ignored
+in the same way. Everything the human starts (control panel, editor, VST3) comes from there.
+
+```text
+apps/
+  <app-id>/
+    <version>+<commit7>[-<variant>]/
+      <unchanged build files>     for example DaisyDiagnostic.exe, Mod on Daisy.vst3/
+      BUILD.txt                   commit, version source, build command or CI run, SHA-256
+      SHA256SUMS                  every file in the folder (inside a .vst3 bundle: each file)
+      STATUS.md                   status history and the firmware it works with
+```
+
+| App ID | Files | Version source |
+| --- | --- | --- |
+| `daisy-diagnostic` | `DaisyDiagnostic.exe` and `COPYING.AGPL-3.0.txt` (the "control panel", SD share tab) | `diagnostics/windows/daisy_diag/__init__.py` |
+| `mod-editor` | `Mod on Daisy Editor.exe`, `Mod on Daisy.vst3` (same version) | `editors/mod-on-daisy/CMakeLists.txt` |
+
+A new app gets its ID in this table when it is first stored.
+
+* **Same version, different source:** two builds can carry the same version but speak different
+  protocols (control panel 0.6.0 from `main` versus from PR #94). The commit in the folder name
+  tells them apart, and `STATUS.md` names the firmware each one was tested with.
+* **Status and retention** as in sections 3 and 4, per app line. PyInstaller and JUCE builds are
+  not bit-reproducible, so a deleted EXE cannot be rebuilt identically: keep the build that a
+  hardware session used until a newer one has passed the same check.
+* **Test packages** copy their apps from `apps/` and their images from `firmware/`.
+* An installed VST3 (for example in `Common Files\VST3`) is an installation; the stored
+  bundle is the source of truth.
+* Downloaded CI artifacts of the Editor or Hardware diagnostics workflows are stored here too.
+* Host test executables (`test_*.exe`, `build/host/`) are build output, not apps.
