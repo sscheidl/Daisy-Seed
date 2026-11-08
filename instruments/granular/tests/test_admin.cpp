@@ -181,6 +181,39 @@ static void Ownership() {
     r.port.busy = false;
 }
 
+static void PendingRestartOwnership() {
+    for(const char* command : {"NEB a=PERFORM", "BOOT"}) {
+        for(bool blocked_tx : {false, true}) {
+            Rig r;
+            r.Host("HELLO proto=1");
+            r.port.in.card = true;  // SHARE must fail on the pending restart, not on the card
+            r.port.busy = blocked_tx;
+            r.Host(command);
+            r.Host("READER a=SHARE");
+            r.Host("READER a=RETURN");
+            CHECK(r.reader.Local());
+            r.Step(60);
+            CHECK(r.port.performs + r.port.boots == 1);
+            CHECK(r.reader.Local());
+        }
+        // Revalidate ownership if it changes independently during ACK settling.
+        Rig changed;
+        changed.Host("HELLO proto=1");
+        changed.Host(command);
+        CHECK(changed.reader.Share(true));
+        changed.Step(60);
+        CHECK(changed.reader.Ready());
+        CHECK(changed.port.performs == 0 && changed.port.boots == 0);
+        // An outstanding BOT command must also prevent the deferred reset.
+        Rig busy;
+        busy.Host("HELLO proto=1");
+        busy.Host(command);
+        busy.port.idle = false;
+        busy.Step(60);
+        CHECK(busy.port.performs == 0 && busy.port.boots == 0);
+    }
+}
+
 static void Interruption() {
     Rig r;
     r.port.in.card = true;
@@ -258,6 +291,7 @@ static void KeysAndLeds() {
 int main() {
     Session();
     Ownership();
+    PendingRestartOwnership();
     Interruption();
     KeysAndLeds();
     std::printf("PASS SD management (admin): %u checks; session, ownership, eject/return/perform, interruption quarantine, keys, LEDs\n", checks);

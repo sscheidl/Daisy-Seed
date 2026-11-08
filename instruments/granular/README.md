@@ -1,6 +1,8 @@
-# Nebulae on Daisy v0.2.0
+# Nebulae on Daisy v0.2.1
 
-**v0.2.0: SOFTWARE PASS / HARDWARE PENDING** ([release report](docs/V0_2_RELEASE_REPORT.md)).
+**v0.2.1: SOFTWARE PASS / HARDWARE PENDING** ([release report](docs/V0_2_RELEASE_REPORT.md)).
+Patch 0.2.1 fixes card ownership changes during a pending management restart;
+see the [current integration and test-candidate report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md).
 New: sample banks with free file names, SW17 bank selection, FAT32 and exFAT cards,
 and a Windows SD management mode in the same image ([architecture](docs/V0_2_ARCHITECTURE.md),
 [control protocol](docs/CONTROL_PROTOCOL.md)). Nothing of v0.2.0 has run on a board yet.
@@ -39,6 +41,14 @@ Host validation used LLVM-MinGW: `HOST_CXX=clang++`. Windows ThreadSanitizer is
 unsupported; Linux CI has a `test-thread` target. The workflow uploads BIN, ELF,
 MAP and SHA256SUMS after a push. See validation for executed CI evidence.
 Generated outputs and toolchains are not tracked.
+
+## Mod on Daisy build
+
+`make PROJECT=granular-mod` builds a separate image with the shared modulation matrix:
+eight global targets (Start, Speed, Size, Density, Pitch, Overlap, Blend, Window), edited
+with the shared Mod on Daisy editor, with the card still shared through the panel. The
+regular image is unchanged. See [MODULATION.md](docs/MODULATION.md) and the
+[hardware test sheet](docs/MOD_HARDWARE_TEST.md); hardware is **NOT MEASURED**.
 
 ## Eight fixed pots
 

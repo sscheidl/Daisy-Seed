@@ -1,6 +1,6 @@
 # One catalogue for local selection and future project additions.
-PROJECTS := toy-piano physical-modeling physical-modeling-mod granular looper looper-mod reverb-fx granular-fx mod-bench
-BUILDABLE_PROJECTS := toy-piano reverb-fx physical-modeling physical-modeling-mod granular looper looper-mod mod-bench
+PROJECTS := toy-piano physical-modeling physical-modeling-mod granular granular-mod looper looper-mod reverb-fx granular-fx mod-bench
+BUILDABLE_PROJECTS := toy-piano reverb-fx physical-modeling physical-modeling-mod granular granular-mod looper looper-mod mod-bench
 PROJECTS += physical-modeling-fx-torus physical-modeling-fx-ambient
 # Added to BUILDABLE_PROJECTS only after cross-compilation is validated.
 BUILDABLE_PROJECTS += physical-modeling-fx-torus physical-modeling-fx-ambient
@@ -22,6 +22,9 @@ PROJECT_DIR_physical-modeling := instruments/physical-modeling
 PROJECT_DIR_physical-modeling-mod := instruments/physical-modeling
 PROJECT_ARGS_physical-modeling-mod := MOD=1
 PROJECT_DIR_granular := instruments/granular
+# Separate Mod on Daisy build of Nebulae (own image and build/mod directory).
+PROJECT_DIR_granular-mod := instruments/granular
+PROJECT_ARGS_granular-mod := MOD=1
 PROJECT_DIR_looper := instruments/looper
 # Separate Mod on Daisy build of the looper (own image and build/mod directory).
 PROJECT_DIR_looper-mod := instruments/looper
@@ -34,6 +37,7 @@ PROJECT_STATUS_toy-piano := buildable
 PROJECT_STATUS_physical-modeling := buildable
 PROJECT_STATUS_physical-modeling-mod := buildable
 PROJECT_STATUS_granular := buildable
+PROJECT_STATUS_granular-mod := buildable
 PROJECT_STATUS_looper := buildable
 PROJECT_STATUS_looper-mod := buildable
 PROJECT_STATUS_reverb-fx := buildable
@@ -50,6 +54,18 @@ PROJECT_STATUS_toy-piano-tape := buildable
 # Acid Seq (docs/acid-seq/ARBEITSAUFTRAG.md): components with standalone test firmwares
 # and the composed product. Each joins BUILDABLE_PROJECTS with its first validated build.
 PROJECTS += step-seq acid-303 drive-fx delay-fx acid-seq
+# Audrey 3: Audrey II port; also needs the DaisySP-LGPL submodule (instruments/audrey-3/README.md).
+PROJECTS += audrey-3
+BUILDABLE_PROJECTS += audrey-3
+PROJECT_DIR_audrey-3 := instruments/audrey-3
+PROJECT_STATUS_audrey-3 := buildable
+# The two effects of Audrey 3 as components with standalone firmwares.
+PROJECTS += echo-delay-fx sc-reverb-fx
+BUILDABLE_PROJECTS += echo-delay-fx sc-reverb-fx
+PROJECT_DIR_echo-delay-fx := effects/echo-delay
+PROJECT_STATUS_echo-delay-fx := buildable
+PROJECT_DIR_sc-reverb-fx := effects/sc-reverb
+PROJECT_STATUS_sc-reverb-fx := buildable
 PROJECT_DIR_step-seq := sequencers/step-seq
 PROJECT_STATUS_step-seq := buildable
 BUILDABLE_PROJECTS += step-seq
@@ -76,6 +92,31 @@ PROJECTS += streichwurst-fx
 BUILDABLE_PROJECTS += streichwurst-fx
 PROJECT_DIR_streichwurst-fx := effects/streichwurst-fx
 PROJECT_STATUS_streichwurst-fx := buildable
+# Grain Cloud: new independent granular engine, host core only (instruments/grain-cloud/README.md).
+# Joins BUILDABLE_PROJECTS with its first validated firmware build (stage 3).
+PROJECTS += grain-cloud
+PROJECT_DIR_grain-cloud := instruments/grain-cloud
+PROJECT_STATUS_grain-cloud := planned
+# FV-1 interpreter FX (research / feasibility study): standalone
+# firmware with own demo programs; ARM build verified 2026-11-05. PROGRAMS=local images are local only.
+PROJECTS += fv1-vm-fx
+BUILDABLE_PROJECTS += fv1-vm-fx
+PROJECT_DIR_fv1-vm-fx := effects/fv1-vm
+PROJECT_STATUS_fv1-vm-fx := buildable
+# Toy Piano -> fv1-vm (composed test product, owner decision 2026-11-05); ARM build verified 2026-11-05.
+# FV1_PROGRAMS=local images are local only.
+PROJECTS += toy-piano-fv1
+BUILDABLE_PROJECTS += toy-piano-fv1
+PROJECT_DIR_toy-piano-fv1 := instruments/toy-piano
+PROJECT_ARGS_toy-piano-fv1 := FV1=1
+PROJECT_STATUS_toy-piano-fv1 := buildable
+# Toy Piano with a filter per voice (test product for the filter models, owner decision 2026-11-06);
+# ARM build verified 2026-11-06. No effects.
+PROJECTS += toy-piano-filter
+BUILDABLE_PROJECTS += toy-piano-filter
+PROJECT_DIR_toy-piano-filter := instruments/toy-piano
+PROJECT_ARGS_toy-piano-filter := FILTER=1
+PROJECT_STATUS_toy-piano-filter := buildable
 # Daisy Program Manager (system/program-manager): BOOT_QSPI application behind the
 # installed bootloader; the probe profile is the first hardware candidate (LED/CDC/service).
 PROJECTS += program-manager program-manager-probe

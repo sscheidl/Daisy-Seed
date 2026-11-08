@@ -82,6 +82,18 @@
       },
       "provenance": "effects/tape-fx/tests/reference/UPSTREAM.md"
     },
+    "fv1-vm": {
+      "kind": "effect",
+      "source": "effects/fv1-vm/include",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/fv1-vm/include/fv1vm/fv1_vm.h",
+        "name": "SEED_FV1VM_VERSION"
+      }
+    },
     "fx-contract": {
       "kind": "contract",
       "source": "common/audio",
@@ -89,6 +101,48 @@
         "type": "macro",
         "path": "common/audio/fx_contract.h",
         "name": "SEED_FX_CONTRACT_VERSION"
+      }
+    },
+    "sd-driver": {
+      "kind": "storage",
+      "source": "common/sd",
+      "version": {
+        "type": "macro",
+        "path": "common/sd/sd_version.h",
+        "name": "SD_DRIVER_VERSION"
+      }
+    },
+    "sd-fs-readonly": {
+      "kind": "storage",
+      "source": "common/sd/ffconf.h",
+      "depends": [
+        "sd-driver"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "common/sd/sd_version.h",
+        "name": "SD_FS_READONLY_VERSION"
+      }
+    },
+    "sd-fs-writable": {
+      "kind": "storage",
+      "source": "common/sd/rw/ffconf.h",
+      "depends": [
+        "sd-driver"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "common/sd/sd_version.h",
+        "name": "SD_FS_WRITABLE_VERSION"
+      }
+    },
+    "sd-reader": {
+      "kind": "storage",
+      "source": "common/sd/reader",
+      "version": {
+        "type": "macro",
+        "path": "common/sd/reader/reader_version.h",
+        "name": "SD_READER_VERSION"
       }
     },
     "bootloader-entry": {
@@ -130,6 +184,20 @@
     "mod-editor-vst3": {
       "kind": "panel",
       "source": "editors/mod-on-daisy/src/plugin",
+      "depends": [
+        "mod-on-daisy",
+        "bootloader-entry",
+        "step-seq",
+        "streichwurst-instrument"
+      ],
+      "version": {
+        "type": "cmake",
+        "path": "editors/mod-on-daisy/CMakeLists.txt"
+      }
+    },
+    "daisy-control-panel": {
+      "kind": "panel",
+      "source": "editors/mod-on-daisy/src/app",
       "depends": [
         "mod-on-daisy",
         "bootloader-entry",
@@ -223,6 +291,18 @@
         "name": "STEREO_DELAY_VERSION"
       }
     },
+    "filter-core": {
+      "kind": "dsp",
+      "source": "modules/filter-core/include",
+      "depends": [
+        "fast-math"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "modules/filter-core/include/filter_core/version.h",
+        "name": "FILTER_CORE_VERSION"
+      }
+    },
     "fast-math": {
       "kind": "dsp",
       "source": "common/dsp/fastmath.h",
@@ -283,6 +363,82 @@
         "type": "macro",
         "path": "common/bootloader/return_entry.h",
         "name": "MANAGER_RETURN_VERSION"
+      }
+    },
+    "audrey-3": {
+      "kind": "instrument",
+      "source": "instruments/audrey-3",
+      "version": {
+        "type": "macro",
+        "path": "instruments/audrey-3/src/version.h",
+        "name": "AUDREY_3_VERSION"
+      },
+      "depends": [
+        "echo-delay",
+        "sc-reverb",
+        "audrey-dsp",
+        "fx-contract"
+      ]
+    },
+    "grain-cloud": {
+      "kind": "instrument",
+      "source": "instruments/grain-cloud/include/grain_cloud",
+      "version": {
+        "type": "macro",
+        "path": "instruments/grain-cloud/include/grain_cloud/version.h",
+        "name": "GRAIN_CLOUD_VERSION"
+      },
+      "depends": [
+        "mod-on-daisy",
+        "step-seq",
+        "fast-math"
+      ],
+      "provenance": "instruments/grain-cloud/docs/PROVENANCE.md"
+    },
+    "audrey-dsp": {
+      "kind": "dsp",
+      "source": "common/dsp/audrey-ii",
+      "version": {
+        "type": "macro",
+        "path": "common/dsp/audrey-ii/version.h",
+        "name": "AUDREY_DSP_VERSION"
+      }
+    },
+    "wet-host": {
+      "kind": "dsp",
+      "source": "common/audio/wet_host.h",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "common/audio/wet_host.h",
+        "name": "SEED_WET_HOST_VERSION"
+      }
+    },
+    "echo-delay": {
+      "kind": "effect",
+      "source": "effects/echo-delay/include",
+      "depends": [
+        "audrey-dsp",
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/echo-delay/src/version.h",
+        "name": "ECHO_DELAY_VERSION"
+      }
+    },
+    "sc-reverb": {
+      "kind": "effect",
+      "source": "effects/sc-reverb/include",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/sc-reverb/src/version.h",
+        "name": "SC_REVERB_VERSION"
       }
     }
   },
@@ -385,9 +541,31 @@
       "marker": "NEBULAE-FW-VERSION=",
       "components": [
         "nebulae",
+        "sd-driver",
+        "sd-fs-readonly",
+        "sd-reader",
         "bootloader-entry"
       ],
-      "panels": []
+      "panels": [
+        "daisy-control-panel"
+      ]
+    },
+    "granular-mod": {
+      "version_component": "nebulae",
+      "directory": "instruments/granular/build/mod",
+      "image": "NebulaeMod",
+      "marker": "NEBULAE-MOD-VERSION=",
+      "components": [
+        "nebulae",
+        "mod-on-daisy",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3",
+        "daisy-control-panel"
+      ]
     },
     "looper": {
       "version_component": "looper",
@@ -396,10 +574,15 @@
       "marker": "LOOPER-VERSION=",
       "components": [
         "looper",
+        "sd-driver",
+        "sd-fs-writable",
+        "sd-reader",
         "bootloader-entry",
         "manager-return"
       ],
-      "panels": []
+      "panels": [
+        "daisy-control-panel"
+      ]
     },
     "looper-mod": {
       "version_component": "looper",
@@ -409,13 +592,17 @@
       "components": [
         "looper",
         "mod-on-daisy",
+        "sd-driver",
+        "sd-fs-writable",
+        "sd-reader",
         "bootloader-entry",
         "manager-return"
       ],
       "panels": [
         "mod-editor-web",
         "mod-editor-juce",
-        "mod-editor-vst3"
+        "mod-editor-vst3",
+        "daisy-control-panel"
       ]
     },
     "reverb-fx": {
@@ -495,6 +682,22 @@
       ],
       "panels": []
     },
+    "fv1-vm-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/fv1-vm/src/version.h",
+        "name": "FV1VM_FIRMWARE_VERSION"
+      },
+      "directory": "effects/fv1-vm/build",
+      "image": "Fv1VmFx",
+      "marker": "FV1VM-FX-VERSION=",
+      "components": [
+        "fv1-vm",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
     "toy-piano-tape": {
       "version": {
         "type": "macro",
@@ -512,6 +715,51 @@
         "fx-contract",
         "bootloader-entry",
         "manager-return"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "toy-piano-filter": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_FILTER_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/filter",
+      "image": "ToyPianoFilter",
+      "marker": "TOYPIANO-FILTER-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "filter-core",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "toy-piano-fv1": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_FV1_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/fv1",
+      "image": "ToyPianoFv1",
+      "marker": "TOYPIANO-FV1-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "fv1-vm",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "fx-contract",
+        "bootloader-entry"
       ],
       "panels": [
         "mod-editor-web",
@@ -687,6 +935,25 @@
       ],
       "panels": []
     },
+    "audrey-3": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/audrey-3/src/version.h",
+        "name": "AUDREY_3_FIRMWARE_VERSION"
+      },
+      "directory": "instruments/audrey-3/build",
+      "image": "Audrey3",
+      "marker": "AUDREY-3-FW-VERSION=",
+      "components": [
+        "audrey-3",
+        "echo-delay",
+        "sc-reverb",
+        "audrey-dsp",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
     "program-manager-probe": {
       "version": {
         "type": "macro",
@@ -698,6 +965,41 @@
       "marker": "PROGRAM-MANAGER-FW-VERSION=",
       "components": [
         "program-manager",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "echo-delay-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/echo-delay/src/version.h",
+        "name": "ECHO_DELAY_FIRMWARE_VERSION"
+      },
+      "directory": "effects/echo-delay/build",
+      "image": "EchoDelayFx",
+      "marker": "ECHO-DELAY-FX-VERSION=",
+      "components": [
+        "echo-delay",
+        "audrey-dsp",
+        "wet-host",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "sc-reverb-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/sc-reverb/src/version.h",
+        "name": "SC_REVERB_FIRMWARE_VERSION"
+      },
+      "directory": "effects/sc-reverb/build",
+      "image": "ScReverbFx",
+      "marker": "SC-REVERB-FX-VERSION=",
+      "components": [
+        "sc-reverb",
+        "wet-host",
+        "fx-contract",
         "bootloader-entry"
       ],
       "panels": []

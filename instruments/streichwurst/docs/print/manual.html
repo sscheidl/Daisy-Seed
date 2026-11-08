@@ -4,7 +4,8 @@
 
 <h1>Streichwurst 0.1.0 – User Manual</h1>
 <div class="sub">String machine with solo voices and ensemble effects for the Electro-Smith Seed3 Desktop Development Kit ·
-Test build 1 · 1 November 2026 · built from <code>main</code> @ <code>0a29966</code></div>
+Test build 1 · 1 November 2026 · built from <code>main</code> @ <code>0a29966</code> ·
+manual revision 2 (English control app)</div>
 
 <p>Streichwurst is a polyphonic string machine in the spirit of the Waldorf Streichfett: a fully polyphonic
 string section, eight solo voices, and an effects section with Animate, Ensemble, Phaser and Reverb. It is
@@ -27,7 +28,7 @@ Start with a low listening level.</div>
 <li>Compare the checksum with <code>SHA256SUMS.txt</code> before flashing.</li>
 <li>First time or recovery: hold <b>BOOT</b>, press <b>RESET</b>, release BOOT, then flash over DFU (Daisy Web Programmer
 or <code>make PROJECT=streichwurst program-dfu</code>).</li>
-<li>Without the Seed buttons: hold <b>S9 + S16</b> (and no other key) for <b>5 s</b>, or use <b>Firmware-Update …</b> in the
+<li>Without the Seed buttons: hold <b>S9 + S16</b> (and no other key) for <b>5 s</b>, or use <b>Firmware update …</b> in the
 control app. All 16 LEDs light up and the bootloader waits for DFU without a time limit.</li>
 <li>Recommended order: first test the FX image alone, then the instrument (“Modular FX first”).</li>
 </ul>
@@ -123,21 +124,23 @@ All Sound Off (CC120). Pitch bend moves strings and soli together.</li>
 
 <h2>6. Control app and modulation matrix</h2>
 <ul>
-<li>Use the <b>Mod on Daisy Editor 0.3.0</b> (Windows app, VST3 plug-in, or the browser page
+<li>Use the <b>Mod on Daisy Editor 0.4.0</b> or newer (Windows app, VST3 plug-in, or the browser page
 <code>editors/mod-on-daisy/web/index.html</code> in Chrome/Edge). Close other programs that hold the MIDI port.</li>
-<li>On connect the app <b>reads</b> the kit first; nothing is overwritten. The status line shows
-<code>streichwurst 0.1.0 · SQ + Matrix</code>.</li>
-<li>Pages <b>Strings, Solo, Tastatur (keyboard), FX, Global</b> hold every parameter. Pot moves on the kit appear in
-the app.</li>
-<li><b>Matrix</b> (top) switches to the 8 × 8 modulation matrix; <b>Klangparameter</b> switches back. Sources: LFO 1/2,
+<li><b>Connect</b> selects the port. On connect the app <b>reads</b> the kit first; nothing is overwritten. The
+status line shows <code>streichwurst 0.1.0 · SQ + Matrix</code>.</li>
+<li>Pages <b>Strings, Solo, Keyboard, FX, Global</b> hold every parameter. Pot moves on the kit appear in the app;
+<b>Read from device</b> reads everything again.</li>
+<li><b>Matrix</b> (top) switches to the 8 × 8 modulation matrix; <b>Sound parameters</b> switches back. Sources: LFO 1/2,
 Random, CV 1/2, mod wheel, channel and poly aftertouch. Targets: Registration, Animate, Phaser, Reverb, Balance,
 Solo Tone, Tremolo (±100 %) and Pitch (±1 semitone). At most eight active connections; an empty matrix leaves the
 sound unchanged.</li>
-<li><b>Patch speichern / laden</b> saves a <code>.swpatch</code> file with all parameters and the matrix. Loading
-shows what fits; only <b>Auf Gerät übertragen</b> sends it. In the VST3 plug-in the patch is stored in the song.</li>
-<li><b>Zähler lesen</b> shows diagnostics, e.g. callback peak (CPU) and free stack.</li>
+<li><b>Save patch …</b> saves a <code>.swpatch</code> file with all parameters and the matrix. <b>Load patch …</b>
+shows what fits; only <b>Send to device</b> sends it. In the VST3 plug-in the patch is stored in the song.</li>
+<li><b>Read counters</b> shows diagnostics, e.g. callback peak (CPU) and free stack.</li>
 </ul>
-<div class="note">The app's interface is in German. The FX image shows only the FX page and no matrix.</div>
+<div class="note">Editor 0.3.0 also works with this firmware, but shows the same functions with German labels
+(Tastatur, Klangparameter, Patch speichern / laden, Auf Gerät übertragen, Zähler lesen). The FX image shows only the
+FX page and no matrix.</div>
 
 <h2>7. The FX image (StreichwurstFx-v0.1.0.bin)</h2>
 <p>Line in → Animate, Ensemble, Phaser → Reverb → out. Plug only the left input for mono to both sides. The pots act

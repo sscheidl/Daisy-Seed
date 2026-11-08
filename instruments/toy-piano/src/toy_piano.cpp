@@ -168,6 +168,41 @@ float ToyPiano::ProcessRaw() {
     return sum * kVoiceGain;
 }
 
+#if TOY_PIANO_FILTER
+void ToyPiano::RenderVoice(std::size_t index, float wave, float* out, std::size_t frames) {
+    Voice& voice = voices_[index];
+    const float inc = voice.increment, inv_inc = 1.0f / std::max(inc, 1e-6f);
+    for(std::size_t i = 0; i < frames; ++i) {
+        float second_phase = 2.0f * voice.phase;
+        if(second_phase >= 1.0f)
+            second_phase -= 1.0f;
+        float sample = Sine(voice.phase) + voice.harmonic * Sine(second_phase);
+        if(wave > 0.0f) {
+            // Saw with a polynomial band-limited step at the wrap.
+            const float t = voice.phase;
+            float saw = 2.0f * t - 1.0f;
+            if(t < inc) {
+                const float x = t * inv_inc;
+                saw -= x + x - x * x - 1.0f;
+            } else if(t > 1.0f - inc) {
+                const float x = (t - 1.0f) * inv_inc;
+                saw -= x * x + x + x + 1.0f;
+            }
+            sample += wave * (saw - sample);
+        }
+        if(voice.level_ramp) {
+            voice.level += voice.level_step;
+            if(--voice.level_ramp == 0)
+                voice.level = voice.level_target;
+        }
+        out[i] = sample * voice.envelope.Process() * voice.level;
+        voice.phase += inc;
+        if(voice.phase >= 1.0f)
+            voice.phase -= 1.0f;
+    }
+}
+#endif
+
 // x / sqrt(1 + (x/c)^2): gain 1 and almost linear far below c, |y| < c for any x.
 float ToyPiano::SoftLimit(float x) {
     const float r = x * (1.0f / kOutputCeiling);

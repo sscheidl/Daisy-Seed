@@ -200,3 +200,38 @@ peak/overrun counters on hardware before treating real-time margin as validated.
 Local artifacts and [hardware smoke steps](HARDWARE_TEST_PLAN.md) are ready for
 the user. The missing hardware test is **not** a software HOLD. The PR remains
 a draft; merge, flash, bootloader update and release are separate actions.
+
+## granular-mod on 0.2.1 - MEASURED 2026-11-06
+
+**RESULT: SOFTWARE PASS / HARDWARE NOT MEASURED.** Windows 11, pinned xPack ARM GCC
+13.2.1-1.1, LLVM-MinGW clang/clang++, Python 3.12, JUCE 9.0.4, libDaisy `f715e48`,
+DaisySP `2c72eaf`. Nothing was flashed or listened to. Hardware checklist:
+[MOD_HARDWARE_TEST.md](MOD_HARDWARE_TEST.md).
+
+| Check | Observed result |
+| --- | --- |
+| `make PROJECT=granular test` | PASS, regular and MOD: FAT32/exFAT round trips, production callback in both builds, `test_modulation` 2,212,635 checks per image, bridge 1,706 checks, management 77 checks |
+| `make PROJECT=granular test-sanitize` | PASS, ASan/UBSan/float-cast-overflow |
+| Golden, empty matrix | regular and MOD both `63576b07d2f2b999`; with one active route `ba76acbdbd5d22a9` |
+| Regular ARM image | byte-identical to `main`: 183,740 B, SHA-256 `cbc4c376...e381ff`; no matrix symbol |
+| MOD ARM image | 211,360 B, SHA-256 `02e52f88...97a727` |
+| `check-firmware.py`, `check-granular-elf.py --host-test` | PASS on both images; MOD capacity 41,695,296 B, DTCM reserve 29,396 B |
+| `make sd-check`, regular and `MOD=1` | PASS on both ELFs: 36 banned, 6 required, 12 injected writers rejected |
+| `component_manifest.py --project granular-mod --built` | PASS: nebulae 0.2.1, mod-on-daisy 0.1.0, bootloader-entry 1.0.0 |
+| `python -m pytest diagnostics/tests/python -q` | 335 passed |
+| `tests/test_components.py`, `tests/test_firmware_checker.py` | PASS |
+| Editor core (`test_core`), `mod_probe.py --sim ... --instrument nebulae targets` | PASS, eight columns |
+| Browser `e2e.cjs` through Edge | PASS, all five suites including Nebulae |
+| JUCE `--selftest`, `mod_editor_core_tests` | PASS |
+| New host code under `arm-none-eabi-g++ -Wall -Wextra -Werror` | clean; stands in for Linux g++ |
+| Packaged apps and entry point in simulation (`nebulae_mod_test_package.py --smoke`) | PASS; the window's buttons also driven through UI Automation |
+
+All of this was repeated after merging `main` at `7e7b02c` (Grain Cloud 0.1.0, Looper 0.6.0),
+with a regular image built from that `main` as the comparison: same hashes for both images.
+
+Not run: `make test-thread` (ThreadSanitizer is unsupported on Windows). `test_mod_thread`
+runs without TSan in `make test`. The whole quick CI result is in the PR.
+
+The browser e2e had never run on Windows: `mod_sim` writes `\r\n` there and the test
+compared lines with `OK`. It now tolerates that, and one stale German expectation
+(`getrennt`) was corrected.

@@ -22,15 +22,21 @@ developed independently and reintegrated through their documented contracts.
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings, six models and global reverb; user-confirmed hardware/MIDI behavior and measured CPU headroom; model-switch spikes accepted as a known limitation ([results](instruments/physical-modeling/docs/HARDWARE_PLAYING_2026-10-22.md)) |
 | [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build without Mod on Daisy code, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [Composed Physical Modeling FX](docs/MODULAR_COMPONENTS.md) | `instruments/physical-modeling/` (`COMPOSED=1`) | Separate v0.2.0 pilot builds with Torus or Ambient Reverb adapters and Mod on Daisy; explicit component manifests; hardware validation pending |
-| [Nebulae on Daisy v0.2.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD sample banks (FAT32/exFAT), Live recording, three UI modes, J7 USB MIDI and Windows SD management via the control panel; software pass, hardware pending |
-| [Looper v0.4.0](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import (48 or 44.1 kHz) on microSD, MIDI CC control over USB; host tests and ARM build pass; hardware test pending |
+| [Nebulae on Daisy v0.2.1](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD sample banks (FAT32/exFAT), Live recording, three UI modes, J7 USB MIDI and Windows SD management via the control panel; software pass, hardware pending |
+| [Nebulae + Mod on Daisy](instruments/granular/docs/MODULATION.md) | `instruments/granular/` (`MOD=1`) | Separate build `make PROJECT=granular-mod`: Mod on Daisy matrix on Start, Speed, Size, Density, Pitch, Overlap, Blend and Window, with the Windows SD share unchanged; software tested, hardware NOT MEASURED |
+| [Looper v0.6.0](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import (48 or 44.1 kHz) on microSD (FAT32 or exFAT), MIDI CC control over USB, Windows SD management via the control panel (shared card reader, loop saved before the share); host tests and ARM build pass; hardware test pending |
 | [Looper + Mod on Daisy](instruments/looper/docs/MODULATION.md) | `instruments/looper/` (`MOD=1`) | Separate build `make PROJECT=looper-mod`: Mod on Daisy matrix on Speed, Start, Size, Slice, Skip, Inertia, Frippertronics decay and Mix; regular image byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [Ambient Reverb v0.4.0](effects/reverb/) | `effects/reverb/` | Shared stereo FX: 32–12 kHz wet Stretch, mode-specific pitch processing; host/sanitizer/ARM checks pass; standalone FX hardware acceptance precedes instrument acceptance |
 | [Tape FX v0.1.0](effects/tape-fx/) | `effects/tape-fx/` | Reusable stereo tape component ported from the drumlogue TapeVibe (bit-identical reference path) with optional MixForge stages, plus the standalone `tape-fx` stereo effect firmware; host/sanitizer/ARM checks pass, hardware untested ([report](effects/tape-fx/docs/REPORT.md)) |
 | [Step Seq v0.1.0](sequencers/step-seq/) | `sequencers/step-seq/` | KORG SQ-1-style 2 × 8-step sequencer, firmware `step-seq`: CV/Gate (own DAC register path, calibration, enable), MIDI USB+DIN with note tracking, three play modes, internal/Gate/MIDI/Auto clock, SQ protocol and `sq_probe.py`; host/sanitizer/ARM checks pass, hardware untested |
 | [Acid 303 v0.1.0](instruments/acid-303/) | `instruments/acid-303/` | Monophonic TB-303-style voice (DaisySP PolyBLEP and ladder filter with self-oscillation, accent, slide, two-source note stack) and standalone firmware `acid-303` with MIDI USB+DIN and CC plan; golden tests; host/sanitizer/ARM checks pass, hardware untested |
+| [Audrey 3 v0.1.0](instruments/audrey-3/) | `instruments/audrey-3/` | Port of the Synthux Academy Audrey II feedback synth (MIT), bit-identical to upstream in a host render, with a second pot page and MIDI notes and CCs. Links ReverbSc and Tone from DaisySP-LGPL (LGPL-2.1). Hardware NOT MEASURED |
+| [Grain Cloud v0.1.0](instruments/grain-cloud/) | `instruments/grain-cloud/` | New independent granular engine, separate from the Nebulae port: offline host core only, with a global grain pool, four note starts, a shared window morph and Mod on Daisy as its matrix. No firmware yet. Hardware NOT MEASURED |
 | [Drive v0.1.0](effects/drive/) | `effects/drive/` | Soft/Hard/Tape/Fold saturation shared with Tape FX (`common/dsp/saturation.h`, Tape FX images byte-identical after the move), tone, auto level within 1 dB, wet-only FX contract; standalone `drive-fx` firmware; host/sanitizer/ARM checks pass, hardware untested |
 | [Stereo Delay v0.1.0](effects/stereo-delay/) | `effects/stereo-delay/` | Ping-pong and stereo L/R delay, free or synced up to 12 s (dotted whole at 30 BPM, 4.6 MB in SDRAM), feedback 95 % bounded, damping, host tail handling; standalone `delay-fx` firmware with MIDI clock; host/sanitizer/ARM checks pass, hardware untested |
+| [Filter core v0.1.0](modules/filter-core/) | `modules/filter-core/` | Reusable zero-delay-feedback ladder: closed-form solve, eight modes by tap mixing, self-oscillation calibrated to within 1 dB over cutoff and mode, saturation inside the loop with resonance pushback, Age (seeded tolerance, drift, jitter), audio-rate cutoff input, cheaper held path; host/sanitizer checks pass, hardware untested |
+| [Echo Delay v0.1.0](effects/echo-delay/) | `effects/echo-delay/` | The tape-like echo of the Audrey II, 5 s per side, firmware `echo-delay-fx`, used by Audrey 3. Hardware NOT MEASURED |
+| [SC Reverb v0.1.0](effects/sc-reverb/) | `effects/sc-reverb/` | ReverbSc from DaisySP-LGPL (LGPL-2.1) under the FX contract, firmware `sc-reverb-fx`, used by Audrey 3. Hardware NOT MEASURED |
 | [Acid Seq v0.1.0](sequencers/acid-seq/) | `sequencers/acid-seq/` | Product firmware `acid-seq` composed of the four components above: sequencer → voice → Drive → Delay → soft limiter, voice shared with MIDI channel 2, delay synced to the sequencer, all components over SQ; end-to-end golden; host/sanitizer/ARM checks pass, hardware untested, no release ([work order](docs/acid-seq/ARBEITSAUFTRAG.md)) |
 | [Hardware diagnostics v0.3.2](diagnostics/) | `diagnostics/` | Implemented SD diagnostics, Windows SD reader and CV/gate tests. **MEASURED 31 October 2026:** SD reader 0.3.2 normal I/O and write-interruption recovery; both CV and gate channels 0.3.1 functional loopbacks. [Scope, remaining checks and binary downloads](diagnostics/README.md#hardware-validation) |
 | [Granular Effect](effects/granular/) | `effects/granular/` | Planned live/freeze application of the granular work |
@@ -50,6 +56,7 @@ Daisy-Seed/
 │   ├── toy-piano/          # Makefile, README, src, tests, docs, generated build
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
 │   ├── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
+│   ├── grain-cloud/        # new independent granular engine, host core
 │   └── looper/             # Stardust analysis and buildable engine core
 ├── sequencers/             # step-seq core and contracts, acid-seq product
 ├── effects/
@@ -57,8 +64,11 @@ Daisy-Seed/
 │   ├── tape-fx/            # Tape FX component (TapeVibe/MixForge port) and standalone firmware
 │   ├── drive/              # planned Drive effect (Acid Seq)
 │   ├── stereo-delay/       # planned Stereo Delay effect (Acid Seq)
+│   ├── echo-delay/         # Audrey II echo component and standalone firmware
+│   ├── sc-reverb/          # ReverbSc component (LGPL-2.1) and standalone firmware
 │   └── granular/           # effect plan
 ├── modules/
+│   ├── filter-core/        # reusable multimode ladder filter: include, tests, tools
 │   └── mod-on-daisy/       # reusable modulation matrix: include, tests, bench firmware, tools
 ├── editors/
 │   └── mod-on-daisy/       # grid editor: JUCE standalone (src/), browser variant (web/)
@@ -168,6 +178,7 @@ Open source, decided on October 24, 2026:
 | --- | --- |
 | Everything of our own unless stated otherwise: firmware, the Mod on Daisy module, the browser editor (`editors/mod-on-daisy/web/`), `mod_probe.py`, scripts, docs | **MIT**, see [LICENSE](LICENSE) |
 | JUCE editor and VST3 plugin (`editors/mod-on-daisy/src/`, `tests/`, `CMakeLists.txt`) | **AGPLv3**, see [COPYING.AGPL-3.0.txt](editors/mod-on-daisy/COPYING.AGPL-3.0.txt). JUCE 9 is used under its AGPLv3 option; the MIT parts it includes stay MIT |
+| Audrey 3, Echo Delay, SC Reverb | MIT, including the Audrey II code in `instruments/audrey-3/third_party/audrey-ii/`, `effects/echo-delay/third_party/audrey-ii/` and `common/dsp/audrey-ii/`. Builds of Audrey 3 and SC Reverb also link code from the DaisySP-LGPL submodule under **LGPL-2.1**, see [the notes](instruments/audrey-3/third_party/README.md) |
 | Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT, `instruments/physical-modeling/third_party/stmlib/LICENSE`, `instruments/physical-modeling/torus/UPSTREAM.md`), a patched copy of libDaisy's `midi_parser.cpp` (MIT, notice in the file, `instruments/physical-modeling/src/`), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/fatfs/LICENSE.txt`), Ambient Reverb (`effects/reverb/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
 
 The repository is public on GitHub; until this license was added it had none. Material

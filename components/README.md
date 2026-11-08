@@ -7,7 +7,8 @@ reproducible product compositions.
 
 `registry.json` assigns stable IDs to all implemented instruments, the two reverb
 components, the Tape FX component (`tape-fx`), Mod on Daisy, the shared bootloader entry (`bootloader-entry`,
-in every firmware product) and the three control panels. The
+in every firmware product) and the control panels (browser, VST3, and the JUCE standalone
+`daisy-control-panel`, since 0.5.0 with the SD card page for Nebulae and the Looper). The
 versions are read from their own headers or CMake. The registry contains
 no second copy of these version numbers. The browser shows its own
 version from `editors/mod-on-daisy/web/version.js`.
@@ -25,6 +26,11 @@ version sources and dependencies, matching control panels, Git revision,
 working tree status as well as BIN size and SHA-256. Panels are listed separately from
 the embedded components: the VST3 editor is not audio DSP in the Daisy BIN.
 The manual firmware workflow stores the manifest next to the BIN/ELF and checksum.
+
+`common/sd` is split the way it is linked: `sd-driver` (disk layer and vendored FatFs),
+one filesystem profile per image (`sd-fs-readonly` for Nebulae, `sd-fs-writable` for the
+Looper) and `sd-reader` (USB card reader); kind `storage`, versions in
+`common/sd/sd_version.h` and `common/sd/reader/reader_version.h`.
 
 New components and product variants use three-part SemVer. Existing
 values such as Toy Piano `0.3` and Ambient Reverb `0.2` are kept for accepted images.
@@ -53,4 +59,12 @@ version headers; the product `streichwurst` (version `src/version.h`) additional
 Mod on Daisy, the SQ device and the queues from `step-seq` as well as the bootloader entry.
 The three panels depend on the Streichwurst parameter contract.
 
+**Filter** (2026-11-06): `filter-core` (kind `dsp`, header-only, `modules/filter-core`). Its test
+product is `toy-piano-filter`: Toy Piano with a filter per voice, no effects.
+
 Audio contract and exact limits: [MODULAR_COMPONENTS.md](../docs/MODULAR_COMPONENTS.md).
+
+**Daisy Control Panel** (2026-11-08): the JUCE standalone is registered as `daisy-control-panel`
+(kind `panel`, version from `editors/mod-on-daisy/CMakeLists.txt`, 0.5.0). `granular-mod` and
+`looper-mod` list it next to the editor panels; `granular` and `looper` list it as their only
+panel, because its SD card page serves those images too (no matrix).

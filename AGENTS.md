@@ -92,6 +92,15 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   Continue FX work from current `main` and merge it into a relevant feature branch
   before further FX edits. Record component versions and separate FX hardware
   acceptance from each composed product's CPU/listening acceptance.
+* **Firmware binaries** (user decision 2026-11-07, [FIRMWARE_BINARIES.md](docs/FIRMWARE_BINARIES.md)):
+  every image handed to the human (flashing, listening test, SD card, release) is first
+  stored in the single git-ignored store `firmware/` of the main checkout, as
+  `firmware/<product-id>/<version>+<commit7>[-<variant>]/` with `BUILD.txt`, `SHA256SUMS`
+  and `STATUS.md`. Never hand out a path inside `build/`, `.work/` or a worktree, and never
+  commit images (the repository is public). When adding an image, delete the superseded
+  images of the same line; keep the newest, the newest accepted/released fallback and any
+  image still under test, and list what was deleted. Reports quote the SHA-256. Host apps
+  (control panel EXE, editor EXE, VST3) follow the same rules in `apps/` next to `firmware/`.
 * **No flash writes** for Mod on Daisy storage until the human approves (D8,
   `STORAGE.md`).
 * **Pinned versions**: libDaisy, DaisySP, xPack GCC 13.2.1-1.1 (`docs/BUILD.md`) and

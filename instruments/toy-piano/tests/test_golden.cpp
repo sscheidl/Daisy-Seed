@@ -27,8 +27,8 @@ uint64_t Perform() {
     float left[toy_piano::kBlockSize], right[toy_piano::kBlockSize];
     float* outputs[] = {left, right};
     for(unsigned block = 0; block < 9000; ++block) {
-        hw.pot[0].value = block < 4000 ? 0.15f : 0.55f; // attack
-        hw.pot[1].value = block < 6000 ? 0.62f : 0.35f; // decay
+        hw.pot[1].value = block < 4000 ? 0.15f : 0.55f; // attack
+        hw.pot[2].value = block < 6000 ? 0.62f : 0.35f; // decay
         for(std::size_t key = 0; key < toy_piano::kNumKeys; ++key) {
             const unsigned start = 100 + 230 * unsigned(key);
             hw.pressed[key] = block >= start && block < start + 70;
@@ -59,6 +59,7 @@ uint64_t Perform() {
 
 int main() {
     hw.Init();
+    hw.pot[0].value = .5f; // VR1 transposition at the centre detent (0.5): original pitch
     piano.Init();
 #ifdef TOY_PIANO_MODULATION
     InitModulation(48000.0f);

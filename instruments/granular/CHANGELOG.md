@@ -1,5 +1,29 @@
 # Changelog
 
+## granular-mod on 0.2.1 - separate Mod on Daisy build, 2026-11-06
+
+Hardware status: **NOT MEASURED**. Nebulae itself stays 0.2.1: the regular image is
+byte-identical (SHA-256 `cbc4c376...`), and the MOD build sounds bit-identical with an
+empty matrix.
+
+* New product `granular-mod`: `build/mod/NebulaeMod-v0.2.1.bin`, marker
+  `NEBULAE-MOD-VERSION=`, IDENTIFY key `nebulae`, eight global columns in CC20-27 order
+  ([modulation](docs/MODULATION.md)).
+* The matrix ticks at 1 kHz on the control timer, counted in milliseconds so merged timer
+  interrupts cannot slow the LFOs; offsets reach the DSP once per 256-frame block
+  (187.5 Hz) before the existing smoothing and laws.
+* BL, NB and MD SysEx stay independent on the same J7 bytes. Sharing, restore and the SD
+  management personality are unchanged. Patches are volatile; save and load them with the
+  editor. No flash storage.
+* Windows test package with one entry point for Modulation and SD card.
+
+## 0.2.1 - SD handover regression fix, 2026-11-03
+
+* Reject SHARE/RETURN while a performance or bootloader restart is pending; recheck local ownership and BOT idleness before the deferred reset.
+* Add regressions for both restart types, blocked ACK transmission and ownership changes during ACK settling.
+* Derive MIDI STATUS version limits from the version source rather than pinning the previous patch number.
+* Preserve the existing FAT32/exFAT read-only and Windows raw-block paths. Hardware: **NOT MEASURED** for this version.
+
 ## 0.2.0 - software release candidate, not flashed, not released
 
 Hardware status: **HARDWARE PENDING**. Release decision and publication are the human's.

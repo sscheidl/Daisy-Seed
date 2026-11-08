@@ -1,4 +1,4 @@
-# Hardware test — Looper v0.4 — PENDING — USER TEST
+# Hardware test — Looper v0.5 — PENDING — USER TEST
 
 No hardware run or flash has been done by the agent. Work through the sections in
 order: later checks only make sense once the earlier ones pass. Tick each box and
@@ -7,7 +7,7 @@ skipped one.
 
 ## 0. Prepare
 
-- [ ] Build or download `Looper-v0.4.0.bin` and note its SHA-256. The PR CI
+- [ ] Build or download `Looper-v0.5.0.bin` and note its SHA-256. The PR CI
       artifact and a local build of the same commit must match.
 - [ ] Flash it through the external Daisy bootloader as in
       [docs/FLASHING.md](../../../docs/FLASHING.md) (`PROJECT=looper`). Do not
@@ -94,7 +94,7 @@ Record: board revision, binary SHA-256, source, input level, monitoring.
 
 ## 7. microSD
 
-Use a FAT32 card. Put a few WAV files (48 kHz; 16/24-bit or float; mono or
+Run this section once with a FAT32 card and once with an exFAT card (v0.6). Put a few WAV files (48 kHz; 16/24-bit or float; mono or
 stereo; one longer than 87 s; one at 96 kHz) into a folder `looper/loops/`, plus
 the same short loop once at 48 kHz and once at 44.1 kHz, and one 44.1 kHz file
 of about 80 s.
@@ -120,6 +120,23 @@ of about 80 s.
       next change is saved.
 - [ ] Check `looper/loop.wav` on a computer: it plays as a 32-bit float stereo
       WAV at 48 kHz.
+
+### 7a. Writable SD driver (v0.6)
+
+Use test cards without anything you need. Background:
+[SD_PERSISTENCE.md](SD_PERSISTENCE.md). The multi-block IDMA write path is new; the
+hardware-tested card reader only writes single blocks.
+
+- [ ] An SDXC card as delivered (exFAT, 64 GB or larger) mounts: S8 LED dim after boot.
+- [ ] Full 87 s save on FAT32 and on exFAT: note the time for each. Audio stays clean and
+      D16 stays off. The 0.5.1 figure for the same card, if you have one, for comparison.
+- [ ] Power off during a save, several times at different moments: after boot the old or the
+      new loop plays, never noise, and the next save works.
+- [ ] Afterwards check the card in Windows (`chkdsk X:`, read-only): note any lost clusters.
+- [ ] Pull the card during a save and during an import: no hang; the kit keeps playing; the
+      card works again after reinsertion.
+- [ ] Unusable card (full, or write-protected adapter) with unsaved audio: Share asks for
+      confirmation instead of reporting Saving forever.
 
 ## 8. MIDI control
 
@@ -147,11 +164,11 @@ Optional, after sections 1–8 passed with the regular image. Columns and rules:
 `python modules/mod-on-daisy/tools/mod_probe.py` (`pip install mido python-rtmidi`);
 close the DAW or disable its port while `P` runs.
 
-- [ ] Build or download `build/mod/LooperMod-v0.4.0.bin`, note its SHA-256, and
+- [ ] Build or download `build/mod/LooperMod-v0.5.0.bin`, note its SHA-256, and
       flash it like the regular image (`PROJECT=looper-mod`).
 - [ ] Without a computer: keys, pots and recording behave exactly as with the
       regular image (sections 2–6, short pass). D16 stays off.
-- [ ] `P identify`: instrument `looper`, version `0.4.0`, capabilities `122`
+- [ ] `P identify`: instrument `looper`, version `0.5.0`, capabilities `122`
       (`0x7A`), capabilities2 `1`. `P targets`: Speed, Start, Size, Slice, Skip,
       Inertia, Fripp Decay, Mix. `P modes`: the four loop modes.
 - [ ] `P lengths`: `frame lengths OK`.
@@ -178,7 +195,54 @@ close the DAW or disable its port while `P` runs.
 - [ ] `P clear`: the loop sounds exactly as before the modulation. After a power
       cycle the matrix is empty (patches are not stored).
 
-## 10. Report
+## 10. SD management (Windows access, v0.5)
+
+Needs Windows with the control panel 0.6.0 (`diagnostics/windows`, with python-rtmidi)
+and a FAT32 or exFAT card that already holds `looper/loop.wav` from section 7. Background:
+[SD_MANAGEMENT.md](SD_MANAGEMENT.md). Copy the card's `looper` folder to the PC first
+(card reader or this test's end result), so nothing is lost if a step fails.
+
+- [ ] Panel, tab **SD share**: the looper is found on USB-MIDI ("Performance"),
+      instrument `Looper`, firmware `0.6.1`, loop length matches the loop, "saved in
+      looper/loop.wav".
+- [ ] Overdub a short layer, then press **Share SD card with Windows** within 2 s: the
+      panel shows "Saving the loop before sharing …", the S8 LED blinks, then the kit
+      restarts. Note the time from the click to the restart and the loop length.
+- [ ] After the restart: all panel LEDs dark except D1 (LOCAL) then D2 (SHARED), D16 and
+      the Seed LED blink; no audio. Windows shows a drive (note the drive letter and
+      whether Windows installed a driver, device name `Looper SD`).
+- [ ] The drive holds `looper/loop.wav` (new date/time) and `looper/loops/`. Copy one
+      48 kHz and one 44.1 kHz WAV file into `looper/loops/`; back up `loop.wav`.
+- [ ] While SHARED: **Return to the Looper** stays disabled; holding S4 for 2 s does
+      nothing.
+- [ ] Eject the drive in Windows ("Safely Remove Hardware"): the panel says "Windows
+      ejected the card", D4 lights. Press **Return to the Looper**: the kit restarts
+      into performance, the overdubbed loop plays (it was saved before the share), the
+      panel shows "Back in performance".
+- [ ] S8 imports the copied files (section 7 rules), both play at the right pitch.
+- [ ] Without the PC: share again, eject in Windows, then hold **S4 alone for 2 s** on
+      the kit: it returns to performance.
+- [ ] Interruption: share, then pull the USB cable while Windows copies a large file.
+      Plug it back: the panel shows INTERRUPTED/ERROR ("quarantined"), D5 blinks, S4
+      does nothing. Acknowledge in the panel, return; the looper starts and loads
+      `loop.wav` (if Windows damaged the file system, note what the looper does; the
+      card can be checked on the PC).
+- [ ] Press S5 (erase) and **Share** as close together as you can, a few times: after
+      the restart the loop is either erased or the share did not happen, never an erase
+      that came undone. Note any click when a share is refused.
+- [ ] Refusals: while recording, **Share** is disabled (and the firmware answers BUSY);
+      without a card the panel shows "no card".
+- [ ] Power-cycle the kit while it is in SD management: it starts in performance.
+- [ ] Repeat the share once with the MOD image (`LooperMod-v0.5.0.bin`): the same
+      sequence works, the Mod on Daisy editor still connects in performance.
+- [ ] If the kit comes back in performance instead of SD management after the share,
+      write down the panel message ("did not enter SD management") and the bootloader
+      version shown in the USB tab: this is risk R1 (the bootloader clears backup SRAM).
+
+Record: card size and format, Windows version, drive letter, save time, restart time,
+copy speed reported by Windows, every LED state you saw.
+
+## 11. Report
 
 Write down for each box: pass, fail, or not tested, plus notes. Especially:
 boot time, any D16 event, control orientation, clicks with the settings that

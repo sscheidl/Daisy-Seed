@@ -8,8 +8,8 @@ import subprocess
 def select_suites(changed):
     def touched(*prefixes):
         return any(p.startswith(prefixes) for p in changed)
-    # common/audio/ (FX contract), common/dsp/ (shared saturation) and common/sd/ (Nebulae
-    # and the Diagnostics card reader) have their own consumer rules instead of selecting
+    # common/audio/ (FX contract), common/dsp/ (shared saturation) and common/sd/ (Nebulae,
+    # the looper and the Diagnostics card reader) have their own consumer rules instead of selecting
     # every firmware suite.
     shared = any(p in ('Makefile', 'projects.mk', 'libDaisy', 'DaisySP') or
                  (p.startswith('common/') and
@@ -56,17 +56,20 @@ def select_suites(changed):
     delay = acid_common or dsp or fx_contract or fixtures or touched('effects/stereo-delay/')
     suites = {
         'bootloader': shared or touched('common/bootloader/'),
-        'toy': shared or touched('instruments/toy-piano/') or mod_api or fx or dsp,
+        'toy': shared or touched('instruments/toy-piano/', 'modules/filter-core/') or mod_api or fx or dsp,
         'physical': shared or touched('instruments/physical-modeling/') or mod_api or fx,
         # Nebulae 0.2 links common/sd (read-only FatFs, card reader) and the DDP framing.
         'granular': shared or touched('instruments/granular/', 'common/sd/', 'diagnostics/protocol/',
-                                      'diagnostics/firmware/src/ring_buffer.h'),
-        'looper': shared or touched('instruments/looper/') or mod_api,
+                                      'diagnostics/firmware/src/ring_buffer.h') or mod_api,
+        # The looper links common/sd in its writable profile, the card reader and the DDP framing.
+        'looper': shared or touched('instruments/looper/', 'common/sd/', 'diagnostics/protocol/',
+                                    'diagnostics/firmware/src/ring_buffer.h') or mod_api,
         'reverb': shared or touched('effects/reverb/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),
-        'mod': shared or touched('modules/mod-on-daisy/'),
+        'mod': shared or touched('modules/mod-on-daisy/', 'instruments/granular/src/modulation.h'),
         # The editor's Streichwurst simulator and patch use the product register and tables.
-        'editor': shared or touched('editors/mod-on-daisy/', 'instruments/streichwurst/contracts/',
+        'editor': shared or touched('editors/mod-on-daisy/', 'instruments/granular/src/modulation.h',
+                                    'instruments/streichwurst/contracts/',
                                     'instruments/streichwurst/src/register.h', 'instruments/streichwurst/src/mod_targets.h',
                                     'instruments/streichwurst/include/streichwurst/param_table.h',
                                     'instruments/streichwurst/include/streichwurst/params.h',
@@ -75,6 +78,7 @@ def select_suites(changed):
         'diagnostics': shared or touched('diagnostics/', 'common/sd/reader/'),
         'fx': shared or fx or dsp or acid_fx,
         'sd': shared or touched('common/sd/', 'scripts/check-sd-symbols.py'),
+        'filter': shared or dsp or touched('modules/filter-core/'),
         'stepseq': stepseq,
         'acid303': acid303,
         'drive': drive,

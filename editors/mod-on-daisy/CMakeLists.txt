@@ -1,11 +1,12 @@
-# Mod on Daisy Editor, JUCE standalone (GUI.md § 3). VST3 follows later (D6).
+# Daisy Control Panel (JUCE standalone: matrix page + SD card page) and the Mod on Daisy VST3 (GUI.md § 3,
+# docs/dcp/SD_PAGE_WORK_ORDER.md).
 #
 #   cmake -S editors/mod-on-daisy -B build/editor -DCMAKE_BUILD_TYPE=Release
 #   cmake --build build/editor --config Release
 #
 # JUCE 9.0.4 is fetched by CMake; -DMOD_EDITOR_JUCE_DIR=<path> uses a local checkout.
 cmake_minimum_required(VERSION 3.22)
-project(ModOnDaisyEditor VERSION 0.4.0 LANGUAGES C CXX)
+project(ModOnDaisyEditor VERSION 0.5.0 LANGUAGES C CXX)
 
 # Static MSVC runtime: the .exe runs without the Visual C++ redistributable.
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -39,14 +40,29 @@ target_include_directories(mod_editor_core_tests PRIVATE "${MOD_MODULE_INCLUDE}"
 # The simulator sends column base values like the Physical Modeling MOD build.
 target_compile_definitions(mod_editor_core_tests PRIVATE MOD_ON_DAISY_EXTENSIONS=1)
 target_compile_options(mod_editor_core_tests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8 /W4>)
+# SD share core (Nebulae/Looper card sharing) against the simulated instruments; reads
+# tests/sd_share_vectors.txt from the source directory.
+add_executable(mod_editor_sd_share_tests tests/test_sd_share.cpp)
+target_include_directories(mod_editor_sd_share_tests PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}")
+target_compile_options(mod_editor_sd_share_tests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8 /W4>)
 enable_testing()
 add_test(NAME editor_core COMMAND mod_editor_core_tests)
+# Threaded serial transport with a fake OS port (phase 3 of the SD page work order).
+add_executable(mod_editor_serial_tests tests/test_serial_transport.cpp)
+target_include_directories(mod_editor_serial_tests PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}")
+target_compile_options(mod_editor_serial_tests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8 /W4>)
+find_package(Threads REQUIRED)
+target_link_libraries(mod_editor_serial_tests PRIVATE Threads::Threads)
+add_test(NAME editor_sd_share COMMAND mod_editor_sd_share_tests WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+add_test(NAME editor_serial COMMAND mod_editor_serial_tests)
 
+# The standalone app: "Daisy Control Panel" (D3 of the SD page work order; the CMake
+# target keeps its name). The VST3 below keeps name, codes and bundle name unchanged.
 juce_add_gui_app(ModOnDaisyEditor
-    PRODUCT_NAME "Mod on Daisy Editor"
+    PRODUCT_NAME "Daisy Control Panel"
     COMPANY_NAME "Daisy-Seed"
     VERSION ${PROJECT_VERSION}
-    BUNDLE_ID org.daisyseed.modondaisy.editor)
+    BUNDLE_ID org.daisyseed.controlpanel)
 
 target_sources(ModOnDaisyEditor PRIVATE
     src/app/Main.cpp
@@ -54,19 +70,22 @@ target_sources(ModOnDaisyEditor PRIVATE
 target_include_directories(ModOnDaisyEditor PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}" "${SQ_INCLUDE}")
 target_compile_definitions(ModOnDaisyEditor PRIVATE
     MOD_EDITOR_VERSION="${PROJECT_VERSION}"
+    MOD_EDITOR_SD_PAGE=1
     MOD_ON_DAISY_EXTENSIONS=1
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_JACK=0
     JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:ModOnDaisyEditor,JUCE_PRODUCT_NAME>"
     JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:ModOnDaisyEditor,JUCE_VERSION>")
-# Source files are UTF-8 (umlauts in the German interface).
+# Source files are UTF-8 (typographic quotes and dashes in the interface texts).
 target_compile_options(ModOnDaisyEditor PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
 target_link_libraries(ModOnDaisyEditor
     PRIVATE
         juce::juce_gui_basics
         juce::juce_audio_basics
         juce::juce_audio_devices
+        # SD card page: COM port enumeration (SetupAPI) for the kit's USB CDC port.
+        $<$<PLATFORM_ID:Windows>:setupapi>
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
@@ -124,3 +143,28 @@ target_link_libraries(ModOnDaisyPluginCheck
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
+
+# Hardware probe (Windows): the SD card page's core against the real kit from the command
+# line, with the same MIDI port, Win32 serial transport and session classes as the app.
+# Never built by CI; run it by hand with a kit on J7 (docs/dcp/SD_PAGE_LOG.md).
+if(WIN32)
+    juce_add_console_app(DcpHardwareProbe PRODUCT_NAME "Daisy Control Panel Hardware Probe")
+    target_sources(DcpHardwareProbe PRIVATE tests/hw_probe.cpp)
+    target_include_directories(DcpHardwareProbe PRIVATE "${MOD_MODULE_INCLUDE}" "${BOOTLOADER_INCLUDE}" "${SQ_INCLUDE}")
+    target_compile_definitions(DcpHardwareProbe PRIVATE
+        MOD_ON_DAISY_EXTENSIONS=1
+        MOD_EDITOR_SD_PAGE=1
+        JUCE_MODAL_LOOPS_PERMITTED=1
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0)
+    target_compile_options(DcpHardwareProbe PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
+    target_link_libraries(DcpHardwareProbe
+        PRIVATE
+            juce::juce_gui_basics
+            juce::juce_audio_basics
+            juce::juce_audio_devices
+            setupapi
+        PUBLIC
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags)
+endif()

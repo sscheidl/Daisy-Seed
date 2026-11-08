@@ -1,6 +1,7 @@
 # Control panel 0.5.0: Nebulae on Daisy profile
 
-App 0.5.0 adds a **Nebulae** tab for Nebulae on Daisy firmware 0.2.0. It moves the
+App 0.5.0 adds a **Nebulae** tab for Nebulae on Daisy firmware 0.2.0 (renamed **SD share**
+in 0.6.0, which also serves the Looper: [looper profile](LOOPER_PROFILE.md)). It moves the
 microSD that stays in the kit between Nebulae and Windows. All diagnostic functions of
 0.4.0 are unchanged. Simulation-tested only; real Windows enumeration, drive letters,
 transfer speed and USB reconnect are **NICHT GEMESSEN**.
@@ -34,6 +35,14 @@ In SD management the LED, read-test, CV and audio controls are disabled because 
 firmware does not advertise them. The saved report contains `nebulae` (NEB status) and
 `nebulae_workflow`.
 
+## Nebulae MOD
+
+The `granular-mod` image needs no panel change: STATUS, SHARE and HELLO are the same, so
+it appears as Nebulae. Only one application can hold the kit's MIDI port on Windows, so
+close the Mod on Daisy editor first; the
+[test package's entry point](../../instruments/granular/docs/MODULATION.md#sd-sharing-and-patches)
+does that. Monitor frames that may follow for up to 3 s are skipped.
+
 ## Simulation and tests
 
 * `DaisyDiagnostic.exe --sim-nebulae` simulates both personalities (no drive is created);
@@ -42,3 +51,10 @@ firmware does not advertise them. The saved report contains `nebulae` (NEB statu
   `test_gui_nebulae.py` (buttons, warning, long texts, report).
 * Packaging: `build_exe.cmd` adds `--hidden-import rtmidi`; requirements pin
   `python-rtmidi==1.5.8`.
+
+## Daisy Control Panel 0.5.0
+
+The same workflow, texts and rules are the **SD card** page of the Daisy Control Panel
+(`editors/mod-on-daisy`, C++ port specified in [docs/dcp/SD_SHARE_PORT.md](../../docs/dcp/SD_SHARE_PORT.md)),
+which also holds the Mod on Daisy matrix on the same MIDI port. Daisy Diagnostic keeps this
+tab; use one of the two programs at a time.

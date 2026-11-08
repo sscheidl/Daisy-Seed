@@ -1,5 +1,20 @@
 # Streichwurst – Änderungen
 
+## Product 0.1.1 (instrument 0.1.0, FX 0.1.0) – 2026-11-01
+
+Firmware fix after the first hardware session; DSP and sound unchanged (fingerprint and
+empty-matrix checks identical).
+
+* MIDI back-pressure: the main loop moves USB and DIN MIDI into the command queue only
+  while 8 entries stay free; the rest waits in libDaisy's event FIFO (256) until the audio
+  callback has drained the queue. Before, a burst after a main-loop stall overflowed the
+  64-entry queue and dropped Note-Ons, pitch bends and CCs. On the kit, test build 1
+  reported "MIDI queue overflow" 64 after normal playing (no audible effect reported).
+* The overflow counter now only counts true losses; the All Notes Off fallback for a
+  release a full queue cannot take stays.
+* Host test: a 200-event burst without audio callbacks in between keeps every note; the
+  fallback is tested separately.
+
 ## Produkt 0.1.0 (Instrument 0.1.0, FX 0.1.0) – 01.11.2026
 
 Erster Firmwareprototyp, lokal gebaut und auf dem Host geprüft; Hardware und

@@ -8,8 +8,9 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
-# 'sequencer' (sequencers/) and 'dsp' (shared header-only DSP in common/dsp) came with Acid Seq.
-KINDS = ('instrument', 'effect', 'control', 'panel', 'contract', 'sequencer', 'dsp')
+# 'sequencer' (sequencers/) and 'dsp' (shared header-only DSP in common/dsp) came with Acid Seq,
+# 'storage' (common/sd: disk layer, filesystem profiles, card reader) with Looper 0.6.
+KINDS = ('instrument', 'effect', 'control', 'panel', 'contract', 'sequencer', 'dsp', 'storage')
 
 
 def read_version(spec, root=ROOT):

@@ -30,7 +30,11 @@ Both FatFs users run libDaisy's FatFs **R0.12c** with `_FS_EXFAT 0`
 | S3 | **exFAT enabled**, so SDXC cards (64 GB and larger, delivered as exFAT) work without reformatting. FAT32 stays supported. |
 | S4 | The libDaisy submodule stays unchanged, including its R0.12c for other code. Projects on the shared driver build with `USE_FATFS = 0` and do not use `daisy::FatFSInterface`, so only one FatFs is linked. |
 | S5 | The USB card reader stays a separate component. The shared driver only defines card ownership (local FatFs **or** USB host, never both) so a reader can be added later. |
+| S7 | **Writable profile, added 2026-11-06 on purpose** (revises the read-only policy of S1 for one consumer). The Looper must save `loop.wav`, and a second FatFs or driver in that project would undo S1 and leave it on R0.12c with its CVEs. So `rw/ffconf.h` is an explicit opt-in (`SD_WRITABLE = 1`); read-only stays the default and `FF_FS_READONLY` is not flipped globally. Nebulae and Diagnostics stay read-only and their images unchanged. Formatting, erase, lock, labels and polled writes stay banned in every profile. |
 | S6 | Windows Explorer access for Nebulae is **deferred and optional**: at most a separate card-reader start mode (no audio/MIDI while shared), and only after Diagnostics R1-R12 have passed on hardware. |
+
+The sections below describe the read-only profile; the writable one is in
+[README.md](README.md#writable-profile-looper-060).
 
 ## FatFs configuration (`common/sd/ffconf.h`)
 

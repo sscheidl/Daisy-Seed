@@ -195,7 +195,7 @@ static void AudioCallback(AudioHandle::InputBuffer, AudioHandle::OutputBuffer ou
 // ----- main loop: MIDI, SQ and MD protocols, LEDs, bootloader -----------------------------
 namespace fw {
 static bool usb_connected = false;
-static uint32_t input_dropped = 0; // Note-Ons and CCs a full queue dropped (main only)
+static uint32_t input_dropped = 0; // Note-Ons, bends and CCs a full queue dropped (main only)
 static uint8_t channel = 0;        // 0 = omni, from the latest snapshot
 static void SendUsb(const uint8_t* bytes, std::size_t size) {
     if(usb_connected)
@@ -253,6 +253,13 @@ static void RequestPanic() {
 
 // Musical MIDI and the CC plan on the selected channel (0 = omni); Mod on Daisy has
 // already taken its SysEx, CC1 and aftertouch.
+// Back-pressure: MIDI input stops at this many free queue entries and stays in libDaisy's
+// event FIFO (256) until the audio callback has drained the queue. A burst after a main-loop
+// stall is delayed by a few ms instead of dropped; the reserve keeps room for releases,
+// panics and SQ parameter writes.
+constexpr std::size_t kQueueReserve = 8;
+static bool InputHasRoom() { return commands.Size() + kQueueReserve < commands.Capacity(); }
+
 static void Route(const MidiEvent& e) {
     if(channel && e.channel + 1 != channel)
         return;
@@ -306,7 +313,7 @@ static void Route(const MidiEvent& e) {
 
 static void ServiceInput() {
     usb_midi.Listen();
-    while(usb_midi.HasEvents()) {
+    while(usb_midi.HasEvents() && InputHasRoom()) {
         MidiEvent e = usb_midi.PopEvent();
         if(e.type == SystemCommon && e.sc_type == SystemExclusive) {
             if(bootloader::IsRequest(e)) {
@@ -324,7 +331,7 @@ static void ServiceInput() {
         Route(e);
     }
     hw.midi.Listen();
-    while(hw.midi.HasEvents()) {
+    while(hw.midi.HasEvents() && InputHasRoom()) {
         MidiEvent e = hw.midi.PopEvent();
         if(e.type == SystemCommon)
             continue; // SysEx over DIN is not part of this version

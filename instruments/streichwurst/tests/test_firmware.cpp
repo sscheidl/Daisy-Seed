@@ -316,14 +316,44 @@ int main() {
     hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
     Tick(2);
 
-    // ----- queue overflow: lost Note-Offs turn into All Notes Off, nothing hangs -----
+    // ----- MIDI burst after a main-loop stall: back-pressure, nothing dropped -----
     for(int i = 0; i < 100; ++i)
         usb_midi.incoming.push_back(Note(true, uint8_t(20 + i), 2));
     for(int i = 0; i < 100; ++i)
+        hw.midi.incoming.push_back(Note(true, uint8_t(20 + i), 2)); // DIN: same notes again
+    for(int pass = 0; pass < 5; ++pass)
+        ServiceMain(); // no audio callback in between: the queue is not drained
+    CHECK(commands.Size() == commands.Capacity() - fw::kQueueReserve);
+    CHECK(usb_midi.incoming.size() == 100 - (commands.Capacity() - fw::kQueueReserve));
+    CHECK(hw.midi.incoming.size() == 100);
+    Tick(10);
+    CHECK(usb_midi.incoming.empty() && hw.midi.incoming.empty());
+    bool all_on = true;
+    for(int i = 0; i < 100; ++i)
+        all_on = all_on && Inst().StringNoteActive(20 + i);
+    CHECK(all_on);
+    for(int i = 0; i < 100; ++i) { // each key was pressed twice (USB and DIN)
         usb_midi.incoming.push_back(Note(false, uint8_t(20 + i), 2));
-    Tick(5);
+        hw.midi.incoming.push_back(Note(false, uint8_t(20 + i), 2));
+    }
+    Tick(10);
     CHECK(!AnyStringNote());
-    CHECK(fw::device.counters[sq::CntMidiQueueOverflow] > 0);
+    CHECK(fw::device.counters[sq::CntMidiQueueOverflow] == 0);
+
+    // ----- queue really full: a lost release turns into All Notes Off, nothing hangs -----
+    usb_midi.incoming.push_back(Note(true, 70, 2));
+    Tick(3);
+    CHECK(Inst().StringNoteActive(70));
+    for(int i = 0; i < 100; ++i)
+        usb_midi.incoming.push_back(Note(true, uint8_t(20 + i), 2));
+    ServiceMain();
+    for(std::size_t i = 0; i < fw::kQueueReserve + 1; ++i)
+        fw::PushEvent(streichwurst::NoteOff(1, 70), true); // the reserve, then one too many
+    CHECK(commands.Size() == commands.Capacity());
+    CHECK(fw::device.counters[sq::CntMidiQueueOverflow] == 0);
+    Tick(10);
+    CHECK(!AnyStringNote()); // All Notes Off after the queued notes
+    CHECK(fw::device.counters[sq::CntMidiQueueOverflow] == 1);
 
     // ----- bootloader request over SysEx: panic first, then the reply and the reset -----
     usb_midi.incoming.push_back(Note(true, 60, 2));

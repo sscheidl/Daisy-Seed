@@ -9,6 +9,9 @@ original on hardware are **NOT MEASURED**.
 | --- | --- |
 | `Streichwurst-Manual.pdf` | English user manual: installation, connections, controls, MIDI/CC plan, control app and matrix, FX image, parameter reference, troubleshooting, test sheet |
 
+Manual revision 2 (2026-11-01) describes the English control app (editor 0.4.0 or newer);
+the firmware images are unchanged. The PDF attached to the draft release is still revision 1.
+
 Rebuild the manual from `instruments/streichwurst/docs/print/`:
 
 ```bash

@@ -513,8 +513,115 @@ static void TestImport44k1() {
          worst);
 }
 
+// Before a share (docs/SD_MANAGEMENT.md): SaveSoon skips the 2 s delay but still
+// waits for an idle engine and after a failure; Halt stops a save and keeps loop.wav.
+static void TestSaveSoonAndHalt() {
+    MemoryVolume card;
+    auto rig = std::make_unique<Rig>(card, 4 * kSecond);
+    Rig& r = *rig;
+    r.Run(10);
+    CHECK(r.store.VersionKnown() && r.store.SavedVersion() == r.engine.ContentVersion());
+    r.engine.PressRecord();
+    r.Run(1000, .5f);
+    r.store.SaveSoon();  // recording: the engine is not idle, nothing starts
+    r.Run(100, .5f);
+    CHECK(!r.store.Active() && r.store.Saves() == 0);
+    r.engine.PressRecord();
+    r.Run(30);  // the take ends with its post-roll
+    CHECK(r.store.SavedVersion() != r.engine.ContentVersion());
+    uint32_t waited = 0;
+    for (; waited < 2000 && r.store.Saves() == 0; ++waited)
+        r.Run(1);
+    CHECK(r.store.Saves() == 1 && waited < 100);  // well before the 2 s delay
+    CHECK(r.store.SavedVersion() == r.engine.ContentVersion() && !r.store.SaveFailed());
+    const auto take = Snapshot(r.engine);
+    CHECK(FileHolds(card, kLoop, take, r.engine.Length(), r.engine.TailLength()));
+    // A request without changes is dropped; the next change waits 2 s again.
+    r.store.SaveSoon();
+    r.Run(10);
+    r.engine.PressRecord();
+    r.Run(200, .3f, 330.0);
+    r.engine.PressRecord();
+    r.Run(500);
+    CHECK(r.store.Saves() == 1);
+    RunUntilSaved(r, 2);
+    // Halt in the middle of a save: loop.wav keeps the previous file, no loop.tmp.
+    const auto layer = Snapshot(r.engine);
+    r.engine.Undo();
+    r.Run(50);
+    r.store.SaveSoon();
+    for (int m = 0; m < 100 && !r.store.Saving(); ++m)
+        r.Run(1);
+    CHECK(r.store.Saving() && card.files.count(kTemp));
+    r.store.Halt();
+    CHECK(!r.store.Active() && !card.files.count(kTemp));
+    CHECK(FileHolds(card, kLoop, layer, uint32_t(layer.size()) - r.engine.TailLength(), r.engine.TailLength()));
+    CHECK(r.store.SavedVersion() != r.engine.ContentVersion());
+    // A failed save: SaveFailed until the retry 10 s later succeeds; SaveSoon does
+    // not skip the retry delay.
+    card.failRename = true;
+    r.store.SaveSoon();
+    for (int m = 0; m < 200 && !r.store.SaveFailed(); ++m)
+        r.Run(1);
+    CHECK(r.store.SaveFailed() && r.store.LastFault() == LoopStore::Fault::Write);
+    card.failRename = false;
+    r.store.SaveSoon();
+    r.Run(5000);
+    CHECK(r.store.SaveFailed() && r.store.Saves() == 2);
+    RunUntilSaved(r, 3, 6000);
+    CHECK(!r.store.SaveFailed() && r.store.SavedVersion() == r.engine.ContentVersion());
+    CHECK(FileHolds(card, kLoop, take, r.engine.Length(), r.engine.TailLength()));
+    PASS("save soon: no delay before a share, idle engine and retry delay kept; halt keeps loop.wav\n");
+}
+
+// The gap documented in docs/SD_PERSISTENCE.md. After a failed rename loop.wav is gone and
+// loop.tmp is the only copy on the card. The retry opens that same file for writing, so
+// until it completes the card holds no complete loop, and a failed retry removes the file.
+// Pinned here so that a change of this behaviour is a decision, not an accident.
+static void TestRenameFailureGap() {
+    MemoryVolume card;
+    auto rig = std::make_unique<Rig>(card, 4 * kSecond);
+    Rig& r = *rig;
+    r.Run(10);
+    r.engine.PressRecord();
+    r.Run(500, .5f);
+    r.engine.PressRecord();
+    RunUntilSaved(r, 1);
+    CHECK(r.store.Saves() == 1 && card.files.count(kLoop));
+    r.engine.PressRecord();
+    r.Run(300, .3f, 330.0);
+    r.engine.PressRecord();
+    card.failRename = true;
+    for (int m = 0; m < 10000 && r.store.LastFault() != LoopStore::Fault::Write; ++m)
+        r.Run(1);
+    card.failRename = false;
+    const auto take = Snapshot(r.engine);
+    CHECK(!card.files.count(kLoop));
+    CHECK(FileHolds(card, kTemp, take, r.engine.Length(), r.engine.TailLength()));
+    auto boot = std::make_unique<Rig>(card, 4 * kSecond);
+    CHECK(boot->store.Recall(boot->engine) && SameFrames(Snapshot(boot->engine), take));
+    // The retry cuts the only copy down to nothing, and its write failure removes the file.
+    const size_t complete = card.files[kTemp].size();
+    card.failWriteAfter = card.written + 20000;
+    bool cut = false;
+    for (uint32_t m = 0; m < 2 * LoopStore::kRetryDelayMs && card.files.count(kTemp); ++m) {
+        r.Run(1);
+        cut = cut || (card.files.count(kTemp) && card.files[kTemp].size() < complete);
+    }
+    CHECK(cut && !card.files.count(kTemp) && !card.files.count(kLoop));
+    auto nothing = std::make_unique<Rig>(card, 4 * kSecond);
+    CHECK(!nothing->store.Recall(nothing->engine));
+    // The loop is still in RAM: the next retry that works puts it back.
+    card.failWriteAfter = -1;
+    RunUntilSaved(r, 2, 30000);
+    CHECK(r.store.Saves() == 2 && FileHolds(card, kLoop, take, r.engine.Length(), r.engine.TailLength()));
+    PASS("rename failure: loop.tmp is the only copy; the retry truncates it, RAM holds the loop\n");
+}
+
 int main() {
     TestSaveAndRecall();
+    TestSaveSoonAndHalt();
+    TestRenameFailureGap();
     TestAbortAndFaults();
     TestTornLastChunk();
     TestImport();

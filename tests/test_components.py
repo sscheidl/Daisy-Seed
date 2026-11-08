@@ -90,9 +90,13 @@ class ComponentTests(unittest.TestCase):
 
     def test_shared_control_consumers(self):
         suites = selection.select_suites(['modules/mod-on-daisy/include/mod_on_daisy/engine.h'])
-        for key in ('toy', 'physical', 'looper', 'mod', 'editor', 'submodules'):
+        for key in ('toy', 'physical', 'granular', 'looper', 'mod', 'editor', 'submodules'):
             self.assertTrue(suites[key], key)
-        self.assertFalse(suites['granular'])
+
+    def test_nebulae_columns_reach_their_readers(self):
+        suites = selection.select_suites(['instruments/granular/src/modulation.h'])
+        for key in ('granular', 'mod', 'editor'):
+            self.assertTrue(suites[key], key)
 
     def test_fx_consumers(self):
         suites = selection.select_suites(['common/audio/fx_contract.h'])
@@ -127,17 +131,33 @@ class ComponentTests(unittest.TestCase):
             self.assertTrue(suites[key], key)
 
     def test_sd_driver_consumers(self):
-        # Nebulae 0.2 links the shared read-only driver and the card reader; the
-        # Diagnostics card-reader image links only the reader. Nothing else runs.
+        # Nebulae links the read-only profile and the card reader, the looper the writable
+        # profile and the reader; the Diagnostics card-reader image links only the reader.
+        # Nothing else runs.
         suites = selection.select_suites(['common/sd/ro_sd.c'])
-        self.assertTrue(suites['sd'] and suites['granular'] and suites['submodules'])
-        for key in ('toy', 'physical', 'looper', 'reverb', 'tape', 'bootloader', 'diagnostics'):
+        self.assertTrue(suites['sd'] and suites['granular'] and suites['looper'] and suites['submodules'])
+        for key in ('toy', 'physical', 'reverb', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
         reader = selection.select_suites(['common/sd/reader/msc_bot.cpp'])
-        self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'])
+        self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'] and reader['looper'])
         self.assertFalse(reader['toy'])
-        self.assertTrue(selection.select_suites(['diagnostics/protocol/ddp.cpp'])['granular'])
+        ddp = selection.select_suites(['diagnostics/protocol/ddp.cpp'])
+        self.assertTrue(ddp['granular'] and ddp['looper'])
+        self.assertFalse(selection.select_suites(['diagnostics/windows/daisy_diag/looper.py'])['looper'])
         self.assertTrue(selection.select_suites(['Makefile'])['sd'])
+
+    def test_sd_compositions(self):
+        # Every SD image records its driver, exactly one filesystem profile and the reader.
+        data = manifest.load_registry()
+        for key in ('sd-driver', 'sd-fs-readonly', 'sd-fs-writable', 'sd-reader'):
+            self.assertEqual(data['components'][key]['kind'], 'storage')
+            self.assertTrue(manifest.read_version(data['components'][key]['version']))
+        expected = {'granular': 'sd-fs-readonly', 'looper': 'sd-fs-writable', 'looper-mod': 'sd-fs-writable'}
+        for project, profile in expected.items():
+            components = data['products'][project]['components']
+            self.assertIn('sd-driver', components)
+            self.assertIn('sd-reader', components)
+            self.assertEqual([c for c in components if c.startswith('sd-fs-')], [profile])
 
     def test_acid_seq_components(self):
         # Components are registered with their version sources; products follow only
@@ -150,6 +170,7 @@ class ComponentTests(unittest.TestCase):
             self.assertRegex(manifest.read_version(data['components'][key]['version']), r'^\d+\.\d+\.\d+$')
         self.assertIn('saturation', data['components']['drive']['depends'])
         self.assertIn('fx-contract', data['components']['stereo-delay']['depends'])
+        self.assertIn('filter-core', data['products']['toy-piano-filter']['components'])
         self.assertEqual(data['components']['saturation']['version']['path'], 'common/dsp/saturation.h')
         mk = (ROOT / 'projects.mk').read_text()
         for project in ('step-seq', 'acid-303', 'drive-fx', 'delay-fx', 'acid-seq'):
@@ -201,9 +222,11 @@ class ComponentTests(unittest.TestCase):
             'effects/drive/include/drive/drive.h': ('drive', 'fx', 'acidseq'),
             'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'acidseq', 'streichwurst'),
             'sequencers/acid-seq/src/main.cpp': ('acidseq',),
+            # The filter core and its test product.
+            'modules/filter-core/include/filter_core/ladder.h': ('filter', 'toy'),
             # Shared saturation: its consumers only, no longer every suite.
-            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
-            'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq'),
+            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
+            'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
             'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst'),
             'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor', 'streichwurst'),

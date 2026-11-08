@@ -1,4 +1,43 @@
-# Mod on Daisy Editor
+# Daisy Control Panel (JUCE standalone), Mod on Daisy VST3 and browser editor
+
+## Daisy Control Panel 0.5.0: matrix and SD card in one app
+
+Since 0.5.0 the standalone app is called **Daisy Control Panel** (`Daisy Control Panel.exe`;
+the VST3 keeps its name "Mod on Daisy", its plugin codes and the bundle `Mod on Daisy.vst3`).
+It has two pages, switched with **Matrix** and **SD card** in the header:
+
+* **Matrix**: the modulation matrix editor described below, unchanged.
+* **SD card**: shares the microSD that stays in the kit with Windows and brings it back, for
+  Nebulae on Daisy 0.2.x and the Looper 0.6.x with or without the Mod on Daisy matrix. It is
+  the "SD share" tab of Daisy Diagnostic 0.6.0 with the same texts, buttons and card-safety
+  rules ([docs/dcp/SD_SHARE_PORT.md](../../docs/dcp/SD_SHARE_PORT.md)); Daisy Diagnostic
+  stays the diagnostics tool. One app now holds J7 in both USB modes: it finds the kit on
+  USB-MIDI by its STATUS reply, asks for SD management, follows the kit to its USB CDC port
+  (DDP v1), opens the card for Windows once, and after a Windows eject and **Return** finds
+  the kit on USB-MIDI again. Instruments without a matrix (plain Nebulae, Looper) open on the
+  SD card page; the matrix page then says so.
+* **The patch survives the share**: before SHARE the current patch is written to
+  `%LOCALAPPDATA%\Daisy Control Panel\autosave\<instrument>-<date>.modpatch` and sent back
+  to the device when the matrix reconnects after the return; the log names the file.
+  Manual **Save file …** / **Open file …** stay as they are.
+* Rules the page keeps (card safety): "ejected" is shown only for the firmware state
+  EJECTED; a timeout means "ownership unknown"; INTERRUPTED and ERROR need
+  **Acknowledge interrupted access …**; closing the app, a reconnect or BYE never return
+  or reshare the card; a restart that comes back in performance instead of SD management is
+  reported (risk R1).
+* In the VST3 the SD card page shows only: "Sharing the SD card needs the Daisy Control
+  Panel app (the kit restarts, and the DAW loses the Daisy MIDI port)".
+* Windows only for the SD card page (COM port enumeration with SetupAPI, overlapped serial
+  I/O on an own thread; no driver, no admin rights). The core
+  (`src/core/SdShare*.h`, `Ddp*.h`, `SerialTransport.h`) is platform-free and tested without
+  JUCE; the self-test runs the complete cycle against simulated instruments
+  (`--simulators` lists "Simulator: Nebulae MOD", "Simulator: Looper MOD", "Simulator: Nebulae",
+  "Simulator: Looper").
+* Hardware status: NOT MEASURED; the test package and sheet are built by
+  `scripts/dcp_sd_test_package.py` ([docs/dcp/SD_PAGE_TEST_SHEET.md](../../docs/dcp/SD_PAGE_TEST_SHEET.md)).
+  Local builds live in the `apps/` store (`apps/daisy-control-panel/<version>+<commit7>/`).
+
+Changes per version: [CHANGELOG.md](CHANGELOG.md).
 
 ## Ambient Reverb (control app 0.4.0)
 
@@ -15,7 +54,7 @@ connection to the Daisy runs over USB MIDI.
 
 | Version | Status |
 | --- | --- |
-| **JUCE editor** ([`src/`](src/)) | **usable**: standalone for Windows (`.exe` from CI), Linux and macOS via CMake. Simulator only for development and self-test (`--simulators`) |
+| **Daisy Control Panel** (JUCE standalone, [`src/`](src/)) | **usable**: standalone for Windows (`Daisy Control Panel.exe`), Linux and macOS via CMake (SD card page: Windows only). Simulators only for development and self-test (`--simulators`) |
 | **Browser editor** ([`web/`](web/)) | **usable**: quick variant for Chrome/Edge (Web MIDI), no installation |
 | **VST3 plugin** ([`src/plugin/`](src/plugin/)) | **new, not yet tested on the device**: the same editor in Studio One, patch stored in the song ([below](#vst3-plugin-for-studio-one)) |
 
@@ -93,16 +132,16 @@ over one port: sound parameters via SQ 1.1, the modulation matrix via Mod on Dai
 * **Simulator:** With `--simulators` there is "Streichwurst (Sim)": the firmware's SQ device, register and
   Mod on Daisy core on the PC (no audio DSP in the editor).
 
-## JUCE editor
+## JUCE standalone (Daisy Control Panel)
 
 ### Getting the Windows program
 
-CI builds `ModOnDaisyEditor.exe` and the VST3 plugin `Mod on Daisy.vst3`:
+CI builds `Daisy Control Panel.exe` and the VST3 plugin `Mod on Daisy.vst3` (local builds: the `apps/` store):
 
 1. On GitHub under **Actions → Editor**, open the latest green run. The run
    only starts manually ("Run workflow", choose the branch).
 2. At the bottom under **Artifacts**, download and unpack `ModOnDaisyEditor-windows-x64-…`.
-3. Start `ModOnDaisyEditor.exe`. No installation is needed; the
+3. Start `Daisy Control Panel.exe`. No installation is needed; the
    Visual C++ runtime is built in. The same package contains the folder
    `Mod on Daisy.vst3` for Studio One ([below](#vst3-plugin-for-studio-one)).
    `SHA256SUMS` lists the checksums of both files.
@@ -113,7 +152,7 @@ Then choose "More info" and "Run anyway".
 ### Operation
 
 1. Connect the Daisy with Mod on Daisy firmware to J7, for example `ToyPiano-v0.3.1.bin`,
-   `PhysicalModelingMod-v0.1.1.bin` or `LooperMod-v0.4.0.bin`.
+   `PhysicalModelingMod-v0.1.1.bin`, `LooperMod-v0.6.0.bin` or `NebulaeMod-v0.2.1.bin`.
 2. **Close Studio One** or deactivate the port "Daisy Seed External" there.
    On Windows only one application can open the port. If it is in use, the
    editor says so.
@@ -136,8 +175,9 @@ firmware does not know the command yet: then hold S9 and S16 for five seconds or
 BOOT. With a simulator the button is disabled.
 
 **Without a Daisy:** The list contains only MIDI ports; without a device you can edit offline.
-The simulators ("Simulator: Toy Piano", "Simulator: Physical Modeling") only appear with
-`"Mod on Daisy Editor" --simulators` and in the self-test. They are the firmware's controller and
+The simulators ("Simulator: Toy Piano", "Simulator: Physical Modeling", the Acid Seq and
+Streichwurst simulators and the four SD card simulators) only appear with
+`"Daisy Control Panel" --simulators` and in the self-test. They are the firmware's controller and
 engine code, compiled on the PC, and identify themselves like the device
 (e.g. `physical-modeling 0.1.0-mod3`), but have no pots. In the hardware test of
 2026-10-24 it was therefore impossible to tell that the simulator was connected instead of the kit;
@@ -267,14 +307,14 @@ cmake --build build/editor --config Release
 ```
 
 The program is then located under
-`build/editor/ModOnDaisyEditor_artefacts/Release/`.
+`build/editor/ModOnDaisyEditor_artefacts/Release/` (`Daisy Control Panel.exe`).
 
 ### Tests
 
 ```bash
 make -C editors/mod-on-daisy test             # core against the firmware controller, without JUCE
 make -C editors/mod-on-daisy test-sanitize    # the same with ASan/UBSan
-"…/Mod on Daisy Editor" --selftest out        # window against the simulator, screenshots in out/
+"…/Daisy Control Panel" --selftest out        # window against the simulators, screenshots in out/
 ```
 
 * **Core test** (`tests/test_core.cpp`): It runs against the firmware's controller and
@@ -286,13 +326,25 @@ make -C editors/mod-on-daisy test-sanitize    # the same with ASan/UBSan
   offline, LFO FM), connection state (no live data, no answer, recovery),
   setting to zero, clearing and loading as per order § 7, extended monitor (range, clock,
   aftertouch cases), target range 0.1/0.5/0.9 ± 0.5 and LFO FM.
+* **SD share core test** (`tests/test_sd_share.cpp`): the share/return workflow against the
+  simulated Nebulae and Looper (both USB personalities): round trips, CONFIRM and cancel,
+  refusals, SHARE and restart timeouts, R1, interruption quarantine, close never returns the
+  card, found in management, Looper SAVING and failed save, DDP session rules (reader
+  timeout = ownership unknown, 5 s tolerance while SHARED, HELLO retry and backoff). The byte
+  vectors in `tests/sd_share_vectors.txt` come from the Python reference
+  (`tests/sd_vectors.py --check`).
+* **Serial transport test** (`tests/test_serial_transport.cpp`): the I/O thread with a fake
+  port: open and HELLO, timeout, port vanishes, reconnect, and no GUI-thread call longer than
+  50 ms while the port blocks.
 * **Self-test** (`--selftest`): It operates the real window with keyboard, dragging,
   mouse wheel, knob, double-click, sources, limit, name and files, plus FM knob,
   range display, clock state, connection state, compatibility prompt (Cancel,
   Load without affected) and the port release after a failed connect. After each
-  step it compares the patch checksum of the window and the simulated device. It writes the result
-  and screenshots to `out/`; on Windows the result is in
-  `out/selftest.txt`.
+  step it compares the patch checksum of the window and the simulated device. Since 0.5.0 it
+  also runs the SD card page: Toy Piano (no instrument), Nebulae MOD (CONFIRM, cancel,
+  confirm, shared, eject, return, patch restored), Looper MOD (also SAVING), plain Nebulae and
+  Looper (no matrix), an interruption with the acknowledge question, and the VST3 note. It
+  writes the result and screenshots to `out/`; on Windows the result is in `out/selftest.txt`.
 
 CI (`.github/workflows/editor.yml`) runs both on Linux (Xvfb) and Windows
 and provides the `.exe`. It only starts manually: GitHub → Actions → **Editor** →

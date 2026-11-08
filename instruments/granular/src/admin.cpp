@@ -144,9 +144,9 @@ void Admin::Handle(const char* body, uint32_t now) {
         bool ok = true;
         if(!std::strcmp(value, "STATUS")) {
         } else if(!std::strcmp(value, "SHARE")) {
-            ok = port_.ReaderIdle() && reader_.Share(port_.Inputs().card);
+            ok = pending_ == Pending::None && port_.ReaderIdle() && reader_.Share(port_.Inputs().card);
         } else if(!std::strcmp(value, "RETURN")) {
-            ok = port_.ReaderIdle() && reader_.Return();
+            ok = pending_ == Pending::None && port_.ReaderIdle() && reader_.Return();
         } else {
             Error("READER", "ARG");
             return;
@@ -241,7 +241,9 @@ void Admin::Step(uint32_t now) {
        && now - pending_since_ >= (tx_fill_ ? kFlushMs : kSettleMs)) {
         const Pending p = pending_;
         pending_ = Pending::None;
-        if(p == Pending::Perform) port_.RestartPerformance();
+        if(!BackToPerformanceAllowed() || !port_.ReaderIdle()) {
+            Error(p == Pending::Perform ? "NEB" : "BOOT", "STATE");
+        } else if(p == Pending::Perform) port_.RestartPerformance();
         else port_.EnterBootloader();
     }
     const uint16_t leds = Leds(now);

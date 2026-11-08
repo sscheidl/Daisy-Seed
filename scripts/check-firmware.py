@@ -6,7 +6,8 @@ Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
 Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
 effects/tape-fx/build/TapeFx-v<version>.bin, build/tape/ToyPianoTape-v<version>.bin,
 PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
-instruments/looper/build/Looper-v<version>.bin, build/mod/LooperMod-v<version>.bin and
+instruments/looper/build/Looper-v<version>.bin, build/mod/LooperMod-v<version>.bin,
+instruments/granular/build/mod/NebulaeMod-v<version>.bin and
 modules/mod-on-daisy/bench/build/ModBench-v<version>.bin and the composed images in
 ACID_SEQ (sequencers/step-seq/build/StepSeq-v<version>.bin, ...,
 instruments/streichwurst/build/Streichwurst-v<version>.bin, effects/streichwurst-fx/build/StreichwurstFx-v<version>.bin).
@@ -28,13 +29,24 @@ path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else project / 'build' / f
 ACID_SEQ = {
     'StepSeq-v': ('sequencers/step-seq/src/version.h', 'STEP_SEQ_FIRMWARE_VERSION', 'STEP-SEQ-FW-VERSION='),
     'Acid303-v': ('instruments/acid-303/src/version.h', 'ACID_303_FIRMWARE_VERSION', 'ACID-303-FW-VERSION='),
+    'Audrey3-v': ('instruments/audrey-3/src/version.h', 'AUDREY_3_FIRMWARE_VERSION', 'AUDREY-3-FW-VERSION='),
     'DriveFx-v': ('effects/drive/src/version.h', 'DRIVE_FIRMWARE_VERSION', 'DRIVE-FX-VERSION='),
     'DelayFx-v': ('effects/stereo-delay/src/version.h', 'STEREO_DELAY_FIRMWARE_VERSION', 'DELAY-FX-VERSION='),
+    'EchoDelayFx-v': ('effects/echo-delay/src/version.h', 'ECHO_DELAY_FIRMWARE_VERSION', 'ECHO-DELAY-FX-VERSION='),
+    'ScReverbFx-v': ('effects/sc-reverb/src/version.h', 'SC_REVERB_FIRMWARE_VERSION', 'SC-REVERB-FX-VERSION='),
     'AcidSeq-v': ('sequencers/acid-seq/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
     # Streichwurst product (same scheme: one product version for name and marker).
     'Streichwurst-v': ('instruments/streichwurst/src/version.h', 'STREICHWURST_VERSION', 'STREICHWURST-FW-VERSION='),
     'StreichwurstFx-v': ('effects/streichwurst-fx/src/version.h', 'STREICHWURST_FX_FIRMWARE_VERSION',
                          'STREICHWURST-FX-VERSION='),
+    'ToyPianoFilter-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FILTER_VERSION',
+                         'TOYPIANO-FILTER-FW-VERSION='),
+    # FV-1 interpreter FX firmware; the Local image (local program table) is never released.
+    'Fv1VmFx-v': ('effects/fv1-vm/src/version.h', 'FV1VM_FIRMWARE_VERSION', 'FV1VM-FX-VERSION='),
+    'Fv1VmFxLocal-v': ('effects/fv1-vm/src/version.h', 'FV1VM_FIRMWARE_VERSION', 'FV1VM-FX-VERSION='),
+    'ToyPianoFv1-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION', 'TOYPIANO-FV1-FW-VERSION='),
+    'ToyPianoFv1Local-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION',
+                           'TOYPIANO-FV1-FW-VERSION='),
 }
 acid = next((prefix for prefix in ACID_SEQ if path.name.startswith(prefix)), None)
 if acid:
@@ -70,6 +82,13 @@ elif path.name.startswith('NebulaeOnDaisy-v'):
     version = match.group(1)
     expected_name = f'NebulaeOnDaisy-v{version}.bin'
     marker = rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
+elif path.name.startswith('NebulaeMod-v'):
+    granular = root / 'instruments' / 'granular'
+    match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
+    assert match, "Could not read the Nebulae version"
+    version = match.group(1)
+    expected_name = f'NebulaeMod-v{version}.bin'
+    marker = rb'NEBULAE-MOD-VERSION=([0-9.]+)\x00'
 elif path.name.startswith(('PhysicalModelingFxTorus-v', 'PhysicalModelingFxAmbient-v')):
     physical = root / 'instruments' / 'physical-modeling'
     match = re.search(r'PHYSICAL_MODELING_COMPOSED_VERSION\s+"([^"]+)"',
