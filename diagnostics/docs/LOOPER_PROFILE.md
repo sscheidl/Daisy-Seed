@@ -47,3 +47,10 @@ The saved report contains `looper` (LOOPER status line in SD management) and
   confirmation, cancel, save timeout, refusals, management start, NEB rejected.
 * `diagnostics/tests/python/test_gui_looper.py`: tab, info rows, buttons, warning,
   report.
+
+## Daisy Control Panel 0.5.0
+
+The same workflow, texts and rules are the **SD card** page of the Daisy Control Panel
+(`editors/mod-on-daisy`, C++ port specified in [docs/dcp/SD_SHARE_PORT.md](../../docs/dcp/SD_SHARE_PORT.md)),
+which also holds the Mod on Daisy matrix on the same MIDI port. Daisy Diagnostic keeps this
+tab; use one of the two programs at a time.

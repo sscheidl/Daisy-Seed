@@ -16,6 +16,20 @@
 >   Wiederverbinden (der Editor lädt derzeit immer vom Gerät), Spaltenzuordnung über
 >   Namen bei abweichendem Schema. VST3 kommt später.
 
+> **2026-11-08, Daisy Control Panel 0.5.0 (English; the concept below is the original
+> German text of the matrix editor):** the standalone app is now the **Daisy Control
+> Panel** with two pages. **Matrix** is the grid editor of this document, unchanged.
+> **SD card** is the share/return workflow of Daisy Diagnostic 0.6.0's "SD share" tab,
+> ported to C++ (`src/core/SdShare*.h`, `src/ui/SdSharePanel.h`): heading with the phase,
+> rows Instrument / Firmware / Connection / SD card / Bank or Loop / Audio deadline,
+> message, error, warning, the buttons Share, Discard-or-share, Cancel, eject help,
+> Return, Acknowledge, and the hint. States, transitions, timeouts, texts and the
+> card-safety rules are specified in
+> [docs/dcp/SD_SHARE_PORT.md](../../../docs/dcp/SD_SHARE_PORT.md). The MIDI port is shared
+> between the matrix session and the SD workflow; the kit's COM port is found by VID/PID.
+> Instruments without a matrix open on the SD card page (D4); the patch is saved before a
+> share and restored after the return (D5); the VST3 shows the page only as a note (D2).
+
 ## 1. Leitlinien
 
 * **Das Raster ist die Oberfläche.** Alle 64 Kreuzungspunkte sind immer sichtbar, ohne

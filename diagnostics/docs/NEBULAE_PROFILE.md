@@ -51,3 +51,10 @@ does that. Monitor frames that may follow for up to 3 s are skipped.
   `test_gui_nebulae.py` (buttons, warning, long texts, report).
 * Packaging: `build_exe.cmd` adds `--hidden-import rtmidi`; requirements pin
   `python-rtmidi==1.5.8`.
+
+## Daisy Control Panel 0.5.0
+
+The same workflow, texts and rules are the **SD card** page of the Daisy Control Panel
+(`editors/mod-on-daisy`, C++ port specified in [docs/dcp/SD_SHARE_PORT.md](../../docs/dcp/SD_SHARE_PORT.md)),
+which also holds the Mod on Daisy matrix on the same MIDI port. Daisy Diagnostic keeps this
+tab; use one of the two programs at a time.

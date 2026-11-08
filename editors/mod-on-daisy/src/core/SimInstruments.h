@@ -5,6 +5,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal" // firmware headers, built with other warnings
 #endif
+#include "../../../../instruments/granular/src/modulation.h"
+#include "../../../../instruments/looper/src/modulation.h"
 #include "../../../../instruments/physical-modeling/src/modulation.h"
 #include "../../../../instruments/toy-piano/src/modulation.h"
 #if defined(__GNUC__)
@@ -31,5 +33,14 @@ inline const SimInstrument kSimInstruments[] = {
     {"Simulator: Toy Piano", toy_piano::MakeModInfo, {-1, -1, -1, -1, -1, -1, -1, -1}, {false, false, false}, -1},
     {"Simulator: Physical Modeling", physical_modeling::MakeModInfo,
      {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.8f, physical_modeling::kLevelBase, 0.25f}, {true, true, true}, 0},
+};
+
+// The matrix side of the instruments that share their SD card; the SD card page's
+// simulator ports pair one of these with core/SdShareSim.h. Nebulae MOD enables the
+// extended monitor and LFO FM (its main.cpp), the Looper MOD all three incl. its modes.
+inline const SimInstrument kSdSimInstruments[] = {
+    {"Simulator: Nebulae MOD", neb::columns::MakeModInfo, {0.0f, 0.5f, 1.0f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f}, {true, true, false}, -1},
+    {"Simulator: Looper MOD", looper::columns::MakeModInfo,
+     {looper::columns::SpeedToUnit(0.f), 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f, looper::columns::kMixBase}, {true, true, true}, 0},
 };
 }

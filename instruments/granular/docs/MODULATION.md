@@ -161,6 +161,11 @@ a Live loop. So save the patch before sharing and load it afterwards:
 2. Share, copy samples, eject, **Return to Nebulae** in the panel.
 3. In the editor: it reconnects by itself; **Open file ...** sends the patch back.
 
+Since the Daisy Control Panel 0.5.0 (`editors/mod-on-daisy`, branch `claude/dcp-sd-page`)
+one app does all of this: its SD card page saves the patch before the share and sends it
+back after the return ([docs/dcp/SD_SHARE_PORT.md](../../../docs/dcp/SD_SHARE_PORT.md) § 8).
+The launcher below stays for the Nebulae MOD package of PR #102.
+
 Only one client can hold J7 on Windows. The test package's
 [entry point](../tools/Nebulae-Mod-Test.ps1) offers **Modulation** and **SD card**, closes
 the active app and waits for it to exit before opening the other. It holds no MIDI, CDC

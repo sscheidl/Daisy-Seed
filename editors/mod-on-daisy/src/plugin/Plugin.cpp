@@ -45,7 +45,9 @@ class Processor : public juce::AudioProcessor {
     EditorComponent& Content() {
         JUCE_ASSERT_MESSAGE_THREAD
         if(!content_) {
-            content_ = std::make_unique<EditorComponent>();
+            // No SD card page in the plugin (D2): the kit's restart would take the DAW's
+            // MIDI port away; the page shows the note and the Daisy Control Panel app does it.
+            content_ = std::make_unique<EditorComponent>(false, false);
             // MOD_ON_DAISY_NO_AUTOCONNECT=1: tests with a kit attached must not touch it.
             content_->auto_connect = juce::SystemStats::getEnvironmentVariable("MOD_ON_DAISY_NO_AUTOCONNECT", {}).isEmpty();
             content_->patch_changed = [this](const std::string& text) {
@@ -109,7 +111,7 @@ class Window : public juce::AudioProcessorEditor {
     explicit Window(Processor& p) : AudioProcessorEditor(p), content_(p.Content()) {
         addAndMakeVisible(content_);
         setResizable(true, true);
-        setResizeLimits(1100, 860, 4000, 3000);
+        setResizeLimits(1200, 860, 4000, 3000);
         setSize(content_.getWidth(), content_.getHeight());
         // The connection is started by the plugin itself; opening the window does not
         // connect, closing it does not disconnect.
