@@ -87,6 +87,21 @@ void TestBootDefaults() {
     CHECK(kModInfo.mode_count == 6);
 }
 
+// 1b. Booting on the Piano page: its pots take over, the FX page keeps its defaults, and the rate
+// pots count as written so the patch follows them.
+void TestPanelBoot() {
+    toy_piano::CumulonimbusPanel panel;
+    panel.Reset();
+    std::array<float, 8> pots{};
+    pots.fill(.7f);
+    panel.Update(pots, false, 0);
+    CHECK(panel.Value(toy_piano::kDestAttack) == .7f && panel.Value(toy_piano::kDestLfo2Rate) == .7f);
+    CHECK(panel.Value(toy_piano::kDestGrainMix) == seed::fx::FxDefaultPots()[4]);
+    CHECK(panel.TakePotWrite(toy_piano::kDestLfo1Rate) && panel.TakePotWrite(toy_piano::kDestRandomRate));
+    CHECK(!panel.TakePotWrite(toy_piano::kDestLfo1Rate)); // taken once
+    CHECK(!panel.TakePotWrite(toy_piano::kDestGrainMix));
+}
+
 // 2. Steady bypass and wet mixes at 0 both give the exact dry Toy Piano.
 void TestDryReference() {
     hw.tog_sw18.value = seed::fx::kSwitch3Down; // FX Bypass
@@ -367,6 +382,7 @@ int main() {
 #endif
     for(auto& p : hw.pot) p.value = .5f;
     hw.tog_sw18.value = 0;
+    TestPanelBoot();
     TestBootDefaults();
     TestDryReference();
     TestWetStereo();

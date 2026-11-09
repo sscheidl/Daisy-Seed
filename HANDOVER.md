@@ -8,6 +8,23 @@ compatible FX are replaceable; modules with their own contracts, versions and te
 evolve independently and are reintegrated after testing. Existing architecture
 documents refer to it; no broad migration of existing code has been started.
 
+**Toy Piano on Cumulonimbus, Stage 1, 2026-11-09 (branch `claude/toy-piano-granular-fx`, worktree
+`Daisy-Seed-worktrees/toy-piano-granular-fx`, from `origin/main` 241f583; not pushed):** Work order
+`L2A/L2A-cases/granular-cross-comparison/CLAUDE_CODE_WORK_ORDER.md`, owner request "Toypiano on
+Cumulonimbus". "Cumulonimbus" = the Clouds granular path (eurorack f4cfa76) cross-checked against Nimbus and
+Cumuloid ([provenance and audit](effects/cumulonimbus/UPSTREAM.md)). New component
+[`effects/cumulonimbus`](effects/cumulonimbus/) 0.1.0 (renderer separate from the live-ring scheduler,
+48 kHz kernel or 32 kHz behind a 48↔32 kHz converter, Torus reverb chain, profiling meter, probe), standalone
+images F48/F32 and [Toy Piano on Cumulonimbus](instruments/toy-piano/docs/CUMULONIMBUS.md) 0.1.0 (P48/P32
+playable, D48/D32 profiling; SW17 pages with pickup, SW18 Freeze/Run/Bypass). Local validation: component and
+Piano host tests at both rates, ASan/UBSan, GCC `-Wextra -Werror` compile check, registry/selection tests; all
+seven images build and pass `check-firmware.py`; the existing Toy Piano images are byte-identical to 241f583.
+TSan not available on this Windows host (Linux only). Package: `build/cumulonimbus-stage1/` in that worktree
+([run sheet](effects/cumulonimbus/docs/STAGE1_RUN_SHEET.md)). **Board timing, listening, switch polarity
+and flashing: NOT MEASURED.** Next: the joint board session (owner + Codex), flash order P0 → F48/F32 →
+D48/D32 → selected P48/P32; then pick rate and grain cap from the measured curve; the SD Grain Sampler
+(work order § 5) starts only after that gate. Codex review of the branch is welcome before the session.
+
 **Streichwurst, preparation 2026-11-01:** New instrument under
 `instruments/streichwurst/`, its own branch `claude/streichwurst`,
 [Claude work order](instruments/streichwurst/docs/CLAUDE_AUFTRAG.md). Target: Seed3

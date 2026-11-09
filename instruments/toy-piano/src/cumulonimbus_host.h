@@ -69,8 +69,12 @@ class CumulonimbusPanel {
         const Page page = sw17 ? kPageFx : kPagePiano;
         if(!started_) {
             // The Piano page in use at boot starts at its pots; the FX page always starts at its safe defaults.
+            // The boot positions count as pot writes, so the source rates reach the patch.
             if(page == kPagePiano)
-                for(unsigned i = 0; i < kPotsPerPage; ++i) value_[i] = x[i];
+                for(unsigned i = 0; i < kPotsPerPage; ++i) {
+                    value_[i] = x[i];
+                    pot_writes_[i] = true;
+                }
             for(unsigned i = 0; i < kPotsPerPage; ++i) picked_[i] = page == kPagePiano;
         } else if(page != page_) {
             for(auto& p : picked_) p = false;
