@@ -402,6 +402,7 @@ neb::sysex::Profile CurrentProfile() {
     p.value[kProfBenchSdramPlain]=prof::bench[2];p.value[kProfBenchSramPlain]=prof::bench[3];
     p.value[kProfEnginePlacement]=uint32_t(reinterpret_cast<uintptr_t>(engine)>>20);
     p.value[kProfLastTotal]=prof::last_total;
+    p.value[kProfSourceChannels]=engine->live?2u:(bridge.published.frames?bridge.published.channels:0u);
     return p;
 }
 #endif

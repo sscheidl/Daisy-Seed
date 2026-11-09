@@ -61,6 +61,25 @@ int main(int argc,char** argv) {
     CHECK(p.v[kProfFftPeak]>0 && p.v[kProfFillPeak]>0 && p.v[kProfPhasePeak]>0);
     CHECK(p.v[kProfOverruns]==0 && p.v[kProfLastTotal]>0);
     CHECK(p.v[kProfEnginePlacement]==uint32_t(reinterpret_cast<uintptr_t>(engine)>>20));
+    CHECK(p.v[kProfSourceChannels]==2);
+    // Mono file (bank 3 slot 1, "2 Kick.WAV"): one vocoder channel per hop, reported as 1.
+    hw.tog_sw17.state=neb::kSw17BankWhenPressed;Advance(30);
+    hw.pressed[2]=true;Advance(15);hw.pressed[2]=false;Settle();
+    hw.tog_sw17.state=!neb::kSw17BankWhenPressed;Advance(30);
+    hw.pressed[0]=true;Advance(15);hw.pressed[0]=false;Settle();
+    CHECK(bridge.published.channels==1 && bridge.published.frames==4801);
+    unsigned mono_hops=0;
+    for(unsigned i=0;i<8;++i) {Block();if(neb::profile::block.hops) {CHECK(neb::profile::block.hops==1);++mono_hops;}}
+    CHECK(mono_hops==4);
+    p=ReadProfile();
+    CHECK(p.v[kProfSourceChannels]==1);
+    // Back to the stereo file: bank 1 slot 1 through the bank view.
+    hw.tog_sw17.state=neb::kSw17BankWhenPressed;Advance(30);
+    hw.pressed[0]=true;Advance(15);hw.pressed[0]=false;Settle();
+    hw.tog_sw17.state=!neb::kSw17BankWhenPressed;Advance(30);
+    hw.pressed[0]=true;Advance(15);hw.pressed[0]=false;Settle();
+    CHECK(bridge.published.channels==2 && bridge.published.frames==12345);
+    ReadProfile(true);Block();
     // STATUS is unchanged by the diagnostic build.
     Send({0xF0,0x7D,0x4E,0x42,0x01,0x01,0xF7});Main();
     CHECK(LastReply().size()==6+kStatusPayload+1);

@@ -251,7 +251,7 @@ peaks of a run include the blocks right after a CC change while the smoothing se
 | START 0, otherwise the same | hop block vocoder 3.95 ms, fill peak 3.34 ms; still overruns and skips | MEASURED |
 | 60 s at the worst settings | overruns +2,554, 10,098 of 11,361 blocks skipped: the protection carries the kit, the sound has vocoder gaps | MEASURED |
 | experiment, not kept: `PLD` prefetch 16 reads ahead in the fill (`9128e63a…`, build dir only) | hop block vocoder 3.67 ms at PITCH max (from 4.1), 3.54 to 3.58 ms at PITCH centre (from 3.2): the hint costs more at normal pitch than it saves at high pitch | MEASURED 21:28-21:30 |
-| mono file: hop block vocoder | | NOT MEASURED (needs the owner to select bank 3) |
+| mono file: hop block vocoder | the owner selected slot 2 (FILE); it measured like slot 1 and the new PROFILE value 20 reports it as a stereo file: no mono file was reached. The shortcut is host-tested (one hop per block on the card image's mono file) | NOT MEASURED on the kit |
 | P2: S1 first press, first stop, second recording | | NOT MEASURED |
 | listening | | NOT MEASURED |
 

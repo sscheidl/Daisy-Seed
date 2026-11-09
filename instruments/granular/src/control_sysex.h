@@ -112,6 +112,7 @@ enum ProfileValue : uint8_t {
     kProfBenchSramPlain,   // boot benchmark: state in AXI SRAM, block without hop, minimum
     kProfEnginePlacement,  // address of the Engine object >> 20 (0xC10 SDRAM, 0x240 AXI SRAM)
     kProfLastTotal,        // most recent callback
+    kProfSourceChannels,   // channels of the playing source: 1 mono file (one vocoder channel computed), 2 stereo file or Live, 0 none
     kProfileValues
 };
 struct Profile { uint32_t value[kProfileValues] = {}; };
