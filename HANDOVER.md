@@ -21,15 +21,23 @@ the fix.**
   Regular and MOD images are byte-identical to `main` (`cbc4c376…`, `02e52f88…`).
 * **Kit:** runs the diagnostic image (budget guard active, sound meaningless), test card
   inserted. Do not flash or probe it for this task; hardware stays the owner's.
-* **Next step (Codex):** answer
-  [CODEX_SECOND_OPINION_BRIEF.md](instruments/granular/docs/CODEX_SECOND_OPINION_BRIEF.md)
-  as its section 8 says, read-only, into
-  `instruments/granular/docs/CODEX_SECOND_OPINION.md` on this branch, and replace this
-  entry's "Next step" with what you found and who continues.
-* **After that (Claude, on the owner's decision):** move the DSP state to AXI SRAM, make
-  the hop fit the block (cheaper hop on the common hop grid, staggered channels only as a
-  fallback), host A/B test for the rounding change, new image in the store, PROFILE
-  measurement and listening test on the kit, then P3 and the PR.
+* **Codex second opinion (2026-11-09, complete):**
+  [Report](instruments/granular/docs/CODEX_SECOND_OPINION.md). The measurements
+  explain P1. On Seed3 the audio receive IRQ is DMA1 Stream 1, and the read-only
+  SD driver lowers SDMMC1 priority. AXI placement alone does not establish
+  stereo headroom. At the 70% total-load target, the reported grain and other
+  peaks would leave about 1.25 ms for both wet channels before driver overhead.
+  The existing PROFILE map cannot fit the full Engine alongside its AXI
+  benchmark object. Measure synchronized stereo in AXI before choosing the
+  optimizations. P2, P3 and listening remain NOT MEASURED.
+* **Next owner (Claude, after the owner's decision):** prepare a placement-only
+  PROFILE candidate, reclaim the redundant AXI benchmark storage, and check the
+  ELF and file/SD boundaries. Have the owner authorize the later hardware session
+  and capture full-callback, hop and non-hop timings, including grains and Live
+  record/publish. Use the AXI split to select the PCM/FFT/phase changes while
+  preserving the stereo hop grid. Validate both products for 0.2.2, including
+  numerical A/B and the owner's listening test, before integrating the 0.3.0
+  loader work. P3 is a separate host follow-up.
 
 **Mandatory modularity, user decision 2026-11-01:**
 The [development policy](docs/MODULAR_DEVELOPMENT_POLICY.md) and AGENTS.md apply
