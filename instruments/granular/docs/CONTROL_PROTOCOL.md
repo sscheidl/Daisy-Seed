@@ -60,11 +60,11 @@ Off for every note it sent plus CC 123, stop audio, close/unmount FatFs, power t
 interface down, write the boot intent (`src/boot_intent.h`), wait 20 ms for USB, and
 restart through the external bootloader with `DAISY_SKIP_TIMEOUT`.
 
-### PROFILE `03` [`reset`] -> reply `43`, 105 bytes (diagnostic build only)
+### PROFILE `03` [`reset`] -> reply `43`, 110 bytes (diagnostic build only)
 
 Answered only by an image built with `PROFILE=1` ([diagnosis](OVERLOAD_DIAGNOSIS.md));
 the regular and the MOD image reply `7F 03 02` (unknown command). The optional payload
-byte `01` clears the peaks after this reply. Twenty-one 32-bit counters, each five 7-bit
+byte `01` clears the peaks after this reply. Twenty-two 32-bit counters, each five 7-bit
 bytes least significant first, in this order:
 
 | # | Counter |
@@ -82,6 +82,7 @@ bytes least significant first, in this order:
 | 18 | Engine address >> 20 (`0xC10` SDRAM, `0x240` AXI SRAM) |
 | 19 | most recent callback |
 | 20 | channels of the playing source: 1 mono file (the vocoder computes one channel and copies it), 2 stereo file or Live, 0 none |
+| 21 | vocoder scheduling of the image: 0 common grid, 1 plain stagger, 2 compensated stagger ([diagnosis](OVERLOAD_DIAGNOSIS.md) section 11) |
 
 All counters are DWT cycles of the firmware, not bench measurements.
 

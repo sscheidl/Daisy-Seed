@@ -23,11 +23,12 @@ PREFIX = [0xF0, 0x7D, 0x4E, 0x42, 0x01]
 CMD_STATUS, CMD_PROFILE, CMD_ERROR, REPLY = 0x01, 0x03, 0x7F, 0x40
 LOAD_ERRORS = {0: "none", 1: "missing", 2: "invalid WAV", 3: "too large", 4: "I/O", 5: "no card"}
 SOURCE_NAMES = {0: "none", 1: "mono file", 2: "stereo or Live"}
+SCHEDULE_NAMES = {0: "common grid", 1: "plain stagger", 2: "compensated stagger"}
 PROFILE_NAMES = [
     "clock_hz", "deadline_cycles", "blocks", "total_peak", "vocoder_peak", "grains_peak",
     "other_peak", "fill_peak", "fft_peak", "phase_peak", "hop_blocks", "hop_vocoder_min",
     "skipped_blocks", "overruns", "bench_sdram_hop", "bench_sram_hop", "bench_sdram_plain",
-    "bench_sram_plain", "engine_placement", "last_total", "source_channels",
+    "bench_sram_plain", "engine_placement", "last_total", "source_channels", "schedule",
 ]
 
 
@@ -123,7 +124,8 @@ def show_profile(d: bytes) -> None:
     print(f"PROFILE clock {clock / 1e6:.0f} MHz, block deadline {deadline} cycles = {deadline / clock * 1e3:.3f} ms, "
           f"blocks {v['blocks']}, hop blocks {v['hop_blocks']}, skipped {v['skipped_blocks']}, overruns {v['overruns']}, "
           f"engine in {placement.get(v['engine_placement'], hex(v['engine_placement']))}, "
-          f"source {SOURCE_NAMES.get(v['source_channels'], v['source_channels'])}")
+          f"source {SOURCE_NAMES.get(v['source_channels'], v['source_channels'])}, "
+          f"schedule {SCHEDULE_NAMES.get(v['schedule'], v['schedule'])}")
     for name in ["total_peak", "last_total", "vocoder_peak", "hop_vocoder_min", "fill_peak", "fft_peak",
                  "phase_peak", "grains_peak", "other_peak", "bench_sdram_hop", "bench_sram_hop",
                  "bench_sdram_plain", "bench_sram_plain"]:

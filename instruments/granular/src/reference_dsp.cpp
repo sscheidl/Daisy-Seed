@@ -228,10 +228,10 @@ void Mincer::Init(float sr, MincerWork& work) {
     sr_ = sr; work_ = &work;
     Reset();
 }
-void Mincer::Reset() {
+void Mincer::Reset(int phase) {
     memset(prev_,0,sizeof prev_); memset(outframe_,0,sizeof outframe_);
     for (int k = 0; k < DECIM; ++k) framecnt_[k] = k*FFT_N;
-    cnt_ = HOP; curframe_ = 0;
+    cnt_ = HOP - std::min(std::max(phase, 0), HOP); curframe_ = 0;
 }
 void Mincer::CopyStateFrom(const Mincer& other) {
     memcpy(prev_, other.prev_, sizeof prev_); memcpy(outframe_, other.outframe_, sizeof outframe_);

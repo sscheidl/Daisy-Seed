@@ -1,7 +1,24 @@
 # Handover — continuing work locally
 
-**Open handover 2026-11-09 (evening), Claude → Codex: second review, hop scheduling of the
-Nebulae vocoder.** Brief:
+**Next session (owner + Claude), planned 2026-11-10: flash, listen, measure.** Head of
+`claude/nebulae-overload-9c0df4` holds Nebulae 0.2.2 with the three vocoder scheduling
+candidates; images in the main checkout's `firmware/` store under `granular-mod/0.2.2+<commit>`
+(A, common grid), `…-stagger` (B), `…-pipeline` (C), plus `…-profile` and
+`…-profile-pipeline` for timing, all `candidate`, hardware of B and C NOT MEASURED. Order:
+1. Owner flashes `NebulaeModProfilePipeline-v0.2.2.bin`; Claude probes with
+   `instruments/granular/tools/nb_probe.py profile` (one client on the port): hop block at
+   PITCH centre and maximum, grains 0 and 127, 60 s at the worst settings; table in
+   OVERLOAD_DIAGNOSIS.md section 11.
+2. Listening per Codex's sheet (CODEX_SECOND_OPINION_2.md): one flash per image A, B, C,
+   the same takes recorded in the DAW, compared blind, stereo and mono fold-down.
+3. Owner decides the shipped schedule; Claude sets it as the product default, reruns the
+   host suite, stores the final images, records P2 (S1 first press / first stop / second
+   recording) and opens the PR. P3 (editor and panel against a stalled kit) needs the
+   0.2.1 image `granular-mod/0.2.1+85f8a13-dirty` and stays a separate step.
+The kit was left running the build-dir profile image `5e62053b…` (0.2.2, common grid).
+
+**Handover 2026-11-09 (evening), Claude → Codex: second review, hop scheduling of the
+Nebulae vocoder (answered, see below).** Brief:
 [CODEX_SECOND_OPINION_2_BRIEF.md](instruments/granular/docs/CODEX_SECOND_OPINION_2_BRIEF.md).
 State: 0.2.2 (head d090a3c) runs on the kit and no longer freezes; hop block 3.2 to
 4.1 ms for both channels, the extreme setting (PITCH max + max grains, 107 %) still runs

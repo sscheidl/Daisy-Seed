@@ -75,31 +75,19 @@ elif path.name.startswith('ToyPianoAmbient-v'):
     version = match.group(1)
     expected_name = f'ToyPianoAmbient-v{version}.bin'
     marker = rb'TOYPIANO-AMBIENT-FW-VERSION=([0-9.]+)\x00'
-elif path.name.startswith('NebulaeOnDaisy-v'):
+elif re.match(r'^Nebulae(OnDaisy|Mod)(Profile|Stagger|Pipeline)*-v', path.name):
+    # Nebulae: regular or MOD image, optionally the diagnostic build (Profile) and the
+    # vocoder scheduling candidates (Stagger, Pipeline; instruments/granular/Makefile).
     granular = root / 'instruments' / 'granular'
     match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
     assert match, "Could not read the Nebulae version"
     version = match.group(1)
-    expected_name = f'NebulaeOnDaisy-v{version}.bin'
-    marker = rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
-elif path.name.startswith('NebulaeMod-v'):
-    granular = root / 'instruments' / 'granular'
-    match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
-    assert match, "Could not read the Nebulae version"
-    version = match.group(1)
-    expected_name = f'NebulaeMod-v{version}.bin'
-    marker = rb'NEBULAE-MOD-VERSION=([0-9.]+)\x00'
-elif path.name.startswith(('NebulaeModProfile-v', 'NebulaeOnDaisyProfile-v')):
-    # Diagnostic build (instruments/granular/docs/OVERLOAD_DIAGNOSIS.md): the version
-    # marker of the image it instruments, plus its own marker.
-    granular = root / 'instruments' / 'granular'
-    match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
-    assert match, "Could not read the Nebulae version"
-    version = match.group(1)
-    mod = path.name.startswith('NebulaeModProfile-v')
-    expected_name = f"Nebulae{'Mod' if mod else 'OnDaisy'}Profile-v{version}.bin"
+    name_match = re.match(r'^(Nebulae(?:OnDaisy|Mod)(?:Profile|Stagger|Pipeline)*)-v', path.name)
+    expected_name = f'{name_match.group(1)}-v{version}.bin'
+    mod = path.name.startswith('NebulaeMod')
     marker = rb'NEBULAE-MOD-VERSION=([0-9.]+)\x00' if mod else rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
-    assert b'NEBULAE-PROFILE-BUILD=1\x00' in path.read_bytes(), 'Profile image without its marker'
+    if 'Profile' in path.name:
+        assert b'NEBULAE-PROFILE-BUILD=1\x00' in path.read_bytes(), 'Profile image without its marker'
 elif path.name.startswith(('PhysicalModelingFxTorus-v', 'PhysicalModelingFxAmbient-v')):
     physical = root / 'instruments' / 'physical-modeling'
     match = re.search(r'PHYSICAL_MODELING_COMPOSED_VERSION\s+"([^"]+)"',

@@ -82,7 +82,9 @@ struct MincerWork {
 class Mincer {
 public:
     void  Init(float sr, MincerWork& work);
-    void  Reset();
+    // `phase` samples of the first hop interval are skipped, so the hops of this channel
+    // fall `phase` samples after those of a channel reset with 0 (plain stagger).
+    void  Reset(int phase = 0);
     void  Process(const double* frame_pos, const PcmView& buf, unsigned channel,
                   float pitch, float amp, float* out, int n);
     // Phase state and overlap-add frames of another channel (same MincerWork).

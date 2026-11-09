@@ -113,6 +113,7 @@ enum ProfileValue : uint8_t {
     kProfEnginePlacement,  // address of the Engine object >> 20 (0xC10 SDRAM, 0x240 AXI SRAM)
     kProfLastTotal,        // most recent callback
     kProfSourceChannels,   // channels of the playing source: 1 mono file (one vocoder channel computed), 2 stereo file or Live, 0 none
+    kProfSchedule,         // vocoder scheduling of the image: 0 common grid, 1 plain stagger, 2 compensated stagger
     kProfileValues
 };
 struct Profile { uint32_t value[kProfileValues] = {}; };

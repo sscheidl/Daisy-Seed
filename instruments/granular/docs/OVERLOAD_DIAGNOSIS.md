@@ -270,3 +270,45 @@ channel shifted by 256 samples; dual-mono files are unaffected because of the mo
 shortcut), rounding-level arithmetic changes (fast inverse square root, float fill;
 perhaps 0.5 to 0.8 ms), or accepting the protection as the behaviour at the extreme
 settings. The owner decides.
+
+## 11. Listening candidates: vocoder scheduling (2026-11-09, software only)
+
+The owner wants to hear the variants before deciding and asked Codex for a second review
+first ([brief](CODEX_SECOND_OPINION_2_BRIEF.md), [report with listening
+sheet](CODEX_SECOND_OPINION_2.md)). Codex's method, which the owner prefers over any
+switch in the firmware: one fixed image per variant from the store, one flash each, the
+same takes recorded in the DAW, compared there with hidden labels, in stereo and as a mono
+fold-down, plus a separate load run. Codex's ranking: C first production candidate, D next,
+A the reference and conservative fallback, B worth hearing as a deliberate stereo character
+but last for the fidelity fix. Claude agrees with the ranking and with two corrections
+to its own earlier statements: B is not a fixed 5.3 ms comb (the right channel reads the
+same or the next 512-frame cell depending on SPEED and the position's phase on the grid,
+so the colour varies), and C is exact for the **wet** layer only; the mix, the grains and
+what an overdub records still use the current block, so the recorded result is not a
+universal one-block shift (Codex section 2).
+
+Implementation (`engine.h` `Schedule`, `Makefile` `SCHEDULE=1|2`, one engine, the mode a
+build-time constant of the product):
+
+| Image | Schedule | What it does |
+| --- | --- | --- |
+| `NebulaeMod-v0.2.2.bin` | A, common grid | both channels hop in the same block, as before |
+| `NebulaeModStagger-v0.2.2.bin` | B, plain stagger | the right Mincer's hop counter runs 256 samples behind, so its hop falls in the next block with that block's newer position |
+| `NebulaeModPipeline-v0.2.2.bin` | C, compensated | the left channel computes block N and keeps its output; the right channel computes block N from the stored inputs in block N+1; both channels output block N in block N+1; the block after a reset is silent (priming) |
+
+Host evidence (`tests/test_schedule.cpp`): C equals A delayed by exactly one block, bit
+for bit, on both channels, for stereo and mono sources, through a source change, FREEZE,
+a pitch change and the overload protection's reset; B leaves the left channel bit-identical
+to A and changes the right. The golden hashes of B and C differ from A on purpose (the
+listening candidates are not the shipped sound until the owner decides). The PROFILE
+reply reports the schedule (value 21).
+
+Expected CPU (NOT MEASURED): one channel's hop per block, so the hop block of a stereo
+file about 2.0 ms at PITCH maximum instead of 4.1 ms; with maximum grains and the rest
+about 3.8 ms (71 %). To measure with `NebulaeModProfilePipeline-v0.2.2.bin`.
+
+| Step | Value | Status |
+| --- | --- | --- |
+| C: hop block vocoder at PITCH centre / maximum, grains 0 and 127 | | NOT MEASURED |
+| C: overruns and skips over 60 s at the worst settings | | NOT MEASURED |
+| listening A / B / C (Codex's sheet) | | NOT MEASURED |

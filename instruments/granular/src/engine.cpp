@@ -11,15 +11,21 @@ void Engine::Init(int16_t* a,int16_t* b,uint32_t cap,int16_t* file,FileBridge& b
     for(unsigned i=0;i<8;++i) smoothed_[i]=ui.params.primary[i];
 }
 float Engine::Random() {random_^=random_<<13;random_^=random_>>17;random_^=random_<<5;return float(random_&0xffffff)/16777216.f;}
+void Engine::ResetVocoders() {
+    vocoder_[0].Reset();
+    vocoder_[1].Reset(schedule_==kScheduleStagger?int(kBlock):0);
+    vocoder_mono_=false;pending_valid_=false;
+    std::fill(voc_delay_,voc_delay_+kBlock,0.f);
+}
 void Engine::ResetDsp() {
-    vocoder_mono_=false;
-    for(unsigned c=0;c<2;++c) {vocoder_[c].Reset();limiter_[c].Init(kRate); for(auto& g:grains_[c]) g.active=false;}
+    ResetVocoders();
+    for(unsigned c=0;c<2;++c) {limiter_[c].Init(kRate); for(auto& g:grains_[c]) g.active=false;}
     grain_clock_[0]=grain_clock_[1]=1; Transition();
 }
 void Engine::Transition() {fade_from_[0]=tail_[0];fade_from_[1]=tail_[1];transition_=0;}
 void Engine::SkipVocoder(unsigned blocks) {
     // Fresh vocoders fade in over their first frames; the 256-sample ramp covers the cut.
-    if(!skip_vocoder_) {vocoder_[0].Reset();vocoder_[1].Reset();vocoder_mono_=false;Transition();}
+    if(!skip_vocoder_) {ResetVocoders();Transition();}
     skip_vocoder_=blocks;
 }
 void Engine::BeginRecord() {
@@ -148,6 +154,41 @@ void Engine::RenderGrains(const PcmView& src,const float* left,const float* righ
     pending_trigger_=false;
     limiter_[0].Process(gran_[0],int(n));limiter_[1].Process(gran_[1],int(n));
 }
+// kScheduleCommon and kScheduleStagger: both channels on this block's inputs; in the
+// stagger mode the right Mincer's hop counter runs 256 samples behind (ResetVocoders).
+void Engine::RunVocodersCommon(const PcmView& src,float ratio,float amp,unsigned n) {
+    if(src.channels==1) {
+        // A mono source feeds both vocoder channels the same samples, so channel 1 would
+        // compute exactly what channel 0 computes: halve the hop and copy.
+        vocoder_[0].Process(positions_,src,0,ratio,amp,voc_[0],int(n));
+        std::copy(voc_[0],voc_[0]+n,voc_[1]);
+        vocoder_mono_=true;
+        return;
+    }
+    // Back to a stereo source without a reset (not a path the UI has, kept safe):
+    // channel 1 takes over the state it would have reached on the mono source.
+    if(vocoder_mono_) {vocoder_[1].CopyStateFrom(vocoder_[0]);vocoder_mono_=false;}
+    for(unsigned c=0;c<2;++c) vocoder_[c].Process(positions_,src,c,ratio,amp,voc_[c],int(n));
+}
+// kScheduleCompensated: the left channel computes logical block N now and keeps the
+// result; the right channel computes logical block N-1 from the stored inputs of the
+// previous call, and both channels output logical block N-1. The block after a reset
+// outputs silence (priming). The stored PcmView is used one block later only; every
+// source change goes through ResetDsp() before main may touch the PCM.
+void Engine::RunVocodersCompensated(const PcmView& src,float ratio,float amp,unsigned n) {
+    vocoder_[0].Process(positions_,src,0,ratio,amp,voc_left_now_,int(n));
+    if(pending_valid_ && pending_n_==n) {
+        std::copy(voc_delay_,voc_delay_+n,voc_[0]);
+        if(pending_src_.channels==1) {std::copy(voc_delay_,voc_delay_+n,voc_[1]);vocoder_mono_=true;}
+        else {
+            if(vocoder_mono_) {vocoder_[1].Reset();vocoder_mono_=false;}  // not a UI path: fade in
+            vocoder_[1].Process(pending_positions_,pending_src_,1,pending_ratio_,pending_amp_,voc_[1],int(n));
+        }
+    } else {std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);}
+    std::copy(voc_left_now_,voc_left_now_+n,voc_delay_);
+    std::copy(positions_,positions_+n,pending_positions_);
+    pending_src_=src;pending_ratio_=ratio;pending_amp_=amp;pending_n_=n;pending_valid_=true;
+}
 void Engine::Process(const float* left,const float* right,float* ol,float* or_,unsigned n) {
     if(!n || n>kBlock) return;
     const bool gate=bridge_->gate.load(std::memory_order_acquire);
@@ -207,20 +248,10 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
 #endif
     if(read_ok) {
         NEB_PROFILE_BEGIN(vocoder);
+        const float ratio=pitch_*src.rate/kRate,amp=live?1.f:.8f;
         if(skip_vocoder) {std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);}
-        else if(src.channels==1) {
-            // A mono source feeds both vocoder channels the same samples, so channel 1
-            // would compute exactly what channel 0 computes: halve the hop and copy.
-            vocoder_[0].Process(positions_,src,0,pitch_*src.rate/kRate,live?1.f:.8f,voc_[0],int(n));
-            std::copy(voc_[0],voc_[0]+n,voc_[1]);
-            vocoder_mono_=true;
-        } else {
-            // Back to a stereo source without a reset (not a path the UI has, kept safe):
-            // channel 1 takes over the state it would have reached on the mono source.
-            if(vocoder_mono_) {vocoder_[1].CopyStateFrom(vocoder_[0]);vocoder_mono_=false;}
-            for(unsigned c=0;c<2;++c)
-                vocoder_[c].Process(positions_,src,c,pitch_*src.rate/kRate,live?1.f:.8f,voc_[c],int(n));
-        }
+        else if(schedule_==kScheduleCompensated) RunVocodersCompensated(src,ratio,amp,n);
+        else RunVocodersCommon(src,ratio,amp,n);
         NEB_PROFILE_ADD(vocoder,vocoder);
         NEB_PROFILE_BEGIN(grains);
         RenderGrains(src,left,right,n,density,pitch_*src.rate/kRate,input_gain);

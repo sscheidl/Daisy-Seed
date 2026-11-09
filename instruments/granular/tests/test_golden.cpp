@@ -99,6 +99,8 @@ int main(int argc,char** argv) {
     static int16_t file_buffer[2*20000];
     Boot(file_buffer,sizeof file_buffer,48000);
     if(const char* path=std::getenv("NEBULAE_GOLDEN_DUMP")) {dump=std::fopen(path,"wb");CHECK(dump);}
+    // NEBULAE_GOLDEN_SCHEDULE=1|2: the listening candidates (engine.h Schedule).
+    if(const char* schedule=std::getenv("NEBULAE_GOLDEN_SCHEDULE")) engine->SetSchedule(unsigned(std::atoi(schedule)));
     block_input=Input;block_output=Output;
 #if NEBULAE_MOD
     if(argc==3) {

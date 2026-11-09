@@ -24,6 +24,19 @@ TARGET := $(TARGET)Profile
 VARIANT := $(if $(VARIANT),$(VARIANT)-profile,profile)
 C_DEFS += $(PROFILE_FLAGS)
 endif
+# SCHEDULE=1|2: listening candidates with the vocoder channels on separate blocks
+# (engine.h Schedule, docs/OVERLOAD_DIAGNOSIS.md section 11). 0 is the common grid.
+SCHEDULE ?= 0
+ifeq ($(SCHEDULE),1)
+TARGET := $(TARGET)Stagger
+VARIANT := $(if $(VARIANT),$(VARIANT)-stagger,stagger)
+C_DEFS += -DNEBULAE_VOCODER_SCHEDULE=1
+endif
+ifeq ($(SCHEDULE),2)
+TARGET := $(TARGET)Pipeline
+VARIANT := $(if $(VARIANT),$(VARIANT)-pipeline,pipeline)
+C_DEFS += -DNEBULAE_VOCODER_SCHEDULE=2
+endif
 TARGET := $(TARGET)-v$(VERSION)
 SD_DIR = ../../common/sd
 READER_DIR = $(SD_DIR)/reader
@@ -120,6 +133,8 @@ test: e2e fft-host
 	./$(H)/test_nebulae
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_vocoder.cpp $(DSP_SOURCES) -o $(H)/test_vocoder
 	./$(H)/test_vocoder
+	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_schedule.cpp $(DSP_SOURCES) -o $(H)/test_schedule
+	./$(H)/test_schedule
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/test_banks.cpp src/banks.cpp -o $(H)/test_banks
 	./$(H)/test_banks
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc -I$(BOOTLOADER_DIR) tests/test_control_sysex.cpp src/control.cpp -o $(H)/test_control_sysex
@@ -167,6 +182,11 @@ test: e2e fft-host
 	@echo "PASS golden: the profile build sounds bit-identical to the regular build"
 	@echo "0.2.1 vocoder in this engine: $$(cat $(H)/golden_reference.txt) (equals the 0.2.1 golden on the same compiler: the rest of the engine is bit-identical)"
 	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_reference.txt)"
+	NEBULAE_GOLDEN_SCHEDULE=1 ./$(H)/test_golden $(H)/e2e/fat32-after.img > $(H)/golden_stagger.txt
+	NEBULAE_GOLDEN_SCHEDULE=2 ./$(H)/test_golden $(H)/e2e/fat32-after.img > $(H)/golden_pipeline.txt
+	@echo "listening candidates: stagger $$(cat $(H)/golden_stagger.txt), pipeline $$(cat $(H)/golden_pipeline.txt)"
+	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_stagger.txt)"
+	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_pipeline.txt)"
 	./$(H)/compare_audio $(H)/golden.f32 $(H)/golden_reference.f32
 SANITIZE = -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all -fno-omit-frame-pointer
 test-sanitize:

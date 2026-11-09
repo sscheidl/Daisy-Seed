@@ -28,6 +28,18 @@ loop, because libDaisy runs all of them at the audio interrupt's priority.
   the end of the file.
 * **Mono sources** feed both vocoder channels the same samples; channel 1 is now a copy of
   channel 0, which halves the hop for mono files (bit-identical; premises host-tested).
+* **Kit, second candidate (MEASURED 2026-11-09):** hop block of a stereo file 3.2 ms at
+  PITCH centre to 4.1 ms at PITCH maximum for both channels; no overruns at normal
+  settings; PITCH maximum with maximum grains still reaches about 107 % and runs into the
+  protection. The window fill is bound by SDRAM cache misses.
+* **Listening candidates** (`make MOD=1 SCHEDULE=1|2`, [diagnosis](docs/OVERLOAD_DIAGNOSIS.md)
+  section 11, Codex's [second review](docs/CODEX_SECOND_OPINION_2.md)): `Stagger` (the
+  right channel hops one block later with its own position, a deliberate stereo
+  character) and `Pipeline` (right channel one block later on the left channel's stored
+  inputs, left output delayed one block: channels exactly as the common grid, the whole
+  vocoder layer 5.3 ms later; host-tested bit for bit against the common grid). Both
+  halve the hop block. The shipped image stays on the common grid until the owner has
+  listened and decided; PROFILE value 21 reports the schedule.
 * **Overload protection in every image**: a second deadline overrun within 16 blocks
   leaves the vocoder out of the next 8 blocks and restarts it from a reset with the
   256-sample ramp, so the kit stays reachable; one isolated overrun only counts. STATUS

@@ -23,6 +23,11 @@
 #endif
 #include <new>
 
+// Vocoder scheduling of this product (engine.h Schedule): 0 common grid, 1 plain
+// stagger, 2 compensated stagger. Listening candidates of 2026-11-09 build 1 and 2.
+#ifndef NEBULAE_VOCODER_SCHEDULE
+#define NEBULAE_VOCODER_SCHEDULE 0
+#endif
 // AXI SRAM section of the DSP state; the host fakes define it empty.
 #ifndef NEB_DSP_SRAM
 #define NEB_DSP_SRAM __attribute__((section(".neb_dsp")))
@@ -403,6 +408,7 @@ neb::sysex::Profile CurrentProfile() {
     p.value[kProfEnginePlacement]=uint32_t(reinterpret_cast<uintptr_t>(engine)>>20);
     p.value[kProfLastTotal]=prof::last_total;
     p.value[kProfSourceChannels]=engine->live?2u:(bridge.published.frames?bridge.published.channels:0u);
+    p.value[kProfSchedule]=engine->ScheduleMode();
     return p;
 }
 #endif
@@ -548,6 +554,7 @@ void InitPerformance(const neb::BootIntent& intent) {
 #endif
     engine=new(engine_storage) neb::Engine;
     engine->Init(live_banks[0],live_banks[1],neb::kLiveFrames,reinterpret_cast<int16_t*>(begin),bridge);
+    engine->SetSchedule(NEBULAE_VOCODER_SCHEDULE);
     loader.Init(file,reinterpret_cast<int16_t*>(begin),end-begin,bridge);
     daisy::SdmmcHandler::Config sd_config;sd_config.Defaults();sd_config.speed=daisy::SdmmcHandler::Speed::STANDARD;
     sd.Init(sd_config);

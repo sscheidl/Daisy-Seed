@@ -11,6 +11,18 @@ struct Grain {
     uint32_t delay=0;
     bool active=false;
 };
+// How the two vocoder channels share the audio blocks (docs/OVERLOAD_DIAGNOSIS.md
+// section 11). Both channels hop every 512 frames; what differs is the block in which
+// each channel's hop runs and what it reads.
+enum Schedule : unsigned {
+    kScheduleCommon = 0,       // both hops in the same block, as the original instrument
+    kScheduleStagger = 1,      // the right channel hops one block later with its own,
+                               // newer position: 256 samples of inter-channel offset
+    kScheduleCompensated = 2,  // the right channel hops one block later on the LEFT
+                               // channel's stored block, the left output is delayed one
+                               // block: channels exactly as kScheduleCommon, the whole
+                               // vocoder layer 256 samples later
+};
 class Engine : public Sink {
   public:
     void Init(int16_t* live_a,int16_t* live_b,uint32_t capacity,int16_t* file,FileBridge& bridge);
@@ -46,6 +58,11 @@ class Engine : public Sink {
     void SetControlOffsets(const float* offsets) {for(unsigned i=0;i<8;++i) offset_[i]=offsets[i];}
     float Smoothed(unsigned i) const {return smoothed_[i];}
 #endif
+    // Build-time choice of the product (NEBULAE_VOCODER_SCHEDULE); resets the vocoders.
+    void SetSchedule(unsigned schedule) {schedule_=schedule;ResetVocoders();}
+    unsigned ScheduleMode() const {return schedule_;}
+    // Host tests: the vocoder layer of the last block, before BLEND and the mix.
+    const float* VocoderOutput(unsigned channel) const {return voc_[channel];}
     // Overload protection (main.cpp calls it after repeated deadline overruns): the
     // vocoder is left out of the next `blocks` blocks and restarts from a reset, so the
     // main loop, USB and the panel get CPU time again. Grains and the dry path go on.
@@ -61,6 +78,9 @@ class Engine : public Sink {
 #endif
     }
     void ResetDsp();
+    void ResetVocoders();
+    void RunVocodersCommon(const PcmView& src,float ratio,float amp,unsigned n);
+    void RunVocodersCompensated(const PcmView& src,float ratio,float amp,unsigned n);
     void Transition();
     void PublishLive(bool resume=false);
     void BeginRecord();
@@ -89,10 +109,20 @@ class Engine : public Sink {
 #endif
     unsigned skip_vocoder_=0;
     bool vocoder_mono_=false;  // channel 1 was not computed: a mono source gives identical output
+    unsigned schedule_=kScheduleCommon;
+    // kScheduleCompensated: the left channel's block N, output in block N+1 together with
+    // the right channel computed on the same stored inputs.
+    bool pending_valid_=false;
+    unsigned pending_n_=0;
+    float pending_ratio_=1,pending_amp_=1;
+    PcmView pending_src_{};
+    double pending_positions_[kBlock]{};
+    float voc_delay_[kBlock]{},voc_left_now_[kBlock]{};
 #if NEBULAE_REFERENCE_VOCODER
     // Host A/B only (tests/compare_audio.cpp): the engine around the 0.2.1 vocoder.
     struct Vocoder : ReferenceMincer {
         void Init(float sr,MincerWork&) {ReferenceMincer::Init(sr);}
+        void Reset(int=0) {ReferenceMincer::Reset();}  // no stagger phase in the oracle
         void CopyStateFrom(const Vocoder& other) {*this=other;}
     };
 #else
