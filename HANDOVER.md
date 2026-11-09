@@ -1,5 +1,36 @@
 # Handover — continuing work locally
 
+**Open handover 2026-11-09, Claude → Codex: Nebulae audio overload, second opinion before
+the fix.**
+
+* **Branch / worktree:** `claude/nebulae-overload-9c0df4`, head `d66ce97` plus this entry,
+  pushed; worktree `Daisy-Seed-worktrees/nebulae-overload-9c0df4` next to the main
+  checkout. No PR yet. `libDaisy` and `DaisySP` are junctions to the main checkout there:
+  run git with `--ignore-submodules=all` (or `GIT_CONFIG_COUNT=1
+  GIT_CONFIG_KEY_0=diff.ignoreSubmodules GIT_CONFIG_VALUE_0=all`) and never
+  `git worktree remove --force` it.
+* **State:** Nebulae on Daisy froze on its first hardware contact (2026-11-08) as soon as a
+  sample played. Root cause MEASURED 2026-11-09 with the diagnostic image
+  `NebulaeModProfile-v0.2.1.bin` (`be1296fb…f919`, store
+  `firmware/granular-mod/0.2.1+e6ad1e5-profile/`): the phase vocoder's hop takes 30.8 to
+  34.2 ms of a 5.333 ms block with the Engine in SDRAM (one channel: 14.0 ms in SDRAM,
+  3.16 ms in AXI SRAM). Every libDaisy interrupt has priority 0, so the overrun starves
+  USB, the control timer and the main loop. Record:
+  [OVERLOAD_DIAGNOSIS.md](instruments/granular/docs/OVERLOAD_DIAGNOSIS.md). No fix is
+  written. P2 (RECORD) and P3 (editor and panel crash on a stalled kit) are NOT MEASURED.
+  Regular and MOD images are byte-identical to `main` (`cbc4c376…`, `02e52f88…`).
+* **Kit:** runs the diagnostic image (budget guard active, sound meaningless), test card
+  inserted. Do not flash or probe it for this task; hardware stays the owner's.
+* **Next step (Codex):** answer
+  [CODEX_SECOND_OPINION_BRIEF.md](instruments/granular/docs/CODEX_SECOND_OPINION_BRIEF.md)
+  as its section 8 says, read-only, into
+  `instruments/granular/docs/CODEX_SECOND_OPINION.md` on this branch, and replace this
+  entry's "Next step" with what you found and who continues.
+* **After that (Claude, on the owner's decision):** move the DSP state to AXI SRAM, make
+  the hop fit the block (cheaper hop on the common hop grid, staggered channels only as a
+  fallback), host A/B test for the rounding change, new image in the store, PROFILE
+  measurement and listening test on the kit, then P3 and the PR.
+
 **Mandatory modularity, user decision 2026-11-01:**
 The [development policy](docs/MODULAR_DEVELOPMENT_POLICY.md) and AGENTS.md apply
 to all new Daisy developments and substantial extensions: instrument, FX,
