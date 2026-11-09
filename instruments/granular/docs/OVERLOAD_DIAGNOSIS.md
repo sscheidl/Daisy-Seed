@@ -94,26 +94,63 @@ The owner flashes, inserts and listens; the agent runs the probes and records th
 
 ## 6. Results
 
+Flashed on 2026-11-09 20:01 by the agent with the owner's approval ("Ja, flashen"), over J7
+through the existing external Daisy bootloader (`dfu-util -a 0 -s 0x90040000:leave`,
+device `0483:df11` with the QSPI map `@Flash /0x90000000/...`); no bootloader write.
+Readings are firmware DWT counters read with `nb_probe.py`, 480 MHz core clock, block
+deadline 2,560,000 cycles = 5.333 ms.
+
 | Step | Value | Status |
 | --- | --- | --- |
-| boot benchmark SDRAM hop / plain | | NOT MEASURED |
-| boot benchmark AXI SRAM hop / plain | | NOT MEASURED |
-| hop block: vocoder min, fill, FFT, phase | | NOT MEASURED |
-| grains peak, other peak | | NOT MEASURED |
-| guard skips, overruns after 10 s playing | | NOT MEASURED |
-| P2 first press / second press | | NOT MEASURED |
+| idle without a card: callback peak | 174,179 cycles = 0.363 ms = 6.8 %, 0 overruns | MEASURED 2026-11-09 |
+| boot benchmark SDRAM hop / plain | 6,726,467 cycles = 14.013 ms = 262.8 % / 34,953 cycles = 0.073 ms (one channel) | MEASURED 2026-11-09 |
+| boot benchmark AXI SRAM hop / plain | 1,518,325 cycles = 3.163 ms = 59.3 % / 10,542 cycles = 0.022 ms (one channel) | MEASURED 2026-11-09 |
+| card inserted, bank 1 slot 1 plays (`playing 1:1`) | the kit keeps answering STATUS and PROFILE: the budget guard works; two STATUS requests went unanswered while the card was inserted and mounted (20:03:02, 20:03:19) | MEASURED 2026-11-09 |
+| hop block, both channels, Engine in SDRAM, DENSITY/OVERLAP/BLEND = 0 (10 s, 142 hop blocks) | vocoder 14,764,501 to 15,548,386 cycles = 30.8 to 32.4 ms = 577 to 607 %; of that FFTs 22.9 ms, window fill 6.5 ms, phase loops and overlap-add 3.1 ms; callback peak 33.2 ms | MEASURED 2026-11-09 |
+| same, DENSITY/OVERLAP/BLEND = 127 (10 s, 141 hop blocks) | vocoder 31.3 to 34.2 ms; FFTs 23.1 ms, fill 8.4 ms, phase 3.1 ms; callback peak 36.6 ms | MEASURED 2026-11-09 |
+| grains peak | 197,406 cycles = 0.41 ms = 7.7 % (minimum settings) to 978,803 cycles = 2.04 ms = 38.2 % (maximum) | MEASURED 2026-11-09 |
+| rest of the callback, peak | 0.44 ms = 8.3 % steady; 1.29 ms once right after the first hop (control frames queued during the overrun) | MEASURED 2026-11-09 |
+| guard activity in 10 s playing | 1,130 of 1,414 counted blocks without vocoder; about 1,000 of the 1,875 block periods never reached the callback (each hop block spans about 6 block periods) | MEASURED 2026-11-09 |
+| listening | | NOT MEASURED (the guard removes most of the vocoder: the sound of this image means nothing) |
+| P2: S1 first press / second press | | NOT MEASURED |
 
-## 7. Fix candidates, to be chosen from the numbers
+### What the numbers say
 
-1. Move the hot DSP state out of SDRAM: the whole Engine fits the free AXI SRAM
-   (~279 KB free after the MOD image), or only the two Mincers; sharing the identical
-   twiddle, bit-reversal and Hann tables between the channels saves another 32 KB.
-   Bit-identical output, golden hashes unchanged.
-2. Spread the hop: compute channel 1's frame in the block after channel 0's (changes the
-   stereo hop timing; needs a deliberate golden update), or compute the frame one hop
-   early.
-3. Skip the vocoder while BLEND mutes it (file mode BLEND = 1, Live mode BLEND >= 0.5):
-   saves CPU only in those settings, output identical where the vocoder gain is 0.
+* **P1 root cause, measured.** One hop needs 30.8 ms of work every 10.67 ms (two blocks):
+  288 % average load from the vocoder alone, 600 % in the hop block. Nothing else is
+  significant: grains at most 38 %, the rest 8 %. The unguarded image can never return
+  from the audio interrupt, which (section 2) takes USB, timer and main loop with it.
+* **SDRAM placement is the main factor, but not the whole fix.** The same hop code runs
+  4.4 times faster with its state in AXI SRAM (3.16 ms instead of 14.0 ms per channel).
+  Both channels in one block are then 6.3 ms = 119 % of a block plus grains and the
+  rest: the average fits (59 %), the hop block does not.
+* **Inside the hop** (SDRAM split): FFTs 72 %, window fill 20 %, phase loops and
+  overlap-add 10 %. The split with the state in AXI SRAM is NOT MEASURED.
+* P2 follows from the same mechanism in the code (a Live loop is a source, the vocoder
+  runs on it) but was not exercised on the kit.
+
+## 7. Fix candidates after the measurement (owner's decision pending)
+
+Budget: a hop block must stay clearly below 5.33 ms including grains (up to 2.0 ms in
+SDRAM, NOT MEASURED in AXI SRAM) and the rest (0.44 ms).
+
+1. **Required: DSP state out of SDRAM.** The whole Engine fits the free AXI SRAM (~279 KB
+   after the MOD image), or only the two Mincers; sharing the identical twiddle,
+   bit-reversal and Hann tables between the channels saves another 32 KB. Bit-identical
+   output. Alone it leaves the hop block at about 119 % plus grains: not enough.
+2. **Make the hop cheaper, same hop timing for both channels** (faithful to the original
+   stereo relation): a faster FFT than the plain radix-2 with separate real/imaginary
+   arrays, `sqrtf(x*x+y*y)` instead of libm `hypotf` in the two phase loops (2,050 calls
+   per channel and hop), a window fill without per-sample modulo. Output changes at
+   float rounding level only; proven by a host A/B test as for F3 (-88 dB then).
+3. **Stagger the channels by one block** (channel 1's frames half a hop later): halves
+   the hop block at once, but changes the stereo hop timing against the original.
+   Fallback if 1 + 2 do not reach the budget.
+4. Skip the vocoder while BLEND mutes it (file mode BLEND = 1, Live mode BLEND >= 0.5):
+   saves CPU only in those settings; no help for the default BLEND = 0.
+
+The golden test compares builds, it does not pin a constant; any rounding change is
+recorded in the changelog with its measured error.
 
 ## 8. P3: host applications and a stalled device
 

@@ -70,7 +70,11 @@ def child(stem: str, message: list[int], want_reply: bool, timeout: float, queue
                 elif buf:
                     buf.append(b)
                     if b == 0xF7:
-                        if list(buf[:5]) == PREFIX and (buf[5] & REPLY):
+                        # Only the answer to this request: another client on the same port
+                        # (panel, editor, a second probe) gets its own NB replies there too.
+                        if (list(buf[:5]) == PREFIX and len(buf) > 6
+                                and buf[5] in (message[5] | REPLY, CMD_ERROR | REPLY)
+                                and (buf[5] != CMD_ERROR | REPLY or buf[6] == message[5])):
                             queue.put(("REPLY", bytes(buf), round(time.monotonic() - t0, 3)))
                             return
                         buf = bytearray()
