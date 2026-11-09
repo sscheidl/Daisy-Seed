@@ -66,9 +66,12 @@ be the default; it could be a deliberate, switchable character, but not the fix.
    proposes one listening image (`PROFILE=1` build) with a runtime switch of the hop
    scheduling mode through a new diagnostic SysEx (NB `04 <mode>`), so the owner switches
    while a sample plays instead of flashing three images; the production image would
-   carry only the chosen mode. Is a runtime switch acceptable for a fair comparison (mode
-   change implies a vocoder reset), and what should the listening sheet contain
-   (material, settings, what to listen for, blind order)?
+   carry only the chosen mode. SW17 has no function outside SAMPLE mode (README,
+   `control.cpp` `bank_view`), so a listening image could also switch on the kit itself.
+   The owner finds a switchable image complicated and asks for the simplest method that
+   still gives a fair comparison: separate images per variant, a SysEx switch, SW17, or
+   something else? A mode change implies a vocoder reset. What should the listening sheet
+   contain (material, settings, what to listen for, blind order)?
 6. **D.** Is 0.5 to 0.8 ms realistic for a fast inverse square root (two Newton steps) and
    a float fill on Cortex-M7, and would you take D in addition to C, or not at all?
 7. Anything in the measurements that you would not trust before the decision (peaks right
