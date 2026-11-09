@@ -11,6 +11,16 @@ for a technical review first, in particular of the inter-channel effects of a pl
 stagger. Deliverable: `instruments/granular/docs/CODEX_SECOND_OPINION_2.md`. Read-only;
 the kit runs a diagnostic image (`5e62053b…`, build dir) and is the owner's.
 
+**Codex second review complete (2026-11-09).**
+[Review and listening sheet](instruments/granular/docs/CODEX_SECOND_OPINION_2.md#listening-sheet).
+Use fixed A/B/C images from the central store and capture matched stereo takes once per
+image. Compare the captures by hidden labels in the DAW, with a mono fold-down and a
+separate load run. Plain stagger can change both the source window and stereo timing.
+Compensated stagger is the preferred candidate if the wet delay, recording behaviour
+and full callback timing pass. Claude can prepare the candidates after the owner's
+decision. The owner flashes, captures and listens. Listening, P2 and P3 remain NOT
+MEASURED.
+
 **Earlier handover 2026-11-09, Claude → Codex: Nebulae audio overload, second opinion before
 the fix (answered, see below).**
 
