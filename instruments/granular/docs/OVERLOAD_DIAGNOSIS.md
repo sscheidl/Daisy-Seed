@@ -239,10 +239,34 @@ at high pitch. Second candidate (same day): `WrapFmod`, an exact replacement of
 samples, so channel 1 is a copy of channel 0; its premises are host-tested). Both keep the
 golden hashes.
 
-| Step, second candidate | Value | Status |
+### Second 0.2.2 candidate on the kit (`f41dd580…`, commit 361a5ea), MEASURED 2026-11-09 21:21-21:23
+
+Flashed by the agent (the kit was in the bootloader again). Stereo 48 kHz test file, bank 1
+slot 1. "hop block vocoder" is the steady minimum over the hop blocks of the run; the
+peaks of a run include the blocks right after a CC change while the smoothing settles.
+
+| Step | Value | Status |
 | --- | --- | --- |
-| playing, START near the end of the file, PITCH maximum: hop block vocoder | | NOT MEASURED |
-| playing, mono file: hop block vocoder | | NOT MEASURED |
-| overruns and skipped blocks after 60 s at worst settings (target: 0 and 0) | | NOT MEASURED |
+| START 124/127 (near the file end), SIZE max, PITCH max, DENSITY/OVERLAP/BLEND 127 | hop block vocoder 3.96 ms (74 %), fill peak 3.99, FFT 1.38, phase 0.65 ms; grains 1.57 ms; callback peak 7.8 ms; 2,597 of 2,921 blocks skipped, overruns climbing | MEASURED |
+| START 0, otherwise the same | hop block vocoder 3.95 ms, fill peak 3.34 ms; still overruns and skips | MEASURED |
+| 60 s at the worst settings | overruns +2,554, 10,098 of 11,361 blocks skipped: the protection carries the kit, the sound has vocoder gaps | MEASURED |
+| experiment, not kept: `PLD` prefetch 16 reads ahead in the fill (`9128e63a…`, build dir only) | hop block vocoder 3.67 ms at PITCH max (from 4.1), 3.54 to 3.58 ms at PITCH centre (from 3.2): the hint costs more at normal pitch than it saves at high pitch | MEASURED 21:28-21:30 |
+| mono file: hop block vocoder | | NOT MEASURED (needs the owner to select bank 3) |
 | P2: S1 first press, first stop, second recording | | NOT MEASURED |
-| listening: file playback, Live, freeze, pitch extremes | | NOT MEASURED |
+| listening | | NOT MEASURED |
+
+Budget on the common hop grid after both candidates (stereo file, both channels in one
+block): vocoder 3.2 ms at PITCH centre to 4.1 ms at PITCH maximum (+0.65 ms with START
+at the file end), grains 0.17 to 1.57 ms, rest 0.17 ms. Typical settings stay well below
+the block (PITCH centre, moderate grains: about 4 ms = 75 %); PITCH centre with maximum
+grains reaches 4.9 ms = 92 %; PITCH maximum with maximum grains reaches 5.7 ms = 107 %
+and runs into the overload protection. The FFT (1.35 ms for six transforms) and the
+phase loops (0.65 ms) are at their expected cost; the window fill (1.0 to 2.0 ms) is bound
+by SDRAM cache misses, which no bit-identical change removes. The 70 % target of the
+second opinion is not reachable on the common grid with bit-identical changes; the
+options are the synchronised two-block pipeline (one block of vocoder latency, stereo
+unchanged), the half-hop channel stagger (no latency, stereo analysis grid of the right
+channel shifted by 256 samples; dual-mono files are unaffected because of the mono
+shortcut), rounding-level arithmetic changes (fast inverse square root, float fill;
+perhaps 0.5 to 0.8 ms), or accepting the protection as the behaviour at the extreme
+settings. The owner decides.
