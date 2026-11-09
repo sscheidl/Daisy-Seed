@@ -117,3 +117,28 @@ BUILDABLE_PROJECTS += toy-piano-filter
 PROJECT_DIR_toy-piano-filter := instruments/toy-piano
 PROJECT_ARGS_toy-piano-filter := FILTER=1
 PROJECT_STATUS_toy-piano-filter := buildable
+# Cumulonimbus (Clouds granular path, effects/cumulonimbus): standalone diagnostic FX at the 48 kHz and
+# the 32 kHz internal grain rate, and Toy Piano on Cumulonimbus, playable and profiling, at both rates.
+# ARM builds verified 2026-11-09; hardware NOT MEASURED.
+PROJECTS += cumulonimbus-fx cumulonimbus-fx-32
+BUILDABLE_PROJECTS += cumulonimbus-fx cumulonimbus-fx-32
+PROJECT_DIR_cumulonimbus-fx := effects/cumulonimbus
+PROJECT_ARGS_cumulonimbus-fx := RATE=48
+PROJECT_STATUS_cumulonimbus-fx := buildable
+PROJECT_DIR_cumulonimbus-fx-32 := effects/cumulonimbus
+PROJECT_ARGS_cumulonimbus-fx-32 := RATE=32
+PROJECT_STATUS_cumulonimbus-fx-32 := buildable
+PROJECTS += toy-piano-cumulonimbus toy-piano-cumulonimbus-32 toy-piano-cumulonimbus-profile toy-piano-cumulonimbus-32-profile
+BUILDABLE_PROJECTS += toy-piano-cumulonimbus toy-piano-cumulonimbus-32 toy-piano-cumulonimbus-profile toy-piano-cumulonimbus-32-profile
+PROJECT_DIR_toy-piano-cumulonimbus := instruments/toy-piano
+PROJECT_ARGS_toy-piano-cumulonimbus := CUMULO=1 CUMULO_RATE=48 CUMULO_PROFILE=0
+PROJECT_STATUS_toy-piano-cumulonimbus := buildable
+PROJECT_DIR_toy-piano-cumulonimbus-32 := instruments/toy-piano
+PROJECT_ARGS_toy-piano-cumulonimbus-32 := CUMULO=1 CUMULO_RATE=32 CUMULO_PROFILE=0
+PROJECT_STATUS_toy-piano-cumulonimbus-32 := buildable
+PROJECT_DIR_toy-piano-cumulonimbus-profile := instruments/toy-piano
+PROJECT_ARGS_toy-piano-cumulonimbus-profile := CUMULO=1 CUMULO_RATE=48 CUMULO_PROFILE=1
+PROJECT_STATUS_toy-piano-cumulonimbus-profile := buildable
+PROJECT_DIR_toy-piano-cumulonimbus-32-profile := instruments/toy-piano
+PROJECT_ARGS_toy-piano-cumulonimbus-32-profile := CUMULO=1 CUMULO_RATE=32 CUMULO_PROFILE=1
+PROJECT_STATUS_toy-piano-cumulonimbus-32-profile := buildable

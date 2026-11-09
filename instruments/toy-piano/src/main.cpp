@@ -28,9 +28,14 @@
 #include "filter_host.h"
 #include "callback_diagnostics.h"
 #include <new>
+#elif TOY_PIANO_CUMULONIMBUS
+#include "cumulonimbus_host.h"
+#include "callback_diagnostics.h"
+#include "../../../effects/cumulonimbus/src/stage_meter.h"
+#include <new>
 #endif
 #define TOY_PIANO_MODULATION 1 // tests: call InitModulation() before the callback
-// Regular Toy Piano (0.5) and toy-piano-fv1: VR1 transposition and DIN MIDI input. Ambient and tape keep their own panel.
+// Regular Toy Piano (0.5), toy-piano-fv1 and Cumulonimbus: transposition and DIN MIDI input. Ambient and tape keep their own panel.
 #define TOY_PIANO_PITCH_AND_DIN (!TOY_PIANO_FX && !TOY_PIANO_TAPE)
 
 // libDaisy's USB device state for the external port (J7 on the carrier).
@@ -52,6 +57,12 @@ const char kProgramSource[] = "FV1VM-PROGRAMS=BUILTIN";
 #endif
 #elif TOY_PIANO_FILTER
 const char kFirmwareId[] = "TOYPIANO-FILTER-FW-VERSION=" TOY_PIANO_FILTER_VERSION;
+#elif TOY_PIANO_CUMULONIMBUS
+const char kFirmwareId[] = "TOYPIANO-CUMULONIMBUS-FW-VERSION=" TOY_PIANO_CUMULONIMBUS_VERSION;
+#define TP_STR2(x) #x
+#define TP_STR(x) TP_STR2(x)
+const char kBuildId[] = "TOYPIANO-CUMULONIMBUS-BUILD=RATE" TP_STR(CUMULONIMBUS_INTERNAL_RATE) " PROFILE="
+    TP_STR(TOY_PIANO_CUMULONIMBUS_PROFILE) " COMPONENT=" CUMULONIMBUS_VERSION " CHAIN=" CUMULONIMBUS_CHAIN_VERSION;
 #else
 const char kFirmwareId[] = "TOYPIANO-FW-VERSION=" TOY_PIANO_VERSION;
 #endif
@@ -158,6 +169,52 @@ float piano_transpose = 1.f; // audio thread only; exactly 1 in the centre deten
 std::array<float, toy_piano::kNumVoices> voice_pressure_now{}; // audio thread only, for the cutoff column
 unsigned test_setting = ~0u; // audio thread only: load test settings; a change starts a new peak
 std::atomic<uint32_t> test_leds{0}; // audio -> main: page 2 shows the load test instead of the keys
+#elif TOY_PIANO_CUMULONIMBUS
+// PCM16 grain ring (2 s mono) in SDRAM; the host (grain state, Clouds tables) and the reverb's 64 KiB
+// in AXI SRAM behind the image (NOLOAD, needs ld/toy_piano_axi.lds): DTCM is nearly full.
+DSY_SDRAM_BSS seed::fx::Cumulonimbus::Storage grain_memory;
+#if defined(__arm__)
+__attribute__((section(".tp_axi_bss"), aligned(32)))
+#endif
+seed::fx::TorusReverb::Storage reverb_memory;
+#if defined(__arm__)
+__attribute__((section(".tp_axi_bss"), aligned(32)))
+#endif
+alignas(toy_piano::CumulonimbusHost) unsigned char cumulo_storage[sizeof(toy_piano::CumulonimbusHost)];
+toy_piano::CumulonimbusHost* cumulo = nullptr;
+mod::adapter::CallbackDiagnostics callback_diagnostics;
+float piano_transpose = 1.f; // audio thread only; exactly 1 in the centre detent
+float harmonic_base = toy_piano::kHarmonicBase, level_base = toy_piano::kLevelBase; // audio thread only
+// Main loop -> audio: external register writes (MIDI CCs, app rate edits).
+toy_piano::SpscQueue<toy_piano::ExternalWrite, 32> external_writes;
+toy_piano::RateReporter rate_reporter; // audio thread only
+toy_piano::RateSync rate_sync;         // main loop only
+std::array<std::atomic<uint32_t>, toy_piano::kRateSources> rate_reports{}; // audio -> main
+static_assert(std::atomic<uint32_t>::is_always_lock_free);
+bool InitializeFx() {
+    std::fill_n(cumulo_storage, sizeof(cumulo_storage), static_cast<unsigned char>(0));
+    cumulo = new(cumulo_storage) toy_piano::CumulonimbusHost{};
+    return cumulo->Prepare(grain_memory, reverb_memory);
+}
+#if TOY_PIANO_CUMULONIMBUS_PROFILE
+namespace diag = cumulonimbus::diag;
+diag::StageMeter meter;
+diag::Requests requests;
+diag::TelemetrySender telemetry;
+toy_piano::PianoLoad piano_load;  // audio thread only
+std::array<std::atomic<uint32_t>, diag::kMetricCount> live{}; // audio -> main, per block
+std::atomic<uint32_t> reset_epoch{0};
+uint8_t scenario = diag::kScenarioFull; // audio thread only
+uint32_t voices_peak = 0;               // audio thread only
+std::atomic<uint32_t> midi_overruns{0}; // main loop: notes refused by the full queue
+uint32_t Cycles() { return DWT->CYCCNT; }
+void RestartStatistics() {
+    meter.RequestReset();
+    cumulo->GetChain().GrainEffect().ResetCounters();
+    voices_peak = 0;
+    reset_epoch.fetch_add(1, std::memory_order_relaxed);
+}
+#endif
 #else
 // 0.5: VR1 transposition, VR2 attack, VR3 decay.
 toy_piano::PotFilter pitch_pot, attack_pot, decay_pot;
@@ -201,6 +258,11 @@ void InitModulation(float sample_rate) {
     callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
     modulation.EnableExtensions({true, true, false});
+#elif TOY_PIANO_CUMULONIMBUS
+    // Extended monitor, LFO cross modulation and the page/SW18 modes.
+    callback_diagnostics.Init(sample_rate, toy_piano::kBlockSize);
+    modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize, 0, &callback_diagnostics);
+    modulation.EnableExtensions({true, true, true});
 #else
     modulation.Init(kModInfo, sample_rate, toy_piano::kBlockSize);
     // v0.4: extended monitor (pot positions, ranges) and LFO cross modulation, like
@@ -228,6 +290,35 @@ void ModulateVoices(size_t size) {
             gain = 0; // Extreme MIDI notes beyond Nyquist fade silent instead of folding.
         }
         piano.Modulate(v, ratio, gain, toy_piano::HarmonicWeight(harmonic), size);
+    }
+#elif TOY_PIANO_CUMULONIMBUS
+    // Piano page: transposition, harmonic and level bases. At the reference values and without an active
+    // matrix the voices render exactly as in the regular Toy Piano.
+    const bool reference = piano_transpose == 1.f && harmonic_base == toy_piano::kHarmonicBase &&
+                           level_base == toy_piano::kLevelBase;
+    if(!engine.Active() && reference) {
+        if(modulating)
+            piano.ClearModulation(size);
+        modulating = false;
+        return;
+    }
+    modulating = true;
+    for(size_t v = 0; v < toy_piano::kNumVoices; ++v) {
+        float ratio = piano_transpose, gain = toy_piano::LevelGain(level_base);
+        float harmonic = toy_piano::HarmonicWeight(harmonic_base);
+        if(engine.Active()) {
+            const int note = v < toy_piano::kNumKeys ? -1 : piano.MidiVoiceNote(v - toy_piano::kNumKeys);
+            const float p = voice_pressure[v].Process(engine, note);
+            ratio *= toy_piano::PitchRatio(engine.ApplyVoice(toy_piano::ModPitch, toy_piano::kPitchBase, p));
+            gain = toy_piano::LevelGain(engine.ApplyVoice(toy_piano::ModLevel, level_base, p));
+            harmonic = toy_piano::HarmonicWeight(engine.ApplyVoice(toy_piano::ModHarmonic, harmonic_base, p));
+        }
+        const float increment = piano.BaseIncrement(v);
+        if(increment * ratio >= .5f) {
+            ratio = .49f / increment;
+            gain = 0; // Notes transposed beyond Nyquist fade silent instead of folding.
+        }
+        piano.Modulate(v, ratio, gain, harmonic, size);
     }
 #elif TOY_PIANO_PITCH_AND_DIN
     // VR1 transposition times the matrix pitch. Without transposition and without an active matrix the
@@ -296,12 +387,38 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
 #if TOY_PIANO_FV1
     const uint32_t fv1_start = DWT->CYCCNT;
 #endif
-#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1 || TOY_PIANO_FILTER
+#if TOY_PIANO_CUMULONIMBUS && TOY_PIANO_CUMULONIMBUS_PROFILE
+    const uint32_t cycle_start = DWT->CYCCNT;
+#endif
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1 || TOY_PIANO_FILTER || TOY_PIANO_CUMULONIMBUS
     if(size != toy_piano::kBlockSize) {
         for(size_t i = 0; i < std::min(size, toy_piano::kBlockSize); ++i) out[0][i] = out[1][i] = 0;
         return;
     }
     callback_diagnostics.Begin();
+#endif
+#if TOY_PIANO_CUMULONIMBUS && TOY_PIANO_CUMULONIMBUS_PROFILE
+    meter.Begin(cycle_start);
+    {
+        const int32_t s = requests.scenario.exchange(-1, std::memory_order_relaxed);
+        if(s >= 0) {
+            scenario = uint8_t(s);
+            cumulo->GetChain().SetRoute(diag::RouteFor(scenario));
+            RestartStatistics();
+        }
+        const int32_t c = requests.cap.exchange(-1, std::memory_order_relaxed);
+        if(c >= 0) {
+            cumulo->GetChain().SetCap(c);
+            RestartStatistics();
+        }
+        const int32_t st = requests.stimulus.exchange(-1, std::memory_order_relaxed);
+        if(st >= 0) {
+            piano_load.Select(uint8_t(st));
+            RestartStatistics();
+        }
+        if(requests.telemetry.exchange(-1, std::memory_order_relaxed) == 2)
+            RestartStatistics();
+    }
 #endif
     hw.UpdateAllControls(); // Shift registers + official debouncing + ADC values.
     mod::adapter::ReadHardware(modulation.engine, hw);
@@ -377,6 +494,44 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     modulation.engine.ReportBase(toy_piano::ModCutoff, panel.cutoff);
     modulation.engine.ReportBase(toy_piano::ModResonance, panel.resonance);
     modulation.engine.ReportBase(toy_piano::ModDrive, panel.drive);
+#elif TOY_PIANO_CUMULONIMBUS
+    std::array<float, 8> raw{};
+    for(size_t i = 0; i < raw.size(); ++i) raw[i] = hw.pot[i].Value();
+    cumulo->ReadControls(raw, hw.tog_sw17.Pressed(), hw.tog_sw18.Read());
+    {
+        toy_piano::ExternalWrite w;
+        for(unsigned n = 0; n < 16 && external_writes.Pop(w); ++n) {
+            cumulo->Write(w);
+            rate_reporter.Count(w);
+        }
+    }
+    toy_piano::CumulonimbusPanel& panel = cumulo->Panel();
+    rate_reporter.Publish(panel, [](unsigned i, uint32_t word) { rate_reports[i].store(word, std::memory_order_relaxed); });
+    piano_transpose = toy_piano::TransposeRatio(panel.Value(toy_piano::kDestTranspose));
+    harmonic_base = panel.Value(toy_piano::kDestHarmonic);
+    level_base = panel.Value(toy_piano::kDestLevel);
+    const float attack_base = panel.Value(toy_piano::kDestAttack);
+    const float decay_base = panel.Value(toy_piano::kDestDecay);
+    const float attack = modulation.engine.Apply(toy_piano::ModAttack, attack_base);
+    const float decay = modulation.engine.Apply(toy_piano::ModDecay, decay_base);
+    const float position = panel.Value(toy_piano::kDestPosition);
+    const float grain_mix = panel.Value(toy_piano::kDestGrainMix);
+    const float hall_mix = panel.Value(toy_piano::kDestHallMix);
+    modulation.engine.ReportBase(toy_piano::ModPitch, toy_piano::kPitchBase);
+    modulation.engine.ReportBase(toy_piano::ModLevel, level_base);
+    modulation.engine.ReportBase(toy_piano::ModHarmonic, harmonic_base);
+    modulation.engine.ReportBase(toy_piano::ModAttack, attack_base);
+    modulation.engine.ReportBase(toy_piano::ModDecay, decay_base);
+    modulation.engine.ReportBase(toy_piano::ModGrainPosition, position);
+    modulation.engine.ReportBase(toy_piano::ModGrainMix, grain_mix);
+    modulation.engine.ReportBase(toy_piano::ModHallMix, hall_mix);
+    modulation.engine.ReportMode(uint8_t((panel.CurrentPage() == toy_piano::kPageFx ? 3 : 0) +
+                                         (panel.Mode() == seed::fx::ChainMode::Freeze ? 1 :
+                                          panel.Mode() == seed::fx::ChainMode::Bypass ? 2 : 0)),
+                                 mod::kModeFromDevice);
+    cumulo->SetModulated(modulation.engine.Apply(toy_piano::ModGrainPosition, position),
+                         modulation.engine.Apply(toy_piano::ModGrainMix, grain_mix),
+                         modulation.engine.Apply(toy_piano::ModHallMix, hall_mix));
 #else
     // 0.5: VR1 transposition +-24 semitones (centre detent), VR2 attack, VR3 decay.
     const float pitch_x = pitch_pot.Process(hw.pot[0].Value());
@@ -474,6 +629,48 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     }
     callback_diagnostics.End();
     test_leds.store(panel.page2 ? (panel.load_voices / 4) | 0x100u : 0u, std::memory_order_relaxed);
+#elif TOY_PIANO_CUMULONIMBUS
+    std::array<float, toy_piano::kBlockSize> mono{};
+#if TOY_PIANO_CUMULONIMBUS_PROFILE
+    piano_load.Process(piano);
+    const uint32_t piano_start = DWT->CYCCNT;
+#endif
+    for(size_t i = 0; i < size; ++i) mono[i] = piano.Process();
+#if TOY_PIANO_CUMULONIMBUS_PROFILE
+    meter.Add(diag::kPiano, DWT->CYCCNT - piano_start);
+#endif
+    cumulo->Process(mono.data(), out[0], out[1], size);
+    callback_diagnostics.End();
+#if TOY_PIANO_CUMULONIMBUS_PROFILE
+    {
+        const auto& chain = cumulo->GetChain();
+        const auto t = chain.GrainEffect().Telemetry();
+        meter.Add(diag::kGrainWrite, t.write_cycles);
+        meter.Add(diag::kGrainRender, t.render_cycles);
+        meter.Add(diag::kConvert, t.convert_cycles);
+        meter.Add(diag::kReverb, chain.ReverbCycles());
+        const uint32_t voices = toy_piano::ActiveVoices(piano);
+        if(voices > voices_peak) voices_peak = voices;
+        live[diag::kScenario].store(scenario, std::memory_order_relaxed);
+        live[diag::kCap].store(uint32_t(chain.GrainEffect().Cap()), std::memory_order_relaxed);
+        live[diag::kStimulus].store(piano_load.Pattern(), std::memory_order_relaxed);
+        live[diag::kGrainsActive].store(uint32_t(t.active), std::memory_order_relaxed);
+        live[diag::kGrainsPeak].store(uint32_t(t.peak_active), std::memory_order_relaxed);
+        live[diag::kRejected].store(t.rejected, std::memory_order_relaxed);
+        live[diag::kStartedHigh].store(t.started_high, std::memory_order_relaxed);
+        live[diag::kStartedMedium].store(t.started_medium, std::memory_order_relaxed);
+        live[diag::kVoicesActive].store(voices, std::memory_order_relaxed);
+        live[diag::kVoicesPeak].store(voices_peak, std::memory_order_relaxed);
+        uint32_t flags = diag::kFlagProfiling | diag::kFlagMono |
+                         (CUMULONIMBUS_INTERNAL_RATE == 32000 ? uint32_t(diag::kFlagRate32) : 0u);
+        flags |= chain.Mode() == seed::fx::ChainMode::Bypass ? uint32_t(diag::kFlagBypass) : 0u;
+        flags |= chain.Mode() == seed::fx::ChainMode::Freeze ? uint32_t(diag::kFlagFreeze) : 0u;
+        flags |= chain.Suspended() ? uint32_t(diag::kFlagSuspended) : 0u;
+        flags |= cumulo->Panel().CurrentPage() == toy_piano::kPageFx ? uint32_t(diag::kFlagFxPage) : 0u;
+        live[diag::kFlags].store(flags, std::memory_order_relaxed);
+        meter.End(DWT->CYCCNT - cycle_start);
+    }
+#endif
 #else
     for(size_t i = 0; i < size; ++i) {
         const float sample = piano.Process();
@@ -508,6 +705,53 @@ void SendKeyChanges(uint32_t mask, bool connected) {
     }
     usb_midi.SendMessage(message, size);
 }
+
+#if TOY_PIANO_CUMULONIMBUS
+#if TOY_PIANO_CUMULONIMBUS_PROFILE
+bool snapshot_pending = false; // main loop only
+#endif
+// Main loop only: source rates between the patch and the Piano page, and the diagnostics telemetry.
+void ServiceCumulonimbus(bool connected) {
+    const mod::Patch& patch = modulation.controller.CurrentPatch();
+    const uint16_t rates[toy_piano::kRateSources] = {patch.lfo[0].rate, patch.lfo[1].rate, patch.random.rate};
+    rate_sync.FromPatch(rates, [](const toy_piano::ExternalWrite& w) { return external_writes.Push(w); });
+    uint32_t reports[toy_piano::kRateSources];
+    for(unsigned i = 0; i < toy_piano::kRateSources; ++i) reports[i] = rate_reports[i].load(std::memory_order_relaxed);
+    uint16_t wanted[toy_piano::kRateSources];
+    if(rate_sync.FromPots(reports, wanted)) {
+        mod::Patch q = patch;
+        q.lfo[0].rate = wanted[0];
+        q.lfo[1].rate = wanted[1];
+        q.random.rate = wanted[2];
+        modulation.controller.LoadPatch(q);
+    }
+#if TOY_PIANO_CUMULONIMBUS_PROFILE
+    static uint32_t seen_epoch = 0, reset_ms = 0;
+    const uint32_t epoch = reset_epoch.load(std::memory_order_relaxed);
+    if(epoch != seen_epoch) { // statistics restarted: the measured window starts now
+        seen_epoch = epoch;
+        reset_ms = daisy::System::GetNow();
+    }
+    if(snapshot_pending && meter.SnapshotReady() && !telemetry.Busy()) {
+        diag::Metrics m{};
+        for(unsigned i = 0; i < diag::kMetricCount; ++i) m[i] = live[i].load(std::memory_order_relaxed);
+        diag::FillMeterMetrics(meter.Snapshot(), m);
+        meter.ReleaseSnapshot();
+        m[diag::kInternalRate] = CUMULONIMBUS_INTERNAL_RATE;
+        m[diag::kBlockFrames] = toy_piano::kBlockSize;
+        m[diag::kWindowMs] = daisy::System::GetNow() - reset_ms;
+        m[diag::kMidiOverruns] = midi_overruns.load(std::memory_order_relaxed);
+        telemetry.Start(m);
+        snapshot_pending = false;
+    }
+    telemetry.Service([connected](const uint8_t* bytes, size_t size) {
+        if(connected) usb_midi.SendMessage(const_cast<uint8_t*>(bytes), size);
+    });
+#else
+    (void)connected;
+#endif
+}
+#endif
 
 // Main loop only: USB parsing happens in the USB interrupt, but sending blocks.
 void ServiceUsbMidi() {
@@ -575,13 +819,35 @@ void ServiceUsbMidi() {
            fx_rate.HandleBody(event.sysex_data, event.sysex_message_len, daisy::System::GetNow()))
             continue;
 #endif
+#if TOY_PIANO_CUMULONIMBUS
+        if(event.type == daisy::ControlChange) {
+#if TOY_PIANO_CUMULONIMBUS_PROFILE
+            if(diag::HandleControlChange(requests, event.channel, event.data[0], event.data[1])) {
+                if(requests.telemetry.load(std::memory_order_relaxed) == 1) {
+                    requests.telemetry.store(-1, std::memory_order_relaxed);
+                    meter.RequestSnapshot();
+                    snapshot_pending = true;
+                }
+                continue;
+            }
+#endif
+            toy_piano::ExternalWrite w;
+            if(toy_piano::CcToWrite(event.channel, event.data[0], event.data[1], w)) {
+                external_writes.Push(w); // a full queue drops the write; the pot still owns it
+                continue;
+            }
+        }
+#endif
         mod::MidiMessage message; // Mod on Daisy sees its SysEx, CC1 and aftertouch.
         if(mod::adapter::ToMessage(event, message) && modulation.controller.HandleMidi(message))
             continue;
         if(event.type == daisy::NoteOn) {
             const auto note = event.AsNoteOn();
             if(note.velocity > 0) {
-#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
+#if TOY_PIANO_CUMULONIMBUS && TOY_PIANO_CUMULONIMBUS_PROFILE
+                if(!midi_in.Push({note.note, note.velocity}))
+                    midi_overruns.fetch_add(1, std::memory_order_relaxed);
+#elif TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
                 if(!midi_in.Push({note.note, note.velocity})) {
                     next = {note.note, note.velocity};
                     pending = true;
@@ -597,6 +863,9 @@ void ServiceUsbMidi() {
     const bool connected = hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED;
     SendKeyChanges(led_mask.load(std::memory_order_relaxed), connected);
     modulation.controller.Service(daisy::System::GetNow(), mod_sender); // at most one reply per ms
+#if TOY_PIANO_CUMULONIMBUS
+    ServiceCumulonimbus(connected);
+#endif
 #if TOY_PIANO_FX
     fx_rate.Service(daisy::System::GetNow(), connected);
 #endif
@@ -640,6 +909,9 @@ int main() {
 #if TOY_PIANO_FV1
     asm volatile("" : : "r"(kProgramSource));
 #endif
+#if TOY_PIANO_CUMULONIMBUS
+    asm volatile("" : : "r"(kBuildId));
+#endif
     hw.Init();
 #if TOY_PIANO_FX && AMBIENT_SDRAM_WRITE_ALLOCATE && defined(__arm__)
     EnableSdramWriteAllocate(); // Before any SDRAM content is initialized.
@@ -647,8 +919,15 @@ int main() {
     hw.seed.SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate::SAI_48KHZ);
     hw.seed.SetAudioBlockSize(toy_piano::kBlockSize);
     piano.Init(hw.seed.AudioSampleRate());
-#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1 || TOY_PIANO_CUMULONIMBUS
     if(!InitializeFx()) while(true) daisy::System::Delay(100);
+#endif
+#if TOY_PIANO_CUMULONIMBUS && TOY_PIANO_CUMULONIMBUS_PROFILE
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+    meter.Init((SystemCoreClock / 48000u) * uint32_t(toy_piano::kBlockSize));
+    cumulo->GetChain().SetClock(Cycles);
 #endif
 #if TOY_PIANO_FILTER
     InitializeFilter();

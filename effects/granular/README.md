@@ -8,5 +8,8 @@ buffers, freeze behavior, dry/wet mix, and bounded feedback need explicit
 definitions before the instrument's granular core is connected to an audio
 input application.
 
+The live Clouds-lineage granular effect with freeze is implemented as
+[Cumulonimbus](../cumulonimbus/) (2026-11-09); this project ID stays reserved.
+
 See the [reference survey](../../docs/REFERENCES.md) for sources and limits.
 `make PROJECT=granular-fx` currently reports that the project has no implementation.
