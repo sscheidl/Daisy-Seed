@@ -1,7 +1,18 @@
 # Handover — continuing work locally
 
-**Open handover 2026-11-09, Claude → Codex: Nebulae audio overload, second opinion before
-the fix.**
+**Open handover 2026-11-09 (evening), Claude → Codex: second review, hop scheduling of the
+Nebulae vocoder.** Brief:
+[CODEX_SECOND_OPINION_2_BRIEF.md](instruments/granular/docs/CODEX_SECOND_OPINION_2_BRIEF.md).
+State: 0.2.2 (head d090a3c) runs on the kit and no longer freezes; hop block 3.2 to
+4.1 ms for both channels, the extreme setting (PITCH max + max grains, 107 %) still runs
+into the overload protection. The owner wants to hear the variants (keep, plain stagger,
+stagger with compensation = two-block pipeline, rounding-level arithmetic) and asks Codex
+for a technical review first, in particular of the inter-channel effects of a plain
+stagger. Deliverable: `instruments/granular/docs/CODEX_SECOND_OPINION_2.md`. Read-only;
+the kit runs a diagnostic image (`5e62053b…`, build dir) and is the owner's.
+
+**Earlier handover 2026-11-09, Claude → Codex: Nebulae audio overload, second opinion before
+the fix (answered, see below).**
 
 * **Branch / worktree:** `claude/nebulae-overload-9c0df4`, head `d66ce97` plus this entry,
   pushed; worktree `Daisy-Seed-worktrees/nebulae-overload-9c0df4` next to the main
