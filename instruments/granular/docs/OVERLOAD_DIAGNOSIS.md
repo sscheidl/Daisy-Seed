@@ -209,13 +209,40 @@ Expected cost per channel and hop in AXI SRAM, from operation counts only (NOT M
 fill about 0.15 ms, three real FFTs about 0.5 ms, phase loops about 0.2 ms; both
 channels about 1.8 ms of a 5.33 ms block, plus grains and the rest.
 
-To measure on the kit with `NebulaeModProfile-v0.2.2.bin` (same procedure as section 5):
+### First 0.2.2 candidate on the kit (`d487eeff…`, commit f8239eb), MEASURED 2026-11-09 21:07-21:09
+
+Flashed by the agent with the owner's approval; the kit was already in the bootloader.
+Firmware DWT counters read with `nb_probe.py`, Engine reported in AXI SRAM.
 
 | Step | Value | Status |
 | --- | --- | --- |
-| boot benchmark, new vocoder, one channel: SDRAM hop / AXI SRAM hop | | NOT MEASURED |
-| playing, DENSITY/OVERLAP/BLEND 0: hop block vocoder (both channels), fill, FFT, phase | | NOT MEASURED |
-| playing, DENSITY/OVERLAP/BLEND 127: callback peak, grains peak | | NOT MEASURED |
-| overruns and skipped blocks after 60 s playing (target: 0 and 0) | | NOT MEASURED |
+| boot benchmark, new vocoder, one channel: SDRAM hop / AXI SRAM hop | 4.233 ms (was 14.013) / **1.554 ms** (was 3.163) | MEASURED |
+| idle without a sample, callback peak | 0.876 ms = 16.4 % (card scan and load running) | MEASURED |
+| playing, pots as found, 15 s | hop block vocoder 6.69 to 6.76 ms = 126 %: fill 4.63, FFT 1.45, phase 0.64 ms; 2,593 of 2,917 blocks skipped, overruns climbing | MEASURED |
+| same with DENSITY/OVERLAP/BLEND 127 | vocoder 6.75 ms, grains 1.53 ms, callback peak 8.49 ms | MEASURED |
+| same with DENSITY/OVERLAP/BLEND 0 | vocoder 6.77 ms, grains 0.18 ms, rest 0.23 ms | MEASURED |
+| PITCH centre, SPEED centre, START 0, SIZE max, grains 0 | hop block vocoder **3.22 ms = 60 %** steady (6.5 ms peak from the first blocks before the CCs took effect), **no new overruns**, grains 0.55 ms | MEASURED |
+| PITCH maximum (4x) | vocoder 4.09 to 4.18 ms = 77 to 78 %: fill 2.00, FFT 1.46, phase 0.69 ms; callback peak 4.96 ms = 93 %; no overruns | MEASURED |
+| PITCH minimum (1/8) | vocoder 3.13 to 3.18 ms = 59 %: fill 1.01, FFT 1.45, phase 0.69 ms; callback peak 3.89 ms; no overruns | MEASURED |
+| P2: S1 first press, first stop, second recording | | NOT MEASURED |
+| listening | | NOT MEASURED (profile image) |
+
+What the numbers say: FFT (1.45 ms for six real transforms) and phase loops (0.65 ms) are
+now as estimated; the window fill is the cost driver, and above all when read positions
+run past the end of the file (START near the end, long windows at high pitch): every such
+read took the `std::fmod` path of `PcmView::Read`, about 270 cycles, and the "as found"
+pot positions produced 4.6 ms of fill per hop. Within the file the fill costs about
+60 cycles per read, mostly the double-to-integer conversions and the SDRAM cache misses
+at high pitch. Second candidate (same day): `WrapFmod`, an exact replacement of
+`std::fmod` for the wrap path (one divide and a correction, bit-identical, host-tested on
+207,171 values), and the mono shortcut (a mono source feeds both channels the same
+samples, so channel 1 is a copy of channel 0; its premises are host-tested). Both keep the
+golden hashes.
+
+| Step, second candidate | Value | Status |
+| --- | --- | --- |
+| playing, START near the end of the file, PITCH maximum: hop block vocoder | | NOT MEASURED |
+| playing, mono file: hop block vocoder | | NOT MEASURED |
+| overruns and skipped blocks after 60 s at worst settings (target: 0 and 0) | | NOT MEASURED |
 | P2: S1 first press, first stop, second recording | | NOT MEASURED |
 | listening: file playback, Live, freeze, pitch extremes | | NOT MEASURED |

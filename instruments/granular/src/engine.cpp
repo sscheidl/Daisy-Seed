@@ -12,13 +12,14 @@ void Engine::Init(int16_t* a,int16_t* b,uint32_t cap,int16_t* file,FileBridge& b
 }
 float Engine::Random() {random_^=random_<<13;random_^=random_>>17;random_^=random_<<5;return float(random_&0xffffff)/16777216.f;}
 void Engine::ResetDsp() {
+    vocoder_mono_=false;
     for(unsigned c=0;c<2;++c) {vocoder_[c].Reset();limiter_[c].Init(kRate); for(auto& g:grains_[c]) g.active=false;}
     grain_clock_[0]=grain_clock_[1]=1; Transition();
 }
 void Engine::Transition() {fade_from_[0]=tail_[0];fade_from_[1]=tail_[1];transition_=0;}
 void Engine::SkipVocoder(unsigned blocks) {
     // Fresh vocoders fade in over their first frames; the 256-sample ramp covers the cut.
-    if(!skip_vocoder_) {vocoder_[0].Reset();vocoder_[1].Reset();Transition();}
+    if(!skip_vocoder_) {vocoder_[0].Reset();vocoder_[1].Reset();vocoder_mono_=false;Transition();}
     skip_vocoder_=blocks;
 }
 void Engine::BeginRecord() {
@@ -207,8 +208,19 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
     if(read_ok) {
         NEB_PROFILE_BEGIN(vocoder);
         if(skip_vocoder) {std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);}
-        else for(unsigned c=0;c<2;++c)
-            vocoder_[c].Process(positions_,src,c,pitch_*src.rate/kRate,live?1.f:.8f,voc_[c],int(n));
+        else if(src.channels==1) {
+            // A mono source feeds both vocoder channels the same samples, so channel 1
+            // would compute exactly what channel 0 computes: halve the hop and copy.
+            vocoder_[0].Process(positions_,src,0,pitch_*src.rate/kRate,live?1.f:.8f,voc_[0],int(n));
+            std::copy(voc_[0],voc_[0]+n,voc_[1]);
+            vocoder_mono_=true;
+        } else {
+            // Back to a stereo source without a reset (not a path the UI has, kept safe):
+            // channel 1 takes over the state it would have reached on the mono source.
+            if(vocoder_mono_) {vocoder_[1].CopyStateFrom(vocoder_[0]);vocoder_mono_=false;}
+            for(unsigned c=0;c<2;++c)
+                vocoder_[c].Process(positions_,src,c,pitch_*src.rate/kRate,live?1.f:.8f,voc_[c],int(n));
+        }
         NEB_PROFILE_ADD(vocoder,vocoder);
         NEB_PROFILE_BEGIN(grains);
         RenderGrains(src,left,right,n,density,pitch_*src.rate/kRate,input_gain);

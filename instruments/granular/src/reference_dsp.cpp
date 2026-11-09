@@ -233,6 +233,11 @@ void Mincer::Reset() {
     for (int k = 0; k < DECIM; ++k) framecnt_[k] = k*FFT_N;
     cnt_ = HOP; curframe_ = 0;
 }
+void Mincer::CopyStateFrom(const Mincer& other) {
+    memcpy(prev_, other.prev_, sizeof prev_); memcpy(outframe_, other.outframe_, sizeof outframe_);
+    memcpy(framecnt_, other.framecnt_, sizeof framecnt_);
+    cnt_ = other.cnt_; curframe_ = other.curframe_;
+}
 void Mincer::Hop(double frame_pos, const PcmView& buf, unsigned channel, float pitch) {
     MincerWork& w = *work_;
     float* const front = w.front; float* const back = w.back;

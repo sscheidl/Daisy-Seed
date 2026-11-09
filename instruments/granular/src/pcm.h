@@ -12,6 +12,20 @@ constexpr size_t kReserveBytes = 8u * 1024 * 1024;
 constexpr size_t kLiveBankBytes = 8u * 1024 * 1024;
 constexpr size_t kLiveFrames = kLiveBankBytes / 4;
 inline float Unit(float v) { return std::isfinite(v) ? std::clamp(v, 0.f, 1.f) : 0.f; }
+// std::fmod(x, n) for a finite x and an integer 1 <= n < 2^31, bit-identical to the
+// library call and far cheaper on Cortex-M7 (one divide instead of the libm loop): the
+// quotient is truncated and corrected by one where the division rounded across an
+// integer; the products and the subtraction are exact for |x| < 2^50 (Sterbenz).
+// Measured on the kit: the vocoder window fill spent 4.6 ms per hop in the wrap path
+// when START pointed near the end of the file (docs/OVERLOAD_DIAGNOSIS.md).
+inline double WrapFmod(double x, double n) {
+    if(!(std::abs(x) < 1125899906842624.0)) return std::fmod(x, n);  // 2^50, or NaN
+    double q = std::trunc(x / n);
+    double r = x - q*n;
+    if(x >= 0) { if(r < 0) r = x - (q-1)*n; else if(r >= n) r = x - (q+1)*n; }
+    else       { if(r > 0) r = x - (q+1)*n; else if(r <= -n) r = x - (q-1)*n; }
+    return r == 0 ? std::copysign(0.0, x) : r;  // fmod keeps the sign of x on a zero remainder
+}
 inline int16_t Encode(float v) {
     if(!std::isfinite(v)) return 0;
     return static_cast<int16_t>(std::clamp(v, -1.f, 32767.f/32768.f)*32768.f);
@@ -27,7 +41,7 @@ struct PcmView {
         if(!frames || !data || !std::isfinite(frame)) return 0.f;
         if(frames==1) return At(0,channel);
         if(frame<0 || frame>=frames) {
-            frame = std::fmod(frame, double(frames));
+            frame = WrapFmod(frame, double(frames));
             if(frame < 0) frame += frames;
         }
         const uint32_t i = static_cast<uint32_t>(frame);

@@ -85,6 +85,8 @@ public:
     void  Reset();
     void  Process(const double* frame_pos, const PcmView& buf, unsigned channel,
                   float pitch, float amp, float* out, int n);
+    // Phase state and overlap-add frames of another channel (same MincerWork).
+    void  CopyStateFrom(const Mincer& other);
 private:
     void  Hop(double frame_pos, const PcmView& buf, unsigned channel, float pitch);
     MincerWork* work_ = nullptr;

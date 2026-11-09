@@ -88,9 +88,13 @@ class Engine : public Sink {
     float offset_[8]{};
 #endif
     unsigned skip_vocoder_=0;
+    bool vocoder_mono_=false;  // channel 1 was not computed: a mono source gives identical output
 #if NEBULAE_REFERENCE_VOCODER
     // Host A/B only (tests/compare_audio.cpp): the engine around the 0.2.1 vocoder.
-    struct Vocoder : ReferenceMincer {void Init(float sr,MincerWork&) {ReferenceMincer::Init(sr);}};
+    struct Vocoder : ReferenceMincer {
+        void Init(float sr,MincerWork&) {ReferenceMincer::Init(sr);}
+        void CopyStateFrom(const Vocoder& other) {*this=other;}
+    };
 #else
     using Vocoder=Mincer;
 #endif

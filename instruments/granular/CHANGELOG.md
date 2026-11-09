@@ -22,6 +22,12 @@ loop, because libDaisy runs all of them at the audio interrupt's priority.
   scratch: vocoder state 123 KB instead of 213 KB.
 * **Grain loop**: the pan gains of a grain, the clock step and the channel readers are
   hoisted out of the sample loop. Bit-identical.
+* **Wrap path**: `WrapFmod` replaces `std::fmod` in `PcmView::Read` (one divide and a
+  correction instead of the libm loop; bit-identical, 207,171 values host-tested). On the
+  kit the first 0.2.2 candidate spent 4.6 ms per hop in that path when START pointed near
+  the end of the file.
+* **Mono sources** feed both vocoder channels the same samples; channel 1 is now a copy of
+  channel 0, which halves the hop for mono files (bit-identical; premises host-tested).
 * **Overload protection in every image**: a second deadline overrun within 16 blocks
   leaves the vocoder out of the next 8 blocks and restarts it from a reset with the
   256-sample ramp, so the kit stays reachable; one isolated overrun only counts. STATUS

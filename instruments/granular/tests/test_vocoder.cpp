@@ -67,7 +67,23 @@ static void TestFft() {
 
 static void TestReader() {
     std::mt19937 rng(11);std::uniform_int_distribution<int> sample(-32768,32767);
-    unsigned compared=0;
+    unsigned compared=0,fmods=0;
+    // WrapFmod against std::fmod, bit for bit, over the ranges Read can see.
+    for(double n:{1.0,2.0,3.0,7.0,100.0,513.0,12345.0,2097152.0,2147483647.0}) {
+        std::vector<double> xs={0.0,-0.0,n,-n,2*n,-2*n,n-1e-9,n+1e-9,-n+1e-9,-n-1e-9,.5,-.5,1e-300,-1e-300,
+            1125899906842623.0,-1125899906842623.0,1e15,-1e15,1e300,-1e300,double(INFINITY),-double(INFINITY),double(NAN)};
+        for(double scale:{10.0,1e4,1e9,1e12,1e15}) {
+            std::uniform_real_distribution<double> u(-scale,scale);
+            for(unsigned i=0;i<3000;++i) xs.push_back(u(rng));
+        }
+        for(unsigned k=1;k<2000;++k) {xs.push_back(k*n);xs.push_back(-k*n);xs.push_back(std::nextafter(k*n,0.0));xs.push_back(std::nextafter(k*n,1e300));}
+        for(double x:xs) {
+            const double a=std::fmod(x,n),b=WrapFmod(x,n);
+            if(std::isnan(a)) CHECK(std::isnan(b)); else CHECK(std::memcmp(&a,&b,sizeof a)==0);
+            ++fmods;
+        }
+    }
+    std::printf("PASS WrapFmod: %u values bit-identical to std::fmod\n",fmods);
     for(unsigned frames:{0u,1u,2u,3u,7u,512u,4801u}) for(unsigned channels:{1u,2u}) for(bool null_data:{false,true}) {
         std::vector<int16_t> pcm(size_t(frames)*channels+2);
         for(auto& v:pcm) v=int16_t(sample(rng));
@@ -244,8 +260,30 @@ static void TestVocoderAb() {
                 cases.size(),tight,worst_tight,worst_excess,worst_band);
 }
 
+// Premises of Engine::Process's mono shortcut: on a mono source channel 1 computes bit
+// for bit what channel 0 computes, and a copied state continues bit for bit.
+static void TestMonoShortcut() {
+    const double tau=6.283185307179586;
+    const Source mono=Make("mono",30000,44100,1,[&](uint32_t i,unsigned) {return float(.4*std::sin(tau*330*i/44100)+.2*std::sin(tau*1234.5*i/44100));});
+    const PcmView view=mono.View();
+    auto work=std::make_unique<MincerWork>();work->Init();
+    auto left=std::make_unique<Mincer>(),right=std::make_unique<Mincer>(),copy=std::make_unique<Mincer>();
+    left->Init(48000,*work);right->Init(48000,*work);copy->Init(48000,*work);
+    double positions[kBlock];float a[kBlock],b[kBlock],c[kBlock];double pos=0;unsigned identical=0;
+    for(unsigned block=0;block<600;++block) {
+        for(unsigned s=0;s<kBlock;++s) {positions[s]=pos;pos+=1.3*44100/48000;if(pos>=mono.frames) pos-=mono.frames;}
+        const float pitch=(block<300?.75f:2.5f)*44100/48000.f;
+        left->Process(positions,view,0,pitch,.8f,a,kBlock);
+        right->Process(positions,view,1,pitch,.8f,b,kBlock);
+        CHECK(std::memcmp(a,b,sizeof a)==0);identical+=kBlock;
+        if(block==200) copy->CopyStateFrom(*left);
+        if(block>200) {copy->Process(positions,view,0,pitch,.8f,c,kBlock);CHECK(std::memcmp(a,c,sizeof a)==0);}
+    }
+    std::printf("PASS mono shortcut premises: %u samples of channel 1 bit-identical to channel 0 on a mono source; a copied state continues bit-identically\n",identical);
+}
+
 int main() {
     std::setvbuf(stdout,nullptr,_IONBF,0);
-    TestFft();TestReader();TestVocoderAb();
+    TestFft();TestReader();TestMonoShortcut();TestVocoderAb();
     std::printf("PASS vocoder replacement: %u checks\n",checks);
 }
