@@ -27,6 +27,13 @@ int main(int argc,char** argv) {
     using namespace neb::sysex;
     CHECK(argc==2);
     LoadCard(argv[1]);
+    // Boot benchmark on the fake counter, before the Engine exists (the AXI SRAM run
+    // borrows its storage): both placements report hop and plain blocks.
+    fake_dwt.CYCCNT.step=1;
+    prof::RunBench(live_banks[0]);
+    for(uint32_t v:prof::bench) CHECK(v>0 && v!=0xffffffffu);
+    CHECK(prof::bench[0]>prof::bench[2] && prof::bench[1]>prof::bench[3]);  // hop costs more reads
+    fake_dwt.CYCCNT.step=0;
     static int16_t file_buffer[2*20000];
     Boot(file_buffer,sizeof file_buffer,8192);
     Settle();
@@ -58,25 +65,26 @@ int main(int argc,char** argv) {
     Send({0xF0,0x7D,0x4E,0x42,0x01,0x01,0xF7});Main();
     CHECK(LastReply().size()==6+kStatusPayload+1);
 
-    // Budget guard: a hop block beyond 80 % of the deadline leaves the vocoder out of the
-    // next eight blocks (they still render grains), then the hops continue.
+    // Overload protection: the second overrun within 16 blocks (here: two hop blocks in a
+    // row beyond the deadline) leaves the vocoder out of the next eight blocks, which
+    // still render grains; then the vocoder restarts from a reset.
     ReadProfile(true);Block();        // Send() runs a block itself: arm the counter afterwards
     fake_dwt.CYCCNT.step=200000;  // ~26 reads in a hop block = 5.2 M cycles; plain ~1.2 M
-    unsigned tripped=0;
-    for(unsigned i=0;i<4 && !tripped;++i) {Block();if(engine->ProfileSkipped()) tripped=i+1;}
-    CHECK(tripped && engine->ProfileSkipped()==8);
+    unsigned tripped=0,overruns_before=callback_overruns;
+    for(unsigned i=0;i<6 && !tripped;++i) {Block();if(engine->VocoderSkips()) tripped=i+1;}
+    CHECK(tripped>=3 && engine->VocoderSkips()==8 && callback_overruns==overruns_before+2);
     fake_dwt.CYCCNT.step=1000;  // the skipped blocks themselves stay cheap
     for(unsigned i=0;i<8;++i) {
         Block();
         CHECK(neb::profile::block.skipped && neb::profile::block.hops==0 && neb::profile::block.grains>0);
         for(unsigned s=0;s<neb::kBlock;++s) CHECK(std::isfinite(output_l[s]));
     }
-    CHECK(engine->ProfileSkipped()==0);
+    CHECK(engine->VocoderSkips()==0);
     unsigned resumed=0;
     for(unsigned i=0;i<2;++i) {Block();CHECK(!neb::profile::block.skipped);resumed+=neb::profile::block.hops;}
     CHECK(resumed==2);
     p=ReadProfile();
-    CHECK(p.v[kProfSkipped]==8 && p.v[kProfOverruns]>=1 && p.v[kProfTotalPeak]>2048000u);
+    CHECK(p.v[kProfSkipped]==8 && p.v[kProfOverruns]>=2 && p.v[kProfTotalPeak]>2560000u);
 
     // Reset clears the peaks after the reply that asked for it.
     p=ReadProfile(true);
@@ -88,10 +96,5 @@ int main(int argc,char** argv) {
     Send({0xF0,0x7D,0x4E,0x42,0x01,0x03,0x02,0xF7});Main();
     CHECK(LastReply()[5]==(kError|kReplyBit) && LastReply()[7]==kErrLength);
 
-    // Boot benchmark on the fake counter: both placements report hop and plain blocks.
-    fake_dwt.CYCCNT.step=1;
-    prof::RunBench(live_banks[0]);
-    for(uint32_t v:prof::bench) CHECK(v>0 && v!=0xffffffffu);
-    CHECK(prof::bench[0]>prof::bench[2] && prof::bench[1]>prof::bench[3]);  // hop costs more reads
     std::printf("PASS profile build: %u checks\n",checks);
 }

@@ -7,6 +7,7 @@ namespace neb {
 struct Grain {
     double position=0;
     float step=1, envelope=1, increment=1, pan=0;
+    float gain_left=1, gain_right=0;  // sqrt(1-pan), sqrt(pan): fixed while the grain lives
     uint32_t delay=0;
     bool active=false;
 };
@@ -45,11 +46,11 @@ class Engine : public Sink {
     void SetControlOffsets(const float* offsets) {for(unsigned i=0;i<8;++i) offset_[i]=offsets[i];}
     float Smoothed(unsigned i) const {return smoothed_[i];}
 #endif
-#if NEBULAE_PROFILE
-    // Diagnostic build (src/profile.h): leave the vocoder out of the next `blocks` blocks.
-    void ProfileSkip(unsigned blocks) {profile_skip_=blocks;}
-    unsigned ProfileSkipped() const {return profile_skip_;}
-#endif
+    // Overload protection (main.cpp calls it after repeated deadline overruns): the
+    // vocoder is left out of the next `blocks` blocks and restarts from a reset, so the
+    // main loop, USB and the panel get CPU time again. Grains and the dry path go on.
+    void SkipVocoder(unsigned blocks);
+    unsigned VocoderSkips() const {return skip_vocoder_;}
   private:
     // What the smoothing and the parameter laws follow.
     float ControlTarget(unsigned i) const {
@@ -86,10 +87,14 @@ class Engine : public Sink {
 #if NEBULAE_MOD
     float offset_[8]{};
 #endif
-#if NEBULAE_PROFILE
-    unsigned profile_skip_=0;
+    unsigned skip_vocoder_=0;
+#if NEBULAE_REFERENCE_VOCODER
+    // Host A/B only (tests/compare_audio.cpp): the engine around the 0.2.1 vocoder.
+    struct Vocoder : ReferenceMincer {void Init(float sr,MincerWork&) {ReferenceMincer::Init(sr);}};
+#else
+    using Vocoder=Mincer;
 #endif
-    Mincer vocoder_[2]; RmsLimiter limiter_[2];
+    MincerWork work_; Vocoder vocoder_[2]; RmsLimiter limiter_[2];
     Grain grains_[2][MAX_GRAINS]{};
     float bank_windows_[W_BANK][WIN_LEN+1]{},window_[WIN_LEN+1]{};
     double positions_[kBlock]{};

@@ -28,7 +28,16 @@ void Hash(const float* x) {
         for(unsigned b=0;b<4;++b) {hash_value^=(bits>>(8*b))&0xff;hash_value*=1099511628211ull;}
     }
 }
-void Output() {Hash(output_l.data());Hash(output_r.data());}
+// NEBULAE_GOLDEN_DUMP=<file>: also write every output block (left, then right, float32)
+// for tests/compare_audio.cpp.
+std::FILE* dump=nullptr;
+void Output() {
+    Hash(output_l.data());Hash(output_r.data());
+    if(dump) {
+        CHECK(std::fwrite(output_l.data(),sizeof(float),neb::kBlock,dump)==neb::kBlock);
+        CHECK(std::fwrite(output_r.data(),sizeof(float),neb::kBlock,dump)==neb::kBlock);
+    }
+}
 void Press(unsigned key) {hw.pressed[key]=true;Advance(15);hw.pressed[key]=false;Advance(15);}
 void Sweep(unsigned pot,float from,float to) {
     for(unsigned i=0;i<=20;++i) {hw.pot[pot].value=from+(to-from)*float(i)/20.f;Advance(6);}
@@ -89,6 +98,7 @@ int main(int argc,char** argv) {
     LoadCard(argv[1]);
     static int16_t file_buffer[2*20000];
     Boot(file_buffer,sizeof file_buffer,48000);
+    if(const char* path=std::getenv("NEBULAE_GOLDEN_DUMP")) {dump=std::fopen(path,"wb");CHECK(dump);}
     block_input=Input;block_output=Output;
 #if NEBULAE_MOD
     if(argc==3) {
@@ -103,5 +113,6 @@ int main(int argc,char** argv) {
     CHECK(argc==2);
 #endif
     Performance();
+    if(dump) std::fclose(dump);
     std::printf("golden %016llx\n",static_cast<unsigned long long>(hash_value));
 }

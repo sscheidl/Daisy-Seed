@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.2.2 - real-time repair after the first hardware contact, 2026-11-09
+
+Hardware status: **NOT MEASURED** for this version (the measurements below were taken on
+0.2.1 with the profile image). Applies to `granular` and `granular-mod`. Record, numbers
+and the second opinion: [OVERLOAD_DIAGNOSIS.md](docs/OVERLOAD_DIAGNOSIS.md),
+[CODEX_SECOND_OPINION.md](docs/CODEX_SECOND_OPINION.md).
+
+0.2.1 could not play a sample on the kit: one vocoder hop took 30.8 to 34.2 ms of a
+5.333 ms block (MEASURED 2026-11-09), which starved USB, the control timer and the main
+loop, because libDaisy runs all of them at the audio interrupt's priority.
+
+* **DSP state out of SDRAM.** The Engine (vocoders, grains, windows) lives in AXI SRAM
+  (`.neb_dsp`); the PCM of the Live banks and of the file stays in SDRAM. The same hop
+  ran 4.4 times faster there (14.0 against 3.16 ms per channel, MEASURED on 0.2.1).
+* **Cheaper hop on the same hop grid** (both channels still compute their frame in the
+  same block, as the original instrument): CMSIS-DSP 1.10 real FFTs from the pinned
+  libDaisy instead of the plain radix-2 pair, `sqrtf(x*x+y*y)` instead of libm `hypotf`
+  in the two phase loops, a window fill without per-sample modulo (`PcmReader`,
+  bit-identical to `PcmView::Read`). The channels share the Hann window and the hop
+  scratch: vocoder state 123 KB instead of 213 KB.
+* **Grain loop**: the pan gains of a grain, the clock step and the channel readers are
+  hoisted out of the sample loop. Bit-identical.
+* **Overload protection in every image**: a second deadline overrun within 16 blocks
+  leaves the vocoder out of the next 8 blocks and restarts it from a reset with the
+  256-sample ramp, so the kit stays reachable; one isolated overrun only counts. STATUS
+  bit 4 and D16 still latch the overrun.
+* **Sound.** The engine around the old vocoder (`-DNEBULAE_REFERENCE_VOCODER=1`, host
+  only) reproduces the 0.2.1 golden hash on the same compiler (`63576b07d2f2b999`,
+  clang, MEASURED 2026-11-09 on the host): everything but the vocoder is bit-identical.
+  The vocoder changes at float rounding level, and the algorithm amplifies rounding:
+  phase locking normalises sums of neighbouring bins that can nearly cancel and feeds
+  the result back. The 0.2.1 vocoder differs from itself by up to 0 dB error/signal
+  when only its FFT rounding changes, as the 0.2.0 packing already did. Host A/B
+  (`tests/test_vocoder.cpp`, 25 scenarios): where the reference agrees with itself the
+  new vocoder agrees with it to -91 dB or better; elsewhere it is at most 4.5 dB
+  further from the reference than the reference from itself; long-term band energies
+  within 0.54 dB. Final mix of the golden performance (`tests/compare_audio.cpp`):
+  total energy -0.018 dB, band energies within 0.70 dB, 85 ms window levels within
+  2.63 dB. None of this proves inaudibility: the listening test is the owner's.
+* A phase-lock sum of exactly zero, where the reference divides by zero and keeps NaN
+  in its phase state, now keeps the bin's phase.
+* The diagnostic build (`PROFILE=1`) measures the new code: its boot benchmark runs one
+  production vocoder channel from SDRAM and from AXI SRAM (in the Engine's own storage).
+* `scripts/check-granular-elf.py` requires the Engine in AXI SRAM after the image and
+  the Live banks in SDRAM. Version 0.3.0 stays with the 24-bit loader of PR #107.
+
 ## 0.2.1 diagnostic profile build - first hardware contact, 2026-11-08
 
 Not a release. The first kit test (owner, 2026-11-08) showed the kit freezing as soon

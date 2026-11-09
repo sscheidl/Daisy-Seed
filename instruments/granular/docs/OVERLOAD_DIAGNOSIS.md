@@ -158,3 +158,64 @@ NOT MEASURED in this session yet. Plan: reproduce with the stalled 0.2.1 image b
 the profile image is flashed, capture the panel traceback and the editor behaviour, then
 make both tolerate a MIDI output that never completes (send off the GUI thread with a
 timeout, report "device not answering", never wait in the driver on the GUI thread).
+Since 0.2.2 the firmware no longer stalls on overload (section 10), so the reproduction
+needs the 0.2.1 image from the store.
+
+## 9. Second opinion (Codex, 2026-11-09) and what was done with it
+
+[Brief](CODEX_SECOND_OPINION_BRIEF.md), [report](CODEX_SECOND_OPINION.md). Assessment:
+
+| Codex's point | Verdict | Consequence in 0.2.2 |
+| --- | --- | --- |
+| Diagnosis holds; the audio callback hangs on DMA1 Stream 1 (receive), not Stream 0; SDMMC1 is lowered to priority 2 by the read-only SD driver | agreed; section 2 above names the wrong stream, the argument (IRQ 12 below OTG_HS 77) is unchanged | none |
+| A freeze on the *first* RECORD press without a source would need another cause than the vocoder | agreed: the code has no wet source then | P2 stays NOT MEASURED; to be separated on the kit: first press, first stop, second recording |
+| Budget: at a 70 % target only about 1.25 ms remain for both vocoder channels next to 2.04 ms grains and 0.44 ms rest, about 5x on the wet path | agreed; this is why placement alone was never an option | hop optimised and grain loop relieved |
+| Measure a placement-only image first | not followed: Codex's own budget shows it cannot pass, and it costs the owner a flash cycle. Instead the old vocoder stays as the numerical oracle on the host and the profile build measures the new split | one image to flash |
+| `hypotf` from the nano libm rescales with two divides; `PcmView::Read` emits divide/remainder sequences | agreed (disassembly evidence) | `sqrtf`, `PcmReader` |
+| CMSIS-DSP real FFTs from the pinned libDaisy; compare with a packed complex forward | taken: three `arm_rfft_fast_f32` per channel and hop. The packed variant was not built; open if the FFT share is still too high | `src/fft_cmsis.cpp` |
+| Squaring can underflow near zero; do not infer sound equivalence; A/B on the full stereo output and the final mix, long runs, extremes | taken, and it paid off: the A/B exposed that the algorithm itself amplifies rounding (section 10) | `tests/test_vocoder.cpp`, `tests/compare_audio.cpp` |
+| Staggering the channels is no first fallback; prefer a synchronised two-block pipeline with one block of latency | agreed | not needed so far; decision only if the kit measurement fails |
+| Keep audio priority; bounded guard rather than USB priority | agreed | overload protection in every image |
+| The boot benchmark is not uninterrupted (USB, SysTick); peaks are independent maxima, not one block's breakdown; the callback timer excludes libDaisy's wrapper | agreed | comment corrected; limits apply to every number in section 6 |
+| The profile map cannot hold the Engine next to an AXI benchmark object | agreed | the AXI run borrows the Engine's storage before the Engine is constructed |
+| The ELF checker expects the Engine in SDRAM | agreed | checker updated |
+| 0.2.2 for the repair, 0.3.0 stays with PR #107, which inherits P1 until it is rebased | agreed | version 0.2.2 |
+
+## 10. Fix in 0.2.2 (software, host-tested; hardware NOT MEASURED)
+
+What changed is listed in the [changelog](../CHANGELOG.md). Evidence on the host
+(clang, Windows, 2026-11-09):
+
+* The engine around the old vocoder reproduces the 0.2.1 golden hash
+  (`63576b07d2f2b999`): grain loop, placement and protection are bit-identical.
+* FFT backend against the radix-2 reference: worst relative error 2.5e-7 forward,
+  4.8e-7 round trip. `PcmReader`: 225,232 reads bit-identical to `PcmView::Read`.
+* **The vocoder algorithm amplifies last-bit rounding.** Phase locking normalises the
+  sum of three neighbouring bins, which can nearly cancel, and the result feeds back
+  through the phase state. The 0.2.1 vocoder compared with *itself*, with nothing but
+  its two forward FFTs unpacked, gives -120 dB error/signal on steady material at
+  pitch 1 and speed 1, -57 dB after 6 s of a tone at pitch 1.3, -45 dB after three
+  minutes of music and +1 dB (uncorrelated) on noise played in reverse at half pitch.
+  The 0.2.0 packing change therefore already altered such passages; its test covered
+  1.6 s of one benign case. A sample comparison cannot be the acceptance criterion
+  for any change to this vocoder, including a port to double precision.
+* New vocoder against the old one, 25 scenarios: -91 dB or better in the ten scenarios
+  where the old one agrees with itself; elsewhere at most 4.5 dB further from it than
+  it is from itself; long-term band energies within 0.54 dB (the old one against
+  itself: 0.46 dB). Final mix of the golden performance: total energy -0.018 dB, band
+  energies within 0.70 dB, 85 ms window levels within 2.63 dB.
+
+Expected cost per channel and hop in AXI SRAM, from operation counts only (NOT MEASURED):
+fill about 0.15 ms, three real FFTs about 0.5 ms, phase loops about 0.2 ms; both
+channels about 1.8 ms of a 5.33 ms block, plus grains and the rest.
+
+To measure on the kit with `NebulaeModProfile-v0.2.2.bin` (same procedure as section 5):
+
+| Step | Value | Status |
+| --- | --- | --- |
+| boot benchmark, new vocoder, one channel: SDRAM hop / AXI SRAM hop | | NOT MEASURED |
+| playing, DENSITY/OVERLAP/BLEND 0: hop block vocoder (both channels), fill, FFT, phase | | NOT MEASURED |
+| playing, DENSITY/OVERLAP/BLEND 127: callback peak, grains peak | | NOT MEASURED |
+| overruns and skipped blocks after 60 s playing (target: 0 and 0) | | NOT MEASURED |
+| P2: S1 first press, first stop, second recording | | NOT MEASURED |
+| listening: file playback, Live, freeze, pitch extremes | | NOT MEASURED |

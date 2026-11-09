@@ -21,6 +21,7 @@
 */
 // Adapted from De-Pattern 073a1ae4; Qu-Bit instrument laws. See LICENSES/.
 #include "reference_dsp.h"
+#include "fft.h"
 #include "profile.h"
 #include <cmath>
 #include <cstring>
@@ -145,19 +146,19 @@ void RFFT::Inverse(float* d) {
     for (int i = 0; i < FFT_N; ++i) d[i] = re_[i]/FFT_N;
 }
 
-// ============================ MINCER ============================
-void Mincer::Init(float sr) {
+// ===================== MINCER, reference (host oracle) =====================
+void ReferenceMincer::Init(float sr) {
     sr_ = sr; fft_.Init();
     for (int i = 0; i < FFT_N; ++i) win_[i] = (float)(0.5 - 0.5*cos(2.0*kPi*i/FFT_N));
     Reset();
 }
-void Mincer::Reset() {
+void ReferenceMincer::Reset() {
     memset(fwin_,0,sizeof fwin_); memset(bwin_,0,sizeof bwin_);
     memset(prev_,0,sizeof prev_); memset(outframe_,0,sizeof outframe_);
     for (int k = 0; k < DECIM; ++k) framecnt_[k] = k*FFT_N;
     cnt_ = HOP; curframe_ = 0;
 }
-void Mincer::Process(const double* frame_pos, const PcmView& buf, unsigned channel,
+void ReferenceMincer::Process(const double* frame_pos, const PcmView& buf, unsigned channel,
                      float pitch, float amp, float* out, int n) {
     const int size = static_cast<int>(buf.frames);
     if(size == 0) { std::fill(out, out+n, 0.f); return; }
@@ -165,19 +166,14 @@ void Mincer::Process(const double* frame_pos, const PcmView& buf, unsigned chann
     for (int s = 0; s < n; ++s) {
         if (cnt_ == HOP) {
             // F1: read position QUANTIZED to hop boundaries
-            NEB_PROFILE_BEGIN(fill);
             double pos = HOP * std::floor(frame_pos[s] / HOP);
             for (int i = 0; i < FFT_N; ++i) {
                 fwin_[i] = buf.Read(pos, channel)*win_[i];
                 bwin_[i] = buf.Read(pos - double(HOP)*pitch, channel)*win_[i];
                 pos += pitch;
             }
-            NEB_PROFILE_ADD(fill, fill);
-            NEB_PROFILE_BEGIN(forward);
             if (packed_) fft_.ForwardPair(bwin_, fwin_);
             else { fft_.Forward(bwin_); fft_.Forward(fwin_); }
-            NEB_PROFILE_ADD(forward, fft);
-            NEB_PROFILE_BEGIN(phase);
             bwin_[FFT_N] = bwin_[1]; bwin_[FFT_N+1] = 0.0f;
             fwin_[FFT_N] = fwin_[1]; fwin_[FFT_N+1] = 0.0f;
             for (int i = 0; i < FFT_N+2; i += 2) {           // phase diff vs prev
@@ -202,20 +198,114 @@ void Mincer::Process(const double* frame_pos, const PcmView& buf, unsigned chann
                 prev_[i] = fwin_[i] = orr; prev_[i+1] = fwin_[i+1] = oi;
             }
             fwin_[1] = fwin_[FFT_N];
-            NEB_PROFILE_ADD(phase, phase);
-            NEB_PROFILE_BEGIN(inverse);
             fft_.Inverse(fwin_);
-            NEB_PROFILE_ADD(inverse, fft);
-            NEB_PROFILE_BEGIN(ola);
             framecnt_[curframe_] = curframe_*FFT_N;
             int base = framecnt_[curframe_];
             for (int i = 0; i < FFT_N; ++i) outframe_[base+i] = win_[i]*fwin_[i];
             cnt_ = 0; curframe_ = (curframe_+1) % DECIM;
-            NEB_PROFILE_ADD(ola, phase);
-#if NEBULAE_PROFILE
-            ++profile::block.hops;
-#endif
         }
+        float acc = 0.0f;
+        for (int i = 0; i < DECIM; ++i) { acc += outframe_[framecnt_[i]]; framecnt_[i]++; }
+        out[s] = acc*amp*scaling;
+        cnt_++;
+    }
+}
+
+// ============================ MINCER (production) ============================
+// The same steps in the same order as ReferenceMincer::Process above; every deviation
+// is listed here and bounded by the host A/B test:
+//   * FFTs: CMSIS-DSP real transforms instead of the packed radix-2 pair (rounding).
+//   * Magnitudes: sqrtf(x*x + y*y) instead of libm hypotf (last bit). Where the sum of
+//     squares would underflow (|z| below 1e-15), hypotf is still used, so the tiny-bin
+//     behaviour of the reference is kept. A phase-lock sum of exactly zero, where the
+//     reference divides by zero and poisons prev_ with NaN for good, keeps the phase.
+//   * Window fill: PcmReader, bit-identical to PcmView::Read.
+void MincerWork::Init() {
+    for (int i = 0; i < FFT_N; ++i) window[i] = (float)(0.5 - 0.5*cos(2.0*kPi*i/FFT_N));
+    fft::Init();
+}
+void Mincer::Init(float sr, MincerWork& work) {
+    sr_ = sr; work_ = &work;
+    Reset();
+}
+void Mincer::Reset() {
+    memset(prev_,0,sizeof prev_); memset(outframe_,0,sizeof outframe_);
+    for (int k = 0; k < DECIM; ++k) framecnt_[k] = k*FFT_N;
+    cnt_ = HOP; curframe_ = 0;
+}
+void Mincer::Hop(double frame_pos, const PcmView& buf, unsigned channel, float pitch) {
+    MincerWork& w = *work_;
+    float* const front = w.front; float* const back = w.back;
+    float* const fbin = w.front_bins; float* const bbin = w.back_bins;
+    const float* const win = w.window;
+    NEB_PROFILE_BEGIN(fill);
+    {   // F1: read position QUANTIZED to hop boundaries
+        const PcmReader read(buf, channel);
+        double pos = HOP * std::floor(frame_pos / HOP);
+        const double lag = double(HOP)*pitch;        // exact: HOP is a power of two
+        for (int i = 0; i < FFT_N; ++i) {
+            front[i] = read(pos)*win[i];
+            back[i]  = read(pos - lag)*win[i];
+            pos += pitch;
+        }
+    }
+    NEB_PROFILE_ADD(fill, fill);
+    NEB_PROFILE_BEGIN(forward);
+    fft::Forward(back, bbin);
+    fft::Forward(front, fbin);
+    NEB_PROFILE_ADD(forward, fft);
+    NEB_PROFILE_BEGIN(phase);
+    bbin[FFT_N] = bbin[1]; bbin[FFT_N+1] = 0.0f;
+    fbin[FFT_N] = fbin[1]; fbin[FFT_N+1] = 0.0f;
+    for (int i = 0; i < FFT_N+2; i += 2) {           // phase diff vs prev
+        const float div = 1.0f/(std::sqrt(prev_[i]*prev_[i] + prev_[i+1]*prev_[i+1]) + 1e-20f);
+        const float pr = prev_[i]*div, pi = prev_[i+1]*div;
+        const float tr = bbin[i]*pr + bbin[i+1]*pi;
+        const float ti = bbin[i]*pi - bbin[i+1]*pr;
+        bbin[i] = tr; bbin[i+1] = ti;
+    }
+    for (int i = 0; i < FFT_N+2; i += 2) {           // phase lock (always on)
+        float tr, ti;
+        if (i > 0) {
+            if (i < FFT_N) { tr = bbin[i]+bbin[i-2]+bbin[i+2];
+                             ti = bbin[i+1]+bbin[i-1]+bbin[i+3]; }
+            else           { tr = bbin[i]+bbin[i-2]; ti = 0.0f; }
+        } else             { tr = bbin[i]+bbin[i+2]; ti = 0.0f; }
+        tr += 1e-15f;
+        const float squares = tr*tr + ti*ti;
+        float pr = 1.0f, pi = 0.0f;
+        if (squares >= 1e-30f) {
+            const float div = 1.0f/std::sqrt(squares);
+            pr = tr*div; pi = ti*div;
+        } else {
+            const float magnitude = hypotf(tr, ti);
+            if (magnitude > 0.0f) { const float div = 1.0f/magnitude; pr = tr*div; pi = ti*div; }
+        }
+        const float orr = fbin[i]*pr - fbin[i+1]*pi;
+        const float oi  = fbin[i]*pi + fbin[i+1]*pr;
+        prev_[i] = fbin[i] = orr; prev_[i+1] = fbin[i+1] = oi;
+    }
+    fbin[1] = fbin[FFT_N];
+    NEB_PROFILE_ADD(phase, phase);
+    NEB_PROFILE_BEGIN(inverse);
+    fft::Inverse(fbin, front);
+    NEB_PROFILE_ADD(inverse, fft);
+    NEB_PROFILE_BEGIN(ola);
+    framecnt_[curframe_] = curframe_*FFT_N;
+    const int base = framecnt_[curframe_];
+    for (int i = 0; i < FFT_N; ++i) outframe_[base+i] = win[i]*front[i];
+    cnt_ = 0; curframe_ = (curframe_+1) % DECIM;
+    NEB_PROFILE_ADD(ola, phase);
+#if NEBULAE_PROFILE
+    ++profile::block.hops;
+#endif
+}
+void Mincer::Process(const double* frame_pos, const PcmView& buf, unsigned channel,
+                     float pitch, float amp, float* out, int n) {
+    if(buf.frames == 0) { std::fill(out, out+n, 0.f); return; }
+    const float scaling = (8.0f/DECIM)/3.0f;
+    for (int s = 0; s < n; ++s) {
+        if (cnt_ == HOP) Hop(frame_pos[s], buf, channel, pitch);
         float acc = 0.0f;
         for (int i = 0; i < DECIM; ++i) { acc += outframe_[framecnt_[i]]; framecnt_[i]++; }
         out[s] = acc*amp*scaling;

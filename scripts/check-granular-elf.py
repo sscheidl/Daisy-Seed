@@ -46,7 +46,7 @@ for section in sections:
 start = symbols['__neb_file_start'][0]
 end = symbols['__neb_file_end'][0]
 assert start % 32 == end % 32 == 0
-assert 0xc0000000+16*1024*1024 < start < end == 0xc3800000
+assert 0xc0000000+16*1024*1024 <= start < end == 0xc3800000  # the file follows the two Live banks
 assert end <= 0xc4000000-8*1024*1024
 assert regions['DTCM'][1]-used['DTCM'] >= 16*1024
 assert symbols['__neb_heap_end'][0]-symbols['__neb_heap_start'][0] == 65536
@@ -63,11 +63,18 @@ for fragment in ('sector_buffer', 'reader_dma_buffer'):
 # Boot intent: fixed backup SRAM words above libDaisy's boot_info (V0_2_ARCHITECTURE.md).
 if '_ebackup_sram' in symbols:
     assert symbols['_ebackup_sram'][0] <= 0x38800F00
-for fragment in ('live_banks', 'engine_storage'):
-    matches = [(n, v, size) for n, (v, size) in symbols.items() if fragment in n]
-    assert len(matches) == 1
-    _, address, size = matches[0]
-    assert 0xc0000000 <= address and address+size <= start
+# Live PCM stays in SDRAM below the file region. Since 0.2.2 the Engine (vocoder and
+# grain state) lives in AXI SRAM after the image, section .neb_dsp: in SDRAM one vocoder
+# hop took 4.4 times as long (instruments/granular/docs/OVERLOAD_DIAGNOSIS.md).
+matches = [(n, v, size) for n, (v, size) in symbols.items() if 'live_banks' in n]
+assert len(matches) == 1
+_, address, size = matches[0]
+assert 0xc0000000 <= address and address+size <= start
+matches = [(n, v, size) for n, (v, size) in symbols.items() if 'engine_storage' in n]
+assert len(matches) == 1, f'engine_storage: {matches}'
+_, address, size = matches[0]
+assert address % 32 == 0 and size > 100000
+assert 0x24000000+len(image) <= address < address+size <= 0x24078000, 'Engine must be in AXI SRAM after the image'
 limits = [{'rate': sr, 'channels': ch, 'max_frames': (end-start)//(ch*2),
            'max_seconds': ((end-start)//(ch*2))/sr} for sr in (44100, 48000) for ch in (1, 2)]
 report = {'bin_bytes': len(image), 'file_start': hex(start), 'file_end': hex(end),

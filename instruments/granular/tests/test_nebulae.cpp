@@ -385,7 +385,7 @@ static void TestPackedFft() {
     const unsigned frames=96000;std::vector<int16_t> pcm(frames*2);
     for(unsigned i=0;i<frames;++i) {pcm[2*i]=Encode(.3f*std::sin(6.283185307f*220*i/48000));pcm[2*i+1]=Encode(i%4800<64?.5f:0.f);}
     const PcmView view{pcm.data(),frames,48000,2};
-    auto packed=std::make_unique<Mincer>(),plain=std::make_unique<Mincer>();
+    auto packed=std::make_unique<ReferenceMincer>(),plain=std::make_unique<ReferenceMincer>();
     packed->Init(48000);plain->Init(48000);plain->SetPackedForward(false);
     double positions[kBlock];float pa[kBlock],pb[kBlock];double pos=0,diff=0,energy=0,error=0;
     for(unsigned c=0;c<2;++c) {

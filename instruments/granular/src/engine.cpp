@@ -5,7 +5,8 @@ namespace neb {
 void Engine::Init(int16_t* a,int16_t* b,uint32_t cap,int16_t* file,FileBridge& bridge) {
     bank_[0]=a; bank_[1]=b; cap_=cap; file_=file; bridge_=&bridge;
     // Everything in the object is initialized by its constructor AFTER SDRAM init.
-    for(unsigned c=0;c<2;++c) {vocoder_[c].Init(kRate);limiter_[c].Init(kRate);}
+    work_.Init();
+    for(unsigned c=0;c<2;++c) {vocoder_[c].Init(kRate,work_);limiter_[c].Init(kRate);}
     BuildWindows(bank_windows_);
     for(unsigned i=0;i<8;++i) smoothed_[i]=ui.params.primary[i];
 }
@@ -15,6 +16,11 @@ void Engine::ResetDsp() {
     grain_clock_[0]=grain_clock_[1]=1; Transition();
 }
 void Engine::Transition() {fade_from_[0]=tail_[0];fade_from_[1]=tail_[1];transition_=0;}
+void Engine::SkipVocoder(unsigned blocks) {
+    // Fresh vocoders fade in over their first frames; the 256-sample ramp covers the cut.
+    if(!skip_vocoder_) {vocoder_[0].Reset();vocoder_[1].Reset();Transition();}
+    skip_vocoder_=blocks;
+}
 void Engine::BeginRecord() {
     if(finalizing || !cap_) return;
     recording=true; overdub_=live_length_!=0; write_=0; copy_=0;
@@ -91,9 +97,13 @@ uint16_t Engine::Status() const {
 void Engine::RenderGrains(const PcmView& src,const float* left,const float* right,
                           unsigned n,float density,float pitch,float input_gain) {
     std::fill(gran_[0],gran_[0]+n,0);std::fill(gran_[1],gran_[1]+n,0);
+    // Hoisted out of the sample loop without changing a value: the clock step, the two
+    // pan gains of a grain (set when it starts) and the channel readers.
+    const float clock_step=density/kRate;
+    const PcmReader read[2]={PcmReader(src,0),PcmReader(src,1)};
     for(unsigned s=0;s<n;++s) {
         for(unsigned c=0;c<2;++c) {
-            grain_clock_[c]+=density/kRate;
+            grain_clock_[c]+=clock_step;
             bool launch=grain_clock_[c]>=1 || (s==0 && pending_trigger_);
             if(launch) {
                 grain_clock_[c]=std::fmod(grain_clock_[c],1.0);
@@ -112,6 +122,7 @@ void Engine::RenderGrains(const PcmView& src,const float* left,const float* righ
                     if(g->position<0) g->position+=src.frames;
                     g->step=pitch*std::pow(2.f,2*(2*Random()-1)*alt_[Pitch]);
                     g->pan=c*(1-alt_[Size])+Random()*alt_[Size];
+                    g->gain_left=std::sqrt(1-g->pan);g->gain_right=std::sqrt(g->pan);
                     g->delay=uint32_t(Random()*alt_[Density]*alt_[Density]*10*kRate);
                 }
             }
@@ -121,8 +132,8 @@ void Engine::RenderGrains(const PcmView& src,const float* left,const float* righ
                 const float ep=g.envelope*WIN_LEN;const unsigned i=unsigned(ep);
                 if(i>=WIN_LEN) {g.active=false;continue;}
                 const float env=window_[i]+(ep-i)*(window_[i+1]-window_[i]);
-                const float x=src.Read(g.position,c)*GRAIN_AMP*env;
-                gran_[0][s]+=x*std::sqrt(1-g.pan);gran_[1][s]+=x*std::sqrt(g.pan);
+                const float x=read[c](g.position)*GRAIN_AMP*env;
+                gran_[0][s]+=x*g.gain_left;gran_[1][s]+=x*g.gain_right;
                 const float fm=(!live && smoothed_[Density]>.001f)?alt_[Blend]*(c?right[s]:left[s])*input_gain:0;
                 g.position+=g.step*(1+std::clamp(fm,-4.f,4.f));
                 if(g.position<0 || g.position>=src.frames) {
@@ -169,6 +180,7 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
     speed_=LawSpeed(KnobSpeed(smoothed_[Speed]),frozen);
     const double start=std::min(double(smoothed_[Start])*src.frames,double(src.frames?src.frames-1:0));
     const double length=std::max(1.0,double(smoothed_[Size]*smoothed_[Size])*(src.frames-start));
+    const double advance=speed_*double(src.rate)/kRate;
     for(unsigned s=0;s<n;++s) {
         if(!src.frames) {position_=0;positions_[s]=0;continue;}
         if(position_<0 || position_>=length) {
@@ -176,7 +188,7 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
             ++resets;reset_light_=1920;
         }
         positions_[s]=start+position_;
-        position_+=speed_*double(src.rate)/kRate;
+        position_+=advance;
     }
     last_read_frame_=uint32_t(positions_[n-1]);
     WinMix(bank_windows_,smoothed_[Window],window_);
@@ -186,18 +198,16 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
     if(live) LawBlendLive(smoothed_[Blend],&bv,&bd,&bg);
     else {bv=std::sqrt(1-smoothed_[Blend]);bg=std::sqrt(smoothed_[Blend]);}
     const bool read_ok=src.frames && (live || !file_detached_);
+    const bool skip_vocoder=skip_vocoder_!=0;
+    if(skip_vocoder) --skip_vocoder_;
 #if NEBULAE_PROFILE
     profile::block={};
-    if(profile_skip_) {--profile_skip_;profile::block.skipped=true;}
+    profile::block.skipped=skip_vocoder;
 #endif
     if(read_ok) {
         NEB_PROFILE_BEGIN(vocoder);
-#if NEBULAE_PROFILE
-        // Budget guard of the diagnostic build: a skipped vocoder keeps the main loop
-        // alive after an overrun, so the counters can still be read out. Sound is wrong.
-        if(profile::block.skipped) {std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);} else
-#endif
-        for(unsigned c=0;c<2;++c)
+        if(skip_vocoder) {std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);}
+        else for(unsigned c=0;c<2;++c)
             vocoder_[c].Process(positions_,src,c,pitch_*src.rate/kRate,live?1.f:.8f,voc_[c],int(n));
         NEB_PROFILE_ADD(vocoder,vocoder);
         NEB_PROFILE_BEGIN(grains);

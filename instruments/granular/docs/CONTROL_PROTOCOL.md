@@ -75,9 +75,9 @@ bytes least significant first, in this order:
 | 4, 5, 6 | vocoder (both channels) peak; grains peak; rest of the callback peak |
 | 7, 8, 9 | inside the hops of a block: window fill (interpolated PCM reads); forward and inverse FFTs; phase loops plus overlap-add, each peak |
 | 10, 11 | blocks that computed a hop; vocoder minimum over those blocks |
-| 12 | blocks whose vocoder the budget guard left out |
+| 12 | blocks whose vocoder the overload protection left out |
 | 13 | callback deadline overruns, 32 bit |
-| 14, 15 | boot benchmark, hop block minimum: Mincer in SDRAM; Mincer in AXI SRAM |
+| 14, 15 | boot benchmark, one vocoder channel, hop block minimum: state in SDRAM; state in AXI SRAM (0.2.1 profile image: the old vocoder, from 0.2.2: the production vocoder) |
 | 16, 17 | boot benchmark, block without hop minimum: SDRAM; AXI SRAM |
 | 18 | Engine address >> 20 (`0xC10` SDRAM, `0x240` AXI SRAM) |
 | 19 | most recent callback |

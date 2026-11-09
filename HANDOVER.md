@@ -30,14 +30,24 @@ the fix.**
   The existing PROFILE map cannot fit the full Engine alongside its AXI
   benchmark object. Measure synchronized stereo in AXI before choosing the
   optimizations. P2, P3 and listening remain NOT MEASURED.
-* **Next owner (Claude, after the owner's decision):** prepare a placement-only
-  PROFILE candidate, reclaim the redundant AXI benchmark storage, and check the
-  ELF and file/SD boundaries. Have the owner authorize the later hardware session
-  and capture full-callback, hop and non-hop timings, including grains and Live
-  record/publish. Use the AXI split to select the PCM/FFT/phase changes while
-  preserving the stereo hop grid. Validate both products for 0.2.2, including
-  numerical A/B and the owner's listening test, before integrating the 0.3.0
-  loader work. P3 is a separate host follow-up.
+* **Claude, 2026-11-09, after the owner's "assess it and implement the fixes and
+  optimisations": Nebulae 0.2.2 written, host-tested, hardware NOT MEASURED.** Engine in
+  AXI SRAM, CMSIS-DSP real FFTs, `sqrtf` for `hypotf`, modulo-free window fill, relieved
+  grain loop, overload protection in every image; the stereo hop grid is unchanged.
+  Assessment of the second opinion point by point and the evidence:
+  [OVERLOAD_DIAGNOSIS.md](instruments/granular/docs/OVERLOAD_DIAGNOSIS.md) sections 9
+  and 10, [changelog](instruments/granular/CHANGELOG.md). Not followed: a placement-only
+  image first (it cannot pass by the report's own budget). New finding: the vocoder
+  algorithm amplifies last-bit rounding, so no sample comparison can be an acceptance
+  criterion; the tests compare against the reference's own rounding spread and
+  phase-independent measures.
+* **Next step (owner, then Claude):** the owner flashes `NebulaeModProfile-v0.2.2.bin`
+  from the store; Claude measures with `nb_probe.py profile` (section 10 table: hop
+  split in AXI SRAM, grains, overruns and skips, P2 with first press, first stop, second
+  recording). If the hop block fits, the owner flashes `NebulaeMod-v0.2.2.bin` and
+  listens. If it does not fit: Codex's synchronised two-block pipeline before any
+  channel stagger. Then P3 (editor and panel against a stalled kit, needs the 0.2.1
+  image from the store), the PR, and rebasing PR #107 (0.3.0) onto the fix.
 
 **Mandatory modularity, user decision 2026-11-01:**
 The [development policy](docs/MODULAR_DEVELOPMENT_POLICY.md) and AGENTS.md apply

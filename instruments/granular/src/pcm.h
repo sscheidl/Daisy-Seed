@@ -35,4 +35,32 @@ struct PcmView {
         return a + float(frame-i)*(b-a);
     }
 };
+// One channel of a view, read with the same result as PcmView::Read for every position.
+// A position strictly inside the buffer (the common case in the vocoder fill and the
+// grains) skips the per-sample modulo and wrap test; everything else, including NaN,
+// one-frame and empty views, goes through PcmView::Read. tests/test_nebulae.cpp
+// compares both bit for bit.
+class PcmReader {
+  public:
+    PcmReader(const PcmView& view, unsigned channel)
+        : view_(view), channel_(channel),
+          data_(view.data ? view.data + (view.channels == 1 ? 0 : channel) : nullptr),
+          stride_(view.channels),
+          last_(view.data && view.frames > 1 ? double(view.frames - 1) : -1.0) {}
+    float operator()(double frame) const {
+        if(frame >= 0 && frame < last_) {
+            const uint32_t i = static_cast<uint32_t>(frame);
+            const int16_t* p = data_ + size_t(i)*stride_;
+            const float a = p[0]/32768.f, b = p[stride_]/32768.f;
+            return a + float(frame-i)*(b-a);
+        }
+        return view_.Read(frame, channel_);
+    }
+  private:
+    const PcmView& view_;
+    unsigned channel_;
+    const int16_t* data_;
+    size_t stride_;
+    double last_;
+};
 }

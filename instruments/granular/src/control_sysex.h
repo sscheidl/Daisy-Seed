@@ -104,12 +104,12 @@ enum ProfileValue : uint8_t {
     kProfPhasePeak,        // vocoder hop: phase loops and overlap-add, peak
     kProfHopBlocks,        // blocks that computed hop frames
     kProfHopVocoderMin,    // vocoder cycles, minimum over hop blocks (steady hop cost)
-    kProfSkipped,          // blocks whose vocoder the budget guard left out
+    kProfSkipped,          // blocks whose vocoder the overload protection left out
     kProfOverruns,         // callback deadline overruns, 32 bit
-    kProfBenchSdramHop,    // boot benchmark: Mincer in SDRAM, hop block, minimum
-    kProfBenchSramHop,     // boot benchmark: Mincer in AXI SRAM, hop block, minimum
-    kProfBenchSdramPlain,  // boot benchmark: Mincer in SDRAM, block without hop, minimum
-    kProfBenchSramPlain,   // boot benchmark: Mincer in AXI SRAM, block without hop, minimum
+    kProfBenchSdramHop,    // boot benchmark, one vocoder channel: state in SDRAM, hop block, minimum
+    kProfBenchSramHop,     // boot benchmark, one vocoder channel: state in AXI SRAM, hop block, minimum
+    kProfBenchSdramPlain,  // boot benchmark: state in SDRAM, block without hop, minimum
+    kProfBenchSramPlain,   // boot benchmark: state in AXI SRAM, block without hop, minimum
     kProfEnginePlacement,  // address of the Engine object >> 20 (0xC10 SDRAM, 0x240 AXI SRAM)
     kProfLastTotal,        // most recent callback
     kProfileValues

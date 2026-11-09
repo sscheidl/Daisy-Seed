@@ -1,8 +1,15 @@
-# Nebulae on Daisy v0.2.1
+# Nebulae on Daisy v0.2.2
 
-**v0.2.1: SOFTWARE PASS / HARDWARE PENDING** ([release report](docs/V0_2_RELEASE_REPORT.md)).
-Patch 0.2.1 fixes card ownership changes during a pending management restart;
-see the [current integration and test-candidate report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md).
+**v0.2.2: SOFTWARE PASS / HARDWARE PENDING.** 0.2.2 is the real-time repair after the
+first hardware contact: 0.2.1 froze the kit as soon as a sample played, because its phase
+vocoder needed 31 to 34 ms per hop in a 5.33 ms block (MEASURED 2026-11-09,
+[diagnosis](docs/OVERLOAD_DIAGNOSIS.md)). The DSP state moved from SDRAM to AXI SRAM, the
+hop got a faster FFT and cheaper phase loops, and every image now protects itself against
+a sustained overload ([changelog](CHANGELOG.md)). The new timing and the sound on the kit
+are **NOT MEASURED**.
+0.2.1 ([release report](docs/V0_2_RELEASE_REPORT.md)) fixed card ownership changes during a
+pending management restart;
+see the [integration and test-candidate report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md).
 New: sample banks with free file names, SW17 bank selection, FAT32 and exFAT cards,
 and a Windows SD management mode in the same image ([architecture](docs/V0_2_ARCHITECTURE.md),
 [control protocol](docs/CONTROL_PROTOCOL.md)). Nothing of v0.2.0 has run on a board yet.

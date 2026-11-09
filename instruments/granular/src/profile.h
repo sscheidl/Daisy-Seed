@@ -16,7 +16,7 @@ struct Split {
                                             // (interpolated SDRAM reads), FFTs, phase
                                             // loops plus overlap-add
     uint32_t hops = 0;                      // hop frames computed in this block (0 or 2)
-    bool skipped = false;                   // vocoder left out by the budget guard
+    bool skipped = false;                   // vocoder left out by the overload protection
 };
 inline Split block;
 #define NEB_PROFILE_BEGIN(tag) const uint32_t neb_profile_##tag = ::neb::profile::Now()
