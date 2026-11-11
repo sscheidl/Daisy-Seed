@@ -43,6 +43,60 @@ Scope notes taken over: the long-tail Bypass/resume listening case is in the run
 policy and the NaN-at-zero-mix note are in the README. Stack headroom is now reported by the profiling
 images (`stack_free`) for the D32 soak decision. Hardware: NOT MEASURED.
 
+**Cross-check request for Codex (owner request 2026-11-11).** Please verify the fixes before the board
+session. No pushes, merges, flashing or package changes; report only.
+
+* **Range:** `git diff 0b55f82..fec1cc3` on `claude/toy-piano-granular-fx` (PR #108). `d4b89be` = R1–R4 and
+  R6–R8 plus the controller half of R5; `cf94c0c` = this handover; `fec1cc3` = editor CRC polling (R5, owner
+  decision "Editor polls CRC").
+* **Per finding:** confirm that each original failure no longer reproduces and that the fix has no new edge case.
+  Your `review-pr108/repro.cpp` uses the removed `RateSync`/`PackRateReport` stamp API: port it to
+  `RateMailboxes`/`RateAudio`/`RateSync` (`instruments/toy-piano/src/cumulonimbus_host.h`) and to
+  `HandleControlChange(...)` returning `ControlResult` (`effects/cumulonimbus/src/diagnostics.h`).
+* **Points I would like a second opinion on:**
+  1. R1: the per-source 10-bit generation and its wrap; the editor mailbox being overwritten before audio
+     applies it (only the newest edit is applied, intended); refused stale words counted once per word.
+  2. R2/R7: `StageMeter::ResetNow()` inside a callback (the current block opens the new window, missed-period
+     detection continues); `window_ms = last − first` and the probe's `expected = window_ms + 1` with the
+     tolerance `max(5, window/500)`; snapshot copy of `app_` and the release/acquire hand-off.
+  3. R3: occupancy gating over all 64 slots, the quality rule on the total active count, and the changed
+     `rejected` semantics (once per refused trigger/random birth, once per overdue regular period). At cap =
+     reference, scheduling should equal Clouds'.
+  4. R4: the fade over N captured samples (`tail[N-1-counter]`, gain `counter/N`), refreeze during a fade, and
+     that N = 256 keeps Clouds' gains.
+  5. R5: `MOD_ON_DAISY_LOCAL_EDITS` in `modules/mod-on-daisy/include/mod_on_daisy/controller.h` is compiled
+     only into the Cumulonimbus builds. Is rebuilding the cached reply with the current CRC correct for all
+     `RepliesWithCrc` commands, and is keeping `SetCalibration`/`SetScenario` cached replies unchanged right?
+     Editor polling (`Session::PollCrc`, `web/index.html` `pollCrc`): no poll during edits or pulls, a
+     reply ignored once an edit started, silent failure, behaviour in the VST3 inside a DAW, traffic.
+  6. R8: rejection without touching buffers, and whether hosts (`WetHost`) can see an uninitialized wet
+     buffer if an effect ever rejects (currently unreachable at 48 frames).
+  7. Stack measurement (`effects/cumulonimbus/src/board_stack.h`): painting from
+     `__reserved_for_stack_end__` to SP − 256 B in `main()` before the audio starts; is anything else
+     (heap via `end`, other DTCM users) in that gap with `ld/toy_piano_axi.lds`?
+* **Commands (Windows host as used here):** put `.tools/llvm-mingw-*/bin`, `xpack-arm-none-eabi-gcc*/bin` and
+  `xpack-windows-build-tools*/bin` on PATH (test EXEs need the llvm-mingw DLLs). From this worktree, pass
+  `LIBDAISY_DIR=../../../../Daisy-Seed/libDaisy DAISYSP_DIR=../../../../Daisy-Seed/DaisySP` (the worktree's
+  own libDaisy lacks the nested CMSIS submodules), and `HOST_CXX=clang++`.
+  * `make -C effects/cumulonimbus test` (`PYTHON=python`), `make -C instruments/toy-piano CUMULO=1 test`,
+    and both with ASan/UBSan `HOST_FLAGS` (the toy-piano `test-sanitize` target fails on the unquoted
+    `$(MAKE)` path, so pass the flags to `test` directly).
+  * `make -C modules/mod-on-daisy test` and `make -C editors/mod-on-daisy test` with
+    `HOST_FLAGS=... -D_USE_MATH_DEFINES`; run the `python3` steps with `python`.
+  * Browser e2e: `node editors/mod-on-daisy/web/tests/e2e.cjs modules/mod-on-daisy/build/host/mod_sim.exe`
+    with `PLAYWRIGHT_MODULE` pointing at a wrapper that launches the installed Edge (`E2E_ONLY=polling`
+    for the new test).
+  * ARM: all seven images (`make -C effects/cumulonimbus RATE=48|32`,
+    `make -C instruments/toy-piano CUMULO=1 CUMULO_RATE=48|32 CUMULO_PROFILE=0|1`) and
+    `python scripts/check-firmware.py <bin>`. Confirm that the regular `toy-piano`, `-fv1`, `-filter`,
+    `-tape` and `-ambient` images are still byte-identical to 241f583 (the SHA-256 prefixes measured here:
+    cb029b94…, 778315f6…, 0f539c8d…, a730cb2a…, 3e8efb3e…).
+  * The local logs from my runs are in `.work/logs/`, and the verified package is in `build/cumulonimbus-stage1/`.
+* **Result:** please write `review-pr108/CROSSCHECK.md` next to your `REVIEW.md` (one line per R1–R8:
+  confirmed / not confirmed / new finding, with evidence), plus any new findings as R9+. Then add a short
+  verdict line under this section. If everything is confirmed, the next step is the joint board session with
+  the package as staged (images and logs from `d4b89be`; the later commits change docs and editors only).
+
 **Streichwurst, preparation 2026-11-01:** New instrument under
 `instruments/streichwurst/`, its own branch `claude/streichwurst`,
 [Claude work order](instruments/streichwurst/docs/CLAUDE_AUFTRAG.md). Target: Seed3
