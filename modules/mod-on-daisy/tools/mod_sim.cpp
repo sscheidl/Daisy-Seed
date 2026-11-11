@@ -6,6 +6,7 @@
 //   stdin:  "S <hex>"  MIDI message (SysEx F0 … F7 or a short message)
 //           "T <ms>"   advance time: one engine tick (48 samples) and Service() per ms
 //           "D"        dump: patch CRC and the active cells
+//           "L <s> <r>" local edit on the instrument (no message): source s (0 LFO 1, 1 LFO 2, 2 Random) rate r
 //   stdout: "R <hex>"  each message the device sends, then "OK" after every command
 #include "mod_on_daisy/module.h"
 #include "../../../instruments/toy-piano/src/modulation.h"
@@ -121,6 +122,16 @@ int main(int argc, char** argv) {
             advance(2); // the reply leaves with the next Service() calls
         } else if(cmd == "T") {
             advance(unsigned(std::stoul(arg.empty() ? "1" : arg)));
+        } else if(cmd == "L") {
+            std::string rate;
+            in >> rate;
+            mod::Patch p = module.controller.CurrentPatch();
+            const unsigned s = unsigned(std::stoul(arg.empty() ? "0" : arg)), r = unsigned(std::stoul(rate.empty() ? "0" : rate));
+            if(s == 2)
+                p.random.rate = uint16_t(r);
+            else if(s < 2)
+                p.lfo[s].rate = uint16_t(r);
+            module.controller.LoadPatch(p);
         } else if(cmd == "D") {
             const mod::Patch& p = module.controller.CurrentPatch();
             std::printf("CRC %08X ACTIVE", unsigned(module.controller.CurrentCrc()));

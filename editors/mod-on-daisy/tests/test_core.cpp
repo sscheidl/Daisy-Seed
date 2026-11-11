@@ -874,6 +874,43 @@ void TestBootRequest() {
     CHECK(rig.session.Connected() && rig.logs.size() == logs);
 }
 
+// A patch change made on the instrument itself (no message to the editor, e.g. a pot that owns a
+// source rate) reaches an idle editor through the CRC poll (PR #108 review R5).
+void TestDevicePolling() {
+    Rig rig(toy_piano::MakeModInfo());
+    CHECK(rig.Connect());
+    rig.Run(5000);
+    CHECK(rig.session.DeviceReloads() == 0 && rig.InSync()); // in step: polls cause no reload
+    mod::Patch patch = rig.sim.Device().CurrentPatch();
+    patch.lfo[0].rate = 1234;
+    CHECK(rig.sim.LocalEdit(patch) == mod::Status::Ok);
+    CHECK(!rig.InSync());
+    rig.Run(Session::kCrcPollMs + 500);
+    CHECK(rig.model.patch.lfo[0].rate == 1234);
+    CHECK(rig.InSync() && rig.session.DeviceReloads() == 1);
+    CHECK(rig.Logged("state changed"));
+    // An edit in the editor and one on the instrument at the same time: the editor's edit wins on
+    // the device (it is sent after), and editor and device end in step.
+    patch = rig.sim.Device().CurrentPatch();
+    patch.lfo[1].rate = 777;
+    rig.sim.LocalEdit(patch);
+    rig.session.EditDepth(Cell(mod::Lfo1, toy_piano::ModPitch), 40);
+    CHECK(rig.RunUntilIdle());
+    rig.Run(Session::kCrcPollMs + 500);
+    CHECK(rig.RunUntilIdle() && rig.InSync());
+    CHECK(rig.model.patch.depth[mod::Lfo1][toy_piano::ModPitch] == 40);
+    // Lost requests and replies: polls stay silent and the editor still converges.
+    rig.sim.drop_replies = .2;
+    patch = rig.sim.Device().CurrentPatch();
+    patch.random.rate = 4321;
+    rig.sim.LocalEdit(patch);
+    rig.Run(4 * Session::kCrcPollMs);
+    rig.sim.drop_replies = 0;
+    rig.Run(2 * Session::kCrcPollMs);
+    CHECK(rig.RunUntilIdle() && rig.InSync() && rig.model.patch.random.rate == 4321);
+    std::printf("PASS device polling: idle CRC poll reloads instrument-side changes, no reload in step\n");
+}
+
 int main() {
     TestBootRequest();
     TestConnect();
@@ -894,6 +931,7 @@ int main() {
     TestTransferRegressions();
     TestCompatibility();
     TestGoalSpanAndAftertouch();
+    TestDevicePolling();
     if(failures) {
         std::fprintf(stderr, "FAIL: %d checks\n", failures);
         return 1;

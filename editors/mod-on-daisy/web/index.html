@@ -686,7 +686,8 @@ function renderClocks() {
 }
 
 // ------------------------------------------------------------------ connection
-let midiAccess = null, monitorTimer = null, healthTimer = null, connecting = false;
+let midiAccess = null, monitorTimer = null, healthTimer = null, crcTimer = null, connecting = false;
+let crcPollOpen = false, deviceReloads = 0, pulling = 0;
 // Port owner (review F2): every port this editor opened is closed again, on explicit
 // disconnect, failed open, failed handshake and unplugging. A reconnect waits for it.
 let closing = Promise.resolve();
@@ -746,6 +747,8 @@ function disconnect(reason) {
   }
   clearInterval(monitorTimer);
   clearInterval(healthTimer);
+  clearInterval(crcTimer);
+  crcPollOpen = false;
   state.health = 'ok';
   state.unconfirmed = false;
   pendingCells.clear(); pendingSources.clear();
@@ -930,6 +933,7 @@ async function connectLink(out, inp, sqClient = null) {
     const renew = () => state.link === link && link.request(P.CMD.monitor, [20]).catch(() => {});
     renew();
     monitorTimer = setInterval(renew, 1000);
+    crcTimer = setInterval(pollCrc, CRC_POLL_MS);
     link.lastFrame = link.lastLive = Date.now(); // grace until the first monitor frame
     healthTimer = setInterval(checkHealth, 250);
     log('Connected. The device state has been loaded.', 'ok');
@@ -939,8 +943,43 @@ async function connectLink(out, inp, sqClient = null) {
   }
 }
 
+// The device may change its patch on its own (an instrument control that owns a source rate);
+// the protocol has no device-to-editor push. While nothing is open, poll the patch CRC
+// (GET_MATRIX, every firmware has it) and reload once it differs. A poll never runs during an
+// edit, and its answer is ignored if an edit started meanwhile. A lost poll stays silent: the
+// health state already reports silence. Same rule as the JUCE core (Session::PollCrc).
+const CRC_POLL_MS = 2000;
+// A poll may queue behind a monitor renewal (the request queue orders them); it waits for edits and pulls.
+const editorIdle = () => !pendingCells.size && !pendingSources.size && inFlightCell < 0 && !sourceInFlight &&
+  changesInFlight === 0 && pulling === 0;
+async function pollCrc() {
+  const link = state.link;
+  if (!link || !state.device || crcPollOpen || !editorIdle()) return;
+  crcPollOpen = true;
+  try {
+    const r = new P.Reader((await link.request(P.CMD.getMatrix)).payload);
+    r.packed(64);
+    r.mask64();
+    const crc = r.u32();
+    if (state.link !== link || !editorIdle()) return;
+    if (crc !== P.patchCrc(state.patch)) {
+      ++deviceReloads;
+      log('The device state changed (e.g. on the instrument) – state reloaded from the device.', 'warn');
+      await pull();
+    }
+  } catch (e) {
+    // silent: the health state reports a link that does not answer
+  } finally {
+    crcPollOpen = false;
+  }
+}
+
 // Read everything from the device (columns once per connection, then the patch).
 async function pull(withColumns = false) {
+  ++pulling;
+  try { return await pullDevice(withColumns); } finally { --pulling; }
+}
+async function pullDevice(withColumns) {
   const link = state.link;
   if (!link) return;
   pendingCells.clear(); pendingSources.clear();

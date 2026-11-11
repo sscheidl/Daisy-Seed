@@ -62,8 +62,9 @@ SW17 selects the edit page only. Both audio stages keep running and keep their s
   from before the edit is never written back over it (an edit of one source never blocks another).
   The pot edit uses `LoadPatchLocal` (`MOD_ON_DAISY_LOCAL_EDITS`, this product only): an editor write
   retried after its reply was lost is answered, not executed again over the pot, and the reply carries
-  the current patch CRC, so the editor reloads. An idle editor is not told about a pot change (the
-  protocol has no device-to-editor push); it sees the new rates after its next pull or edit.
+  the current patch CRC, so the editor reloads. An idle editor (Daisy Control Panel / VST3 0.5.1,
+  browser 0.4.1) polls the patch CRC every 2 s and reloads, so a pot change appears there within about
+  2 s; older editors see it only after their next pull or edit.
 
 ### MIDI
 
