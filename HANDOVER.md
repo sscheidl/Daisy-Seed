@@ -25,6 +25,24 @@ and flashing: NOT MEASURED.** Next: the joint board session (owner + Codex), fla
 D48/D32 → selected P48/P32; then pick rate and grain cap from the measured curve; the SD Grain Sampler
 (work order § 5) starts only after that gate. Codex review of the branch is welcome before the session.
 
+**Cumulonimbus 0.1.1 — response to the Codex review of PR #108, 2026-11-11 (commit d4b89be on 0b55f82;
+report `L2A/L2A-cases/granular-cross-comparison/review-pr108/REVIEW.md`).** For Codex's cross-check:
+
+| ID | Status | Where | Test |
+| --- | --- | --- | --- |
+| R1 | Fixed: per-source last-value mailboxes (`RateMailboxes`) with a per-source editor generation and a valid bit replace the queue and the shared stamp; refused CC writes counted (`control_drops`) | `instruments/toy-piano/src/cumulonimbus_host.h` (`RateAudio`, `RateSync`), `main.cpp` | `TestRateSync` (cross-source, stale word once, 100 edits in a row, post-edit pot accepted) |
+| R2 | Fixed: CC119=1 → main calls `StageMeter::RequestSnapshot()` directly; CC119=2 → own `Requests::reset` flag; the audio thread resets in the same block (`ResetNow`) | `effects/cumulonimbus/src/diagnostics.h`, `stage_meter.h`, both `main.cpp` | `TestTelemetryInterleaving` (reset before/between/after the audio block, snapshot never pre-reset) |
+| R3 | Fixed: starts gated on total active grains (all 64 slots); quality and normalization use the total; refused starts counted once per event / overdue period | `src/clouds/live_scheduler.h` | `TestLoweredCap` (your 12 → cap 8 + trigger case stays 12) |
+| R4 | Fixed: fade over the N captured samples (tail 0..N-1, gain (N-1)/N → 0; equals Clouds for N = 256); Freeze during a fade captures afresh | `src/clouds/pcm_ring.h` | `TestShortFreeze` (24-sample Freeze, refreeze during a fade, full tail) |
+| R5 | **Partly fixed:** `MOD_ON_DAISY_LOCAL_EDITS` (this product only; other images byte-identical) adds `LoadPatchLocal`: the retry cache survives a pot edit and a retried editor write is answered with the current CRC, so the editor reloads instead of the write executing again. **Open:** an idle editor is not told about a pot rate change (no device-to-editor push in the protocol); needs an owner decision (editor-side CRC polling vs. a protocol extension) | `modules/mod-on-daisy/include/mod_on_daisy/controller.h` | `TestEditorRetryAfterPotEdit` |
+| R6 | Fixed: B0 timing on the D48/D32 dry route; P0 = sound reference/rollback only; logical pot mapping noted; results template updated | `docs/STAGE1_RUN_SHEET.md`, package script | — |
+| R7 | Fixed: meter 0.2.0 snapshots carry their own window (audio ms) and the metadata of the same block; set 2 adds control drops, stale rates, meter accounting cost (outside the peak), untouched DTCM stack (painted at boot); probe fails invalid windows (`FAIL: invalid window`, ends `--stop-on-fail`) and any MIDI/control drop | `stage_meter.h`, `board_stack.h`, `tools/cumulonimbus_probe.py` | meter test, `test_cumulonimbus_probe.py` (incl. the C++ encoder bytes) |
+| R8 | Fixed: unsupported blocks and an unprepared effect are rejected without touching any buffer | `src/cumulonimbus.h` | `TestContract` (in-place 47-frame block keeps the dry input) |
+
+Scope notes taken over: the long-tail Bypass/resume listening case is in the run sheet; the reverb state
+policy and the NaN-at-zero-mix note are in the README. Stack headroom is now reported by the profiling
+images (`stack_free`) for the D32 soak decision. Hardware: NOT MEASURED.
+
 **Streichwurst, preparation 2026-11-01:** New instrument under
 `instruments/streichwurst/`, its own branch `claude/streichwurst`,
 [Claude work order](instruments/streichwurst/docs/CLAUDE_AUFTRAG.md). Target: Seed3
