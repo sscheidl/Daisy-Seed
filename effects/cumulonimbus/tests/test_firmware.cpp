@@ -52,15 +52,52 @@ static void TestRoutes() {
 
 static void TestControlChanges() {
     diag::Requests q;
-    CHECK(!diag::HandleControlChange(q, 0, 20, 3)); // other channels are not ours
-    CHECK(diag::HandleControlChange(q, 15, 20, 3) && q.scenario.load() == 3);
-    CHECK(diag::HandleControlChange(q, 15, 20, 99) && q.scenario.load() == 3); // out of range ignored
-    CHECK(diag::HandleControlChange(q, 15, 21, 24) && q.cap.load() == 24);
-    CHECK(diag::HandleControlChange(q, 15, 21, 65) && q.cap.load() == 24);
-    CHECK(diag::HandleControlChange(q, 15, 22, 2) && q.stimulus.load() == 2);
-    CHECK(diag::HandleControlChange(q, 15, 119, 1) && q.telemetry.load() == 1);
-    CHECK(diag::HandleControlChange(q, 15, 119, 5) && q.telemetry.load() == 1);
-    CHECK(!diag::HandleControlChange(q, 15, 1, 64)); // CC1 stays with Mod on Daisy
+    CHECK(!diag::HandleControlChange(q, 0, 20, 3).consumed); // other channels are not ours
+    CHECK(diag::HandleControlChange(q, 15, 20, 3).consumed && q.scenario.load() == 3);
+    CHECK(diag::HandleControlChange(q, 15, 20, 99).consumed && q.scenario.load() == 3); // out of range ignored
+    CHECK(diag::HandleControlChange(q, 15, 21, 24).consumed && q.cap.load() == 24);
+    CHECK(diag::HandleControlChange(q, 15, 21, 65).consumed && q.cap.load() == 24);
+    CHECK(diag::HandleControlChange(q, 15, 22, 2).consumed && q.stimulus.load() == 2);
+    const auto snapshot = diag::HandleControlChange(q, 15, 119, 1);
+    CHECK(snapshot.consumed && snapshot.snapshot && !q.reset.load());
+    const auto reset = diag::HandleControlChange(q, 15, 119, 2);
+    CHECK(reset.consumed && !reset.snapshot && q.reset.load());
+    CHECK(!diag::HandleControlChange(q, 15, 119, 5).snapshot);
+    CHECK(!diag::HandleControlChange(q, 15, 1, 64).consumed); // CC1 stays with Mod on Daisy
+}
+
+// R2 (PR #108 review): the snapshot request goes from the main loop straight to the meter, the
+// reset through its own flag. Every interleaving with the audio thread delivers both, and a
+// snapshot that follows a reset never shows the statistics from before it.
+static void TestTelemetryInterleaving() {
+    using namespace cumulonimbus::diag;
+    for(int order = 0; order < 3; ++order) {
+        Requests q;
+        StageMeter meter;
+        meter.Init(1000);
+        uint32_t cycles = 0, ms = 0;
+        auto block = [&](uint32_t total) { // the audio callback's part
+            meter.Begin(cycles, ms);
+            if(q.reset.exchange(false))
+                meter.ResetNow();
+            meter.End(total);
+            cycles += 1000;
+            ++ms;
+        };
+        for(int i = 0; i < 10; ++i) block(900); // old statistics: peak 900
+        // Main: reset, then snapshot (the probe's order). The audio block runs before, between or after.
+        if(order == 0) block(100);
+        diag::HandleControlChange(q, 15, 119, 2);
+        if(order == 1) block(100);
+        if(diag::HandleControlChange(q, 15, 119, 1).snapshot) meter.RequestSnapshot();
+        if(order == 2) block(100);
+        block(200);
+        CHECK(meter.SnapshotReady());
+        CHECK(meter.Snapshot().max[kTotal] <= 200); // never the 900 from before the reset
+        CHECK(meter.Snapshot().blocks >= 1);
+        meter.ReleaseSnapshot();
+        CHECK(!q.reset.load());
+    }
 }
 
 static void TestSource() {
@@ -138,6 +175,7 @@ int main() {
     TestControlMap();
     TestRoutes();
     TestControlChanges();
+    TestTelemetryInterleaving();
     TestSource();
     TestSender();
     if(failures) {

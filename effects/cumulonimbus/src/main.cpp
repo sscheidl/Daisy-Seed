@@ -8,6 +8,7 @@
 #include "diagnostics.h"
 #include "fx_panel.h"
 #include "stage_meter.h"
+#include "board_stack.h"
 #include "version.h"
 #define CUMULONIMBUS_STR2(x) #x
 #define CUMULONIMBUS_STR(x) CUMULONIMBUS_STR2(x)
@@ -50,7 +51,6 @@ static diag::StageMeter meter;
 static diag::Requests requests;
 static diag::TestSource source;
 static diag::TelemetrySender telemetry;
-static std::array<std::atomic<uint32_t>, diag::kMetricCount> live{}; // audio -> main, per block
 static std::atomic<uint32_t> ui_state{0};
 static uint8_t scenario = diag::kScenarioFull;
 static int32_t cap = fx_fw::kDefaultCap;
@@ -59,20 +59,23 @@ static bool overrun_seen = false;
 static bootloader::KeyCombo boot_keys;
 static bootloader::Request boot_request;
 static MidiUsbHandler usb_midi;
-static std::atomic<uint32_t> reset_epoch{0}; // audio -> main: statistics restarted
 static uint32_t Cycles() { return DWT->CYCCNT; }
 
+// Audio thread: every setting change starts new statistics in this very block.
+static void RestartStatistics() {
+    meter.ResetNow();
+    chain->GrainEffect().ResetCounters();
+    overrun_seen = false;
+}
 static void ApplyScenario(uint8_t s) {
     scenario = s < diag::kScenarioCount ? s : diag::kScenarioFull;
     chain->SetRoute(diag::RouteFor(scenario));
-    meter.RequestReset(); // a new setting starts new statistics
-    reset_epoch.fetch_add(1, std::memory_order_relaxed);
+    RestartStatistics();
 }
 static void ApplyCap(int32_t c) {
     cap = c;
     chain->SetCap(cap);
-    meter.RequestReset();
-    reset_epoch.fetch_add(1, std::memory_order_relaxed);
+    RestartStatistics();
 }
 
 // Audio thread only.
@@ -82,13 +85,12 @@ static void Controls() {
     const int32_t c = requests.cap.exchange(-1, std::memory_order_relaxed);
     if(c >= 0) ApplyCap(c);
     const int32_t st = requests.stimulus.exchange(-1, std::memory_order_relaxed);
-    if(st >= 0) source.Select(uint8_t(st));
-    if(requests.telemetry.exchange(-1, std::memory_order_relaxed) == 2) {
-        chain->GrainEffect().ResetCounters();
-        meter.RequestReset();
-        reset_epoch.fetch_add(1, std::memory_order_relaxed);
-        overrun_seen = false;
+    if(st >= 0) {
+        source.Select(uint8_t(st));
+        RestartStatistics();
     }
+    if(requests.reset.exchange(false, std::memory_order_acq_rel))
+        RestartStatistics();
     hw.UpdateAllControls();
     uint32_t presses = 0;
     for(unsigned i = 0; i < 16; ++i) {
@@ -125,7 +127,7 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
         for(size_t i = 0; i < n; ++i) out[0][i] = out[1][i] = 0.f;
         return;
     }
-    meter.Begin(start);
+    meter.Begin(start, System::GetNow());
     Controls();
     float l[fx_fw::kBlockSize], r[fx_fw::kBlockSize];
     if(source.External()) {
@@ -144,22 +146,25 @@ static void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer
     meter.Add(diag::kGrainRender, t.render_cycles);
     meter.Add(diag::kConvert, t.convert_cycles);
     meter.Add(diag::kReverb, chain->ReverbCycles());
-    live[diag::kScenario].store(scenario, std::memory_order_relaxed);
-    live[diag::kCap].store(uint32_t(cap), std::memory_order_relaxed);
-    live[diag::kStimulus].store(source.Pattern(), std::memory_order_relaxed);
-    live[diag::kGrainsActive].store(uint32_t(t.active), std::memory_order_relaxed);
-    live[diag::kGrainsPeak].store(uint32_t(t.peak_active), std::memory_order_relaxed);
-    live[diag::kRejected].store(t.rejected, std::memory_order_relaxed);
-    live[diag::kStartedHigh].store(t.started_high, std::memory_order_relaxed);
-    live[diag::kStartedMedium].store(t.started_medium, std::memory_order_relaxed);
+    meter.SetApp(diag::kScenario, scenario);
+    meter.SetApp(diag::kCap, uint32_t(cap));
+    meter.SetApp(diag::kStimulus, source.Pattern());
+    meter.SetApp(diag::kInternalRate, CUMULONIMBUS_INTERNAL_RATE);
+    meter.SetApp(diag::kBlockFrames, fx_fw::kBlockSize);
+    meter.SetApp(diag::kGrainsActive, uint32_t(t.active));
+    meter.SetApp(diag::kGrainsPeak, uint32_t(t.peak_active));
+    meter.SetApp(diag::kRejected, t.rejected);
+    meter.SetApp(diag::kStartedHigh, t.started_high);
+    meter.SetApp(diag::kStartedMedium, t.started_medium);
     uint32_t flags = diag::kFlagProfiling | (CUMULONIMBUS_INTERNAL_RATE == 32000 ? uint32_t(diag::kFlagRate32) : 0u);
     flags |= chain->Mode() == ::seed::fx::ChainMode::Bypass ? uint32_t(diag::kFlagBypass) : 0u;
     flags |= chain->Mode() == ::seed::fx::ChainMode::Freeze ? uint32_t(diag::kFlagFreeze) : 0u;
     flags |= chain->Suspended() ? uint32_t(diag::kFlagSuspended) : 0u;
-    live[diag::kFlags].store(flags, std::memory_order_relaxed);
+    meter.SetApp(diag::kFlags, flags);
     const uint32_t total = DWT->CYCCNT - start;
     if(total > meter.Budget()) overrun_seen = true;
     meter.End(total);
+    meter.AddAccounting(DWT->CYCCNT - start - total); // the meter's own work, outside kTotal
 }
 
 static void RenderLeds(uint32_t ui) {
@@ -179,7 +184,6 @@ static void Send(const uint8_t* bytes, size_t size) {
         usb_midi.SendMessage(const_cast<uint8_t*>(bytes), size);
 }
 
-static uint32_t reset_ms = 0;
 static bool snapshot_pending = false;
 // Main loop only.
 static void ServiceUsbMidi() {
@@ -190,29 +194,20 @@ static void ServiceUsbMidi() {
             boot_request.Set(bootloader::Request::kSysEx);
             continue;
         }
-        if(event.type == ControlChange &&
-           diag::HandleControlChange(requests, event.channel, event.data[0], event.data[1])) {
-            if(requests.telemetry.load(std::memory_order_relaxed) == 1) {
-                requests.telemetry.store(-1, std::memory_order_relaxed);
+        if(event.type == ControlChange) {
+            const auto r = diag::HandleControlChange(requests, event.channel, event.data[0], event.data[1]);
+            if(r.snapshot && !snapshot_pending) {
                 meter.RequestSnapshot();
                 snapshot_pending = true;
             }
         }
     }
-    static uint32_t seen_epoch = 0;
-    const uint32_t epoch = reset_epoch.load(std::memory_order_relaxed);
-    if(epoch != seen_epoch) { // statistics restarted: the measured window starts now
-        seen_epoch = epoch;
-        reset_ms = System::GetNow();
-    }
     if(snapshot_pending && meter.SnapshotReady() && !telemetry.Busy()) {
         diag::Metrics m{};
-        for(unsigned i = 0; i < diag::kMetricCount; ++i) m[i] = live[i].load(std::memory_order_relaxed);
-        diag::FillMeterMetrics(meter.Snapshot(), m);
+        diag::FillMeterMetrics(meter.Snapshot(), m); // statistics, window and metadata of one block
         meter.ReleaseSnapshot();
-        m[diag::kInternalRate] = CUMULONIMBUS_INTERNAL_RATE;
-        m[diag::kBlockFrames] = fx_fw::kBlockSize;
-        m[diag::kWindowMs] = System::GetNow() - reset_ms;
+        m[diag::kStackFree] = cumulonimbus::board::StackFree();
+        m[diag::kStackSize] = cumulonimbus::board::StackSize();
         telemetry.Start(m);
         snapshot_pending = false;
     }
@@ -244,12 +239,11 @@ int main() {
     DWT->CYCCNT = 0;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
     meter.Init((SystemCoreClock / 48000u) * uint32_t(fx_fw::kBlockSize));
-    live[diag::kBudgetCycles].store(meter.Budget(), std::memory_order_relaxed);
+    cumulonimbus::board::PaintFreeStack(); // before the audio interrupt runs
     MidiUsbHandler::Config usb_config;
     usb_config.transport_config.periph = MidiUsbTransport::Config::EXTERNAL;
     usb_midi.Init(usb_config);
     usb_midi.StartReceive();
-    reset_ms = System::GetNow();
     hw.seed.StartAudio(AudioCallback);
     uint32_t previous_ui = ~0u, last_led = System::GetNow();
     while(true) {

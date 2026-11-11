@@ -48,9 +48,11 @@ class ProbeTests(unittest.TestCase):
 
     def test_derive(self):
         m = self.sample()
-        m.update(total_max=300000, total_mean=200000, p99=6100, window_ms=30000, blocks=30000,
-                 missed_periods=0, overruns=0)
-        self.assertTrue(probe.derive(m)['verdict'].startswith('PASS'))
+        m.update(total_max=300000, total_mean=200000, p99=6100, window_ms=29999, blocks=30000,
+                 missed_periods=0, overruns=0, midi_overruns=0, control_drops=0, accounting_max=4800)
+        d = probe.derive(m)
+        self.assertTrue(d['verdict'].startswith('PASS'))
+        self.assertEqual((d['expected_blocks'], d['block_deficit'], d['accounting_pct']), (30000, 0, 1.0))
         m['total_max'] = 360000
         self.assertTrue(probe.derive(m)['verdict'].startswith('MIDDLE'))
         m['total_max'] = 400000
@@ -59,8 +61,19 @@ class ProbeTests(unittest.TestCase):
         m['missed_periods'] = 1
         self.assertTrue(probe.derive(m)['verdict'].startswith('FAIL'))
         m['missed_periods'] = 0
-        m['blocks'] = 29000  # duration-only counters can hide skipped DMA periods
-        self.assertIn('does not match', probe.derive(m)['verdict'])
+        m['midi_overruns'] = 1  # a refused note fails the point
+        self.assertIn('queue drops', probe.derive(m)['verdict'])
+        m['midi_overruns'] = 0
+        m['control_drops'] = 2
+        self.assertIn('queue drops', probe.derive(m)['verdict'])
+        m['control_drops'] = 0
+        # Duration-only counters can hide skipped DMA periods: a mismatch is invalid, never a pass,
+        # and starts with FAIL so --stop-on-fail ends the sweep (PR #108 review R7).
+        m['blocks'] = 29000
+        verdict = probe.derive(m)['verdict']
+        self.assertTrue(verdict.startswith('FAIL: invalid window'), verdict)
+        m['blocks'] = 30003  # within the tolerance of max(5, window/500)
+        self.assertTrue(probe.derive(m)['verdict'].startswith('PASS'))
 
     def test_selftest(self):
         probe.selftest()

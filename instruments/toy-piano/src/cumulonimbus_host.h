@@ -195,74 +195,92 @@ inline unsigned ActiveVoices(const ToyPiano& piano) {
 }
 
 // The three Mod on Daisy source rates (LFO 1, LFO 2, Random) live in the patch, which only the main
-// loop edits. The audio thread reports each pot write as one 32-bit word: rate (14 bits), the count
-// of external writes it had applied (8 bits) and a sequence number (10 bits). The main loop applies a
-// pot write only if that count equals the external writes it has sent, so a pot value that predates
-// an app edit is never written back over it (no stale writes).
+// loop edits (PR #108 review R1). Per source, two last-value mailboxes (no queue, nothing to lose):
+//   editor: main -> audio, the patch rate after an edit nobody here made (app, patch load), with a
+//           per-source generation that main increments for each such edit;
+//   pot:    audio -> main, the last pot write, stamped with the editor generation the audio thread
+//           had applied when the pot wrote it.
+// Main applies a pot word only if its stamp equals the newest generation main sent for that
+// source: a pot value from before an edit (or while the edit is still unacknowledged) never
+// overwrites it, and an edit of one source never invalidates another source's pot. A word has an
+// explicit valid bit (bit 31), rate in bits 0..13, generation in bits 14..23 (wraps after 1024
+// edits of one source; a pot word would have to be 1024 edits old to alias).
 constexpr unsigned kRateSources = 3;
 constexpr uint16_t kModRateMax = 16383; // mod::kRateMax
-inline uint32_t PackRateReport(uint16_t rate, uint32_t applied, uint32_t seq) {
-    return uint32_t(rate & 0x3FFFu) | ((applied & 0xFFu) << 14) | ((seq & 0x3FFu) << 22);
+constexpr uint32_t kRateValid = 0x80000000u, kRateGenMask = 0x3FFu;
+inline uint32_t PackRateWord(uint16_t rate, uint32_t generation) {
+    return kRateValid | uint32_t(rate & 0x3FFFu) | ((generation & kRateGenMask) << 14);
 }
-inline uint16_t ReportRate(uint32_t r) { return uint16_t(r & 0x3FFFu); }
-inline uint32_t ReportApplied(uint32_t r) { return (r >> 14) & 0xFFu; }
-inline uint32_t ReportSeq(uint32_t r) { return r >> 22; }
+inline bool RateWordValid(uint32_t w) { return (w & kRateValid) != 0; }
+inline uint16_t RateWordRate(uint32_t w) { return uint16_t(w & 0x3FFFu); }
+inline uint32_t RateWordGeneration(uint32_t w) { return (w >> 14) & kRateGenMask; }
 inline uint16_t RateFromPosition(float x) {
     const float r = x * float(kModRateMax) + .5f;
     return uint16_t(r < 0.f ? 0.f : (r > float(kModRateMax) ? float(kModRateMax) : r));
 }
+inline Dest RateDest(unsigned i) { return Dest(kDestLfo1Rate + i); }
 
-// Audio thread: publishes rate pot writes.
-class RateReporter {
+struct RateMailboxes {
+    std::array<std::atomic<uint32_t>, kRateSources> editor{}, pot{};
+    static_assert(std::atomic<uint32_t>::is_always_lock_free, "rate mailboxes must be lock-free");
+};
+
+// Audio thread, once per block after the panel update: editor values first, then pot writes.
+class RateAudio {
   public:
-    // Counts the external writes to the rate destinations (only those come from RateSync).
-    void Count(const ExternalWrite& w) {
-        if(w.dest >= kDestLfo1Rate && w.dest < kDestLfo1Rate + kRateSources) ++applied_;
+    void Apply(CumulonimbusPanel& panel, RateMailboxes& box) {
+        for(unsigned i = 0; i < kRateSources; ++i) {
+            const uint32_t w = box.editor[i].load(std::memory_order_acquire);
+            if(!RateWordValid(w) || RateWordGeneration(w) == generation_[i])
+                continue;
+            generation_[i] = RateWordGeneration(w);
+            panel.Write({uint8_t(RateDest(i)), float(RateWordRate(w)) / float(kModRateMax)});
+        }
     }
-    template <class Store> void Publish(CumulonimbusPanel& panel, Store&& store) {
+    void Publish(CumulonimbusPanel& panel, RateMailboxes& box) {
         for(unsigned i = 0; i < kRateSources; ++i)
-            if(panel.TakePotWrite(Dest(kDestLfo1Rate + i)))
-                store(i, PackRateReport(RateFromPosition(panel.Value(Dest(kDestLfo1Rate + i))), applied_, ++seq_[i]));
+            if(panel.TakePotWrite(RateDest(i)))
+                box.pot[i].store(PackRateWord(RateFromPosition(panel.Value(RateDest(i))), generation_[i]),
+                                 std::memory_order_release);
     }
 
   private:
-    uint32_t applied_ = 0, seq_[kRateSources] = {};
+    uint32_t generation_[kRateSources] = {};
 };
 
 // Main loop: keeps the patch rates and the register in step.
 class RateSync {
   public:
-    // `patch`: the current patch rates. A change nobody here made (app, patch load) becomes an
-    // external write to the register; returns the number pushed.
-    template <class Push> unsigned FromPatch(const uint16_t (&patch)[kRateSources], Push&& push) {
-        unsigned pushed = 0;
+    // `patch`: the current patch rates. A change nobody here made becomes a new editor generation.
+    void FromPatch(const uint16_t (&patch)[kRateSources], RateMailboxes& box) {
         for(unsigned i = 0; i < kRateSources; ++i) {
             if(started_ && patch[i] == applied_[i])
                 continue;
             applied_[i] = patch[i];
-            if(started_ && push(ExternalWrite{uint8_t(kDestLfo1Rate + i), float(patch[i]) / float(kModRateMax)})) {
-                ++sent_;
-                ++pushed;
+            if(started_) {
+                generation_[i] = (generation_[i] + 1) & kRateGenMask;
+                box.editor[i].store(PackRateWord(patch[i], generation_[i]), std::memory_order_release);
             }
         }
         started_ = true;
-        return pushed;
     }
-    // `reports`: the audio thread's last words. Returns true and fills `rates` when the patch must change.
-    bool FromPots(const uint32_t (&reports)[kRateSources], uint16_t (&rates)[kRateSources]) {
+    // Returns true and fills `rates` when the patch must follow a pot.
+    bool FromPots(RateMailboxes& box, uint16_t (&rates)[kRateSources]) {
         bool change = false;
         for(unsigned i = 0; i < kRateSources; ++i) {
             rates[i] = applied_[i];
-            const uint32_t r = reports[i];
-            if(!r || ReportSeq(r) == seen_[i])
+            const uint32_t w = box.pot[i].load(std::memory_order_acquire);
+            if(!RateWordValid(w))
                 continue;
-            seen_[i] = ReportSeq(r);
-            if(ReportApplied(r) != (sent_ & 0xFFu)) {
-                ++stale_;
-                continue; // written before an external edit reached the audio thread
+            if(RateWordGeneration(w) != generation_[i]) {
+                if(w != last_stale_[i]) { // written before the newest edit reached the audio thread
+                    last_stale_[i] = w;
+                    ++stale_;
+                }
+                continue;
             }
-            if(ReportRate(r) != applied_[i]) {
-                applied_[i] = rates[i] = ReportRate(r);
+            if(RateWordRate(w) != applied_[i]) {
+                applied_[i] = rates[i] = RateWordRate(w);
                 change = true;
             }
         }
@@ -272,8 +290,8 @@ class RateSync {
 
   private:
     uint16_t applied_[kRateSources] = {};
-    uint32_t seen_[kRateSources] = {};
-    uint32_t sent_ = 0, stale_ = 0;
+    uint32_t generation_[kRateSources] = {}, last_stale_[kRateSources] = {};
+    uint32_t stale_ = 0;
     bool started_ = false;
 };
 

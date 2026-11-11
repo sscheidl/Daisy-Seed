@@ -185,6 +185,22 @@ class Controller {
         cv_offset_[1] = cv2;
         Commit(patch_);
     }
+#if MOD_ON_DAISY_LOCAL_EDITS
+    // An edit made on the instrument itself (for example a pot that owns a source rate). Unlike
+    // LoadPatch it keeps the retry cache: an editor write retried after its reply was lost is
+    // still answered, not executed a second time over the newer local edit. Its reply then carries
+    // the current patch CRC, so the editor sees the difference and reloads (PR #108 review R5).
+    Status LoadPatchLocal(const Patch& patch) {
+        const Status s = Validate(patch, allowed_);
+        if(s != Status::Ok)
+            return s;
+        const bool keep = have_last_;
+        Commit(patch);
+        have_last_ = keep;
+        local_since_last_ = keep;
+        return s;
+    }
+#endif
     const Patch& CurrentPatch() const { return patch_; }
     uint32_t CurrentCrc() const { return crc_; }
     uint64_t Allowed() const { return allowed_; }
@@ -238,6 +254,18 @@ class Controller {
         }
 #endif
         if(have_last_ && f.seq == last_seq_ && size == last_size_ && Same(body, size)) {
+#if MOD_ON_DAISY_LOCAL_EDITS
+            if(local_since_last_ && RepliesWithCrc(last_command_)) { // the state changed since: current CRC
+                uint8_t out[7];
+                proto::Writer w(out, sizeof(out));
+                w.U7(0);
+                w.U7(PopCount(patch_.ActiveMask()));
+                w.U32(crc_);
+                last_reply_size_ = proto::BuildFrame(last_reply_, device_, uint8_t(last_command_ | proto::kReplyBit),
+                                                     last_seq_, w.Data(), w.Size());
+                local_since_last_ = false;
+            }
+#endif
             Queue(last_reply_, last_reply_size_); // retry: same answer, not executed twice
             return true;
         }
@@ -250,8 +278,13 @@ class Controller {
         }
         if(reply_size_) {
             Queue(reply_, reply_size_);
-            if(Changes(f.command))
+            if(Changes(f.command)) {
                 Remember(body, size, f.seq); // reads are always answered fresh
+#if MOD_ON_DAISY_LOCAL_EDITS
+                last_command_ = f.command;
+                local_since_last_ = false;
+#endif
+            }
         }
         return true;
     }
@@ -556,6 +589,15 @@ class Controller {
         slot.size = size;
         ++tx_count_;
     }
+#if MOD_ON_DAISY_LOCAL_EDITS
+    // Commands answered with status, active cells and the patch CRC (Change()).
+    static bool RepliesWithCrc(uint8_t command) {
+        return command == proto::SetMatrix || command == proto::SetCell || command == proto::ClearMatrix ||
+               command == proto::SetSource || command == proto::SetName;
+    }
+    uint8_t last_command_ = 0;
+    bool local_since_last_ = false;
+#endif
     // Only state-changing commands are answered from the retry cache.
     static bool Changes(uint8_t command) {
         switch(command) {

@@ -31,7 +31,11 @@
 // * 16-bit resolution only (the 8-bit and mu-law paths are not built here).
 // * Plain float input pointers; no stmlib include (Clip16 is local).
 // * Fix: the unfreeze crossfade read tail_[kCrossFadeSize] (one past the end) on its last
-//   sample; it now reads indices 0..kCrossFadeSize-1.
+//   sample. The crossfade now runs over the samples actually captured (N <= kCrossFadeSize):
+//   it reads tail_[0..N-1] in order with the gain falling from (N-1)/N to 0, so a short Freeze
+//   no longer reads zeros or samples from an earlier Freeze (PR #108 review R4). For N =
+//   kCrossFadeSize the gains equal Clouds' counter / 256.
+// * A Freeze during a running crossfade abandons that fade and captures afresh.
 // * Reads wrap any index in [0, 2 * size) and fold larger ones defensively.
 #pragma once
 #include <algorithm>
@@ -53,7 +57,8 @@ class PcmRing {
         s16_ = buffer;
         size_ = frames - kInterpolationTail;
         write_head_ = 0;
-        crossfade_counter_ = 0;
+        crossfade_counter_ = fade_length_ = 0;
+        capturing_ = false;
         std::fill(&s16_[0], &s16_[frames], int16_t(0));
         tail_ = tail;
         std::fill(&tail_[0], &tail_[kCrossFadeSize], int16_t(0));
@@ -72,11 +77,21 @@ class PcmRing {
     // first kCrossFadeSize incoming samples are kept, so recording resumes with a crossfade.
     inline void WriteFade(const float* in, int32_t size, int32_t stride, bool write) {
         if(!write) {
-            while(size-- && crossfade_counter_ < kCrossFadeSize) {
+            if(!capturing_) { // a new Freeze, possibly during a running fade: capture afresh
+                capturing_ = true;
+                crossfade_counter_ = 0;
+            }
+            while(size-- > 0 && crossfade_counter_ < kCrossFadeSize) {
                 tail_[crossfade_counter_++] = Clip16(static_cast<int32_t>(*in * 32767.0f));
                 in += stride;
             }
-        } else if(!crossfade_counter_ && write_head_ >= kInterpolationTail && write_head_ < (size_ - size)) {
+            return;
+        }
+        if(capturing_) { // recording resumes: fade over the N captured samples
+            capturing_ = false;
+            fade_length_ = crossfade_counter_;
+        }
+        if(!crossfade_counter_ && write_head_ >= kInterpolationTail && write_head_ < (size_ - size)) {
             // Fast write routine for the most common case.
             while(size--) {
                 s16_[write_head_] = Clip16(static_cast<int32_t>(*in * 32767.0f));
@@ -88,8 +103,8 @@ class PcmRing {
                 float sample = *in;
                 if(crossfade_counter_) {
                     --crossfade_counter_;
-                    const float tail_sample = tail_[kCrossFadeSize - 1 - crossfade_counter_];
-                    const float gain = crossfade_counter_ * (1.0f / float(kCrossFadeSize));
+                    const float tail_sample = tail_[fade_length_ - 1 - crossfade_counter_];
+                    const float gain = float(crossfade_counter_) / float(fade_length_);
                     sample += (tail_sample / 32768.0f - sample) * gain;
                 }
                 Write(sample);
@@ -131,6 +146,9 @@ class PcmRing {
 
     inline int32_t size() const { return size_; }
     inline int32_t head() const { return write_head_; }
+    // Test access: samples captured during the current Freeze / still to fade.
+    bool Capturing() const { return capturing_; }
+    int32_t FadeRemaining() const { return capturing_ ? 0 : crossfade_counter_; }
 
   private:
     inline int32_t Wrap(int32_t i) const {
@@ -149,7 +167,8 @@ class PcmRing {
     int16_t* tail_ = nullptr;
     int32_t size_ = 1;
     int32_t write_head_ = 0;
-    int32_t crossfade_counter_ = 0;
+    int32_t crossfade_counter_ = 0, fade_length_ = 0;
+    bool capturing_ = false;
 };
 
 } // namespace cumulonimbus::clouds

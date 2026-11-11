@@ -40,9 +40,9 @@ python tools/cumulonimbus_probe.py set --scenario 0 --cap 16 --stimulus 4
 python tools/cumulonimbus_probe.py reset          # measured window starts now
 python tools/cumulonimbus_probe.py snapshot       # prints loads, stages, grains, verdict
 python tools/cumulonimbus_probe.py sweep --scenarios 1,2,3,0 --caps 8,16,24,32 --stimulus 4 \
-    --warmup 5 --seconds 30 --csv results.csv --label B3 --image ToyPianoCumulonimbus48Profile-v0.1.0 --stop-on-fail
+    --warmup 5 --seconds 30 --csv results.csv --label B3 --image ToyPianoCumulonimbus48Profile-v0.1.1 --stop-on-fail
 python tools/cumulonimbus_probe.py play --seconds 1800 --voices 16 --cc-traffic   # B4, playable image
-python tools/mod_probe.py stats                    # GET_STATS: callback load mean/max, overruns
+python tools/mod_probe.py stats                    # GET_STATS on P48/P32: callback load mean/max, overruns (not P0)
 ```
 
 `sweep` resets the statistics after each warm-up, measures for `--seconds` (≥ 30 s), and writes one
@@ -62,7 +62,7 @@ chord retrigger every 500 ms).
 
 | Row | Image / scenario | Procedure | Record |
 | --- | --- | --- | --- |
-| **B0** | P0 (regular Toy Piano 0.5), then D48 and D32 scenario 1 (dry route) | P0: `mod_probe.py stats` with 0/1/8/16 MIDI voices and 16 MIDI + 16 keys (hold the longest decay, repeat chord attacks; use `cumulonimbus_probe.py play --voices N` for MIDI). D48/D32: `sweep --scenarios 1 --caps 16 --stimulus 0..4` (one run per stimulus). Listen: D48 dry route vs P0 at the same patch and pots must sound identical | dry load per voice count; `voices_peak` (actual concurrent DSP voices); output equivalence by ear (host test shows bit-exact) |
+| **B0** | D48 and D32 scenario 1 (dry route) for timing; P0 (regular Toy Piano 0.5) for the dry sound only | **Timing:** `sweep --scenarios 1 --caps 16 --stimulus N` for N = 0..4 (0, 1, 8, 16 MIDI voices, 16 MIDI + 16 keys; 3 s decays, chord attacks every 500 ms) on D48 and on D32. P0 has no callback meter (`GET_STATS` is not supported in the regular build), so it gives no comparable timing. **Sound:** P0 vs the D48 dry route at the same *logical* settings. P0 0.5 maps VR1 transpose, VR2 attack, VR3 decay; the Cumulonimbus Piano page maps VR1 attack, VR2 decay, VR3 transpose (harmonic 0.24 and level 0.5 match P0). Play the same notes, e.g. `play --voices 8` | dry load per voice count; `voices_peak` (actual concurrent DSP voices); output equivalence by ear (the host test shows bit-exact) |
 | **B1** | F48 and F32 | External stereo input with independent L/R material, then stimuli 1/2/3. `sweep --scenarios 4,5,2 --caps 8,16,24,32 --stimulus 3` (write-only, render-only, grains only) and scenario 0 for the full chain. Check: L-only impulse comes out L (Spread 0), R-only R; Spread right widens; Freeze holds and re-enters with a crossfade; first grains after boot and after Bypass warm up from silence | stage costs per cap, `grains_peak` reached, stereo routing, freeze/re-entry by ear |
 | **B2** | D48 and D32, one effect at a time | Same note load (stimulus 3 or 4) and pot snapshot (write down VR1–VR8 on both pages): `sweep --scenarios 2 --caps 8,16,24,32`, then `--scenarios 3 --caps 16` | marginal grain and reverb cost, actual grains per cap |
 | **B3** | D48 and D32, full graph | Stimulus 4. Points: long overlapping grains (Length right, Density far right), short high-birth grains (Length left, Density far left), Spread right, Pitch ±24, simultaneous retriggers (the stimulus-4 chord attacks), page flips with pickup, Freeze and Bypass during the measurement, normal USB/MIDI/LED traffic (`play --cc-traffic` in parallel). Then a **deliberate over-cap case** (cap 8 with dense settings): every refused start appears in `rejected` | worst peak per cap; missed periods; rejected starts accounted |
@@ -75,6 +75,12 @@ raise them. The owner chooses the production rate and cap from the measured curv
 
 * Exact dry: in Bypass (after ~2 s) and with Grain Mix and Hall Mix at 0 the output must equal the
   regular Toy Piano.
+* Long tail across Bypass: set Hall Decay right, play, switch to Bypass, wait well over 2 s, return to
+  Run. The reverb keeps its state while suspended, so a remnant of the old tail fades back in with the
+  mix (state policy, by design). Note whether it is audible.
+* Probe acceptance: every MIDI note or control-queue drop (`midi_overruns`, `control_drops`) and every
+  block-count mismatch fails the point. Record `stack_free` from the heaviest D32 point (DTCM headroom
+  for the soak) and `accounting_max` (the meter's own cost, outside the reported peak).
 * Pickup: after an SW17 flip, a pot does nothing until it reaches its stored value; after a MIDI
   CC70–77 write (or an app rate edit) the same. Held notes keep sounding across switch changes.
 * Freeze: the texture continues from the held ring; releasing crossfades (256 samples).

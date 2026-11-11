@@ -32,6 +32,9 @@
 #include "cumulonimbus_host.h"
 #include "callback_diagnostics.h"
 #include "../../../effects/cumulonimbus/src/stage_meter.h"
+#if TOY_PIANO_CUMULONIMBUS_PROFILE
+#include "../../../effects/cumulonimbus/src/board_stack.h"
+#endif
 #include <new>
 #endif
 #define TOY_PIANO_MODULATION 1 // tests: call InitModulation() before the callback
@@ -185,11 +188,13 @@ toy_piano::CumulonimbusHost* cumulo = nullptr;
 mod::adapter::CallbackDiagnostics callback_diagnostics;
 float piano_transpose = 1.f; // audio thread only; exactly 1 in the centre detent
 float harmonic_base = toy_piano::kHarmonicBase, level_base = toy_piano::kLevelBase; // audio thread only
-// Main loop -> audio: external register writes (MIDI CCs, app rate edits).
+// Main loop -> audio: external register writes from MIDI CCs (a full queue drops the write and counts it).
 toy_piano::SpscQueue<toy_piano::ExternalWrite, 32> external_writes;
-toy_piano::RateReporter rate_reporter; // audio thread only
-toy_piano::RateSync rate_sync;         // main loop only
-std::array<std::atomic<uint32_t>, toy_piano::kRateSources> rate_reports{}; // audio -> main
+uint32_t control_drops = 0; // main loop only
+// Source rates between the Mod on Daisy patch (main loop) and the Piano page (audio): last-value mailboxes.
+toy_piano::RateMailboxes rate_boxes;
+toy_piano::RateAudio rate_audio; // audio thread only
+toy_piano::RateSync rate_sync;   // main loop only
 static_assert(std::atomic<uint32_t>::is_always_lock_free);
 bool InitializeFx() {
     std::fill_n(cumulo_storage, sizeof(cumulo_storage), static_cast<unsigned char>(0));
@@ -202,14 +207,14 @@ diag::StageMeter meter;
 diag::Requests requests;
 diag::TelemetrySender telemetry;
 toy_piano::PianoLoad piano_load;  // audio thread only
-std::array<std::atomic<uint32_t>, diag::kMetricCount> live{}; // audio -> main, per block
-std::atomic<uint32_t> reset_epoch{0};
+std::atomic<uint32_t> reset_epoch{0}; // audio -> main: the statistics restarted (main rebases its counters)
 uint8_t scenario = diag::kScenarioFull; // audio thread only
 uint32_t voices_peak = 0;               // audio thread only
-std::atomic<uint32_t> midi_overruns{0}; // main loop: notes refused by the full queue
+uint32_t midi_overruns = 0;             // main loop: notes refused by the full queue
 uint32_t Cycles() { return DWT->CYCCNT; }
+// Audio thread: restarts the statistics in this very block.
 void RestartStatistics() {
-    meter.RequestReset();
+    meter.ResetNow();
     cumulo->GetChain().GrainEffect().ResetCounters();
     voices_peak = 0;
     reset_epoch.fetch_add(1, std::memory_order_relaxed);
@@ -398,7 +403,7 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     callback_diagnostics.Begin();
 #endif
 #if TOY_PIANO_CUMULONIMBUS && TOY_PIANO_CUMULONIMBUS_PROFILE
-    meter.Begin(cycle_start);
+    meter.Begin(cycle_start, daisy::System::GetNow());
     {
         const int32_t s = requests.scenario.exchange(-1, std::memory_order_relaxed);
         if(s >= 0) {
@@ -416,7 +421,7 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
             piano_load.Select(uint8_t(st));
             RestartStatistics();
         }
-        if(requests.telemetry.exchange(-1, std::memory_order_relaxed) == 2)
+        if(requests.reset.exchange(false, std::memory_order_acq_rel))
             RestartStatistics();
     }
 #endif
@@ -500,13 +505,12 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
     cumulo->ReadControls(raw, hw.tog_sw17.Pressed(), hw.tog_sw18.Read());
     {
         toy_piano::ExternalWrite w;
-        for(unsigned n = 0; n < 16 && external_writes.Pop(w); ++n) {
+        for(unsigned n = 0; n < 16 && external_writes.Pop(w); ++n)
             cumulo->Write(w);
-            rate_reporter.Count(w);
-        }
     }
     toy_piano::CumulonimbusPanel& panel = cumulo->Panel();
-    rate_reporter.Publish(panel, [](unsigned i, uint32_t word) { rate_reports[i].store(word, std::memory_order_relaxed); });
+    rate_audio.Apply(panel, rate_boxes);
+    rate_audio.Publish(panel, rate_boxes);
     piano_transpose = toy_piano::TransposeRatio(panel.Value(toy_piano::kDestTranspose));
     harmonic_base = panel.Value(toy_piano::kDestHarmonic);
     level_base = panel.Value(toy_piano::kDestLevel);
@@ -651,24 +655,28 @@ void AudioCallback(daisy::AudioHandle::InputBuffer,
         meter.Add(diag::kReverb, chain.ReverbCycles());
         const uint32_t voices = toy_piano::ActiveVoices(piano);
         if(voices > voices_peak) voices_peak = voices;
-        live[diag::kScenario].store(scenario, std::memory_order_relaxed);
-        live[diag::kCap].store(uint32_t(chain.GrainEffect().Cap()), std::memory_order_relaxed);
-        live[diag::kStimulus].store(piano_load.Pattern(), std::memory_order_relaxed);
-        live[diag::kGrainsActive].store(uint32_t(t.active), std::memory_order_relaxed);
-        live[diag::kGrainsPeak].store(uint32_t(t.peak_active), std::memory_order_relaxed);
-        live[diag::kRejected].store(t.rejected, std::memory_order_relaxed);
-        live[diag::kStartedHigh].store(t.started_high, std::memory_order_relaxed);
-        live[diag::kStartedMedium].store(t.started_medium, std::memory_order_relaxed);
-        live[diag::kVoicesActive].store(voices, std::memory_order_relaxed);
-        live[diag::kVoicesPeak].store(voices_peak, std::memory_order_relaxed);
+        meter.SetApp(diag::kScenario, scenario);
+        meter.SetApp(diag::kCap, uint32_t(chain.GrainEffect().Cap()));
+        meter.SetApp(diag::kStimulus, piano_load.Pattern());
+        meter.SetApp(diag::kInternalRate, CUMULONIMBUS_INTERNAL_RATE);
+        meter.SetApp(diag::kBlockFrames, toy_piano::kBlockSize);
+        meter.SetApp(diag::kGrainsActive, uint32_t(t.active));
+        meter.SetApp(diag::kGrainsPeak, uint32_t(t.peak_active));
+        meter.SetApp(diag::kRejected, t.rejected);
+        meter.SetApp(diag::kStartedHigh, t.started_high);
+        meter.SetApp(diag::kStartedMedium, t.started_medium);
+        meter.SetApp(diag::kVoicesActive, voices);
+        meter.SetApp(diag::kVoicesPeak, voices_peak);
         uint32_t flags = diag::kFlagProfiling | diag::kFlagMono |
                          (CUMULONIMBUS_INTERNAL_RATE == 32000 ? uint32_t(diag::kFlagRate32) : 0u);
         flags |= chain.Mode() == seed::fx::ChainMode::Bypass ? uint32_t(diag::kFlagBypass) : 0u;
         flags |= chain.Mode() == seed::fx::ChainMode::Freeze ? uint32_t(diag::kFlagFreeze) : 0u;
         flags |= chain.Suspended() ? uint32_t(diag::kFlagSuspended) : 0u;
         flags |= cumulo->Panel().CurrentPage() == toy_piano::kPageFx ? uint32_t(diag::kFlagFxPage) : 0u;
-        live[diag::kFlags].store(flags, std::memory_order_relaxed);
-        meter.End(DWT->CYCCNT - cycle_start);
+        meter.SetApp(diag::kFlags, flags);
+        const uint32_t total = DWT->CYCCNT - cycle_start;
+        meter.End(total);
+        meter.AddAccounting(DWT->CYCCNT - cycle_start - total); // the meter's own work, outside kTotal
     }
 #endif
 #else
@@ -714,33 +722,34 @@ bool snapshot_pending = false; // main loop only
 void ServiceCumulonimbus(bool connected) {
     const mod::Patch& patch = modulation.controller.CurrentPatch();
     const uint16_t rates[toy_piano::kRateSources] = {patch.lfo[0].rate, patch.lfo[1].rate, patch.random.rate};
-    rate_sync.FromPatch(rates, [](const toy_piano::ExternalWrite& w) { return external_writes.Push(w); });
-    uint32_t reports[toy_piano::kRateSources];
-    for(unsigned i = 0; i < toy_piano::kRateSources; ++i) reports[i] = rate_reports[i].load(std::memory_order_relaxed);
+    rate_sync.FromPatch(rates, rate_boxes);
     uint16_t wanted[toy_piano::kRateSources];
-    if(rate_sync.FromPots(reports, wanted)) {
+    if(rate_sync.FromPots(rate_boxes, wanted)) {
         mod::Patch q = patch;
         q.lfo[0].rate = wanted[0];
         q.lfo[1].rate = wanted[1];
         q.random.rate = wanted[2];
-        modulation.controller.LoadPatch(q);
+        modulation.controller.LoadPatchLocal(q); // keeps the editor retry cache (MOD_ON_DAISY_LOCAL_EDITS)
     }
 #if TOY_PIANO_CUMULONIMBUS_PROFILE
-    static uint32_t seen_epoch = 0, reset_ms = 0;
+    // Main-loop counters restart with the statistics (the epoch changes in the reset block).
+    static uint32_t seen_epoch = 0, base_midi = 0, base_control = 0, base_stale = 0;
     const uint32_t epoch = reset_epoch.load(std::memory_order_relaxed);
-    if(epoch != seen_epoch) { // statistics restarted: the measured window starts now
+    if(epoch != seen_epoch) {
         seen_epoch = epoch;
-        reset_ms = daisy::System::GetNow();
+        base_midi = midi_overruns;
+        base_control = control_drops;
+        base_stale = rate_sync.Stale();
     }
     if(snapshot_pending && meter.SnapshotReady() && !telemetry.Busy()) {
         diag::Metrics m{};
-        for(unsigned i = 0; i < diag::kMetricCount; ++i) m[i] = live[i].load(std::memory_order_relaxed);
-        diag::FillMeterMetrics(meter.Snapshot(), m);
+        diag::FillMeterMetrics(meter.Snapshot(), m); // statistics, window and metadata of one block
         meter.ReleaseSnapshot();
-        m[diag::kInternalRate] = CUMULONIMBUS_INTERNAL_RATE;
-        m[diag::kBlockFrames] = toy_piano::kBlockSize;
-        m[diag::kWindowMs] = daisy::System::GetNow() - reset_ms;
-        m[diag::kMidiOverruns] = midi_overruns.load(std::memory_order_relaxed);
+        m[diag::kMidiOverruns] = midi_overruns - base_midi;
+        m[diag::kControlDrops] = control_drops - base_control;
+        m[diag::kStaleRates] = rate_sync.Stale() - base_stale;
+        m[diag::kStackFree] = cumulonimbus::board::StackFree();
+        m[diag::kStackSize] = cumulonimbus::board::StackSize();
         telemetry.Start(m);
         snapshot_pending = false;
     }
@@ -822,18 +831,18 @@ void ServiceUsbMidi() {
 #if TOY_PIANO_CUMULONIMBUS
         if(event.type == daisy::ControlChange) {
 #if TOY_PIANO_CUMULONIMBUS_PROFILE
-            if(diag::HandleControlChange(requests, event.channel, event.data[0], event.data[1])) {
-                if(requests.telemetry.load(std::memory_order_relaxed) == 1) {
-                    requests.telemetry.store(-1, std::memory_order_relaxed);
-                    meter.RequestSnapshot();
-                    snapshot_pending = true;
-                }
-                continue;
+            const auto diagnostic = diag::HandleControlChange(requests, event.channel, event.data[0], event.data[1]);
+            if(diagnostic.snapshot && !snapshot_pending) {
+                meter.RequestSnapshot();
+                snapshot_pending = true;
             }
+            if(diagnostic.consumed)
+                continue;
 #endif
             toy_piano::ExternalWrite w;
             if(toy_piano::CcToWrite(event.channel, event.data[0], event.data[1], w)) {
-                external_writes.Push(w); // a full queue drops the write; the pot still owns it
+                if(!external_writes.Push(w))
+                    ++control_drops; // the pot keeps its value; counted for the board acceptance
                 continue;
             }
         }
@@ -846,7 +855,7 @@ void ServiceUsbMidi() {
             if(note.velocity > 0) {
 #if TOY_PIANO_CUMULONIMBUS && TOY_PIANO_CUMULONIMBUS_PROFILE
                 if(!midi_in.Push({note.note, note.velocity}))
-                    midi_overruns.fetch_add(1, std::memory_order_relaxed);
+                    ++midi_overruns;
 #elif TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1
                 if(!midi_in.Push({note.note, note.velocity})) {
                     next = {note.note, note.velocity};
@@ -927,6 +936,9 @@ int main() {
     DWT->CYCCNT = 0;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
     meter.Init((SystemCoreClock / 48000u) * uint32_t(toy_piano::kBlockSize));
+#if defined(__arm__)
+    cumulonimbus::board::PaintFreeStack(); // before the audio interrupt runs
+#endif
     cumulo->GetChain().SetClock(Cycles);
 #endif
 #if TOY_PIANO_FILTER

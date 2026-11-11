@@ -125,13 +125,11 @@ template <unsigned InternalRate> class CumulonimbusT {
     void SetRenderEnabled(bool on) { render_enabled_ = on; }
     void SetClock(Clock clock) { clock_ = clock; }
 
+    // Rejects without touching any buffer (FX contract): unprepared, invalid blocks, and in the
+    // 32 kHz build blocks that are not a multiple of 3 frames (48 -> 32 kHz needs whole phase cycles).
     bool Process(audio::StereoBlock block) {
-        if(!ready_ || !audio::Valid(config_, block) || (InternalRate == 32000 && block.frames % 3)) {
-            if(audio::Valid(config_, block))
-                for(std::size_t i = 0; i < block.frames; ++i)
-                    block.out_left[i] = block.out_right[i] = 0.f;
+        if(!ready_ || !audio::Valid(config_, block) || !SupportedFrames(block.frames))
             return false;
-        }
         telemetry_.write_cycles = telemetry_.render_cycles = telemetry_.convert_cycles = 0;
         const bool write = write_enabled_ && !parameters_.freeze;
         if(InternalRate == 48000) {
@@ -158,6 +156,7 @@ template <unsigned InternalRate> class CumulonimbusT {
         return true;
     }
 
+    static constexpr bool SupportedFrames(std::size_t frames) { return InternalRate == 48000 || frames % 3 == 0; }
     CumulonimbusTelemetry Telemetry() const { return telemetry_; }
     void ResetCounters() {
         scheduler_.ResetCounters();

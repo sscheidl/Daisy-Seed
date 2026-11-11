@@ -92,9 +92,23 @@ template <unsigned Rate> static void TestContract() {
     CHECK(rig.fx->Process({l, r, ol, orr, 0}));             // zero frames: no-op
     if(Rate == 32000) {
         for(auto& x : ol) x = 7.f;
-        CHECK(!rig.fx->Process({l, r, ol, orr, 47}));        // 32 kHz path needs multiples of 3
-        CHECK(ol[0] == 0.f);                                 // ... and is silenced, not stale
+        CHECK(!rig.fx->Process({l, r, ol, orr, 47})); // 32 kHz path needs multiples of 3 ...
+        CHECK(ol[0] == 7.f && ol[46] == 7.f);           // ... and rejects without touching buffers (R8)
+        float a[kBlock], b[kBlock];
+        for(std::size_t i = 0; i < kBlock; ++i) a[i] = b[i] = .25f;
+        CHECK(!rig.fx->Process({a, b, a, b, 47})); // exact in-place: the dry input survives
+        bool untouched = true;
+        for(std::size_t i = 0; i < kBlock; ++i) untouched = untouched && a[i] == .25f && b[i] == .25f;
+        CHECK(untouched);
         CHECK(rig.fx->Process({l, r, ol, orr, 24}));
+    }
+    // Unprepared effects reject without touching buffers too.
+    {
+        Rig<Rate> idle;
+        float a[kBlock], o[kBlock];
+        for(std::size_t i = 0; i < kBlock; ++i) a[i] = o[i] = .5f;
+        CHECK(!idle.fx->Process({a, a, o, a, kBlock}));
+        CHECK(o[0] == .5f && a[0] == .5f);
     }
     // NaN parameters fall back to defaults.
     CumulonimbusParameters p;
@@ -256,6 +270,80 @@ template <unsigned Rate> static void TestPoolAndQuality() {
     rig.fx->SetCap(4);
     rig.Run(2000, [](std::size_t n, int) { return float(n % 100) / 200.f - .25f; });
     CHECK(rig.fx->ActiveGrains() <= 4);
+}
+
+// R3 (PR #108 review): after lowering the cap below the active count, no grain starts (not even
+// a trigger into a free low slot) until the running grains have finished; quality and
+// normalization count every audible grain.
+static void TestLoweredCap() {
+    cc::Tables tables;
+    tables.Init(48000.f);
+    std::vector<int16_t> pcm(96000 + cc::kInterpolationTail), tail(cc::kCrossFadeSize);
+    cc::PcmRing ring;
+    ring.Init(pcm.data(), int32_t(pcm.size()), tail.data());
+    auto scheduler = std::make_unique<cc::LiveScheduler>();
+    scheduler->Init(&tables, 1, 40, 48000.f, 24, 1);
+    cc::GrainParameters params;
+    params.size = 1.f; // 512 ms grains
+    float wet[48];
+    scheduler->SetCap(16);
+    for(int i = 0; i < 12; ++i) scheduler->Play(&ring, params, true, wet, 24);
+    CHECK(scheduler->ActiveGrains() == 12);
+    scheduler->SetCap(8);
+    const uint32_t refused = scheduler->Counters().rejected;
+    scheduler->Play(&ring, params, true, wet, 24);
+    CHECK(scheduler->ActiveGrains() == 12);               // was 13 before the fix
+    CHECK(scheduler->Counters().rejected == refused + 1); // the refused trigger is counted once
+    CHECK(scheduler->Counters().peak_active == 12);
+    // Once enough grains have ended (512 ms), starts resume up to the new cap only.
+    for(int i = 0; i < 1100; ++i) scheduler->Play(&ring, params, true, wet, 24);
+    CHECK(scheduler->ActiveGrains() <= 8 && scheduler->ActiveGrains() > 0);
+    // An overdue regular grain counts once per overdue period, not once per waiting sample.
+    auto regular = std::make_unique<cc::LiveScheduler>();
+    regular->Init(&tables, 1, 40, 48000.f, 24, 1);
+    regular->SetCap(1);
+    cc::GrainParameters dense = params;
+    dense.overlap = 1.f;
+    dense.use_deterministic_seed = true;
+    for(int i = 0; i < 200; ++i) regular->Play(&ring, dense, false, wet, 24); // 100 ms of one 512 ms grain
+    CHECK(regular->ActiveGrains() == 1);
+    CHECK(regular->Counters().rejected >= 1 && regular->Counters().rejected <= 2);
+}
+
+// R4 (PR #108 review): a Freeze shorter than the 256-sample tail crossfades over what it captured;
+// a new Freeze during a fade captures afresh.
+static void TestShortFreeze() {
+    std::vector<int16_t> pcm(4096 + cc::kInterpolationTail), tail(cc::kCrossFadeSize, int16_t(-1234));
+    cc::PcmRing ring;
+    ring.Init(pcm.data(), int32_t(pcm.size()), tail.data());
+    float ones[64], zeros[64] = {};
+    for(auto& x : ones) x = 1.f;
+    ring.WriteFade(zeros, 16, 1, true);          // head 16
+    ring.WriteFade(ones, 24, 1, false);          // a 24-sample Freeze
+    CHECK(ring.Capturing() && ring.head() == 16);
+    ring.WriteFade(zeros, 24, 1, true);          // resume with silence
+    CHECK(!ring.Capturing() && ring.FadeRemaining() == 0);
+    // First resumed sample: tail[0] (1.0) at gain 23/24, the last one fades to 0.
+    CHECK(std::abs(int(pcm[16]) - int(32767.f * 23.f / 24.f)) <= 2);
+    CHECK(pcm[16 + 23] == 0);
+    for(int i = 1; i < 24; ++i) CHECK(pcm[std::size_t(16 + i)] <= pcm[std::size_t(15 + i)]); // monotonic fade
+    // Refreeze during a fade: the old fade is abandoned, the new capture starts at tail[0].
+    float halves[8];
+    for(auto& x : halves) x = .5f;
+    ring.WriteFade(ones, 40, 1, false);          // 40 samples captured
+    ring.WriteFade(zeros, 10, 1, true);          // fade started (30 left)
+    CHECK(ring.FadeRemaining() == 30);
+    ring.WriteFade(halves, 8, 1, false);         // refreeze: 8 new samples
+    const int32_t head = ring.head();
+    ring.WriteFade(zeros, 8, 1, true);
+    CHECK(std::abs(int(pcm[std::size_t(head)]) - int(16383.f * 7.f / 8.f)) <= 2); // tail[0] = 0.5 at gain 7/8
+    CHECK(ring.FadeRemaining() == 0);
+    // A full 256-sample Freeze keeps Clouds' gains counter / 256.
+    std::vector<float> long_in(300, 1.f);
+    ring.WriteFade(long_in.data(), 300, 1, false);
+    const int32_t h2 = ring.head();
+    ring.WriteFade(zeros, 1, 1, true);
+    CHECK(std::abs(int(pcm[std::size_t(h2)]) - int(32767.f * 255.f / 256.f)) <= 2);
 }
 
 // One-shot triggers start exactly one grain per host block, in its first call.
@@ -475,9 +563,10 @@ static void TestMeter() {
     using namespace cumulonimbus::diag;
     StageMeter meter;
     meter.Init(10000);
-    uint32_t now = 0;
-    for(unsigned b = 0; b < 100; ++b) {
-        meter.Begin(now);
+    uint32_t now = 0, ms = 1000;
+    for(unsigned b = 0; b < 100; ++b, ++ms) {
+        meter.SetApp(kScenario, 3);
+        meter.Begin(now, ms);
         meter.Add(kPiano, 1000);
         meter.Add(kGrainRender, 2000 + b);
         meter.End(b < 99 ? 5000 : 12000); // one overrun
@@ -485,11 +574,14 @@ static void TestMeter() {
     }
     // Two periods lost: the next start comes 3 budgets later.
     now += 20000;
-    meter.Begin(now);
+    ms += 2;
+    meter.Begin(now, ms++);
     meter.End(4000);
+    meter.AddAccounting(321);
     meter.RequestSnapshot();
     now += 10000;
-    meter.Begin(now);
+    meter.Begin(now, ms);
+    meter.SetApp(kGrainsPeak, 17);
     meter.End(4000);
     CHECK(meter.SnapshotReady());
     MeterSnapshot s = meter.Snapshot();
@@ -497,12 +589,17 @@ static void TestMeter() {
     CHECK(s.blocks == 102);
     CHECK(s.overruns == 1);
     CHECK(s.missed == 2);
+    CHECK(s.window_ms == 103); // 102 blocks spanning 103 ms (two lost periods)
+    CHECK(s.accounting_max == 321);
+    CHECK(s.app[kScenario] == 3 && s.app[kGrainsPeak] == 17); // metadata taken with the statistics
     CHECK(s.max[kTotal] == 12000 && s.max[kGrainRender] == 2099 && s.max[kPiano] == 1000);
     CHECK(Percentile(s, 500) == 5100);  // 50 % bin -> upper edge 51 %
     CHECK(Percentile(s, 1000) == 12100); // the overrun: 120 % bin, upper edge 121 %
     Metrics m{};
     FillMeterMetrics(s, m);
     CHECK(m[kTotalMax] == 12000 && m[kMissedPeriods] == 2 && m[kP50] == 5100);
+    CHECK(m[kWindowMs] == 103 && m[kScenario] == 3 && m[kGrainsPeak] == 17 && m[kAccountingMax] == 321);
+    CHECK(m[kMetricSet] == kMetricSetVersion && kMetricCount == 39 && kRecords == 13);
     m[kScenario] = 4;
     m[kFlags] = kFlagProfiling | kFlagRate32;
     m[kWriteMean] = 0x7FFFFFFFu;
@@ -520,14 +617,38 @@ static void TestMeter() {
         }
         for(unsigned i = 0; i < 20; ++i) CHECK(p[3 * i + 2] < 128);
     }
-    // Reset request clears at the next Begin.
+    // A main-loop reset request clears at the next Begin.
     meter.RequestReset();
-    meter.Begin(now + 10000);
+    meter.Begin(now + 10000, 5000);
     meter.End(1);
     meter.RequestSnapshot();
-    meter.Begin(now + 20000);
+    meter.Begin(now + 20000, 5001);
     meter.End(1);
-    CHECK(meter.Snapshot().blocks == 2 && meter.Snapshot().missed == 0);
+    CHECK(meter.SnapshotReady());
+    CHECK(meter.Snapshot().blocks == 2 && meter.Snapshot().missed == 0 && meter.Snapshot().window_ms == 1);
+    meter.ReleaseSnapshot();
+    // An audio-thread reset (ResetNow) inside a block: that block is the first of the new window,
+    // so a snapshot requested together with the reset never shows the old statistics (R2).
+    meter.Begin(now + 30000, 6000);
+    meter.End(9000);
+    meter.RequestSnapshot();
+    meter.Begin(now + 40000, 6001);
+    meter.ResetNow();
+    meter.End(2000);
+    CHECK(meter.SnapshotReady());
+    CHECK(meter.Snapshot().blocks == 1 && meter.Snapshot().max[kTotal] == 2000 && meter.Snapshot().window_ms == 0);
+    meter.ReleaseSnapshot();
+    meter.Begin(now + 50000, 6002); // missed-period detection continues across the reset
+    meter.End(1);
+    meter.RequestSnapshot();
+    meter.Begin(now + 60000, 6003);
+    meter.End(1);
+    CHECK(meter.Snapshot().missed == 0 && meter.Snapshot().blocks == 3);
+    // Stack paint helpers.
+    uint32_t stack[16];
+    PaintStack(stack, stack + 16);
+    stack[10] = 0;
+    CHECK(UntouchedStack(stack, stack + 16) == 40);
 }
 
 int main() {
@@ -542,6 +663,8 @@ int main() {
     TestWrapAndTinyRing();
     TestPoolAndQuality<48000>();
     TestPoolAndQuality<32000>();
+    TestLoweredCap();
+    TestShortFreeze();
     TestTrigger<48000>();
     TestTrigger<32000>();
     TestDurations<48000>();

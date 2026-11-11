@@ -38,29 +38,43 @@ inline seed::fx::ChainRoute RouteFor(uint8_t scenario) {
     return r;
 }
 
-// Main loop -> audio thread requests (-1 = none). Values are applied at the next block start.
+// Main loop -> audio thread requests (-1 = none), applied at the next block start. The statistics
+// reset has its own flag; a snapshot request never travels through here: the main loop asks the
+// meter directly (StageMeter::RequestSnapshot), so neither can swallow or overwrite the other
+// (PR #108 review R2).
 struct Requests {
-    std::atomic<int32_t> scenario{-1}, cap{-1}, stimulus{-1}, telemetry{-1};
+    std::atomic<int32_t> scenario{-1}, cap{-1}, stimulus{-1};
+    std::atomic<bool> reset{false};
 };
 static_assert(std::atomic<int32_t>::is_always_lock_free, "requests must be lock-free");
+static_assert(std::atomic<bool>::is_always_lock_free, "requests must be lock-free");
 
-// Channel-16 control change (channel 15 zero-based). Returns true when consumed.
-inline bool HandleControlChange(Requests& q, uint8_t channel, uint8_t cc, uint8_t value) {
+struct ControlResult {
+    bool consumed = false; // the CC belonged to the diagnostics
+    bool snapshot = false; // main loop: call StageMeter::RequestSnapshot()
+};
+
+// Channel-16 control change (channel 15 zero-based), main loop.
+inline ControlResult HandleControlChange(Requests& q, uint8_t channel, uint8_t cc, uint8_t value) {
+    ControlResult r;
     if(channel != 15)
-        return false;
+        return r;
+    r.consumed = true;
     switch(cc) {
         case ControlCc::kScenario:
             if(value < kScenarioCount) q.scenario.store(value, std::memory_order_relaxed);
-            return true;
+            break;
         case ControlCc::kCap:
             if(value <= 64) q.cap.store(value, std::memory_order_relaxed);
-            return true;
-        case ControlCc::kStimulus: q.stimulus.store(value, std::memory_order_relaxed); return true;
+            break;
+        case ControlCc::kStimulus: q.stimulus.store(value, std::memory_order_relaxed); break;
         case ControlCc::kTelemetry:
-            if(value == 1 || value == 2) q.telemetry.store(value, std::memory_order_relaxed);
-            return true;
-        default: return false;
+            if(value == 1) r.snapshot = true;
+            else if(value == 2) q.reset.store(true, std::memory_order_release);
+            break;
+        default: r.consumed = false; break;
     }
+    return r;
 }
 
 // Deterministic stereo test source (standalone images). Patterns: 0 external input (not

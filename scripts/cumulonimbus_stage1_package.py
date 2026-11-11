@@ -28,7 +28,8 @@ TP = ROOT / 'instruments' / 'toy-piano'
 FX = ROOT / 'effects' / 'cumulonimbus'
 IMAGES = [
     # label, project, image path relative to ROOT (version filled in), purpose
-    ('P0', 'toy-piano', 'instruments/toy-piano/build/ToyPiano-v{v}.bin', 'Regular Toy Piano: dry reference, B0'),
+    ('P0', 'toy-piano', 'instruments/toy-piano/build/ToyPiano-v{v}.bin',
+     'Regular Toy Piano: dry sound reference and rollback (no callback meter), B0'),
     ('F48', 'cumulonimbus-fx', 'effects/cumulonimbus/build/fx48/CumulonimbusFx48-v{v}.bin',
      'Standalone grains + reverb, 48 kHz kernel, true stereo, scenarios, B1'),
     ('F32', 'cumulonimbus-fx-32', 'effects/cumulonimbus/build/fx32/CumulonimbusFx32-v{v}.bin',
@@ -121,12 +122,13 @@ def flash_layout(image, rows):
 
 def results_template(path):
     rows = []
-    for image in ('P0',):
-        for stim in ('0 voices', '1 MIDI', '8 MIDI', '16 MIDI', '16 MIDI + 16 keys'):
-            rows.append(['B0', image, 'mod_probe stats', '', '', stim, 'long decay, repeated chords'])
+    # B0 timing comes from the D48/D32 dry route; P0 has no callback meter and is the sound reference only.
+    rows.append(['B0', 'P0', 'sound reference', '', 'play --voices 8', 'same logical settings as D48',
+                 'P0 VR1 transpose/VR2 attack/VR3 decay; Piano page VR1 attack/VR2 decay/VR3 transpose'])
     for image in ('D48', 'D32'):
         for stim in range(5):
-            rows.append(['B0', image, '1 (dry)', '16', str(stim), '', 'compare by ear with P0'])
+            rows.append(['B0', image, '1 (dry)', '16', str(stim), '0/1/8/16 MIDI, 16 MIDI + 16 keys',
+                         'timing; compare by ear with P0'])
     for image in ('F48', 'F32'):
         for scenario in ('4 (write only)', '5 (render only)', '2 (grains only)', '0 (full)'):
             for cap in (8, 16, 24, 32):
@@ -146,10 +148,11 @@ def results_template(path):
         w = csv.writer(handle)
         w.writerow(['row', 'image', 'scenario', 'cap', 'stimulus', 'settings', 'notes', 'date', 'measured_s',
                     'peak_load_pct', 'mean_load_pct', 'p99_load_pct', 'missed_periods', 'overruns', 'blocks',
-                    'window_ms', 'grains_peak', 'rejected', 'voices_peak', 'midi_overruns', 'verdict',
+                    'window_ms', 'grains_peak', 'rejected', 'voices_peak', 'midi_overruns', 'control_drops',
+                    'stack_free', 'accounting_pct', 'verdict',
                     'listening (MEASURED)', 'status'])
         for r in rows:
-            w.writerow(r + [''] * 15 + ['NOT MEASURED'])
+            w.writerow(r + [''] * 18 + ['NOT MEASURED'])
 
 
 def main():

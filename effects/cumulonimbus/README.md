@@ -1,6 +1,6 @@
 # Cumulonimbus — Clouds granular FX
 
-Component `cumulonimbus` 0.1.0, chain 0.1.0, meter 0.1.0, standalone diagnostic firmware 0.1.0.
+Component `cumulonimbus` 0.1.1, chain 0.1.0, meter 0.2.0, standalone diagnostic firmware 0.1.1.
 Project IDs: `cumulonimbus-fx` (48 kHz grain kernel, image **F48**) and `cumulonimbus-fx-32`
 (32 kHz grain kernel, image **F32**). The Toy Piano composition is
 [Toy Piano on Cumulonimbus](../../instruments/toy-piano/docs/CUMULONIMBUS.md).
@@ -37,16 +37,21 @@ one stereo [Torus reverb](../torus-reverb/) on that mix (dry/wet) → output gua
 | `pitch` | ±24 st | grain playback pitch; pitch > 0 shortens grains as in Clouds |
 | `texture` | 0..1 | TEXTURE: window shape (fixed .5 in the firmwares). The diffuser above .75 is not built |
 | `stereo_spread` | 0..1 | random pan per grain |
-| `freeze` | bool | holds the ring (256-sample crossfade on release); grains keep playing |
-| cap (runtime) | 0..64 | grain pool bound; Clouds' 32 stereo / 40 mono stay the density reference |
+| `freeze` | bool | holds the ring; on release it crossfades over the captured input (up to 256 samples); grains keep playing |
+| cap (runtime) | 0..64 | bound on the total active grains (a lowered cap admits new grains only once enough running ones have ended); Clouds' 32 stereo / 40 mono stay the density reference |
 
 Options: `channels` 2 (true stereo, standalone) or 1 (mono ring with Clouds' sin/cos pan law, Toy
 Piano), `seed` for repeatable tests. One-shot `Trigger()` starts one grain in the next block, once.
+The 32 kHz build accepts blocks of a multiple of 3 frames only (48 → 32 kHz needs whole phase cycles);
+other blocks, and any call before `Prepare`, are rejected without touching a buffer.
 
 **Freeze / Run / Bypass** (SW18 up / centre / down, `ChainMode`): Freeze holds the ring. Bypass fades
 both feeds out over 10 ms, lets the tails ring for 2 s (the ring length), glides both wet mixes to 0
 in 10 ms and then suspends the wet work: the output is the exact input. Leaving Bypass resumes with
-feeds and mixes gliding from 0 and the ring refilling from silence.
+feeds and mixes gliding from 0 and the ring refilling from silence. The reverb keeps its state while
+suspended, so a remnant of a long tail fades back in with the mix (state policy). While the wet path
+runs at mix 0, a non-finite wet sample would reach the output guard (which maps NaN to 0); normalized
+finite audio cannot produce one in the reviewed configuration.
 
 ## Two internal rates
 
@@ -78,7 +83,7 @@ source → chain → output. No storage writes.
 | S15 | test source: external → impulses → tone bursts → noise (LED on = built-in source) |
 | S8 LED | a callback overran its budget since the last reset |
 | S9 + S16 (5 s) | bootloader, as every firmware here |
-| USB-MIDI ch. 16 | CC20 scenario, CC21 cap, CC22 stimulus, CC119 = 1 telemetry / 2 reset ([probe](tools/cumulonimbus_probe.py)) |
+| USB-MIDI ch. 16 | CC20 scenario, CC21 cap, CC22 stimulus, CC119 = 1 telemetry / 2 reset ([probe](tools/cumulonimbus_probe.py)); a snapshot carries its own window and metadata (metric set 2: 39 metrics in 13 records, incl. control drops, stale rate reports, meter cost and untouched DTCM stack) |
 
 Test source patterns: impulses (L at 0 ms, R at 250 ms, every 500 ms), tone bursts (50 ms of 440 Hz
 left / 660 Hz right, alternating every 250 ms), independent L/R noise at −12 dBFS.
@@ -90,7 +95,7 @@ make PROJECT=cumulonimbus-fx test          # component + firmware-logic host tes
 make PROJECT=cumulonimbus-fx test-sanitize
 make PROJECT=cumulonimbus-fx -j4           # F48
 make PROJECT=cumulonimbus-fx-32 -j4        # F32
-python scripts/check-firmware.py effects/cumulonimbus/build/fx48/CumulonimbusFx48-v0.1.0.bin
+python scripts/check-firmware.py effects/cumulonimbus/build/fx48/CumulonimbusFx48-v0.1.1.bin
 python effects/cumulonimbus/tools/cumulonimbus_probe.py selftest
 ```
 

@@ -38,11 +38,15 @@ METRICS = [
     'started_high', 'started_medium', 'midi_overruns',
     'voices_active', 'voices_peak', 'flags',
     'piano_mean', 'reverb_mean', 'write_mean',
+    # metric set 2 (meter 0.2.0)
+    'control_drops', 'stale_rates', 'accounting_max',
+    'stack_free', 'stack_size', 'metric_set',
 ]
 RECORDS = len(METRICS) // 3
 SCENARIOS = ['full', 'dry', 'grains_only', 'reverb_only', 'write_only', 'render_only', 'muted']
 FLAGS = {1: 'profiling', 2: 'bypass', 4: 'freeze', 8: 'suspended', 16: 'fx_page', 32: 'rate32', 64: 'mono'}
-DERIVED = ['peak_load_pct', 'mean_load_pct', 'p99_load_pct', 'expected_blocks', 'block_deficit', 'verdict']
+DERIVED = ['peak_load_pct', 'mean_load_pct', 'p99_load_pct', 'accounting_pct', 'expected_blocks', 'block_deficit',
+           'verdict']
 
 
 class RecordDecoder:
@@ -99,26 +103,34 @@ def encode(metrics):
 
 
 def derive(m):
-    """Load in % of the budget, block accounting and the Stage 1 verdict (<= 70 % peak, no misses)."""
+    """Load in % of the budget, block accounting and the Stage 1 verdict.
+
+    PASS <= 70 % peak; MIDDLE 70-80 %; FAIL above 80 %, on any missed period or overrun, on any MIDI
+    note or control-queue drop, and when the counted blocks do not match the measured window (an
+    invalid measurement, never a pass)."""
     budget = max(1, m['budget_cycles'])
+    # The window spans the first to the last counted block: blocks = window_ms + 1 at 1 kHz.
+    expected = m['window_ms'] + 1 if m['blocks'] else 0
     d = {
         'peak_load_pct': round(100.0 * m['total_max'] / budget, 2),
         'mean_load_pct': round(100.0 * m['total_mean'] / budget, 2),
         'p99_load_pct': round(m['p99'] / 100.0, 2),
-        # 1 kHz callbacks: the window in ms is the expected block count.
-        'expected_blocks': m['window_ms'],
-        'block_deficit': m['window_ms'] - m['blocks'],
+        'accounting_pct': round(100.0 * m.get('accounting_max', 0) / budget, 2),
+        'expected_blocks': expected,
+        'block_deficit': expected - m['blocks'],
     }
-    if m['missed_periods'] or m['overruns']:
+    if abs(d['block_deficit']) > max(5, expected // 500):
+        verdict = 'FAIL: invalid window (block count does not match the measured time)'
+    elif m['missed_periods'] or m['overruns']:
         verdict = 'FAIL: missed periods or overruns'
+    elif m['midi_overruns'] or m.get('control_drops', 0):
+        verdict = 'FAIL: MIDI note or control queue drops'
     elif d['peak_load_pct'] > 80.0:
         verdict = 'FAIL: peak above 80 %'
     elif d['peak_load_pct'] > 70.0:
         verdict = 'MIDDLE: 70-80 % peak'
     else:
         verdict = 'PASS: <= 70 % peak'
-    if abs(d['block_deficit']) > max(5, m['window_ms'] // 500):
-        verdict += ' (block count does not match the window)'
     d['verdict'] = verdict
     return d
 
@@ -139,14 +151,18 @@ def print_metrics(m):
           f"convert {m['convert_max']}, reverb {m['reverb_max']}")
     print(f"grains active {m['grains_active']}, peak {m['grains_peak']}, rejected {m['rejected']}, "
           f"started high/medium {m['started_high']}/{m['started_medium']}; voices {m['voices_active']} "
-          f"(peak {m['voices_peak']}), MIDI overruns {m['midi_overruns']}")
+          f"(peak {m['voices_peak']}), MIDI overruns {m['midi_overruns']}, control drops {m['control_drops']}, "
+          f"stale rate reports {m['stale_rates']}")
+    stack = f"{m['stack_free']} of {m['stack_size']} bytes never touched" if m['stack_size'] else 'not measured'
+    print(f"meter accounting max {m['accounting_max']} cycles ({d['accounting_pct']} %, outside the peak); "
+          f"stack {stack}")
     print(d['verdict'])
 
 
 def selftest():
     sample = {name: (i * 7919) % 100000 for i, name in enumerate(METRICS)}
-    sample.update(budget_cycles=480000, total_max=300000, window_ms=30000, blocks=30000,
-                  missed_periods=0, overruns=0, flags=1 | 32)
+    sample.update(budget_cycles=480000, total_max=300000, window_ms=29999, blocks=30000,
+                  missed_periods=0, overruns=0, midi_overruns=0, control_drops=0, flags=1 | 32, metric_set=2)
     decoder = RecordDecoder()
     result = None
     for packet in encode(sample):

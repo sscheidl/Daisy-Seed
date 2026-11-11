@@ -59,12 +59,16 @@ chain, meter and diagnostics files are this project's own MIT code.
   index now wraps correctly.
 * `clouds/dsp/granular_sample_player.h` → [src/clouds/live_scheduler.h](src/clouds/live_scheduler.h):
   the scheduling policy around the live write head. Changes: rate-aware sizes and smoothers, the
-  reference-pool/cap split, an instance RNG, telemetry counters (started per quality, rejected
-  starts, peak active) and a guard against grains longer than half the ring (small test rings only).
-  The quality rule (medium interpolation above a quarter of the reference pool) is Clouds'.
+  reference-pool/cap split (the cap bounds the total of active grains in all slots; with cap =
+  reference this is Clouds' pool), an instance RNG, telemetry counters (started per quality, refused
+  starts counted once per event or overdue period, peak active) and a guard against grains longer than
+  half the ring (small test rings only). The quality rule (medium interpolation above a quarter of the
+  reference pool) is Clouds', on the total active count.
 * `clouds/dsp/audio_buffer.h` → [src/clouds/pcm_ring.h](src/clouds/pcm_ring.h): 16-bit only. Fix:
-  the unfreeze crossfade read one sample past its 256-sample tail; it now reads 0..255. Reads fold
-  out-of-range indices defensively.
+  the unfreeze crossfade read one sample past its 256-sample tail. It now fades over the N samples
+  actually captured (tail 0..N-1, gain (N-1)/N to 0), which equals Clouds' counter / 256 for a full
+  tail and keeps short Freezes from reading stale samples; a Freeze during a fade captures afresh.
+  Reads fold out-of-range indices defensively.
 * `clouds/dsp/granular_processor.cc`, `ProcessGranular()`, `PLAYBACK_MODE_GRANULAR`: the DENSITY
   meta mapping (below .47 regular, .47 to .53 none, above .53 random, overlap = distance · 2.12) and
   TEXTURE → window shape, in [src/cumulonimbus.h](src/cumulonimbus.h). Freeze uses `WriteFade`.

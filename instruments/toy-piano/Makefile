@@ -25,7 +25,7 @@ TARGET = ToyPianoCumulonimbus$(CUMULO_RATE)$(CUMULO_SUFFIX)-v$(VERSION)
 override BUILD_DIR = build/cumulonimbus$(CUMULO_RATE)$(if $(filter 1,$(CUMULO_PROFILE)),-profile,)
 CUMULO_INCLUDES = -I../../instruments/physical-modeling/torus -I../../instruments/physical-modeling/third_party
 FX_DEFS = -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=$(CUMULO_PROFILE) \
-          -DCUMULONIMBUS_INTERNAL_RATE=$(CUMULO_RATE)000 -DMOD_ON_DAISY_EXTENSIONS=1
+          -DCUMULONIMBUS_INTERNAL_RATE=$(CUMULO_RATE)000 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1
 C_DEFS = $(FX_DEFS)
 C_INCLUDES = $(CUMULO_INCLUDES)
 else ifeq ($(FILTER),1)
@@ -129,13 +129,13 @@ ifeq ($(CUMULO),1)
 CUMULO_HOST = -DTEST -isystem ../../instruments/physical-modeling/torus -isystem ../../instruments/physical-modeling/third_party -D_USE_MATH_DEFINES
 test:
 	mkdir -p build/host/cumulonimbus
-	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=0 -DMOD_ON_DAISY_EXTENSIONS=1 -DCUMULONIMBUS_INTERNAL_RATE=48000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test48
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=0 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1 -DCUMULONIMBUS_INTERNAL_RATE=48000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test48
 	./build/host/cumulonimbus/test48
-	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=0 -DMOD_ON_DAISY_EXTENSIONS=1 -DCUMULONIMBUS_INTERNAL_RATE=32000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test32
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=0 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1 -DCUMULONIMBUS_INTERNAL_RATE=32000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test32
 	./build/host/cumulonimbus/test32
-	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DCUMULONIMBUS_INTERNAL_RATE=48000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test48_profile
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1 -DCUMULONIMBUS_INTERNAL_RATE=48000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test48_profile
 	./build/host/cumulonimbus/test48_profile
-	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DCUMULONIMBUS_INTERNAL_RATE=32000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test32_profile
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1 -DCUMULONIMBUS_INTERNAL_RATE=32000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test32_profile
 	./build/host/cumulonimbus/test32_profile
 else ifeq ($(FILTER),1)
 test:

@@ -32,9 +32,14 @@
 //   smoothers (active-grain count, gain normalization) are converted from Clouds' 32 kHz /
 //   32-frame calls to the configured rate and call size, so their times stay the same.
 // * The Clouds grain count (32 stereo / 40 mono) stays the density reference. A separate
-//   runtime cap bounds the pool: with cap == reference the scheduling is Clouds'.
+//   runtime cap bounds the total number of active grains: a start needs active < cap, over all
+//   slots, so a lowered cap admits no new grain until the running ones have finished (PR #108
+//   review R3). Quality and normalization use the total active count. With cap == reference the
+//   scheduling is Clouds'.
 // * Random is a per-instance stmlib LCG (same recurrence), seeded explicitly for repeatable tests.
 // * Counters for telemetry: started grains per quality, rejected starts, peak active grains.
+//   A refused trigger or random birth counts once; an overdue regular (deterministic) grain
+//   counts once per overdue period, not once per sample while it waits.
 // * Grains longer than half the ring are shortened (only reachable with small test rings).
 // * The one-shot trigger is taken from the call's argument, so a host can apply it once.
 #pragma once
@@ -116,6 +121,7 @@ class LiveScheduler {
         slope_down_ = float(1.0 - std::pow(1.0 - 0.2, calls_ratio));
         gain_coefficient_ = float(1.0 - std::pow(1.0 - 0.01, double(kCloudsRate) / double(rate)));
         counters_ = {};
+        overdue_ = false;
     }
 
     // Runtime pool bound, 0..kMaxNumGrains. Running grains above a lowered cap finish normally.
@@ -137,7 +143,9 @@ class LiveScheduler {
         else
             grain_rate_phasor_ = -1000.0f;
 
-        int32_t num_available_grains = FillAvailableGrainsList();
+        int32_t active = 0;
+        const int32_t num_free = FillAvailableGrainsList(active);
+        int32_t num_available_grains = std::min(num_free, std::max<int32_t>(0, cap_ - active));
 
         bool seed_trigger = trigger;
         for(std::size_t t = 0; t < size; ++t) {
@@ -146,16 +154,19 @@ class LiveScheduler {
             const bool seed_deterministic = grain_rate_phasor_ >= space_between_grains;
             const bool seed = seed_probabilistic || seed_deterministic || seed_trigger;
             if(seed && !num_available_grains) {
-                if(counters_.rejected != UINT32_MAX) ++counters_.rejected;
+                const bool waiting = seed_deterministic && !seed_probabilistic && !seed_trigger;
+                if((!waiting || !overdue_) && counters_.rejected != UINT32_MAX) ++counters_.rejected;
+                overdue_ = overdue_ || seed_deterministic;
                 seed_trigger = false;
             }
             if(num_available_grains && seed) {
                 --num_available_grains;
                 const int32_t index = available_grains_[num_available_grains];
-                // Quality follows Clouds' occupancy rule against the reference pool.
-                const int32_t free_of_reference = num_available_grains + (reference_grains_ - available_pool_);
+                ++active;
+                overdue_ = false;
+                // Quality follows Clouds' occupancy rule (free slots of the reference pool).
                 const GrainQuality quality =
-                    free_of_reference < num_midfi_grains_ ? GRAIN_QUALITY_MEDIUM : GRAIN_QUALITY_HIGH;
+                    reference_grains_ - active < num_midfi_grains_ ? GRAIN_QUALITY_MEDIUM : GRAIN_QUALITY_HIGH;
                 ScheduleGrain(&grains_[index], parameters, int32_t(t), buffer->size(),
                               buffer->head() - int32_t(size) + int32_t(t), quality);
                 if(quality == GRAIN_QUALITY_HIGH) {
@@ -193,8 +204,8 @@ class LiveScheduler {
             }
         }
 
-        // Normalization uses the grains active at the start of the call (as Clouds).
-        const int32_t active_grains = available_pool_ - num_available_grains;
+        // Normalization uses the grains active after scheduling, before rendering (as Clouds).
+        const int32_t active_grains = active;
         counters_.active = ActiveGrains();
         counters_.peak_active = std::max(counters_.peak_active, std::max(active_grains, counters_.active));
         {
@@ -224,13 +235,16 @@ class LiveScheduler {
     float GainNormalization() const { return gain_normalization_; }
 
   private:
-    // Grains below the cap that are free. Grains above a lowered cap keep playing to their end.
-    int32_t FillAvailableGrainsList() {
+    // All free slots; `active` receives the number of grains still playing (in any slot).
+    int32_t FillAvailableGrainsList(int32_t& active) {
         int32_t n = 0;
-        available_pool_ = cap_;
-        for(int32_t i = 0; i < cap_; ++i)
-            if(!grains_[i].active())
+        active = 0;
+        for(int32_t i = 0; i < kMaxNumGrains; ++i) {
+            if(grains_[i].active())
+                ++active;
+            else
                 available_grains_[n++] = i;
+        }
         return n;
     }
 
@@ -274,7 +288,8 @@ class LiveScheduler {
     }
 
     const Tables* tables_ = nullptr;
-    int32_t reference_grains_ = 32, cap_ = 32, available_pool_ = 32;
+    int32_t reference_grains_ = 32, cap_ = 32;
+    bool overdue_ = false; // a regular grain is due but the pool is full
     int32_t num_midfi_grains_ = 24;
     int32_t num_channels_ = 2;
     float num_grains_ = 0.f;

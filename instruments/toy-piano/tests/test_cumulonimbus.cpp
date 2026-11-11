@@ -9,6 +9,7 @@ extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <new>
 #include <string>
@@ -268,20 +269,116 @@ void TestRateSync() {
     Tick(250);
     CHECK(modulation.controller.CurrentPatch().lfo[0].rate == toy_piano::RateFromPosition(Panel().Value(toy_piano::kDestLfo1Rate)));
     CHECK(modulation.controller.CurrentPatch().lfo[0].rate < 1000);
-    // The race: a pot write stamped before an external write reached the audio thread is refused.
-    toy_piano::RateSync sync;
-    const uint16_t patch_rates[3] = {500, 500, 500};
-    unsigned pushed = 0;
-    sync.FromPatch(patch_rates, [&](const toy_piano::ExternalWrite&) { ++pushed; return true; });
-    const uint16_t app_rates[3] = {900, 500, 500};
-    sync.FromPatch(app_rates, [&](const toy_piano::ExternalWrite&) { ++pushed; return true; });
-    CHECK(pushed == 1);
-    uint32_t reports[3] = {toy_piano::PackRateReport(3000, 0, 1), 0, 0}; // stamped with 0 external writes
-    uint16_t out[3];
-    CHECK(!sync.FromPots(reports, out));
-    CHECK(sync.Stale() == 1);
-    reports[0] = toy_piano::PackRateReport(3000, 1, 2); // after the edit arrived
-    CHECK(sync.FromPots(reports, out) && out[0] == 3000);
+    // R1 (PR #108 review), with the mailbox classes directly.
+    using toy_piano::RateMailboxes;
+    // a) A pot word from before an app edit is refused, also when the edit was the second one.
+    {
+        RateMailboxes box;
+        toy_piano::RateSync sync;
+        toy_piano::RateAudio audio;
+        toy_piano::CumulonimbusPanel panel;
+        panel.Reset();
+        std::array<float, 8> pots{};
+        pots.fill(.5f);
+        panel.Update(pots, false, 0); // boot on the Piano page: pot writes for all three rates
+        const uint16_t boot[3] = {6000, 6000, 8000};
+        sync.FromPatch(boot, box);
+        audio.Apply(panel, box);
+        audio.Publish(panel, box);
+        uint16_t out[3];
+        CHECK(sync.FromPots(box, out) && out[0] == toy_piano::RateFromPosition(.5f)); // boot pots reach the patch
+        const uint16_t edited[3] = {out[0], 9000, out[2]};            // app edits LFO 2 only
+        sync.FromPatch(edited, box);
+        // A pot write for LFO 1 that the audio thread published before it saw the LFO 2 edit.
+        box.pot[0].store(toy_piano::PackRateWord(1234, 0));
+        CHECK(sync.FromPots(box, out) && out[0] == 1234); // another source's edit does not invalidate it
+        // (The LFO 2 edit also made LFO 2's boot pot word stale: counted once above.)
+        const uint32_t stale = sync.Stale();
+        const uint16_t edited1[3] = {1234, 9000, 500};               // app edits Random
+        sync.FromPatch(edited1, box);
+        box.pot[2].store(toy_piano::PackRateWord(7777, 0));           // pot word from before that edit
+        CHECK(!sync.FromPots(box, out) && out[2] == 500 && sync.Stale() == stale + 1);
+        CHECK(!sync.FromPots(box, out) && sync.Stale() == stale + 1); // the same stale word counts once
+        audio.Apply(panel, box);                                      // the edit reaches the register
+        CHECK(std::fabs(panel.Value(toy_piano::kDestRandomRate) - 500.f / 16383.f) < 1e-6f);
+        CHECK(std::fabs(panel.Value(toy_piano::kDestLfo2Rate) - 9000.f / 16383.f) < 1e-6f);
+    }
+    // b) No queue to overflow: many edits in a row keep only the newest value, and a pot write
+    // made after the newest edit was applied is accepted.
+    {
+        RateMailboxes box;
+        toy_piano::RateSync sync;
+        toy_piano::RateAudio audio;
+        toy_piano::CumulonimbusPanel panel;
+        panel.Reset();
+        const uint16_t boot[3] = {6000, 6000, 8000};
+        sync.FromPatch(boot, box);
+        for(uint16_t r = 100; r < 200; ++r) {
+            const uint16_t edit[3] = {r, 6000, 8000};
+            sync.FromPatch(edit, box);
+        }
+        audio.Apply(panel, box);
+        CHECK(std::fabs(panel.Value(toy_piano::kDestLfo1Rate) - 199.f / 16383.f) < 1e-6f);
+        uint16_t out[3];
+        CHECK(!sync.FromPots(box, out) && out[0] == 199);
+        // The pot (stationary or not) writes after the edit: its stamp is current and it is accepted.
+        panel.Write({uint8_t(toy_piano::kDestLfo1Rate), .25f});
+        box.pot[0].store(toy_piano::PackRateWord(toy_piano::RateFromPosition(.25f), 100)); // generation 100
+        CHECK(sync.FromPots(box, out) && out[0] == toy_piano::RateFromPosition(.25f));
+        CHECK(!toy_piano::RateWordValid(0) && toy_piano::RateWordValid(toy_piano::PackRateWord(0, 0)));
+    }
+}
+
+// R5 (PR #108 review): an editor write whose reply was lost is retried after a pot changed the same
+// rate on the device. The retry is answered, not executed again over the pot, and its reply carries
+// the current patch CRC, so the editor sees the difference and reloads.
+void TestEditorRetryAfterPotEdit() {
+    hw.tog_sw17.value = false; // Piano page, VR6 = LFO 1 rate
+    hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
+    uint8_t payload[8];
+    mod::proto::Writer w(payload, sizeof(payload));
+    w.U7(0);    // LFO 1
+    w.U7(0);    // rate
+    w.U14(2000);
+    uint8_t frame[mod::proto::kMaxFrame];
+    const std::size_t size = mod::proto::BuildFrame(frame, 0, mod::proto::SetSource, 77, w.Data(), w.Size());
+    auto receive = [&]() {
+        daisy::MidiEvent event;
+        event.type = daisy::SystemCommon;
+        event.sc_type = daisy::SystemExclusive;
+        std::memcpy(event.sysex_data, frame + 1, size - 2);
+        event.sysex_message_len = uint8_t(size - 2);
+        usb_midi.incoming.push_back(event);
+    };
+    receive();
+    Tick(5);
+    CHECK(modulation.controller.CurrentPatch().lfo[0].rate == 2000);
+    usb_midi.sent.clear(); // the reply is lost on the way to the editor
+    Tick(250);             // the edit reaches the register; VR6 must pick it up
+    CHECK(std::fabs(Panel().Value(toy_piano::kDestLfo1Rate) - 2000.f / 16383.f) < 1e-5f);
+    hw.pot[5].value = .9f;
+    Tick(250);
+    hw.pot[5].value = .05f; // crosses 2000/16383 = .122 and takes over
+    Tick(250);
+    const uint16_t pot_rate = modulation.controller.CurrentPatch().lfo[0].rate;
+    CHECK(pot_rate != 2000 && pot_rate == toy_piano::RateFromPosition(Panel().Value(toy_piano::kDestLfo1Rate)));
+    usb_midi.sent.clear();
+    receive(); // the editor's retry: same sequence number, same bytes
+    Tick(5);
+    CHECK(modulation.controller.CurrentPatch().lfo[0].rate == pot_rate); // not executed again
+    bool replied = false;
+    for(const auto& m : usb_midi.sent) {
+        if(m.size() < 4 || m[0] != 0xF0) continue;
+        mod::proto::Frame f;
+        if(mod::proto::ParseHeader(m.data() + 1, m.size() - 2, f) != mod::proto::Parse::Ok) continue;
+        if(f.command != (mod::proto::SetSource | mod::proto::kReplyBit) || f.seq != 77) continue;
+        mod::proto::Reader r(f.payload, f.length);
+        r.U7();
+        r.U7();
+        CHECK(r.U32() == modulation.controller.CurrentCrc()); // the current CRC: the editor reloads
+        replied = true;
+    }
+    CHECK(replied);
 }
 
 // 6. Held notes survive switch changes; nothing retriggers.
@@ -388,6 +485,7 @@ int main() {
     TestWetStereo();
     TestPickup();
     TestRateSync();
+    TestEditorRetryAfterPotEdit();
     TestHeldNotes();
     TestFreezeAndBypass();
 #if TOY_PIANO_CUMULONIMBUS_PROFILE
