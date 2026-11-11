@@ -307,8 +307,29 @@ Expected CPU (NOT MEASURED): one channel's hop per block, so the hop block of a 
 file about 2.0 ms at PITCH maximum instead of 4.1 ms; with maximum grains and the rest
 about 3.8 ms (71 %). To measure with `NebulaeModProfilePipeline-v0.2.2.bin`.
 
-| Step | Value | Status |
-| --- | --- | --- |
-| C: hop block vocoder at PITCH centre / maximum, grains 0 and 127 | | NOT MEASURED |
-| C: overruns and skips over 60 s at the worst settings | | NOT MEASURED |
-| listening A / B / C (Codex's sheet) | | NOT MEASURED |
+Measured on the kit with `NebulaeModProfilePipeline-v0.2.2.bin` (`231e18a4…`, commit
+701e4a4), flashed by the agent on 2026-11-11 22:29 with the owner's approval (the kit was
+already in the bootloader). Stereo 48 kHz file, bank 1 slot 1; PROFILE reports
+"compensated stagger" and one hop in every block (as designed: left and right alternate).
+Each row is a 15 s window after a reset of the peaks, one probe client on the port.
+
+| Setting (CC values) | Callback peak | Vocoder peak (steady minimum) | Fill / FFT / phase peaks | Grains peak | Overruns, skips | Status |
+| --- | ---: | ---: | --- | ---: | --- | --- |
+| pots as found | 4.14 ms (78 %) | 2.98 ms (2.92) | 1.90 / 0.68 / 0.35 ms | 0.94 ms | 0, 0 | MEASURED 2026-11-11 |
+| START 124 (file end), SIZE max, PITCH max, DENSITY/OVERLAP/BLEND 127 | **4.82 ms (90 %)** | 3.09 ms (2.01) | 2.01 / 0.68 / 0.35 ms | 1.58 ms | 0, 0 | MEASURED 2026-11-11 |
+| START 0, PITCH centre, grains 127 | 3.97 ms (74 %) | 2.31 ms (1.59) | 1.23 / 0.68 / 0.35 ms | 1.53 ms | 0, 0 | MEASURED 2026-11-11 |
+| START 0, PITCH max, grains 0 | 3.29 ms (62 %) | 2.99 ms (2.02) | 1.91 / 0.68 / 0.35 ms | 0.18 ms | 0, 0 | MEASURED 2026-11-11 |
+| START 0, PITCH centre, grains 0 | 2.62 ms (49 %) | 2.31 ms (1.60) | 1.23 / 0.68 / 0.35 ms | 0.18 ms | 0, 0 | MEASURED 2026-11-11 |
+| 60 s at the worst settings (row 2) | 4.81 ms (90 %) | 3.10 ms | as row 2 | 1.59 ms | **0 overruns, 0 skips** in 11,375 blocks | MEASURED 2026-11-11 |
+| listening A / B / C (Codex's sheet) | | | | | | NOT MEASURED |
+
+What it says: C halves the per-block vocoder work as expected (FFT 0.68 ms and phase
+0.35 ms per block instead of 1.35 and 0.65 in the hop block of A) and removes every
+overrun, including the extreme setting that ran A into the protection (A: 5.7 ms planned,
+7.8 ms peak, protection active). The extreme setting peaks at 90 %; the margin there is
+small but sufficient, and Codex's 70 % target is met at PITCH centre with maximum grains
+(74 %) but not at PITCH maximum with maximum grains. Two of the PROFILE readouts during
+the run went unanswered (22:31:02, 22:32:15, setting row 3) although STATUS showed no
+overrun afterwards; a repeat answered at once. The cause is not known (the one-slot SysEx
+mailbox drops a request that arrives while the previous one is still being answered; the
+probe's preceding `--reset` request may have overlapped). It did not recur in the 60 s run.

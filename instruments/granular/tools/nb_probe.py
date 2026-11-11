@@ -182,6 +182,8 @@ def main() -> int:
             else:
                 print(f"unexpected command 0x{cmd:02x}: {frame.hex(' ')}")
                 worst = max(worst, 4)
+        elif result[0] == "SENT":
+            print(f"[{stamp}] sent")
         else:
             print(f"[{stamp}] {result[0]}: {result[1]}")
             worst = max(worst, {"NOPORT": 3}.get(result[0], 2))

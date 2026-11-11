@@ -5,7 +5,9 @@
 candidates; images in the main checkout's `firmware/` store under `granular-mod/0.2.2+<commit>`
 (A, common grid), `…-stagger` (B), `…-pipeline` (C), plus `…-profile` and
 `…-profile-pipeline` for timing, all `candidate`, hardware of B and C NOT MEASURED. Order:
-1. Owner flashes `NebulaeModProfilePipeline-v0.2.2.bin`; Claude probes with
+0. **Done 2026-11-11:** the C profile image ran on the kit with 0 overruns and 0 skips,
+   extreme setting 90 % of the block (OVERLOAD_DIAGNOSIS.md section 11). Steps 2 to 4 open.
+1. (done) Owner flashes `NebulaeModProfilePipeline-v0.2.2.bin`; Claude probes with
    `instruments/granular/tools/nb_probe.py profile` (one client on the port): hop block at
    PITCH centre and maximum, grains 0 and 127, 60 s at the worst settings; table in
    OVERLOAD_DIAGNOSIS.md section 11.

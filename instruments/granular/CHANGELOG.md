@@ -40,6 +40,9 @@ loop, because libDaisy runs all of them at the audio interrupt's priority.
   vocoder layer 5.3 ms later; host-tested bit for bit against the common grid). Both
   halve the hop block. The shipped image stays on the common grid until the owner has
   listened and decided; PROFILE value 21 reports the schedule.
+* **Kit, Pipeline (MEASURED 2026-11-11):** 0 overruns and 0 skipped blocks, also over 60 s
+  at the extreme setting (START at the file end, PITCH maximum, maximum grains), whose
+  callback peak is 4.82 ms = 90 % of the block; PITCH centre with maximum grains 74 %.
 * **Overload protection in every image**: a second deadline overrun within 16 blocks
   leaves the vocoder out of the next 8 blocks and restarts it from a reset with the
   256-sample ramp, so the kit stays reachable; one isolated overrun only counts. STATUS
