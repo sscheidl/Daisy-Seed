@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Toy Piano on Cumulonimbus 0.1.2 – Quick Guide</title>
+<link rel="stylesheet" href="style.css"></head><body>
+
+<h1>Toy Piano on Cumulonimbus 0.1.2 – Quick Guide</h1>
+<div class="sub">The Toy Piano through a Clouds-style granular cloud and a stereo hall reverb, for the Electro-Smith
+Seed3 Desktop Development Kit · 12 November 2026 · <code>main</code> @ <code>a97569f</code> (images built at <code>9075282</code>)</div>
+
+<div class="warn"><b>Status:</b> host tests, sanitizers and all ARM builds passed. Sound, controls, CPU load and the
+<b>direction of SW18</b> on the real kit are <b>NOT MEASURED</b>. Start at a low listening level.</div>
+
+<h2>1. Firmware</h2>
+<table>
+<tr><th>Image</th><th>Use</th><th>SHA-256 (start)</th></tr>
+<tr><td class="k">ToyPianoCumulonimbus48-v0.1.2.bin</td><td><b>P48</b>: the playable instrument, grains at 48 kHz</td><td><code>5cd63420…</code></td></tr>
+<tr><td class="k">ToyPianoCumulonimbus32-v0.1.2.bin</td><td><b>P32</b>: the same with the grains at 32 kHz (lighter CPU load)</td><td><code>7d9c7ba9…</code></td></tr>
+</table>
+<p>Store: <code>firmware/toy-piano-cumulonimbus[-32]/0.1.2+9075282/</code>. Test package with the run sheet, profiling
+and standalone images and the v0.2 rollback: <code>build/cumulonimbus-stage2/</code>. Check the SHA-256 first.</p>
+<ul>
+<li><b>Enter the bootloader:</b> hold <b>S9 + S16</b> (and no other key) for <b>5 s</b>, or click <b>Firmware update …</b> in
+the editor. All 16 LEDs light up; the bootloader waits without a time limit.</li>
+<li><b>Flash:</b> <a href="https://flash.daisy.audio/">Daisy Web Programmer</a> → Custom → the <code>.bin</code>, or
+<code>dfu-util -a 0 -s 0x90040000:leave -D &lt;image&gt;.bin -d ,0483:df11</code>.</li>
+</ul>
+
+<h2>2. Connections and signal flow</h2>
+<table>
+<tr><th>Connector</th><th>Use</th></tr>
+<tr><td class="k">Audio OUT L/R, headphones</td><td>Stereo output, 48 kHz; RV1 is the analogue headphone volume</td></tr>
+<tr><td class="k">USB J7</td><td>USB-MIDI (notes in and out, CCs), the editor, firmware update</td></tr>
+<tr><td class="k">MIDI DIN in</td><td>Notes and CCs, handled like USB (no SysEx)</td></tr>
+<tr><td class="k">CV IN 1/2, Gate IN 1/2</td><td>Sources and sync inputs of the Mod on Daisy matrix</td></tr>
+</table>
+<pre>Toy Piano (mono) --> grain cloud (2 s recording, stereo grains) --> hall reverb (stereo) --> OUT
+                     Grain mix: dry/grains                           Hall mix: dry/reverb</pre>
+<p>With Grain mix and Hall mix at 0, or in FX Bypass, the regular Toy Piano sound comes out unchanged.</p>
+
+<h2>3. Playing</h2>
+<ul>
+<li><b>S1–S8</b> play C4–C5, <b>S9–S16</b> C5–C6 (white keys). Each press starts a one-shot attack/decay envelope;
+releasing does not stop it. LEDs D1–D16 show the held keys.</li>
+<li>The keys send their notes over USB-MIDI on channel 1. Incoming MIDI notes (any channel, with velocity) play
+16 more voices.</li>
+</ul>
+
+<h2>4. MIDI</h2>
+<table>
+<tr><th>Message</th><th>Function</th></tr>
+<tr><td class="k">Notes, any channel</td><td>Play piano voices (note-offs are ignored)</td></tr>
+<tr><td class="k">CC 70–77, ch. 1–15</td><td>FX page VR1–VR8 (position, length, density, pitch, grain mix, spread, hall decay, hall mix)</td></tr>
+<tr><td class="k">CC 86–90, ch. 1–15</td><td>Piano attack, decay, transpose, harmonic, level</td></tr>
+<tr><td class="k">CC 1, aftertouch</td><td>Sources of the modulation matrix</td></tr>
+</table>
+
+<h2 style="break-before: page">5. Controls</h2>
+<p><b>SW17</b> only selects which page the eight pots edit. Both the piano and the effects keep running with their
+settings.</p>
+<table>
+<tr><th>Pot</th><th>SW17 off: Piano page</th><th>SW17 on: FX page</th></tr>
+<tr><td class="k">VR1</td><td>Attack, 2–300 ms</td><td>Grain position: left = newest audio, right = 2 s back</td></tr>
+<tr><td class="k">VR2</td><td>Decay, 50–3000 ms</td><td>Grain length, 32–512 ms</td></tr>
+<tr><td class="k">VR3</td><td>Transpose ±24 semitones (centre detent)</td><td>Density: left regular, centre none, right random</td></tr>
+<tr><td class="k">VR4</td><td>Second harmonic (brightness)</td><td>Grain pitch ±24 semitones (centre detent)</td></tr>
+<tr><td class="k">VR5</td><td>Piano level</td><td>Grain mix</td></tr>
+<tr><td class="k">VR6</td><td>Modulation LFO 1 rate</td><td>Stereo spread of the grains</td></tr>
+<tr><td class="k">VR7</td><td>Modulation LFO 2 rate</td><td>Hall decay</td></tr>
+<tr><td class="k">VR8</td><td>Modulation Random rate</td><td>Hall mix</td></tr>
+</table>
+<table>
+<tr><th>Switch</th><th>Function</th></tr>
+<tr><td class="k">SW18 up</td><td><b>Freeze</b>: the recording stops and the grains keep playing the held sound; the reverb keeps running.
+Releasing cross-fades back to live input.</td></tr>
+<tr><td class="k">SW18 centre</td><td><b>Run</b>: normal operation</td></tr>
+<tr><td class="k">SW18 down</td><td><b>FX Bypass</b>: new sound no longer enters the effects, the tail rings out for about 2 s,
+then the output is the exact dry piano</td></tr>
+</table>
+<div class="note">Which way is “up” on your kit is checked in the first board run; please note it.</div>
+<ul>
+<li><b>Pickup:</b> after a page change, a MIDI CC or an editor change, a pot does nothing until you turn it to the stored
+value (or across it). Values never jump.</li>
+<li><b>Power-up:</b> with SW17 off, the Piano page starts at the pot positions. The FX page always starts at gentle
+defaults (little grain and reverb mix) and picks up as described.</li>
+</ul>
+
+<h2>6. Editor and modulation</h2>
+<ul>
+<li>Use the Mod on Daisy editor (Daisy Control Panel / VST3 <b>0.5.1</b> or the browser editor <b>0.4.1</b>); the instrument
+reports as <code>toy-piano-cumulonimbus</code>. Close other programs that hold the MIDI port.</li>
+<li>Matrix targets: Pitch, Level, Harmonic, Attack, Decay, <b>Grain position</b>, <b>Grain mix</b>, <b>Hall mix</b>.
+VR6–VR8 (Piano page) set the patch's LFO and Random rates; an idle editor shows the change within about 2 s.</li>
+</ul>
+
+<h2>7. If something seems wrong</h2>
+<table>
+<tr><th>Observation</th><th>Check</th></tr>
+<tr><td>A pot does nothing</td><td>Pickup: turn it to the current value. Check the page (SW17).</td></tr>
+<tr><td>No effect audible</td><td>SW18 in Bypass? Grain mix (FX VR5) and Hall mix (FX VR8) turned up? Density (VR3) at centre = no grains.</td></tr>
+<tr><td>The sound keeps repeating</td><td>SW18 is in Freeze.</td></tr>
+<tr><td>Crackles or drop-outs</td><td>Note the settings; read the load with <code>python mod_probe.py stats</code> (in the test package tools); try P32.</td></tr>
+<tr><td>Back to a known state</td><td>Flash Toy Piano 0.5 or the released v0.2 from the test package.</td></tr>
+</table>
+
+<div class="foot" style="margin-top:2mm">Sources: instruments/toy-piano/docs/CUMULONIMBUS.md, README.md, effects/cumulonimbus · Repository
+sscheidl/Daisy-Seed, PR #108 · Hardware results: record with the date as MEASURED.</div>
+</body></html>
