@@ -13,6 +13,7 @@ extern "C" { USBD_HandleTypeDef hUsbDeviceHS; }
 #include <memory>
 #include <new>
 #include <string>
+#include <thread>
 #include <vector>
 
 static bool in_audio = false;
@@ -269,63 +270,102 @@ void TestRateSync() {
     Tick(250);
     CHECK(modulation.controller.CurrentPatch().lfo[0].rate == toy_piano::RateFromPosition(Panel().Value(toy_piano::kDestLfo1Rate)));
     CHECK(modulation.controller.CurrentPatch().lfo[0].rate < 1000);
-    // R1 (PR #108 review), with the mailbox classes directly.
-    using toy_piano::RateMailboxes;
-    // a) A pot word from before an app edit is refused, also when the edit was the second one.
-    {
-        RateMailboxes box;
+    // R9: a consumed boot pot must never reappear, even after many complete old-generation laps.
+    for(bool defer_audio : {false, true}) {
+        toy_piano::RateMailboxes box;
         toy_piano::RateSync sync;
         toy_piano::RateAudio audio;
         toy_piano::CumulonimbusPanel panel;
         panel.Reset();
         std::array<float, 8> pots{};
         pots.fill(.5f);
-        panel.Update(pots, false, 0); // boot on the Piano page: pot writes for all three rates
-        const uint16_t boot[3] = {6000, 6000, 8000};
-        sync.FromPatch(boot, box);
-        audio.Apply(panel, box);
+        panel.Update(pots, false, 0);
+        uint16_t patch[3] = {6000, 6000, 8000}, out[3];
+        sync.FromPatch(patch, box);
         audio.Publish(panel, box);
-        uint16_t out[3];
-        CHECK(sync.FromPots(box, out) && out[0] == toy_piano::RateFromPosition(.5f)); // boot pots reach the patch
-        const uint16_t edited[3] = {out[0], 9000, out[2]};            // app edits LFO 2 only
-        sync.FromPatch(edited, box);
-        // A pot write for LFO 1 that the audio thread published before it saw the LFO 2 edit.
-        box.pot[0].store(toy_piano::PackRateWord(1234, 0));
-        CHECK(sync.FromPots(box, out) && out[0] == 1234); // another source's edit does not invalidate it
-        // (The LFO 2 edit also made LFO 2's boot pot word stale: counted once above.)
-        const uint32_t stale = sync.Stale();
-        const uint16_t edited1[3] = {1234, 9000, 500};               // app edits Random
-        sync.FromPatch(edited1, box);
-        box.pot[2].store(toy_piano::PackRateWord(7777, 0));           // pot word from before that edit
-        CHECK(!sync.FromPots(box, out) && out[2] == 500 && sync.Stale() == stale + 1);
-        CHECK(!sync.FromPots(box, out) && sync.Stale() == stale + 1); // the same stale word counts once
-        audio.Apply(panel, box);                                      // the edit reaches the register
+        CHECK(sync.FromPots(box, out));
+        for(unsigned i = 0; i < 3; ++i) patch[i] = out[i];
+        for(unsigned i = 0; i < 4096; ++i) {
+            patch[0] = uint16_t(9000 + i % 2);
+            sync.FromPatch(patch, box);
+            if(!defer_audio) {
+                audio.Apply(panel, box);
+                audio.Publish(panel, box);
+            }
+            CHECK(!sync.FromPots(box, out));
+            CHECK(out[0] == patch[0]);
+        }
+        audio.Apply(panel, box);
+        CHECK(std::fabs(panel.Value(toy_piano::kDestLfo1Rate) - patch[0] / 16383.f) < 1e-6f);
+        // Zero is a real edit, not an empty mailbox; latest edit wins without audio acknowledgement.
+        patch[0] = 0;
+        sync.FromPatch(patch, box);
+        audio.Apply(panel, box);
+        CHECK(panel.Value(toy_piano::kDestLfo1Rate) == 0.f);
+        // Another source's pending editor write cannot suppress LFO 1's new pot.
+        patch[1] = 9999;
+        sync.FromPatch(patch, box);
+        box.state[0].store(toy_piano::kRatePot | 1234);
+        CHECK(sync.FromPots(box, out) && out[0] == 1234 && out[1] == 9999);
+        CHECK(!sync.FromPots(box, out)); // consumed exactly once
+        patch[0] = 1234;
+        // An unconsumed old pot is replaced by an edit and counted exactly once.
+        box.state[2].store(toy_piano::kRatePot | 7777);
+        const uint32_t before = box.Stale();
+        patch[2] = 500;
+        sync.FromPatch(patch, box);
+        CHECK(!sync.FromPots(box, out) && out[2] == 500 && box.Stale() == before + 1);
+        CHECK(!sync.FromPots(box, out) && box.Stale() == before + 1);
+        audio.Apply(panel, box);
         CHECK(std::fabs(panel.Value(toy_piano::kDestRandomRate) - 500.f / 16383.f) < 1e-6f);
-        CHECK(std::fabs(panel.Value(toy_piano::kDestLfo2Rate) - 9000.f / 16383.f) < 1e-6f);
     }
-    // b) No queue to overflow: many edits in a row keep only the newest value, and a pot write
-    // made after the newest edit was applied is accepted.
+    // Main can publish an edit between audio Apply and Publish. That pending edit must win.
     {
-        RateMailboxes box;
+        toy_piano::RateMailboxes box;
         toy_piano::RateSync sync;
         toy_piano::RateAudio audio;
         toy_piano::CumulonimbusPanel panel;
         panel.Reset();
-        const uint16_t boot[3] = {6000, 6000, 8000};
-        sync.FromPatch(boot, box);
-        for(uint16_t r = 100; r < 200; ++r) {
-            const uint16_t edit[3] = {r, 6000, 8000};
-            sync.FromPatch(edit, box);
-        }
+        std::array<float, 8> pots{};
+        pots.fill(.5f);
+        panel.Update(pots, false, 0);
+        uint16_t patch[3] = {6000, 6000, 8000}, out[3];
+        sync.FromPatch(patch, box);
         audio.Apply(panel, box);
-        CHECK(std::fabs(panel.Value(toy_piano::kDestLfo1Rate) - 199.f / 16383.f) < 1e-6f);
-        uint16_t out[3];
-        CHECK(!sync.FromPots(box, out) && out[0] == 199);
-        // The pot (stationary or not) writes after the edit: its stamp is current and it is accepted.
-        panel.Write({uint8_t(toy_piano::kDestLfo1Rate), .25f});
-        box.pot[0].store(toy_piano::PackRateWord(toy_piano::RateFromPosition(.25f), 100)); // generation 100
-        CHECK(sync.FromPots(box, out) && out[0] == toy_piano::RateFromPosition(.25f));
-        CHECK(!toy_piano::RateWordValid(0) && toy_piano::RateWordValid(toy_piano::PackRateWord(0, 0)));
+        patch[0] = 9000;
+        sync.FromPatch(patch, box);
+        audio.Publish(panel, box);
+        sync.FromPots(box, out);
+        CHECK(out[0] == 9000 && box.Stale() == 1);
+        audio.Apply(panel, box);
+        CHECK(std::fabs(panel.Value(toy_piano::kDestLfo1Rate) - 9000.f / 16383.f) < 1e-6f);
+    }
+    // Exercise the actual main/audio mailbox ownership concurrently; no panel access from main
+    // until join. The final edit must reach audio even if intermediate stores coalesce.
+    {
+        toy_piano::RateMailboxes box;
+        toy_piano::RateSync sync;
+        toy_piano::RateAudio audio;
+        toy_piano::CumulonimbusPanel panel;
+        panel.Reset();
+        uint16_t patch[3] = {6000, 6000, 8000}, out[3];
+        sync.FromPatch(patch, box);
+        std::atomic<bool> done{false};
+        std::thread worker([&]() {
+            while(!done.load(std::memory_order_acquire)) {
+                audio.Apply(panel, box);
+                audio.Publish(panel, box);
+            }
+            audio.Apply(panel, box);
+        });
+        for(unsigned i = 0; i < 20000; ++i) {
+            patch[0] = uint16_t(9000 + i % 2);
+            sync.FromPatch(patch, box);
+            CHECK(!sync.FromPots(box, out));
+        }
+        done.store(true, std::memory_order_release);
+        worker.join();
+        CHECK(std::fabs(panel.Value(toy_piano::kDestLfo1Rate) - patch[0] / 16383.f) < 1e-6f);
     }
 }
 
@@ -426,6 +466,78 @@ void TestFreezeAndBypass() {
 }
 
 #if TOY_PIANO_CUMULONIMBUS_PROFILE
+// R11: counters belong to the audio reset/snapshot boundaries, including uint32 wrap.
+void TestCounterWindow() {
+    auto callback = []() {
+        float* output[]{left, right};
+        in_audio = true;
+        AudioCallback(nullptr, output, kN);
+        in_audio = false;
+        ++daisy::System::now;
+    };
+    auto flood = []() {
+        for(unsigned i = 0; i < 40; ++i) SendCc(0, 70, i);
+        for(unsigned i = 0; i < toy_piano::kMidiQueueSize + 8; ++i) SendNote(60, 80);
+        ServiceUsbMidi();
+    };
+    hUsbDeviceHS.dev_state = USBD_STATE_CONFIGURED;
+    hw.tog_sw17.value = true;
+    for(uint32_t initial : {uint32_t{123}, UINT32_MAX - 3}) {
+        Tick(50); // drain prior queues and telemetry
+        control_drops.store(initial);
+        midi_overruns.store(initial);
+        rate_boxes.stale.store(initial);
+        requests.reset.store(true);
+        callback(); // new window begins before main receives the overflowing MIDI batch
+        flood();
+        rate_boxes.stale.fetch_add(3);
+        CHECK(control_drops.load() - initial == 8);
+        CHECK(midi_overruns.load() - initial == 8);
+        meter.RequestSnapshot();
+        snapshot_pending = true;
+        callback();
+        CHECK(meter.SnapshotReady());
+        CHECK(meter.Snapshot().app[diag::kControlDrops] == 8);
+        CHECK(meter.Snapshot().app[diag::kMidiOverruns] == 8);
+        CHECK(meter.Snapshot().app[diag::kStaleRates] == 3);
+        usb_midi.sent.clear();
+        // More drops after snapshot capture must not leak into its encoded telemetry.
+        flood();
+        rate_boxes.stale.fetch_add(3);
+        for(unsigned i = 0; i <= diag::kRecords; ++i) ServiceCumulonimbus(true);
+        diag::Metrics m{};
+        unsigned records = 0;
+        for(const auto& packet : usb_midi.sent) {
+            if(packet.size() != 60 || packet[0] != 0xBF || packet[2] != diag::kProtocolId) continue;
+            const unsigned record = packet[5];
+            if(record >= diag::kRecords) continue;
+            for(unsigned v = 0; v < 3; ++v) {
+                uint64_t value = 0;
+                for(unsigned d = 0; d < 5; ++d)
+                    value |= uint64_t(packet[8 + 15 * v + 3 * d]) << (7 * d);
+                m[record * 3 + v] = uint32_t(value);
+            }
+            ++records;
+        }
+        CHECK(records == diag::kRecords);
+        CHECK(m[diag::kControlDrops] == 8 && m[diag::kMidiOverruns] == 8 && m[diag::kStaleRates] == 3);
+        meter.RequestSnapshot();
+        callback();
+        CHECK(meter.Snapshot().app[diag::kControlDrops] > 8);
+        CHECK(meter.Snapshot().app[diag::kMidiOverruns] > 8);
+        CHECK(meter.Snapshot().app[diag::kStaleRates] == 6);
+        meter.ReleaseSnapshot();
+        requests.reset.store(true);
+        callback();
+        meter.RequestSnapshot();
+        callback();
+        CHECK(meter.Snapshot().app[diag::kControlDrops] == 0);
+        CHECK(meter.Snapshot().app[diag::kMidiOverruns] == 0);
+        CHECK(meter.Snapshot().app[diag::kStaleRates] == 0);
+        meter.ReleaseSnapshot();
+    }
+}
+
 // 8. Profiling: scenario/cap/stimulus CCs, stage isolation and the telemetry records.
 void TestProfiling() {
     SendCc(15, 20, cumulonimbus::diag::kScenarioDry);
@@ -490,6 +602,7 @@ int main() {
     TestFreezeAndBypass();
 #if TOY_PIANO_CUMULONIMBUS_PROFILE
     TestProfiling();
+    TestCounterWindow();
 #endif
     CHECK(allocations == 0);
     if(failures) {

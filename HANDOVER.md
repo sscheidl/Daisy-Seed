@@ -97,6 +97,18 @@ session. No pushes, merges, flashing or package changes; report only.
   verdict line under this section. If everything is confirmed, the next step is the joint board session with
   the package as staged (images and logs from `d4b89be`; the later commits change docs and editors only).
 
+**Codex cross-check, 2026-11-11 (0b55f82..af53b32):** R2/R3/R4/R6/R8 confirmed; R1/R5/R7 not fully confirmed (new P2 findings R9-R11); P3 WetHost rejection finding R12. Host/sanitizer tests, browser polling and incremental ARM validations pass; package unchanged. Fix R9-R11 before hardware acceptance. Report: `L2A/L2A-cases/granular-cross-comparison/review-pr108/CROSSCHECK.md`. Hardware: NOT MEASURED.
+
+**PR #108 R9-R12 fixed locally, 2026-11-12 (Codex):** Generation-free consumed rate mailboxes;
+cached NAKs preserved; drop counters captured at audio reset/snapshot boundaries; WetHost handles
+fallible-effect rejection and retains legacy void adapters. Toy Piano/standalone FX firmware 0.1.2,
+WetHost 0.1.1; DSP unchanged. Targeted host/ASan/UBSan tests, browser polling, all seven ARM images,
+legacy image hashes and composition manifests PASS. Details: [fix/validation record](instruments/toy-piano/docs/PR108_FIXES.md).
+The preserved Stage 1 package is unchanged and does not contain these fixes; refresh the package/store
+before a board session. No push, merge or flashing. Hardware and TSan: NOT MEASURED.
+
+**Claude independent review requested, 2026-11-12:** [Review order for R9-R12](instruments/toy-piano/docs/CLAUDE_REVIEW_PR108_R9_R12.md). Review the uncommitted fixes above af53b32, report per finding and R13+ findings, and link the result here. Report only; preserve the older package. No commit, push, merge or flashing.
+
 **Streichwurst, preparation 2026-11-01:** New instrument under
 `instruments/streichwurst/`, its own branch `claude/streichwurst`,
 [Claude work order](instruments/streichwurst/docs/CLAUDE_AUFTRAG.md). Target: Seed3

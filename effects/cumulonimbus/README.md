@@ -1,6 +1,6 @@
 # Cumulonimbus — Clouds granular FX
 
-Component `cumulonimbus` 0.1.1, chain 0.1.0, meter 0.2.0, standalone diagnostic firmware 0.1.1.
+Component `cumulonimbus` 0.1.1, chain 0.1.0, meter 0.2.0, standalone diagnostic firmware 0.1.2.
 Project IDs: `cumulonimbus-fx` (48 kHz grain kernel, image **F48**) and `cumulonimbus-fx-32`
 (32 kHz grain kernel, image **F32**). The Toy Piano composition is
 [Toy Piano on Cumulonimbus](../../instruments/toy-piano/docs/CUMULONIMBUS.md).
@@ -95,7 +95,7 @@ make PROJECT=cumulonimbus-fx test          # component + firmware-logic host tes
 make PROJECT=cumulonimbus-fx test-sanitize
 make PROJECT=cumulonimbus-fx -j4           # F48
 make PROJECT=cumulonimbus-fx-32 -j4        # F32
-python scripts/check-firmware.py effects/cumulonimbus/build/fx48/CumulonimbusFx48-v0.1.1.bin
+python scripts/check-firmware.py effects/cumulonimbus/build/fx48/CumulonimbusFx48-v0.1.2.bin
 python effects/cumulonimbus/tools/cumulonimbus_probe.py selftest
 ```
 
@@ -105,3 +105,11 @@ starts, one-shot triggers across sub-calls, grain durations at both rates, deter
 fixed seed, the rate converter (gain, alias rejection, delay), the chain (exact dry at mix 0 and in
 suspended bypass, tail policy, freeze, stage isolation, output guard) and the meter (missed periods,
 percentiles, telemetry encoding).
+
+## PR #108 follow-up, 2026-11-12
+
+WetHost 0.1.1 returns exact dry when a fallible effect rejects a block, without reading
+unwritten wet buffers. Existing void-returning adapters retain their accepted-block path.
+The standalone firmware is 0.1.2; the granular DSP component stays 0.1.1. This changes no
+grain/reverb algorithm or accepted sound reference. See the
+[fix and validation record](../../instruments/toy-piano/docs/PR108_FIXES.md).

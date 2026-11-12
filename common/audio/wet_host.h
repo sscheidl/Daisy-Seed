@@ -5,7 +5,8 @@
 // the exact dry signal. Effects with their own tail policy keep their own host (stereo delay).
 #include "fx_contract.h"
 #include <cstddef>
-#define SEED_WET_HOST_VERSION "0.1.0"
+#include <type_traits>
+#define SEED_WET_HOST_VERSION "0.1.1"
 
 namespace seed::audio {
 
@@ -27,6 +28,7 @@ template <class Effect, std::size_t MaxBlock> class WetHost {
     }
 
     // Exact in-place use per channel is allowed. Longer blocks are not processed.
+    // If the effect rejects, return dry without reading its unwritten wet buffers (R12).
     void Process(const float* left, const float* right, float* out_left, float* out_right, std::size_t frames) {
         if(frames > MaxBlock)
             return;
@@ -36,7 +38,13 @@ template <class Effect, std::size_t MaxBlock> class WetHost {
             feed_left[i] = left[i] * feed_;
             feed_right[i] = right[i] * feed_;
         }
-        effect_.Process(StereoBlock{feed_left, feed_right, wet_left, wet_right, frames});
+        if(!ProcessWet(StereoBlock{feed_left, feed_right, wet_left, wet_right, frames})) {
+            for(std::size_t i = 0; i < frames; ++i) {
+                out_left[i] = left[i];
+                out_right[i] = right[i];
+            }
+            return;
+        }
         for(std::size_t i = 0; i < frames; ++i) {
             mix_ = Toward(mix_, mix_target_);
             const float dry = 1.f - mix_;
@@ -46,6 +54,16 @@ template <class Effect, std::size_t MaxBlock> class WetHost {
     }
 
   private:
+    bool ProcessWet(StereoBlock block) {
+        // Existing infallible adapters return void and fill every valid block. Fallible
+        // adapters return bool, allowing the host to avoid unwritten buffers on rejection.
+        if constexpr(std::is_void_v<decltype(effect_.Process(block))>) {
+            effect_.Process(block);
+            return true;
+        } else {
+            return effect_.Process(block);
+        }
+    }
     static constexpr float kStep = 1.f / 480.f; // 10 ms at 48 kHz
 
     static float Toward(float value, float target) {

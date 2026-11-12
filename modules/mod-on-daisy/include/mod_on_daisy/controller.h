@@ -255,7 +255,7 @@ class Controller {
 #endif
         if(have_last_ && f.seq == last_seq_ && size == last_size_ && Same(body, size)) {
 #if MOD_ON_DAISY_LOCAL_EDITS
-            if(local_since_last_ && RepliesWithCrc(last_command_)) { // the state changed since: current CRC
+            if(local_since_last_ && last_crc_reply_ && RepliesWithCrc(last_command_)) { // the state changed since: current CRC
                 uint8_t out[7];
                 proto::Writer w(out, sizeof(out));
                 w.U7(0);
@@ -281,6 +281,12 @@ class Controller {
             if(Changes(f.command)) {
                 Remember(body, size, f.seq); // reads are always answered fresh
 #if MOD_ON_DAISY_LOCAL_EDITS
+                // A failed write is cached too. Its NAK must never become a success after
+                // a local edit (R10); only successful CRC replies may be refreshed.
+                proto::Frame cached;
+                last_crc_reply_ = proto::ParseHeader(reply_ + 1, reply_size_ - 2, cached) == proto::Parse::Ok &&
+                                  cached.command == uint8_t(f.command | proto::kReplyBit) &&
+                                  cached.length == 7 && cached.payload[0] == 0;
                 last_command_ = f.command;
                 local_since_last_ = false;
 #endif
@@ -596,7 +602,7 @@ class Controller {
                command == proto::SetSource || command == proto::SetName;
     }
     uint8_t last_command_ = 0;
-    bool local_since_last_ = false;
+    bool local_since_last_ = false, last_crc_reply_ = false;
 #endif
     // Only state-changing commands are answered from the retry cache.
     static bool Changes(uint8_t command) {

@@ -651,6 +651,33 @@ static void TestMeter() {
     CHECK(UntouchedStack(stack, stack + 16) == 40);
 }
 
+// R12: rejected wet blocks return exact dry, including in-place and zero mix.
+static void TestWetHostRejection() {
+    Rig<32000> rig;
+    audio::WetHost<CumulonimbusT<32000>, kBlock> host(*rig.fx);
+    float l[kBlock], r[kBlock], ol[kBlock], orr[kBlock];
+    for(std::size_t i = 0; i < kBlock; ++i) {
+        l[i] = .25f + float(i) * .001f;
+        r[i] = -.125f - float(i) * .001f;
+    }
+    for(bool prepared : {false, true}) {
+        if(prepared) CHECK(rig.Prepare());
+        for(float mix : {0.f, .5f, 1.f}) {
+            host.Reset(true, mix);
+            for(bool inplace : {false, true}) {
+                for(std::size_t i = 0; i < kBlock; ++i) { ol[i] = l[i]; orr[i] = r[i]; }
+                // 47 is rejected by F32; 48 is also rejected before Prepare.
+                const std::size_t n = prepared ? 47 : 48;
+                host.Process(inplace ? ol : l, inplace ? orr : r, ol, orr, n);
+                for(std::size_t i = 0; i < kBlock; ++i) CHECK(ol[i] == l[i] && orr[i] == r[i]);
+            }
+        }
+    }
+    host.Reset(true, .5f);
+    host.Process(l, r, ol, orr, 48); // valid wet processing still runs
+    for(std::size_t i = 0; i < kBlock; ++i) CHECK(std::isfinite(ol[i]) && std::isfinite(orr[i]));
+}
+
 int main() {
     TestContract<48000>();
     TestContract<32000>();
@@ -674,6 +701,7 @@ int main() {
     TestRateConversion();
     TestChain();
     TestMeter();
+    TestWetHostRejection();
     if(failures) {
         std::printf("%d failure(s)\n", failures);
         return 1;
