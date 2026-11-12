@@ -1,6 +1,8 @@
-# Nebulae on Daisy v0.2.1
+# Nebulae on Daisy v0.3.0
 
-**v0.2.1: SOFTWARE PASS / HARDWARE PENDING** ([release report](docs/V0_2_RELEASE_REPORT.md)).
+**v0.3.0: SOFTWARE PASS / HARDWARE PENDING.** v0.3.0 loads 24-bit and WAVE_FORMAT_EXTENSIBLE
+PCM files, such as the original Nebulae factory samples ([validation](docs/VALIDATION.md)).
+v0.2 [release report](docs/V0_2_RELEASE_REPORT.md).
 Patch 0.2.1 fixes card ownership changes during a pending management restart;
 see the [current integration and test-candidate report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md).
 New: sample banks with free file names, SW17 bank selection, FAT32 and exFAT cards,
@@ -167,8 +169,11 @@ file names; no FatFs write function exists in the image). Samples live in
 
 Directory work runs in main, one entry per iteration, never while a file loads.
 
-Only RIFF/WAVE PCM16, mono/stereo, 44100/48000 Hz is accepted. Other encodings,
-containers, rates, depths, channels and WAVE_FORMAT_EXTENSIBLE are rejected.
+RIFF/WAVE PCM, **16 or 24 bit**, mono/stereo, 44100/48000 Hz is accepted, with a plain
+`fmt` chunk, the 40-byte variant some DAWs write, or WAVE_FORMAT_EXTENSIBLE with the PCM
+subtype. 24-bit samples are rounded to the nearest 16-bit value while loading (no dither);
+the buffer and the engine stay PCM16, so the length limit in seconds is the same for both
+depths. Float, 8/20/32-bit containers, other rates and more channels are rejected.
 RIFF extent must match the file. Unknown padded chunks and reversed fmt/data order
 are supported; duplicate fmt/data, malformed alignment and truncated chunks fail.
 Exactly **one** complete file buffer holds PCM16. Mono reads duplicate to stereo;

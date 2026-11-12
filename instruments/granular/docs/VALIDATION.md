@@ -235,3 +235,35 @@ runs without TSan in `make test`. The whole quick CI result is in the PR.
 The browser e2e had never run on Windows: `mod_sim` writes `\r\n` there and the test
 compared lines with `OK`. It now tolerates that, and one stale German expectation
 (`getrennt`) was corrected.
+
+## 0.3.0 - MEASURED 2026-11-08
+
+**RESULT: SOFTWARE PASS / HARDWARE NOT MEASURED** for loading 24-bit files on the kit.
+Windows 11, xPack ARM GCC 13.2.1-1.1, LLVM-MinGW clang/clang++.
+
+| Check | Observed result |
+| --- | --- |
+| `make PROJECT=granular test` | PASS, regular and MOD; the FAT32/exFAT round trip now writes a real 24-bit file, which loads with the expected PCM hash |
+| WAV parser tests | 24/16 bit x mono/stereo x 44.1/48 kHz x plain/EXTENSIBLE/40-byte fmt, all truncations; rejects float, wrong GUID, cbSize, align, byte rate, half frames, 8/20/32 bit; PCM16 capacity limit for 24-bit |
+| 24-to-16 rounding | all 2^24 input values against an independent oracle |
+| Loader | 24-bit mono and stereo across several 4092-byte chunks, nothing written past the file |
+| Golden | regular and MOD `63576b07d2f2b999`, unchanged from 0.2.1 |
+| `make PROJECT=granular test-sanitize` | PASS |
+| ARM images | `NebulaeOnDaisy-v0.3.0.bin` 188,312 B, SHA-256 `0f2e56ea...49cf85`; `NebulaeMod-v0.3.0.bin` 215,920 B, `350f5611...52ac12e`; +4,572 B against 0.2.1 |
+| `check-firmware.py`, `check-granular-elf.py --host-test`, `make sd-check` | PASS on both |
+| The 11 original Nebulae factory samples | all accepted by the firmware parser (7 of them 24-bit, 2 with a 40-byte `fmt`); 0.2.1 accepted 4 |
+
+### Windows SD share throughput - MEASURED 2026-11-08 on the kit
+
+Nebulae SD management (USB serial suffix `N`), FAT32 card, Windows 11, USB Full Speed on J7.
+
+| Transfer | Result |
+| --- | --- |
+| Copy samples to the card in Explorer (reported by the user) | about 300-400 kB/s |
+| Write 16 MiB, write-through, 64 KiB blocks | 193 KiB/s |
+| Read 16 MiB, unbuffered | 650 KiB/s |
+
+Writing is about three times slower than reading: the shared card reader writes one
+512-byte sector per command and waits for the card after each one; multi-block writes stay
+banned by the SD policy. The figures apply to Windows sharing through the shared reader,
+not to card access on the kit (sample loading), which is NOT MEASURED.

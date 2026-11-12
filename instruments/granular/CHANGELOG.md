@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0 - 24-bit samples, 2026-11-08
+
+Hardware status: **NOT MEASURED**. Applies to `granular` and `granular-mod`.
+
+* Load 24-bit PCM WAVs, WAVE_FORMAT_EXTENSIBLE with the PCM subtype (valid bits up to the
+  container) and plain PCM with a 40-byte `fmt` chunk (BWF/DAW files). The original Nebulae
+  factory samples load without conversion.
+* 24-bit samples are rounded to the nearest PCM16 value while loading, without dither. The
+  buffer and engine stay PCM16, so the limit in seconds is unchanged. 24-bit loads read
+  4092-byte chunks (whole frames); 16-bit loads are unchanged.
+* 16-bit playback is unchanged: the regular and MOD golden hashes match 0.2.1.
+
 ## granular-mod on 0.2.1 - separate Mod on Daisy build, 2026-11-06
 
 Hardware status: **NOT MEASURED**. Nebulae itself stays 0.2.1: the regular image is

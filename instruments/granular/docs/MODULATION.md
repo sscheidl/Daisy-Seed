@@ -1,8 +1,8 @@
 # Nebulae + Mod on Daisy (separate build)
 
-**Image:** `build/mod/NebulaeMod-v0.2.1.bin` (`make PROJECT=granular-mod`, or
-`make PROJECT=granular MOD=1`). Firmware marker: `NEBULAE-MOD-VERSION=0.2.1`; IDENTIFY
-reports the key `nebulae` and the version `0.2.1`, the same version as image and marker.
+**Image:** `build/mod/NebulaeMod-v0.3.0.bin` (`make PROJECT=granular-mod`, or
+`make PROJECT=granular MOD=1`). Firmware marker: `NEBULAE-MOD-VERSION=0.3.0`; IDENTIFY
+reports the key `nebulae` and the version `0.3.0`, the same version as image and marker.
 **Status:** software tested, hardware test pending (**NOT MEASURED**). Checklist:
 [MOD_HARDWARE_TEST.md](MOD_HARDWARE_TEST.md).
 
@@ -10,11 +10,9 @@ This is an **additional, separate build** of Nebulae with the
 [Mod on Daisy](../../../modules/mod-on-daisy/) modulation matrix, following the
 [Looper](../../looper/docs/MODULATION.md) pattern. The regular firmware stays as it is:
 
-* `make PROJECT=granular` compiles exactly the 0.2.1 code. Its image is **byte-identical**
-  to `main`: 183,740 bytes, SHA-256
-  `cbc4c37686be32eca39825459f95c676af7a7010c3c719faba1cf0def4e381ff`, the value recorded
-  in [SD_CARD_INTEGRATION_2026-11-03.md](../../../docs/SD_CARD_INTEGRATION_2026-11-03.md).
-  It contains no matrix symbol.
+* `make PROJECT=granular` compiles the regular sources without any matrix code. When the
+  MOD build was added (on 0.2.1) the regular image stayed **byte-identical** to `main`
+  (183,740 bytes, SHA-256 `cbc4c376...e381ff`); it contains no matrix symbol.
 * All matrix code sits behind `NEBULAE_MOD`. Only `MOD=1` sets it, together with
   `MOD_ON_DAISY_EXTENSIONS`, and that build uses its own `build/mod/` directory.
 * With an empty matrix the MOD build sounds bit-identical to the regular build. A golden
@@ -196,14 +194,14 @@ closed by hand.
 | `editors/mod-on-daisy` | core test and browser e2e against the Nebulae column table; patch save and reload |
 | `diagnostics/tests/python/test_nebulae.py` | monitor frames on the port do not disturb the panel |
 
-## Resources (MEASURED 2026-11-06, local ARM build, GCC 13.2.1)
+## Resources (MEASURED 2026-11-08 for 0.3.0, local ARM build, GCC 13.2.1)
 
 | | Regular | MOD=1 |
 | --- | ---: | ---: |
-| BIN | 183,740 B | 211,360 B |
-| DTCM static | 97,900 B | 101,676 B (reserve 29,396 B; the check requires 16 KiB) |
-| SRAM image and data | 184,768 B | 212,384 B of 491,520 B |
-| WAV file capacity | 41,695,328 B | 41,695,296 B |
+| BIN | 188,312 B | 215,920 B |
+| DTCM static | 97,892 B | 101,652 B (reserve 29,420 B; the check requires 16 KiB) |
+| SRAM image and data | 189,344 B | 216,960 B of 491,520 B |
+| WAV PCM16 capacity | 41,695,328 B | 41,695,296 B |
 
 CPU load of the matrix on the board: **NOT MEASURED**. The tick runs below audio, so it
 cannot raise `callback_peak_cycles` directly; the panel's STATUS line shows peak and

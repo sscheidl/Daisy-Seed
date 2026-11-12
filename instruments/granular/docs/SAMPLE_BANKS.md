@@ -61,7 +61,7 @@ The same rules apply to bank folders and to files:
 * Digit runs compare by numeric value: `2 Low hum.wav` sorts before `10 Air.wav`.
   Equal values with a different number of leading zeros sort shorter first. A final
   byte-wise comparison makes the order deterministic.
-* A WAV the parser rejects (e.g. 24-bit, 96 kHz, EXTENSIBLE) still occupies its
+* A WAV the parser rejects (e.g. 32-bit float, 96 kHz) still occupies its
   slot and shows error code 2 when selected, as today. It is not skipped, so the
   user can see that a file was refused.
 
