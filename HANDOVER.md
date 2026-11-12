@@ -113,6 +113,8 @@ before a board session. No push, merge or flashing. Hardware and TSan: NOT MEASU
 
 **R13/R14 fixed locally, 2026-11-12 (Claude, owner request):** WetHost 0.2.0 requires `bool Process` and returns exact dry on rejection; Echo Delay and SC Reverb 0.1.1 report rejection; the controller keeps the retry metadata for frames it does not cache. Host/ASan/UBSan runners, browser polling, ARM (incl. `echo-delay-fx` 0.1.1), manifests, legacy hashes PASS; SC Reverb only syntax-checked (DaisySP-LGPL absent). Piano Cumulonimbus 0.1.2 images changed (R14); standalone FX images changed only by equivalent codegen. Still uncommitted, no independent review of R13/R14. Next: commit, then a fresh package/store entry. Hardware: NOT MEASURED. [Details](instruments/toy-piano/docs/PR108_FIXES.md#r13-and-r14-after-the-claude-review).
 
+**Committed and staged for the board, 2026-11-12:** R9–R12 committed as `18c422c` (exactly the reviewed diff), R13/R14 as `9075282`. Six 0.1.2 images rebuilt from scratch at `9075282`, byte-identical to the validated builds, stored as `candidate` under `firmware/<product>/0.1.2+9075282/`. Run package `build/cumulonimbus-stage2/` (51 files, verified). PR #108 is merged on the owner's request (2026-11-12) before the board test. Next: the owner's board run per the stage 2 run sheet; record the results as MEASURED and in each store `STATUS.md`. Hardware: NOT MEASURED. [Store table](instruments/toy-piano/docs/PR108_FIXES.md#package-and-handover).
+
 **Streichwurst, preparation 2026-11-01:** New instrument under
 `instruments/streichwurst/`, its own branch `claude/streichwurst`,
 [Claude work order](instruments/streichwurst/docs/CLAUDE_AUFTRAG.md). Target: Seed3

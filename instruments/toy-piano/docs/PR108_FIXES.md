@@ -111,3 +111,27 @@ size and modification timestamp. That preserved package still contains the earli
 it does **not** contain these fixes. A fresh package/store entry is required before handing
 the fixed firmware to the human for board acceptance. Validation build outputs alone are
 not a hardware delivery. No push, merge, flashing or package generation was performed.
+
+**Board candidates, 2026-11-12 (after the R9–R14 commits):** the six images were rebuilt
+from scratch at commit `9075282` (clean tree, build folders deleted first). They reproduce
+the validated images byte for byte and are stored as `candidate`
+(`docs/FIRMWARE_BINARIES.md`, hardware NOT MEASURED):
+
+| Label | Store folder (main checkout `firmware/`) | SHA-256 |
+| --- | --- | --- |
+| F48 | `cumulonimbus-fx/0.1.2+9075282/CumulonimbusFx48-v0.1.2.bin` | `d9905424383da04bd3d03800c45ad218e9a2513fe3b390bbef4cce3af32e5470` |
+| F32 | `cumulonimbus-fx-32/0.1.2+9075282/CumulonimbusFx32-v0.1.2.bin` | `58ec449420db17e5d96e2836f0442a1539d3fce3ed19c2304d7de13abc526e2d` |
+| D48 | `toy-piano-cumulonimbus-profile/0.1.2+9075282/ToyPianoCumulonimbus48Profile-v0.1.2.bin` | `50ddb0e3533cd0935da8612abc90a48be004553e5dec9e2775ce4a5fed53bcc7` |
+| D32 | `toy-piano-cumulonimbus-32-profile/0.1.2+9075282/ToyPianoCumulonimbus32Profile-v0.1.2.bin` | `5bea88a380dab1c5ac1c992c1a2268b62d642995e0bc4198023ba2b6a5eec1d9` |
+| P48 | `toy-piano-cumulonimbus/0.1.2+9075282/ToyPianoCumulonimbus48-v0.1.2.bin` | `5cd63420029f4173b0ef965fce047153dff9a173b052c13a6497b56f4b65c736` |
+| P32 | `toy-piano-cumulonimbus-32/0.1.2+9075282/ToyPianoCumulonimbus32-v0.1.2.bin` | `7d9c7ba9fec02e39da5b312aa9b23615f5e9aee44f246643ff14988861ca26a2` |
+
+The run package `build/cumulonimbus-stage2/` (51 files, verified, from
+`scripts/cumulonimbus_stage1_package.py`) carries the same images, together with:
+
+* P0 (Toy Piano 0.5) and the released v0.2 rollback;
+* the run sheet, probes, manifests, link maps and logs.
+
+Its run sheet still shows `--image ...-v0.1.1` in one `sweep` example. That value is only a
+CSV label; the template is fixed in the following docs commit. The older `stage1` package is
+unchanged.

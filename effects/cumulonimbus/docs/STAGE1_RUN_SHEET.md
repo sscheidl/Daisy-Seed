@@ -40,7 +40,7 @@ python tools/cumulonimbus_probe.py set --scenario 0 --cap 16 --stimulus 4
 python tools/cumulonimbus_probe.py reset          # measured window starts now
 python tools/cumulonimbus_probe.py snapshot       # prints loads, stages, grains, verdict
 python tools/cumulonimbus_probe.py sweep --scenarios 1,2,3,0 --caps 8,16,24,32 --stimulus 4 \
-    --warmup 5 --seconds 30 --csv results.csv --label B3 --image ToyPianoCumulonimbus48Profile-v0.1.1 --stop-on-fail
+    --warmup 5 --seconds 30 --csv results.csv --label B3 --image ToyPianoCumulonimbus48Profile-v0.1.2 --stop-on-fail
 python tools/cumulonimbus_probe.py play --seconds 1800 --voices 16 --cc-traffic   # B4, playable image
 python tools/mod_probe.py stats                    # GET_STATS on P48/P32: callback load mean/max, overruns (not P0)
 ```
