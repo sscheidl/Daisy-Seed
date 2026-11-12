@@ -109,6 +109,10 @@ before a board session. No push, merge or flashing. Hardware and TSan: NOT MEASU
 
 **Claude independent review requested, 2026-11-12:** [Review order for R9-R12](instruments/toy-piano/docs/CLAUDE_REVIEW_PR108_R9_R12.md). Review the uncommitted fixes above af53b32, report per finding and R13+ findings, and link the result here. Report only; preserve the older package. No commit, push, merge or flashing.
 
+**Claude review verdict, 2026-11-12: READY FOR PACKAGE PREPARATION.** R9-R12 CONFIRMED on the uncommitted state above af53b32 (diff SHA-256 `3bf424a5…6677`); new P3 findings R13 (void FX adapters can silently reject; unreachable in current products) and R14 (oversize SysEx clears the cached reply's local-edit marker; stale CRC until the next idle poll), non-blocking. TSan/Linux NOT RUN, SC Reverb NOT TESTED; package (52 files) unchanged and still without R9-R12. Hardware: NOT MEASURED. [Result](instruments/toy-piano/docs/CLAUDE_REVIEW_PR108_R9_R12_RESULT.md).
+
+**R13/R14 fixed locally, 2026-11-12 (Claude, owner request):** WetHost 0.2.0 requires `bool Process` and returns exact dry on rejection; Echo Delay and SC Reverb 0.1.1 report rejection; the controller keeps the retry metadata for frames it does not cache. Host/ASan/UBSan runners, browser polling, ARM (incl. `echo-delay-fx` 0.1.1), manifests, legacy hashes PASS; SC Reverb only syntax-checked (DaisySP-LGPL absent). Piano Cumulonimbus 0.1.2 images changed (R14); standalone FX images changed only by equivalent codegen. Still uncommitted, no independent review of R13/R14. Next: commit, then a fresh package/store entry. Hardware: NOT MEASURED. [Details](instruments/toy-piano/docs/PR108_FIXES.md#r13-and-r14-after-the-claude-review).
+
 **Streichwurst, preparation 2026-11-01:** New instrument under
 `instruments/streichwurst/`, its own branch `claude/streichwurst`,
 [Claude work order](instruments/streichwurst/docs/CLAUDE_AUFTRAG.md). Target: Seed3

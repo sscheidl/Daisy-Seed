@@ -108,8 +108,9 @@ percentiles, telemetry encoding).
 
 ## PR #108 follow-up, 2026-11-12
 
-WetHost 0.1.1 returns exact dry when a fallible effect rejects a block, without reading
-unwritten wet buffers. Existing void-returning adapters retain their accepted-block path.
+WetHost 0.2.0 returns exact dry when an effect rejects a block, without reading unwritten
+wet buffers. It requires `bool Process(StereoBlock)`, so a rejection cannot go unreported (R13);
+Echo Delay and SC Reverb 0.1.1 were converted accordingly.
 The standalone firmware is 0.1.2; the granular DSP component stays 0.1.1. This changes no
 grain/reverb algorithm or accepted sound reference. See the
 [fix and validation record](../../instruments/toy-piano/docs/PR108_FIXES.md).

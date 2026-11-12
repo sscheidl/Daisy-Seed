@@ -51,13 +51,15 @@ class ScReverb {
     }
     const Parameters& Requested() const { return requested_; }
 
-    void Process(const audio::StereoBlock& block) {
+    // False: rejected (unprepared or invalid block) without touching any buffer.
+    bool Process(const audio::StereoBlock& block) {
         if(!reverb_ || !audio::Valid(config_, block))
-            return;
+            return false;
         for(std::size_t i = 0; i < block.frames; ++i) {
             const float left = block.left[i], right = block.right[i];
             reverb_->Process(left, right, &block.out_left[i], &block.out_right[i]);
         }
+        return true;
     }
 
   private:

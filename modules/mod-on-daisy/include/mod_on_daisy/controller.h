@@ -281,14 +281,18 @@ class Controller {
             if(Changes(f.command)) {
                 Remember(body, size, f.seq); // reads are always answered fresh
 #if MOD_ON_DAISY_LOCAL_EDITS
-                // A failed write is cached too. Its NAK must never become a success after
-                // a local edit (R10); only successful CRC replies may be refreshed.
-                proto::Frame cached;
-                last_crc_reply_ = proto::ParseHeader(reply_ + 1, reply_size_ - 2, cached) == proto::Parse::Ok &&
-                                  cached.command == uint8_t(f.command | proto::kReplyBit) &&
-                                  cached.length == 7 && cached.payload[0] == 0;
-                last_command_ = f.command;
-                local_since_last_ = false;
+                // Remember() skips a frame longer than its buffer (always NAKed as too long). The
+                // cache then still holds the earlier pair, so its metadata must stay too (R14).
+                if(size <= sizeof(last_request_)) {
+                    // A failed write is cached too. Its NAK must never become a success after
+                    // a local edit (R10); only successful CRC replies may be refreshed.
+                    proto::Frame cached;
+                    last_crc_reply_ = proto::ParseHeader(reply_ + 1, reply_size_ - 2, cached) == proto::Parse::Ok &&
+                                      cached.command == uint8_t(f.command | proto::kReplyBit) &&
+                                      cached.length == 7 && cached.payload[0] == 0;
+                    last_command_ = f.command;
+                    local_since_last_ = false;
+                }
 #endif
             }
         }

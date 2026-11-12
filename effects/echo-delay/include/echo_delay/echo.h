@@ -58,14 +58,16 @@ class StereoEcho {
     }
     const Parameters& Requested() const { return requested_; }
 
-    void Process(const audio::StereoBlock& block) {
+    // False: rejected (unprepared or invalid block) without touching any buffer.
+    bool Process(const audio::StereoBlock& block) {
         if(!line_[0] || !audio::Valid(config_, block))
-            return;
+            return false;
         for(std::size_t i = 0; i < block.frames; ++i) {
             const float left = block.left[i], right = block.right[i];
             block.out_left[i] = line_[0]->Process(left);
             block.out_right[i] = line_[1]->Process(right);
         }
+        return true;
     }
 
   private:

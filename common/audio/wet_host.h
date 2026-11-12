@@ -3,15 +3,22 @@
 // Host side of a standalone wet-only effect under the FX contract 1.0: the feed fades over
 // 10 ms when switched, so the tail rings on, and dry/wet glides over 10 ms. A mix of 0 gives
 // the exact dry signal. Effects with their own tail policy keep their own host (stereo delay).
+// Effects report a rejected block with `bool Process(StereoBlock)` returning false.
 #include "fx_contract.h"
 #include <cstddef>
 #include <type_traits>
-#define SEED_WET_HOST_VERSION "0.1.1"
+#include <utility>
+#define SEED_WET_HOST_VERSION "0.2.0"
 
 namespace seed::audio {
 
 template <class Effect, std::size_t MaxBlock> class WetHost {
   public:
+    // FX contract 1.0 lets an effect reject a block without touching any buffer. A void Process
+    // could not tell the host, which would then mix unwritten wet buffers (R13), so it is refused.
+    static_assert(std::is_same_v<decltype(std::declval<Effect&>().Process(std::declval<StereoBlock>())), bool>,
+                  "WetHost effects must report rejection: bool Process(StereoBlock)");
+
     explicit WetHost(Effect& effect) : effect_(effect) {}
 
     void Reset(bool enabled, float mix) {
@@ -38,7 +45,7 @@ template <class Effect, std::size_t MaxBlock> class WetHost {
             feed_left[i] = left[i] * feed_;
             feed_right[i] = right[i] * feed_;
         }
-        if(!ProcessWet(StereoBlock{feed_left, feed_right, wet_left, wet_right, frames})) {
+        if(!effect_.Process(StereoBlock{feed_left, feed_right, wet_left, wet_right, frames})) {
             for(std::size_t i = 0; i < frames; ++i) {
                 out_left[i] = left[i];
                 out_right[i] = right[i];
@@ -54,16 +61,6 @@ template <class Effect, std::size_t MaxBlock> class WetHost {
     }
 
   private:
-    bool ProcessWet(StereoBlock block) {
-        // Existing infallible adapters return void and fill every valid block. Fallible
-        // adapters return bool, allowing the host to avoid unwritten buffers on rejection.
-        if constexpr(std::is_void_v<decltype(effect_.Process(block))>) {
-            effect_.Process(block);
-            return true;
-        } else {
-            return effect_.Process(block);
-        }
-    }
     static constexpr float kStep = 1.f / 480.f; // 10 ms at 48 kHz
 
     static float Toward(float value, float target) {

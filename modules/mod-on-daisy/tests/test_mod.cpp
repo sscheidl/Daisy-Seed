@@ -1099,6 +1099,33 @@ static void TestLocalRetryCache() {
         }
         assert(d.module.controller.CurrentPatch().lfo[0].rate == 4321);
     }
+    // R14: an oversize state-changing frame (body > kMaxFrame, still within libDaisy's 128 bytes) is
+    // NAKed but not cached. It must not clear the local-edit marker of the cached earlier write.
+    {
+        Device d;
+        uint8_t frame[proto::kMaxFrame];
+        const uint8_t cell[] = {0, 0, 50, 1};
+        const auto size = proto::BuildFrame(frame, 0, proto::SetCell, 26, cell, sizeof(cell));
+        d.SendRaw(frame, size);
+        assert(d.Collect().frame.command == uint8_t(proto::SetCell | proto::kReplyBit));
+        Patch local = d.module.controller.CurrentPatch();
+        local.lfo[0].rate = 4321;
+        assert(d.module.controller.LoadPatchLocal(local) == Status::Ok);
+        uint8_t big[127] = {0xF0, proto::kManufacturer, proto::kProject[0], proto::kProject[1], proto::kVersion,
+                            0, proto::SetName, 27, 100};
+        big[sizeof(big) - 1] = 0xF7;
+        d.SendRaw(big, sizeof(big));
+        const auto nak = d.Collect();
+        assert(nak.frame.command == proto::kNak && nak.payload[1] == proto::ErrLength);
+        d.SendRaw(frame, size);
+        const auto retry = d.Collect();
+        assert(retry.frame.command == uint8_t(proto::SetCell | proto::kReplyBit));
+        proto::Reader r(retry.payload.data(), retry.payload.size());
+        assert(r.U7() == 0);
+        r.U7();
+        assert(r.U32() == d.module.controller.CurrentCrc());
+        assert(d.module.controller.CurrentPatch().lfo[0].rate == 4321);
+    }
 }
 #endif
 
