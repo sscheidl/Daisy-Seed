@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Toy Piano on Cumulonimbus 0.1.2 – Kurzanleitung</title>
+<link rel="stylesheet" href="style.css"><style>body { font-size: 8.7pt; }</style></head><body>
+
+<h1 style="font-size:17pt">Toy Piano on Cumulonimbus 0.1.2 – Kurzanleitung</h1>
+<div class="sub">Toy Piano durch eine Grain-Wolke im Stil von Clouds und einen Stereo-Hall · Seed3 Desktop Kit ·
+12. November 2026 · <code>main</code> @ <code>a97569f</code> (Images aus <code>9075282</code>) · Übersetzung der englischen Quick Guide</div>
+
+<div class="warn"><b>Status:</b> Host-Tests, Sanitizer und ARM-Builds bestanden. Klang, Bedienung, CPU-Last und die
+<b>Richtung von SW18</b> am Kit: <b>NICHT GEMESSEN</b>. Leise anfangen.</div>
+
+<h2>1. Firmware</h2>
+<table>
+<tr><th>Image</th><th>Verwendung</th><th>SHA-256 (Anfang)</th></tr>
+<tr><td class="k">ToyPianoCumulonimbus48-v0.1.2.bin</td><td><b>P48</b>: das spielbare Instrument, Grains mit 48 kHz</td><td><code>5cd63420…</code></td></tr>
+<tr><td class="k">ToyPianoCumulonimbus32-v0.1.2.bin</td><td><b>P32</b>: dasselbe, Grains mit 32 kHz (weniger CPU-Last)</td><td><code>7d9c7ba9…</code></td></tr>
+</table>
+<p>Store: <code>firmware/toy-piano-cumulonimbus[-32]/0.1.2+9075282/</code>. Testpaket mit Ablaufplan, Profiling- und
+Standalone-Images und dem v0.2-Rollback: <code>build/cumulonimbus-stage2/</code>. Vorher den SHA-256 prüfen.</p>
+<ul>
+<li><b>Bootloader starten:</b> <b>S9 + S16</b> (und keine andere Taste) <b>5 s</b> halten oder im Editor auf
+<b>Firmware update …</b> klicken. Alle 16 LEDs leuchten; der Bootloader wartet ohne Zeitlimit.</li>
+<li><b>Flashen:</b> <a href="https://flash.daisy.audio/">Daisy Web Programmer</a> → Custom → die <code>.bin</code>, oder
+<code>dfu-util -a 0 -s 0x90040000:leave -D &lt;image&gt;.bin -d ,0483:df11</code>.</li>
+</ul>
+
+<h2>2. Anschlüsse und Signalweg</h2>
+<table>
+<tr><th>Anschluss</th><th>Verwendung</th></tr>
+<tr><td class="k">Audio OUT L/R, Kopfhörer</td><td>Stereo-Ausgang, 48 kHz; RV1 ist die analoge Kopfhörer-Lautstärke</td></tr>
+<tr><td class="k">USB J7</td><td>USB-MIDI (Noten rein und raus, CCs), der Editor, Firmware-Update</td></tr>
+<tr><td class="k">MIDI DIN in</td><td>Noten und CCs, wie USB behandelt (kein SysEx)</td></tr>
+<tr><td class="k">CV IN 1/2, Gate IN 1/2</td><td>Quellen und Sync-Eingänge der Mod-on-Daisy-Matrix</td></tr>
+</table>
+<pre>Toy Piano (mono) --> Grain-Wolke (2 s Aufnahme, Stereo-Grains) --> Hall (stereo) --> OUT
+                     Grain Mix: trocken/Grains                      Hall Mix: trocken/Hall</pre>
+<p>Grain Mix und Hall Mix auf 0 oder FX Bypass: der normale Toy-Piano-Klang kommt unverändert heraus.</p>
+
+<h2>3. Spielen</h2>
+<ul>
+<li><b>S1–S8</b> spielen C4–C5, <b>S9–S16</b> C5–C6 (weiße Tasten). Jeder Anschlag startet eine einmalige
+Attack/Decay-Hüllkurve; Loslassen beendet sie nicht. Die LEDs D1–D16 zeigen die gehaltenen Tasten.</li>
+<li>Die Tasten senden über USB-MIDI auf Kanal 1. Eingehende MIDI-Noten (jeder Kanal, mit Anschlagstärke) spielen
+16 weitere Stimmen.</li>
+</ul>
+
+<h2>4. MIDI</h2>
+<table>
+<tr><th>Nachricht</th><th>Funktion</th></tr>
+<tr><td class="k">Noten, jeder Kanal</td><td>Spielen Piano-Stimmen (Note-Offs werden ignoriert)</td></tr>
+<tr><td class="k">CC 70–77, Kanal 1–15</td><td>FX-Seite VR1–VR8 (Position, Länge, Dichte, Tonhöhe, Grain Mix, Breite, Hall-Abklingzeit, Hall Mix)</td></tr>
+<tr><td class="k">CC 86–90, Kanal 1–15</td><td>Piano Attack, Decay, Transponierung, Harmonische, Lautstärke</td></tr>
+<tr><td class="k">CC 1, Aftertouch</td><td>Quellen der Modulationsmatrix</td></tr>
+</table>
+
+<h2 style="break-before: page">5. Bedienelemente</h2>
+<p><b>SW17</b> wählt nur, welche Seite die acht Potis bearbeiten. Piano und Effekte laufen mit ihren Einstellungen
+weiter.</p>
+<table>
+<tr><th>Poti</th><th>SW17 aus: Piano-Seite</th><th>SW17 an: FX-Seite</th></tr>
+<tr><td class="k">VR1</td><td>Attack, 2–300 ms</td><td>Grain-Position: links = neuestes Audio, rechts = 2 s zurück</td></tr>
+<tr><td class="k">VR2</td><td>Decay, 50–3000 ms</td><td>Grain-Länge, 32–512 ms</td></tr>
+<tr><td class="k">VR3</td><td>Transponierung ±24 Halbtöne (Mittelrastung)</td><td>Dichte: links regelmäßig, Mitte keine, rechts zufällig</td></tr>
+<tr><td class="k">VR4</td><td>Zweite Harmonische (Helligkeit)</td><td>Grain-Tonhöhe ±24 Halbtöne (Mittelrastung)</td></tr>
+<tr><td class="k">VR5</td><td>Piano-Lautstärke</td><td>Grain Mix</td></tr>
+<tr><td class="k">VR6</td><td>Rate Modulations-LFO 1</td><td>Stereobreite der Grains</td></tr>
+<tr><td class="k">VR7</td><td>Rate Modulations-LFO 2</td><td>Hall-Abklingzeit</td></tr>
+<tr><td class="k">VR8</td><td>Rate Modulations-Random</td><td>Hall Mix</td></tr>
+</table>
+<table>
+<tr><th>Schalter</th><th>Funktion</th></tr>
+<tr><td class="k">SW18 oben</td><td><b>Freeze</b>: die Aufnahme stoppt, die Grains spielen den gehaltenen Klang weiter; der Hall läuft weiter.
+Beim Lösen wird zum Live-Eingang übergeblendet.</td></tr>
+<tr><td class="k">SW18 Mitte</td><td><b>Run</b>: normaler Betrieb</td></tr>
+<tr><td class="k">SW18 unten</td><td><b>FX Bypass</b>: neuer Klang gelangt nicht mehr in die Effekte, die Fahne klingt etwa 2 s aus,
+danach ist der Ausgang exakt das trockene Piano</td></tr>
+</table>
+<div class="note">Welche Richtung an deinem Kit „oben“ ist, wird beim ersten Board-Test geprüft; bitte notieren.</div>
+<ul>
+<li><b>Pickup:</b> nach einem Seitenwechsel, einem MIDI-CC oder einer Änderung im Editor wirkt ein Poti erst, wenn du es auf
+den gespeicherten Wert (oder darüber hinweg) drehst. Werte springen nie.</li>
+<li><b>Einschalten:</b> mit SW17 aus startet die Piano-Seite bei den Poti-Stellungen; die FX-Seite startet immer mit
+sanften Grundwerten (wenig Grain und Hall).</li>
+</ul>
+
+<h2>6. Editor und Modulation</h2>
+<ul>
+<li>Den Mod-on-Daisy-Editor verwenden (Daisy Control Panel / VST3 <b>0.5.1</b> oder den Browser-Editor <b>0.4.1</b>); das
+Instrument meldet sich als <code>toy-piano-cumulonimbus</code>. Andere Programme, die den MIDI-Port belegen, schließen.</li>
+<li>Matrix-Ziele: Pitch, Level, Harmonic, Attack, Decay, <b>Grain-Position</b>, <b>Grain Mix</b>, <b>Hall Mix</b>.
+VR6–VR8 (Piano-Seite) stellen die LFO- und Random-Raten des Patches; ein ruhender Editor zeigt das nach etwa 2 s.</li>
+</ul>
+
+<h2>7. Wenn etwas nicht stimmt</h2>
+<table>
+<tr><th>Beobachtung</th><th>Prüfen</th></tr>
+<tr><td>Ein Poti tut nichts</td><td>Pickup: auf den aktuellen Wert drehen. Seite prüfen (SW17).</td></tr>
+<tr><td>Kein Effekt hörbar</td><td>SW18 auf Bypass? Grain Mix (FX VR5), Hall Mix (FX VR8) auf? Dichte (VR3) Mitte = keine Grains.</td></tr>
+<tr><td>Der Klang wiederholt sich ständig</td><td>SW18 steht auf Freeze.</td></tr>
+<tr><td>Knackser oder Aussetzer</td><td>Einstellung notieren, Last mit <code>python mod_probe.py stats</code> lesen; P32 versuchen.</td></tr>
+<tr><td>Zurück zu einem bekannten Zustand</td><td>Toy Piano 0.5 oder die veröffentlichte v0.2 aus dem Testpaket flashen.</td></tr>
+</table>
+
+<div class="foot" style="margin-top:2mm">Quellen: instruments/toy-piano/docs/CUMULONIMBUS.md, README.md · sscheidl/Daisy-Seed, PR #108 ·
+Board-Ergebnisse mit Datum als GEMESSEN eintragen.</div>
+</body></html>
