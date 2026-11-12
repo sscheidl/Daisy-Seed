@@ -1052,6 +1052,83 @@ void TestModes() {
 }
 #endif
 
+#if MOD_ON_DAISY_LOCAL_EDITS
+// R10: local edits may refresh a successful CRC reply, never a cached NAK.
+static void TestLocalRetryCache() {
+    for(uint8_t command : {uint8_t(proto::SetMatrix), uint8_t(proto::SetCell), uint8_t(proto::ClearMatrix),
+                           uint8_t(proto::SetSource), uint8_t(proto::SetName)}) {
+        Device d;
+        uint8_t frame[proto::kMaxFrame];
+        const auto size = proto::BuildFrame(frame, 0, command, 23, nullptr, 0);
+        frame[size - 2] ^= 1; // checksum rejection, for every command with CRC-shaped success
+        d.SendRaw(frame, size);
+        const auto first = d.Collect();
+        assert(first.present && first.frame.command == proto::kNak);
+        Patch local = d.module.controller.CurrentPatch();
+        local.lfo[0].rate = 4321;
+        assert(d.module.controller.LoadPatchLocal(local) == Status::Ok);
+        for(unsigned retry = 0; retry < 2; ++retry) {
+            d.SendRaw(frame, size);
+            const auto response = d.Collect();
+            assert(response.frame.command == first.frame.command && response.payload == first.payload);
+        }
+    }
+    for(uint8_t depth : {uint8_t{127}, uint8_t{50}}) {
+        Device d;
+        uint8_t frame[proto::kMaxFrame];
+        const uint8_t cell[] = {0, 0, depth, 1};
+        const auto size = proto::BuildFrame(frame, 0, proto::SetCell, 25, cell, sizeof(cell));
+        d.SendRaw(frame, size);
+        const auto first = d.Collect();
+        const bool valid = depth == 50;
+        assert(first.frame.command == (valid ? uint8_t(proto::SetCell | proto::kReplyBit) : uint8_t(proto::kNak)));
+        Patch local = d.module.controller.CurrentPatch();
+        local.lfo[0].rate = 4321;
+        assert(d.module.controller.LoadPatchLocal(local) == Status::Ok);
+        d.SendRaw(frame, size);
+        const auto retry = d.Collect();
+        assert(retry.frame.command == first.frame.command);
+        if(valid) {
+            proto::Reader r(retry.payload.data(), retry.payload.size());
+            assert(r.U7() == 0);
+            r.U7();
+            assert(r.U32() == d.module.controller.CurrentCrc());
+        } else {
+            assert(retry.payload == first.payload);
+            assert(d.module.controller.CurrentPatch().depth[0][0] == 0);
+        }
+        assert(d.module.controller.CurrentPatch().lfo[0].rate == 4321);
+    }
+    // R14: an oversize state-changing frame (body > kMaxFrame, still within libDaisy's 128 bytes) is
+    // NAKed but not cached. It must not clear the local-edit marker of the cached earlier write.
+    {
+        Device d;
+        uint8_t frame[proto::kMaxFrame];
+        const uint8_t cell[] = {0, 0, 50, 1};
+        const auto size = proto::BuildFrame(frame, 0, proto::SetCell, 26, cell, sizeof(cell));
+        d.SendRaw(frame, size);
+        assert(d.Collect().frame.command == uint8_t(proto::SetCell | proto::kReplyBit));
+        Patch local = d.module.controller.CurrentPatch();
+        local.lfo[0].rate = 4321;
+        assert(d.module.controller.LoadPatchLocal(local) == Status::Ok);
+        uint8_t big[127] = {0xF0, proto::kManufacturer, proto::kProject[0], proto::kProject[1], proto::kVersion,
+                            0, proto::SetName, 27, 100};
+        big[sizeof(big) - 1] = 0xF7;
+        d.SendRaw(big, sizeof(big));
+        const auto nak = d.Collect();
+        assert(nak.frame.command == proto::kNak && nak.payload[1] == proto::ErrLength);
+        d.SendRaw(frame, size);
+        const auto retry = d.Collect();
+        assert(retry.frame.command == uint8_t(proto::SetCell | proto::kReplyBit));
+        proto::Reader r(retry.payload.data(), retry.payload.size());
+        assert(r.U7() == 0);
+        r.U7();
+        assert(r.U32() == d.module.controller.CurrentCrc());
+        assert(d.module.controller.CurrentPatch().lfo[0].rate == 4321);
+    }
+}
+#endif
+
 int main() {
     TestCrcAndSerialization();
     TestValidation();
@@ -1069,6 +1146,9 @@ int main() {
     TestProtocolCommands();
     TestFramingErrors();
     TestControllerBehavior();
+#if MOD_ON_DAISY_LOCAL_EDITS
+    TestLocalRetryCache();
+#endif
     TestNoAllocation();
     TestFuzz();
 #if MOD_ON_DAISY_EXTENSIONS

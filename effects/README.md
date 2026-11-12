@@ -13,7 +13,8 @@ Dev Kit:
 | [Echo Delay](echo-delay/) | `echo-delay-fx` | v0.1.0: the tape-like echo of the Audrey II, up to 5 s per side; also used by `audrey-3`; host tests and ARM build passed, hardware test pending |
 | [SC Reverb](sc-reverb/) | `sc-reverb-fx` | v0.1.0: ReverbSc from DaisySP-LGPL (LGPL-2.1) under the FX contract; also used by `audrey-3`; host tests and ARM build passed, hardware test pending |
 | [FV-1 interpreter](fv1-vm/) | `fv1-vm-fx` | Research / feasibility study: runs 128-word FV-1 programs at 32 kHz; own demo programs, local program tables never committed; also used by `toy-piano-fv1`; host tests and ARM build passed, hardware test pending |
-| [Granular / Freeze](granular/) | `granular-fx` | Planned |
+| [Cumulonimbus](cumulonimbus/) | `cumulonimbus-fx`, `cumulonimbus-fx-32` | v0.1.0: the Clouds granular path (cross-checked with Nimbus and Cumuloid) as a stereo wet-only effect with a 48 kHz or a 32 kHz grain kernel, plus the Torus reverb chain; also used by `toy-piano-cumulonimbus`; host tests and ARM builds passed, hardware test pending |
+| [Granular / Freeze](granular/) | `granular-fx` | Planned (the live Clouds-style granular effect is now [Cumulonimbus](cumulonimbus/)) |
 
 Ambient Reverb has its own source, host tests, README, and build directory.
 Other effects will get the same structure when implemented. DSP actually shared

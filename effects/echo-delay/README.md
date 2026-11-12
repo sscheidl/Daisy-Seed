@@ -7,7 +7,7 @@ saturates instead of growing. Wet-only under FX contract 1.0, with its own firmw
 
 | Status | |
 | --- | --- |
-| Version | Core and firmware 0.1.0 (`src/version.h`) |
+| Version | Core and firmware 0.1.1 (`src/version.h`) |
 | Software | Host and ARM checks, see CHANGELOG |
 | Hardware | NOT MEASURED, [hardware test](docs/HARDWARE_TEST.md) |
 

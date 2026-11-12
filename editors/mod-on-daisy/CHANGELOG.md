@@ -3,6 +3,19 @@
 Versions come from `CMakeLists.txt` (standalone and VST3) and `web/version.js` (browser).
 Hardware results are recorded in the test sheets, never here.
 
+## 0.5.1 / browser 0.4.1 (2026-11-11, branch `claude/toy-piano-granular-fx`, hardware NOT MEASURED)
+
+* **Device-side changes reach an idle editor** (PR #108 review R5): while connected and nothing is
+  open (no edit pending or in flight, no pull running), the standalone, the VST3 (shared core
+  `Session::PollCrc`) and the browser editor (`pollCrc`) read the patch CRC every 2 s with `GET_MATRIX`
+  and reload the device state once it differs from the editor's. An instrument control that edits the
+  patch itself (Toy Piano on Cumulonimbus: the Piano-page source-rate pots) therefore shows up within
+  about 2 s. No protocol or firmware change: every firmware answers `GET_MATRIX`. A poll answer is
+  ignored if an edit started meanwhile, and a lost poll is silent (the health state reports silence).
+  An editor in step does not reload. Traffic: one 10-byte request and its 100-byte reply every 2 s.
+* `mod_sim` gets `L <source> <rate>`, an edit on the simulated instrument that sends no message, for
+  the browser end-to-end test.
+
 ## 0.5.0 (2026-11-08, branch `claude/dcp-sd-page`, hardware NOT MEASURED)
 
 * **Daisy Control Panel**: the standalone app is renamed (window title, EXE

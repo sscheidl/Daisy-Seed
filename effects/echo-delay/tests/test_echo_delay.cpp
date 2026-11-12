@@ -31,18 +31,18 @@ static void TestContract() {
     StereoEcho echo;
     float in[kBlock] = {1.f}, left[kBlock], right[kBlock];
     left[0] = right[0] = 7.f;
-    echo.Process(StereoBlock{in, in, left, right, 1}); // not prepared: nothing happens
+    CHECK(!echo.Process(StereoBlock{in, in, left, right, 1})); // not prepared: rejected, nothing happens
     CHECK(left[0] == 7.f);
     CHECK(!echo.Prepare({44100, kBlock}, *memory));
     CHECK(!echo.Prepare({48000, 0}, *memory));
     CHECK(echo.Prepare({48000, kBlock}, *memory));
-    echo.Process(StereoBlock{in, in, left, right, kBlock + 1}); // too long: rejected
+    CHECK(!echo.Process(StereoBlock{in, in, left, right, kBlock + 1})); // too long: rejected
     CHECK(left[0] == 7.f);
-    echo.Process(StereoBlock{in, in, left, left, 1}); // shared output: rejected
+    CHECK(!echo.Process(StereoBlock{in, in, left, left, 1})); // shared output: rejected
     CHECK(left[0] == 7.f);
-    echo.Process(StereoBlock{in, in, left, right, 0}); // no-op
+    CHECK(echo.Process(StereoBlock{in, in, left, right, 0})); // no-op
     CHECK(left[0] == 7.f);
-    echo.Process(StereoBlock{in, in, left, right, kBlock}); // wet-only: no dry signal
+    CHECK(echo.Process(StereoBlock{in, in, left, right, kBlock})); // wet-only: no dry signal
     CHECK(left[0] == 0.f && right[0] == 0.f);
 }
 
@@ -189,6 +189,34 @@ static void TestWetHost() {
     CHECK(std::isfinite(out_left[0]));
 }
 
+// R13: a block the echo rejects (unprepared, or longer than its prepared max_block) leaves the
+// host's wet buffers unwritten; the host must then return the exact dry input.
+static void TestWetHostRejection() {
+    float in_l[kBlock], in_r[kBlock];
+    for(std::size_t i = 0; i < kBlock; ++i) {
+        in_l[i] = .25f + float(i) * .001f;
+        in_r[i] = -.125f - float(i) * .001f;
+    }
+    auto memory = std::make_unique<StereoEcho::Storage>();
+    for(int prepared = 0; prepared < 2; ++prepared) {
+        StereoEcho echo;
+        if(prepared) CHECK(echo.Prepare({48000, 32}, *memory)); // the host accepts 48
+        seed::audio::WetHost<StereoEcho, kBlock> host(echo);
+        for(float mix : {0.f, .5f, 1.f})
+            for(int inplace = 0; inplace < 2; ++inplace) {
+                host.Reset(true, mix);
+                float ol[kBlock], orr[kBlock];
+                for(std::size_t i = 0; i < kBlock; ++i) {
+                    ol[i] = in_l[i];
+                    orr[i] = in_r[i];
+                }
+                host.Process(inplace ? ol : in_l, inplace ? orr : in_r, ol, orr, kBlock);
+                for(std::size_t i = 0; i < kBlock; ++i)
+                    CHECK(ol[i] == in_l[i] && orr[i] == in_r[i]);
+            }
+    }
+}
+
 int main() {
     TestContract();
     TestParameters();
@@ -196,6 +224,7 @@ int main() {
     TestBounded();
     TestUpstreamSound();
     TestWetHost();
+    TestWetHostRejection();
     if(failures) {
         std::printf("%d failure(s)\n", failures);
         return 1;

@@ -51,7 +51,7 @@ class ComponentTests(unittest.TestCase):
                 buildable.extend(match.group(1).split())
         self.assertEqual(set(buildable), set(data['products']))
         self.assertEqual(manifest.read_version(data['components']['mod-on-daisy']['version']), '0.1.0')
-        self.assertEqual(manifest.read_version(data['components']['mod-editor-web']['version']), '0.4.0')
+        self.assertEqual(manifest.read_version(data['components']['mod-editor-web']['version']), '0.4.1')
 
     def test_composition_and_image_identity(self):
         for effect in ('torus', 'ambient'):
@@ -227,7 +227,11 @@ class ComponentTests(unittest.TestCase):
             # Shared saturation: its consumers only, no longer every suite.
             'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
             'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
-            'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst'),
+            'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst',
+                                           'cumulonimbus'),
+            # Cumulonimbus: its own suite; the Toy Piano product also runs the Toy Piano suite.
+            'effects/cumulonimbus/src/clouds/grain.h': ('cumulonimbus',),
+            'instruments/toy-piano/src/cumulonimbus_host.h': ('toy', 'cumulonimbus'),
             'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             'tests/fixtures/acid-seq/manifest.json': ('acid303', 'drive', 'delay', 'acidseq'),

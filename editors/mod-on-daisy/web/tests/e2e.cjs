@@ -4,7 +4,7 @@
 //
 //   node tests/e2e.cjs <path to mod_sim> [screenshot dir]
 // Needs Playwright with Chromium (preinstalled in the cloud environment).
-// E2E_ONLY=nebulae runs one test, for a quick check of a single instrument.
+// E2E_ONLY=nebulae (or polling) runs one test, for a quick check of a single instrument.
 'use strict';
 const assert = require('assert');
 const fs = require('fs');
@@ -237,6 +237,28 @@ async function testToyPiano(browser) {
   console.log('PASS toy-piano: connect, columns, greyed cells, keyboard/drag/wheel/slider, on/off, sources, limit 8, monitor, file save/load, CRC agreement');
 }
 
+// A patch change on the instrument itself (no message to the editor, e.g. a pot that owns a
+// source rate) reaches an idle editor through the CRC poll; an editor in step does not reload.
+async function testDevicePolling(browser) {
+  const sim = startSim('toy-piano');
+  const page = await openEditor(browser, sim);
+  await page.click('#connect');
+  await page.waitForFunction(() => document.getElementById('status').textContent.includes('toy-piano'));
+  const stop = pumpTime(page, sim);
+  await new Promise((r) => setTimeout(r, 4500)); // two polls while in step
+  assert.strictEqual(await page.evaluate(() => deviceReloads), 0, 'no reload while editor and device agree');
+  await sim.command('L 0 1234'); // LFO 1 rate changed on the instrument
+  await page.waitForFunction(() => state.patch.lfo[0].rate === 1234, null, { timeout: 8000 });
+  await settle(page);
+  assert.strictEqual(await page.evaluate(() => deviceReloads), 1);
+  assert((await page.textContent('#log')).includes('state changed'), 'the reload is logged');
+  assert.strictEqual(await pageCrc(page), (await dump(sim)).crc, 'editor and device agree after the reload');
+  stop();
+  await page.close();
+  sim.proc.stdin.end();
+  console.log('PASS device polling: instrument-side rate change reloaded by the idle CRC poll, no reload in step');
+}
+
 async function testPhysicalModeling(browser) {
   const sim = startSim('physical-modeling');
   const page = await openEditor(browser, sim);
@@ -461,8 +483,11 @@ async function testOffline(browser) {
   try {
     if (process.env.E2E_ONLY === 'nebulae') {
       await testNebulae(browser);
+    } else if (process.env.E2E_ONLY === 'polling') {
+      await testDevicePolling(browser);
     } else {
       await testToyPiano(browser);
+      await testDevicePolling(browser);
       await testPhysicalModeling(browser);
       await testCorrections(browser);
       await testNebulae(browser);

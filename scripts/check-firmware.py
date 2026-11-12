@@ -47,6 +47,20 @@ ACID_SEQ = {
     'ToyPianoFv1-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION', 'TOYPIANO-FV1-FW-VERSION='),
     'ToyPianoFv1Local-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION',
                            'TOYPIANO-FV1-FW-VERSION='),
+    # Cumulonimbus (Clouds granular FX): standalone diagnostic images and Toy Piano on Cumulonimbus,
+    # each at the 48 kHz and the 32 kHz internal grain rate; Profile = diagnostic scenarios.
+    'CumulonimbusFx48-v': ('effects/cumulonimbus/src/version.h', 'CUMULONIMBUS_FX_FIRMWARE_VERSION',
+                           'CUMULONIMBUS-FX-VERSION='),
+    'CumulonimbusFx32-v': ('effects/cumulonimbus/src/version.h', 'CUMULONIMBUS_FX_FIRMWARE_VERSION',
+                           'CUMULONIMBUS-FX-VERSION='),
+    'ToyPianoCumulonimbus48-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_CUMULONIMBUS_VERSION',
+                                 'TOYPIANO-CUMULONIMBUS-FW-VERSION='),
+    'ToyPianoCumulonimbus32-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_CUMULONIMBUS_VERSION',
+                                 'TOYPIANO-CUMULONIMBUS-FW-VERSION='),
+    'ToyPianoCumulonimbus48Profile-v': ('instruments/toy-piano/src/composed_version.h',
+                                        'TOY_PIANO_CUMULONIMBUS_VERSION', 'TOYPIANO-CUMULONIMBUS-FW-VERSION='),
+    'ToyPianoCumulonimbus32Profile-v': ('instruments/toy-piano/src/composed_version.h',
+                                        'TOY_PIANO_CUMULONIMBUS_VERSION', 'TOYPIANO-CUMULONIMBUS-FW-VERSION='),
 }
 acid = next((prefix for prefix in ACID_SEQ if path.name.startswith(prefix)), None)
 if acid:
