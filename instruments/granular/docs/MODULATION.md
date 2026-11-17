@@ -1,8 +1,11 @@
 # Nebulae + Mod on Daisy (separate build)
 
-**Image:** `build/mod/NebulaeMod-v0.2.1.bin` (`make PROJECT=granular-mod`, or
-`make PROJECT=granular MOD=1`). Firmware marker: `NEBULAE-MOD-VERSION=0.2.1`; IDENTIFY
-reports the key `nebulae` and the version `0.2.1`, the same version as image and marker.
+**Image:** `build/mod/NebulaeMod-v0.2.2.bin` (`make PROJECT=granular-mod`, or
+`make PROJECT=granular MOD=1`). Firmware marker: `NEBULAE-MOD-VERSION=0.2.2`; IDENTIFY
+reports the key `nebulae` and the version `0.2.2`, the same version as image and marker.
+The numbers and hashes below were recorded for 0.2.1; 0.2.2 changes both images on purpose
+(real-time repair, [changelog](../CHANGELOG.md)) and keeps the rule that the MOD build
+with an empty matrix sounds bit-identical to the regular build.
 **Status:** software tested, hardware test pending (**NOT MEASURED**). Checklist:
 [MOD_HARDWARE_TEST.md](MOD_HARDWARE_TEST.md).
 
@@ -10,8 +13,8 @@ This is an **additional, separate build** of Nebulae with the
 [Mod on Daisy](../../../modules/mod-on-daisy/) modulation matrix, following the
 [Looper](../../looper/docs/MODULATION.md) pattern. The regular firmware stays as it is:
 
-* `make PROJECT=granular` compiles exactly the 0.2.1 code. Its image is **byte-identical**
-  to `main`: 183,740 bytes, SHA-256
+* On 0.2.1, `make PROJECT=granular` compiled exactly the code without the matrix; its
+  image was **byte-identical** to `main`: 183,740 bytes, SHA-256
   `cbc4c37686be32eca39825459f95c676af7a7010c3c719faba1cf0def4e381ff`, the value recorded
   in [SD_CARD_INTEGRATION_2026-11-03.md](../../../docs/SD_CARD_INTEGRATION_2026-11-03.md).
   It contains no matrix symbol.

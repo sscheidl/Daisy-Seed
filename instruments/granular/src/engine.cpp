@@ -1,19 +1,33 @@
 #include "engine.h"
+#include "profile.h"
 #include <cstring>
 namespace neb {
 void Engine::Init(int16_t* a,int16_t* b,uint32_t cap,int16_t* file,FileBridge& bridge) {
     bank_[0]=a; bank_[1]=b; cap_=cap; file_=file; bridge_=&bridge;
     // Everything in the object is initialized by its constructor AFTER SDRAM init.
-    for(unsigned c=0;c<2;++c) {vocoder_[c].Init(kRate);limiter_[c].Init(kRate);}
+    work_.Init();
+    for(unsigned c=0;c<2;++c) {vocoder_[c].Init(kRate,work_);limiter_[c].Init(kRate);}
     BuildWindows(bank_windows_);
     for(unsigned i=0;i<8;++i) smoothed_[i]=ui.params.primary[i];
 }
 float Engine::Random() {random_^=random_<<13;random_^=random_>>17;random_^=random_<<5;return float(random_&0xffffff)/16777216.f;}
+void Engine::ResetVocoders() {
+    vocoder_[0].Reset();
+    vocoder_[1].Reset(schedule_==kScheduleStagger?int(kBlock):0);
+    vocoder_mono_=false;pending_valid_=false;
+    std::fill(voc_delay_,voc_delay_+kBlock,0.f);
+}
 void Engine::ResetDsp() {
-    for(unsigned c=0;c<2;++c) {vocoder_[c].Reset();limiter_[c].Init(kRate); for(auto& g:grains_[c]) g.active=false;}
+    ResetVocoders();
+    for(unsigned c=0;c<2;++c) {limiter_[c].Init(kRate); for(auto& g:grains_[c]) g.active=false;}
     grain_clock_[0]=grain_clock_[1]=1; Transition();
 }
 void Engine::Transition() {fade_from_[0]=tail_[0];fade_from_[1]=tail_[1];transition_=0;}
+void Engine::SkipVocoder(unsigned blocks) {
+    // Fresh vocoders fade in over their first frames; the 256-sample ramp covers the cut.
+    if(!skip_vocoder_) {ResetVocoders();Transition();}
+    skip_vocoder_=blocks;
+}
 void Engine::BeginRecord() {
     if(finalizing || !cap_) return;
     recording=true; overdub_=live_length_!=0; write_=0; copy_=0;
@@ -90,9 +104,13 @@ uint16_t Engine::Status() const {
 void Engine::RenderGrains(const PcmView& src,const float* left,const float* right,
                           unsigned n,float density,float pitch,float input_gain) {
     std::fill(gran_[0],gran_[0]+n,0);std::fill(gran_[1],gran_[1]+n,0);
+    // Hoisted out of the sample loop without changing a value: the clock step, the two
+    // pan gains of a grain (set when it starts) and the channel readers.
+    const float clock_step=density/kRate;
+    const PcmReader read[2]={PcmReader(src,0),PcmReader(src,1)};
     for(unsigned s=0;s<n;++s) {
         for(unsigned c=0;c<2;++c) {
-            grain_clock_[c]+=density/kRate;
+            grain_clock_[c]+=clock_step;
             bool launch=grain_clock_[c]>=1 || (s==0 && pending_trigger_);
             if(launch) {
                 grain_clock_[c]=std::fmod(grain_clock_[c],1.0);
@@ -111,6 +129,7 @@ void Engine::RenderGrains(const PcmView& src,const float* left,const float* righ
                     if(g->position<0) g->position+=src.frames;
                     g->step=pitch*std::pow(2.f,2*(2*Random()-1)*alt_[Pitch]);
                     g->pan=c*(1-alt_[Size])+Random()*alt_[Size];
+                    g->gain_left=std::sqrt(1-g->pan);g->gain_right=std::sqrt(g->pan);
                     g->delay=uint32_t(Random()*alt_[Density]*alt_[Density]*10*kRate);
                 }
             }
@@ -120,8 +139,8 @@ void Engine::RenderGrains(const PcmView& src,const float* left,const float* righ
                 const float ep=g.envelope*WIN_LEN;const unsigned i=unsigned(ep);
                 if(i>=WIN_LEN) {g.active=false;continue;}
                 const float env=window_[i]+(ep-i)*(window_[i+1]-window_[i]);
-                const float x=src.Read(g.position,c)*GRAIN_AMP*env;
-                gran_[0][s]+=x*std::sqrt(1-g.pan);gran_[1][s]+=x*std::sqrt(g.pan);
+                const float x=read[c](g.position)*GRAIN_AMP*env;
+                gran_[0][s]+=x*g.gain_left;gran_[1][s]+=x*g.gain_right;
                 const float fm=(!live && smoothed_[Density]>.001f)?alt_[Blend]*(c?right[s]:left[s])*input_gain:0;
                 g.position+=g.step*(1+std::clamp(fm,-4.f,4.f));
                 if(g.position<0 || g.position>=src.frames) {
@@ -134,6 +153,41 @@ void Engine::RenderGrains(const PcmView& src,const float* left,const float* righ
     }
     pending_trigger_=false;
     limiter_[0].Process(gran_[0],int(n));limiter_[1].Process(gran_[1],int(n));
+}
+// kScheduleCommon and kScheduleStagger: both channels on this block's inputs; in the
+// stagger mode the right Mincer's hop counter runs 256 samples behind (ResetVocoders).
+void Engine::RunVocodersCommon(const PcmView& src,float ratio,float amp,unsigned n) {
+    if(src.channels==1) {
+        // A mono source feeds both vocoder channels the same samples, so channel 1 would
+        // compute exactly what channel 0 computes: halve the hop and copy.
+        vocoder_[0].Process(positions_,src,0,ratio,amp,voc_[0],int(n));
+        std::copy(voc_[0],voc_[0]+n,voc_[1]);
+        vocoder_mono_=true;
+        return;
+    }
+    // Back to a stereo source without a reset (not a path the UI has, kept safe):
+    // channel 1 takes over the state it would have reached on the mono source.
+    if(vocoder_mono_) {vocoder_[1].CopyStateFrom(vocoder_[0]);vocoder_mono_=false;}
+    for(unsigned c=0;c<2;++c) vocoder_[c].Process(positions_,src,c,ratio,amp,voc_[c],int(n));
+}
+// kScheduleCompensated: the left channel computes logical block N now and keeps the
+// result; the right channel computes logical block N-1 from the stored inputs of the
+// previous call, and both channels output logical block N-1. The block after a reset
+// outputs silence (priming). The stored PcmView is used one block later only; every
+// source change goes through ResetDsp() before main may touch the PCM.
+void Engine::RunVocodersCompensated(const PcmView& src,float ratio,float amp,unsigned n) {
+    vocoder_[0].Process(positions_,src,0,ratio,amp,voc_left_now_,int(n));
+    if(pending_valid_ && pending_n_==n) {
+        std::copy(voc_delay_,voc_delay_+n,voc_[0]);
+        if(pending_src_.channels==1) {std::copy(voc_delay_,voc_delay_+n,voc_[1]);vocoder_mono_=true;}
+        else {
+            if(vocoder_mono_) {vocoder_[1].Reset();vocoder_mono_=false;}  // not a UI path: fade in
+            vocoder_[1].Process(pending_positions_,pending_src_,1,pending_ratio_,pending_amp_,voc_[1],int(n));
+        }
+    } else {std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);}
+    std::copy(voc_left_now_,voc_left_now_+n,voc_delay_);
+    std::copy(positions_,positions_+n,pending_positions_);
+    pending_src_=src;pending_ratio_=ratio;pending_amp_=amp;pending_n_=n;pending_valid_=true;
 }
 void Engine::Process(const float* left,const float* right,float* ol,float* or_,unsigned n) {
     if(!n || n>kBlock) return;
@@ -168,6 +222,7 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
     speed_=LawSpeed(KnobSpeed(smoothed_[Speed]),frozen);
     const double start=std::min(double(smoothed_[Start])*src.frames,double(src.frames?src.frames-1:0));
     const double length=std::max(1.0,double(smoothed_[Size]*smoothed_[Size])*(src.frames-start));
+    const double advance=speed_*double(src.rate)/kRate;
     for(unsigned s=0;s<n;++s) {
         if(!src.frames) {position_=0;positions_[s]=0;continue;}
         if(position_<0 || position_>=length) {
@@ -175,7 +230,7 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
             ++resets;reset_light_=1920;
         }
         positions_[s]=start+position_;
-        position_+=speed_*double(src.rate)/kRate;
+        position_+=advance;
     }
     last_read_frame_=uint32_t(positions_[n-1]);
     WinMix(bank_windows_,smoothed_[Window],window_);
@@ -185,10 +240,22 @@ void Engine::Process(const float* left,const float* right,float* ol,float* or_,u
     if(live) LawBlendLive(smoothed_[Blend],&bv,&bd,&bg);
     else {bv=std::sqrt(1-smoothed_[Blend]);bg=std::sqrt(smoothed_[Blend]);}
     const bool read_ok=src.frames && (live || !file_detached_);
+    const bool skip_vocoder=skip_vocoder_!=0;
+    if(skip_vocoder) --skip_vocoder_;
+#if NEBULAE_PROFILE
+    profile::block={};
+    profile::block.skipped=skip_vocoder;
+#endif
     if(read_ok) {
-        for(unsigned c=0;c<2;++c)
-            vocoder_[c].Process(positions_,src,c,pitch_*src.rate/kRate,live?1.f:.8f,voc_[c],int(n));
+        NEB_PROFILE_BEGIN(vocoder);
+        const float ratio=pitch_*src.rate/kRate,amp=live?1.f:.8f;
+        if(skip_vocoder) {std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);}
+        else if(schedule_==kScheduleCompensated) RunVocodersCompensated(src,ratio,amp,n);
+        else RunVocodersCommon(src,ratio,amp,n);
+        NEB_PROFILE_ADD(vocoder,vocoder);
+        NEB_PROFILE_BEGIN(grains);
         RenderGrains(src,left,right,n,density,pitch_*src.rate/kRate,input_gain);
+        NEB_PROFILE_ADD(grains,grains);
     } else {
         std::fill(voc_[0],voc_[0]+n,0);std::fill(voc_[1],voc_[1]+n,0);
         std::fill(gran_[0],gran_[0]+n,0);std::fill(gran_[1],gran_[1]+n,0);

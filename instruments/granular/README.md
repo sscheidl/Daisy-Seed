@@ -1,8 +1,17 @@
-# Nebulae on Daisy v0.2.1
+# Nebulae on Daisy v0.2.2
 
-**v0.2.1: SOFTWARE PASS / HARDWARE PENDING** ([release report](docs/V0_2_RELEASE_REPORT.md)).
-Patch 0.2.1 fixes card ownership changes during a pending management restart;
-see the [current integration and test-candidate report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md).
+**v0.2.2: SOFTWARE PASS / HARDWARE PENDING.** 0.2.2 is the real-time repair after the
+first hardware contact: 0.2.1 froze the kit as soon as a sample played, because its phase
+vocoder needed 31 to 34 ms per hop in a 5.33 ms block (MEASURED 2026-11-09,
+[diagnosis](docs/OVERLOAD_DIAGNOSIS.md)). The DSP state moved from SDRAM to AXI SRAM, the
+hop got a faster FFT and cheaper phase loops, the two vocoder channels compute their frames
+in alternate blocks (the vocoder layer sounds 5.3 ms later; owner's decision 2026-11-17),
+and every image now protects itself against a sustained overload ([changelog](CHANGELOG.md)).
+On the kit the diagnostic build ran the extreme settings without an overrun (MEASURED
+2026-11-11); the sound of 0.2.2 is **NOT MEASURED** (no listening test).
+0.2.1 ([release report](docs/V0_2_RELEASE_REPORT.md)) fixed card ownership changes during a
+pending management restart;
+see the [integration and test-candidate report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md).
 New: sample banks with free file names, SW17 bank selection, FAT32 and exFAT cards,
 and a Windows SD management mode in the same image ([architecture](docs/V0_2_ARCHITECTURE.md),
 [control protocol](docs/CONTROL_PROTOCOL.md)). Nothing of v0.2.0 has run on a board yet.
@@ -41,6 +50,16 @@ Host validation used LLVM-MinGW: `HOST_CXX=clang++`. Windows ThreadSanitizer is
 unsupported; Linux CI has a `test-thread` target. The workflow uploads BIN, ELF,
 MAP and SHA256SUMS after a push. See validation for executed CI evidence.
 Generated outputs and toolchains are not tracked.
+
+## Diagnostic build
+
+`make -C instruments/granular MOD=1 PROFILE=1` (or without `MOD=1`) builds
+`build/mod-profile/NebulaeModProfile-v<version>.bin`: the same image plus DWT cycle splits
+of the audio callback, a budget guard that keeps USB and LEDs alive after an overrun, a
+boot benchmark of one vocoder hop from SDRAM and from AXI SRAM, and the PROFILE SysEx
+([protocol](docs/CONTROL_PROTOCOL.md)). `tools/nb_probe.py status|profile` reads the
+counters from the PC. Never a release: with the guard active the sound is wrong. Why it
+exists and what it found: [OVERLOAD_DIAGNOSIS.md](docs/OVERLOAD_DIAGNOSIS.md).
 
 ## Mod on Daisy build
 

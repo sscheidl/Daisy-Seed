@@ -45,7 +45,11 @@ private:
 };
 
 // ---------- phase vocoder (Csound mincer, mono variant) ----------
-class Mincer {
+// Reference implementation, the one shipped up to 0.2.1: plain radix-2 RFFT, libm hypotf,
+// PcmView::Read per sample, 104 KB of state per channel. It measured 14 ms per hop and
+// channel in SDRAM and 3.2 ms in AXI SRAM on the kit (docs/OVERLOAD_DIAGNOSIS.md); the
+// firmware uses Mincer below. Kept unchanged as the numerical oracle of the host tests.
+class ReferenceMincer {
 public:
     void  Init(float sr);
     void  Reset();
@@ -60,6 +64,37 @@ private:
     float outframe_[DECIM*FFT_N];
     int   framecnt_[DECIM], cnt_, curframe_;
     RFFT  fft_;
+};
+
+// Working memory the Mincer channels of one engine share: the Hann window and the
+// frames of the hop being computed. Audio callback only, never across a Process call.
+struct MincerWork {
+    float window[FFT_N];
+    float front[FFT_N], back[FFT_N];              // windowed frames; front is also the IFFT output
+    float front_bins[FFT_N+2], back_bins[FFT_N+2];
+    void  Init();
+};
+
+// Production vocoder since 0.2.2: the same algorithm, hop grid and arithmetic order as
+// ReferenceMincer, with a CMSIS-DSP real FFT (src/fft.h), sqrtf for hypotf and
+// PcmReader for the window fill. The output differs at float rounding level only
+// (host A/B in tests/test_nebulae.cpp). State per channel: 41 KB.
+class Mincer {
+public:
+    void  Init(float sr, MincerWork& work);
+    // `phase` samples of the first hop interval are skipped, so the hops of this channel
+    // fall `phase` samples after those of a channel reset with 0 (plain stagger).
+    void  Reset(int phase = 0);
+    void  Process(const double* frame_pos, const PcmView& buf, unsigned channel,
+                  float pitch, float amp, float* out, int n);
+    // Phase state and overlap-add frames of another channel (same MincerWork).
+    void  CopyStateFrom(const Mincer& other);
+private:
+    void  Hop(double frame_pos, const PcmView& buf, unsigned channel, float pitch);
+    MincerWork* work_ = nullptr;
+    float sr_, prev_[FFT_N+2];
+    float outframe_[DECIM*FFT_N];
+    int   framecnt_[DECIM], cnt_, curframe_;
 };
 
 // RMS limiter: identity below RMS_CEIL, attenuation above. NOT a leveler.

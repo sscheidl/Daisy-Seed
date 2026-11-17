@@ -1,5 +1,103 @@
 # Handover — continuing work locally
 
+**State 2026-11-17 (Claude): decision taken, C is the product default.** The owner dropped
+the listening test and chose the compensated stagger (C) for `granular` and `granular-mod`;
+the default is changed, host suites rerun, final images stored (OVERLOAD_DIAGNOSIS.md
+section 11 "Decision", CHANGELOG). P2 MEASURED 2026-11-17 on the final image (section 12:
+Live publication and three overdubs, 0 overruns; owner: keys, LEDs, sound fine). PR #111
+opened 2026-11-17 (merge is the owner's). Open: P3 (editor and panel against a stalled kit,
+separate), rebasing PR #107 onto this branch. Listening stays NOT MEASURED; the guide is
+LISTENING_TEST_0.2.2.md.
+
+**Earlier plan for 2026-11-10 (steps 0 and 1 done, 2 dropped, 3 under way):** Head of
+`claude/nebulae-overload-9c0df4` holds Nebulae 0.2.2 with the three vocoder scheduling
+candidates; images in the main checkout's `firmware/` store under `granular-mod/0.2.2+<commit>`
+(A, common grid), `…-stagger` (B), `…-pipeline` (C), plus `…-profile` and
+`…-profile-pipeline` for timing, all `candidate`, hardware of B and C NOT MEASURED. Order:
+0. **Done 2026-11-11:** the C profile image ran on the kit with 0 overruns and 0 skips,
+   extreme setting 90 % of the block (OVERLOAD_DIAGNOSIS.md section 11). Steps 2 to 4 open.
+1. (done) Owner flashes `NebulaeModProfilePipeline-v0.2.2.bin`; Claude probes with
+   `instruments/granular/tools/nb_probe.py profile` (one client on the port): hop block at
+   PITCH centre and maximum, grains 0 and 127, 60 s at the worst settings; table in
+   OVERLOAD_DIAGNOSIS.md section 11.
+2. Listening per Codex's sheet (CODEX_SECOND_OPINION_2.md): one flash per image A, B, C,
+   the same takes recorded in the DAW, compared blind, stereo and mono fold-down.
+3. Owner decides the shipped schedule; Claude sets it as the product default, reruns the
+   host suite, stores the final images, records P2 (S1 first press / first stop / second
+   recording) and opens the PR. P3 (editor and panel against a stalled kit) needs the
+   0.2.1 image `granular-mod/0.2.1+85f8a13-dirty` and stays a separate step.
+The kit was left running the build-dir profile image `5e62053b…` (0.2.2, common grid).
+
+**Handover 2026-11-09 (evening), Claude → Codex: second review, hop scheduling of the
+Nebulae vocoder (answered, see below).** Brief:
+[CODEX_SECOND_OPINION_2_BRIEF.md](instruments/granular/docs/CODEX_SECOND_OPINION_2_BRIEF.md).
+State: 0.2.2 (head d090a3c) runs on the kit and no longer freezes; hop block 3.2 to
+4.1 ms for both channels, the extreme setting (PITCH max + max grains, 107 %) still runs
+into the overload protection. The owner wants to hear the variants (keep, plain stagger,
+stagger with compensation = two-block pipeline, rounding-level arithmetic) and asks Codex
+for a technical review first, in particular of the inter-channel effects of a plain
+stagger. Deliverable: `instruments/granular/docs/CODEX_SECOND_OPINION_2.md`. Read-only;
+the kit runs a diagnostic image (`5e62053b…`, build dir) and is the owner's.
+
+**Codex second review complete (2026-11-09).**
+[Review and listening sheet](instruments/granular/docs/CODEX_SECOND_OPINION_2.md#listening-sheet).
+Use fixed A/B/C images from the central store and capture matched stereo takes once per
+image. Compare the captures by hidden labels in the DAW, with a mono fold-down and a
+separate load run. Plain stagger can change both the source window and stereo timing.
+Compensated stagger is the preferred candidate if the wet delay, recording behaviour
+and full callback timing pass. Claude can prepare the candidates after the owner's
+decision. The owner flashes, captures and listens. Listening, P2 and P3 remain NOT
+MEASURED.
+
+**Earlier handover 2026-11-09, Claude → Codex: Nebulae audio overload, second opinion before
+the fix (answered, see below).**
+
+* **Branch / worktree:** `claude/nebulae-overload-9c0df4`, head `d66ce97` plus this entry,
+  pushed; worktree `Daisy-Seed-worktrees/nebulae-overload-9c0df4` next to the main
+  checkout. No PR yet. `libDaisy` and `DaisySP` are junctions to the main checkout there:
+  run git with `--ignore-submodules=all` (or `GIT_CONFIG_COUNT=1
+  GIT_CONFIG_KEY_0=diff.ignoreSubmodules GIT_CONFIG_VALUE_0=all`) and never
+  `git worktree remove --force` it.
+* **State:** Nebulae on Daisy froze on its first hardware contact (2026-11-08) as soon as a
+  sample played. Root cause MEASURED 2026-11-09 with the diagnostic image
+  `NebulaeModProfile-v0.2.1.bin` (`be1296fb…f919`, store
+  `firmware/granular-mod/0.2.1+e6ad1e5-profile/`): the phase vocoder's hop takes 30.8 to
+  34.2 ms of a 5.333 ms block with the Engine in SDRAM (one channel: 14.0 ms in SDRAM,
+  3.16 ms in AXI SRAM). Every libDaisy interrupt has priority 0, so the overrun starves
+  USB, the control timer and the main loop. Record:
+  [OVERLOAD_DIAGNOSIS.md](instruments/granular/docs/OVERLOAD_DIAGNOSIS.md). No fix is
+  written. P2 (RECORD) and P3 (editor and panel crash on a stalled kit) are NOT MEASURED.
+  Regular and MOD images are byte-identical to `main` (`cbc4c376…`, `02e52f88…`).
+* **Kit:** runs the diagnostic image (budget guard active, sound meaningless), test card
+  inserted. Do not flash or probe it for this task; hardware stays the owner's.
+* **Codex second opinion (2026-11-09, complete):**
+  [Report](instruments/granular/docs/CODEX_SECOND_OPINION.md). The measurements
+  explain P1. On Seed3 the audio receive IRQ is DMA1 Stream 1, and the read-only
+  SD driver lowers SDMMC1 priority. AXI placement alone does not establish
+  stereo headroom. At the 70% total-load target, the reported grain and other
+  peaks would leave about 1.25 ms for both wet channels before driver overhead.
+  The existing PROFILE map cannot fit the full Engine alongside its AXI
+  benchmark object. Measure synchronized stereo in AXI before choosing the
+  optimizations. P2, P3 and listening remain NOT MEASURED.
+* **Claude, 2026-11-09, after the owner's "assess it and implement the fixes and
+  optimisations": Nebulae 0.2.2 written, host-tested, hardware NOT MEASURED.** Engine in
+  AXI SRAM, CMSIS-DSP real FFTs, `sqrtf` for `hypotf`, modulo-free window fill, relieved
+  grain loop, overload protection in every image; the stereo hop grid is unchanged.
+  Assessment of the second opinion point by point and the evidence:
+  [OVERLOAD_DIAGNOSIS.md](instruments/granular/docs/OVERLOAD_DIAGNOSIS.md) sections 9
+  and 10, [changelog](instruments/granular/CHANGELOG.md). Not followed: a placement-only
+  image first (it cannot pass by the report's own budget). New finding: the vocoder
+  algorithm amplifies last-bit rounding, so no sample comparison can be an acceptance
+  criterion; the tests compare against the reference's own rounding spread and
+  phase-independent measures.
+* **Next step (owner, then Claude):** the owner flashes `NebulaeModProfile-v0.2.2.bin`
+  from the store; Claude measures with `nb_probe.py profile` (section 10 table: hop
+  split in AXI SRAM, grains, overruns and skips, P2 with first press, first stop, second
+  recording). If the hop block fits, the owner flashes `NebulaeMod-v0.2.2.bin` and
+  listens. If it does not fit: Codex's synchronised two-block pipeline before any
+  channel stagger. Then P3 (editor and panel against a stalled kit, needs the 0.2.1
+  image from the store), the PR, and rebasing PR #107 (0.3.0) onto the fix.
+
 **Mandatory modularity, user decision 2026-11-01:**
 The [development policy](docs/MODULAR_DEVELOPMENT_POLICY.md) and AGENTS.md apply
 to all new Daisy developments and substantial extensions: instrument, FX,
