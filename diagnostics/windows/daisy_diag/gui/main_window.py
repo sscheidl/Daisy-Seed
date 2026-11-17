@@ -20,7 +20,7 @@ from .. import __version__
 from .. import protocol as p
 from ..session import ConnState, DeviceSession, SerialLink, list_serial_ports
 from ..simulator import SimulatedCable
-from ..nebulae import NEBULAE, NebulaeWorkflow, Phase, RtMidiLink, list_midi_ports
+from ..nebulae import NEBULAE, BackgroundScan, NebulaeWorkflow, Phase, list_midi_ports, open_rtmidi
 from ..nebulae_sim import SimulatedNebulae
 from ..looper import LOOPER
 from ..looper_sim import SimulatedLooper
@@ -130,6 +130,7 @@ class MainWindow(QMainWindow):
         self.neb_sim: SimulatedNebulae | None = None
         self.nebulae: NebulaeWorkflow | None = None
         self.paused = False
+        self._last_poll_error = ""
         self.sd_result: p.SdInfo | None = None
         self._last_sd_card: bool | None = None
         self._port_override = port
@@ -849,7 +850,7 @@ class MainWindow(QMainWindow):
             cable = self.cable
             self.session = DeviceSession(cable.ports, lambda port: cable.open(port, self._clock),
                                          self._clock, simulated=True)
-            self.nebulae = NebulaeWorkflow(self.session, lambda: [], RtMidiLink, self._clock,
+            self.nebulae = NebulaeWorkflow(self.session, lambda: [], open_rtmidi, self._clock,
                                            profiles=SHARE_PROFILES)
             self._sync_sim_controls()
         else:
@@ -857,8 +858,9 @@ class MainWindow(QMainWindow):
             self.session = DeviceSession(list_serial_ports, SerialLink, self._clock,
                                          port_override=self._port_override)
             # Performance mode has no COM port: Nebulae and the looper are found on
-            # USB-MIDI (python-rtmidi).
-            self.nebulae = NebulaeWorkflow(self.session, list_midi_ports, RtMidiLink, self._clock,
+            # USB-MIDI (python-rtmidi). Every MIDI driver call runs off the GUI thread: a kit
+            # whose firmware stalled must not freeze the panel (P3, 2026-11-08).
+            self.nebulae = NebulaeWorkflow(self.session, BackgroundScan(list_midi_ports), open_rtmidi, self._clock,
                                            profiles=SHARE_PROFILES)
         self.mode_sim.setChecked(simulation)
         self.mode_hw.setChecked(not simulation)
@@ -930,7 +932,13 @@ class MainWindow(QMainWindow):
         if not self.paused:
             self.session.poll()
             if self.nebulae is not None:
-                self.nebulae.poll()
+                try:
+                    self.nebulae.poll()
+                except Exception as exc:  # never let a device fault stop the panel's timer
+                    text = f"SD share: unexpected error ({exc}); the panel keeps running"
+                    if text != self._last_poll_error:
+                        self._last_poll_error = text
+                        self._log(text)
                 for kind, payload in self.nebulae.drain_events():
                     if kind == "log":
                         self._log(str(payload))

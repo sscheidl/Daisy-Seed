@@ -347,19 +347,51 @@ void EditorComponent::ConnectTo(int index) {
         session_.Connect(*simulator_, now_);
     } else {
         juce::String error;
-        midi_ = MidiPort::Open(p.out, p.in, error);
-        if(!midi_)
+        std::unique_ptr<MidiPort> port = MidiPort::Open(p.out, p.in, error);
+        if(!port)
             return Log(LogKind::Error, error);
-        // SQ first (Acid Seq firmwares); without an answer Mod on Daisy follows (R09).
-        sq_link_.send = [this](const uint8_t* b, std::size_t n) { return midi_ && midi_->Send(b, n); };
-        sq_session_.Connect(now_, 1);
-        md_pending_ = true;
+        AttachMidi(std::move(port));
     }
     port_.setSelectedItemIndex(index, juce::dontSendNotification);
     last_alert_ = 0; // messages of the previous device are over
     sd_.ScanNow();   // the SD share workflow probes the new port at once (NB/LP STATUS)
     Log(LogKind::Info, U("Connecting to ") + p.label + U(" …"));
     RefreshAll();
+}
+
+void EditorComponent::AttachMidi(std::unique_ptr<MidiPort> port) {
+    midi_ = std::move(port);
+    // SQ first (Acid Seq firmwares); without an answer Mod on Daisy follows (R09).
+    sq_link_.send = [this](const uint8_t* b, std::size_t n) { return midi_ && midi_->Send(b, n); };
+    sq_session_.Connect(now_, 1);
+    md_pending_ = true;
+}
+
+void EditorComponent::ConnectTestPort(std::unique_ptr<MidiPort> port) {
+    Disconnect();
+    user_disconnected_ = false;
+    AttachMidi(std::move(port));
+    last_alert_ = 0;
+    Log(LogKind::Info, U("Connecting to the self-test MIDI port …"));
+    RefreshAll();
+}
+
+// A kit whose firmware stalled stops completing MIDI sends (P3 of the Nebulae first-contact
+// test, 2026-11-08). The sender thread reports it; the port is closed in bounded time and the
+// editor carries on offline. Connecting again works once the kit answers (the VST3 retries
+// when the port list changes, e.g. after a power cycle).
+void EditorComponent::CheckMidiLink() {
+    if(!midi_ || !midi_->Lost())
+        return;
+    const juce::String reason = U(midi_->LostReason());
+    RouteMidiFrames(); // what arrived before still counts
+    const bool restarting = sd_.Following();
+    Disconnect();
+    if(restarting)
+        Log(LogKind::Info, U("The MIDI port was closed while the kit restarts (") + reason + U(")."));
+    else
+        Log(LogKind::Error, U("The Daisy is not answering: ") + reason + U(". The MIDI port was closed; editing "
+                              "continues offline. Connect again once the kit runs (power-cycle it if it stays silent)."));
 }
 
 void EditorComponent::ShowMatrix(bool on) {
@@ -493,6 +525,7 @@ void EditorComponent::Advance(uint32_t now_ms) {
                 session_.OnMessage(m.data(), m.size());
         }
     }
+    CheckMidiLink();
     RouteMidiFrames();
     if(sd_sim_midi_) { // the simulated instrument's control SysEx replies
         std::vector<std::vector<uint8_t>> replies;

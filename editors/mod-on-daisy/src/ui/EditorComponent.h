@@ -71,6 +71,10 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     // Applies pending view updates at once (the self-test has no message loop).
     void RefreshNow() { handleUpdateNowIfNeeded(); }
     bool PortOpen() const { return midi_ || simulator_ || sd_sim_midi_; }
+    // Self-test: connects through `port` (MidiPort::OpenForTest) as if the user chose a Daisy
+    // MIDI port, so the stalled-kit case (P3, 2026-11-08) runs without hardware.
+    void ConnectTestPort(std::unique_ptr<MidiPort> port);
+    MidiPort* OpenMidiPort() { return midi_.get(); }
     // Firmware update: restart the kit into the Daisy bootloader (no confirmation dialog).
     void StartFirmwareUpdate(int port_index);
     bool FirmwareUpdateWaiting() const { return boot_.Waiting(); }
@@ -211,6 +215,8 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     void SdAcknowledge();
     juce::String CurrentPortLabel() const;
     void RouteMidiFrames();
+    void AttachMidi(std::unique_ptr<MidiPort> port);
+    void CheckMidiLink();
 
     // Sends to whatever carries the SQ conversation: the MIDI port or the SQ simulator.
     struct SqLink : Transport {

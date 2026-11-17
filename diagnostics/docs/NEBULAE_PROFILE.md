@@ -14,7 +14,9 @@ transfer speed and USB reconnect are **NICHT GEMESSEN**.
 | SD management | USB CDC (DDP v1) + mass storage | the normal COM-port session; HELLO `app=NebulaeOnDaisy`, capability `nebmgmt` |
 
 Without python-rtmidi the performance personality is not found; SD management still
-works. Protocols: [instruments/granular/docs/CONTROL_PROTOCOL.md](../../instruments/granular/docs/CONTROL_PROTOCOL.md).
+works. Since app 0.6.1 every python-rtmidi call (scan, open, send, receive) runs off the GUI
+thread; a send that fails or stays in the driver longer than 1.5 s means "device not
+answering" and closes the link (a stalled firmware must not freeze the panel). Protocols: [instruments/granular/docs/CONTROL_PROTOCOL.md](../../instruments/granular/docs/CONTROL_PROTOCOL.md).
 
 ## Workflow
 
