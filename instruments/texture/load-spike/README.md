@@ -12,6 +12,14 @@ Desktop Kit (decision D8 of the port concept). **Not an instrument and not the p
   DIRTY_TAPE). The two 12-bit modes are not measured, and in BI their code stays in QSPI; the port must place the active
   mode's code in fast memory and measure them.
 
+## Stored images
+
+The measured images are kept in the firmware store of the main checkout ([FIRMWARE_BINARIES.md](../../../docs/FIRMWARE_BINARIES.md)),
+`firmware/texture-load-spike/`, the newest measured one per line: `0.2.0+a97569f-A-dirty`, `0.2.0+a97569f-AI-dirty`,
+`0.1.0+a97569f-B-dirty` and `0.4.0+e35905a-BI` (SHA-256 `835c2dfd…`, running on the kit since 2026-11-17). The `-dirty`
+ones were built from the uncommitted tree before this branch was committed and flashed from `build/` before storing; the
+superseded A 0.1.0 (`d6a287d4…`) and BI 0.3.0 (`3414be75…`) are not stored. Paths in the table below are build outputs.
+
 ## The two images
 
 | Image | Boot type | Code | Audio buffer (768 KB) | Reverb buffer | Engine state |
