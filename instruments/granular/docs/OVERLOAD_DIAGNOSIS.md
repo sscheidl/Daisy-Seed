@@ -369,8 +369,8 @@ their finalization copies. The capture was made with the card inserted; without 
 no key was pressed in this run. Listening (the sound of the loop and the overdubs) and the
 owner's observation of keys and LEDs are not part of this log.
 
-Seven of about 90 STATUS requests went unanswered during the run (20:27:13, 20:27:31,
-20:27:58, 20:28:05, 20:29:13, 20:29:56 and one more before the run), with 0 overruns
+Six of about 90 STATUS requests went unanswered during the run (20:27:13, 20:27:31,
+20:27:58, 20:28:05, 20:29:13 and 20:29:56), with 0 overruns
 and the next request answered at once. The same pattern appeared on the profile images.
 The cause is not known; candidates are the one-slot SysEx mailbox and the probe opening
 and closing the Windows MIDI port for every request. It does not indicate an overload
