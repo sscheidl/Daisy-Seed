@@ -133,6 +133,9 @@ inline std::string ErrorText(unsigned code) {
 class Session {
   public:
     static constexpr uint32_t kTimeoutMs = 250, kEditGapMs = 20, kMonitorRenewMs = 1000;
+    // While idle, the patch CRC is polled (GET_MATRIX, every firmware has it): an edit made on the
+    // instrument itself (e.g. Toy Piano on Cumulonimbus rate pots) shows up within this time.
+    static constexpr uint32_t kCrcPollMs = 2000;
     // No monitor frame for 1.5 s: live data stale. Nothing at all for 5 s: no replies.
     static constexpr uint32_t kStaleMs = 1500, kLostMs = 5000, kLogRepeatMs = 3000;
     static constexpr int kRetries = 3;
@@ -159,6 +162,7 @@ class Session {
     // Nothing waiting, nothing open: what the tests wait for.
     bool Idle() const { return !current_ && queue_.empty() && !HasPendingEdits() && changes_in_flight_ == 0; }
     uint32_t Retries() const { return retries_; }
+    uint32_t DeviceReloads() const { return device_reloads_; } // reloads after a polled CRC differed
 
     // ------------------------------------------------------------------ connection
     void Connect(Transport& transport, uint32_t now_ms) {
@@ -199,6 +203,7 @@ class Session {
                 last_frame_ms_ = last_live_ms_ = now_; // grace until the first monitor frame
                 SetStatus(device_info_.key + " " + device_info_.version + " · ID " + std::to_string(device_));
                 last_monitor_ = now_ - kMonitorRenewMs; // start at once
+                last_crc_poll_ = now_;
                 Log(LogKind::Ok, "Connected. The device state has been loaded.");
                 if(device_info_.Modes())
                     FetchMode(0);
@@ -220,6 +225,7 @@ class Session {
         transport_ = nullptr;
         health_ = Health::Ok;
         unconfirmed_ = false;
+        crc_poll_open_ = false;
         const bool was = state_ != LinkState::Offline;
         state_ = LinkState::Offline;
         if(was || !reason.empty())
@@ -282,6 +288,7 @@ class Session {
             // A lost renewal is not logged on its own: the health state reports silence.
             Send(proto::Monitor, {uint8_t(kMonitorRate)}, device_, nullptr, [](const std::string&) {});
         }
+        PollCrc();
         UpdateHealth();
     }
 
@@ -746,6 +753,34 @@ class Session {
             changed();
     }
 
+    // The device may change its patch on its own (an instrument control that owns a source rate);
+    // the protocol has no device-to-editor push. While nothing is open, poll the patch CRC and
+    // reload once it differs. A poll never runs during an edit, and its answer is ignored if an
+    // edit started meanwhile (that edit's reply carries the CRC anyway). A lost poll stays silent:
+    // the health state already reports silence.
+    void PollCrc() {
+        if(!Connected() || crc_poll_open_ || !Idle() || now_ - last_crc_poll_ < kCrcPollMs)
+            return;
+        last_crc_poll_ = now_;
+        crc_poll_open_ = true;
+        Send(proto::GetMatrix, {}, device_, [this](const Reply& r) {
+            crc_poll_open_ = false;
+            proto::Reader rd(r.payload.data(), r.payload.size());
+            uint8_t depth[mod::kCells];
+            rd.Packed(depth, mod::kCells);
+            rd.Mask64();
+            const uint32_t crc = rd.U32();
+            // Edits are queued as changes (counted) or still pending; a queued monitor renewal is harmless.
+            if(!rd.Ok() || HasPendingEdits() || changes_in_flight_ > 0)
+                return;
+            if(crc != model_.Crc()) {
+                ++device_reloads_;
+                Log(LogKind::Warn, "The device state changed (e.g. on the instrument) – state reloaded from the device.");
+                Pull();
+            }
+        }, [this](const std::string&) { crc_poll_open_ = false; });
+    }
+
     Model& model_;
     Transport* transport_ = nullptr;
     LinkState state_ = LinkState::Offline;
@@ -756,6 +791,8 @@ class Session {
     uint32_t last_frame_ms_ = 0, last_live_ms_ = 0, last_log_ms_ = 0;
     Health health_ = Health::Ok;
     bool unconfirmed_ = false; // a change timed out: reload when the device is heard again
+    bool crc_poll_open_ = false;
+    uint32_t last_crc_poll_ = 0, device_reloads_ = 0;
     std::string last_log_;
     uint64_t generation_ = 0;
     std::unique_ptr<Request> current_;

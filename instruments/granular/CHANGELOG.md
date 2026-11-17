@@ -1,8 +1,9 @@
 # Changelog
 
-## 0.3.0 - 24-bit samples, 2026-11-08
+## 0.3.0 - 24-bit samples, 2026-11-08 (rebased onto 0.2.2 on 2026-11-17)
 
-Hardware status: **NOT MEASURED**. Applies to `granular` and `granular-mod`.
+Hardware status: **NOT MEASURED**. Applies to `granular` and `granular-mod`. Builds on the
+0.2.2 real-time repair below; without it, 0.3.0 would freeze the kit as 0.2.1 did.
 
 * Load 24-bit PCM WAVs, WAVE_FORMAT_EXTENSIBLE with the PCM subtype (valid bits up to the
   container) and plain PCM with a 40-byte `fmt` chunk (BWF/DAW files). The original Nebulae
@@ -10,7 +11,105 @@ Hardware status: **NOT MEASURED**. Applies to `granular` and `granular-mod`.
 * 24-bit samples are rounded to the nearest PCM16 value while loading, without dither. The
   buffer and engine stay PCM16, so the limit in seconds is unchanged. 24-bit loads read
   4092-byte chunks (whole frames); 16-bit loads are unchanged.
-* 16-bit playback is unchanged: the regular and MOD golden hashes match 0.2.1.
+* 16-bit playback is unchanged against 0.2.2: the regular and MOD golden hashes match
+  0.2.2 (`8d01c852fa6c71b9`, clang/Windows, host 2026-11-17).
+
+## 0.2.2 - real-time repair after the first hardware contact, 2026-11-09
+
+Hardware status: **NOT MEASURED** for this version (the measurements below were taken on
+0.2.1 with the profile image). Applies to `granular` and `granular-mod`. Record, numbers
+and the second opinion: [OVERLOAD_DIAGNOSIS.md](docs/OVERLOAD_DIAGNOSIS.md),
+[CODEX_SECOND_OPINION.md](docs/CODEX_SECOND_OPINION.md).
+
+0.2.1 could not play a sample on the kit: one vocoder hop took 30.8 to 34.2 ms of a
+5.333 ms block (MEASURED 2026-11-09), which starved USB, the control timer and the main
+loop, because libDaisy runs all of them at the audio interrupt's priority.
+
+**Deliberate sound change (owner's decision 2026-11-17, without a listening test):** the
+two vocoder channels now compute their frames in alternate blocks on the same inputs
+(compensated stagger, `kScheduleCompensated`). Left and right stay exactly as before
+relative to each other; the whole vocoder layer sounds 256 samples (5.3 ms) later than
+grains and the dry path, and an overdub records the vocoder part 5.3 ms later per pass.
+It is the only schedule that ran the extreme settings on the kit without an overrun.
+Golden hash of the product changes on purpose (clang/Windows `make test` prints it); the
+same engine on the common grid with the 0.2.1 vocoder still reproduces the 0.2.1 golden
+`63576b07d2f2b999`. Audibility of the 5.3 ms offset: **NOT MEASURED**.
+
+* **DSP state out of SDRAM.** The Engine (vocoders, grains, windows) lives in AXI SRAM
+  (`.neb_dsp`); the PCM of the Live banks and of the file stays in SDRAM. The same hop
+  ran 4.4 times faster there (14.0 against 3.16 ms per channel, MEASURED on 0.2.1).
+* **Cheaper hop on the same hop grid** (both channels still compute their frame in the
+  same block, as the original instrument): CMSIS-DSP 1.10 real FFTs from the pinned
+  libDaisy instead of the plain radix-2 pair, `sqrtf(x*x+y*y)` instead of libm `hypotf`
+  in the two phase loops, a window fill without per-sample modulo (`PcmReader`,
+  bit-identical to `PcmView::Read`). The channels share the Hann window and the hop
+  scratch: vocoder state 123 KB instead of 213 KB.
+* **Grain loop**: the pan gains of a grain, the clock step and the channel readers are
+  hoisted out of the sample loop. Bit-identical.
+* **Wrap path**: `WrapFmod` replaces `std::fmod` in `PcmView::Read` (one divide and a
+  correction instead of the libm loop; bit-identical, 207,171 values host-tested). On the
+  kit the first 0.2.2 candidate spent 4.6 ms per hop in that path when START pointed near
+  the end of the file.
+* **Mono sources** feed both vocoder channels the same samples; channel 1 is now a copy of
+  channel 0, which halves the hop for mono files (bit-identical; premises host-tested).
+* **Kit, second candidate (MEASURED 2026-11-09):** hop block of a stereo file 3.2 ms at
+  PITCH centre to 4.1 ms at PITCH maximum for both channels; no overruns at normal
+  settings; PITCH maximum with maximum grains still reaches about 107 % and runs into the
+  protection. The window fill is bound by SDRAM cache misses.
+* **Listening candidates of 2026-11-09** (then `make MOD=1 SCHEDULE=1|2`; since the decision
+  `SCHEDULE=0` common grid and `SCHEDULE=1` plain stagger, the default is C; [diagnosis](docs/OVERLOAD_DIAGNOSIS.md)
+  section 11, Codex's [second review](docs/CODEX_SECOND_OPINION_2.md)): `Stagger` (the
+  right channel hops one block later with its own position, a deliberate stereo
+  character) and `Pipeline` (right channel one block later on the left channel's stored
+  inputs, left output delayed one block: channels exactly as the common grid, the whole
+  vocoder layer 5.3 ms later; host-tested bit for bit against the common grid). Both
+  halve the hop block. The shipped image stays on the common grid until the owner has
+  listened and decided; PROFILE value 21 reports the schedule.
+* **Kit, final image (MEASURED 2026-11-17, `NebulaeMod-v0.2.2.bin` `f3eecab3…`):** P2 fixed: the
+  first Live capture, its publication (where 0.2.1 froze) and three overdubs ran with 0
+  overruns, STATUS peak 51-54 %; the owner reported keys, LEDs and the loop's sound as fine.
+* **Kit, Pipeline (MEASURED 2026-11-11):** 0 overruns and 0 skipped blocks, also over 60 s
+  at the extreme setting (START at the file end, PITCH maximum, maximum grains), whose
+  callback peak is 4.82 ms = 90 % of the block; PITCH centre with maximum grains 74 %.
+* **Overload protection in every image**: a second deadline overrun within 16 blocks
+  leaves the vocoder out of the next 8 blocks and restarts it from a reset with the
+  256-sample ramp, so the kit stays reachable; one isolated overrun only counts. STATUS
+  bit 4 and D16 still latch the overrun.
+* **Sound.** The engine around the old vocoder (`-DNEBULAE_REFERENCE_VOCODER=1`, host
+  only) reproduces the 0.2.1 golden hash on the same compiler (`63576b07d2f2b999`,
+  clang, MEASURED 2026-11-09 on the host): everything but the vocoder is bit-identical.
+  The vocoder changes at float rounding level, and the algorithm amplifies rounding:
+  phase locking normalises sums of neighbouring bins that can nearly cancel and feeds
+  the result back. The 0.2.1 vocoder differs from itself by up to 0 dB error/signal
+  when only its FFT rounding changes, as the 0.2.0 packing already did. Host A/B
+  (`tests/test_vocoder.cpp`, 25 scenarios): where the reference agrees with itself the
+  new vocoder agrees with it to -91 dB or better; elsewhere it is at most 4.5 dB
+  further from the reference than the reference from itself; long-term band energies
+  within 0.54 dB. Final mix of the golden performance (`tests/compare_audio.cpp`):
+  total energy -0.018 dB, band energies within 0.70 dB, 85 ms window levels within
+  2.63 dB. None of this proves inaudibility: the listening test is the owner's.
+* A phase-lock sum of exactly zero, where the reference divides by zero and keeps NaN
+  in its phase state, now keeps the bin's phase.
+* The diagnostic build (`PROFILE=1`) measures the new code: its boot benchmark runs one
+  production vocoder channel from SDRAM and from AXI SRAM (in the Engine's own storage).
+* `scripts/check-granular-elf.py` requires the Engine in AXI SRAM after the image and
+  the Live banks in SDRAM. Version 0.3.0 stays with the 24-bit loader of PR #107.
+
+## 0.2.1 diagnostic profile build - first hardware contact, 2026-11-08
+
+Not a release. The first kit test (owner, 2026-11-08) showed the kit freezing as soon
+as a sample plays ([OVERLOAD_DIAGNOSIS.md](docs/OVERLOAD_DIAGNOSIS.md)); hardware
+numbers are **NOT MEASURED** until the owner runs the profile image.
+
+* `make PROFILE=1` (also with `MOD=1`): DWT cycle splits of the callback (vocoder, grains,
+  rest; window fill, FFTs, phase inside a hop), a budget guard that leaves the vocoder out
+  for 8 blocks after an overrun so USB and LEDs stay alive, a boot benchmark of one
+  `Mincer` hop from SDRAM and from AXI SRAM, and the PROFILE SysEx `03`
+  ([protocol](docs/CONTROL_PROTOCOL.md)). `tools/nb_probe.py` reads STATUS and PROFILE
+  from the PC, each probe in its own process with a timeout.
+* Regular and MOD images stay byte-identical (`cbc4c376…`, `02e52f88…`): every hook
+  compiles to nothing without `NEBULAE_PROFILE`. The profile build prints the regular
+  golden hash while the guard does not trip.
 
 ## granular-mod on 0.2.1 - separate Mod on Daisy build, 2026-11-06
 

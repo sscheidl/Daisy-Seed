@@ -1,6 +1,6 @@
-# Hardware test SC Reverb FX 0.1.0
+# Hardware test SC Reverb FX 0.1.1
 
-Firmware `effects/sc-reverb/build/ScReverbFx-v0.1.0.bin` (`make PROJECT=sc-reverb-fx`). The owner runs this test on the kit.
+Firmware `effects/sc-reverb/build/ScReverbFx-v0.1.1.bin` (`make PROJECT=sc-reverb-fx`). The owner runs this test on the kit.
 Every result is **NOT MEASURED** until an entry with a date stands here. This accepts the effect alone; Audrey 3 has its own
 CPU and listening acceptance.
 

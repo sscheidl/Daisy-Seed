@@ -47,6 +47,20 @@ ACID_SEQ = {
     'ToyPianoFv1-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION', 'TOYPIANO-FV1-FW-VERSION='),
     'ToyPianoFv1Local-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION',
                            'TOYPIANO-FV1-FW-VERSION='),
+    # Cumulonimbus (Clouds granular FX): standalone diagnostic images and Toy Piano on Cumulonimbus,
+    # each at the 48 kHz and the 32 kHz internal grain rate; Profile = diagnostic scenarios.
+    'CumulonimbusFx48-v': ('effects/cumulonimbus/src/version.h', 'CUMULONIMBUS_FX_FIRMWARE_VERSION',
+                           'CUMULONIMBUS-FX-VERSION='),
+    'CumulonimbusFx32-v': ('effects/cumulonimbus/src/version.h', 'CUMULONIMBUS_FX_FIRMWARE_VERSION',
+                           'CUMULONIMBUS-FX-VERSION='),
+    'ToyPianoCumulonimbus48-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_CUMULONIMBUS_VERSION',
+                                 'TOYPIANO-CUMULONIMBUS-FW-VERSION='),
+    'ToyPianoCumulonimbus32-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_CUMULONIMBUS_VERSION',
+                                 'TOYPIANO-CUMULONIMBUS-FW-VERSION='),
+    'ToyPianoCumulonimbus48Profile-v': ('instruments/toy-piano/src/composed_version.h',
+                                        'TOY_PIANO_CUMULONIMBUS_VERSION', 'TOYPIANO-CUMULONIMBUS-FW-VERSION='),
+    'ToyPianoCumulonimbus32Profile-v': ('instruments/toy-piano/src/composed_version.h',
+                                        'TOY_PIANO_CUMULONIMBUS_VERSION', 'TOYPIANO-CUMULONIMBUS-FW-VERSION='),
 }
 acid = next((prefix for prefix in ACID_SEQ if path.name.startswith(prefix)), None)
 if acid:
@@ -75,20 +89,20 @@ elif path.name.startswith('ToyPianoAmbient-v'):
     version = match.group(1)
     expected_name = f'ToyPianoAmbient-v{version}.bin'
     marker = rb'TOYPIANO-AMBIENT-FW-VERSION=([0-9.]+)\x00'
-elif path.name.startswith('NebulaeOnDaisy-v'):
+elif re.match(r'^Nebulae(OnDaisy|Mod)(Profile|Common|Stagger|Pipeline)*-v', path.name):
+    # Nebulae: regular or MOD image, optionally the diagnostic build (Profile) and the
+    # vocoder scheduling listening builds (Common, Stagger; Pipeline was the 2026-11-09
+    # name of today's default; instruments/granular/Makefile).
     granular = root / 'instruments' / 'granular'
     match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
     assert match, "Could not read the Nebulae version"
     version = match.group(1)
-    expected_name = f'NebulaeOnDaisy-v{version}.bin'
-    marker = rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
-elif path.name.startswith('NebulaeMod-v'):
-    granular = root / 'instruments' / 'granular'
-    match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
-    assert match, "Could not read the Nebulae version"
-    version = match.group(1)
-    expected_name = f'NebulaeMod-v{version}.bin'
-    marker = rb'NEBULAE-MOD-VERSION=([0-9.]+)\x00'
+    name_match = re.match(r'^(Nebulae(?:OnDaisy|Mod)(?:Profile|Common|Stagger|Pipeline)*)-v', path.name)
+    expected_name = f'{name_match.group(1)}-v{version}.bin'
+    mod = path.name.startswith('NebulaeMod')
+    marker = rb'NEBULAE-MOD-VERSION=([0-9.]+)\x00' if mod else rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
+    if 'Profile' in path.name:
+        assert b'NEBULAE-PROFILE-BUILD=1\x00' in path.read_bytes(), 'Profile image without its marker'
 elif path.name.startswith(('PhysicalModelingFxTorus-v', 'PhysicalModelingFxAmbient-v')):
     physical = root / 'instruments' / 'physical-modeling'
     match = re.search(r'PHYSICAL_MODELING_COMPOSED_VERSION\s+"([^"]+)"',

@@ -4,7 +4,7 @@
 // for experiments and are greyed out in the editor.
 #include "config.h"
 #include "version.h"
-#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1 || TOY_PIANO_FILTER
+#if TOY_PIANO_FX || TOY_PIANO_TAPE || TOY_PIANO_FV1 || TOY_PIANO_FILTER || TOY_PIANO_CUMULONIMBUS
 #include "composed_version.h"
 #endif
 #include "mod_on_daisy/types.h"
@@ -17,6 +17,16 @@ constexpr unsigned ModHallDecay = 5, ModHallMix = 6, ModHallX = 7;
 inline constexpr mod::ModeInfo kFxModes[] = {
     {"Cloud", "A / SW18 up"}, {"Halo", "A / SW18 center"}, {"Scatter", "A / SW18 down"},
     {"Abyss", "B / SW18 up"}, {"Bloom", "B / SW18 center"}, {"Shimmer", "B / SW18 down"},
+};
+#endif
+#if TOY_PIANO_CUMULONIMBUS
+// Columns 5-7: grain position, grain mix, hall mix (bases from the FX page). Modes report the SW17
+// page and the SW18 state for the extended monitor.
+constexpr unsigned ModGrainPosition = 5, ModGrainMix = 6, ModHallMix = 7;
+inline constexpr mod::ModeInfo kCumuloModes[] = {
+    {"Piano Run", "SW17 Piano / SW18 centre"}, {"Piano Freeze", "SW17 Piano / SW18 up"},
+    {"Piano Bypass", "SW17 Piano / SW18 down"}, {"FX Run", "SW17 FX / SW18 centre"},
+    {"FX Freeze", "SW17 FX / SW18 up"}, {"FX Bypass", "SW17 FX / SW18 down"},
 };
 #endif
 #if TOY_PIANO_FILTER
@@ -58,6 +68,14 @@ inline mod::InstrumentInfo MakeModInfo() {
     info.targets[ModCutoff] = {"Cutoff", "+-48 st", kModCutoffSpan, true, false};
     info.targets[ModResonance] = {"Resonance", "100%", 1.f, false, false};
     info.targets[ModDrive] = {"Drive", "100%", 1.f, false, false};
+#elif TOY_PIANO_CUMULONIMBUS
+    info.key = "toy-piano-cumulonimbus";
+    info.version = TOY_PIANO_CUMULONIMBUS_VERSION;
+    info.modes = kCumuloModes;
+    info.mode_count = 6;
+    info.targets[ModGrainPosition] = {"GrainPos", "100%", 1.f, false, false};
+    info.targets[ModGrainMix] = {"GrainMix", "100%", 1.f, false, false};
+    info.targets[ModHallMix] = {"HallMix", "100%", 1.f, false, false};
 #else
     info.key = "toy-piano";
     info.version = TOY_PIANO_VERSION;

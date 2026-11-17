@@ -1,5 +1,36 @@
 # Actual ARM memory budget
 
+## v0.2.2 (local ARM builds of 2026-11-09, `check-granular-elf.py` PASS, GCC 13.2.1)
+
+The Engine moved from SDRAM to AXI SRAM (section `.neb_dsp`, NOLOAD, after the image and
+the two SD sectors); one vocoder hop took 4.4 times as long with its state in SDRAM
+([diagnosis](OVERLOAD_DIAGNOSIS.md)). The PCM of the two Live banks and of the file stays
+in SDRAM, so the file region now starts directly after the banks.
+
+| | Regular | MOD=1 | MOD=1 PROFILE=1 |
+| --- | ---: | ---: | ---: |
+| BIN | 207,200 B | 234,804 B | 240,832 B |
+| AXI SRAM: image, data and `.neb_sd` | 208,224 B | 235,840 B | 241,856 B |
+| AXI SRAM: Engine (`.neb_dsp`) | 157,760 B | 157,792 B | 157,792 B |
+| AXI SRAM used of 491,520 B | 365,984 B | 393,632 B | 399,648 B |
+| DTCM static of 131,072 B (16 KiB stack floor asserted) | 97,924 B | 101,700 B | 104,868 B |
+| SDRAM file region start | `0xc1000000` | `0xc1000000` | `0xc1014040` (benchmark storage before it) |
+| WAV file capacity | 41,943,040 B | 41,943,040 B | 41,861,056 B |
+
+Engine layout (MOD): shared `MincerWork` 40,976 B (Hann window and the four hop buffers),
+two `Mincer` channels of 41,000 B each (phase state and four overlap-add frames), window
+bank, grains and block buffers. 0.2.1: 247,736 B, of which about 213,000 B were the two
+vocoders with a private window, FFT tables and workspace each. The CMSIS-DSP tables the
+FFT needs (8 KB complex twiddles, 8 KB real twiddles, 3.6 KB bit reversal) are constants
+of the image. Capacity: 10,485,760 stereo frames = 237.8 s at 44.1 kHz and 218.5 s at
+48 kHz; mono twice that.
+
+Stack (`-fstack-usage`, MOD): `Engine::Process` 168 B, `RenderGrains` 200 B,
+`Mincer::Hop` 120 B, `Mincer::Process` 48 B, `arm_rfft_fast_f32` 24 B,
+`arm_cfft_f32` 24 B, `arm_cfft_radix8by2_f32` 56 B, `arm_radix8_butterfly_f32` 160 B:
+about 600 B below `Audio()` on the vocoder path. Per-function sizes, not a measured
+high-water mark. CPU load of 0.2.2 on the kit: **NOT MEASURED**.
+
 ## v0.2.0 (ELF of SHA256 `3734dde5…2f19`, `check-granular-elf.py`, 2026-11-01)
 
 | Region | v0.1.1 | v0.2.0 | Note |

@@ -79,6 +79,8 @@ class Simulator : public Transport {
     void EnableExtensions(const mod::Extensions& e) { module_->EnableExtensions(e); }
 
     const mod::Controller& Device() const { return module_->controller; }
+    // An edit made on the simulated instrument itself (a pot that owns a source rate): no message.
+    mod::Status LocalEdit(const mod::Patch& patch) { return module_->controller.LoadPatch(patch); }
     const mod::InstrumentInfo& Info() const { return info_; }
 
   private:

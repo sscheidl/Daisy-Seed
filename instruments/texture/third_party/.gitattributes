@@ -1,0 +1,3 @@
+# Upstream files stay byte-identical (LF, trailing spaces), so SHA256SUMS.upstream can be checked on any checkout.
+eurorack/** -text -whitespace
+SHA256SUMS.upstream -text

@@ -100,6 +100,11 @@ jobs:
       - name: Reverb host tests
         if: steps.changes.outputs.reverb == 'true'
         run: make PROJECT=reverb-fx test
+      - name: Cumulonimbus host tests (component, firmware logic, probe, Toy Piano on Cumulonimbus)
+        if: steps.changes.outputs.cumulonimbus == 'true'
+        run: |
+          make PROJECT=cumulonimbus-fx test
+          make PROJECT=toy-piano-cumulonimbus test
       - name: Tape FX host tests (DSP against drumlogue reference, firmware controls)
         if: steps.changes.outputs.tape == 'true'
         run: make PROJECT=tape-fx test

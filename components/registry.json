@@ -419,6 +419,42 @@
         "path": "effects/sc-reverb/src/version.h",
         "name": "SC_REVERB_VERSION"
       }
+    },
+    "cumulonimbus": {
+      "kind": "effect",
+      "source": "effects/cumulonimbus/src",
+      "depends": [
+        "fx-contract"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/cumulonimbus/src/version.h",
+        "name": "CUMULONIMBUS_VERSION"
+      },
+      "provenance": "effects/cumulonimbus/UPSTREAM.md"
+    },
+    "cumulonimbus-chain": {
+      "kind": "dsp",
+      "source": "effects/cumulonimbus/src/chain.h",
+      "depends": [
+        "cumulonimbus",
+        "torus-reverb",
+        "wet-host"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/cumulonimbus/src/chain.h",
+        "name": "CUMULONIMBUS_CHAIN_VERSION"
+      }
+    },
+    "cumulonimbus-meter": {
+      "kind": "control",
+      "source": "effects/cumulonimbus/src/stage_meter.h",
+      "version": {
+        "type": "macro",
+        "path": "effects/cumulonimbus/src/stage_meter.h",
+        "name": "CUMULONIMBUS_METER_VERSION"
+      }
     }
   },
   "products": {
@@ -945,6 +981,146 @@
         "bootloader-entry"
       ],
       "panels": []
+    },
+    "cumulonimbus-fx": {
+      "version": {
+        "type": "macro",
+        "path": "effects/cumulonimbus/src/version.h",
+        "name": "CUMULONIMBUS_FX_FIRMWARE_VERSION"
+      },
+      "directory": "effects/cumulonimbus/build/fx48",
+      "image": "CumulonimbusFx48",
+      "marker": "CUMULONIMBUS-FX-VERSION=",
+      "components": [
+        "cumulonimbus",
+        "cumulonimbus-chain",
+        "cumulonimbus-meter",
+        "torus-reverb",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "cumulonimbus-fx-32": {
+      "version": {
+        "type": "macro",
+        "path": "effects/cumulonimbus/src/version.h",
+        "name": "CUMULONIMBUS_FX_FIRMWARE_VERSION"
+      },
+      "directory": "effects/cumulonimbus/build/fx32",
+      "image": "CumulonimbusFx32",
+      "marker": "CUMULONIMBUS-FX-VERSION=",
+      "components": [
+        "cumulonimbus",
+        "cumulonimbus-chain",
+        "cumulonimbus-meter",
+        "torus-reverb",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "toy-piano-cumulonimbus": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_CUMULONIMBUS_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/cumulonimbus48",
+      "image": "ToyPianoCumulonimbus48",
+      "marker": "TOYPIANO-CUMULONIMBUS-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "cumulonimbus",
+        "cumulonimbus-chain",
+        "torus-reverb",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "toy-piano-cumulonimbus-profile": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_CUMULONIMBUS_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/cumulonimbus48-profile",
+      "image": "ToyPianoCumulonimbus48Profile",
+      "marker": "TOYPIANO-CUMULONIMBUS-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "cumulonimbus",
+        "cumulonimbus-chain",
+        "cumulonimbus-meter",
+        "torus-reverb",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "toy-piano-cumulonimbus-32": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_CUMULONIMBUS_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/cumulonimbus32",
+      "image": "ToyPianoCumulonimbus32",
+      "marker": "TOYPIANO-CUMULONIMBUS-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "cumulonimbus",
+        "cumulonimbus-chain",
+        "torus-reverb",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
+    },
+    "toy-piano-cumulonimbus-32-profile": {
+      "version": {
+        "type": "macro",
+        "path": "instruments/toy-piano/src/composed_version.h",
+        "name": "TOY_PIANO_CUMULONIMBUS_VERSION"
+      },
+      "directory": "instruments/toy-piano/build/cumulonimbus32-profile",
+      "image": "ToyPianoCumulonimbus32Profile",
+      "marker": "TOYPIANO-CUMULONIMBUS-FW-VERSION=",
+      "components": [
+        "toy-piano",
+        "cumulonimbus",
+        "cumulonimbus-chain",
+        "cumulonimbus-meter",
+        "torus-reverb",
+        "mod-on-daisy",
+        "callback-diagnostics",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": [
+        "mod-editor-web",
+        "mod-editor-juce",
+        "mod-editor-vst3"
+      ]
     }
   }
 }

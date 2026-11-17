@@ -127,7 +127,10 @@ active, depth outside ±100) is rejected as a whole.
   second. A closed editor therefore leaves no data stream behind.
 * The main loop reads the values from a snapshot that the audio IRQ publishes via an
   SPSC queue.
-* Apart from monitor frames, the device **never sends unsolicited**.
+* Apart from monitor frames, the device **never sends unsolicited**. An instrument may still
+  change its patch itself (e.g. a pot that owns a source rate); the editors therefore read the patch
+  CRC with `GET_MATRIX` every 2 s while idle and reload on a difference (editor 0.5.1, browser 0.4.1;
+  no wire change).
 * Base values and the extended monitor are **backwards-compatible extensions**: they are
   appended at the end; a client that reads 36 bytes notices nothing. A client recognizes
   them by the frame length and by the capability bits. Details in § 3.6.

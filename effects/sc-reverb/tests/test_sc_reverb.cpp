@@ -29,18 +29,18 @@ static void TestContract() {
     ScReverb reverb;
     float in[kBlock] = {1.f}, left[kBlock], right[kBlock];
     left[0] = right[0] = 7.f;
-    reverb.Process(StereoBlock{in, in, left, right, 1}); // not prepared: nothing happens
+    CHECK(!reverb.Process(StereoBlock{in, in, left, right, 1})); // not prepared: rejected, nothing happens
     CHECK(left[0] == 7.f);
     CHECK(!reverb.Prepare({44100, kBlock}, *memory));
     CHECK(!reverb.Prepare({48000, 0}, *memory));
     CHECK(reverb.Prepare({48000, kBlock}, *memory));
-    reverb.Process(StereoBlock{in, in, left, right, kBlock + 1}); // too long: rejected
+    CHECK(!reverb.Process(StereoBlock{in, in, left, right, kBlock + 1})); // too long: rejected
     CHECK(left[0] == 7.f);
-    reverb.Process(StereoBlock{in, in, left, left, 1}); // shared output: rejected
+    CHECK(!reverb.Process(StereoBlock{in, in, left, left, 1})); // shared output: rejected
     CHECK(left[0] == 7.f);
-    reverb.Process(StereoBlock{in, in, left, right, 0}); // no-op
+    CHECK(reverb.Process(StereoBlock{in, in, left, right, 0})); // no-op
     CHECK(left[0] == 7.f);
-    reverb.Process(StereoBlock{in, in, left, right, kBlock}); // wet-only: no dry signal
+    CHECK(reverb.Process(StereoBlock{in, in, left, right, kBlock})); // wet-only: no dry signal
     CHECK(left[0] == 0.f && right[0] == 0.f);
 }
 

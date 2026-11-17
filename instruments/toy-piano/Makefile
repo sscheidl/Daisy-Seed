@@ -8,10 +8,27 @@ endif
 TAPE ?= 0
 FV1 ?= 0
 FILTER ?= 0
+# Toy Piano on Cumulonimbus: CUMULO=1, CUMULO_RATE=48|32 (internal grain rate), CUMULO_PROFILE=0|1.
+CUMULO ?= 0
+CUMULO_RATE ?= 48
+CUMULO_PROFILE ?= 0
 ifeq ($(FV1),1)
 $(if $(filter 1,$(TAPE) $(AMBIENT)),$(error FV1=1 cannot be combined with TAPE=1 or AMBIENT=1))
 endif
-ifeq ($(FILTER),1)
+ifeq ($(CUMULO),1)
+$(if $(filter 1,$(TAPE) $(AMBIENT) $(FV1) $(FILTER)),$(error CUMULO=1 cannot be combined with another FX build))
+$(if $(filter $(CUMULO_RATE),48 32),,$(error CUMULO_RATE must be 48 or 32))
+$(if $(filter $(CUMULO_PROFILE),0 1),,$(error CUMULO_PROFILE must be 0 or 1))
+VERSION := $(shell sed -n 's/.*TOY_PIANO_CUMULONIMBUS_VERSION "\(.*\)".*/\1/p' src/composed_version.h | head -n 1)
+CUMULO_SUFFIX := $(if $(filter 1,$(CUMULO_PROFILE)),Profile,)
+TARGET = ToyPianoCumulonimbus$(CUMULO_RATE)$(CUMULO_SUFFIX)-v$(VERSION)
+override BUILD_DIR = build/cumulonimbus$(CUMULO_RATE)$(if $(filter 1,$(CUMULO_PROFILE)),-profile,)
+CUMULO_INCLUDES = -I../../instruments/physical-modeling/torus -I../../instruments/physical-modeling/third_party
+FX_DEFS = -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=$(CUMULO_PROFILE) \
+          -DCUMULONIMBUS_INTERNAL_RATE=$(CUMULO_RATE)000 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1
+C_DEFS = $(FX_DEFS)
+C_INCLUDES = $(CUMULO_INCLUDES)
+else ifeq ($(FILTER),1)
 $(if $(filter 1,$(TAPE) $(AMBIENT) $(FV1)),$(error FILTER=1 stands alone: the test build has no effects))
 VERSION := $(shell sed -n 's/.*TOY_PIANO_FILTER_VERSION "\(.*\)".*/\1/p' src/composed_version.h | head -n 1)
 TARGET = ToyPianoFilter-v$(VERSION)
@@ -88,6 +105,10 @@ ifeq ($(FILTER),1)
 LDSCRIPT := ld/toy_piano_axi.lds
 $(BUILD_DIR)/$(TARGET).elf: $(LDSCRIPT)
 endif
+ifeq ($(CUMULO),1)
+LDSCRIPT := ld/toy_piano_axi.lds
+$(BUILD_DIR)/$(TARGET).elf: $(LDSCRIPT)
+endif
 ifeq ($(AMBIENT),1)
 # Prevent the official flattened VPATH from finding the standalone FX's main.cpp.
 $(BUILD_DIR)/main.o: src/main.cpp Makefile | $(BUILD_DIR)
@@ -103,7 +124,20 @@ HOST_INCLUDES = $(MOD_DEFS) -Isrc -I$(BOOTLOADER_DIR) -I$(DAISYSP_DIR)/Source -I
 ifeq ($(AMBIENT),1)
 HOST_INCLUDES += -I../../sequencers/step-seq/include
 endif
-ifeq ($(FILTER),1)
+ifeq ($(CUMULO),1)
+# Both internal rates and both image kinds share these host tests; the golden dry check runs on each.
+CUMULO_HOST = -DTEST -isystem ../../instruments/physical-modeling/torus -isystem ../../instruments/physical-modeling/third_party -D_USE_MATH_DEFINES
+test:
+	mkdir -p build/host/cumulonimbus
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=0 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1 -DCUMULONIMBUS_INTERNAL_RATE=48000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test48
+	./build/host/cumulonimbus/test48
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=0 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1 -DCUMULONIMBUS_INTERNAL_RATE=32000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test32
+	./build/host/cumulonimbus/test32
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1 -DCUMULONIMBUS_INTERNAL_RATE=48000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test48_profile
+	./build/host/cumulonimbus/test48_profile
+	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1 -DCUMULONIMBUS_INTERNAL_RATE=32000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test32_profile
+	./build/host/cumulonimbus/test32_profile
+else ifeq ($(FILTER),1)
 test:
 	mkdir -p build/host/filter
 	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(FX_DEFS) tests/test_filter.cpp src/toy_piano.cpp -o build/host/filter/test_filter

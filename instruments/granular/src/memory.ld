@@ -2,6 +2,10 @@
 SECTIONS
 {
     .neb_sd (NOLOAD) : ALIGN(32) { *(.neb_sd) . = ALIGN(32); } > SRAM
+    /* AXI SRAM DSP state: the Engine with its vocoders and grains (src/main.cpp,
+       engine_storage). NOLOAD, not zeroed: the constructor writes every member. In
+       SDRAM the vocoder hop took 4.4 times as long (docs/OVERLOAD_DIAGNOSIS.md). */
+    .neb_dsp (NOLOAD) : ALIGN(32) { *(.neb_dsp) . = ALIGN(32); } > SRAM
     .neb_heap (NOLOAD) : ALIGN(32)
     {
         __neb_heap_start = .;

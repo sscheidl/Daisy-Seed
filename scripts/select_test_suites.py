@@ -86,13 +86,16 @@ def select_suites(changed):
         # Any change to one of its cores also tests the composed product.
         'acidseq': stepseq or acid303 or drive or delay or touched('sequencers/acid-seq/'),
         'streichwurst': streichwurst,
+        # Cumulonimbus (Clouds granular FX) and its Toy Piano product: the component, the Torus reverb
+        # and FX contract it composes, the Toy Piano sources and the Mod on Daisy API.
+        'cumulonimbus': shared or fx or mod_api or touched('effects/cumulonimbus/', 'instruments/toy-piano/'),
         'components': True, # tiny registry/selection tests; no compiler or dependencies
     }
     if '.github/workflows/quick.yml' in changed:
         suites = {key: True for key in suites}
     suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape',
                                                     'stepseq', 'acid303', 'drive', 'delay', 'acidseq',
-                                                    'streichwurst'))
+                                                    'streichwurst', 'cumulonimbus'))
     return suites
 
 

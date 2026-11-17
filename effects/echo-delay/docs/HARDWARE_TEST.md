@@ -1,6 +1,6 @@
-# Hardware test Echo Delay FX 0.1.0
+# Hardware test Echo Delay FX 0.1.1
 
-Firmware `effects/echo-delay/build/EchoDelayFx-v0.1.0.bin` (`make PROJECT=echo-delay-fx`). The owner runs this test on the kit.
+Firmware `effects/echo-delay/build/EchoDelayFx-v0.1.1.bin` (`make PROJECT=echo-delay-fx`). The owner runs this test on the kit.
 Every result is **NOT MEASURED** until an entry with a date stands here. This accepts the effect alone; Audrey 3 has its own
 CPU and listening acceptance.
 

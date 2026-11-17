@@ -125,5 +125,23 @@ int main(int argc,char** argv) {
     hw.sd_detect.state=true;Advance(20);Settle();
     CHECK(perf.mounted && banks.BankCount()==3);
     CHECK(aborts==0);
+
+    // Overload protection (last: the overrun latch stays on). One isolated deadline
+    // overrun only counts; a second one within 16 blocks leaves the vocoder out of the
+    // next eight blocks, with finite output (Block() checks it) and a working main loop.
+    CHECK(callback_overruns==0 && engine->VocoderSkips()==0);
+    fake_dwt.CYCCNT.step=3000000;Block();fake_dwt.CYCCNT.step=0;   // 3.0 M > 2.56 M cycles
+    CHECK(callback_overruns==1 && engine->VocoderSkips()==0);
+    for(unsigned i=0;i<20;++i) Block();
+    fake_dwt.CYCCNT.step=3000000;Block();
+    CHECK(callback_overruns==2 && engine->VocoderSkips()==0);        // 20 blocks apart: isolated
+    Block();fake_dwt.CYCCNT.step=0;
+    CHECK(callback_overruns==3 && engine->VocoderSkips()==8);        // the second in a row
+    for(unsigned i=0;i<8;++i) {CHECK(engine->VocoderSkips()==8-i);Block();Main();}
+    CHECK(engine->VocoderSkips()==0);
+    Send({0xF0,0x7D,0x4E,0x42,0x01,0x01,0xF7});Main();
+    CHECK(LastReply().size()>10 && (LastReply()[10]&16));           // STATUS: overrun latched
+    for(unsigned i=0;i<40;++i) Block();
+    CHECK(engine->VocoderSkips()==0 && callback_overruns==3);
     std::printf("PASS production callback/main: %u checks; real FatFs R0.16 + ro_sd banks/slots/SW17/LED dimming, F7 gesture only in NEBULAE, MIDI, control SysEx, PREPARE_SHARE, intent dispatch, card swap\n",checks);
 }

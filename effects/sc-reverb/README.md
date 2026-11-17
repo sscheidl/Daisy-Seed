@@ -5,7 +5,7 @@ The Sean Costello reverb from DaisySP-LGPL (`ReverbSc`) as a component: stereo, 
 
 | Status | |
 | --- | --- |
-| Version | Core and firmware 0.1.0 (`src/version.h`) |
+| Version | Core and firmware 0.1.1 (`src/version.h`) |
 | Software | Host and ARM checks, see CHANGELOG |
 | Hardware | NOT MEASURED, [hardware test](docs/HARDWARE_TEST.md) |
 

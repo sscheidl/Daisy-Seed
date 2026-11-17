@@ -1,0 +1,122 @@
+// Diagnostic build (MOD=1 PROFILE=1) on the production harness: cycle splits per block,
+// hop detection, the budget guard, the PROFILE SysEx and its reset, the boot benchmark.
+// The fake cycle counter advances by a step on every read, so the splits are deterministic
+// counts of reads and a large step trips the guard. Usage: test_profile <card.img>
+#include "production_harness.h"
+
+namespace {
+struct Values {uint32_t v[neb::sysex::kProfileValues];};
+Values Decode(const std::vector<uint8_t>& reply) {
+    CHECK(reply.size()==7+neb::sysex::kProfilePayload && reply[5]==(neb::sysex::kProfile|neb::sysex::kReplyBit));
+    Values out{};
+    for(size_t i=0;i<neb::sysex::kProfileValues;++i) {
+        uint32_t v=0;
+        for(unsigned k=0;k<5;++k) v|=uint32_t(reply[6+5*i+k])<<(7*k);
+        out.v[i]=v;
+    }
+    return out;
+}
+Values ReadProfile(bool reset=false) {
+    if(reset) Send({0xF0,0x7D,0x4E,0x42,0x01,0x03,0x01,0xF7}); else Send({0xF0,0x7D,0x4E,0x42,0x01,0x03,0xF7});
+    Main();
+    return Decode(LastReply());
+}
+}
+
+int main(int argc,char** argv) {
+    using namespace neb::sysex;
+    CHECK(argc==2);
+    LoadCard(argv[1]);
+    // Boot benchmark on the fake counter, before the Engine exists (the AXI SRAM run
+    // borrows its storage): both placements report hop and plain blocks.
+    fake_dwt.CYCCNT.step=1;
+    prof::RunBench(live_banks[0]);
+    for(uint32_t v:prof::bench) CHECK(v>0 && v!=0xffffffffu);
+    CHECK(prof::bench[0]>prof::bench[2] && prof::bench[1]>prof::bench[3]);  // hop costs more reads
+    fake_dwt.CYCCNT.step=0;
+    static int16_t file_buffer[2*20000];
+    Boot(file_buffer,sizeof file_buffer,8192);
+    Settle();
+    CHECK(bridge.published.frames==12345);  // bank 1 slot 1 plays: the vocoder has material
+
+    // Splits: every block costs vocoder and grain reads; hop blocks add fill, FFT and
+    // phase. Product schedule (compensated stagger): one hop frame in every block, left
+    // and right alternating. Common grid: two hop frames in every second block.
+    const bool compensated=engine->ScheduleMode()==neb::kScheduleCompensated;
+    CHECK(compensated);  // the product default
+    fake_dwt.CYCCNT.step=1000;
+    ReadProfile(true);Block();  // clear the peaks of the settle phase
+    unsigned hop_blocks=0,plain_blocks=0;
+    for(unsigned i=0;i<8;++i) {
+        Block();
+        const neb::profile::Split& s=neb::profile::block;
+        CHECK(s.vocoder>0 && s.grains>0 && !s.skipped);
+        if(s.hops) {CHECK(s.hops==(compensated?1u:2u) && s.fill>0 && s.fft>0 && s.phase>0);++hop_blocks;}
+        else {CHECK(s.fill==0 && s.fft==0 && s.phase==0);++plain_blocks;}
+    }
+    CHECK(compensated?hop_blocks==8 && plain_blocks==0:hop_blocks==4 && plain_blocks==4);
+    Values p=ReadProfile();
+    CHECK(p.v[kProfClock]==480000000u && p.v[kProfDeadline]==2560000u);
+    CHECK(p.v[kProfBlocks]>=9 && p.v[kProfHopBlocks]>=4 && p.v[kProfSkipped]==0);
+    CHECK(p.v[kProfTotalPeak]>=p.v[kProfVocoderPeak]+p.v[kProfGrainsPeak]);
+    CHECK(p.v[kProfOtherPeak]<=p.v[kProfTotalPeak]);
+    CHECK(p.v[kProfHopVocoderMin]>0 && p.v[kProfHopVocoderMin]<=p.v[kProfVocoderPeak]);
+    CHECK(p.v[kProfFftPeak]>0 && p.v[kProfFillPeak]>0 && p.v[kProfPhasePeak]>0);
+    CHECK(p.v[kProfOverruns]==0 && p.v[kProfLastTotal]>0);
+    CHECK(p.v[kProfEnginePlacement]==uint32_t(reinterpret_cast<uintptr_t>(engine)>>20));
+    CHECK(p.v[kProfSourceChannels]==2);
+    // Mono file (bank 3 slot 1, "2 Kick.WAV"): one vocoder channel per hop, reported as 1.
+    hw.tog_sw17.state=neb::kSw17BankWhenPressed;Advance(30);
+    hw.pressed[2]=true;Advance(15);hw.pressed[2]=false;Settle();
+    hw.tog_sw17.state=!neb::kSw17BankWhenPressed;Advance(30);
+    hw.pressed[0]=true;Advance(15);hw.pressed[0]=false;Settle();
+    CHECK(bridge.published.channels==1 && bridge.published.frames==4801);
+    unsigned mono_hops=0;
+    for(unsigned i=0;i<8;++i) {Block();if(neb::profile::block.hops) {CHECK(neb::profile::block.hops==1);++mono_hops;}}
+    CHECK(mono_hops==4);
+    p=ReadProfile();
+    CHECK(p.v[kProfSourceChannels]==1);
+    // Back to the stereo file: bank 1 slot 1 through the bank view.
+    hw.tog_sw17.state=neb::kSw17BankWhenPressed;Advance(30);
+    hw.pressed[0]=true;Advance(15);hw.pressed[0]=false;Settle();
+    hw.tog_sw17.state=!neb::kSw17BankWhenPressed;Advance(30);
+    hw.pressed[0]=true;Advance(15);hw.pressed[0]=false;Settle();
+    CHECK(bridge.published.channels==2 && bridge.published.frames==12345);
+    ReadProfile(true);Block();
+    // STATUS is unchanged by the diagnostic build.
+    Send({0xF0,0x7D,0x4E,0x42,0x01,0x01,0xF7});Main();
+    CHECK(LastReply().size()==6+kStatusPayload+1);
+
+    // Overload protection: the second overrun within 16 blocks (here: two hop blocks
+    // beyond the deadline) leaves the vocoder out of the next eight blocks, which still
+    // render grains; then the vocoder restarts from a reset.
+    ReadProfile(true);Block();        // Send() runs a block itself: arm the counter afterwards
+    fake_dwt.CYCCNT.step=200000;  // every DWT read costs 200 k cycles: a hop block is > 2.56 M
+    unsigned tripped=0,overruns_before=callback_overruns;
+    for(unsigned i=0;i<6 && !tripped;++i) {Block();if(engine->VocoderSkips()) tripped=i+1;}
+    CHECK(tripped>=2 && engine->VocoderSkips()==8 && callback_overruns==overruns_before+2);
+    fake_dwt.CYCCNT.step=1000;  // the skipped blocks themselves stay cheap
+    for(unsigned i=0;i<8;++i) {
+        Block();
+        CHECK(neb::profile::block.skipped && neb::profile::block.hops==0 && neb::profile::block.grains>0);
+        for(unsigned s=0;s<neb::kBlock;++s) CHECK(std::isfinite(output_l[s]));
+    }
+    CHECK(engine->VocoderSkips()==0);
+    unsigned resumed=0;
+    for(unsigned i=0;i<2;++i) {Block();CHECK(!neb::profile::block.skipped);resumed+=neb::profile::block.hops;}
+    CHECK(resumed==2);
+    p=ReadProfile();
+    CHECK(p.v[kProfSkipped]==8 && p.v[kProfOverruns]>=2 && p.v[kProfTotalPeak]>2560000u);
+
+    // Reset clears the peaks after the reply that asked for it.
+    p=ReadProfile(true);
+    CHECK(p.v[kProfSkipped]==8);
+    Block();
+    p=ReadProfile();
+    CHECK(p.v[kProfSkipped]==0 && p.v[kProfBlocks]>=1 && p.v[kProfBlocks]<=3);
+    // Length and payload errors.
+    Send({0xF0,0x7D,0x4E,0x42,0x01,0x03,0x02,0xF7});Main();
+    CHECK(LastReply()[5]==(kError|kReplyBit) && LastReply()[7]==kErrLength);
+
+    std::printf("PASS profile build: %u checks\n",checks);
+}
