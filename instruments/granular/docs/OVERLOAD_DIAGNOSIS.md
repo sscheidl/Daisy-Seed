@@ -321,7 +321,17 @@ Each row is a 15 s window after a reset of the peaks, one probe client on the po
 | START 0, PITCH max, grains 0 | 3.29 ms (62 %) | 2.99 ms (2.02) | 1.91 / 0.68 / 0.35 ms | 0.18 ms | 0, 0 | MEASURED 2026-11-11 |
 | START 0, PITCH centre, grains 0 | 2.62 ms (49 %) | 2.31 ms (1.60) | 1.23 / 0.68 / 0.35 ms | 0.18 ms | 0, 0 | MEASURED 2026-11-11 |
 | 60 s at the worst settings (row 2) | 4.81 ms (90 %) | 3.10 ms | as row 2 | 1.59 ms | **0 overruns, 0 skips** in 11,375 blocks | MEASURED 2026-11-11 |
-| listening A / B / C (Codex's sheet) | | | | | | NOT MEASURED |
+| listening A / B / C (Codex's sheet) | | | | | | NOT MEASURED (dropped by the owner, see below) |
+
+### Decision (owner, 2026-11-17)
+
+The owner dropped the listening test as too time-consuming and chose **C, the compensated
+stagger**, as the product default for `granular` and `granular-mod`, on the measured
+timing: the only variant without an overrun at the extreme settings, with the original
+left/right relation. The 5.3 ms delay of the vocoder layer against grains and dry path is
+accepted unheard; its audibility, and the accumulation over repeated overdubs that Codex
+pointed out, remain **NOT MEASURED**. A (`SCHEDULE=0`, common grid) and B (`SCHEDULE=1`)
+stay buildable for a later listening test with [the guide](LISTENING_TEST_0.2.2.md).
 
 What it says: C halves the per-block vocoder work as expected (FFT 0.68 ms and phase
 0.35 ms per block instead of 1.35 and 0.65 in the hop block of A) and removes every

@@ -24,18 +24,19 @@ TARGET := $(TARGET)Profile
 VARIANT := $(if $(VARIANT),$(VARIANT)-profile,profile)
 C_DEFS += $(PROFILE_FLAGS)
 endif
-# SCHEDULE=1|2: listening candidates with the vocoder channels on separate blocks
-# (engine.h Schedule, docs/OVERLOAD_DIAGNOSIS.md section 11). 0 is the common grid.
-SCHEDULE ?= 0
+# Vocoder scheduling (engine.h Schedule, docs/OVERLOAD_DIAGNOSIS.md section 11). The
+# product is 2, the compensated stagger (owner's decision 2026-11-17). SCHEDULE=0 (common
+# grid, as up to 0.2.1) and SCHEDULE=1 (plain stagger) build listening images only.
+SCHEDULE ?= 2
+ifeq ($(SCHEDULE),0)
+TARGET := $(TARGET)Common
+VARIANT := $(if $(VARIANT),$(VARIANT)-common,common)
+C_DEFS += -DNEBULAE_VOCODER_SCHEDULE=0
+endif
 ifeq ($(SCHEDULE),1)
 TARGET := $(TARGET)Stagger
 VARIANT := $(if $(VARIANT),$(VARIANT)-stagger,stagger)
 C_DEFS += -DNEBULAE_VOCODER_SCHEDULE=1
-endif
-ifeq ($(SCHEDULE),2)
-TARGET := $(TARGET)Pipeline
-VARIANT := $(if $(VARIANT),$(VARIANT)-pipeline,pipeline)
-C_DEFS += -DNEBULAE_VOCODER_SCHEDULE=2
 endif
 TARGET := $(TARGET)-v$(VERSION)
 SD_DIR = ../../common/sd
@@ -172,22 +173,21 @@ test: e2e fft-host
 	./$(H)/test_golden_profile $(H)/e2e/fat32-after.img > $(H)/golden_profile.txt
 	$(HOST_CXX) $(HOST_FLAGS) $(REFERENCE_FLAGS) $(PRODUCTION) tests/test_golden.cpp $(PRODUCTION_LINK) -o $(H)/test_golden_reference
 	$(HOST_CXX) $(HOST_FLAGS) -Isrc tests/compare_audio.cpp $(DSP_SOURCES) -o $(H)/compare_audio
-	NEBULAE_GOLDEN_DUMP=$(H)/golden.f32 ./$(H)/test_golden $(H)/e2e/fat32-after.img > /dev/null
-	NEBULAE_GOLDEN_DUMP=$(H)/golden_reference.f32 ./$(H)/test_golden_reference $(H)/e2e/fat32-after.img > $(H)/golden_reference.txt
+	NEBULAE_GOLDEN_SCHEDULE=0 NEBULAE_GOLDEN_DUMP=$(H)/golden_common.f32 ./$(H)/test_golden $(H)/e2e/fat32-after.img > $(H)/golden_common.txt
+	NEBULAE_GOLDEN_SCHEDULE=0 NEBULAE_GOLDEN_DUMP=$(H)/golden_reference.f32 ./$(H)/test_golden_reference $(H)/e2e/fat32-after.img > $(H)/golden_reference.txt
 	cat $(H)/golden.txt $(H)/golden_mod.txt $(H)/golden_route.txt $(H)/golden_profile.txt
 	cmp $(H)/golden.txt $(H)/golden_mod.txt
 	cmp $(H)/golden.txt $(H)/golden_profile.txt
 	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_route.txt)"
 	@echo "PASS golden: the MOD build with an empty matrix sounds bit-identical to the regular build, and one active route changes the hash"
 	@echo "PASS golden: the profile build sounds bit-identical to the regular build"
-	@echo "0.2.1 vocoder in this engine: $$(cat $(H)/golden_reference.txt) (equals the 0.2.1 golden on the same compiler: the rest of the engine is bit-identical)"
-	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_reference.txt)"
+	@echo "0.2.1 vocoder in this engine on the common grid: $$(cat $(H)/golden_reference.txt) (equals the 0.2.1 golden on the same compiler: the rest of the engine is bit-identical)"
 	NEBULAE_GOLDEN_SCHEDULE=1 ./$(H)/test_golden $(H)/e2e/fat32-after.img > $(H)/golden_stagger.txt
-	NEBULAE_GOLDEN_SCHEDULE=2 ./$(H)/test_golden $(H)/e2e/fat32-after.img > $(H)/golden_pipeline.txt
-	@echo "listening candidates: stagger $$(cat $(H)/golden_stagger.txt), pipeline $$(cat $(H)/golden_pipeline.txt)"
+	@echo "product (compensated stagger) $$(cat $(H)/golden.txt); listening builds: common grid $$(cat $(H)/golden_common.txt), plain stagger $$(cat $(H)/golden_stagger.txt)"
+	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_common.txt)"
 	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_stagger.txt)"
-	test "$$(cat $(H)/golden.txt)" != "$$(cat $(H)/golden_pipeline.txt)"
-	./$(H)/compare_audio $(H)/golden.f32 $(H)/golden_reference.f32
+	test "$$(cat $(H)/golden_common.txt)" != "$$(cat $(H)/golden_reference.txt)"
+	./$(H)/compare_audio $(H)/golden_common.f32 $(H)/golden_reference.f32
 SANITIZE = -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all -fno-omit-frame-pointer
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -pthread $(SANITIZE)" \

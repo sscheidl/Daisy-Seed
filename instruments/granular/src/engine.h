@@ -21,7 +21,9 @@ enum Schedule : unsigned {
     kScheduleCompensated = 2,  // the right channel hops one block later on the LEFT
                                // channel's stored block, the left output is delayed one
                                // block: channels exactly as kScheduleCommon, the whole
-                               // vocoder layer 256 samples later
+                               // vocoder layer 256 samples later. Product default since
+                               // 0.2.2 (owner's decision 2026-11-17): the only schedule
+                               // without overruns at the extreme settings on the kit
 };
 class Engine : public Sink {
   public:
@@ -109,7 +111,7 @@ class Engine : public Sink {
 #endif
     unsigned skip_vocoder_=0;
     bool vocoder_mono_=false;  // channel 1 was not computed: a mono source gives identical output
-    unsigned schedule_=kScheduleCommon;
+    unsigned schedule_=kScheduleCompensated;
     // kScheduleCompensated: the left channel's block N, output in block N+1 together with
     // the right channel computed on the same stored inputs.
     bool pending_valid_=false;

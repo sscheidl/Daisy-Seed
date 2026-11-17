@@ -40,7 +40,10 @@ int main(int argc,char** argv) {
     CHECK(bridge.published.frames==12345);  // bank 1 slot 1 plays: the vocoder has material
 
     // Splits: every block costs vocoder and grain reads; hop blocks add fill, FFT and
-    // phase and report two hop frames (both channels in the same block, hop 512 = 2 blocks).
+    // phase. Product schedule (compensated stagger): one hop frame in every block, left
+    // and right alternating. Common grid: two hop frames in every second block.
+    const bool compensated=engine->ScheduleMode()==neb::kScheduleCompensated;
+    CHECK(compensated);  // the product default
     fake_dwt.CYCCNT.step=1000;
     ReadProfile(true);Block();  // clear the peaks of the settle phase
     unsigned hop_blocks=0,plain_blocks=0;
@@ -48,10 +51,10 @@ int main(int argc,char** argv) {
         Block();
         const neb::profile::Split& s=neb::profile::block;
         CHECK(s.vocoder>0 && s.grains>0 && !s.skipped);
-        if(s.hops) {CHECK(s.hops==2 && s.fill>0 && s.fft>0 && s.phase>0);++hop_blocks;}
+        if(s.hops) {CHECK(s.hops==(compensated?1u:2u) && s.fill>0 && s.fft>0 && s.phase>0);++hop_blocks;}
         else {CHECK(s.fill==0 && s.fft==0 && s.phase==0);++plain_blocks;}
     }
-    CHECK(hop_blocks==4 && plain_blocks==4);
+    CHECK(compensated?hop_blocks==8 && plain_blocks==0:hop_blocks==4 && plain_blocks==4);
     Values p=ReadProfile();
     CHECK(p.v[kProfClock]==480000000u && p.v[kProfDeadline]==2560000u);
     CHECK(p.v[kProfBlocks]>=9 && p.v[kProfHopBlocks]>=4 && p.v[kProfSkipped]==0);
@@ -84,14 +87,14 @@ int main(int argc,char** argv) {
     Send({0xF0,0x7D,0x4E,0x42,0x01,0x01,0xF7});Main();
     CHECK(LastReply().size()==6+kStatusPayload+1);
 
-    // Overload protection: the second overrun within 16 blocks (here: two hop blocks in a
-    // row beyond the deadline) leaves the vocoder out of the next eight blocks, which
-    // still render grains; then the vocoder restarts from a reset.
+    // Overload protection: the second overrun within 16 blocks (here: two hop blocks
+    // beyond the deadline) leaves the vocoder out of the next eight blocks, which still
+    // render grains; then the vocoder restarts from a reset.
     ReadProfile(true);Block();        // Send() runs a block itself: arm the counter afterwards
-    fake_dwt.CYCCNT.step=200000;  // ~26 reads in a hop block = 5.2 M cycles; plain ~1.2 M
+    fake_dwt.CYCCNT.step=200000;  // every DWT read costs 200 k cycles: a hop block is > 2.56 M
     unsigned tripped=0,overruns_before=callback_overruns;
     for(unsigned i=0;i<6 && !tripped;++i) {Block();if(engine->VocoderSkips()) tripped=i+1;}
-    CHECK(tripped>=3 && engine->VocoderSkips()==8 && callback_overruns==overruns_before+2);
+    CHECK(tripped>=2 && engine->VocoderSkips()==8 && callback_overruns==overruns_before+2);
     fake_dwt.CYCCNT.step=1000;  // the skipped blocks themselves stay cheap
     for(unsigned i=0;i<8;++i) {
         Block();

@@ -75,14 +75,15 @@ elif path.name.startswith('ToyPianoAmbient-v'):
     version = match.group(1)
     expected_name = f'ToyPianoAmbient-v{version}.bin'
     marker = rb'TOYPIANO-AMBIENT-FW-VERSION=([0-9.]+)\x00'
-elif re.match(r'^Nebulae(OnDaisy|Mod)(Profile|Stagger|Pipeline)*-v', path.name):
+elif re.match(r'^Nebulae(OnDaisy|Mod)(Profile|Common|Stagger|Pipeline)*-v', path.name):
     # Nebulae: regular or MOD image, optionally the diagnostic build (Profile) and the
-    # vocoder scheduling candidates (Stagger, Pipeline; instruments/granular/Makefile).
+    # vocoder scheduling listening builds (Common, Stagger; Pipeline was the 2026-11-09
+    # name of today's default; instruments/granular/Makefile).
     granular = root / 'instruments' / 'granular'
     match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
     assert match, "Could not read the Nebulae version"
     version = match.group(1)
-    name_match = re.match(r'^(Nebulae(?:OnDaisy|Mod)(?:Profile|Stagger|Pipeline)*)-v', path.name)
+    name_match = re.match(r'^(Nebulae(?:OnDaisy|Mod)(?:Profile|Common|Stagger|Pipeline)*)-v', path.name)
     expected_name = f'{name_match.group(1)}-v{version}.bin'
     mod = path.name.startswith('NebulaeMod')
     marker = rb'NEBULAE-MOD-VERSION=([0-9.]+)\x00' if mod else rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'

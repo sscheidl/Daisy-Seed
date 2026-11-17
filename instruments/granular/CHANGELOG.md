@@ -11,6 +11,16 @@ and the second opinion: [OVERLOAD_DIAGNOSIS.md](docs/OVERLOAD_DIAGNOSIS.md),
 5.333 ms block (MEASURED 2026-11-09), which starved USB, the control timer and the main
 loop, because libDaisy runs all of them at the audio interrupt's priority.
 
+**Deliberate sound change (owner's decision 2026-11-17, without a listening test):** the
+two vocoder channels now compute their frames in alternate blocks on the same inputs
+(compensated stagger, `kScheduleCompensated`). Left and right stay exactly as before
+relative to each other; the whole vocoder layer sounds 256 samples (5.3 ms) later than
+grains and the dry path, and an overdub records the vocoder part 5.3 ms later per pass.
+It is the only schedule that ran the extreme settings on the kit without an overrun.
+Golden hash of the product changes on purpose (clang/Windows `make test` prints it); the
+same engine on the common grid with the 0.2.1 vocoder still reproduces the 0.2.1 golden
+`63576b07d2f2b999`. Audibility of the 5.3 ms offset: **NOT MEASURED**.
+
 * **DSP state out of SDRAM.** The Engine (vocoders, grains, windows) lives in AXI SRAM
   (`.neb_dsp`); the PCM of the Live banks and of the file stays in SDRAM. The same hop
   ran 4.4 times faster there (14.0 against 3.16 ms per channel, MEASURED on 0.2.1).
@@ -32,7 +42,8 @@ loop, because libDaisy runs all of them at the audio interrupt's priority.
   PITCH centre to 4.1 ms at PITCH maximum for both channels; no overruns at normal
   settings; PITCH maximum with maximum grains still reaches about 107 % and runs into the
   protection. The window fill is bound by SDRAM cache misses.
-* **Listening candidates** (`make MOD=1 SCHEDULE=1|2`, [diagnosis](docs/OVERLOAD_DIAGNOSIS.md)
+* **Listening candidates of 2026-11-09** (then `make MOD=1 SCHEDULE=1|2`; since the decision
+  `SCHEDULE=0` common grid and `SCHEDULE=1` plain stagger, the default is C; [diagnosis](docs/OVERLOAD_DIAGNOSIS.md)
   section 11, Codex's [second review](docs/CODEX_SECOND_OPINION_2.md)): `Stagger` (the
   right channel hops one block later with its own position, a deliberate stereo
   character) and `Pipeline` (right channel one block later on the left channel's stored

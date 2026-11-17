@@ -4,9 +4,11 @@
 first hardware contact: 0.2.1 froze the kit as soon as a sample played, because its phase
 vocoder needed 31 to 34 ms per hop in a 5.33 ms block (MEASURED 2026-11-09,
 [diagnosis](docs/OVERLOAD_DIAGNOSIS.md)). The DSP state moved from SDRAM to AXI SRAM, the
-hop got a faster FFT and cheaper phase loops, and every image now protects itself against
-a sustained overload ([changelog](CHANGELOG.md)). The new timing and the sound on the kit
-are **NOT MEASURED**.
+hop got a faster FFT and cheaper phase loops, the two vocoder channels compute their frames
+in alternate blocks (the vocoder layer sounds 5.3 ms later; owner's decision 2026-11-17),
+and every image now protects itself against a sustained overload ([changelog](CHANGELOG.md)).
+On the kit the diagnostic build ran the extreme settings without an overrun (MEASURED
+2026-11-11); the sound of 0.2.2 is **NOT MEASURED** (no listening test).
 0.2.1 ([release report](docs/V0_2_RELEASE_REPORT.md)) fixed card ownership changes during a
 pending management restart;
 see the [integration and test-candidate report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md).

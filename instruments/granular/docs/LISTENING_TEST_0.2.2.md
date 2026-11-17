@@ -2,7 +2,10 @@
 
 Short operating guide for the owner. Background: [OVERLOAD_DIAGNOSIS.md](OVERLOAD_DIAGNOSIS.md)
 section 11, method and full sheet: [CODEX_SECOND_OPINION_2.md](CODEX_SECOND_OPINION_2.md).
-German translation below. Result: **NOT MEASURED** until the owner has listened.
+German translation below. Result: **NOT MEASURED**. On 2026-11-17 the owner chose C without
+the test; this guide stays for a later check. Images since then: C is the regular
+`NebulaeMod-v0.2.2.bin`, A is built with `SCHEDULE=0` (`NebulaeModCommon`), B with
+`SCHEDULE=1` (`NebulaeModStagger`).
 
 ## What is compared
 

@@ -23,10 +23,11 @@
 #endif
 #include <new>
 
-// Vocoder scheduling of this product (engine.h Schedule): 0 common grid, 1 plain
-// stagger, 2 compensated stagger. Listening candidates of 2026-11-09 build 1 and 2.
+// Vocoder scheduling of this product (engine.h Schedule): 2 compensated stagger, the
+// product default (owner's decision 2026-11-17); 0 common grid and 1 plain stagger are
+// listening builds (Makefile SCHEDULE=0|1).
 #ifndef NEBULAE_VOCODER_SCHEDULE
-#define NEBULAE_VOCODER_SCHEDULE 0
+#define NEBULAE_VOCODER_SCHEDULE 2
 #endif
 // AXI SRAM section of the DSP state; the host fakes define it empty.
 #ifndef NEB_DSP_SRAM
