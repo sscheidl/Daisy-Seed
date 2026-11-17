@@ -87,14 +87,16 @@ Do each row, then write the highest voice count with 0 overruns and its peak loa
 
 | Row | Model (VR6, page 2) | Drive (VR7, page 1) | Age (VR8) | Highest voices | Peak load | Result |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Clean | left | left | | | NOT MEASURED |
-| 2 | Sum | right | left | | | NOT MEASURED |
-| 3 | Stages | right | left | | | NOT MEASURED |
-| 4 | Stages | right | right | | | NOT MEASURED |
-| 5 | Clean | left | right | | | NOT MEASURED |
-| 6 | Shared | right | left | | | NOT MEASURED |
+| 1 | Clean | left | left | 32 (load test maximum) | 48.3 % at 16, 90.5 % at 32 | MEASURED 2026-11-17, 0 overruns |
+| 2 | Sum | right | left | at least 24, not pushed further | 61.7 % at 16, 89.0 % at 24 | MEASURED 2026-11-17, 0 overruns |
+| 3 | Stages | right | left | at least 16, not pushed further | 85.6 % at 16 | MEASURED 2026-11-17, 0 overruns |
+| 4 | Stages | right | right | at least 16, not pushed further | 86.0 % at 16 | MEASURED 2026-11-17, 0 overruns |
+| 5 | Clean | left | right | at least 16, not pushed further | 53.6 % at 16 | MEASURED 2026-11-17, 0 overruns |
+| 6 | Shared | right | left | – | – | NOT MEASURED: the run gave the Clean figures, so VR6 most likely had not switched; not repeated |
 
 Also please write down the peak load at 16 voices in rows 1 to 4: that answers "16 key voices" directly.
+
+**Result of the kit run, 2026-11-17.** Image `ToyPianoFilter-v0.1.0.bin`, SHA-256 `0f539c8da8ed543a9b4efda17e29b0add307ba6f6f8f6ffb28df20dcb4970d31`, built from `main` at `53fd8a0`. The owner set the pots; up to 16 voices were held as USB-MIDI notes (retriggered every 0.25 s, velocity 100), above 16 with the built-in load test. Load was read with `mod_probe.py` stats over 6 s per step (10 s for the load test). Every step from 4 to 16 voices, in rows 1 to 5, ran without overruns. Cost per voice: Clean about 2.7 %, Clean with full Age about 3.1 %, Sum with full drive about 3.6 %, Stages with full drive about 5.1 %; Age adds about 0.4 percentage points to Stages at 16 voices. Idle load 2.7 %. The owner decided that 16 voices are enough and ended the load test there. The listening checks below are open.
 
 **Listening**, Stages unless noted:
 
