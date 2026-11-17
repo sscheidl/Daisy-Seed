@@ -10,7 +10,7 @@ void WavParser::Begin(uint32_t bytes, size_t capacity) {
 bool WavParser::Step(File& file) {
     if(done_) return true;
     auto fail = [&](FileError e) { error=e; done_=true; return true; };
-    uint8_t b[24]{};
+    uint8_t b[40]{};
     if(pos_==0) {
         if(size_<12) return fail(FileError::Format);
         if(!file.Read(0,b,12)) return fail(FileError::Io);
@@ -21,9 +21,11 @@ bool WavParser::Step(File& file) {
         end_=uint32_t(end); pos_=12; return false;
     }
     if(pos_==end_) {
-        if(!fmt_ || !data_ || !info.bytes || info.bytes%(info.channels*2)) return fail(FileError::Format);
-        info.frames=info.bytes/(info.channels*2);
-        if(info.bytes>capacity_) return fail(FileError::TooLarge);
+        const uint32_t frame=info.channels*(info.bits/8u);
+        if(!fmt_ || !data_ || !info.bytes || info.bytes%frame) return fail(FileError::Format);
+        info.frames=info.bytes/frame;
+        // The buffer always holds PCM16, whatever the file stores.
+        if(uint64_t(info.frames)*info.channels*2>capacity_) return fail(FileError::TooLarge);
         done_=true; return true;
     }
     if(end_-pos_<8 || ++chunks_>4096) return fail(FileError::Format);
@@ -32,13 +34,23 @@ bool WavParser::Step(File& file) {
     const uint64_t next=uint64_t(pos_)+8+n+(n&1);
     if(next>end_) return fail(FileError::Format);
     if(!std::memcmp(b,"fmt ",4)) {
-        if(fmt_ || (n!=16 && n!=18)) return fail(FileError::Format);
+        // 16: plain PCM. 18: PCM with cbSize 0. 40: EXTENSIBLE, or plain PCM with the
+        // empty extension some DAWs write (cbSize 0, the 22 bytes after it unused).
+        if(fmt_ || (n!=16 && n!=18 && n!=40)) return fail(FileError::Format);
         if(!file.Read(pos_+8,b,n)) return fail(FileError::Io);
-        const unsigned ch=U16(b+2), rate=U32(b+4);
-        if(U16(b)!=1 || (ch!=1 && ch!=2) || (rate!=44100 && rate!=48000)
-           || U16(b+14)!=16 || U16(b+12)!=ch*2 || U32(b+8)!=rate*ch*2
-           || (n==18 && U16(b+16)!=0)) return fail(FileError::Format);
-        info.channels=ch; info.rate=rate; fmt_=true;
+        const unsigned tag=U16(b), ch=U16(b+2), rate=U32(b+4), bits=U16(b+14);
+        if(tag==0xFFFE) {
+            // KSDATAFORMAT_SUBTYPE_PCM; valid bits may be fewer than the container.
+            static const uint8_t kPcm[16]={1,0,0,0,0,0,0x10,0,0x80,0,0,0xAA,0,0x38,0x9B,0x71};
+            const unsigned valid=U16(b+18);
+            if(n!=40 || U16(b+16)!=22 || std::memcmp(b+24,kPcm,16) || !valid || valid>bits)
+                return fail(FileError::Format);
+        } else if(tag!=1 || (n>16 && U16(b+16)!=0)) {
+            return fail(FileError::Format);
+        }
+        if((ch!=1 && ch!=2) || (rate!=44100 && rate!=48000) || (bits!=16 && bits!=24)
+           || U16(b+12)!=ch*(bits/8) || U32(b+8)!=rate*ch*(bits/8)) return fail(FileError::Format);
+        info.channels=uint16_t(ch); info.rate=rate; info.bits=uint16_t(bits); fmt_=true;
     } else if(!std::memcmp(b,"data",4)) {
         if(data_) return fail(FileError::Format);
         info.offset=pos_+8; info.bytes=n; data_=true;
@@ -79,10 +91,14 @@ void Loader::Service() {
         if(bridge_->ack.load(std::memory_order_acquire)) { read_=0; state=State::Read; }
         break;
     case State::Read: {
-        const uint32_t n=std::min(uint32_t(sizeof bounce_),parser_.info.bytes-read_);
+        // 4092 bytes for 24-bit: whole samples of mono and stereo in every chunk.
+        const bool wide=parser_.info.bits==24;
+        const uint32_t chunk=wide ? 4092u : uint32_t(sizeof bounce_);
+        const uint32_t n=std::min(chunk,parser_.info.bytes-read_);
         if(!file_->Read(parser_.info.offset+read_,bounce_,n)) { Fail(FileError::Io,true); break; }
         // Decode LE explicitly: portable host oracle and Cortex-M7 have identical PCM.
-        for(uint32_t i=0;i<n;i+=2) pcm_[(read_+i)/2]=static_cast<int16_t>(U16(bounce_+i));
+        if(wide) for(uint32_t i=0;i<n;i+=3) pcm_[(read_+i)/3]=Pcm24To16(bounce_+i);
+        else for(uint32_t i=0;i<n;i+=2) pcm_[(read_+i)/2]=static_cast<int16_t>(U16(bounce_+i));
         read_+=n;
         if(read_==parser_.info.bytes) {
             const unsigned bank=file_->Bank();

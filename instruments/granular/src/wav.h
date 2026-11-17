@@ -12,8 +12,17 @@ struct File {
     virtual void Close() = 0;
     virtual unsigned Bank() const { return 0; }  // bank of the open file (0 = none)
 };
-struct WavInfo { uint32_t offset=0, bytes=0, frames=0, rate=0; uint16_t channels=0; };
-// One RIFF chunk per Step, metadata reads <=24 bytes, no payload scans.
+// bytes: the data chunk in the file; frames, rate, channels: what the PCM16 buffer holds.
+struct WavInfo { uint32_t offset=0, bytes=0, frames=0, rate=0; uint16_t channels=0, bits=16; };
+// One 24-bit little-endian sample rounded to the nearest PCM16 value (no dither: the
+// error sits near -96 dBFS, and loads stay bit-exact and testable). Full scale clamps.
+inline int16_t Pcm24To16(const uint8_t* p) {
+    int32_t x=int32_t(uint32_t(p[0]) | uint32_t(p[1])<<8 | uint32_t(p[2])<<16);
+    if(x & 0x800000) x-=0x1000000;
+    const int32_t y=((x+0x800080)>>8)-0x8000;  // x+0x800080 is never negative
+    return int16_t(y>32767 ? 32767 : y);
+}
+// One RIFF chunk per Step, metadata reads <=40 bytes, no payload scans.
 class WavParser {
   public:
     void Begin(uint32_t bytes, size_t capacity);

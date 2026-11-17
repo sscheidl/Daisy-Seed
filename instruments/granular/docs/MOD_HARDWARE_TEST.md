@@ -7,7 +7,7 @@ with the date, in the Result column: PASS, FAIL or a value. Do not fill in expec
 | --- | --- |
 | Tester / date | |
 | Package revision (`MANIFEST.json`) | |
-| Firmware | `firmware/NebulaeMod-v0.2.1.bin` |
+| Firmware | `firmware/NebulaeMod-v0.3.0.bin` |
 | SHA-256 checked with `SHA256SUMS` | |
 | Kit, USB port, Windows build | |
 
@@ -34,7 +34,7 @@ editor inside a DAW, which can send MIDI on the same port; skip them if you do n
 
 | # | Step | Expected | Result |
 | --- | --- | --- | --- |
-| 1.1 | Click **Modulation** | Editor connects by itself; pill shows `nebulae 0.2.1`; tick 1000 Hz | NOT MEASURED |
+| 1.1 | Click **Modulation** | Editor connects by itself; pill shows `nebulae 0.3.0`; tick 1000 Hz | NOT MEASURED |
 | 1.2 | Click **Firmware update ...**, then cancel without confirming | Dialog opens; the kit keeps playing | NOT MEASURED |
 
 ## 2. Eight targets
@@ -101,13 +101,13 @@ Save the patch first. Create a Live loop so the confirmation appears.
 | --- | --- | --- | --- |
 | 6.1 | Select a sample in bank 2, note bank and slot | | NOT MEASURED |
 | 6.2 | Click **SD card**, answer the save question with Yes | Editor closes first, then the panel opens; nothing is shared | NOT MEASURED |
-| 6.3 | Tab **SD share**: panel finds the kit in performance | STATUS line appears, firmware 0.2.1 | NOT MEASURED |
+| 6.3 | Tab **SD share**: panel finds the kit in performance | STATUS line appears, firmware 0.3.0 | NOT MEASURED |
 | 6.4 | While recording, click **Share SD card with Windows** | Refused as busy; kit keeps playing | NOT MEASURED |
 | 6.5 | Stop recording, Share again | Warning: the Live loop will be lost | NOT MEASURED |
 | 6.6 | Confirm | Fade, kit restarts, Windows shows a drive, D2 steady | NOT MEASURED |
-| 6.7 | Copy a new WAV into a bank, then eject in Windows | Panel shows ejected, D4 steady | NOT MEASURED |
+| 6.7 | Copy a new 16-bit and a new 24-bit WAV into a bank, then eject in Windows | Panel shows ejected, D4 steady | NOT MEASURED |
 | 6.8 | **Return to Nebulae** | Panel shows Performance; same bank and slot as 6.1 sound | NOT MEASURED |
-| 6.9 | Play the new WAV | Loads and plays | NOT MEASURED |
+| 6.9 | Play both new WAVs | Both load and play; no LED error pulses | NOT MEASURED |
 | 6.10 | Click **Modulation**, answer Yes | Panel closes first, editor reconnects, matrix empty | NOT MEASURED |
 | 6.11 | **Open file ...** with the saved patch | Routes work again | NOT MEASURED |
 | 6.12 | Interrupted access: Share, then pull J7 before ejecting; reconnect | Card stays quarantined until you acknowledge it in the panel | NOT MEASURED |

@@ -8,6 +8,7 @@
 // stack. This is a simulation, not a substitute for the hardware test.
 // Usage: e2e_windows <in.img> <out.img> <expected.txt>
 #include <array>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -134,15 +135,25 @@ static void P32(std::vector<uint8_t>& b, uint32_t v) { P16(b, uint16_t(v)); P16(
 // PCM16 WAV with a deterministic signal; returns the file and the PCM hash.
 static std::vector<uint8_t> Wav(unsigned rate, unsigned ch, unsigned frames, unsigned seed, uint32_t& hash,
                                 unsigned bits = 16) {
+    // The hash is what Nebulae must hold after loading: PCM16, for 24-bit the nearest value.
     std::vector<int16_t> pcm(size_t(frames) * ch);
-    for(size_t i = 0; i < pcm.size(); ++i) pcm[i] = int16_t(int32_t(i * 2654435761u + seed * 97u) >> 8);
+    std::vector<int32_t> wide(pcm.size());
+    for(size_t i = 0; i < pcm.size(); ++i) {
+        const uint32_t v = uint32_t(i * 2654435761u + seed * 97u);
+        wide[i] = int32_t(v >> 8) - ((v >> 8) & 0x800000 ? 0x1000000 : 0);  // 24-bit, signed
+        const double nearest = std::floor(double(wide[i]) / 256.0 + 0.5);
+        pcm[i] = bits == 24 ? int16_t(nearest > 32767 ? 32767 : nearest) : int16_t(int32_t(v) >> 8);
+    }
     hash = Fnv(pcm.data(), pcm.size());
     std::vector<uint8_t> b = {'R', 'I', 'F', 'F', 0, 0, 0, 0, 'W', 'A', 'V', 'E', 'f', 'm', 't', ' '};
     P32(b, 16); P16(b, 1); P16(b, uint16_t(ch)); P32(b, rate); P32(b, rate * ch * bits / 8);
     P16(b, uint16_t(ch * bits / 8)); P16(b, uint16_t(bits));
     b.insert(b.end(), {'d', 'a', 't', 'a'});
-    P32(b, uint32_t(pcm.size() * 2));
-    for(int16_t v : pcm) P16(b, uint16_t(v));
+    P32(b, uint32_t(pcm.size() * bits / 8));
+    for(size_t i = 0; i < pcm.size(); ++i) {
+        if(bits == 24) { const uint32_t v = uint32_t(wide[i]); b.push_back(uint8_t(v)); P16(b, uint16_t(v >> 8)); }
+        else P16(b, uint16_t(pcm[i]));
+    }
     const uint32_t riff = uint32_t(b.size() - 8);
     for(int i = 0; i < 4; ++i) b[4 + i] = uint8_t(riff >> (8 * i));
     return b;
@@ -194,7 +205,7 @@ int main(int argc, char** argv) {
     for(const Item& it : items) {
         uint32_t hash = 0;
         Put(it.path, Wav(it.rate, it.ch, it.frames, it.seed, hash, it.bits));
-        std::fprintf(expected, "%s|%s|%u|%u|%u|%08x\n", it.listed, it.bits == 16 ? "OK" : "FORMAT",
+        std::fprintf(expected, "%s|%s|%u|%u|%u|%08x\n", it.listed, it.bits == 16 || it.bits == 24 ? "OK" : "FORMAT",
                      it.rate, it.ch, it.frames, hash);
     }
     // Rename and delete through Windows.

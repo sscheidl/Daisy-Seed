@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
                 CHECK(Fnv(pcm.data(), size_t(e.frames) * e.ch) == e.hash);
                 CHECK(file.Bank() == bank);
             } else {
-                CHECK(loader.error == neb::FileError::Format);  // 24-bit: slot occupied, load refused
+                CHECK(loader.error == neb::FileError::Format);  // unsupported format: slot occupied, load refused
             }
             ++matched;
         }
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
     CHECK(matched == expected.size());
     for(const std::string& name : absent) CHECK(!seen.count(name));
     for(const std::string& name : present) CHECK(seen.count(name));
-    // Natural order inside the new bank: 2 before 10, then the 24-bit file.
+    // Natural order inside the new bank: 2 before 10, then the 24-bit file (loads since 0.3.0).
     CHECK(banks.SelectBank(3) || banks.FilesBank() == 3);
     while(banks.Step(dir)) {}
     CHECK(std::string(banks.FileTable().Name(0)) == "2 Kick.WAV" && std::string(banks.FileTable().Name(1)) == "10 Pad.wav");

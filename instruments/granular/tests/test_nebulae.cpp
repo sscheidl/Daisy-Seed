@@ -19,6 +19,25 @@ static void Put32(std::vector<uint8_t>& b,unsigned p,uint32_t v) {for(unsigned j
 static void Chunk(std::vector<uint8_t>& b,const char* id,const std::vector<uint8_t>& data) {
     b.insert(b.end(),id,id+4);P32(b,uint32_t(data.size()));b.insert(b.end(),data.begin(),data.end());if(data.size()&1) b.push_back(0);
 }
+// fmt 16 bytes, or 40 with tag 1 and an empty extension, or EXTENSIBLE (extensible=true).
+static std::vector<uint8_t> WavBits(unsigned rate,unsigned ch,unsigned bits,unsigned frames,bool extensible,
+                                    bool wide_fmt=false,unsigned valid=0) {
+    std::vector<uint8_t> b={'R','I','F','F',0,0,0,0,'W','A','V','E'},fmt,data;
+    const unsigned bps=bits/8;
+    P16(fmt,extensible?0xFFFE:1);P16(fmt,uint16_t(ch));P32(fmt,rate);P32(fmt,rate*ch*bps);P16(fmt,uint16_t(ch*bps));
+    P16(fmt,uint16_t(bits));
+    if(extensible || wide_fmt) {
+        P16(fmt,extensible?22:0);P16(fmt,uint16_t(extensible?(valid?valid:bits):0));P32(fmt,extensible?(ch==1?4u:3u):0u);
+        const uint8_t pcm[16]={1,0,0,0,0,0,0x10,0,0x80,0,0,0xAA,0,0x38,0x9B,0x71};
+        for(uint8_t v:pcm) fmt.push_back(extensible?v:0);
+    }
+    for(unsigned i=0;i<frames*ch;++i) {
+        const uint32_t v=i*0x9E3779B1u;
+        for(unsigned k=0;k<bps;++k) data.push_back(uint8_t(v>>(8*k)));
+    }
+    Chunk(b,"fmt ",fmt);Chunk(b,"data",data);
+    Put32(b,4,uint32_t(b.size()-8));return b;
+}
 static std::vector<uint8_t> Wav(unsigned rate,unsigned ch,unsigned frames=32,bool reversed=false) {
     std::vector<uint8_t> b={'R','I','F','F',0,0,0,0,'W','A','V','E'},fmt,data;
     P16(fmt,1);P16(fmt,uint16_t(ch));P32(fmt,rate);P32(fmt,rate*ch*2);P16(fmt,uint16_t(ch*2));P16(fmt,16);
@@ -65,7 +84,48 @@ static void TestWav(size_t actual_capacity=41695360) {
     }
     for(unsigned sr:{44000u,22050u,96000u}) {f.bytes=Wav(sr,2);CHECK(Parse(f).error==FileError::Format);}
     for(unsigned ch:{0u,3u}) {f.bytes=Wav(48000,ch);CHECK(Parse(f).error==FileError::Format);}
-    f.bytes=good;f.bytes[32]=0xfe;f.bytes[33]=0xff;CHECK(Parse(f).error==FileError::Format); // extensible
+    f.bytes=good;f.bytes[32]=0xfe;f.bytes[33]=0xff;CHECK(Parse(f).error==FileError::Format); // extensible, 16-byte fmt
+    // 24-bit and EXTENSIBLE (v0.3.0): frames counted in the file's depth, capacity in PCM16.
+    for(unsigned sr:{44100u,48000u}) for(unsigned ch:{1u,2u}) for(unsigned bits:{16u,24u}) for(int kind=0;kind<3;++kind) {
+        f.bytes=WavBits(sr,ch,bits,30,kind==1,kind==2);auto p=Parse(f);
+        CHECK(p.error==FileError::None && p.info.frames==30 && p.info.channels==ch && p.info.rate==sr && p.info.bits==bits);
+        CHECK(Parse(f,30*ch*2).error==FileError::None && Parse(f,30*ch*2-1).error==FileError::TooLarge);
+        auto whole=f.bytes;
+        for(unsigned cut=0;cut<whole.size();++cut) {f.bytes.assign(whole.begin(),whole.begin()+cut);CHECK(Parse(f).error!=FileError::None);}
+    }
+    f.bytes=WavBits(48000,2,24,30,true,false,20);CHECK(Parse(f).error==FileError::None);   // 20 valid bits in 24
+    f.bytes=WavBits(48000,2,24,30,true,false,25);CHECK(Parse(f).error==FileError::Format); // more valid bits than stored
+    for(unsigned bits:{8u,20u,32u}) {f.bytes=WavBits(48000,2,bits,30,false);CHECK(Parse(f).error==FileError::Format);}
+    f.bytes=WavBits(48000,2,32,30,true);CHECK(Parse(f).error==FileError::Format);         // 32-bit containers stay out
+    {   // EXTENSIBLE must carry the PCM GUID, cbSize 22 and a 40-byte fmt; float stays out.
+        const auto ext=WavBits(48000,2,24,30,true);const unsigned fmt=20;  // fmt payload offset
+        f.bytes=ext;f.bytes[fmt+24]=3;CHECK(Parse(f).error==FileError::Format);             // IEEE float subtype
+        f.bytes=ext;f.bytes[fmt+39]^=1;CHECK(Parse(f).error==FileError::Format);
+        f.bytes=ext;f.bytes[fmt+16]=0;CHECK(Parse(f).error==FileError::Format);             // cbSize 0
+        f.bytes=WavBits(48000,2,24,30,false,true);f.bytes[fmt+16]=22;CHECK(Parse(f).error==FileError::Format); // tag 1, cbSize 22
+        f.bytes=WavBits(48000,2,24,30,false);f.bytes[fmt+12]=3;CHECK(Parse(f).error==FileError::Format);       // block align
+        f.bytes=WavBits(48000,2,24,30,false);f.bytes[fmt+8]^=1;CHECK(Parse(f).error==FileError::Format);       // byte rate
+        f.bytes=WavBits(48000,2,24,31,false);
+        Put32(f.bytes,fmt+20,uint32_t(31*6-1));f.bytes.pop_back();Put32(f.bytes,4,uint32_t(f.bytes.size()-8));
+        CHECK(Parse(f).error==FileError::Format);                                           // half a frame
+    }
+    // 24-bit capacity limit with a virtual data extent: the PCM16 buffer decides, not the file.
+    for(unsigned ch:{1u,2u}) {
+        const size_t cap=actual_capacity;const uint32_t frames=uint32_t(cap/(ch*2));
+        f.bytes=WavBits(48000,ch,24,1,false);const unsigned data=36;
+        CHECK(!std::memcmp(f.bytes.data()+data,"data",4));
+        auto extent=[&](uint32_t n) {Put32(f.bytes,data+4,n);f.pretend=data+8+n+(n&1);Put32(f.bytes,4,f.pretend-8);};
+        extent(frames*ch*3);  // odd data lengths carry RIFF's pad byte
+        auto p=Parse(f,cap);CHECK(p.error==FileError::None && p.info.frames==frames && p.info.bytes>cap);
+        extent((frames+1)*ch*3);
+        CHECK(Parse(f,cap).error==FileError::TooLarge);f.pretend=0;
+    }
+    // Rounding: every value against an independent oracle (nearest, halves up, clamp at the top).
+    for(int32_t x=-0x800000;x<=0x7FFFFF;++x) {
+        const uint8_t s[3]={uint8_t(x),uint8_t(x>>8),uint8_t(x>>16)};
+        const double r=std::floor(double(x)/256.0+0.5);
+        CHECK(Pcm24To16(s)==int16_t(r>32767 ? 32767 : r));
+    }
     f.bytes=good;Chunk(f.bytes,"data",{0,0});Put32(f.bytes,4,uint32_t(f.bytes.size()-8));CHECK(Parse(f).error==FileError::Format);
     f.bytes=good;Chunk(f.bytes,"fmt ",std::vector<uint8_t>(16));Put32(f.bytes,4,uint32_t(f.bytes.size()-8));CHECK(Parse(f).error==FileError::Format);
     f.bytes=good;Put32(f.bytes,16,UINT32_MAX);CHECK(Parse(f).error==FileError::Format);
@@ -88,7 +148,7 @@ static void TestWav(size_t actual_capacity=41695360) {
         f.bytes=good;for(unsigned j=0;j<3;++j) f.bytes[rng()%f.bytes.size()]=uint8_t(rng());
         auto p=Parse(f);if(p.error==FileError::None) CHECK(p.info.bytes<=1024*1024);
     }
-    std::puts("PASS WAV: format matrix, exact capacities, truncation, duplicate/padded/reordered chunks, 10000 corruptions");
+    std::puts("PASS WAV: format matrix incl. 24-bit/EXTENSIBLE/40-byte fmt, exact capacities, 24-to-16 rounding over all 2^24 values, truncation, duplicate/padded/reordered chunks, 10000 corruptions");
 }
 struct UiSink : Sink {
     std::vector<Action> actions;std::vector<unsigned> slots,banks;unsigned on=0,off=0;
@@ -283,7 +343,17 @@ static void TestLoader() {
     CHECK(ll.active==1 && !r.bridge.ack.load());CHECK(ll.Request(2));
     for(unsigned i=0;i<40 && ll.state!=Loader::State::Idle;++i) {ll.Service();r.Tick();}
     CHECK(ll.active==2);
-    std::puts("PASS loader: preflight retention, bounded load, atomic fade/ack/publish, destructive I/O failure, no-card, back-to-back loads");
+    for(unsigned ch:{1u,2u}) {
+        MemoryFile wf;wf.bytes=WavBits(44100,ch,24,3001,ch==1);
+        std::vector<int16_t> out(8192,7);FileBridge wb;Loader wl;wl.Init(wf,out.data(),out.size()*2,wb);
+        CHECK(wl.Request(2));
+        for(unsigned i=0;i<100 && wl.state!=Loader::State::Publish;++i) {wl.Service();wb.ack.store(wb.gate.load());}
+        CHECK(wl.error==FileError::None && wb.published.frames==3001 && wb.published.channels==ch && wb.published.bits==24);
+        const uint8_t* payload=wf.bytes.data()+wb.published.offset;
+        for(unsigned i=0;i<3001*ch;++i) CHECK(out[i]==Pcm24To16(payload+3*i));
+        CHECK(out[3001*ch]==7);  // nothing written past the file
+    }
+    std::puts("PASS loader: preflight retention, bounded load, atomic fade/ack/publish, destructive I/O failure, no-card, back-to-back loads, 24-bit mono/stereo across chunks");
 }
 
 // ---------------- v0.2.0: SW17 banks, panel LEDs, FILE per bank, F6, F3 ----------------

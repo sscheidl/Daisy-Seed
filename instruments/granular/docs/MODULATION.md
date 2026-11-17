@@ -1,11 +1,11 @@
 # Nebulae + Mod on Daisy (separate build)
 
-**Image:** `build/mod/NebulaeMod-v0.2.2.bin` (`make PROJECT=granular-mod`, or
-`make PROJECT=granular MOD=1`). Firmware marker: `NEBULAE-MOD-VERSION=0.2.2`; IDENTIFY
-reports the key `nebulae` and the version `0.2.2`, the same version as image and marker.
-The numbers and hashes below were recorded for 0.2.1; 0.2.2 changes both images on purpose
-(real-time repair, [changelog](../CHANGELOG.md)) and keeps the rule that the MOD build
-with an empty matrix sounds bit-identical to the regular build.
+**Image:** `build/mod/NebulaeMod-v0.3.0.bin` (`make PROJECT=granular-mod`, or
+`make PROJECT=granular MOD=1`). Firmware marker: `NEBULAE-MOD-VERSION=0.3.0`; IDENTIFY
+reports the key `nebulae` and the version `0.3.0`, the same version as image and marker.
+The numbers and hashes below were recorded for 0.2.1; 0.2.2 changed both images on purpose
+(real-time repair, [changelog](../CHANGELOG.md)), and every version keeps the rule that the
+MOD build with an empty matrix sounds bit-identical to the regular build.
 **Status:** software tested, hardware test pending (**NOT MEASURED**). Checklist:
 [MOD_HARDWARE_TEST.md](MOD_HARDWARE_TEST.md).
 
@@ -199,14 +199,14 @@ closed by hand.
 | `editors/mod-on-daisy` | core test and browser e2e against the Nebulae column table; patch save and reload |
 | `diagnostics/tests/python/test_nebulae.py` | monitor frames on the port do not disturb the panel |
 
-## Resources (MEASURED 2026-11-06, local ARM build, GCC 13.2.1)
+## Resources (MEASURED 2026-11-08 for 0.3.0, local ARM build, GCC 13.2.1)
 
 | | Regular | MOD=1 |
 | --- | ---: | ---: |
-| BIN | 183,740 B | 211,360 B |
-| DTCM static | 97,900 B | 101,676 B (reserve 29,396 B; the check requires 16 KiB) |
-| SRAM image and data | 184,768 B | 212,384 B of 491,520 B |
-| WAV file capacity | 41,695,328 B | 41,695,296 B |
+| BIN | 188,312 B | 215,920 B |
+| DTCM static | 97,892 B | 101,652 B (reserve 29,420 B; the check requires 16 KiB) |
+| SRAM image and data | 189,344 B | 216,960 B of 491,520 B |
+| WAV PCM16 capacity | 41,695,328 B | 41,695,296 B |
 
 CPU load of the matrix on the board: **NOT MEASURED**. The tick runs below audio, so it
 cannot raise `callback_peak_cycles` directly; the panel's STATUS line shows peak and
