@@ -4,7 +4,8 @@
 the listening test and chose the compensated stagger (C) for `granular` and `granular-mod`;
 the default is changed, host suites rerun, final images stored (OVERLOAD_DIAGNOSIS.md
 section 11 "Decision", CHANGELOG). P2 MEASURED 2026-11-17 on the final image (section 12:
-Live publication and three overdubs, 0 overruns). Open: the PR, P3 (editor and panel against a stalled kit,
+Live publication and three overdubs, 0 overruns; owner: keys, LEDs, sound fine). PR #111
+opened 2026-11-17 (merge is the owner's). Open: P3 (editor and panel against a stalled kit,
 separate), rebasing PR #107 onto this branch. Listening stays NOT MEASURED; the guide is
 LISTENING_TEST_0.2.2.md.
 
