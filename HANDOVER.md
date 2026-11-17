@@ -3,8 +3,8 @@
 **State 2026-11-17 (Claude): decision taken, C is the product default.** The owner dropped
 the listening test and chose the compensated stagger (C) for `granular` and `granular-mod`;
 the default is changed, host suites rerun, final images stored (OVERLOAD_DIAGNOSIS.md
-section 11 "Decision", CHANGELOG). Open: P2 on the kit (S1 first press, first stop, second
-recording; needs the owner at the kit), the PR, P3 (editor and panel against a stalled kit,
+section 11 "Decision", CHANGELOG). P2 MEASURED 2026-11-17 on the final image (section 12:
+Live publication and three overdubs, 0 overruns). Open: the PR, P3 (editor and panel against a stalled kit,
 separate), rebasing PR #107 onto this branch. Listening stays NOT MEASURED; the guide is
 LISTENING_TEST_0.2.2.md.
 

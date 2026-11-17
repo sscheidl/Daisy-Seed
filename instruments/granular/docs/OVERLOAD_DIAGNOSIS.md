@@ -343,3 +343,35 @@ the run went unanswered (22:31:02, 22:32:15, setting row 3) although STATUS show
 overrun afterwards; a repeat answered at once. The cause is not known (the one-slot SysEx
 mailbox drops a request that arrives while the previous one is still being answered; the
 probe's preceding `--reset` request may have overlapped). It did not recur in the 60 s run.
+
+## 12. P2 (RECORD) on the final image, MEASURED 2026-11-17
+
+Image `NebulaeMod-v0.2.2.bin` (`f3eecab3…`, commit 0131885, compensated stagger), flashed
+by the agent at 20:26 with the owner's approval; the kit was in the bootloader. The owner
+pressed the keys, the agent logged every change of STATUS once per second (one client on
+the port). Times are the agent's log.
+
+| Time | Owner's action | STATUS | Overruns, peak |
+| --- | --- | --- | --- |
+| 20:26:59 | bank 1 slot 1 plays | card | 0, 51 % |
+| 20:27:28 | card pulled | no card, source kept | 0, 51 % |
+| 20:27:47 | card inserted | card, loading, then card | 0, 51 % |
+| 20:27:52 | S1: first capture (file source playing) | card, recording | 0, 51 % |
+| 20:28:07 | S1: capture ends, Live loop published and playing | card, live | **0, 51 %** |
+| 20:28:16 / 20:28:26 | S1 / S1: first overdub and its end (finalization copy) | live recording / live | 0, 54 % |
+| 20:28:28 / 20:28:47 | second overdub | live recording / live | 0, 54 % |
+| 20:28:49 / 20:28:58 | third overdub | live recording / live | 0, 54 % |
+| 20:29:52 | end | card, live | 0, 54 % |
+
+What it says: the step at which 0.2.1 froze (publishing the first Live loop, which makes
+the Live bank the vocoder's source) passes with no overrun, as do three overdubs with
+their finalization copies. The capture was made with the card inserted; without a card
+no key was pressed in this run. Listening (the sound of the loop and the overdubs) and the
+owner's observation of keys and LEDs are not part of this log.
+
+Seven of about 90 STATUS requests went unanswered during the run (20:27:13, 20:27:31,
+20:27:58, 20:28:05, 20:29:13, 20:29:56 and one more before the run), with 0 overruns
+and the next request answered at once. The same pattern appeared on the profile images.
+The cause is not known; candidates are the one-slot SysEx mailbox and the probe opening
+and closing the Windows MIDI port for every request. It does not indicate an overload
+and is listed as an open item.
