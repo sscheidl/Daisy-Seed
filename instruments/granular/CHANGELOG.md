@@ -51,6 +51,9 @@ same engine on the common grid with the 0.2.1 vocoder still reproduces the 0.2.1
   vocoder layer 5.3 ms later; host-tested bit for bit against the common grid). Both
   halve the hop block. The shipped image stays on the common grid until the owner has
   listened and decided; PROFILE value 21 reports the schedule.
+* **Kit, final image (MEASURED 2026-11-17, `NebulaeMod-v0.2.2.bin` `f3eecab3…`):** P2 fixed: the
+  first Live capture, its publication (where 0.2.1 froze) and three overdubs ran with 0
+  overruns, STATUS peak 51-54 %; the owner reported keys, LEDs and the loop's sound as fine.
 * **Kit, Pipeline (MEASURED 2026-11-11):** 0 overruns and 0 skipped blocks, also over 60 s
   at the extreme setting (START at the file end, PITCH maximum, maximum grains), whose
   callback peak is 4.82 ms = 90 % of the block; PITCH centre with maximum grains 74 %.

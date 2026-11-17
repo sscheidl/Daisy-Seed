@@ -366,8 +366,9 @@ the port). Times are the agent's log.
 What it says: the step at which 0.2.1 froze (publishing the first Live loop, which makes
 the Live bank the vocoder's source) passes with no overrun, as do three overdubs with
 their finalization copies. The capture was made with the card inserted; without a card
-no key was pressed in this run. Listening (the sound of the loop and the overdubs) and the
-owner's observation of keys and LEDs are not part of this log.
+no key was pressed in this run. The owner reported afterwards (2026-11-17): keys and LEDs
+responded throughout and the loop and the overdubs sounded clean. This is the owner's
+observation during the run, not a structured listening test of the schedules.
 
 Six of about 90 STATUS requests went unanswered during the run (20:27:13, 20:27:31,
 20:27:58, 20:28:05, 20:29:13 and 20:29:56), with 0 overruns
