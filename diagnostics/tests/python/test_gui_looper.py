@@ -111,4 +111,4 @@ def test_report_names_the_profile(loop, monkeypatch, tmp_path):
     report = json.loads(target.read_text())
     assert report["nebulae_workflow"]["profile"] == "Looper"
     assert report["device"]["app"] == "LooperOnDaisy" and report["looper"]["mode"] == "SDMGMT"
-    assert report["app_version"] == "0.6.0"
+    assert report["app_version"] == "0.6.1"

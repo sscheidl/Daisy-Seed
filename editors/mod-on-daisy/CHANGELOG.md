@@ -3,6 +3,30 @@
 Versions come from `CMakeLists.txt` (standalone and VST3) and `web/version.js` (browser).
 Hardware results are recorded in the test sheets, never here.
 
+## 0.5.2 (2026-11-17, branch `claude/midi-stall-resilience`, hardware NOT MEASURED)
+
+* **A stalled kit no longer takes the app down** (P3 of the Nebulae first-contact test,
+  2026-11-08: with the stalling Nebulae 0.2.1 image the standalone and the panel crashed once
+  WinMM stopped completing SysEx). Standalone and VST3:
+  * The MIDI sender thread moved into the JUCE-free core (`src/core/SendWorker.h`) with a
+    watchdog: a message that stays in the driver longer than 2 s, a refused message or a full
+    queue marks the link lost. JUCE 9 returns `true` after its own 5 s SysEx timeout, so the old
+    port never reported a hang.
+  * The editor then closes the port and logs "The Daisy is not answering: … The MIDI port was
+    closed; editing continues offline." Connecting again works once the kit answers (the VST3
+    retries when the port list changes, e.g. after a power cycle). During an SD-share restart
+    the same case is only an info line.
+  * JUCE 9 requires MIDI devices to be destroyed on the message thread; the old port let a
+    sender stuck in the driver destroy them on its own thread. Now a stuck sender is detached
+    without waiting, keeps the devices until the driver returns and then posts their
+    destruction to the message thread; after application shutdown began it leaks them instead
+    of racing the library's statics. Received SysEx goes to a shared inbox, so a late input
+    callback never touches a closed port.
+* New host test `tests/test_send_worker.cpp` (fake drivers that block, refuse or throw) and a
+  self-test case "stalled kit" (fake driver behind `MidiPort::OpenForTest`, screenshot
+  `stalled-kit.png`).
+* Browser editor unchanged (`web/version.js` stays 0.4.1).
+
 ## 0.5.1 / browser 0.4.1 (2026-11-11, branch `claude/toy-piano-granular-fx`, hardware NOT MEASURED)
 
 * **Device-side changes reach an idle editor** (PR #108 review R5): while connected and nothing is
