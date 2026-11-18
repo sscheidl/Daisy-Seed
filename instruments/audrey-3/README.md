@@ -4,7 +4,7 @@ The [Synthux Academy Audrey II](https://github.com/Synthux-Academy/Audrey-II) fe
 a Karplus string, overdrive, filters and reverb in one feedback loop, with an echo after it. This is a faithful port with two
 additions: a second pot page and MIDI.
 
-**Status 0.1.0:** builds, and host tests pass. **Nothing was run on the kit: sound, CPU load and controls are NOT MEASURED.**
+**Status 0.1.1:** builds, and host tests pass. **Nothing was run on the kit: sound, CPU load and controls are NOT MEASURED.**
 
 ## Controls
 
@@ -15,8 +15,8 @@ additions: a second pot page and MIDI.
 | VR3 | Feedback Body | same |
 | VR4 | Feedback LPF | same |
 | VR5 | Feedback HPF | same |
-| VR6 | Reverb Mix | Reverb Decay |
-| VR7 | Echo Send | Echo Time |
+| VR6 | Reverb Mix | Echo Send |
+| VR7 | Reverb Decay | Echo Time |
 | VR8 | Output Volume | Echo Feedback |
 
 After SW17 moves, VR6–VR8 do nothing until they reach the stored value of their new parameter, so nothing jumps.
