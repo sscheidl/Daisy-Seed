@@ -156,8 +156,8 @@ class Control {
         return ids[pot];
     }
     static uint8_t PagedParam(int paged_pot, bool page_b) {
-        static const uint8_t ids[2][kPagedPots] = {{kReverbMix, kEchoSend, kOutputVolume},
-                                                   {kReverbDecay, kEchoTime, kEchoFeedback}};
+        static const uint8_t ids[2][kPagedPots] = {{kReverbMix, kReverbDecay, kOutputVolume},
+                                                   {kEchoSend, kEchoTime, kEchoFeedback}};
         return ids[page_b ? 1 : 0][paged_pot];
     }
 

@@ -1,5 +1,12 @@
 # Changelog Audrey 3
 
+## 0.1.1 (2026-11-18)
+
+Pot pages regrouped on the owner's decision of 2026-11-06. Hardware NOT MEASURED.
+
+* **Controls:** reverb on page 1, echo on page 2. VR6 Reverb Mix / Echo Send, VR7 Reverb Decay / Echo Time, VR8 Output
+  Volume / Echo Feedback (page 1 / page 2). VR1-VR5, MIDI and the engine are unchanged.
+
 ## 0.1.0 (2026-11-06)
 
 First port of the Audrey II to the Seed3 Desktop Dev Kit. Hardware NOT MEASURED.

@@ -93,8 +93,11 @@ static void TestPotsAndPages() {
     c.Panel(f);
     CHECK(Near(c.Bank().Norm(kFrequency), 0.5f, 1e-6f));
     CHECK(Near(c.Bank().Norm(kReverbMix), 0.5f, 1e-6f));
+    CHECK(Near(c.Bank().Norm(kReverbDecay), 0.5f, 1e-6f));
     CHECK(Near(c.Bank().Norm(kOutputVolume), 0.5f, 1e-6f));
-    CHECK(Near(c.Bank().Norm(kEchoTime), Spec(kEchoTime).initial_norm, 1e-6f)); // page B untouched
+    CHECK(Near(c.Bank().Norm(kEchoSend), Spec(kEchoSend).initial_norm, 1e-6f)); // page B untouched
+    CHECK(Near(c.Bank().Norm(kEchoTime), Spec(kEchoTime).initial_norm, 1e-6f));
+    CHECK(Near(c.Bank().Norm(kEchoFeedback), Spec(kEchoFeedback).initial_norm, 1e-6f));
 
     // A CC stays until the pot moves (last change wins).
     c.ControlChange(kFirstParamCc + kFrequency, 127);
@@ -108,13 +111,13 @@ static void TestPotsAndPages() {
     f.page_b = true;
     c.Panel(f);
     CHECK(c.Waiting(0) && c.Waiting(1) && c.Waiting(2));
-    CHECK(Near(c.Bank().Norm(kReverbDecay), Spec(kReverbDecay).initial_norm, 1e-6f));
+    CHECK(Near(c.Bank().Norm(kEchoSend), Spec(kEchoSend).initial_norm, 1e-6f));
     f.pots[0] = 0.7f;
     f.pots[6] = 0.45f; // VR7 moves, still above Echo Time's stored 0.30: nothing happens
     c.Panel(f);
     CHECK(Near(c.Bank().Norm(kFrequency), 0.7f, 1e-6f));
     CHECK(Near(c.Bank().Norm(kEchoTime), Spec(kEchoTime).initial_norm, 1e-6f));
-    CHECK(Near(c.Bank().Norm(kEchoSend), 0.5f, 1e-6f)); // and page A keeps its value
+    CHECK(Near(c.Bank().Norm(kReverbDecay), 0.5f, 1e-6f)); // and page A keeps its value
     f.pots[6] = 0.29f; // crosses the stored value: picked up
     c.Panel(f);
     CHECK(!c.Waiting(1));
@@ -123,15 +126,15 @@ static void TestPotsAndPages() {
     c.Panel(f);
     CHECK(Near(c.Bank().Norm(kEchoTime), 0.2f, 1e-6f));
 
-    // Back to page A: Echo Send is at 0.5, the pot at 0.2. It waits, then follows.
+    // Back to page A: Reverb Decay is at 0.5, the pot at 0.2. It waits, then follows.
     f.page_b = false;
     c.Panel(f);
     CHECK(c.Waiting(1));
-    CHECK(Near(c.Bank().Norm(kEchoSend), 0.5f, 1e-6f));
+    CHECK(Near(c.Bank().Norm(kReverbDecay), 0.5f, 1e-6f));
     f.pots[6] = 0.49f;
     c.Panel(f);
     CHECK(!c.Waiting(1));
-    CHECK(Near(c.Bank().Norm(kEchoSend), 0.49f, 1e-6f));
+    CHECK(Near(c.Bank().Norm(kReverbDecay), 0.49f, 1e-6f));
 }
 
 // A MIDI CC that moves a paged parameter while its pot waits for pickup must not be mistaken for
