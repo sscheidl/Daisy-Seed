@@ -6,6 +6,8 @@
 // (local reference model fv1_model.py, assumptions A1-A7 and A5b) so that host results can be
 // compared sample by sample with that model. This is NOT a certified chip emulation: delay-RAM
 // compression, MULX/coefficient truncation and silicon LFO details are not modelled.
+// Deviation from that model since 0.2.0: a SKP with several condition flags skips only when all of
+// them hold (the model OR-ed them).
 //
 // Contract: seed::audio FX interface 1.0 - Prepare(Config, Storage&) at startup, SetParameters,
 // Process(StereoBlock) wet-only, bounded, allocation/lock/I/O-free. Program words are supplied by the
@@ -15,7 +17,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#define SEED_FV1VM_VERSION "0.1.0"
+#define SEED_FV1VM_VERSION "0.2.0"
 
 namespace seed::fx::fv1 {
 
@@ -206,13 +208,15 @@ template <typename T> class Vm {
                 }
                 case Op::Skp: {
                     if(in.n) {
-                        // An empty mask jumps unconditionally (SKP 0,n); SKP 0,0 is the NOP. Several flags are OR-ed.
-                        bool take = in.cond == 0;
-                        if(in.cond & 0x10) take |= run_;
-                        if(in.cond & 0x08) take |= ((acc < 0) != (pacc < 0));
-                        if(in.cond & 0x04) take |= acc == 0;
-                        if(in.cond & 0x02) take |= acc >= 0;
-                        if(in.cond & 0x01) take |= acc < 0;
+                        // The skip is taken only when every set condition holds, so an empty mask jumps
+                        // unconditionally (SKP 0,n) and SKP 0,0 stays the NOP. RUN|GEZ, for example, never skips on
+                        // the first sample after a program load.
+                        bool take = true;
+                        if(in.cond & 0x10) take = take && run_;
+                        if(in.cond & 0x08) take = take && ((acc < 0) != (pacc < 0));
+                        if(in.cond & 0x04) take = take && acc == 0;
+                        if(in.cond & 0x02) take = take && acc >= 0;
+                        if(in.cond & 0x01) take = take && acc < 0;
                         if(take) next = pc + 1 + in.n;
                     }
                     break;

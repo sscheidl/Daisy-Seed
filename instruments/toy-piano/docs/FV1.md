@@ -1,4 +1,4 @@
-# Toy Piano + FV-1 interpreter v0.10.0 (research / feasibility study)
+# Toy Piano + FV-1 interpreter v0.10.1 (research / feasibility study)
 
 Own test product `toy-piano-fv1`: Toy Piano → [fv1-vm](../../../effects/fv1-vm/) (48 kHz adapter, program at
 32 kHz) → stereo output. Composition by build flag `FV1=1`; the regular Toy Piano, `toy-piano-tape` and

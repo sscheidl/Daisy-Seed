@@ -1,5 +1,16 @@
 # Changelog: fv1-vm
 
+## Component 0.2.0, fv1-vm-fx 0.4.1, toy-piano-fv1 0.10.1 (2026-11-22, unreleased)
+
+* **SKP with several condition flags skips only when all of them hold.** The interpreter OR-ed them, as the L2A case
+  model did. Example: `SKP RUN|GEZ` skipped on the first sample after a program load whenever ACC >= 0, so the part
+  it guards ran one sample late; `SKP NEG|ZRO`, which can never hold, skipped on every ACC <= 0. An empty mask stays the
+  unconditional jump and `SKP 0,0` the NOP. Found on 2026-11-22 while running the openly licensed Otherworld vol. 1
+  programs on the host: Mitosis stayed silent and Avalanche fell silent after about 5 s; with the fix both run, and the
+  other 30 programs produce the same host output as before. Regression tests 7b added; they fail on 0.1.0.
+* Programs without a multi-flag SKP are unaffected; the own demo programs (thru, echo) use none. The CPU sweeps of
+  2026-11-05 ran 0.1.0: programs with such a skip may have taken other paths and other loads. Hardware: NOT MEASURED.
+
 ## toy-piano-fv1 0.10.0, fv1-vm-fx 0.4.0 (2026-11-05, unreleased)
 
 * The interpreter low-passes POT0..2 (2^-12 per sample, 125 ms at 32 768 Hz). The FV-1 filters its POT inputs, and the

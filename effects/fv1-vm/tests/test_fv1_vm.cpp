@@ -76,6 +76,18 @@ int main() {
     // 7 SKP NEG/GEZ on the input sign
     { Rig g({Rdax(ADCL, 1.0), Skp(NEG, 1), Sof(0, 0.25), Wrax(DACL, 0)}); std::vector<double> l = {0.5, -0.5}; g.Run(l, l, ol, orr);
       CHECK(Near(ol[0], 0.25) && Near(ol[1], -0.5), "skp neg"); }
+    // 7b Several condition flags skip only when all of them hold (OR-ing them was a bug before component 0.2.0)
+    { // RUN|GEZ with ACC = 0: no skip on the first sample, a skip afterwards
+      Rig g({Skp(RUN | GEZ, 1), Sof(0, 0.5), Wrax(DACL, 0)}); std::vector<double> l(3, 0.0); g.Run(l, l, ol, orr);
+      CHECK(Near(ol[0], 0.5) && Near(ol[1], 0.0) && Near(ol[2], 0.0), "skp run|gez waits for the first sample"); }
+    { // RUN|NEG: needs both, a running program and a negative ACC
+      Rig g({Rdax(ADCL, 1.0), Skp(RUN | NEG, 1), Sof(0, 0.25), Wrax(DACL, 0)}); std::vector<double> l = {-0.5, -0.5, 0.5};
+      g.Run(l, l, ol, orr);
+      CHECK(Near(ol[0], 0.25) && Near(ol[1], -0.5) && Near(ol[2], 0.25), "skp run|neg needs both"); }
+    { // NEG|ZRO can never hold at once, so it never skips
+      Rig g({Rdax(ADCL, 1.0), Skp(NEG | ZRO, 1), Sof(0, 0.25), Wrax(DACL, 0)}); std::vector<double> l = {0.5, -0.5, 0.0};
+      g.Run(l, l, ol, orr);
+      CHECK(Near(ol[0], 0.25) && Near(ol[1], 0.25) && Near(ol[2], 0.25), "skp neg|zro never skips"); }
     // 8 LOG/EXP round trip and the zero endpoint (A6: log2(0) -> -16)
     { Rig g({Rdax(ADCL, 1.0), Log(1.0, 0), Exp(1.0, 0), Wrax(DACL, 0)}); std::vector<double> l = {0.25, 0.0}; g.Run(l, l, ol, orr);
       CHECK(Near(ol[0], 0.25, 1e-12), "log/exp round trip");
