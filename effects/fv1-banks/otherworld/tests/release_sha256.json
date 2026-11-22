@@ -1,0 +1,133 @@
+{
+ "source": "site/otherworld-vol1-fxaid-xl.wav of github.com/andreasjansson/otherworld at 8505568090db52310a255be3f95a0018145e90e6 (git blob 4dbbe0a90e03b881bba2f4d0e1171598cb6ef8be, 3 713 708 bytes)",
+ "method": "Programs decoded from the release WAV (owner research tool, 2026-10); SHA-256 of each 512-byte big-endian program.",
+ "missing": {
+  "21": "215_ventifact: no decoded slot available; only the assembler path covers it"
+ },
+ "slots": {
+  "1": {
+   "id": "01_prism_scatter",
+   "sha256": "567b779a085ed85c56419027c656890d7e4422a661d2170ebf1bb48a6f1b7a35"
+  },
+  "2": {
+   "id": "01_prism_scatter_clk",
+   "sha256": "56c93d66525c56b0695b37188292a8ea2ba7099cc6327db3ca72006909996864"
+  },
+  "3": {
+   "id": "202_grain_bloom",
+   "sha256": "f1341a007e302ea24713e4cfcb87ff950e0011594a052cc1d2848b2ab365a991"
+  },
+  "4": {
+   "id": "202_grain_bloom_clk",
+   "sha256": "19ac1ac0def9517a2a148f92a4a7dc4056361abcf7c2db894da2c00acb1668de"
+  },
+  "5": {
+   "id": "95_zenos_arrow",
+   "sha256": "0fb169cb83c57c4d9c00635aac1dc26863adfd42bd999081f32be54771fe7b17"
+  },
+  "6": {
+   "id": "95_zenos_arrow_clk",
+   "sha256": "bf254f1325a6e037d5df01b74eb371df8fd8229ab21f45b18c1776fc71f1b1b4"
+  },
+  "7": {
+   "id": "121_quantum_tunneling",
+   "sha256": "9b92b60a527913c39a2d91f7479b4d8627ceebbe0d01a4a534dc78ced058181d"
+  },
+  "8": {
+   "id": "121_quantum_tunneling_clk",
+   "sha256": "2c0e2c3b4ed75b988cb385db62ce98caf7edc7fbebab39b2ffa263fd116581c1"
+  },
+  "9": {
+   "id": "18_turtle_grammar",
+   "sha256": "df7f58fab9e4b39df61a593f99aa19904d012e720341dc5b0c89e2aafdf4cf7e"
+  },
+  "10": {
+   "id": "18_turtle_grammar_clk",
+   "sha256": "6c470d2062c20315a69bf8d308740cf0034479e9fd88c65831e4f9f9bf5bf5e8"
+  },
+  "11": {
+   "id": "73_step_mutator",
+   "sha256": "31eee5784f2bc322a23773d2de77d5e738ccfd3c65c6e378990b427f84d0e0c8"
+  },
+  "12": {
+   "id": "73_step_mutator_clk",
+   "sha256": "ca114f51ae52a4c18a959f25dc54b463f4e5e44b1896c43412b7a943ab2115d0"
+  },
+  "13": {
+   "id": "93_tesseract",
+   "sha256": "02ddaa52a977ecbbbfca53e8c6f733a77067b55372784aa9b8189f6b7dc13644"
+  },
+  "14": {
+   "id": "93_tesseract_clk",
+   "sha256": "cad5382481930efbb81ecb985f6cd3de41944b42908c93c89b90410cfa0931e7"
+  },
+  "15": {
+   "id": "85_mitosis",
+   "sha256": "acfd455e86b92163c3f81b0a4d6f97384b66ac7c2e27ede2724ed3ea5c00a03a"
+  },
+  "16": {
+   "id": "113_noocytes",
+   "sha256": "5505df1df99df23dc9ef101a6d63ac6dde042473ccb60b1dcf9b73ca63159546"
+  },
+  "17": {
+   "id": "122_brownian_dust",
+   "sha256": "1e7234ac6a950948faf76a23253d59f83d04308b1f87283a62d5c2118bb80845"
+  },
+  "18": {
+   "id": "165_strata",
+   "sha256": "ed53833b3eb89c6952f7b75c2251e14c483f4fa6d5a8944e826bcd3212c94b01"
+  },
+  "19": {
+   "id": "172_fog_bank",
+   "sha256": "8c98814c2b89cacc257be613a6d4494dc2b1fe0fc7a00b4051bb17ec2d209315"
+  },
+  "20": {
+   "id": "216_comet_harp",
+   "sha256": "7436bce18f425fb2f893888de05e692de85e88b7b63a396431494ae46be95560"
+  },
+  "22": {
+   "id": "71_avalanche",
+   "sha256": "d499a885e3b9a779b45350f051486bd063aa4a32937d78b88c3a8731fe1e1fd6"
+  },
+  "23": {
+   "id": "179_numbers_station",
+   "sha256": "c3a3ea66d33151f747a3afa9eba4cec347c3f7cc7432ad582266fe351db738c0"
+  },
+  "24": {
+   "id": "179_numbers_station_clk",
+   "sha256": "cd69a3b2fe443af50271729f800d8859cca7064c1a7e90c36cc6835c41d2b54f"
+  },
+  "25": {
+   "id": "103_pitch_locked_decimator",
+   "sha256": "8a3c54d41a6b381c26b27d10b0701df9ce37d56480fd0b73b06f751eed8beae2"
+  },
+  "26": {
+   "id": "247_transmutation",
+   "sha256": "1f2ca1a2c76a80f2571cac7588242bd654255ca5b1c8b4ae2ebc74a208ebaf2b"
+  },
+  "27": {
+   "id": "102_wavetable_thief",
+   "sha256": "063f22757425561b091d19d44850f46c9f12d8eac461210dfb4e4a0492165d25"
+  },
+  "28": {
+   "id": "258_two_whales",
+   "sha256": "31bda3a66bb9b3be4a323197f6d73e1c3936a4e35b704f12a0eead20cbfb96e5"
+  },
+  "29": {
+   "id": "112_bellfounder",
+   "sha256": "e67274449585cefe80349dab09147a0925036a4d6426008a17cedd5389e18633"
+  },
+  "30": {
+   "id": "132_phase_ghost",
+   "sha256": "4c55867553e911d330b1c59b34d6971222984af8e8eb53cdc01f333ba6d58d2f"
+  },
+  "31": {
+   "id": "186_talking_chip",
+   "sha256": "c92945d679c5d95fe5c603e2b3b33af4b6f71035369800a92c0d1d1cbad75f36"
+  },
+  "32": {
+   "id": "211_moonquake_clk",
+   "sha256": "b48a4c371201891ea515c92153425ce36e84d0a29f3213d1bf669cdbb449c4d3"
+  }
+ }
+}

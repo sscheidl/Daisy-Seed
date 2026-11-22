@@ -44,6 +44,8 @@ ACID_SEQ = {
     # FV-1 interpreter FX firmware; the Local image (local program table) is never released.
     'Fv1VmFx-v': ('effects/fv1-vm/src/version.h', 'FV1VM_FIRMWARE_VERSION', 'FV1VM-FX-VERSION='),
     'Fv1VmFxLocal-v': ('effects/fv1-vm/src/version.h', 'FV1VM_FIRMWARE_VERSION', 'FV1VM-FX-VERSION='),
+    # FV-1-FX-Suite: fv1-vm-fx with the MIT bank effects/fv1-banks/otherworld.
+    'Fv1FxSuite-v': ('effects/fv1-vm/src/version.h', 'FV1_FX_SUITE_VERSION', 'FV1-FX-SUITE-VERSION='),
     'ToyPianoFv1-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION', 'TOYPIANO-FV1-FW-VERSION='),
     'ToyPianoFv1Local-v': ('instruments/toy-piano/src/composed_version.h', 'TOY_PIANO_FV1_VERSION',
                            'TOYPIANO-FV1-FW-VERSION='),

@@ -2,7 +2,8 @@
 <!-- SPDX-License-Identifier: MIT
      Local Web-MIDI control page for the fv1-vm firmwares (fv1-vm-fx and toy-piano-fv1).
      Research / feasibility study. This file holds no program data: program names come from the local,
-     git-ignored ../../generated/fv1vm_programs.local.js written by tools/gen_programs.py --names.
+     git-ignored ../../generated/fv1vm_programs.local.js written by tools/gen_programs.py --names, or, with
+     ?bank=otherworld (FV-1-FX-Suite), from the committed MIT list ../../../fv1-banks/otherworld/otherworld_programs.js.
      Open it directly in Chrome or Edge (file://); Web MIDI asks for permission once. -->
 <html lang="en">
 <head>
@@ -77,6 +78,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12px; text-tr
 section + section { margin-top: 16px; }
 </style>
 <script src="../../generated/fv1vm_programs.local.js"></script>
+<script src="../../../fv1-banks/otherworld/otherworld_programs.js"></script>
 </head>
 <body>
 <header>
@@ -158,8 +160,9 @@ section + section { margin-top: 16px; }
 </main>
 <script>
 'use strict';
-// ---- Program list (local file) or plain numbers --------------------------------------------------------
-const data = window.FV1VM_PROGRAMS;
+// ---- Program list (local file, or the committed open bank with ?bank=otherworld) or plain numbers ------
+const openBank = new URLSearchParams(location.search).get('bank') === 'otherworld';
+const data = openBank ? window.FV1_BANK_OTHERWORLD : window.FV1VM_PROGRAMS;
 const banner = document.getElementById('banner');
 let programs, groups = [];
 if (data && Array.isArray(data.programs)) {
@@ -168,7 +171,8 @@ if (data && Array.isArray(data.programs)) {
   programs = data.programs.map(p => ({ index: p.index, id: String(p.id), name: String(p.name), category: String(p.category || ''),
     group: String(p.group || ''), bank: p.bank, position: p.position, ref: String(p.ref || '') }));
   document.getElementById('source').textContent =
-    `Program list: ${data.label} · ${programs.length} programs · words SHA-256 ${String(data.sha256).slice(0, 12)}… · local only, do not share.`;
+    `Program list: ${data.label} · ${programs.length} programs · words SHA-256 ${String(data.sha256).slice(0, 12)}… · ` +
+    (openBank ? `${data.license}.` : 'local only, do not share.');
 } else {
   programs = Array.from({ length: 2 }, (_, i) => ({ index: i, id: String(i + 1), name: ['Thru (demo)', 'Echo (demo)'][i], category: 'Demo', group: '', ref: '' }));
   banner.hidden = false;
@@ -177,7 +181,7 @@ if (data && Array.isArray(data.programs)) {
 }
 
 // ---- Telemetry decoder: channel-16 CC100..119, protocol id 2 (src/fv1_firmware.h) --------------------------
-const FLAG_NAMES = { 1: 'double', 2: 'fast memory', 4: 'bypass', 8: 'noise', 16: 'local programs' };
+const FLAG_NAMES = { 1: 'double', 2: 'fast memory', 4: 'bypass', 8: 'noise', 16: 'local programs', 32: 'open bank' };
 function makeDecoder() {
   let values = [];
   return function feed(status, control, value) {

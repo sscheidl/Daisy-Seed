@@ -13,7 +13,7 @@ import csv
 from datetime import datetime, timezone
 import time
 
-FLAGS = {1: 'double', 2: 'fast_memory', 4: 'bypass', 8: 'noise', 16: 'local_programs'}
+FLAGS = {1: 'double', 2: 'fast_memory', 4: 'bypass', 8: 'noise', 16: 'local_programs', 32: 'open_bank'}
 
 
 class SnapshotDecoder:

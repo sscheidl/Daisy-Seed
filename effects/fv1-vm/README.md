@@ -1,7 +1,8 @@
 # FV-1 interpreter FX component (`fv1-vm`)
 
-**Status: firmware 0.4.1 (component 0.2.0), 2026-11-22, research / feasibility study.**
-* Component, standalone firmware `fv1-vm-fx` and the composed `toy-piano-fv1` are built and host-tested.
+**Status: firmware 0.4.2, FV-1-FX-Suite 0.1.0 (component 0.2.0), 2026-11-22, research / feasibility study.**
+* Component, standalone firmware `fv1-vm-fx`, the FV-1-FX-Suite `fv1-fx-suite` and the composed `toy-piano-fv1`
+  are built and host-tested.
 * Hardware: CPU sweeps over all 240 programs, standalone (`float`/SDRAM) and inside `toy-piano-fv1`, MEASURED
   2026-11-05 without an overrun (see [Hardware results](#hardware-results)); `double`, AXI and sound NOT MEASURED.
   Those sweeps ran component 0.1.0, which OR-ed combined SKP conditions (fixed in 0.2.0); programs that use such a skip
@@ -18,6 +19,7 @@ serves as a reference for later native ports. Composition: Toy Piano with this c
 | Project | Content | Status |
 | --- | --- | --- |
 | `fv1-vm-fx` | Stereo line input (or internal noise) → FV-1 interpreter at 32 kHz → output, CPU telemetry | Host tests and ARM build passed; hardware NOT MEASURED |
+| `fv1-fx-suite` | The same firmware with the MIT bank [Otherworld vol. 1](../fv1-banks/otherworld/README.md) (32 programs, 4 MIDI banks) | Host tests and ARM build passed 2026-11-22; hardware NOT MEASURED |
 | `toy-piano-fv1` | Toy Piano → variable-rate adapter → FV-1 interpreter at 8–32 kHz (VR8) → output | Host tests and ARM build passed; hardware NOT MEASURED |
 
 ## Contract
@@ -42,18 +44,35 @@ Delay-RAM compression, MULX truncation and silicon LFO details are **not** model
 
 ## Programs and licensing
 
-**This repository contains no FV-1 program data except the two own demo programs.** Programs that are not openly
-licensed are used for research only (no products, releases or redistribution). They enter a build only as a
-local, git-ignored table:
+**This component contains no FV-1 program data except the two own demo programs.** Openly licensed banks are
+separate components in [effects/fv1-banks](../fv1-banks/README.md) (pinned upstream, licence, generator, tests);
+the FV-1-FX-Suite builds one of them in. Programs that are not openly licensed are used for research only (no
+products, releases or redistribution). They enter a build only as a local, git-ignored table:
 
 ```bash
 python effects/fv1-vm/tools/gen_programs.py --label "..." <512-byte program files ...>   # -> effects/fv1-vm/generated/
-make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.4.1.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
+make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.4.2.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
 make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.10.1.bin
 ```
 
 Local tables and images built from them must never be committed, released or uploaded as CI artifacts. Openly
 licensed FV-1 programs (Spin free programs with attribution, Otherworld MIT) may be used for public test material.
+
+## FV-1-FX-Suite (`fv1-fx-suite`)
+
+`make PROJECT=fv1-fx-suite` builds this firmware with `PROGRAMS=otherworld`: the program table is the committed
+bank component `fv1-bank-otherworld` ([README](../fv1-banks/otherworld/README.md), MIT). Everything else is the
+standalone firmware below: panel, MIDI, telemetry and bootloader entry are shared, not copied.
+
+| Item | Value |
+| --- | --- |
+| Image | `build/otherworld-float-sdram/Fv1FxSuite-v<FV1_FX_SUITE_VERSION>.bin`, marker `FV1-FX-SUITE-VERSION=`, program source `FV1VM-PROGRAMS=OTHERWORLD-MIT-<bank version>` |
+| Programs | 32 in 4 groups: Slicer (17), Reverb (4), Distortion (4), Voice (7); S3/S4 step the group, S1/S2 the program |
+| MIDI | Bank Select 0..3 = group, Program Change = position in the group (0-based); CC22/CC23 the index 0..31 |
+| Clocked programs | Nine `(clocked)` programs read a square clock on input **R** (mono audio on L); patch a clock there |
+| Telemetry | flag 32 `open bank` (an openly licensed, committed bank) instead of flag 16 `local programs` |
+| Control page | `tools/control/fv1vm_control.html?bank=otherworld` shows the committed program list |
+| Resources (ARM build 2026-11-22) | SRAM 136 312 B of 480 KiB, DTCMRAM 111 032 B, delay RAM 128 KiB in SDRAM |
 
 ## Standalone firmware `fv1-vm-fx`
 
@@ -122,8 +141,11 @@ Measurement variants, each with its own build directory and the same image name:
 ## Build and tests
 
 ```bash
-make -C effects/fv1-vm test                 # interpreter, firmware logic, both 48 kHz adapters, Python tools
-make PROJECT=fv1-vm-fx -j4                  # ARM image effects/fv1-vm/build/Fv1VmFx-v0.2.0.bin
+make -C effects/fv1-vm test                 # interpreter, firmware logic, both 48 kHz adapters, suite bank mapping, Python tools
+make PROJECT=fv1-fx-suite test              # the same plus the Otherworld bank tests (effects/fv1-banks/otherworld)
+make PROJECT=fv1-fx-suite -j4               # ARM image build/otherworld-float-sdram/Fv1FxSuite-v0.1.0.bin
+make PROJECT=fv1-fx-suite manifest
+make PROJECT=fv1-vm-fx -j4                  # ARM image effects/fv1-vm/build/Fv1VmFx-v0.4.2.bin
 make PROJECT=fv1-vm-fx manifest
 make PROJECT=toy-piano-fv1 test             # composed end-to-end host test
 make PROJECT=toy-piano-fv1 -j4
