@@ -94,6 +94,19 @@
         "name": "SEED_FV1VM_VERSION"
       }
     },
+    "fv1-bank-otherworld": {
+      "kind": "effect",
+      "source": "effects/fv1-banks/otherworld/include",
+      "depends": [
+        "fv1-vm"
+      ],
+      "version": {
+        "type": "macro",
+        "path": "effects/fv1-banks/otherworld/include/fv1bank/otherworld_version.h",
+        "name": "SEED_FV1_BANK_OTHERWORLD_VERSION"
+      },
+      "provenance": "effects/fv1-banks/otherworld/UPSTREAM.md"
+    },
     "fx-contract": {
       "kind": "contract",
       "source": "common/audio",
@@ -703,6 +716,23 @@
       "marker": "FV1VM-FX-VERSION=",
       "components": [
         "fv1-vm",
+        "fx-contract",
+        "bootloader-entry"
+      ],
+      "panels": []
+    },
+    "fv1-fx-suite": {
+      "version": {
+        "type": "macro",
+        "path": "effects/fv1-vm/src/version.h",
+        "name": "FV1_FX_SUITE_VERSION"
+      },
+      "directory": "effects/fv1-vm/build/otherworld-float-sdram",
+      "image": "Fv1FxSuite",
+      "marker": "FV1-FX-SUITE-VERSION=",
+      "components": [
+        "fv1-vm",
+        "fv1-bank-otherworld",
         "fx-contract",
         "bootloader-entry"
       ],

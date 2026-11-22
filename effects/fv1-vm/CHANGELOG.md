@@ -1,5 +1,17 @@
 # Changelog: fv1-vm
 
+## FV-1-FX-Suite 0.1.0, fv1-vm-fx 0.4.2 (2026-11-22, unreleased)
+
+* New product `fv1-fx-suite` (owner decision 2026-11-22): this firmware with `PROGRAMS=otherworld`, the committed MIT
+  bank `fv1-bank-otherworld` 0.1.0 (effects/fv1-banks/otherworld). Own version `FV1_FX_SUITE_VERSION`, image
+  `Fv1FxSuite-v0.1.0.bin`, marker `FV1-FX-SUITE-VERSION=`. Board code, controls and MIDI are shared with fv1-vm-fx.
+* Telemetry flag 32 `open bank`; flag 16 `local programs` is now set only by `PROGRAMS=local` builds (it was set for
+  any external table). Probe and control page decode the new flag; the page shows the committed list with
+  `?bank=otherworld`.
+* fv1-vm-fx 0.4.2: the image changes only by that flag computation; behaviour unchanged.
+* `tests/test_suite.cpp`: bank mapping (groups, MIDI banks, keys) and a finite-output run of all 32 programs.
+* Hardware: NOT MEASURED (CPU load of the 32 programs, sound, clocked programs with a real clock on R).
+
 ## Component 0.2.0, fv1-vm-fx 0.4.1, toy-piano-fv1 0.10.1 (2026-11-22, unreleased)
 
 * **SKP with several condition flags skips only when all of them hold.** The interpreter OR-ed them, as the L2A case

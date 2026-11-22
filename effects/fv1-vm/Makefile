@@ -3,20 +3,26 @@
 #   PRECISION=double  MEMORY=axi      measurement variants, each with its own build directory
 #   PROGRAMS=local                    program table from generated/fv1vm_programs.local.h
 #                                     (tools/gen_programs.py); such images are LOCAL ONLY
+#   PROGRAMS=otherworld               the FV-1-FX-Suite product (make PROJECT=fv1-fx-suite): the MIT bank
+#                                     effects/fv1-banks/otherworld, own version FV1_FX_SUITE_VERSION
 .DEFAULT_GOAL := all
-VERSION := $(shell sed -n 's/.*FV1VM_FIRMWARE_VERSION "\(.*\)".*/\1/p' src/version.h | head -n 1)
-$(if $(VERSION),,$(error Could not read the version from src/version.h))
 PRECISION ?= float
 MEMORY ?= sdram
 PROGRAMS ?= builtin
 $(if $(filter $(PRECISION),float double),,$(error PRECISION must be float or double))
 $(if $(filter $(MEMORY),sdram axi),,$(error MEMORY must be sdram or axi))
-$(if $(filter $(PROGRAMS),builtin local),,$(error PROGRAMS must be builtin or local))
+$(if $(filter $(PROGRAMS),builtin local otherworld),,$(error PROGRAMS must be builtin, local or otherworld))
+VERSION_MACRO = $(if $(filter otherworld,$(PROGRAMS)),FV1_FX_SUITE_VERSION,FV1VM_FIRMWARE_VERSION)
+VERSION := $(shell sed -n 's/.*$(VERSION_MACRO) "\(.*\)".*/\1/p' src/version.h | head -n 1)
+$(if $(VERSION),,$(error Could not read $(VERSION_MACRO) from src/version.h))
 LOCAL_TABLE = generated/fv1vm_programs.local.h
 ifeq ($(PROGRAMS),local)
 $(if $(wildcard $(LOCAL_TABLE)),,$(error $(LOCAL_TABLE) is missing; run tools/gen_programs.py first))
 TARGET = Fv1VmFxLocal-v$(VERSION)
 C_INCLUDES += -Igenerated
+else ifeq ($(PROGRAMS),otherworld)
+TARGET = Fv1FxSuite-v$(VERSION)
+C_INCLUDES += -I../fv1-banks/otherworld/include
 else
 TARGET = Fv1VmFx-v$(VERSION)
 endif
@@ -25,7 +31,8 @@ override BUILD_DIR = build/$(PROGRAMS)-$(PRECISION)-$(MEMORY)
 endif
 C_DEFS = -DFV1VM_DOUBLE=$(if $(filter double,$(PRECISION)),1,0) \
          -DFV1VM_FAST_MEMORY=$(if $(filter axi,$(MEMORY)),1,0) \
-         -DFV1VM_LOCAL_PROGRAMS=$(if $(filter local,$(PROGRAMS)),1,0)
+         -DFV1VM_LOCAL_PROGRAMS=$(if $(filter local,$(PROGRAMS)),1,0) \
+         -DFV1VM_BANK_OTHERWORLD=$(if $(filter otherworld,$(PROGRAMS)),1,0)
 C_INCLUDES += -Iinclude -Isrc
 CPP_SOURCES = src/main.cpp
 include ../../common/desktop.mk
@@ -62,7 +69,12 @@ test:
 	./build/host/test_fx48
 	"$(HOST_CXX)" $(HOST_FLAGS) $(HOST_INCLUDES) tests/test_fxvar.cpp -o build/host/test_fxvar
 	./build/host/test_fxvar
+	"$(HOST_CXX)" $(HOST_FLAGS) $(HOST_INCLUDES) -I../fv1-banks/otherworld/include tests/test_suite.cpp -o build/host/test_suite
+	./build/host/test_suite
 	"$(PYTHON)" -m unittest discover -s tests -p test_probe.py
+ifeq ($(PROGRAMS),otherworld)
+	"$(MAKE)" -C ../fv1-banks/otherworld test
+endif
 
 test-sanitize:
 	"$(MAKE)" test HOST_FLAGS="-std=c++17 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"

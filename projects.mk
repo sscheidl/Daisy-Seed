@@ -110,6 +110,13 @@ BUILDABLE_PROJECTS += toy-piano-fv1
 PROJECT_DIR_toy-piano-fv1 := instruments/toy-piano
 PROJECT_ARGS_toy-piano-fv1 := FV1=1
 PROJECT_STATUS_toy-piano-fv1 := buildable
+# FV-1-FX-Suite: fv1-vm-fx with the MIT bank effects/fv1-banks/otherworld (owner decision 2026-11-22);
+# ARM build verified 2026-11-22.
+PROJECTS += fv1-fx-suite
+BUILDABLE_PROJECTS += fv1-fx-suite
+PROJECT_DIR_fv1-fx-suite := effects/fv1-vm
+PROJECT_ARGS_fv1-fx-suite := PROGRAMS=otherworld
+PROJECT_STATUS_fv1-fx-suite := buildable
 # Toy Piano with a filter per voice (test product for the filter models, owner decision 2026-11-06);
 # ARM build verified 2026-11-06. No effects.
 PROJECTS += toy-piano-filter

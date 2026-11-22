@@ -20,10 +20,20 @@
 #ifndef FV1VM_LOCAL_PROGRAMS
 #define FV1VM_LOCAL_PROGRAMS 0 // PROGRAMS=local
 #endif
+#ifndef FV1VM_BANK_OTHERWORLD
+#define FV1VM_BANK_OTHERWORLD 0 // PROGRAMS=otherworld: the FV-1-FX-Suite product
+#endif
+#if FV1VM_LOCAL_PROGRAMS && FV1VM_BANK_OTHERWORLD
+#error "PROGRAMS selects one program table"
+#endif
 #include "fv1_firmware.h"
 #include "version.h"
 #if FV1VM_LOCAL_PROGRAMS
 #include "fv1vm_programs.local.h" // generated, git-ignored: fv1vm_local::kCount, kPrograms
+#endif
+#if FV1VM_BANK_OTHERWORLD
+#include "fv1bank/otherworld_programs.h" // committed MIT bank (effects/fv1-banks/otherworld)
+#include "fv1bank/otherworld_version.h"
 #endif
 #include "desktop_devkit.h"
 #include "bootloader_daisy.h"
@@ -33,9 +43,15 @@
 using namespace daisy;
 extern "C" USBD_HandleTypeDef hUsbDeviceHS; // external USB port (J7)
 
+#if FV1VM_BANK_OTHERWORLD
+const char fv1vm_firmware_version[] = "FV1-FX-SUITE-VERSION=" FV1_FX_SUITE_VERSION;
+#else
 const char fv1vm_firmware_version[] = "FV1VM-FX-VERSION=" FV1VM_FIRMWARE_VERSION;
+#endif
 #if FV1VM_LOCAL_PROGRAMS
 const char fv1vm_program_source[] = "FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE";
+#elif FV1VM_BANK_OTHERWORLD
+const char fv1vm_program_source[] = "FV1VM-PROGRAMS=OTHERWORLD-MIT-" SEED_FV1_BANK_OTHERWORLD_VERSION;
 #else
 const char fv1vm_program_source[] = "FV1VM-PROGRAMS=BUILTIN";
 #endif
@@ -90,7 +106,8 @@ uint8_t Flags() {
     if(FV1VM_FAST_MEMORY) f |= fv1_fw::kFastMemory;
     if(bypass) f |= fv1_fw::kBypass;
     if(use_noise) f |= fv1_fw::kNoise;
-    if(bank.Local()) f |= fv1_fw::kLocalPrograms;
+    if(FV1VM_LOCAL_PROGRAMS) f |= fv1_fw::kLocalPrograms;
+    if(FV1VM_BANK_OTHERWORLD) f |= fv1_fw::kOpenBank;
     return f;
 }
 
@@ -242,6 +259,9 @@ int main() {
 #if FV1VM_LOCAL_PROGRAMS
     bank.Init({fv1vm_local::kPrograms, fv1vm_local::kCount, fv1vm_local::kGroupOffset, fv1vm_local::kGroupSize,
                fv1vm_local::kGroupCount});
+#elif FV1VM_BANK_OTHERWORLD
+    bank.Init({fv1_bank_otherworld::kPrograms, fv1_bank_otherworld::kCount, fv1_bank_otherworld::kGroupOffset,
+               fv1_bank_otherworld::kGroupSize, fv1_bank_otherworld::kGroupCount});
 #else
     bank.Init({});
 #endif

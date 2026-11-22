@@ -171,7 +171,8 @@ struct Snapshot {
     uint16_t program = 0;
     uint8_t flags = 0;
 };
-enum Flag : uint8_t { kDouble = 1, kFastMemory = 2, kBypass = 4, kNoise = 8, kLocalPrograms = 16 };
+// kOpenBank: an openly licensed, committed bank (FV-1-FX-Suite); kLocalPrograms: the git-ignored local table.
+enum Flag : uint8_t { kDouble = 1, kFastMemory = 2, kBypass = 4, kNoise = 8, kLocalPrograms = 16, kOpenBank = 32 };
 class Meter {
   public:
     void Init(uint32_t budget_cycles) { budget_ = budget_cycles ? budget_cycles : 1; Reset(); }
