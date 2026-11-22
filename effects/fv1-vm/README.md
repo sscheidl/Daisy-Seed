@@ -1,9 +1,11 @@
 # FV-1 interpreter FX component (`fv1-vm`)
 
-**Status: firmware 0.2.0 (component 0.1.0), 2026-11-05, research / feasibility study.**
+**Status: firmware 0.4.1 (component 0.2.0), 2026-11-22, research / feasibility study.**
 * Component, standalone firmware `fv1-vm-fx` and the composed `toy-piano-fv1` are built and host-tested.
 * Hardware: CPU sweeps over all 240 programs, standalone (`float`/SDRAM) and inside `toy-piano-fv1`, MEASURED
   2026-11-05 without an overrun (see [Hardware results](#hardware-results)); `double`, AXI and sound NOT MEASURED.
+  Those sweeps ran component 0.1.0, which OR-ed combined SKP conditions (fixed in 0.2.0); programs that use such a skip
+  took other paths then. Component 0.2.0 on hardware: NOT MEASURED.
 
 ## Purpose
 
@@ -34,6 +36,8 @@ serves as a reference for later native ports. Composition: Toy Piano with this c
 
 The interpreter implements the assumptions A1–A7 and A5b of the L2A model (`fv1_model.py` in the case), for example
 saturating ACC, PACC as the ACC before the current instruction, WLDR keeping the ramp phase, and LOG(0) → −16.
+One deliberate deviation since component 0.2.0: a SKP with several condition flags (for example `SKP RUN|GEZ`) skips
+only when **all** of them hold; the model OR-ed them. An empty mask stays the unconditional jump.
 Delay-RAM compression, MULX truncation and silicon LFO details are **not** modelled.
 
 ## Programs and licensing
@@ -44,8 +48,8 @@ local, git-ignored table:
 
 ```bash
 python effects/fv1-vm/tools/gen_programs.py --label "..." <512-byte program files ...>   # -> effects/fv1-vm/generated/
-make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.4.0.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
-make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.4.0.bin
+make -C effects/fv1-vm PROGRAMS=local          # Fv1VmFxLocal-v0.4.1.bin, marker FV1VM-PROGRAMS=LOCAL-NOT-FOR-RELEASE
+make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.10.1.bin
 ```
 
 Local tables and images built from them must never be committed, released or uploaded as CI artifacts. Openly
