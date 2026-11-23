@@ -175,6 +175,7 @@ editors/mod-on-daisy/
 │   │   ├── Session.h       Anfragewarteschlange, Zeitüberschreitung, Wiederholung, CRC-Abgleich, Monitor
 │   │   ├── PatchFile.h     .modpatch (JSON) lesen/schreiben, wie der Browser-Editor
 │   │   ├── Simulator.h     Controller und Engine der Firmware als „Gerät“ im PC
+│   │   ├── SendWorker.h    MIDI-Sendethread mit Watchdog (hängender Treiber = Gerät antwortet nicht)
 │   │   └── SimInstruments.h Spaltentabellen von Toy Piano und Physical Modeling (nur Simulator)
 │   ├── ui/                 MatrixGrid, SourcePanel, EditorComponent, MidiPort, Theme
 │   └── app/                Standalone-Anwendung mit --selftest (später zusätzlich AudioProcessor für VST3)

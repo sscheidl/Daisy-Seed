@@ -336,6 +336,13 @@ make -C editors/mod-on-daisy test-sanitize    # the same with ASan/UBSan
 * **Serial transport test** (`tests/test_serial_transport.cpp`): the I/O thread with a fake
   port: open and HELLO, timeout, port vanishes, reconnect, and no GUI-thread call longer than
   50 ms while the port blocks.
+* **MIDI send worker test** (`tests/test_send_worker.cpp`, since 0.5.2): the sender thread of
+  the MIDI port with fake drivers that block, refuse or throw (a kit whose firmware stalled,
+  P3 of 2026-11-08): sending never waits, a send that stays in the driver longer than the
+  watchdog limit or fails marks the link lost, closing is bounded and hands the device objects
+  back for destruction on the owner thread once the driver returns, the editor core reconnects
+  through a new port while the old sender is still stuck, and after application exit begins a
+  late sender leaks instead of destroying devices.
 * **Self-test** (`--selftest`): It operates the real window with keyboard, dragging,
   mouse wheel, knob, double-click, sources, limit, name and files, plus FM knob,
   range display, clock state, connection state, compatibility prompt (Cancel,
@@ -343,8 +350,11 @@ make -C editors/mod-on-daisy test-sanitize    # the same with ASan/UBSan
   step it compares the patch checksum of the window and the simulated device. Since 0.5.0 it
   also runs the SD card page: Toy Piano (no instrument), Nebulae MOD (CONFIRM, cancel,
   confirm, shared, eject, return, patch restored), Looper MOD (also SAVING), plain Nebulae and
-  Looper (no matrix), an interruption with the acknowledge question, and the VST3 note. It
-  writes the result and screenshots to `out/`; on Windows the result is in `out/selftest.txt`.
+  Looper (no matrix), an interruption with the acknowledge question, and the VST3 note. Since
+  0.5.2 a stalled kit (a fake MIDI driver that stops completing sends): the window keeps
+  running, reports "The Daisy is not answering", closes the port, and connects again once the
+  kit answers. It writes the result and screenshots to `out/`; on Windows the result is in
+  `out/selftest.txt`.
 
 CI (`.github/workflows/editor.yml`) runs both on Linux (Xvfb) and Windows
 and provides the `.exe`. It only starts manually: GitHub → Actions → **Editor** →

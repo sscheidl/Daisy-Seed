@@ -6,6 +6,9 @@
 //                                         the device CRC after every step, writes screenshots
 #include "../ui/EditorComponent.h"
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <condition_variable>
+#include <deque>
+#include <mutex>
 
 namespace {
 using namespace editor;
@@ -61,6 +64,7 @@ class SelfTest {
         SdNoCardAndLongTexts();
         SdLooperFailedSave();
         SdPluginNote();
+        StalledKit();
         SELFTEST_CHECK(!e_.HardwareSerialActive()); // still none at the end
         if(failures_)
             Say("FAIL: " + juce::String(failures_) + " checks");
@@ -866,6 +870,100 @@ class SelfTest {
         Say("PASS SD page in the plugin: D2 note only");
     }
 
+    // P3 of the Nebulae first-contact test (2026-11-08): the kit's firmware stalls and its
+    // USB-MIDI stops completing sends. The window keeps running, reports that the device is not
+    // answering, closes the port in bounded time and connects again once the kit answers. The
+    // "kit" is the Physical Modeling simulator behind a fake driver on the sender thread.
+    struct FakeKit {
+        std::mutex mutex;
+        std::condition_variable cv;
+        bool stalled = false;
+        std::deque<std::vector<uint8_t>> wire;
+        bool Send(const std::vector<uint8_t>& m) { // sender thread
+            std::unique_lock<std::mutex> lock(mutex);
+            cv.wait(lock, [this] { return !stalled; });
+            wire.push_back(m);
+            return true;
+        }
+        void Stall(bool on) {
+            std::lock_guard<std::mutex> lock(mutex);
+            stalled = on;
+            cv.notify_all();
+        }
+        bool Stalled() {
+            std::lock_guard<std::mutex> lock(mutex);
+            return stalled;
+        }
+        std::deque<std::vector<uint8_t>> Take() {
+            std::lock_guard<std::mutex> lock(mutex);
+            return std::exchange(wire, {});
+        }
+    };
+    void StalledKit() {
+        const SimInstrument& inst = kSimInstruments[1];
+        Simulator sim(inst.make(), 11);
+        sim.bases = inst.bases;
+        sim.mode = inst.mode;
+        sim.EnableExtensions(inst.extensions);
+        SendWorker::Config config = ui::MidiPort::DefaultConfig();
+        config.send_timeout_ms = 300;
+        auto open = [&config](std::shared_ptr<FakeKit> kit) {
+            return ui::MidiPort::OpenForTest([kit](const std::vector<uint8_t>& m) { return kit->Send(m); }, config);
+        };
+        double worst_ms = 0;
+        // One editor millisecond: what reached the kit goes to the simulator, its replies back.
+        // While the kit answers, the step waits for the sender thread, so the manual clock does
+        // not outrun it.
+        auto pump = [&](FakeKit& kit) {
+            const double t0 = juce::Time::getMillisecondCounterHiRes();
+            e_.Step(1);
+            worst_ms = std::max(worst_ms, juce::Time::getMillisecondCounterHiRes() - t0);
+            ui::MidiPort* port = e_.OpenMidiPort();
+            for(int spin = 0; port && !kit.Stalled() && !port->SendIdle() && spin < 50; ++spin)
+                juce::Thread::sleep(1);
+            for(std::vector<uint8_t>& m : kit.Take())
+                sim.Send(m.data(), m.size());
+            sim.Advance(1, [port](const uint8_t* b, std::size_t n) {
+                if(port)
+                    port->Inject(b, n);
+            });
+        };
+        auto kit = std::make_shared<FakeKit>();
+        e_.ConnectTestPort(open(kit));
+        for(int i = 0; i < 20000 && !(e_.GetSession().Connected() && e_.GetSession().Idle()); ++i)
+            pump(*kit);
+        SELFTEST_CHECK(e_.GetSession().Connected() && e_.GetSession().Device().key == "physical-modeling");
+
+        kit->Stall(true); // the firmware stalls
+        const double stalled_at = juce::Time::getMillisecondCounterHiRes();
+        while(e_.OpenMidiPort() && juce::Time::getMillisecondCounterHiRes() - stalled_at < 8000) {
+            pump(*kit);
+            juce::Thread::sleep(1); // the watchdog runs in real time
+        }
+        const double closed_after = juce::Time::getMillisecondCounterHiRes() - stalled_at;
+        SELFTEST_CHECK(!e_.OpenMidiPort() && !e_.GetSession().Connected());
+        SELFTEST_CHECK(e_.LogText().contains("The Daisy is not answering") && e_.LogText().contains("did not complete"));
+        SELFTEST_CHECK(worst_ms < 50.0); // no step of the message thread waited in the driver
+        SELFTEST_CHECK(SendWorker::Abandoned() == 1); // the stuck sender lives on, detached
+        Shot("stalled-kit.png");
+
+        auto healthy = std::make_shared<FakeKit>(); // reflashed or power-cycled: it answers again
+        e_.ConnectTestPort(open(healthy));
+        for(int i = 0; i < 20000 && !(e_.GetSession().Connected() && e_.GetSession().Idle()); ++i)
+            pump(*healthy);
+        SELFTEST_CHECK(e_.GetSession().Connected() && e_.OpenMidiPort() && !e_.OpenMidiPort()->Lost());
+        SELFTEST_CHECK(worst_ms < 50.0);
+
+        kit->Stall(false); // the old driver call returns; the detached sender ends
+        for(int i = 0; i < 1000 && SendWorker::Abandoned() != 0; ++i)
+            juce::Thread::sleep(1);
+        SELFTEST_CHECK(SendWorker::Abandoned() == 0);
+        e_.ConnectButton().onClick(); // Disconnect
+        SELFTEST_CHECK(!e_.OpenMidiPort());
+        Say("PASS stalled kit: port closed after " + juce::String(int(closed_after)) + " ms, worst message-thread step "
+            + juce::String(worst_ms, 1) + " ms, reconnect works");
+    }
+
     EditorComponent& e_;
     juce::File dir_, log_;
     int failures_ = 0;
@@ -894,7 +992,12 @@ class Application : public juce::JUCEApplication {
         }
         window_->setVisible(true);
     }
-    void shutdown() override { window_.reset(); }
+    void shutdown() override {
+        // A MIDI sender still stuck in the driver of a stalled kit must not destroy JUCE
+        // devices while the application's statics go away: it leaks them instead (MidiPort.h).
+        SendWorker::BeginShutdown();
+        window_.reset();
+    }
     void systemRequestedQuit() override { quit(); }
 
   private:

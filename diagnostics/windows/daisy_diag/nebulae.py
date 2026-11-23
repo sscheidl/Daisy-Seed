@@ -19,7 +19,9 @@ share. In SD management the HELLO ``app`` selects the profile.
 from __future__ import annotations
 
 import os
+import threading
 import time
+from collections import deque
 from dataclasses import dataclass, asdict, field
 from enum import Enum
 from typing import Callable, Iterable, Protocol, Sequence
@@ -46,6 +48,12 @@ RESTART_TIMEOUT_S = 20.0    # bootloader skip + USB enumeration on Windows
 SCAN_INTERVAL_S = 1.0
 SAVE_RETRY_S = 0.5          # looper: ask again while the firmware saves the loop
 SAVE_TIMEOUT_S = 180.0      # looper: an 87 s loop is 33 MB; card speed NICHT GEMESSEN
+# MIDI link on its own thread (ThreadedMidiLink, P3 of the Nebulae first-contact test):
+MIDI_SEND_TIMEOUT_S = 1.5   # one message longer in the driver: the device is not answering
+MIDI_OPEN_TIMEOUT_S = 2.0   # opening the port may not take longer either
+MIDI_CLOSE_WAIT_S = 0.05    # close() waits at most this long for the worker
+MIDI_MAX_QUEUED = 64        # messages waiting for the driver
+MIDI_SCAN_WAIT_S = 0.25     # the port scan returns the previous result after this
 
 
 class NebulaeError(ValueError):
@@ -205,7 +213,7 @@ class RtMidiLink:
             self._out.open_port(out_index)
             self._in.open_port(in_index)
             self._in.ignore_types(sysex=False, timing=True, active_sense=True)
-        except (ValueError, StopIteration, rtmidi.SystemError) as exc:
+        except Exception as exc:  # ValueError, StopIteration and every rtmidi.RtMidiError
             self.close()
             raise MidiLinkError(f"cannot open MIDI port {port_name!r}: {exc}") from exc
         self._sysex = bytearray()
@@ -245,6 +253,189 @@ class RtMidiLink:
                 pass
 
 
+class ThreadedMidiLink:
+    """Runs a blocking ``MidiLink`` (``RtMidiLink``) on its own daemon thread.
+
+    Why (P3 of the Nebulae first-contact test, 2026-11-08): once a kit's firmware stalls, its
+    USB-MIDI stops completing SysEx. RtMidi's WinMM backend then throws ("error sending sysex
+    message", "error preparing sysex header") or waits in ``midiOutUnprepareHeader`` until the
+    device completes, which it never does; on the Qt timer that froze the whole panel.
+
+    Here every driver call runs on the worker: ``send()`` only queues (bounded), ``poll()``
+    only takes what the worker received. A driver call that raises, or a send that stays in the
+    driver longer than ``send_timeout``, marks the link lost: the next ``send()``/``poll()``
+    raises ``MidiLinkError`` (the workflow then closes the link and reports it). Opening waits at
+    most ``open_timeout``; ``close()`` at most ``close_wait``. A worker still stuck in the driver
+    is abandoned and closes its port itself once the driver returns.
+    """
+
+    def __init__(self, open_link: Callable[[], MidiLink], *,
+                 open_timeout: float = MIDI_OPEN_TIMEOUT_S,
+                 send_timeout: float = MIDI_SEND_TIMEOUT_S,
+                 close_wait: float = MIDI_CLOSE_WAIT_S,
+                 max_queued: int = MIDI_MAX_QUEUED,
+                 poll_interval: float = 0.005,
+                 clock: Callable[[], float] = time.monotonic) -> None:
+        self._cond = threading.Condition()
+        self._queue: deque[bytes] = deque()
+        self._received: list[bytes] = []
+        self._error: str | None = None
+        self._busy_since: float | None = None
+        self._closing = False
+        self._opened = False
+        self._send_timeout = send_timeout
+        self._close_wait = close_wait
+        self._max_queued = max_queued
+        self._poll_interval = poll_interval
+        self._clock = clock
+        self._thread = threading.Thread(target=self._run, args=(open_link,), name="midi-link", daemon=True)
+        self._thread.start()
+        with self._cond:
+            self._cond.wait_for(lambda: self._opened or self._error is not None, open_timeout)
+            if self._opened and self._error is None:
+                return
+            error = self._error or (f"opening the MIDI port did not complete within {open_timeout:g} s "
+                                    "(device not answering)")
+            self._closing = True  # a late open is closed by the worker itself
+            self._cond.notify_all()
+        raise MidiLinkError(error)
+
+    # ---- GUI thread ---------------------------------------------------------------------
+    def send(self, message: bytes) -> None:
+        with self._cond:
+            self._check()
+            if len(self._queue) >= self._max_queued:
+                self._fail("device not answering: the MIDI driver stopped taking messages "
+                           f"({len(self._queue)} queued)")
+                raise MidiLinkError(self._error)
+            self._queue.append(bytes(message))
+            self._cond.notify_all()
+
+    def poll(self) -> list[bytes]:
+        with self._cond:
+            self._check()
+            result, self._received = self._received, []
+            return result
+
+    def close(self) -> None:
+        with self._cond:
+            self._closing = True
+            self._queue.clear()
+            self._cond.notify_all()
+        if self._thread is not threading.current_thread():
+            self._thread.join(self._close_wait)
+
+    @property
+    def stuck(self) -> bool:
+        """The worker is still alive (in the driver) after close()."""
+        return self._closing and self._thread.is_alive()
+
+    @property
+    def busy(self) -> bool:
+        with self._cond:
+            return self._busy_since is not None or bool(self._queue)
+
+    def _check(self) -> None:  # with the lock held
+        if self._error is None and self._busy_since is not None \
+                and self._clock() - self._busy_since > self._send_timeout:
+            self._fail(f"device not answering: a MIDI send did not complete within {self._send_timeout:g} s")
+        if self._error is not None:
+            raise MidiLinkError(self._error)
+        if self._closing:
+            raise MidiLinkError("MIDI link closed")
+
+    def _fail(self, reason: str) -> None:  # with the lock held
+        if self._error is None:
+            self._error = reason
+        self._queue.clear()
+        self._cond.notify_all()
+
+    # ---- worker thread ------------------------------------------------------------------
+    def _run(self, open_link: Callable[[], MidiLink]) -> None:
+        try:
+            link = open_link()
+        except Exception as exc:
+            with self._cond:
+                self._fail(str(exc))
+            return
+        try:
+            with self._cond:
+                if self._closing:
+                    return  # the open completed after the caller gave up
+                self._opened = True
+                self._cond.notify_all()
+            while True:
+                with self._cond:
+                    self._cond.wait_for(lambda: self._closing or self._error is not None or bool(self._queue),
+                                        self._poll_interval)
+                    if self._closing or self._error is not None:
+                        return
+                    message = self._queue.popleft() if self._queue else None
+                    if message is not None:
+                        self._busy_since = self._clock()
+                try:
+                    if message is not None:
+                        link.send(message)
+                        received: list[bytes] = []
+                    else:
+                        received = link.poll()
+                except Exception as exc:  # the driver threw: the device is gone or stalled
+                    with self._cond:
+                        self._busy_since = None
+                        self._fail(f"MIDI driver error: {exc}")
+                    return
+                with self._cond:
+                    self._busy_since = None
+                    room = 256 - len(self._received)
+                    self._received.extend(received[:max(room, 0)])
+        finally:
+            try:
+                link.close()
+            except Exception:
+                pass
+
+
+class BackgroundScan:
+    """Runs a port scan on a daemon thread; ``__call__`` waits at most ``wait`` seconds for it
+    and otherwise returns the previous result, so a hanging enumeration never blocks the GUI."""
+
+    def __init__(self, scan: Callable[[], Iterable[str]], wait: float = MIDI_SCAN_WAIT_S) -> None:
+        self._scan = scan
+        self._wait = wait
+        self._lock = threading.Lock()
+        self._result: list[str] = []
+        self._error: Exception | None = None
+        self._thread: threading.Thread | None = None
+
+    def __call__(self) -> list[str]:
+        with self._lock:
+            if self._thread is None or not self._thread.is_alive():
+                self._thread = threading.Thread(target=self._run, name="midi-scan", daemon=True)
+                self._thread.start()
+            thread = self._thread
+        thread.join(self._wait)
+        with self._lock:
+            if self._error is not None:
+                error, self._error = self._error, None
+                raise MidiLinkError(f"MIDI port scan failed: {error}")
+            return list(self._result)
+
+    def _run(self) -> None:
+        try:
+            result = list(self._scan())
+        except Exception as exc:
+            with self._lock:
+                self._error = exc
+            return
+        with self._lock:
+            self._result = result
+
+
+def open_rtmidi(port_name: str) -> MidiLink:
+    """The panel's MIDI link: python-rtmidi, every driver call on its own thread."""
+    return ThreadedMidiLink(lambda: RtMidiLink(port_name))
+
+
 class Phase(Enum):
     NOT_FOUND = "No Nebulae or Looper found"
     PERFORMANCE = "Performance (USB-MIDI)"
@@ -265,7 +456,7 @@ class NebulaeWorkflow:
 
     def __init__(self, session: DeviceSession,
                  scan_midi: Callable[[], Iterable[str]] = list_midi_ports,
-                 open_midi: Callable[[str], MidiLink] = RtMidiLink,
+                 open_midi: Callable[[str], MidiLink] = open_rtmidi,
                  clock: Callable[[], float] = time.monotonic,
                  token_source: Callable[[int], bytes] = os.urandom,
                  profiles: Sequence[DeviceProfile] = (NEBULAE,)) -> None:

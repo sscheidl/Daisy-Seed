@@ -8,6 +8,18 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > Windows SD card reader, both CV channels and both gate inputs. Results are
 > real-board measurements, separate from software/simulation tests.
 
+## App 0.6.1: a stalled kit no longer freezes the panel
+
+App **0.6.1** keeps running when a kit's firmware stalls (P3 of the Nebulae first-contact
+test, 2026-11-08: with the stalling Nebulae 0.2.1 image WinMM threw "error sending sysex
+message" or never completed a SysEx, and the panel hung inside python-rtmidi on its GUI
+thread). Every MIDI driver call of the **SD share** tab now runs on its own thread
+(`ThreadedMidiLink`, `BackgroundScan` in `nebulae.py`): a send that raises, or stays in the
+driver longer than 1.5 s, closes the link and the tab reports "device not answering"; the kit
+is found again once it answers. Regression tests: `tests/python/test_midi_link.py` (fake drivers
+that block or raise). Diagnostics and the CDC protocol are unchanged. On the kit: **NOT
+MEASURED**.
+
 ## App 0.6.0: Looper profile, tab "SD share"
 
 App **0.6.0** renames the Nebulae tab to **SD share** and adds the Looper 0.5.0: the
