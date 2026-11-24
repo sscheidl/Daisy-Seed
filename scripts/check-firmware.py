@@ -3,7 +3,7 @@
 
 Usage: check-firmware.py [image.bin]
 Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
-Also accepts effects/reverb/build/AmbientReverb-v<version>.bin,
+Also accepts effects/fourier/build/Fourier-v<version>.bin,
 effects/tape-fx/build/TapeFx-v<version>.bin, build/tape/ToyPianoTape-v<version>.bin,
 PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
 instruments/looper/build/Looper-v<version>.bin, build/mod/LooperMod-v<version>.bin,
@@ -129,12 +129,12 @@ elif path.name.startswith('PhysicalModeling-v'):
     version = match.group(1)
     expected_name = f'PhysicalModeling-v{version}.bin'
     marker = rb'PHYSICAL-MODELING-VERSION=([0-9.]+)\x00'
-elif path.name.startswith('AmbientReverb-v'):
-    reverb = root / 'effects' / 'reverb'
+elif path.name.startswith('Fourier-v'):
+    reverb = root / 'effects' / 'fourier'
     match = re.search(r'AMBIENT_REVERB_VERSION\s+"([^"]+)"', (reverb / 'src' / 'version.h').read_text())
     assert match, "Could not read the Ambient Reverb version"
     version = match.group(1)
-    expected_name = f'AmbientReverb-v{version}.bin'
+    expected_name = f'Fourier-v{version}.bin'
     marker = rb'AMBIENT-REVERB-VERSION=([0-9.]+)\x00'
 elif path.name.startswith('Looper-v'):
     looper = root / 'instruments' / 'looper'

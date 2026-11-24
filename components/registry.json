@@ -39,23 +39,23 @@
     },
     "ambient-reverb": {
       "kind": "effect",
-      "source": "effects/reverb",
+      "source": "effects/fourier",
       "version": {
         "type": "macro",
-        "path": "effects/reverb/src/version.h",
+        "path": "effects/fourier/src/version.h",
         "name": "AMBIENT_REVERB_VERSION"
       }
     },
     "ambient-reverb-fx": {
       "kind": "effect",
-      "source": "effects/reverb/src/fx_adapter.h",
+      "source": "effects/fourier/src/fx_adapter.h",
       "depends": [
         "ambient-reverb",
         "fx-contract"
       ],
       "version": {
         "type": "macro",
-        "path": "effects/reverb/src/adapter_version.h",
+        "path": "effects/fourier/src/adapter_version.h",
         "name": "AMBIENT_FX_ADAPTER_VERSION"
       }
     },
@@ -350,10 +350,10 @@
     },
     "ambient-reverb-control": {
       "kind": "control",
-      "source": "effects/reverb/src/rate_control.h",
+      "source": "effects/fourier/src/rate_control.h",
       "version": {
         "type": "macro",
-        "path": "effects/reverb/src/control_version.h",
+        "path": "effects/fourier/src/control_version.h",
         "name": "AMBIENT_CONTROL_VERSION"
       }
     },
@@ -630,10 +630,10 @@
         "daisy-control-panel"
       ]
     },
-    "reverb-fx": {
+    "fourier-fx": {
       "version_component": "ambient-reverb",
-      "directory": "effects/reverb/build",
-      "image": "AmbientReverb",
+      "directory": "effects/fourier/build",
+      "image": "Fourier",
       "marker": "AMBIENT-REVERB-VERSION=",
       "components": [
         "ambient-reverb",

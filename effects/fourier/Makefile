@@ -4,7 +4,7 @@ $(error AMB_GATE/AMB_WET32 are obsolete; shared Ambient 0.4 always uses gating a
 endif
 VERSION := $(shell sed -n 's/.*AMBIENT_REVERB_VERSION "\(.*\)".*/\1/p' src/version.h | head -n 1)
 $(if $(VERSION),,$(error Could not read the version from src/version.h))
-TARGET = AmbientReverb-v$(VERSION)
+TARGET = Fourier-v$(VERSION)
 CPP_SOURCES = src/main.cpp src/ambient_reverb.cpp src/wet_path.cpp
 C_INCLUDES = -I../../sequencers/step-seq/include
 include ../../common/desktop.mk

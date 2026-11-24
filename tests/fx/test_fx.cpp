@@ -1,6 +1,6 @@
 // MIT. Exercise both typed adapters through the same audio-block contract.
 #include "../../effects/torus-reverb/src/torus_reverb.h"
-#include "../../effects/reverb/src/fx_adapter.h"
+#include "../../effects/fourier/src/fx_adapter.h"
 #include "../../effects/tape-fx/src/tape_fx.h"
 #include "../../effects/drive/include/drive/drive.h"
 #include "../../effects/stereo-delay/include/stereo_delay/delay.h"

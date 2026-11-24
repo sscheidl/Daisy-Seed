@@ -80,7 +80,7 @@ endif
 FX_DEFS = -DTOY_PIANO_FX=1 -DMOD_ON_DAISY_EXTENSIONS=1 -DAMBIENT_SDRAM_WRITE_ALLOCATE=$(AMB_WA) \
           -DAMBIENT_COMPACT_48K=$(AMB_COMPACT) -DAMBIENT_CONTIGUOUS_FIR=$(AMB_FIR)
 C_DEFS = $(FX_DEFS)
-FX_SOURCES = ../../effects/reverb/src/ambient_reverb.cpp ../../effects/reverb/src/wet_path.cpp
+FX_SOURCES = ../../effects/fourier/src/ambient_reverb.cpp ../../effects/fourier/src/wet_path.cpp
 C_INCLUDES = -I../../sequencers/step-seq/include
 else
 TARGET = ToyPiano-v$(VERSION)
@@ -159,9 +159,9 @@ test:
 	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(FX_DEFS) tests/test_ambient.cpp src/toy_piano.cpp $(FX_SOURCES) -o build/host/ambient/test_ambient
 	./build/host/ambient/test_ambient
 	# Diagnostic memory switches must render bit-identically to the default build.
-	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) -I../../effects/reverb/src tests/test_ambient_experiments.cpp src/toy_piano.cpp $(FX_SOURCES) -o build/host/ambient/experiments_reference
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) -I../../effects/fourier/src tests/test_ambient_experiments.cpp src/toy_piano.cpp $(FX_SOURCES) -o build/host/ambient/experiments_reference
 	./build/host/ambient/experiments_reference write build/host/ambient/experiments.f32
-	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) -I../../effects/reverb/src -DAMBIENT_COMPACT_48K=1 -DAMBIENT_CONTIGUOUS_FIR=1 tests/test_ambient_experiments.cpp src/toy_piano.cpp $(FX_SOURCES) -o build/host/ambient/experiments_variant
+	$(HOST_CXX) $(HOST_FLAGS) $(HOST_INCLUDES) -I../../effects/fourier/src -DAMBIENT_COMPACT_48K=1 -DAMBIENT_CONTIGUOUS_FIR=1 tests/test_ambient_experiments.cpp src/toy_piano.cpp $(FX_SOURCES) -o build/host/ambient/experiments_variant
 	./build/host/ambient/experiments_variant compare build/host/ambient/experiments.f32
 else
 test:

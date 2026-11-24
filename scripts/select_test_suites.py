@@ -16,7 +16,7 @@ def select_suites(changed):
                   not p.startswith(('common/audio/', 'common/dsp/', 'common/sd/')))
                  for p in changed)
     mod_api = touched('modules/mod-on-daisy/include/', 'modules/mod-on-daisy/adapters/')
-    fx = touched('common/audio/', 'effects/torus-reverb/', 'effects/reverb/src/', 'effects/tape-fx/src/', 'tests/fx/',
+    fx = touched('common/audio/', 'effects/torus-reverb/', 'effects/fourier/src/', 'effects/tape-fx/src/', 'tests/fx/',
                  'instruments/physical-modeling/torus/dsp/fx/',
                  'instruments/physical-modeling/third_party/stmlib/')
     # Shared saturation curves (common/dsp/): Tape FX, its Toy Piano build and Drive.
@@ -64,7 +64,7 @@ def select_suites(changed):
         # The looper links common/sd in its writable profile, the card reader and the DDP framing.
         'looper': shared or touched('instruments/looper/', 'common/sd/', 'diagnostics/protocol/',
                                     'diagnostics/firmware/src/ring_buffer.h') or mod_api,
-        'reverb': shared or touched('effects/reverb/'),
+        'fourier': shared or touched('effects/fourier/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),
         'mod': shared or touched('modules/mod-on-daisy/', 'instruments/granular/src/modulation.h'),
         # The editor's Streichwurst simulator and patch use the product register and tables.
@@ -93,7 +93,7 @@ def select_suites(changed):
     }
     if '.github/workflows/quick.yml' in changed:
         suites = {key: True for key in suites}
-    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'reverb', 'tape',
+    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'fourier', 'tape',
                                                     'stepseq', 'acid303', 'drive', 'delay', 'acidseq',
                                                     'streichwurst', 'cumulonimbus'))
     return suites
