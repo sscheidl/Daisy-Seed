@@ -6,7 +6,7 @@ Dev Kit:
 | Effect | Project ID | Status |
 | --- | --- | --- |
 | [Streichwurst FX](streichwurst-fx/) | Component `streichwurst-fx` 0.1.0, standalone `StreichwurstFx-v0.1.0` | Animate, Ensemble (3/5/3 taps), Phaser, Reverb; string stage and global stage separate; in the firmware product `streichwurst`; host tests passed, hardware acceptance open |
-| [Ambient Reverb](reverb/) | `reverb-fx` | Buildable original stereo reverb; hardware test pending. Clouds/Nimbus remains a separate study |
+| [FOURIER](fourier/) | `fourier-fx` | Atmospheric reverb (formerly Ambient Reverb); buildable original stereo reverb; hardware test pending. Clouds/Nimbus remains a separate study |
 | [Tape FX](tape-fx/) | `tape-fx` | Buildable TapeVibe/MixForge port as reusable component and stereo effect; also used by `toy-piano-tape`; hardware test pending |
 | [Drive](drive/) | `drive-fx` | v0.1.0: saturation curves shared with Tape FX, tone, auto level; buildable, hardware test pending |
 | [Stereo Delay](stereo-delay/) | `delay-fx` | v0.1.0: ping-pong and stereo L/R delay, sync up to 12 s; buildable, hardware test pending |

@@ -17,7 +17,7 @@ developed independently and reintegrated through their documented contracts.
 | --- | --- | --- |
 | [Streichwurst](instruments/streichwurst/) | `instruments/streichwurst/`, FX in `effects/streichwurst-fx/` | Firmware prototype 0.1.0: string section/soli instrument, separate Streichfett-style FX, one parameter register for kit/MIDI/SQ/matrix, control app 0.3.0 pages; host and ARM builds pass, hardware and sound comparison not measured |
 | [Toy Piano v0.4](instruments/toy-piano/) | `instruments/toy-piano/` | USB MIDI and the Mod on Daisy matrix (per-voice pitch/level/harmonic, Poly AT); with an empty matrix bit-identical to v0.2 (golden test); v0.4 has the full Mod on Daisy panel like Physical Modeling (pot positions, extended monitor, LFO cross modulation) and ignores echoed replies (Studio One input monitoring); ARM and host tests pass; v0.2 keys, AD, polyphony and MIDI with Studio One reported working on hardware, v0.3/v0.4 hardware test pending |
-| [Toy Piano + Ambient Reverb v0.1.2](instruments/toy-piano/docs/AMBIENT.md) | `instruments/toy-piano/` (`AMBIENT=1`) | Separate `toy-piano-ambient` build: six modes and existing matrix/editor; CPU overload measured on the old 48 kHz wet path. Shared FX 0.4.0 is developed and accepted first; composed hardware acceptance pending ([current work](effects/reverb/docs/PERFORMANCE.md)) |
+| [Toy Piano + Ambient Reverb v0.1.2](instruments/toy-piano/docs/AMBIENT.md) | `instruments/toy-piano/` (`AMBIENT=1`) | Separate `toy-piano-ambient` build: six modes and existing matrix/editor; CPU overload measured on the old 48 kHz wet path. Shared FX 0.4.0 is developed and accepted first; composed hardware acceptance pending ([current work](effects/fourier/docs/PERFORMANCE.md)) |
 | [Toy Piano + Tape FX v0.1.0](instruments/toy-piano/docs/TAPE.md) | `instruments/toy-piano/` (`TAPE=1`) | Separate `toy-piano-tape` test build: Toy Piano into the TapeVibe port, all eight pots for the tape, bypass/character switches, existing matrix/editor contract and callback diagnostics; host/sanitizer/ARM checks pass, hardware untested |
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings, six models and global reverb; user-confirmed hardware/MIDI behavior and measured CPU headroom; model-switch spikes accepted as a known limitation ([results](instruments/physical-modeling/docs/HARDWARE_PLAYING_2026-10-22.md)) |
 | [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build without Mod on Daisy code, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
@@ -26,7 +26,7 @@ developed independently and reintegrated through their documented contracts.
 | [Nebulae + Mod on Daisy](instruments/granular/docs/MODULATION.md) | `instruments/granular/` (`MOD=1`) | Separate build `make PROJECT=granular-mod`: Mod on Daisy matrix on Start, Speed, Size, Density, Pitch, Overlap, Blend and Window, with the Windows SD share unchanged; software tested, hardware NOT MEASURED |
 | [Looper v0.6.0](instruments/looper/) | `instruments/looper/` | Original tape looper modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import (48 or 44.1 kHz) on microSD (FAT32 or exFAT), MIDI CC control over USB, Windows SD management via the control panel (shared card reader, loop saved before the share); host tests and ARM build pass; hardware test pending |
 | [Looper + Mod on Daisy](instruments/looper/docs/MODULATION.md) | `instruments/looper/` (`MOD=1`) | Separate build `make PROJECT=looper-mod`: Mod on Daisy matrix on Speed, Start, Size, Slice, Skip, Inertia, Frippertronics decay and Mix; regular image byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
-| [Ambient Reverb v0.4.0](effects/reverb/) | `effects/reverb/` | Shared stereo FX: 32–12 kHz wet Stretch, mode-specific pitch processing; host/sanitizer/ARM checks pass; standalone FX hardware acceptance precedes instrument acceptance |
+| [FOURIER v0.5.0](effects/fourier/) | `effects/fourier/` | Atmospheric reverb (formerly Ambient Reverb), shared stereo FX: 32–12 kHz wet Stretch, mode-specific pitch processing; host/sanitizer/ARM checks pass; standalone FX hardware acceptance precedes instrument acceptance |
 | [Tape FX v0.1.0](effects/tape-fx/) | `effects/tape-fx/` | Reusable stereo tape component ported from the drumlogue TapeVibe (bit-identical reference path) with optional MixForge stages, plus the standalone `tape-fx` stereo effect firmware; host/sanitizer/ARM checks pass, hardware untested ([report](effects/tape-fx/docs/REPORT.md)) |
 | [Step Seq v0.1.0](sequencers/step-seq/) | `sequencers/step-seq/` | KORG SQ-1-style 2 × 8-step sequencer, firmware `step-seq`: CV/Gate (own DAC register path, calibration, enable), MIDI USB+DIN with note tracking, three play modes, internal/Gate/MIDI/Auto clock, SQ protocol and `sq_probe.py`; host/sanitizer/ARM checks pass, hardware untested |
 | [Acid 303 v0.1.0](instruments/acid-303/) | `instruments/acid-303/` | Monophonic TB-303-style voice (DaisySP PolyBLEP and ladder filter with self-oscillation, accent, slide, two-source note stack) and standalone firmware `acid-303` with MIDI USB+DIN and CC plan; golden tests; host/sanitizer/ARM checks pass, hardware untested |
@@ -106,9 +106,9 @@ make PROJECT=toy-piano -j4
 make PROJECT=toy-piano test
 make PROJECT=toy-piano test-sanitize
 make PROJECT=toy-piano test-thread
-make PROJECT=reverb-fx -j4
-make PROJECT=reverb-fx test
-make PROJECT=reverb-fx test-sanitize
+make PROJECT=fourier-fx -j4
+make PROJECT=fourier-fx test
+make PROJECT=fourier-fx test-sanitize
 make test-release
 ```
 
@@ -118,9 +118,9 @@ its directory with `make -C instruments/toy-piano`. Its image is
 `instruments/toy-piano/src/version.h`; `make -s version` prints it. Builds for
 projects that are still plans fail explicitly instead of building a substitute
 firmware. `make all-projects` and `make test-projects` run all implemented projects.
-The reverb image is `effects/reverb/build/AmbientReverb-v0.4.0.bin`.
+The FOURIER image is `effects/fourier/build/Fourier-v0.5.0.bin`.
 Its shared wet clock is limited to 32–12 kHz; FX acceptance precedes instrument
-acceptance ([current work and limits](effects/reverb/docs/PERFORMANCE.md)).
+acceptance ([current work and limits](effects/fourier/docs/PERFORMANCE.md)).
 Nebulae builds with `make PROJECT=granular` to
 `instruments/granular/build/NebulaeOnDaisy-v0.2.0.bin`; its controls and hardware
 test are in the [project README](instruments/granular/README.md).
@@ -175,7 +175,7 @@ Open source, decided on October 24, 2026:
 | Everything of our own unless stated otherwise: firmware, the Mod on Daisy module, the browser editor (`editors/mod-on-daisy/web/`), `mod_probe.py`, scripts, docs | **MIT**, see [LICENSE](LICENSE) |
 | JUCE editor and VST3 plugin (`editors/mod-on-daisy/src/`, `tests/`, `CMakeLists.txt`) | **AGPLv3**, see [COPYING.AGPL-3.0.txt](editors/mod-on-daisy/COPYING.AGPL-3.0.txt). JUCE 9 is used under its AGPLv3 option; the MIT parts it includes stay MIT |
 | Audrey 3, Echo Delay, SC Reverb | MIT, including the Audrey II code in `instruments/audrey-3/third_party/audrey-ii/`, `effects/echo-delay/third_party/audrey-ii/` and `common/dsp/audrey-ii/`. Builds of Audrey 3 and SC Reverb also link code from the DaisySP-LGPL submodule under **LGPL-2.1**, see [the notes](instruments/audrey-3/third_party/README.md) |
-| Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT, `instruments/physical-modeling/third_party/stmlib/LICENSE`, `instruments/physical-modeling/torus/UPSTREAM.md`), a patched copy of libDaisy's `midi_parser.cpp` (MIT, notice in the file, `instruments/physical-modeling/src/`), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/fatfs/LICENSE.txt`), Ambient Reverb (`effects/reverb/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
+| Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT, `instruments/physical-modeling/third_party/stmlib/LICENSE`, `instruments/physical-modeling/torus/UPSTREAM.md`), a patched copy of libDaisy's `midi_parser.cpp` (MIT, notice in the file, `instruments/physical-modeling/src/`), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/fatfs/LICENSE.txt`), Ambient Reverb (`effects/fourier/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
 
 The repository is public on GitHub; until this license was added it had none. Material
 that may not be redistributed (manufacturer documents, photos, analysis inputs) does not

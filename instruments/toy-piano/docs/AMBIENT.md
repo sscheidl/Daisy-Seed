@@ -1,11 +1,11 @@
 # Toy Piano + Ambient Reverb v0.1.2
 
 **v0.1.3 (2026-11-01, local build):** composes Ambient Reverb 0.5.0 (stronger
-depth/X/Bloom ranges from `effects/reverb/src/control_mapping.h`) and the
+depth/X/Bloom ranges from `effects/fourier/src/control_mapping.h`) and the
 `ambient-reverb-control` adapter 0.1.0. The control app's **Ambient FX** page sets
 **Reverb LFO rate** (0.03–1.5 Hz, default 0.18 Hz, RAM only) over SQ 1.1 as
 `toy-piano-amb`; Mod on Daisy stays on the same USB port. Details:
-[CONTROL_APP.md](../../../effects/reverb/docs/CONTROL_APP.md). ARM image
+[CONTROL_APP.md](../../../effects/fourier/docs/CONTROL_APP.md). ARM image
 `ToyPianoAmbient-v0.1.3.bin`, 204,668 bytes, SHA-256
 `3e8efb3e72801bb64125a519031484d8a29167a63ff5cdc26d3d4af735eab8f7`;
 `check-firmware.py` PASS (**MEASURED 2026-11-01**). Host tests were not run for
@@ -22,7 +22,7 @@ Adapter 0.2.0 (32–12 kHz, bedarfsgerechte Pitchshifter). Zuerst wird die
 Standalone-FX-Fassung am Gerät abgenommen, danach dieses Produkt separat neu
 versioniert und gemessen. Die v0.1.2-Prüfsummen unten bezeichnen historische
 Images; aktuelle Entwicklungsbuilds sind über Git-Revision und Komponentenmanifest
-zu unterscheiden. [Aktuelle FX-Arbeit](../../../effects/reverb/docs/PERFORMANCE.md).
+zu unterscheiden. [Aktuelle FX-Arbeit](../../../effects/fourier/docs/PERFORMANCE.md).
 
 Eigenes Produkt `toy-piano-ambient`, aufbauend auf der modularen FX-Stufe in
 PR #38. Das bisherige Toy Piano v0.3 und die reine Ambient-FX-Firmware bleiben

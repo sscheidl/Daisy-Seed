@@ -25,7 +25,7 @@ exponentially to 12 kHz by Stretch (VR8). The codec and dry path remain at
 variants `AMB_WA`, `AMB_COMPACT` and `AMB_FIR` are all disabled.
 
 The existing product version is retained pending the separate FX and product
-acceptance described in [the FX performance report](../../../effects/reverb/docs/PERFORMANCE.md).
+acceptance described in [the FX performance report](../../../effects/fourier/docs/PERFORMANCE.md).
 The filename alone does not distinguish this build from historical 0.1.2 images;
 use the checksum, source commit and `COMPONENTS.json`.
 
@@ -48,7 +48,7 @@ files; tracked sources and the pinned libDaisy/DaisySP submodules were unchanged
 
 * ARM build: `make -C instruments/toy-piano AMBIENT=1 -j4`, with the five
   firmware translation units forced to rebuild using make's `-W` option.
-* Shared FX `effects/reverb/tests/test_performance.cpp`, compiled with Clang
+* Shared FX `effects/fourier/tests/test_performance.cpp`, compiled with Clang
   using `-std=c++17 -O2 -Wall -Wextra -Werror -pthread`: actual 32–12 kHz core
   work at five codec rates, unchanged dry path, pitch gating/crossfades, shared
   adapter policy and constant-time pitch restart.

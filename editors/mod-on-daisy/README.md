@@ -45,7 +45,7 @@ The shared JUCE standalone/VST3 UI and browser now expose **Ambient FX → Rever
 rate**, 0.03–1.5 Hz (default 0.18 Hz), for Ambient Reverb 0.5.0 and compatible
 composed products. This is the internal reverb modulation rate; the matrix LFOs
 remain separate. The existing SQ descriptor contract supplies range, units and
-readback. [Firmware/control contract](../../effects/reverb/docs/CONTROL_APP.md).
+readback. [Firmware/control contract](../../effects/fourier/docs/CONTROL_APP.md).
 
 Graphical editor for the [Mod on Daisy](../../modules/mod-on-daisy/) modulation matrix.
 The central control is the fully visible **8×8 grid matrix** modeled on the

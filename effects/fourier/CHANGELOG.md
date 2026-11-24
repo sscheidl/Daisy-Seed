@@ -1,5 +1,14 @@
 # Changelog
 
+## Rename to FOURIER — 2026-11-24 (version unchanged: 0.5.0)
+
+* Public name FOURIER; directory `effects/reverb` -> `effects/fourier`, project ID `reverb-fx` -> `fourier-fx`,
+  firmware `AmbientReverb-v0.5.0.bin` -> `Fourier-v0.5.0.bin`.
+* No code, DSP, control or sound change: the rebuilt 0.5.0 image is byte-identical with the previous
+  `AmbientReverb-v0.5.0.bin` (SHA-256 `c6b7099eab73154a8ee86de68c0e72a81a1680f0767ebe92a6e78198150a2c81`).
+* Kept for compatibility: SQ component key `ambient-reverb`, version marker `AMBIENT-REVERB-VERSION=`,
+  C++ names and macros, parameter contract and presets.
+
 ## 0.5.0 — 2026-11-01
 
 * Intentional control-range extension requested after the stable Toy Piano Ambient

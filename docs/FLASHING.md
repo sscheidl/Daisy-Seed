@@ -2,7 +2,7 @@
 
 These are local hardware steps. No device was flashed from cloud.
 Commands below run at the **repository root**. The examples select `PROJECT=toy-piano`;
-substitute `PROJECT=reverb-fx` for Ambient Reverb.
+substitute `PROJECT=fourier-fx` for FOURIER (formerly Ambient Reverb).
 Each project has its own BIN; the last flashed application runs on the kit.
 Runtime switching between instruments is not implemented.
 
@@ -85,9 +85,9 @@ use the buttons on the Seed3. With a closed case they are reached through the pl
 3. Continue with step 3 above.
 
 For Ambient Reverb, select
-`effects/reverb/build/AmbientReverb-v0.3.1.bin` in the Web Programmer, or use
-`make PROJECT=reverb-fx program-dfu` with the same J7 connection and update mode
-(S9+S16 or the editor button). See the [reverb controls and test steps](../effects/reverb/README.md).
+`effects/fourier/build/Fourier-v0.5.0.bin` in the Web Programmer, or use
+`make PROJECT=fourier-fx program-dfu` with the same J7 connection and update mode
+(S9+S16 or the editor button). See the [FOURIER controls and test steps](../effects/fourier/README.md).
 
 For Nebulae on Daisy v0.1.0, use the same **carrier J7 / external bootloader**
 application sequence with `instruments/granular/build/NebulaeOnDaisy-v0.1.1.bin`,

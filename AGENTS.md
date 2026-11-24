@@ -88,7 +88,7 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   component and standalone FX firmware before accepting it inside an instrument.
   Instrument hosts reuse that component and own only mapping, routing and mixing.
   Ambient wet-clock limits and pitch-shifter policy belong solely to
-  `effects/reverb/src/`; do not copy them into Toy Piano, Rings/Torus or a branch.
+  `effects/fourier/src/`; do not copy them into Toy Piano, Rings/Torus or a branch.
   Continue FX work from current `main` and merge it into a relevant feature branch
   before further FX edits. Record component versions and separate FX hardware
   acceptance from each composed product's CPU/listening acceptance.

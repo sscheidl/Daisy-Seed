@@ -244,7 +244,7 @@ pitch shifters only where needed. Standalone FX, Toy Piano and Physical Modeling
 use the same FX sources. The sound change is intentional; accept the FX
 on the device first, then each instrument separately. Historical measurements from
 27/28 October concern the old version. Current state, validation and
-acceptance order: [FX performance](effects/reverb/docs/PERFORMANCE.md).
+acceptance order: [FX performance](effects/fourier/docs/PERFORMANCE.md).
 
 **Diagnostics 2026-10-31:** PR #70 merged, suite 0.3.2. SD card reader with
 file operations, physical write interruption and recovery MEASURED;

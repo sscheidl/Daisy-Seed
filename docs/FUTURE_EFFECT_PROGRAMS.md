@@ -6,7 +6,7 @@ shall be replaced or extended by the following own programs:
 
 * A stereo delay program.
 * Our already developed Ambient Reverb from the Slöer work,
-  [effects/reverb](../effects/reverb/README.md).
+  [effects/fourier](../effects/fourier/README.md).
 
 The existing Ambient Reverb is an own development with Slöer as
 a design reference. It is not an identified original Walrus algorithm.

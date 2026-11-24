@@ -12,7 +12,7 @@ auf `ccr-23103956-s5bxpy` (`d5c8c81`, 28.10.) enthielt Gate und 32-kHz-Limit ber
 als abschaltbare Experimente. Beide Historien sind in diesem Arbeitsstand mit dem
 aktuellen `main` zusammengeführt; die historischen Messberichte bleiben erhalten.
 
-Verbindlich sind die Komponenten in `effects/reverb/src/`: Kern **0.4.0**,
+Verbindlich sind die Komponenten in `effects/fourier/src/`: Kern **0.4.0**,
 Wet-only-Adapter **0.2.0**. Standalone-FX, Toy Piano und Physical Modeling binden
 diese Quellen ein. Es gibt keine eigenen Wet-Takt- oder Gate-Kopien im Instrument.
 Die bisherigen Schalter `AMB_GATE`, `AMB_WET32`, `AMBIENT_PITCH_GATE` und
@@ -67,8 +67,8 @@ die neue FX-Policy und nicht als zusätzliche Verbesserung am Gerät belegt.
   über 2.304.000 Samples exakt mit dem Standard-Speicherpfad überein.
 
 ```sh
-make -C effects/reverb test HOST_CXX=clang++
-make -C effects/reverb test-sanitize HOST_CXX=clang++
+make -C effects/fourier test HOST_CXX=clang++
+make -C effects/fourier test-sanitize HOST_CXX=clang++
 make -C tests/fx test-sanitize CXX="clang++ -D_USE_MATH_DEFINES -ffp-contract=off"
 make -C instruments/toy-piano AMBIENT=1 test HOST_CXX=clang++
 make -C instruments/toy-piano AMBIENT=1 test-sanitize HOST_CXX=clang++
@@ -90,9 +90,9 @@ SDRAM: 1.114.112 Bytes; DTCM: 120.648 Bytes, statische Reserve 10.424 Bytes
 (mindestens 8 KiB verlangt). Das ist keine Stack-Hochwassermessung.
 
 ```sh
-make -C effects/reverb -j4
-python scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.4.0.bin
-python scripts/check-elf-placement.py effects/reverb/build/AmbientReverb-v0.4.0.elf --sdram memory:1114112
+make -C effects/fourier -j4
+python scripts/check-firmware.py effects/fourier/build/AmbientReverb-v0.4.0.bin
+python scripts/check-elf-placement.py effects/fourier/build/AmbientReverb-v0.4.0.elf --sdram memory:1114112
 ```
 
 ## Abnahmefolge am Gerät

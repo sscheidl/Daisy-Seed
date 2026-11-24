@@ -50,7 +50,7 @@ development and increases flexibility.
 On 24.10.2026, wishes for Physical Modeling were collected:
 
 * two alternative FX to the bundled Torus reverb, in the sense of **"Rings into Clouds"**:
-  **Stereo Delay**, our **Ambient Reverb** (`effects/reverb`, modelled on Slöer, modes
+  **Stereo Delay**, our **Ambient Reverb** (`effects/fourier`, modelled on Slöer, modes
   Cloud/Halo/Scatter/Abyss/Bloom) or a **simple granular effect like Clouds**;
 * show the active model (SW17/SW18 or CC28) at the top of the editor's connection area.
 
@@ -66,7 +66,7 @@ be interchangeable building blocks.
 * SysEx protocol 0x7D with two editors (JUCE, browser) and `mod_probe.py`.
 * FX candidates:
   * Torus reverb (in Physical Modeling, measured as part of the instrument);
-  * Ambient Reverb v0.2 (`effects/reverb`, own code, MIT; **never run on the device**);
+  * Ambient Reverb v0.2 (`effects/fourier`, own code, MIT; **never run on the device**);
   * Mutable sources in the local archive `Firmware Hacking/Eurorack/Rings (NanoRings)/DIY/eurorack-master.zip`:
     `rings/dsp/fx/chorus.h`, `rings/dsp/fx/ensemble.h` (Rings' "Disastrous Peace" itself switches
     between chorus, ensemble and reverb), `clouds/dsp/fx/pitch_shifter.h`,
