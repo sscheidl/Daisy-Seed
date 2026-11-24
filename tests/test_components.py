@@ -103,8 +103,8 @@ class ComponentTests(unittest.TestCase):
         self.assertTrue(suites['fx'] and suites['physical'])
         self.assertTrue(suites['toy'])
         self.assertFalse(suites['looper'])
-        suites = selection.select_suites(['effects/reverb/src/wet_path.cpp'])
-        self.assertTrue(suites['fx'] and suites['physical'] and suites['reverb'])
+        suites = selection.select_suites(['effects/fourier/src/wet_path.cpp'])
+        self.assertTrue(suites['fx'] and suites['physical'] and suites['fourier'])
         suites = selection.select_suites(['instruments/physical-modeling/torus/dsp/fx/reverb.h'])
         self.assertTrue(suites['fx'] and suites['physical'])
         # Tape FX DSP: its own suite, the shared FX contract test and its Toy Piano consumer.
@@ -126,7 +126,7 @@ class ComponentTests(unittest.TestCase):
         for panel in ('mod-editor-web', 'mod-editor-juce', 'mod-editor-vst3'):
             self.assertIn('bootloader-entry', data['components'][panel]['depends'])
         suites = selection.select_suites(['common/bootloader/bootloader_entry.h'])
-        for key in ('bootloader', 'toy', 'physical', 'granular', 'looper', 'reverb', 'tape', 'mod',
+        for key in ('bootloader', 'toy', 'physical', 'granular', 'looper', 'fourier', 'tape', 'mod',
                     'diagnostics', 'submodules'):
             self.assertTrue(suites[key], key)
 
@@ -136,7 +136,7 @@ class ComponentTests(unittest.TestCase):
         # Nothing else runs.
         suites = selection.select_suites(['common/sd/ro_sd.c'])
         self.assertTrue(suites['sd'] and suites['granular'] and suites['looper'] and suites['submodules'])
-        for key in ('toy', 'physical', 'reverb', 'tape', 'bootloader', 'diagnostics'):
+        for key in ('toy', 'physical', 'fourier', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
         reader = selection.select_suites(['common/sd/reader/msc_bot.cpp'])
         self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'] and reader['looper'])

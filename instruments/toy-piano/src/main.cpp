@@ -10,7 +10,7 @@
 #include <atomic>
 #if TOY_PIANO_FX
 #include "ambient_host.h"
-#include "../../../effects/reverb/src/rate_control.h"
+#include "../../../effects/fourier/src/rate_control.h"
 #include "callback_diagnostics.h"
 #include <new>
 #elif TOY_PIANO_TAPE

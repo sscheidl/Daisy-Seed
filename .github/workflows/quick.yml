@@ -97,9 +97,9 @@ jobs:
       - name: Looper host tests
         if: steps.changes.outputs.looper == 'true'
         run: make PROJECT=looper test
-      - name: Reverb host tests
-        if: steps.changes.outputs.reverb == 'true'
-        run: make PROJECT=reverb-fx test
+      - name: FOURIER host tests
+        if: steps.changes.outputs.fourier == 'true'
+        run: make PROJECT=fourier-fx test
       - name: Cumulonimbus host tests (component, firmware logic, probe, Toy Piano on Cumulonimbus)
         if: steps.changes.outputs.cumulonimbus == 'true'
         run: |

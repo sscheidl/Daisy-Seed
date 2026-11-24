@@ -1,4 +1,7 @@
-# Ambient Reverb 0.5.0 controls and app
+# FOURIER 0.5.0 controls and app
+
+FOURIER was called Ambient Reverb until 2026-11-24; the control app still shows it as "Ambient FX" and the SQ
+component key stays `ambient-reverb`.
 
 The 2026-11-01 revision deliberately strengthens the physical controls after the
 user's stable Toy Piano Ambient / FX 0.4.0 listening test. That older acceptance
@@ -28,7 +31,7 @@ These are the existing DSP rate limits, not the independent Mod-on-Daisy LFOs.
 Rates are nominal at the 32 kHz wet clock; maximum Stretch scales their audible
 rate by 12/32. Both editors read the device before writing anything.
 
-The contract is `effects/reverb/contracts/parameters.json`, generated into the
+The contract is `effects/fourier/contracts/parameters.json`, generated into the
 firmware table and both editors' labels. Component `ambient-reverb`, schema 1,
 parameter ID 1, key `reverb_lfo_rate`, unit Hz; SQ values are 30–1500 milli-Hz.
 The existing SQ wire format is unchanged; the generic probe supports it:

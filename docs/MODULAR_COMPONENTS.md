@@ -12,7 +12,7 @@ Core 0.4.0 / adapter 0.2.0 define the 32–12 kHz wet clock and
 pitch shifter use centrally. All existing instrument hosts use
 these sources; control mappings remain in the host. Hardware acceptance follows
 first for the standalone FX, then separately for Toy Piano and Rings/Torus.
-Details and historical branch assignment: [FX performance](../effects/reverb/docs/PERFORMANCE.md).
+Details and historical branch assignment: [FX performance](../effects/fourier/docs/PERFORMANCE.md).
 
 Instruments, effects and control panels are developed separately and combined into
 named products at build time. This stage supplements the existing
@@ -54,7 +54,7 @@ as before. The host keeps the existing dry/wet mix and output protection.
 | `physical-modeling-mod` | accepted Mod4 version | historical file name `0.1.0`, IDENTIFY `0.1.0-mod4` |
 | `physical-modeling-fx-torus` | Torus + Mod core + Torus FX adapter | `0.2.0` |
 | `physical-modeling-fx-ambient` | Torus + Mod core + Ambient FX adapter | `0.2.0` |
-| `reverb-fx` | existing Ambient FX with external audio inputs | unchanged `0.2` |
+| `fourier-fx` (formerly `reverb-fx`) | FOURIER (formerly Ambient FX) with external audio inputs | unchanged `0.2` |
 | `granular-mod` | Nebulae + Mod core (`MOD=1`) | Nebulae version, `0.3.0`, for firmware, IDENTIFY and manifest |
 | `looper-mod` | Looper + Mod core (`MOD=1`) | Looper version, e.g. `0.4.0`, for file name, marker `LOOPER-MOD-VERSION` and IDENTIFY |
 

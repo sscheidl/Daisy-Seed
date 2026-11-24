@@ -21,7 +21,7 @@ on:
           - granular-mod
           - looper
           - looper-mod
-          - reverb-fx
+          - fourier-fx
           - mod-bench
           - all
 permissions:
@@ -46,7 +46,7 @@ jobs:
               {"project":"toy-piano","directory":"instruments/toy-piano","image":"ToyPiano","build":"build"},
               {"project":"toy-piano-ambient","directory":"instruments/toy-piano","image":"ToyPianoAmbient","build":"build/ambient"},
               {"project":"toy-piano-tape","directory":"instruments/toy-piano","image":"ToyPianoTape","build":"build/tape"},
-              {"project":"reverb-fx","directory":"effects/reverb","image":"AmbientReverb","build":"build"},
+              {"project":"fourier-fx","directory":"effects/fourier","image":"Fourier","build":"build"},
               {"project":"tape-fx","directory":"effects/tape-fx","image":"TapeFx","build":"build"},
               {"project":"physical-modeling","directory":"instruments/physical-modeling","image":"PhysicalModeling","build":"build"},
               {"project":"physical-modeling-mod","directory":"instruments/physical-modeling","image":"PhysicalModelingMod","build":"build/mod"},

@@ -4,7 +4,7 @@
 in PR #68 zusammengeführt. Kern 0.4.0 / Adapter 0.2.0 verwenden Gate und 32–12 kHz
 zentral im FX; die alten `AMB_GATE`-/`AMB_WET32`-Schalter entfallen. Die folgenden
 Messungen und Prüfsummen gelten weiterhin ausschließlich für die damaligen Images.
-FX-zuerst-Abnahme und aktueller Stand: [FX-Performance](../../../effects/reverb/docs/PERFORMANCE.md).
+FX-zuerst-Abnahme und aktueller Stand: [FX-Performance](../../../effects/fourier/docs/PERFORMANCE.md).
 
 **CPU-ÜBERLAST GEMESSEN (27./28.10.2026) — URSACHE: AMBIENT-REVERB-KERN BEI VOLLER WET-RATE.**
 
@@ -127,7 +127,7 @@ make -C instruments/toy-piano AMBIENT=1 AMB_GATE=1 AMB_WET32=1 -j4
 
 **GEMESSEN (Host, 28.10.2026):**
 
-- `effects/reverb/tests/test_variants.cpp` rendert alle sechs Modi ab `Prepare` ohne
+- `effects/fourier/tests/test_variants.cpp` rendert alle sechs Modi ab `Prepare` ohne
   Moduswechsel (Stretch-Endpunkte und -Fahrten, Rauschstöße): mit `AMB_GATE`
   1 728 000 Samples, 0 Abweichungen. Gegenprobe: ein absichtlich falsch abgeschalteter
   unterer Shifter liefert 277 342 Abweichungen, ein zu kurzer Füllzähler 835 293.

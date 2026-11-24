@@ -42,18 +42,18 @@ make PROJECT=toy-piano -j4
 make PROJECT=toy-piano test
 make PROJECT=toy-piano test-sanitize
 make PROJECT=toy-piano test-thread
-make PROJECT=reverb-fx -j4
-make PROJECT=reverb-fx test
-make PROJECT=reverb-fx test-sanitize
+make PROJECT=fourier-fx -j4
+make PROJECT=fourier-fx test
+make PROJECT=fourier-fx test-sanitize
 make test-release
 python3 scripts/check-firmware.py
-python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.2.bin
+python3 scripts/check-firmware.py effects/fourier/build/Fourier-v0.5.0.bin
 ```
 
 Toy Piano is the default when PROJECT is omitted. `make -C instruments/toy-piano`
 builds the same firmware. Output is in `instruments/toy-piano/build/`; the former
 root `build/` location is no longer used. Ambient Reverb builds into
-`effects/reverb/build/`. Planned or unknown projects are rejected
+`effects/fourier/build/`. Planned or unknown projects are rejected
 rather than silently building a different instrument.
 
 `make all-projects` and `make test-projects` process every implemented project in

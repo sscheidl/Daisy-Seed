@@ -1,6 +1,15 @@
-# Ambient Reverb v0.5.0 — Seed3 Desktop Dev Kit
+# FOURIER v0.5.0 — Seed3 Desktop Dev Kit
 
-**Buildable prototype; no hardware run has been reported.** Project ID: `reverb-fx`.
+**FOURIER** is an atmospheric reverb: lush and dreamlike, with evolving textures, pitch modulation and wide
+ambient spaces. The idea is the sound of the Walrus Audio Slöer ambient reverb pedal on the Daisy, with its own
+DSP (see below).
+
+**Buildable prototype; no hardware run has been reported.** Project ID: `fourier-fx`, firmware `Fourier-v<version>.bin`.
+Until 2026-11-24 the project was called *Ambient Reverb* (directory `effects/reverb`, project `reverb-fx`, image
+`AmbientReverb-v<version>.bin`); the rename changed no code or sound (the 0.5.0 image is byte-identical). Technical
+identifiers stay for compatibility: the SQ component key `ambient-reverb`, the version marker
+`AMBIENT-REVERB-VERSION=`, the C++ names (`ambient::`, `seed::fx::AmbientReverb`) and the parameter contract.
+Older reports below keep the names that were valid at the time.
 The shared FX now limits its wet clock to **32–12 kHz** and processes only the
 pitch shifters needed by the active/fading modes. Codec and dry audio stay at
 48 kHz. This deliberately changes the sound from v0.3.1. Start with the standalone
@@ -102,13 +111,13 @@ From the repository root, with the pinned submodules and ARM toolchain installed
 as in [BUILD.md](../../docs/BUILD.md):
 
 ```bash
-make PROJECT=reverb-fx test
-make PROJECT=reverb-fx test-sanitize
-make PROJECT=reverb-fx -j4
-python3 scripts/check-firmware.py effects/reverb/build/AmbientReverb-v0.5.0.bin
+make PROJECT=fourier-fx test
+make PROJECT=fourier-fx test-sanitize
+make PROJECT=fourier-fx -j4
+python3 scripts/check-firmware.py effects/fourier/build/Fourier-v0.5.0.bin
 ```
 
-The firmware is `effects/reverb/build/AmbientReverb-v0.5.0.bin`, built with the
+The firmware is `effects/fourier/build/Fourier-v0.5.0.bin`, built with the
 same `BOOT_SRAM` setup and external DFU bootloader as Toy Piano. Follow the
 [Desktop Kit flashing guide](../../docs/FLASHING.md); no bootloader change is
 required. Do not flash the research project's original image if you want the

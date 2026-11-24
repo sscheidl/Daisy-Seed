@@ -1,7 +1,7 @@
 #pragma once
 // SPDX-License-Identifier: MIT
 // Test harness around the production Ambient control adapter (no alternative DSP).
-#include "../../../effects/reverb/src/rate_control.h"
+#include "../../../effects/fourier/src/rate_control.h"
 #include <functional>
 
 class AmbientControlSim {

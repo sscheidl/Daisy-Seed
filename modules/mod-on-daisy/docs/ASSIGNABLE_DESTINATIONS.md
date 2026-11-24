@@ -183,7 +183,7 @@ All three builds share `src/modulation.h`; each gets its own catalog.
 | Toy Piano Tape | Drive*, Tone*, Age*, Mix*, Wow*, Flutter*, Hiss*, Dropouts* | Pitch, Level, Harmonic, Attack, Decay |
 
 Ambient and Tape hooks are added in their FX components first; Stretch changes the wet
-clock, whose limits stay in `effects/reverb/src/`.
+clock, whose limits stay in `effects/fourier/src/`.
 
 ### 5.3 Later firmwares (first draft, decided when they are adopted)
 
@@ -197,7 +197,7 @@ Notes:
 
 * FX destinations (Ambient Filter/Mod Depth/Stretch, Tape) are hooks in their own
   `effects/` components first ("Modular FX first"); wet-clock limits stay in
-  `effects/reverb/src/`.
+  `effects/fourier/src/`.
 * Envelope times and other values read only at the strike are `latched` destinations.
 * Physical Modeling replaced Reverb Decay by Level in 2026-10 because it had little
   audible effect; as a catalog entry both can coexist, the default follows the pot.

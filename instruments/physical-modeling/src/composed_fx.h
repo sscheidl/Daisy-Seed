@@ -2,7 +2,7 @@
 // Compile-time effect selection. This file owns instrument-to-FX parameter mapping.
 #include "parameter_manager.h"
 #if PHYSICAL_MODELING_AMBIENT
-#include "../../../effects/reverb/src/fx_adapter.h"
+#include "../../../effects/fourier/src/fx_adapter.h"
 #else
 #include "../../../effects/torus-reverb/src/torus_reverb.h"
 #endif

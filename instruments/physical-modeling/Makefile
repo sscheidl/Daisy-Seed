@@ -28,7 +28,7 @@ MOD_DEFS += -DPHYSICAL_MODELING_COMPOSED=1
 ifeq ($(FX),ambient)
 MOD_DEFS += -DPHYSICAL_MODELING_AMBIENT=1
 COMPOSED_IMAGE = PhysicalModelingFxAmbient
-FX_SOURCES = ../../effects/reverb/src/ambient_reverb.cpp ../../effects/reverb/src/wet_path.cpp
+FX_SOURCES = ../../effects/fourier/src/ambient_reverb.cpp ../../effects/fourier/src/wet_path.cpp
 else
 COMPOSED_IMAGE = PhysicalModelingFxTorus
 endif

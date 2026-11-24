@@ -1,7 +1,7 @@
 #pragma once
 // MIT. Board-independent parameter mapping and routing for the Toy Piano FX product.
 #include "toy_piano.h"
-#include "../../../effects/reverb/src/fx_adapter.h"
+#include "../../../effects/fourier/src/fx_adapter.h"
 #include <array>
 #include <cmath>
 

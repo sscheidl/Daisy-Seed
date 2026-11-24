@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Drive FX firmware for the Seed3 Desktop Dev Kit (ARBEITSAUFTRAG Phase 3b): stereo line
-// input -> Drive (drive.h) -> 10 ms on/off fade (host.h) -> output, as reverb-fx and
+// input -> Drive (drive.h) -> 10 ms on/off fade (host.h) -> output, as fourier-fx and
 // tape-fx. Pots for the drive, keys for curve and auto level, MIDI CC (omni, USB and DIN)
 // and SQ parameters over USB. Callback owns controls and DSP; main owns MIDI, SQ, LEDs and
 // the bootloader.
