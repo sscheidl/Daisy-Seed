@@ -22,8 +22,8 @@ developed independently and reintegrated through their documented contracts.
 | [Physical Modeling](instruments/physical-modeling/) | `instruments/physical-modeling/` | Four-voice Torus/Rings, six models and global reverb; user-confirmed hardware/MIDI behavior and measured CPU headroom; model-switch spikes accepted as a known limitation ([results](instruments/physical-modeling/docs/HARDWARE_PLAYING_2026-10-22.md)) |
 | [Physical Modeling + Mod on Daisy](instruments/physical-modeling/docs/MODULATION.md) | `instruments/physical-modeling/` (`MOD=1`) | Separate build `make PROJECT=physical-modeling-mod`: Mod on Daisy matrix with Poly AT per Torus voice; regular build without Mod on Daisy code, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [Composed Physical Modeling FX](docs/MODULAR_COMPONENTS.md) | `instruments/physical-modeling/` (`COMPOSED=1`) | Separate v0.2.0 pilot builds with Torus or Ambient Reverb adapters and Mod on Daisy; explicit component manifests; hardware validation pending |
-| [Nebulae on Daisy v0.3.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD sample banks (FAT32/exFAT, 16- and 24-bit WAV), Live recording, three UI modes, J7 USB MIDI and Windows SD management via the control panel; software pass, hardware pending |
-| [Nebulae + Mod on Daisy](instruments/granular/docs/MODULATION.md) | `instruments/granular/` (`MOD=1`) | Separate build `make PROJECT=granular-mod`: Mod on Daisy matrix on Start, Speed, Size, Density, Pitch, Overlap, Blend and Window, with the Windows SD share unchanged; software tested, hardware NOT MEASURED |
+| [MESSIER v0.3.0](instruments/messier/) | `instruments/messier/` | Formerly Nebulae on Daisy. Stereo granular/vocoder, SD sample banks (FAT32/exFAT, 16- and 24-bit WAV), Live recording, three UI modes, J7 USB MIDI and Windows SD management via the control panel; software pass, hardware pending |
+| [MESSIER + Mod on Daisy](instruments/messier/docs/MODULATION.md) | `instruments/messier/` (`MOD=1`) | Separate build `make PROJECT=messier-mod`: Mod on Daisy matrix on Start, Speed, Size, Density, Pitch, Overlap, Blend and Window, with the Windows SD share unchanged; software tested, hardware NOT MEASURED |
 | [FERRUM v0.6.1](instruments/ferrum/) | `instruments/ferrum/` | Original tape looper (formerly Looper); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import (48 or 44.1 kHz) on microSD (FAT32 or exFAT), MIDI CC control over USB, Windows SD management via the control panel (shared card reader, loop saved before the share); host tests and ARM build pass; hardware test pending |
 | [FERRUM + Mod on Daisy](instruments/ferrum/docs/MODULATION.md) | `instruments/ferrum/` (`MOD=1`) | Separate build `make PROJECT=ferrum-mod`: Mod on Daisy matrix on Speed, Start, Size, Slice, Skip, Inertia, Frippertronics decay and Mix; regular image byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [FOURIER v0.5.0](effects/fourier/) | `effects/fourier/` | Atmospheric reverb (formerly Ambient Reverb), shared stereo FX: 32–12 kHz wet Stretch, mode-specific pitch processing; host/sanitizer/ARM checks pass; standalone FX hardware acceptance precedes instrument acceptance |
@@ -55,7 +55,7 @@ Daisy-Seed/
 ├── instruments/
 │   ├── toy-piano/          # Makefile, README, src, tests, docs, generated build
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
-│   ├── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
+│   ├── messier/            # MESSIER DSP, SD, UI, MIDI and tests
 │   ├── grain-cloud/        # new independent granular engine, host core
 │   └── ferrum/             # FERRUM tape looper (formerly looper)
 ├── sequencers/             # step-seq core and contracts, acid-seq product
@@ -121,9 +121,9 @@ firmware. `make all-projects` and `make test-projects` run all implemented proje
 The FOURIER image is `effects/fourier/build/Fourier-v0.5.0.bin`.
 Its shared wet clock is limited to 32–12 kHz; FX acceptance precedes instrument
 acceptance ([current work and limits](effects/fourier/docs/PERFORMANCE.md)).
-Nebulae builds with `make PROJECT=granular` to
-`instruments/granular/build/NebulaeOnDaisy-v0.2.0.bin`; its controls and hardware
-test are in the [project README](instruments/granular/README.md).
+MESSIER builds with `make PROJECT=messier` to
+`instruments/messier/build/Messier-v0.3.0.bin`; its controls and hardware
+test are in the [project README](instruments/messier/README.md).
 
 Each implemented project is currently a separate firmware image. Switching
 instruments requires flashing the corresponding BIN. The composed Physical Modeling
@@ -175,7 +175,7 @@ Open source, decided on October 24, 2026:
 | Everything of our own unless stated otherwise: firmware, the Mod on Daisy module, the browser editor (`editors/mod-on-daisy/web/`), `mod_probe.py`, scripts, docs | **MIT**, see [LICENSE](LICENSE) |
 | JUCE editor and VST3 plugin (`editors/mod-on-daisy/src/`, `tests/`, `CMakeLists.txt`) | **AGPLv3**, see [COPYING.AGPL-3.0.txt](editors/mod-on-daisy/COPYING.AGPL-3.0.txt). JUCE 9 is used under its AGPLv3 option; the MIT parts it includes stay MIT |
 | Audrey 3, Echo Delay, SC Reverb | MIT, including the Audrey II code in `instruments/audrey-3/third_party/audrey-ii/`, `effects/echo-delay/third_party/audrey-ii/` and `common/dsp/audrey-ii/`. Builds of Audrey 3 and SC Reverb also link code from the DaisySP-LGPL submodule under **LGPL-2.1**, see [the notes](instruments/audrey-3/third_party/README.md) |
-| Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT, `instruments/physical-modeling/third_party/stmlib/LICENSE`, `instruments/physical-modeling/torus/UPSTREAM.md`), a patched copy of libDaisy's `midi_parser.cpp` (MIT, notice in the file, `instruments/physical-modeling/src/`), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/fatfs/LICENSE.txt`), Ambient Reverb (`effects/fourier/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/granular/LICENSES/`) |
+| Third-party code | its own license, kept next to it: libDaisy and DaisySP (MIT, submodules), Mutable Instruments stmlib/Torus (MIT, `instruments/physical-modeling/third_party/stmlib/LICENSE`, `instruments/physical-modeling/torus/UPSTREAM.md`), a patched copy of libDaisy's `midi_parser.cpp` (MIT, notice in the file, `instruments/physical-modeling/src/`), the VST3 SDK bundled with JUCE (MIT), FatFs (`common/sd/fatfs/LICENSE.txt`), Ambient Reverb (`effects/fourier/LICENSE-MIT.txt`), the granular instrument's sources incl. LGPL-2.1 parts (`instruments/messier/LICENSES/`) |
 
 The repository is public on GitHub; until this license was added it had none. Material
 that may not be redistributed (manufacturer documents, photos, analysis inputs) does not

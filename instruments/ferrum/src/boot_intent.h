@@ -2,7 +2,7 @@
 // Boot intent: the one-shot record that selects the boot personality after a
 // controlled software reset (docs/SD_MANAGEMENT.md). Pure and host-tested; the
 // firmware maps it onto backup SRAM at kBootIntentAddress. Same scheme as Nebulae on
-// Daisy (instruments/granular/src/boot_intent.h), with the looper's own magic, so an
+// Daisy (instruments/messier/src/boot_intent.h), with the looper's own magic, so an
 // intent written by one image never selects a mode in the other.
 //
 // Rules:

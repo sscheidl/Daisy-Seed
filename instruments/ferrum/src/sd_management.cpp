@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SD management personality of the looper and its board glue. Reuses the Diagnostics
 // card reader (common/sd/reader) exactly as its hardware-tested 0.3.2 image and
-// Nebulae on Daisy 0.2.0 (instruments/granular/src/hw_glue.cpp) wire it: SDMMC1 IDMA
+// Nebulae on Daisy 0.2.0 (instruments/messier/src/hw_glue.cpp) wire it: SDMMC1 IDMA
 // into one isolated 512-byte AXI SRAM buffer, polled programming completion,
 // RCC-reset abort, CDC on interfaces 0/1 and MSC on interface 2. No audio and no
 // FatFs run in this personality (docs/SD_MANAGEMENT.md).

@@ -3,12 +3,12 @@
 **Status:** decisions recorded on 2026-10-23. Steps 1, 3, 4 and 5 are implemented
 (Nebulae on Daisy 0.2.0, 2026-11-01); step 2 (Diagnostics read test on this driver) is
 still open. S6 was revised by the v0.2.0 order: Windows access for Nebulae is a second
-boot personality of the same image ([architecture](../../instruments/granular/docs/V0_2_ARCHITECTURE.md)). Hardware
+boot personality of the same image ([architecture](../../instruments/messier/docs/V0_2_ARCHITECTURE.md)). Hardware
 behaviour of the shared driver is **NICHT GEMESSEN**.
 
 One microSD read path for every firmware in this repository, instead of separate
 drivers per project. First users: the Diagnostics read test and Nebulae on Daisy
-([sample banks](../../instruments/granular/docs/SAMPLE_BANKS.md)).
+([sample banks](../../instruments/messier/docs/SAMPLE_BANKS.md)).
 
 ## Starting point
 

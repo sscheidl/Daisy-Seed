@@ -1,7 +1,7 @@
-# Nebulae + Mod on Daisy (separate build)
+# MESSIER + Mod on Daisy (separate build)
 
-**Image:** `build/mod/NebulaeMod-v0.3.0.bin` (`make PROJECT=granular-mod`, or
-`make PROJECT=granular MOD=1`). Firmware marker: `NEBULAE-MOD-VERSION=0.3.0`; IDENTIFY
+**Image:** `build/mod/MessierMod-v0.3.0.bin` (`make PROJECT=messier-mod`, or
+`make PROJECT=messier MOD=1`). Firmware marker: `NEBULAE-MOD-VERSION=0.3.0`; IDENTIFY
 reports the key `nebulae` and the version `0.3.0`, the same version as image and marker.
 The numbers and hashes below were recorded for 0.2.1; 0.2.2 changed both images on purpose
 (real-time repair, [changelog](../CHANGELOG.md)), and every version keeps the rule that the
@@ -38,7 +38,7 @@ unchanged.
 | Column table | `src/modulation.h` (no libDaisy, also read by `mod_sim`) | `src/version.h` |
 | Execution-context glue | `src/mod_bridge.h` (no libDaisy, host-tested) | `src/version.h` |
 | Matrix | `modules/mod-on-daisy`, unchanged | `mod_on_daisy/types.h` (`mod-on-daisy`) |
-| Composition | `src/main.cpp`, `Makefile`, `components/registry.json` (`granular-mod`) | product manifest `COMPONENTS.json` |
+| Composition | `src/main.cpp`, `Makefile`, `components/registry.json` (`messier-mod`) | product manifest `COMPONENTS.json` |
 
 The engine knows nothing about the matrix: it takes eight normalized offsets
 (`SetControlOffsets`). It has no FX slot, so there is nothing to swap in this product.
@@ -183,7 +183,7 @@ closed by hand.
 | `src/mod_bridge.h` | new: `MidiTap`, `TickClock` |
 | `src/engine.h`, `src/engine.cpp` | `ControlTarget()`; `SetControlOffsets()` and `Smoothed()` in the MOD build only |
 | `src/main.cpp` | `NEBULAE_MOD` only: module, tick in `PollControls`, offsets and bases in `Audio`, `MidiTap` in `ReceiveUsb`, `ServiceModulation()` in the main loop, the marker. `ArmRestore()` is a plain extraction so the restart test runs the production code; the regular image stays byte-identical |
-| `Makefile` | `MOD=1`: target `NebulaeMod-v...`, `build/mod/`; `make test` always runs both builds |
+| `Makefile` | `MOD=1`: target `MessierMod-v...`, `build/mod/`; `make test` always runs both builds |
 | `tools/` | test-package entry point |
 
 ## Tests (host)

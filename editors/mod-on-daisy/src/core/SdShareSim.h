@@ -1,6 +1,6 @@
 #pragma once
 // Simulated Nebulae on Daisy and Looper with both USB personalities: performance on a
-// simulated USB-MIDI port (control SysEx as instruments/granular/src/control_sysex.h and
+// simulated USB-MIDI port (control SysEx as instruments/messier/src/control_sysex.h and
 // instruments/ferrum/src/control_sysex.h), SD management on a simulated CDC cable (DDP v1
 // with the card reader's ownership rules). Port of diagnostics/windows/daisy_diag/
 // nebulae_sim.py, looper_sim.py and the reader part of simulator.py. Simulation only: no

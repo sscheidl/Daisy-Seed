@@ -1,6 +1,6 @@
 """Simulated Nebulae on Daisy 0.2.0: performance personality on a simulated USB-MIDI
 port, SD management personality on the simulated CDC cable. Mirrors the firmware rules
-(instruments/granular/src/control_sysex.h and admin.cpp); simulation only, no drive is
+(instruments/messier/src/control_sysex.h and admin.cpp); simulation only, no drive is
 created on Windows.
 """
 from __future__ import annotations
@@ -153,7 +153,7 @@ class SimulatedNebulae:
         self.advance()
         return self.cable.ports()
 
-    # ---- control SysEx, as instruments/granular/src/control_sysex.h ----------------------
+    # ---- control SysEx, as instruments/messier/src/control_sysex.h ----------------------
     def handle_sysex(self, msg: bytes) -> bytes | None:
         if len(msg) < 7 or msg[:4] != SYSEX_PREFIX or msg[-1] != 0xF7:
             return None

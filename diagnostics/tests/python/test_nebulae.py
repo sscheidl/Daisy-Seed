@@ -9,7 +9,7 @@ from daisy_diag.nebulae_sim import SimulatedNebulae, RESTART_S
 from daisy_diag.session import ConnState, DeviceSession
 
 
-# ---- SysEx codec (byte layout of instruments/granular/src/control_sysex.h) -----------
+# ---- SysEx codec (byte layout of instruments/messier/src/control_sysex.h) -----------
 def test_requests_match_firmware_layout():
     assert n.status_request() == bytes([0xF0, 0x7D, 0x4E, 0x42, 0x01, 0x01, 0xF7])
     assert n.share_request(True, bytes([1, 2, 3, 4])) == bytes(

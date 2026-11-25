@@ -16,7 +16,7 @@ transfer speed and USB reconnect are **NICHT GEMESSEN**.
 Without python-rtmidi the performance personality is not found; SD management still
 works. Since app 0.6.1 every python-rtmidi call (scan, open, send, receive) runs off the GUI
 thread; a send that fails or stays in the driver longer than 1.5 s means "device not
-answering" and closes the link (a stalled firmware must not freeze the panel). Protocols: [instruments/granular/docs/CONTROL_PROTOCOL.md](../../instruments/granular/docs/CONTROL_PROTOCOL.md).
+answering" and closes the link (a stalled firmware must not freeze the panel). Protocols: [instruments/messier/docs/CONTROL_PROTOCOL.md](../../instruments/messier/docs/CONTROL_PROTOCOL.md).
 
 ## Workflow
 
@@ -39,10 +39,10 @@ firmware does not advertise them. The saved report contains `nebulae` (NEB statu
 
 ## Nebulae MOD
 
-The `granular-mod` image needs no panel change: STATUS, SHARE and HELLO are the same, so
+The `messier-mod` image needs no panel change: STATUS, SHARE and HELLO are the same, so
 it appears as Nebulae. Only one application can hold the kit's MIDI port on Windows, so
 close the Mod on Daisy editor first; the
-[test package's entry point](../../instruments/granular/docs/MODULATION.md#sd-sharing-and-patches)
+[test package's entry point](../../instruments/messier/docs/MODULATION.md#sd-sharing-and-patches)
 does that. Monitor frames that may follow for up to 3 s are skipped.
 
 ## Simulation and tests

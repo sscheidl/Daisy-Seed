@@ -1,6 +1,6 @@
 #pragma once
 // Control SysEx of the instruments that hand their microSD to Windows: Nebulae on Daisy
-// ("NB", instruments/granular/docs/CONTROL_PROTOCOL.md) and the Looper ("LP",
+// ("NB", instruments/messier/docs/CONTROL_PROTOCOL.md) and the Looper ("LP",
 // instruments/ferrum/docs/SD_MANAGEMENT.md). Port of diagnostics/windows/daisy_diag/
 // nebulae.py and looper.py; the byte layouts are pinned in docs/dcp/SD_SHARE_PORT.md § 2.1
 // and cross-checked against the Python reference by tests/sd_share_vectors.txt.

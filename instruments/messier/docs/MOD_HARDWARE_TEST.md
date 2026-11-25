@@ -1,4 +1,4 @@
-# Nebulae MOD hardware test sheet
+# MESSIER MOD hardware test sheet
 
 All results are **NOT MEASURED** until you run them on the kit. Write what you observe,
 with the date, in the Result column: PASS, FAIL or a value. Do not fill in expected values.
@@ -7,7 +7,7 @@ with the date, in the Result column: PASS, FAIL or a value. Do not fill in expec
 | --- | --- |
 | Tester / date | |
 | Package revision (`MANIFEST.json`) | |
-| Firmware | `firmware/NebulaeMod-v0.3.0.bin` |
+| Firmware | `firmware/MessierMod-v0.3.0.bin` |
 | SHA-256 checked with `SHA256SUMS` | |
 | Kit, USB port, Windows build | |
 

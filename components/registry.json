@@ -21,10 +21,10 @@
     },
     "nebulae": {
       "kind": "instrument",
-      "source": "instruments/granular",
+      "source": "instruments/messier",
       "version": {
         "type": "macro",
-        "path": "instruments/granular/src/version.h",
+        "path": "instruments/messier/src/version.h",
         "name": "NEBULAE_VERSION"
       }
     },
@@ -561,10 +561,10 @@
         "mod-editor-vst3"
       ]
     },
-    "granular": {
+    "messier": {
       "version_component": "nebulae",
-      "directory": "instruments/granular/build",
-      "image": "NebulaeOnDaisy",
+      "directory": "instruments/messier/build",
+      "image": "Messier",
       "marker": "NEBULAE-FW-VERSION=",
       "components": [
         "nebulae",
@@ -577,10 +577,10 @@
         "daisy-control-panel"
       ]
     },
-    "granular-mod": {
+    "messier-mod": {
       "version_component": "nebulae",
-      "directory": "instruments/granular/build/mod",
-      "image": "NebulaeMod",
+      "directory": "instruments/messier/build/mod",
+      "image": "MessierMod",
       "marker": "NEBULAE-MOD-VERSION=",
       "components": [
         "nebulae",

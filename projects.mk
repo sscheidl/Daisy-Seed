@@ -1,6 +1,6 @@
 # One catalogue for local selection and future project additions.
-PROJECTS := toy-piano physical-modeling physical-modeling-mod granular granular-mod ferrum ferrum-mod fourier-fx granular-fx mod-bench
-BUILDABLE_PROJECTS := toy-piano fourier-fx physical-modeling physical-modeling-mod granular granular-mod ferrum ferrum-mod mod-bench
+PROJECTS := toy-piano physical-modeling physical-modeling-mod messier messier-mod ferrum ferrum-mod fourier-fx granular-fx mod-bench
+BUILDABLE_PROJECTS := toy-piano fourier-fx physical-modeling physical-modeling-mod messier messier-mod ferrum ferrum-mod mod-bench
 PROJECTS += physical-modeling-fx-torus physical-modeling-fx-ambient
 # Added to BUILDABLE_PROJECTS only after cross-compilation is validated.
 BUILDABLE_PROJECTS += physical-modeling-fx-torus physical-modeling-fx-ambient
@@ -21,10 +21,10 @@ PROJECT_DIR_physical-modeling := instruments/physical-modeling
 # Separate Mod on Daisy build of the same sources (own image and build/mod directory).
 PROJECT_DIR_physical-modeling-mod := instruments/physical-modeling
 PROJECT_ARGS_physical-modeling-mod := MOD=1
-PROJECT_DIR_granular := instruments/granular
+PROJECT_DIR_messier := instruments/messier
 # Separate Mod on Daisy build of Nebulae (own image and build/mod directory).
-PROJECT_DIR_granular-mod := instruments/granular
-PROJECT_ARGS_granular-mod := MOD=1
+PROJECT_DIR_messier-mod := instruments/messier
+PROJECT_ARGS_messier-mod := MOD=1
 PROJECT_DIR_ferrum := instruments/ferrum
 # Separate Mod on Daisy build of the looper (own image and build/mod directory).
 PROJECT_DIR_ferrum-mod := instruments/ferrum
@@ -36,8 +36,8 @@ PROJECT_DIR_mod-bench := modules/mod-on-daisy/bench
 PROJECT_STATUS_toy-piano := buildable
 PROJECT_STATUS_physical-modeling := buildable
 PROJECT_STATUS_physical-modeling-mod := buildable
-PROJECT_STATUS_granular := buildable
-PROJECT_STATUS_granular-mod := buildable
+PROJECT_STATUS_messier := buildable
+PROJECT_STATUS_messier-mod := buildable
 PROJECT_STATUS_ferrum := buildable
 PROJECT_STATUS_ferrum-mod := buildable
 PROJECT_STATUS_fourier-fx := buildable

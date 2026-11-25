@@ -89,11 +89,11 @@ For Ambient Reverb, select
 `make PROJECT=fourier-fx program-dfu` with the same J7 connection and update mode
 (S9+S16 or the editor button). See the [FOURIER controls and test steps](../effects/fourier/README.md).
 
-For Nebulae on Daisy v0.1.0, use the same **carrier J7 / external bootloader**
-application sequence with `instruments/granular/build/NebulaeOnDaisy-v0.1.1.bin`,
-or explicitly run `make PROJECT=granular program-dfu`. No bootloader update is
-needed for an already compatible external v6.x installation. This implementation
-did not flash a device. Follow its [short smoke plan](../instruments/granular/docs/HARDWARE_TEST_PLAN.md).
+For MESSIER (formerly Nebulae on Daisy), use the same **carrier J7 / external bootloader**
+application sequence with `instruments/messier/build/Messier-v0.3.0.bin`,
+or run `make PROJECT=messier program-dfu` in application update mode. Keep the installed
+external bootloader if it is already compatible (v6.x). Follow the
+[MESSIER v0.3.0 hardware smoke test](../instruments/messier/README.md#hardware-smoke-test).
 
 ## If the device is missing
 

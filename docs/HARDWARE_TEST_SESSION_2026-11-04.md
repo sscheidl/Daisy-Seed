@@ -97,9 +97,9 @@ note it.
 
 ## 2. Block A: Nebulae on Daisy 0.2.1 (about 2 h)
 
-Detailed steps: [instruments/granular/docs/HARDWARE_TEST_PLAN.md](../instruments/granular/docs/HARDWARE_TEST_PLAN.md)
+Detailed steps: [instruments/granular/docs/HARDWARE_TEST_PLAN.md](../instruments/messier/docs/HARDWARE_TEST_PLAN.md)
 (written for 0.2.0, in German; 0.2.1 behaves the same, the panel shows `0.2.1`).
-Background: [V0_2_ARCHITECTURE.md](../instruments/granular/docs/V0_2_ARCHITECTURE.md),
+Background: [V0_2_ARCHITECTURE.md](../instruments/messier/docs/V0_2_ARCHITECTURE.md),
 [panel profile](../diagnostics/docs/NEBULAE_PROFILE.md).
 
 - [ ] **A1 Flash and boot.** Windows shows a **USB-MIDI** device and **no** COM port.

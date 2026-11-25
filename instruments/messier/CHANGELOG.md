@@ -1,5 +1,15 @@
 # Changelog
 
+## Rename to MESSIER, 2026-11-25
+
+No code or sound change; the version stays 0.3.0. Directory `instruments/granular` -> `instruments/messier`,
+projects `granular`/`granular-mod` -> `messier`/`messier-mod`, images `NebulaeOnDaisy-v0.3.0.bin` /
+`NebulaeMod-v0.3.0.bin` -> `Messier-v0.3.0.bin` / `MessierMod-v0.3.0.bin` (build variants follow the new
+prefix), CI suite key `granular` -> `messier`. Both default images are byte-identical to the build before
+the rename (MEASURED 2026-11-25, fresh clones of `f749b82` and the rename commit). Wire IDs, SD paths, firmware
+markers, the `nebulae` component and Mod on Daisy key stay ([README](README.md)). The entries below keep
+the names that were valid at the time.
+
 ## 0.3.0 - 24-bit samples, 2026-11-08 (rebased onto 0.2.2 on 2026-11-17)
 
 Hardware status: **NOT MEASURED**. Applies to `granular` and `granular-mod`. Builds on the

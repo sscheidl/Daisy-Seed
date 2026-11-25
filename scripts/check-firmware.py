@@ -7,7 +7,7 @@ Also accepts effects/fourier/build/Fourier-v<version>.bin,
 effects/tape-fx/build/TapeFx-v<version>.bin, build/tape/ToyPianoTape-v<version>.bin,
 PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
 instruments/ferrum/build/Ferrum-v<version>.bin, build/mod/FerrumMod-v<version>.bin,
-instruments/granular/build/mod/NebulaeMod-v<version>.bin and
+instruments/messier/build/mod/MessierMod-v<version>.bin and
 modules/mod-on-daisy/bench/build/ModBench-v<version>.bin and the composed images in
 ACID_SEQ (sequencers/step-seq/build/StepSeq-v<version>.bin, ...,
 instruments/streichwurst/build/Streichwurst-v<version>.bin, effects/streichwurst-fx/build/StreichwurstFx-v<version>.bin).
@@ -91,17 +91,17 @@ elif path.name.startswith('ToyPianoAmbient-v'):
     version = match.group(1)
     expected_name = f'ToyPianoAmbient-v{version}.bin'
     marker = rb'TOYPIANO-AMBIENT-FW-VERSION=([0-9.]+)\x00'
-elif re.match(r'^Nebulae(OnDaisy|Mod)(Profile|Common|Stagger|Pipeline)*-v', path.name):
+elif re.match(r'^Messier(Mod)?(Profile|Common|Stagger|Pipeline)*-v', path.name):
     # Nebulae: regular or MOD image, optionally the diagnostic build (Profile) and the
     # vocoder scheduling listening builds (Common, Stagger; Pipeline was the 2026-11-09
-    # name of today's default; instruments/granular/Makefile).
-    granular = root / 'instruments' / 'granular'
-    match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (granular / 'src' / 'version.h').read_text())
+    # name of today's default; instruments/messier/Makefile).
+    messier = root / 'instruments' / 'messier'
+    match = re.search(r'NEBULAE_VERSION\s+"([^"]+)"', (messier / 'src' / 'version.h').read_text())
     assert match, "Could not read the Nebulae version"
     version = match.group(1)
-    name_match = re.match(r'^(Nebulae(?:OnDaisy|Mod)(?:Profile|Common|Stagger|Pipeline)*)-v', path.name)
+    name_match = re.match(r'^(Messier(?:Mod)?(?:Profile|Common|Stagger|Pipeline)*)-v', path.name)
     expected_name = f'{name_match.group(1)}-v{version}.bin'
-    mod = path.name.startswith('NebulaeMod')
+    mod = path.name.startswith('MessierMod')
     marker = rb'NEBULAE-MOD-VERSION=([0-9.]+)\x00' if mod else rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
     if 'Profile' in path.name:
         assert b'NEBULAE-PROFILE-BUILD=1\x00' in path.read_bytes(), 'Profile image without its marker'

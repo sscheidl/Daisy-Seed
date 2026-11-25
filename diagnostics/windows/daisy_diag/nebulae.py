@@ -1,10 +1,10 @@
 """SD share workflow of the control panel: Nebulae on Daisy (firmware 0.2.0) and, through
 the profile in ``looper.py``, the Looper (firmware 0.5.0).
 
-Two transports, never at the same time (instruments/granular/docs/V0_2_ARCHITECTURE.md):
+Two transports, never at the same time (instruments/messier/docs/V0_2_ARCHITECTURE.md):
 
 * Performance personality: class-compliant USB-MIDI. The panel speaks the control
-  SysEx ``F0 7D 4E 42 ...`` (instruments/granular/docs/CONTROL_PROTOCOL.md): STATUS and
+  SysEx ``F0 7D 4E 42 ...`` (instruments/messier/docs/CONTROL_PROTOCOL.md): STATUS and
   SHARE. There is no COM port in this mode.
 * SD management personality: USB CDC (DDP v1, handled by ``DeviceSession``) plus USB
   mass storage. HELLO reports ``app=NebulaeOnDaisy``.

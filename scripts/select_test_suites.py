@@ -59,16 +59,16 @@ def select_suites(changed):
         'toy': shared or touched('instruments/toy-piano/', 'modules/filter-core/') or mod_api or fx or dsp,
         'physical': shared or touched('instruments/physical-modeling/') or mod_api or fx,
         # Nebulae 0.2 links common/sd (read-only FatFs, card reader) and the DDP framing.
-        'granular': shared or touched('instruments/granular/', 'common/sd/', 'diagnostics/protocol/',
+        'messier': shared or touched('instruments/messier/', 'common/sd/', 'diagnostics/protocol/',
                                       'diagnostics/firmware/src/ring_buffer.h') or mod_api,
         # The looper links common/sd in its writable profile, the card reader and the DDP framing.
         'ferrum': shared or touched('instruments/ferrum/', 'common/sd/', 'diagnostics/protocol/',
                                     'diagnostics/firmware/src/ring_buffer.h') or mod_api,
         'fourier': shared or touched('effects/fourier/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),
-        'mod': shared or touched('modules/mod-on-daisy/', 'instruments/granular/src/modulation.h'),
+        'mod': shared or touched('modules/mod-on-daisy/', 'instruments/messier/src/modulation.h'),
         # The editor's Streichwurst simulator and patch use the product register and tables.
-        'editor': shared or touched('editors/mod-on-daisy/', 'instruments/granular/src/modulation.h',
+        'editor': shared or touched('editors/mod-on-daisy/', 'instruments/messier/src/modulation.h',
                                     'instruments/streichwurst/contracts/',
                                     'instruments/streichwurst/src/register.h', 'instruments/streichwurst/src/mod_targets.h',
                                     'instruments/streichwurst/include/streichwurst/param_table.h',
@@ -93,7 +93,7 @@ def select_suites(changed):
     }
     if '.github/workflows/quick.yml' in changed:
         suites = {key: True for key in suites}
-    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'ferrum', 'fourier', 'tape',
+    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'messier', 'ferrum', 'fourier', 'tape',
                                                     'stepseq', 'acid303', 'drive', 'delay', 'acidseq',
                                                     'streichwurst', 'cumulonimbus'))
     return suites

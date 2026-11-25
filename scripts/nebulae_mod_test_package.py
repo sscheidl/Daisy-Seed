@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Builds the local Windows hardware-test package of Nebulae on Daisy MOD.
+"""Builds the local Windows hardware-test package of MESSIER MOD.
 
     python scripts/nebulae_mod_test_package.py --panel-exe <DaisyDiagnostic.exe> --smoke
 
-Needs a built `make PROJECT=granular-mod` and the JUCE editor (docs in
+Needs a built `make PROJECT=messier-mod` and the JUCE editor (docs in
 editors/mod-on-daisy/README.md). Output: build/nebulae-mod-test/ with the firmware, both
 Windows apps, the single entry point, the test sheet, MANIFEST.json and SHA256SUMS.
 
@@ -23,22 +23,22 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-GRANULAR = ROOT / 'instruments' / 'granular'
+GRANULAR = ROOT / 'instruments' / 'messier'
 EDITOR_NAME = 'Mod on Daisy Editor.exe'
 PANEL_NAME = 'DaisyDiagnostic.exe'
 DEFAULT_EDITOR = ROOT / 'build' / 'editor' / 'ModOnDaisyEditor_artefacts' / 'Release' / EDITOR_NAME
 HARDWARE_STATUS = 'NOT MEASURED'
 
-# What this package was validated with; results are in instruments/granular/docs/VALIDATION.md.
+# Validation commands for this package; earlier results are in instruments/messier/docs/VALIDATION.md.
 COMMANDS = [
-    'make PROJECT=granular test HOST_CXX=clang++ HOST_CC=clang',
-    'make PROJECT=granular test-sanitize HOST_CXX=clang++ HOST_CC=clang',
-    'make PROJECT=granular -j8',
-    'make PROJECT=granular-mod -j8',
-    'python scripts/check-firmware.py instruments/granular/build/mod/NebulaeMod-v<version>.bin',
-    'python scripts/check-granular-elf.py instruments/granular/build/mod/NebulaeMod-v<version>.elf --host-test',
-    'python scripts/check-sd-symbols.py <instruments/granular sd-check flags> <NebulaeMod ELF>',
-    'python scripts/component_manifest.py --project granular-mod --built',
+    'make PROJECT=messier test HOST_CXX=clang++ HOST_CC=clang',
+    'make PROJECT=messier test-sanitize HOST_CXX=clang++ HOST_CC=clang',
+    'make PROJECT=messier -j8',
+    'make PROJECT=messier-mod -j8',
+    'python scripts/check-firmware.py instruments/messier/build/mod/MessierMod-v<version>.bin',
+    'python scripts/check-granular-elf.py instruments/messier/build/mod/MessierMod-v<version>.elf --host-test',
+    'python scripts/check-sd-symbols.py <instruments/messier sd-check flags> <MessierMod ELF>',
+    'python scripts/component_manifest.py --project messier-mod --built',
     'python -m pytest diagnostics/tests/python -q',
     'node editors/mod-on-daisy/web/tests/e2e.cjs <mod_sim>',
     'build/editor/.../Mod on Daisy Editor.exe --selftest <dir>',
@@ -136,13 +136,13 @@ def main():
         raise SystemExit('Tracked changes: commit first so the package names one exact revision.')
     version = version_of(GRANULAR / 'src' / 'version.h', 'NEBULAE_VERSION')
     build = GRANULAR / 'build' / 'mod'
-    image = build / f'NebulaeMod-v{version}.bin'
+    image = build / f'MessierMod-v{version}.bin'
     for required in (image, args.panel_exe, args.editor_exe):
         if not required.is_file():
             raise SystemExit(f'Missing: {required}')
 
     run(sys.executable, ROOT / 'scripts' / 'check-firmware.py', image)
-    run(sys.executable, ROOT / 'scripts' / 'component_manifest.py', '--project', 'granular-mod', '--built')
+    run(sys.executable, ROOT / 'scripts' / 'component_manifest.py', '--project', 'messier-mod', '--built')
 
     out = args.out
     if running_clients():  # before anything is deleted: a running app locks its exe

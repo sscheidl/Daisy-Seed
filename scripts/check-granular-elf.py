@@ -65,7 +65,7 @@ if '_ebackup_sram' in symbols:
     assert symbols['_ebackup_sram'][0] <= 0x38800F00
 # Live PCM stays in SDRAM below the file region. Since 0.2.2 the Engine (vocoder and
 # grain state) lives in AXI SRAM after the image, section .neb_dsp: in SDRAM one vocoder
-# hop took 4.4 times as long (instruments/granular/docs/OVERLOAD_DIAGNOSIS.md).
+# hop took 4.4 times as long (instruments/messier/docs/OVERLOAD_DIAGNOSIS.md).
 matches = [(n, v, size) for n, (v, size) in symbols.items() if 'live_banks' in n]
 assert len(matches) == 1
 _, address, size = matches[0]

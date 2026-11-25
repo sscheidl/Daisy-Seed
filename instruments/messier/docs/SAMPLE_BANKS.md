@@ -139,7 +139,7 @@ only in SAMPLE mode (SW18 center):
 
 ## Tests to add with the implementation
 
-Host (`make PROJECT=granular test test-sanitize`):
+Host (`make PROJECT=messier test test-sanitize`):
 
 * Sorting: case, numeric runs, leading zeros, equal names, code-page bytes.
 * Filtering: non-WAV, `.`/`._*`, hidden/system, deeper folders, empty folders.
