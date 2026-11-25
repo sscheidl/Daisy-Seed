@@ -11,12 +11,12 @@ MOD_FLAGS = $(MOD_DEFS) -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 PROFILE ?= 0
 PROFILE_FLAGS = -DNEBULAE_PROFILE=1
 ifeq ($(MOD),1)
-TARGET := NebulaeMod
+TARGET := MessierMod
 VARIANT := mod
 C_DEFS = $(MOD_DEFS)
 C_INCLUDES += -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 else
-TARGET := NebulaeOnDaisy
+TARGET := Messier
 VARIANT :=
 endif
 ifeq ($(PROFILE),1)

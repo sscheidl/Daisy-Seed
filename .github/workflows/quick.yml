@@ -91,9 +91,9 @@ jobs:
           make PROJECT=physical-modeling test
           make PROJECT=physical-modeling-fx-torus test
           make PROJECT=physical-modeling-fx-ambient test
-      - name: Nebulae host tests
-        if: steps.changes.outputs.granular == 'true'
-        run: make PROJECT=granular test
+      - name: MESSIER host tests
+        if: steps.changes.outputs.messier == 'true'
+        run: make PROJECT=messier test
       - name: FERRUM host tests
         if: steps.changes.outputs.ferrum == 'true'
         run: make PROJECT=ferrum test

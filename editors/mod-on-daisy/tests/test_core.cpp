@@ -5,7 +5,7 @@
 #include "../src/core/PatchFile.h"
 #include "../src/core/SimInstruments.h"
 #include "../src/core/Simulator.h"
-#include "../../../instruments/granular/src/modulation.h"
+#include "../../../instruments/messier/src/modulation.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>

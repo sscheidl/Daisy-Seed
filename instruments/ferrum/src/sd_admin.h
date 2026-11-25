@@ -3,7 +3,7 @@
 // control panel, next to the USB mass-storage interface of the shared card reader
 // (common/sd/reader). libDaisy-free; sd_management.cpp supplies the hardware through
 // AdminPort. Protocol: diagnostics/protocol/PROTOCOL.md plus the LOOPER message in
-// docs/SD_MANAGEMENT.md. Adapted from Nebulae on Daisy (instruments/granular/src/
+// docs/SD_MANAGEMENT.md. Adapted from Nebulae on Daisy (instruments/messier/src/
 // admin.h); the session, READER and BOOT handling and the ownership rules are the same.
 //
 // Ownership rules:

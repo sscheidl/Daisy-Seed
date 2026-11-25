@@ -12,7 +12,7 @@
 #include "../../../instruments/toy-piano/src/modulation.h"
 #include "../../../instruments/physical-modeling/src/modulation.h"
 #include "../../../instruments/ferrum/src/modulation.h"
-#include "../../../instruments/granular/src/modulation.h"
+#include "../../../instruments/messier/src/modulation.h"
 #include "../bench/src/scenarios.h"
 #include <cstdio>
 #include <cstring>

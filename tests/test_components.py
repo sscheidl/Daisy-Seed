@@ -90,12 +90,12 @@ class ComponentTests(unittest.TestCase):
 
     def test_shared_control_consumers(self):
         suites = selection.select_suites(['modules/mod-on-daisy/include/mod_on_daisy/engine.h'])
-        for key in ('toy', 'physical', 'granular', 'ferrum', 'mod', 'editor', 'submodules'):
+        for key in ('toy', 'physical', 'messier', 'ferrum', 'mod', 'editor', 'submodules'):
             self.assertTrue(suites[key], key)
 
     def test_nebulae_columns_reach_their_readers(self):
-        suites = selection.select_suites(['instruments/granular/src/modulation.h'])
-        for key in ('granular', 'mod', 'editor'):
+        suites = selection.select_suites(['instruments/messier/src/modulation.h'])
+        for key in ('messier', 'mod', 'editor'):
             self.assertTrue(suites[key], key)
 
     def test_fx_consumers(self):
@@ -126,7 +126,7 @@ class ComponentTests(unittest.TestCase):
         for panel in ('mod-editor-web', 'mod-editor-juce', 'mod-editor-vst3'):
             self.assertIn('bootloader-entry', data['components'][panel]['depends'])
         suites = selection.select_suites(['common/bootloader/bootloader_entry.h'])
-        for key in ('bootloader', 'toy', 'physical', 'granular', 'ferrum', 'fourier', 'tape', 'mod',
+        for key in ('bootloader', 'toy', 'physical', 'messier', 'ferrum', 'fourier', 'tape', 'mod',
                     'diagnostics', 'submodules'):
             self.assertTrue(suites[key], key)
 
@@ -135,14 +135,14 @@ class ComponentTests(unittest.TestCase):
         # profile and the reader; the Diagnostics card-reader image links only the reader.
         # Nothing else runs.
         suites = selection.select_suites(['common/sd/ro_sd.c'])
-        self.assertTrue(suites['sd'] and suites['granular'] and suites['ferrum'] and suites['submodules'])
+        self.assertTrue(suites['sd'] and suites['messier'] and suites['ferrum'] and suites['submodules'])
         for key in ('toy', 'physical', 'fourier', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
         reader = selection.select_suites(['common/sd/reader/msc_bot.cpp'])
-        self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'] and reader['ferrum'])
+        self.assertTrue(reader['sd'] and reader['messier'] and reader['diagnostics'] and reader['ferrum'])
         self.assertFalse(reader['toy'])
         ddp = selection.select_suites(['diagnostics/protocol/ddp.cpp'])
-        self.assertTrue(ddp['granular'] and ddp['ferrum'])
+        self.assertTrue(ddp['messier'] and ddp['ferrum'])
         self.assertFalse(selection.select_suites(['diagnostics/windows/daisy_diag/looper.py'])['ferrum'])
         self.assertTrue(selection.select_suites(['Makefile'])['sd'])
 
@@ -152,7 +152,7 @@ class ComponentTests(unittest.TestCase):
         for key in ('sd-driver', 'sd-fs-readonly', 'sd-fs-writable', 'sd-reader'):
             self.assertEqual(data['components'][key]['kind'], 'storage')
             self.assertTrue(manifest.read_version(data['components'][key]['version']))
-        expected = {'granular': 'sd-fs-readonly', 'ferrum': 'sd-fs-writable', 'ferrum-mod': 'sd-fs-writable'}
+        expected = {'messier': 'sd-fs-readonly', 'ferrum': 'sd-fs-writable', 'ferrum-mod': 'sd-fs-writable'}
         for project, profile in expected.items():
             components = data['products'][project]['components']
             self.assertIn('sd-driver', components)
