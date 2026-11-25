@@ -1,4 +1,4 @@
-# Nebulae MOD hardware test sheet
+# MESSIER MOD hardware test sheet
 
 All results are **NOT MEASURED** until you run them on the kit. Write what you observe,
 with the date, in the Result column: PASS, FAIL or a value. Do not fill in expected values.

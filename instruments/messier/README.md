@@ -12,9 +12,13 @@ component `nebulae`, the version markers `NEBULAE-FW-VERSION=` / `NEBULAE-MOD-VE
 `NEBULAE-PROFILE-BUILD=1`, the C++ names (`NEBULAE_VERSION`, `NEBULAE_MOD`) and the script names
 `scripts/check-granular-elf.py` and `scripts/nebulae_mod_test_package.py`. The control panel and the
 diagnostics app still show "Nebulae". The planned effect `granular-fx` (`effects/granular`) is a separate
-project and was not renamed. The DCP SD test package for 0.2.1 keeps the old image names; rebuild it with
-`scripts/dcp_sd_test_package.py --package --check-root <checkout of 9cce907>`. Older reports keep the names
-that were valid at the time. See [CHANGELOG.md](CHANGELOG.md).
+project. Older reports keep the names that were valid at the time. See [CHANGELOG.md](CHANGELOG.md).
+
+The historical DCP SD test package requires the stored DCP app and all four original
+Nebulae 0.2.1 and Looper 0.6.1 images. With those inputs available, use
+`python scripts/dcp_sd_test_package.py --package --check-root "<path-to-9cce907-checkout>"`.
+The rename test environment lacked the regular original at
+`firmware/granular/0.2.1+da5f574/NebulaeOnDaisy-v0.2.1.bin`.
 
 **v0.3.0: SOFTWARE PASS / HARDWARE PENDING.** v0.3.0 loads 24-bit and WAVE_FORMAT_EXTENSIBLE
 PCM files, such as the original Nebulae factory samples ([validation](docs/VALIDATION.md)).
@@ -41,7 +45,7 @@ independent. This adapts Qu-Bit's default Nebulae v2.1.2 Granular Looper, with t
 documented differences below. It does not host alternate instruments or claim
 bit-identical Csound output. This is the Nebulae granular project; the separate
 [FERRUM tape looper](../ferrum/) has its own implementation path. [Validation](docs/VALIDATION.md) separates software
-checks from pending hardware checks. No board was flashed or sound auditioned.
+checks from pending hardware checks.
 
 ## Build and binary
 
@@ -65,17 +69,20 @@ durations, not measured end-to-end latency or CPU usage.
 
 Windows PATH needs the ARM toolchain, xPack build tools and Git `usr/bin`.
 Host validation used LLVM-MinGW: `HOST_CXX=clang++`. Windows ThreadSanitizer is
-unsupported; Linux CI has a `test-thread` target. The workflow uploads BIN, ELF,
-MAP and SHA256SUMS after a push. See validation for executed CI evidence.
+unsupported. Linux has a `test-thread` target. The manual **Firmware** workflow publishes
+the BIN, ELF, MAP, `SHA256SUMS` and `COMPONENTS.json`. See validation for executed CI evidence.
 Generated outputs and toolchains are not tracked.
 
 ## Diagnostic build
 
-`make -C instruments/messier MOD=1 PROFILE=1` (or without `MOD=1`) builds
-`build/mod-profile/MessierModProfile-v<version>.bin`: the same image plus DWT cycle splits
-of the audio callback, a budget guard that keeps USB and LEDs alive after an overrun, a
-boot benchmark of one vocoder hop from SDRAM and from AXI SRAM, and the PROFILE SysEx
-([protocol](docs/CONTROL_PROTOCOL.md)). `tools/nb_probe.py status|profile` reads the
+| Command from the repository root | Image under `instruments/messier/` |
+| --- | --- |
+| `make -C instruments/messier PROFILE=1` | `build/profile/MessierProfile-v<version>.bin` |
+| `make -C instruments/messier MOD=1 PROFILE=1` | `build/mod-profile/MessierModProfile-v<version>.bin` |
+
+Both variants add DWT cycle splits for the audio callback, a budget guard that keeps USB and
+LEDs alive after an overrun, a boot benchmark of one vocoder hop from SDRAM and from AXI
+SRAM, and [PROFILE SysEx](docs/CONTROL_PROTOCOL.md). `tools/nb_probe.py status|profile` reads the
 counters from the PC. Never a release: with the guard active the sound is wrong. Why it
 exists and what it found: [OVERLOAD_DIAGNOSIS.md](docs/OVERLOAD_DIAGNOSIS.md).
 
@@ -314,8 +321,16 @@ fraction at fractional pitches. These change random clouds/transients; no origin
 device null test or listening comparison was performed. No filter, shifter or
 reverb was added.
 
-The [hardware plan](docs/HARDWARE_TEST_PLAN.md) gives J7 application flashing and
-smoke checks. CPU timing, analog behavior, USB enumeration, SD compatibility and
-mechanical switch orientation are **PENDING-HARDWARE**. Debugger-visible
-`callback_peak_cycles` and `callback_overruns` are DWT counters, not measurements
-until run on a board. See [licenses/relink instructions](LICENSES/README.md).
+### Hardware smoke test
+
+Regular v0.3.0 hardware results are **NOT MEASURED**. Record the observed result and date for each step.
+
+1. Check `Messier-v0.3.0.bin` against its `SHA256SUMS`. Flash the application using the
+   [carrier J7 and external bootloader procedure](../../docs/FLASHING.md).
+2. Start in NEBULAE mode and check that the computer detects the kit as a USB MIDI device on J7.
+3. Use a test microSD card with one PCM16 WAV and one PCM24 WAV under `NEBULAE/SAMPLES/`.
+   Load and play both samples. Try pitch and speed changes and send a MIDI note from the computer.
+
+Use the [MESSIER MOD hardware test sheet](docs/MOD_HARDWARE_TEST.md) for the MOD build.
+The [Nebulae v0.2.0 hardware plan](docs/HARDWARE_TEST_PLAN.md) records the historical procedure.
+See [licenses and relink instructions](LICENSES/README.md).

@@ -55,7 +55,7 @@ Daisy-Seed/
 ├── instruments/
 │   ├── toy-piano/          # Makefile, README, src, tests, docs, generated build
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
-│   ├── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
+│   ├── messier/            # MESSIER DSP, SD, UI, MIDI and tests
 │   ├── grain-cloud/        # new independent granular engine, host core
 │   └── ferrum/             # FERRUM tape looper (formerly looper)
 ├── sequencers/             # step-seq core and contracts, acid-seq product
