@@ -13,7 +13,7 @@ This is an **additional, separate build** of the looper with the
 [Physical Modeling](../../physical-modeling/docs/MODULATION.md) pattern. The regular
 firmware stays as it is:
 
-* `make PROJECT=ferrum` still compiles exactly the v0.4.0 sources. Its image is
+* v0.4.0 evidence (before the FERRUM rename): `make PROJECT=looper` still compiled exactly the v0.4.0 sources. Its image was
   **byte-identical** to the v0.4.0 image of `feat/looper-midi-cc` (166,072 bytes,
   SHA-256 `7477080fb2b21e2d79393dfc3db4a93749f5695d5db97df8fe11449447727a67`,
   compared after a clean rebuild on 2026-10-26).

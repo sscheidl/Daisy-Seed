@@ -9,7 +9,7 @@ the USB drive name `Looper SD`, the control identifiers `app=LooperOnDaisy`, `lo
 the Mod on Daisy key `looper`, the registry component `looper`, the version markers `LOOPER-VERSION=` /
 `LOOPER-MOD-VERSION=` and the C++ names (`looper::`, `LOOPER_VERSION`). The control panel and the diagnostics
 app still show "Looper". The DCP SD test package for 0.6.1 keeps the old image names; rebuild it with
-`scripts/dcp_sd_test_package.py --check-root <checkout of 11627e6>`. Older reports keep the names that were
+`python scripts/dcp_sd_test_package.py --package --check-root "<path-to-11627e6-checkout>"`. Older reports keep the names that were
 valid at the time. See [CHANGELOG.md](CHANGELOG.md).
 
 For the 0.5.1 handover fixes, see the
