@@ -5,7 +5,7 @@ firmware image (`.bin`, with its `.elf`) built from this repository for the Seed
 Kit: instruments, effects, sequencers, composed products, diagnostics and benches.
 Host programs (control panel EXE, editor EXE, VST3) follow the same rules in a second store,
 `apps/` (section 8). Not covered: the libDaisy bootloader images and third-party images (for
-example Stardust under `instruments/looper/`).
+example Stardust under `instruments/ferrum/`).
 
 Why: before this rule, 161 firmware files with 98 different contents were spread over
 `build/` folders, `.work/` and 19 worktrees. Twelve file names existed with several different
@@ -39,7 +39,7 @@ firmware/
 ```
 
 * `<product-id>` is the project ID from `make list` / `components/registry.json`
-  (`toy-piano-ambient`, `looper-mod`, ...). Diagnostics uses `diagnostics`; one build that
+  (`toy-piano-ambient`, `ferrum-mod`, ...). Diagnostics uses `diagnostics`; one build that
   produces several images (`DaisyDiagnostic.bin`, `DaisyDiagnostic-CardReader.bin`) shares a folder.
 * `<commit7>` is the short commit the image was built from. The same version built from
   another commit therefore gets another folder.

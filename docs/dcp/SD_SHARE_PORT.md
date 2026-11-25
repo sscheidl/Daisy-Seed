@@ -5,7 +5,7 @@ C++ core `editors/mod-on-daisy/src/core/SdShare*.h` has to do, taken from the Py
 Daisy Diagnostic 0.6.0 (`diagnostics/windows/daisy_diag/nebulae.py`, `looper.py`,
 `session.py`, `protocol.py`, `gui/main_window.py`) and from the protocol documents
 ([Nebulae](../../instruments/granular/docs/CONTROL_PROTOCOL.md),
-[Looper](../../instruments/looper/docs/SD_MANAGEMENT.md),
+[Looper](../../instruments/ferrum/docs/SD_MANAGEMENT.md),
 [DDP](../../diagnostics/protocol/PROTOCOL.md), [Nebulae profile](../../diagnostics/docs/NEBULAE_PROFILE.md),
 [Looper profile](../../diagnostics/docs/LOOPER_PROFILE.md)). Where the Python code and the
 documents differ, section 9 says so. Card safety rules are marked **CS**; the C++ port keeps

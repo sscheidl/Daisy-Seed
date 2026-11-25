@@ -401,7 +401,7 @@ modulation.controller.Service(daisy::System::GetNow(), sender);
 (`ChordSelector`). Whether a per-voice Structure makes sense there is checked during
 integration.
 
-**Looper** (separate build `MOD=1`, [MODULATION.md](../../../instruments/looper/docs/MODULATION.md)):
+**Looper** (separate build `MOD=1`, [MODULATION.md](../../../instruments/ferrum/docs/MODULATION.md)):
 one loop, no voices; all columns global, none `latched`, all 64 cells allowed. The base
 value is the pot or CC value (whichever was moved last), plus the offset, clamped to the
 range of the control.

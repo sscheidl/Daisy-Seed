@@ -22,7 +22,7 @@ decides (`NebulaeOnDaisy` or `LooperOnDaisy`).
 | Performance | USB-MIDI only | STATUS SysEx `F0 7D 4C 50 01 01 F7` answered within 1 s |
 | SD management | USB CDC (DDP v1) + mass storage, `Looper SD` | HELLO `app=LooperOnDaisy`, capability `loopmgmt`, status message `LOOPER` |
 
-Protocol: [instruments/looper/docs/SD_MANAGEMENT.md](../../instruments/looper/docs/SD_MANAGEMENT.md).
+Protocol: [instruments/ferrum/docs/SD_MANAGEMENT.md](../../instruments/ferrum/docs/SD_MANAGEMENT.md).
 
 ## Differences from Nebulae
 

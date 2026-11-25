@@ -1,7 +1,7 @@
 # Looper + Mod on Daisy (separate build)
 
-**Image:** `build/mod/LooperMod-v0.5.0.bin` (`make PROJECT=looper MOD=1`, or
-`make PROJECT=looper-mod`). Firmware marker: `LOOPER-MOD-VERSION=0.5.0`; IDENTIFY
+**Image:** `build/mod/LooperMod-v0.5.0.bin` (`make PROJECT=ferrum MOD=1`, or
+`make PROJECT=ferrum-mod`). Firmware marker: `LOOPER-MOD-VERSION=0.5.0`; IDENTIFY
 reports the key `looper` and the version `0.5.0`, the same version as image and marker.
 v0.5 adds the [SD management](SD_MANAGEMENT.md) to both builds; the looper's control
 SysEx (`F0 7D 4C 50`) is handled before anything is forwarded to the matrix.
@@ -12,7 +12,7 @@ This is an **additional, separate build** of the looper with the
 [Physical Modeling](../../physical-modeling/docs/MODULATION.md) pattern. The regular
 firmware stays as it is:
 
-* `make PROJECT=looper` still compiles exactly the v0.4.0 sources. Its image is
+* `make PROJECT=ferrum` still compiles exactly the v0.4.0 sources. Its image is
   **byte-identical** to the v0.4.0 image of `feat/looper-midi-cc` (166,072 bytes,
   SHA-256 `7477080fb2b21e2d79393dfc3db4a93749f5695d5db97df8fe11449447727a67`,
   compared after a clean rebuild on 2026-10-26).

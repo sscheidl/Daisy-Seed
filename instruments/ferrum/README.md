@@ -1,4 +1,16 @@
-# Looper — Instrument Project
+# FERRUM — Instrument Project
+
+**FERRUM** is the tape looper of this repository. Project IDs: `ferrum` and `ferrum-mod`, firmware
+`Ferrum-v<version>.bin` and `FerrumMod-v<version>.bin`. Until 2026-11-25 the project was called *Looper*
+(directory `instruments/looper`, projects `looper`/`looper-mod`, images `Looper-v<version>.bin` /
+`LooperMod-v<version>.bin`); the rename changed no code or sound (the 0.6.1 images are byte-identical).
+Technical identifiers stay for compatibility: the SD folder `0:/looper` (`looper/loop.wav`, `looper/loops`),
+the USB drive name `Looper SD`, the control identifiers `app=LooperOnDaisy`, `loopmgmt`, `LOOPER` and SysEx `LP`,
+the Mod on Daisy key `looper`, the registry component `looper`, the version markers `LOOPER-VERSION=` /
+`LOOPER-MOD-VERSION=` and the C++ names (`looper::`, `LOOPER_VERSION`). The control panel and the diagnostics
+app still show "Looper". The DCP SD test package for 0.6.1 keeps the old image names; rebuild it with
+`scripts/dcp_sd_test_package.py --check-root <checkout of 11627e6>`. Older reports keep the names that were
+valid at the time. See [CHANGELOG.md](CHANGELOG.md).
 
 For the 0.5.1 handover fixes, see the
 [integration report](../../docs/SD_CARD_INTEGRATION_2026-11-03.md); for 0.6.0, the
@@ -18,10 +30,10 @@ build with the Mod on Daisy modulation matrix: [docs/MODULATION.md](docs/MODULAT
 Windows access to the card: [docs/SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md).
 
 ```sh
-make PROJECT=looper -j4            # firmware: build/Looper-v0.6.1.bin
-make PROJECT=looper MOD=1 -j4      # Mod on Daisy build: build/mod/LooperMod-v0.6.1.bin
-make PROJECT=looper test           # host tests of both builds, incl. production callback
-make PROJECT=looper test-sanitize  # the same with ASan and UBSan
+make PROJECT=ferrum -j4            # firmware: build/Ferrum-v0.6.1.bin
+make PROJECT=ferrum MOD=1 -j4      # Mod on Daisy build: build/mod/FerrumMod-v0.6.1.bin
+make PROJECT=ferrum test           # host tests of both builds, incl. production callback
+make PROJECT=ferrum test-sanitize  # the same with ASan and UBSan
 ```
 
 ## Engine
@@ -283,8 +295,8 @@ ignored, and the looper sends nothing back except the bootloader reply.
 
 ## Mod on Daisy build (MOD=1)
 
-`make PROJECT=looper MOD=1` (or `PROJECT=looper-mod`) builds a second image,
-`build/mod/LooperMod-v0.6.1.bin`, with the
+`make PROJECT=ferrum MOD=1` (or `PROJECT=ferrum-mod`) builds a second image,
+`build/mod/FerrumMod-v0.6.1.bin`, with the
 [Mod on Daisy](../../modules/mod-on-daisy/README.md) 8×8 modulation matrix. The
 editors (browser, JUCE, VST3) connect over J7 and read its eight looper columns from
 the device: **Speed** (±12 semitones at depth 100), **Start**, **Size**, **Slice**,
