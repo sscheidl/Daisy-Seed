@@ -8,11 +8,11 @@
 __pycache__/
 .pytest_cache/
 # Stardust analysis inputs and outputs stay local
-/instruments/looper/**/*.bin
-/instruments/looper/**/*.elf
-/instruments/looper/**/*.pkl
-/instruments/looper/work/
-/instruments/looper/stardust-work/
+/instruments/ferrum/**/*.bin
+/instruments/ferrum/**/*.elf
+/instruments/ferrum/**/*.pkl
+/instruments/ferrum/work/
+/instruments/ferrum/stardust-work/
 # Local review exports that bundle third-party 3D models
 /hardware/desktop-case-review/
 # Local agent scratch space

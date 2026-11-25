@@ -90,7 +90,7 @@ class ComponentTests(unittest.TestCase):
 
     def test_shared_control_consumers(self):
         suites = selection.select_suites(['modules/mod-on-daisy/include/mod_on_daisy/engine.h'])
-        for key in ('toy', 'physical', 'granular', 'looper', 'mod', 'editor', 'submodules'):
+        for key in ('toy', 'physical', 'granular', 'ferrum', 'mod', 'editor', 'submodules'):
             self.assertTrue(suites[key], key)
 
     def test_nebulae_columns_reach_their_readers(self):
@@ -102,7 +102,7 @@ class ComponentTests(unittest.TestCase):
         suites = selection.select_suites(['common/audio/fx_contract.h'])
         self.assertTrue(suites['fx'] and suites['physical'])
         self.assertTrue(suites['toy'])
-        self.assertFalse(suites['looper'])
+        self.assertFalse(suites['ferrum'])
         suites = selection.select_suites(['effects/fourier/src/wet_path.cpp'])
         self.assertTrue(suites['fx'] and suites['physical'] and suites['fourier'])
         suites = selection.select_suites(['instruments/physical-modeling/torus/dsp/fx/reverb.h'])
@@ -110,10 +110,10 @@ class ComponentTests(unittest.TestCase):
         # Tape FX DSP: its own suite, the shared FX contract test and its Toy Piano consumer.
         suites = selection.select_suites(['effects/tape-fx/src/tape_fx.h'])
         self.assertTrue(suites['tape'] and suites['fx'] and suites['toy'] and suites['submodules'])
-        self.assertFalse(suites['looper'])
+        self.assertFalse(suites['ferrum'])
         suites = selection.select_suites(['effects/tape-fx/tests/test_tape_fx.cpp'])
         self.assertTrue(suites['tape'] and suites['submodules'])
-        self.assertFalse(suites['toy'] or suites['physical'] or suites['looper'])
+        self.assertFalse(suites['toy'] or suites['physical'] or suites['ferrum'])
 
     def test_bootloader_entry(self):
         # Every firmware product embeds the shared bootloader entry with its own version;
@@ -126,7 +126,7 @@ class ComponentTests(unittest.TestCase):
         for panel in ('mod-editor-web', 'mod-editor-juce', 'mod-editor-vst3'):
             self.assertIn('bootloader-entry', data['components'][panel]['depends'])
         suites = selection.select_suites(['common/bootloader/bootloader_entry.h'])
-        for key in ('bootloader', 'toy', 'physical', 'granular', 'looper', 'fourier', 'tape', 'mod',
+        for key in ('bootloader', 'toy', 'physical', 'granular', 'ferrum', 'fourier', 'tape', 'mod',
                     'diagnostics', 'submodules'):
             self.assertTrue(suites[key], key)
 
@@ -135,15 +135,15 @@ class ComponentTests(unittest.TestCase):
         # profile and the reader; the Diagnostics card-reader image links only the reader.
         # Nothing else runs.
         suites = selection.select_suites(['common/sd/ro_sd.c'])
-        self.assertTrue(suites['sd'] and suites['granular'] and suites['looper'] and suites['submodules'])
+        self.assertTrue(suites['sd'] and suites['granular'] and suites['ferrum'] and suites['submodules'])
         for key in ('toy', 'physical', 'fourier', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
         reader = selection.select_suites(['common/sd/reader/msc_bot.cpp'])
-        self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'] and reader['looper'])
+        self.assertTrue(reader['sd'] and reader['granular'] and reader['diagnostics'] and reader['ferrum'])
         self.assertFalse(reader['toy'])
         ddp = selection.select_suites(['diagnostics/protocol/ddp.cpp'])
-        self.assertTrue(ddp['granular'] and ddp['looper'])
-        self.assertFalse(selection.select_suites(['diagnostics/windows/daisy_diag/looper.py'])['looper'])
+        self.assertTrue(ddp['granular'] and ddp['ferrum'])
+        self.assertFalse(selection.select_suites(['diagnostics/windows/daisy_diag/looper.py'])['ferrum'])
         self.assertTrue(selection.select_suites(['Makefile'])['sd'])
 
     def test_sd_compositions(self):
@@ -152,7 +152,7 @@ class ComponentTests(unittest.TestCase):
         for key in ('sd-driver', 'sd-fs-readonly', 'sd-fs-writable', 'sd-reader'):
             self.assertEqual(data['components'][key]['kind'], 'storage')
             self.assertTrue(manifest.read_version(data['components'][key]['version']))
-        expected = {'granular': 'sd-fs-readonly', 'looper': 'sd-fs-writable', 'looper-mod': 'sd-fs-writable'}
+        expected = {'granular': 'sd-fs-readonly', 'ferrum': 'sd-fs-writable', 'ferrum-mod': 'sd-fs-writable'}
         for project, profile in expected.items():
             components = data['products'][project]['components']
             self.assertIn('sd-driver', components)

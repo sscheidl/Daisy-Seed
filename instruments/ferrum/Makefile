@@ -8,12 +8,12 @@ MOD_ON_DAISY = ../../modules/mod-on-daisy
 MOD_DEFS = -DLOOPER_MOD=1 -DMOD_ON_DAISY_EXTENSIONS=1
 MOD_FLAGS = $(MOD_DEFS) -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 ifeq ($(MOD),1)
-TARGET = LooperMod-v$(VERSION)
+TARGET = FerrumMod-v$(VERSION)
 override BUILD_DIR = build/mod
 C_DEFS = $(MOD_DEFS)
 C_INCLUDES += -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 else
-TARGET = Looper-v$(VERSION)
+TARGET = Ferrum-v$(VERSION)
 endif
 STORE_SOURCES = src/wav.cpp src/resample.cpp src/loop_store.cpp
 # SD management personality (docs/SD_MANAGEMENT.md): the shared, hardware-tested card

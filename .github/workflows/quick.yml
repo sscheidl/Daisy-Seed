@@ -94,9 +94,9 @@ jobs:
       - name: Nebulae host tests
         if: steps.changes.outputs.granular == 'true'
         run: make PROJECT=granular test
-      - name: Looper host tests
-        if: steps.changes.outputs.looper == 'true'
-        run: make PROJECT=looper test
+      - name: FERRUM host tests
+        if: steps.changes.outputs.ferrum == 'true'
+        run: make PROJECT=ferrum test
       - name: FOURIER host tests
         if: steps.changes.outputs.fourier == 'true'
         run: make PROJECT=fourier-fx test

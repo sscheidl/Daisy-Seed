@@ -19,8 +19,8 @@ on:
           - tape-fx
           - granular
           - granular-mod
-          - looper
-          - looper-mod
+          - ferrum
+          - ferrum-mod
           - fourier-fx
           - mod-bench
           - all
@@ -54,8 +54,8 @@ jobs:
               {"project":"physical-modeling-fx-ambient","directory":"instruments/physical-modeling","image":"PhysicalModelingFxAmbient","build":"build/fx-ambient"},
               {"project":"granular","directory":"instruments/granular","image":"NebulaeOnDaisy","build":"build"},
               {"project":"granular-mod","directory":"instruments/granular","image":"NebulaeMod","build":"build/mod"},
-              {"project":"looper","directory":"instruments/looper","image":"Looper","build":"build"},
-              {"project":"looper-mod","directory":"instruments/looper","image":"LooperMod","build":"build/mod"},
+              {"project":"ferrum","directory":"instruments/ferrum","image":"Ferrum","build":"build"},
+              {"project":"ferrum-mod","directory":"instruments/ferrum","image":"FerrumMod","build":"build/mod"},
               {"project":"mod-bench","directory":"modules/mod-on-daisy/bench","image":"ModBench","build":"build"},
           ]
           selected = os.environ["SELECTED_PROJECT"]

@@ -11,7 +11,7 @@
 #include "mod_on_daisy/module.h"
 #include "../../../instruments/toy-piano/src/modulation.h"
 #include "../../../instruments/physical-modeling/src/modulation.h"
-#include "../../../instruments/looper/src/modulation.h"
+#include "../../../instruments/ferrum/src/modulation.h"
 #include "../../../instruments/granular/src/modulation.h"
 #include "../bench/src/scenarios.h"
 #include <cstdio>

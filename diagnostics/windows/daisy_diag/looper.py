@@ -1,7 +1,7 @@
 """Looper (firmware 0.5.0): device profile for the SD share workflow of the control panel.
 
 Same two personalities as Nebulae on Daisy (``nebulae.py``), with the looper's own
-control SysEx ``F0 7D 4C 50 ...`` (instruments/looper/docs/SD_MANAGEMENT.md):
+control SysEx ``F0 7D 4C 50 ...`` (instruments/ferrum/docs/SD_MANAGEMENT.md):
 
 * Performance: class-compliant USB-MIDI, STATUS and SHARE. The restart reloads the loop
   from ``looper/loop.wav``, so SHARE first answers SAVING while the firmware writes the
