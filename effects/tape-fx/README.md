@@ -65,5 +65,5 @@ of runtime at extreme values.
 * Ready-made listening test images with checksums, user manual and cheat sheet (PDF):
   [releases/tape-fx-0.1.0](../../releases/tape-fx-0.1.0/). PDF sources: `docs/print/`.
 
-Stardust (`instruments/ferrum/`) is not changed. The component is prepared for a
+FERRUM (`instruments/ferrum/`) is not changed. The component is prepared for a
 later integration there (16 KiB delay memory in the remaining SDRAM).

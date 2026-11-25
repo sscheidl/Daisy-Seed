@@ -134,15 +134,13 @@ controllers and modulation wheel. Order of a catalog:
 | --- | --- | --- |
 | Physical Modeling | Mutable Instruments Rings | CV: V/Oct and FM (pitch), Structure, Brightness, Damping, Position. No CV for excitation level or the output mix |
 | Granular | Qu-Bit Nebulae v2 | CV (±5 V) for Start, Speed, Size, Density, Pitch, Overlap, Window, plus 1V/Oct; Blend CV not confirmed from a primary source |
-| Looper | Qu-Bit Stardust | Knob plus CV for Start, Size, Slice, Skip (our firmware analysis); 1V/Oct on speed; Start CV can drive the Frippertronics decay instead; per a review, every control except Loop Mode and Effect Type has a CV input (9 CV inputs, incl. Mix and In Level) |
+| Looper | — (own instrument, FERRUM) | Knob plus CV for Start, Size, Slice, Skip; 1V/Oct on speed; Start CV can drive the Frippertronics decay instead; per a review, every control except Loop Mode and Effect Type has a CV input (9 CV inputs, incl. Mix and In Level) |
 | Streichwurst | Waldorf Streichfett | No CV. MIDI CC 70–82 and 91–94: registration, octaves, release, crescendo, ensemble type, ensemble, solo tone, solo tremolo, split, solo sustain, solo attack, solo decay, balance, FX type, animate, phaser, reverb. Modulation wheel (CC 1): vibrato level and speed of strings and solo |
 | Toy Piano | — (own instrument) | curated by us |
 
 Sources: Streichfett reference manual, MIDI implementation and "Modulation wheel"
 (manualsdir.com, pages 18, 22, 23); Nebulae v2 firmware 2.1.2 cheat sheet
-(cheatography.com, a draft); Stardust: `instruments/ferrum/docs/STARDUST_ANALYSIS.md`,
-Sound On Sound review, Perfect Circuit manual excerpt. Exact CV lists of Nebulae and
-Stardust are to be confirmed against the official manuals before those firmwares adopt
+(cheatography.com, a draft). Exact CV lists of Nebulae are to be confirmed against the official manuals before those firmwares adopt
 their catalogs.
 
 ### 5.1 Streichwurst (pilot) — proposal for owner confirmation
@@ -190,7 +188,7 @@ clock, whose limits stay in `effects/fourier/src/`.
 | Firmware | Default slots VR1–VR8 | Further catalog entries |
 | --- | --- | --- |
 | Physical Modeling | Pitch, Structure, Brightness, Damping, Position, Excitation, Reverb Decay*, Dry/Wet | Level (own); VR1–VR5 are exactly the Rings CV inputs |
-| Looper | Speed, Inertia, Slope*, Start, Size, Slice, Skip, Fripp Decay | Mix, In Level*, tape effect amount* (Stardust CV) |
+| Looper | Speed, Inertia, Slope*, Start, Size, Slice, Skip, Fripp Decay | Mix, In Level*, tape effect amount* |
 | Granular (no matrix yet) | Start, Speed, Size, Density, Pitch, Overlap, Blend, Window | — (the eight pots are the Nebulae CV parameters) |
 
 Notes:

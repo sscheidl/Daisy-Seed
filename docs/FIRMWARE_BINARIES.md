@@ -4,8 +4,7 @@
 firmware image (`.bin`, with its `.elf`) built from this repository for the Seed3 Desktop
 Kit: instruments, effects, sequencers, composed products, diagnostics and benches.
 Host programs (control panel EXE, editor EXE, VST3) follow the same rules in a second store,
-`apps/` (section 8). Not covered: the libDaisy bootloader images and third-party images (for
-example Stardust under `instruments/ferrum/`).
+`apps/` (section 8). Not covered: the libDaisy bootloader images and third-party images.
 
 Why: before this rule, 161 firmware files with 98 different contents were spread over
 `build/` folders, `.work/` and 19 worktrees. Twelve file names existed with several different

@@ -7,7 +7,7 @@
 *.wav
 __pycache__/
 .pytest_cache/
-# Stardust analysis inputs and outputs stay local
+# Local third-party analysis data: never commit (remove these lines only after the folders are gone)
 /instruments/ferrum/**/*.bin
 /instruments/ferrum/**/*.elf
 /instruments/ferrum/**/*.pkl
