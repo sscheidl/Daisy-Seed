@@ -71,7 +71,7 @@ be interchangeable building blocks.
     `rings/dsp/fx/chorus.h`, `rings/dsp/fx/ensemble.h` (Rings' "Disastrous Peace" itself switches
     between chorus, ensemble and reverb), `clouds/dsp/fx/pitch_shifter.h`,
     `clouds/dsp/fx/diffuser.h` — all on the same `FxEngine` as the Torus reverb;
-  * Granular: core of Nebulae on Daisy (`instruments/granular`); the live project
+  * Granular: core of MESSIER, formerly Nebulae on Daisy (`instruments/messier`); the live project
     `effects/granular` is only planned.
 
 ## 4. Sketch

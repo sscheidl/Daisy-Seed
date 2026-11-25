@@ -1,4 +1,20 @@
-# Nebulae on Daisy v0.3.0
+# MESSIER v0.3.0
+
+**MESSIER** is the Nebulae port of this repository. Project IDs: `messier` and `messier-mod`, firmware
+`Messier-v<version>.bin` and `MessierMod-v<version>.bin`; the diagnostic and listening builds keep their
+suffixes after the new prefix (`MessierProfile`, `MessierCommon`, `MessierStagger`, `MessierModProfileStagger`, ...).
+Until 2026-11-25 the project was called *Nebulae on Daisy* (directory `instruments/granular`, projects
+`granular`/`granular-mod`, images `NebulaeOnDaisy-v<version>.bin` / `NebulaeMod-v<version>.bin`); the rename
+changed no code or sound (the 0.3.0 images are byte-identical). Technical identifiers stay for compatibility:
+the SD sample root `0:/NEBULAE/SAMPLES`, the USB drive name `Nebulae on Daisy SD`, the control identifiers
+`app=NebulaeOnDaisy`, `nebmgmt`, DDP `NEB` and SysEx `NB`, the Mod on Daisy key `nebulae`, the registry
+component `nebulae`, the version markers `NEBULAE-FW-VERSION=` / `NEBULAE-MOD-VERSION=` /
+`NEBULAE-PROFILE-BUILD=1`, the C++ names (`NEBULAE_VERSION`, `NEBULAE_MOD`) and the script names
+`scripts/check-granular-elf.py` and `scripts/nebulae_mod_test_package.py`. The control panel and the
+diagnostics app still show "Nebulae". The planned effect `granular-fx` (`effects/granular`) is a separate
+project and was not renamed. The DCP SD test package for 0.2.1 keeps the old image names; rebuild it with
+`scripts/dcp_sd_test_package.py --package --check-root <checkout of 9cce907>`. Older reports keep the names
+that were valid at the time. See [CHANGELOG.md](CHANGELOG.md).
 
 **v0.3.0: SOFTWARE PASS / HARDWARE PENDING.** v0.3.0 loads 24-bit and WAVE_FORMAT_EXTENSIBLE
 PCM files, such as the original Nebulae factory samples ([validation](docs/VALIDATION.md)).
@@ -18,7 +34,7 @@ New: sample banks with free file names, SW17 bank selection, FAT32 and exFAT car
 and a Windows SD management mode in the same image ([architecture](docs/V0_2_ARCHITECTURE.md),
 [control protocol](docs/CONTROL_PROTOCOL.md)). Nothing of v0.2.0 has run on a board yet.
 
-Project `granular`, for the **Seed3 Desktop Development Kit**, using the official
+Project `messier`, for the **Seed3 Desktop Development Kit**, using the official
 `daisy::desktop_devkit::Hardware`. Stereo granular processing and a phase-locked
 2048-point phase vocoder run from the same PCM16 source. Pitch and scan speed are
 independent. This adapts Qu-Bit's default Nebulae v2.1.2 Granular Looper, with the
@@ -33,15 +49,15 @@ Use the pinned ARM toolchain and submodules from [BUILD](../../docs/BUILD.md).
 From the repository root:
 
 ```sh
-make PROJECT=granular -j4
-make PROJECT=granular test
-make PROJECT=granular test-sanitize
-python3 scripts/check-firmware.py instruments/granular/build/NebulaeOnDaisy-v0.2.0.bin
-python3 scripts/check-granular-elf.py instruments/granular/build/NebulaeOnDaisy-v0.2.0.elf
+make PROJECT=messier -j4
+make PROJECT=messier test
+make PROJECT=messier test-sanitize
+python3 scripts/check-firmware.py instruments/messier/build/Messier-v0.3.0.bin
+python3 scripts/check-granular-elf.py instruments/messier/build/Messier-v0.3.0.elf
 ```
 
-Outputs: `build/NebulaeOnDaisy-v0.2.0.bin`, `.elf`, `.map`, `SHA256SUMS`.
-Identity: `NEBULAE-FW-VERSION=0.2.0`. C++17, Cortex-M7 hard float,
+Outputs: `build/Messier-v0.3.0.bin`, `.elf`, `.map`, `SHA256SUMS`.
+Identity: `NEBULAE-FW-VERSION=0.3.0`. C++17, Cortex-M7 hard float,
 `BOOT_SRAM`, 48 kHz, **256 samples/block**. The pinned AudioHandle clamps larger
 blocks to 256; firmware checks the actual size. FFT hop is 512 samples.
 Buffer duration is 5.33 ms; vocoder windows span 42.67 ms. These are sample-count
@@ -55,8 +71,8 @@ Generated outputs and toolchains are not tracked.
 
 ## Diagnostic build
 
-`make -C instruments/granular MOD=1 PROFILE=1` (or without `MOD=1`) builds
-`build/mod-profile/NebulaeModProfile-v<version>.bin`: the same image plus DWT cycle splits
+`make -C instruments/messier MOD=1 PROFILE=1` (or without `MOD=1`) builds
+`build/mod-profile/MessierModProfile-v<version>.bin`: the same image plus DWT cycle splits
 of the audio callback, a budget guard that keeps USB and LEDs alive after an overrun, a
 boot benchmark of one vocoder hop from SDRAM and from AXI SRAM, and the PROFILE SysEx
 ([protocol](docs/CONTROL_PROTOCOL.md)). `tools/nb_probe.py status|profile` reads the
@@ -65,7 +81,7 @@ exists and what it found: [OVERLOAD_DIAGNOSIS.md](docs/OVERLOAD_DIAGNOSIS.md).
 
 ## Mod on Daisy build
 
-`make PROJECT=granular-mod` builds a separate image with the shared modulation matrix:
+`make PROJECT=messier-mod` builds a separate image with the shared modulation matrix:
 eight global targets (Start, Speed, Size, Density, Pitch, Overlap, Blend, Window), edited
 with the shared Mod on Daisy editor, with the card still shared through the panel. The
 regular image is unchanged. See [MODULATION.md](docs/MODULATION.md) and the

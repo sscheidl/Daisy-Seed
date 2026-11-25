@@ -4,7 +4,7 @@ Phase 1 of [SD_PAGE_WORK_ORDER.md](SD_PAGE_WORK_ORDER.md). This document pins do
 C++ core `editors/mod-on-daisy/src/core/SdShare*.h` has to do, taken from the Python reference
 Daisy Diagnostic 0.6.0 (`diagnostics/windows/daisy_diag/nebulae.py`, `looper.py`,
 `session.py`, `protocol.py`, `gui/main_window.py`) and from the protocol documents
-([Nebulae](../../instruments/granular/docs/CONTROL_PROTOCOL.md),
+([Nebulae](../../instruments/messier/docs/CONTROL_PROTOCOL.md),
 [Looper](../../instruments/ferrum/docs/SD_MANAGEMENT.md),
 [DDP](../../diagnostics/protocol/PROTOCOL.md), [Nebulae profile](../../diagnostics/docs/NEBULAE_PROFILE.md),
 [Looper profile](../../diagnostics/docs/LOOPER_PROFILE.md)). Where the Python code and the

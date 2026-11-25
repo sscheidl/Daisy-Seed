@@ -55,7 +55,7 @@ as before. The host keeps the existing dry/wet mix and output protection.
 | `physical-modeling-fx-torus` | Torus + Mod core + Torus FX adapter | `0.2.0` |
 | `physical-modeling-fx-ambient` | Torus + Mod core + Ambient FX adapter | `0.2.0` |
 | `fourier-fx` (formerly `reverb-fx`) | FOURIER (formerly Ambient FX) with external audio inputs | unchanged `0.2` |
-| `granular-mod` | Nebulae + Mod core (`MOD=1`) | Nebulae version, `0.3.0`, for firmware, IDENTIFY and manifest |
+| `messier-mod` | MESSIER + Mod core (`MOD=1`) | Nebulae component version, `0.3.0`, for firmware, IDENTIFY and manifest |
 | `ferrum-mod` | FERRUM + Mod core (`MOD=1`) | FERRUM version, e.g. `0.4.0`, for file name, marker `LOOPER-MOD-VERSION` and IDENTIFY |
 
 The new products have their own build directories and markers; file name and

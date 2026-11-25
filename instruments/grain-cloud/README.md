@@ -4,7 +4,7 @@ A new, independent granular engine for the Seed3 Desktop Kit: up to eight notes 
 pool of up to 256 grains, stereo, 48 kHz. This is **stage 2: the offline host core**. There is no
 firmware yet, nothing was flashed, and no sound was judged on hardware: **NOT MEASURED**.
 
-It is separate from `instruments/granular`, the faithful Nebulae port, which stays as it is.
+It is separate from `instruments/messier` (MESSIER), the faithful Nebulae port, which stays as it is.
 
 ## Build and test
 

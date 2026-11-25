@@ -6,7 +6,7 @@ kit yet. Checklist: [HARDWARE_TEST.md, section 10](HARDWARE_TEST.md#10-sd-manage
 
 The looper keeps its microSD in the kit. v0.5 can hand that card to Windows over USB on
 J7, the same way Nebulae on Daisy 0.2.0 does
-([architecture](../../granular/docs/V0_2_ARCHITECTURE.md)), using the hardware-tested
+([architecture](../../messier/docs/V0_2_ARCHITECTURE.md)), using the hardware-tested
 card reader of [common/sd/reader](../../../common/sd/reader/) (Diagnostics 0.3.2,
 GEMESSEN 2026-10-31). Use it to copy WAV files into `looper/loops/` or to back up
 `looper/loop.wav` without taking the card out.

@@ -30,7 +30,7 @@ The kit was left running the build-dir profile image `5e62053b…` (0.2.2, commo
 
 **Handover 2026-11-09 (evening), Claude → Codex: second review, hop scheduling of the
 Nebulae vocoder (answered, see below).** Brief:
-[CODEX_SECOND_OPINION_2_BRIEF.md](instruments/granular/docs/CODEX_SECOND_OPINION_2_BRIEF.md).
+[CODEX_SECOND_OPINION_2_BRIEF.md](instruments/messier/docs/CODEX_SECOND_OPINION_2_BRIEF.md).
 State: 0.2.2 (head d090a3c) runs on the kit and no longer freezes; hop block 3.2 to
 4.1 ms for both channels, the extreme setting (PITCH max + max grains, 107 %) still runs
 into the overload protection. The owner wants to hear the variants (keep, plain stagger,
@@ -40,7 +40,7 @@ stagger. Deliverable: `instruments/granular/docs/CODEX_SECOND_OPINION_2.md`. Rea
 the kit runs a diagnostic image (`5e62053b…`, build dir) and is the owner's.
 
 **Codex second review complete (2026-11-09).**
-[Review and listening sheet](instruments/granular/docs/CODEX_SECOND_OPINION_2.md#listening-sheet).
+[Review and listening sheet](instruments/messier/docs/CODEX_SECOND_OPINION_2.md#listening-sheet).
 Use fixed A/B/C images from the central store and capture matched stereo takes once per
 image. Compare the captures by hidden labels in the DAW, with a mono fold-down and a
 separate load run. Plain stagger can change both the source window and stereo timing.
@@ -65,13 +65,13 @@ the fix (answered, see below).**
   34.2 ms of a 5.333 ms block with the Engine in SDRAM (one channel: 14.0 ms in SDRAM,
   3.16 ms in AXI SRAM). Every libDaisy interrupt has priority 0, so the overrun starves
   USB, the control timer and the main loop. Record:
-  [OVERLOAD_DIAGNOSIS.md](instruments/granular/docs/OVERLOAD_DIAGNOSIS.md). No fix is
+  [OVERLOAD_DIAGNOSIS.md](instruments/messier/docs/OVERLOAD_DIAGNOSIS.md). No fix is
   written. P2 (RECORD) and P3 (editor and panel crash on a stalled kit) are NOT MEASURED.
   Regular and MOD images are byte-identical to `main` (`cbc4c376…`, `02e52f88…`).
 * **Kit:** runs the diagnostic image (budget guard active, sound meaningless), test card
   inserted. Do not flash or probe it for this task; hardware stays the owner's.
 * **Codex second opinion (2026-11-09, complete):**
-  [Report](instruments/granular/docs/CODEX_SECOND_OPINION.md). The measurements
+  [Report](instruments/messier/docs/CODEX_SECOND_OPINION.md). The measurements
   explain P1. On Seed3 the audio receive IRQ is DMA1 Stream 1, and the read-only
   SD driver lowers SDMMC1 priority. AXI placement alone does not establish
   stereo headroom. At the 70% total-load target, the reported grain and other
@@ -84,8 +84,8 @@ the fix (answered, see below).**
   AXI SRAM, CMSIS-DSP real FFTs, `sqrtf` for `hypotf`, modulo-free window fill, relieved
   grain loop, overload protection in every image; the stereo hop grid is unchanged.
   Assessment of the second opinion point by point and the evidence:
-  [OVERLOAD_DIAGNOSIS.md](instruments/granular/docs/OVERLOAD_DIAGNOSIS.md) sections 9
-  and 10, [changelog](instruments/granular/CHANGELOG.md). Not followed: a placement-only
+  [OVERLOAD_DIAGNOSIS.md](instruments/messier/docs/OVERLOAD_DIAGNOSIS.md) sections 9
+  and 10, [changelog](instruments/messier/CHANGELOG.md). Not followed: a placement-only
   image first (it cannot pass by the report's own budget). New finding: the vocoder
   algorithm amplifies last-bit rounding, so no sample comparison can be an acceptance
   criterion; the tests compare against the reference's own rounding spread and
@@ -273,8 +273,8 @@ published). The user decides both.
 (`NebulaeMod-v0.2.1.bin`): Mod on Daisy on the eight primaries, with Windows SD sharing
 unchanged. The regular image stays byte-identical. The matrix ticks on the control timer,
 not in the 256-frame callback, so offsets cross to audio through a triple buffer.
-[Modulation](instruments/granular/docs/MODULATION.md),
-[test sheet](instruments/granular/docs/MOD_HARDWARE_TEST.md). Hardware **NOT MEASURED**.
+[Modulation](instruments/messier/docs/MODULATION.md),
+[test sheet](instruments/messier/docs/MOD_HARDWARE_TEST.md). Hardware **NOT MEASURED**.
 
 **Integration 2026-10-25/26:** Branch `integration/shimmer-bootloader` combines PR #40
 (bootloader entry), #38 (modular FX) and #41 (Toy Piano + Ambient with Shimmer).

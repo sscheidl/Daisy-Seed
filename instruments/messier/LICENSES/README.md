@@ -23,8 +23,8 @@ LGPL-covered vocoder and stays under the same LGPL terms. No manual PDFs,
 factory samples, Terrarium driver, alternate instruments or Pedal BINs are shipped.
 
 Corresponding application source, linker additions and build instructions are
-included. Rebuild with pinned submodules/compiler: `make PROJECT=granular clean`,
-then `make PROJECT=granular -j4`. DSP objects are generated in `build/`; modifying
+included. Rebuild with pinned submodules/compiler: `make PROJECT=messier clean`,
+then `make PROJECT=messier -j4`. DSP objects are generated in `build/`; modifying
 `src/reference_dsp.cpp` and invoking the same Makefile recompiles and relinks a
 replacement LGPL component. No signature restricts replacement. Preserve the full
 corresponding source and dependency pins with binary distributions; a standalone

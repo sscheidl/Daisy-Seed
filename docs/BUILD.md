@@ -105,10 +105,10 @@ These limits especially matter for private repositories; public repositories
 have different billing for GitHub-hosted standard runners. Downloads from
 private repositories require an authorized GitHub login.
 
-Nebulae uses `make PROJECT=granular`, with the same `test` and `test-sanitize`
+MESSIER (formerly Nebulae on Daisy) uses `make PROJECT=messier`, with the same `test` and `test-sanitize`
 targets. Its additional `scripts/check-granular-elf.py` validates actual ARM
 segments, the isolated AXI SD-DMA sector, stack reserve and dynamically derived
-PCM16 SDRAM limits. See its [validation report](../instruments/granular/docs/VALIDATION.md).
+PCM16 SDRAM limits. See its [validation report](../instruments/messier/docs/VALIDATION.md).
 
 ## Adding another implemented project
 
