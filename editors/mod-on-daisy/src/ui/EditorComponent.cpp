@@ -12,7 +12,7 @@ constexpr int kSwSimulator = -3; // Port::simulator of "Streichwurst (Sim)"
 // Instruments that share their SD card, simulated with both USB personalities
 // (core/SdShareSim.h); the MOD variants add the matrix of core/SimInstruments.h.
 constexpr int kSdNebulaeMod = -4, kSdLooperMod = -5, kSdNebulae = -6, kSdLooper = -7;
-constexpr const char* kSdNebulaeLabel = "Simulator: Nebulae", *kSdLooperLabel = "Simulator: Looper";
+constexpr const char* kSdNebulaeLabel = "Simulator: Nebulae", *kSdLooperLabel = "Simulator: FERRUM";
 bool IsSdSimulator(int id) { return id <= kSdNebulaeMod && id >= kSdLooper; }
 const sd::Profile& SdSimProfile(int id) { return id == kSdNebulaeMod || id == kSdNebulae ? sd::kNebulae : sd::kLooper; }
 int SdSimMatrix(int id) { return id == kSdNebulaeMod ? 0 : id == kSdLooperMod ? 1 : -1; } // index into kSdSimInstruments
@@ -61,7 +61,7 @@ EditorComponent::EditorComponent(bool with_simulators, bool sd_page)
         b->setClickingTogglesState(false);
     }
     page_matrix_.setTooltip(U("Modulation matrix of the connected instrument"));
-    page_sd_.setTooltip(U("Share the instrument's microSD card with Windows and bring it back (Nebulae on Daisy, Looper)"));
+    page_sd_.setTooltip(U("Share the instrument's microSD card with Windows and bring it back (Nebulae on Daisy, FERRUM)"));
     page_matrix_.onClick = [this] { ShowSdPage(false); };
     page_sd_.onClick = [this] { ShowSdPage(true); };
     addChildComponent(no_matrix_);
@@ -901,7 +901,7 @@ void EditorComponent::FinishFirmwareUpdate(BootRequest::Result result) {
     if(result == BootRequest::Result::Acknowledged) {
         Disconnect(); // the port disappears with the reset; no "connection lost" message
         // The reply confirms that the request was accepted, not the DFU entry itself.
-        Log(LogKind::Ok, U("Request accepted: the kit restarts into update mode (all LEDs on; the Looper only after "
+        Log(LogKind::Ok, U("Request accepted: the kit restarts into update mode (all LEDs on; FERRUM only after "
                            "running card work). As soon as it appears as a DFU device, load the firmware with "
                            "the Daisy Web Programmer or “make program-dfu”."));
     } else {
@@ -1060,7 +1060,7 @@ void EditorComponent::RefreshAll() {
         name_.setText(U(model_.Name()), juce::dontSendNotification);
     if(session_.Connected()) {
         const DeviceInfo& d = session_.Device();
-        device_info_.setText(U(d.key) + " " + U(d.version) + ", Mod on Daisy " + juce::String(d.module_major) + "."
+        device_info_.setText(U(InstrumentDisplayName(d.key)) + " " + U(d.version) + ", Mod on Daisy " + juce::String(d.module_major) + "."
                                  + juce::String(d.module_minor) + "." + juce::String(d.module_patch) + ", protocol "
                                  + juce::String(d.protocol_major) + "." + juce::String(d.protocol_minor) + ", tick "
                                  + juce::String(d.tick_hz) + " Hz, schema " + U(Hex32(d.schema)) + U(".\nMemory slots on the device: ")

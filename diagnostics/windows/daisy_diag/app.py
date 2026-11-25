@@ -14,7 +14,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--sim-nebulae", action="store_true",
                         help='simulate Nebulae on Daisy 0.2 (USB-MIDI performance and SD management)')
     parser.add_argument("--sim-looper", action="store_true",
-                        help='simulate the Looper 0.5 (USB-MIDI performance and SD management)')
+                        help='simulate FERRUM (formerly Looper) 0.5 (USB-MIDI performance and SD management)')
     parser.add_argument("--port", help='use a fixed COM port, e.g. COM5')
     parser.add_argument("--selftest", type=float, metavar='SECONDS',
                         help='exit after N seconds; exit code 0 if device data was received (for automated startup tests)')

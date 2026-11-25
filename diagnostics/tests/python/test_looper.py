@@ -1,6 +1,6 @@
 """Looper 0.5.0 profile: control SysEx codec, save-before-share, share/return workflow over
 the simulated USB-MIDI and CDC personalities, and the profile probe that tells Nebulae and
-the looper apart on one MIDI port. Simulation only."""
+FERRUM apart on one MIDI port. Simulation only."""
 import pytest
 
 from conftest import FakeClock

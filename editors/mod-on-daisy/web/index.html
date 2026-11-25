@@ -908,6 +908,8 @@ async function connectLink(out, inp, sqClient = null) {
   try {
     const f = await link.request(P.CMD.identify, [], P.BROADCAST);
     const r = new P.Reader(f.payload);
+    // Display name only; info.key stays the wire key (patch files, checks).
+    const instrumentDisplayName = k => k === 'looper' ? 'FERRUM' : k;
     const info = { protocol: `${r.u7()}.${r.u7()}`, module: `${r.u7()}.${r.u7()}.${r.u7()}`, key: r.str(), version: r.str(),
       maxActive: r.u7(), tickHz: r.u14(), slots: r.u7(), schema: r.u32(), caps: r.u7(),
       caps2: r.pos < f.payload.length ? r.u7() : 0, device: f.device, modes: [] }; // caps2: newer firmware
@@ -924,9 +926,9 @@ async function connectLink(out, inp, sqClient = null) {
         info.modes[i] = { name: g.str(), hint: g.str() };
       }
     }
-    state.statusBase = `${info.key} ${info.version} · ID ${info.device}`;
+    state.statusBase = `${instrumentDisplayName(info.key)} ${info.version} · ID ${info.device}`;
     setStatus(state.statusBase, 'ok');
-    $('deviceInfo').textContent = `${info.key} ${info.version}, Mod on Daisy ${info.module}, protocol ${info.protocol}, tick ${info.tickHz} Hz, schema ${info.schema.toString(16).toUpperCase().padStart(8, '0')}. Memory slots on the device: ${info.slots ? info.slots : 'none yet (save patches as files)'}.`;
+    $('deviceInfo').textContent = `${instrumentDisplayName(info.key)} ${info.version}, Mod on Daisy ${info.module}, protocol ${info.protocol}, tick ${info.tickHz} Hz, schema ${info.schema.toString(16).toUpperCase().padStart(8, '0')}. Memory slots on the device: ${info.slots ? info.slots : 'none yet (save patches as files)'}.`;
     $('connect').textContent = 'Disconnect';
     $('pullBtn').disabled = false;
     // A lost renewal is not logged on its own: the health state reports silence.
@@ -1201,7 +1203,7 @@ async function firmwareUpdate() {
     if (acked && state.link) disconnect(); // the port disappears with the reset
     else if (!link) closePorts(out, inp);
     // The reply confirms that the request was accepted, not the DFU entry itself.
-    if (acked) log('Request accepted: the kit restarts into update mode (all LEDs on; the Looper only after running card work). As soon as it appears as a DFU device, load the firmware with the Daisy Web Programmer or “make program-dfu”.', 'ok');
+    if (acked) log('Request accepted: the kit restarts into update mode (all LEDs on; FERRUM only after running card work). As soon as it appears as a DFU device, load the firmware with the Daisy Web Programmer or “make program-dfu”.', 'ok');
     else log('No answer from the kit. Older firmware does not know the command: then hold S9 and S16 for five seconds or use RESET and BOOT (docs/FLASHING.md).', 'warn');
   } finally {
     updating = false;

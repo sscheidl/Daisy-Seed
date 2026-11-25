@@ -488,7 +488,7 @@ void TestProbeProfiles() {
     Rig r(kLooper);
     r.Run(1500);
     CHECK(r.wf.GetPhase() == Phase::Performance && r.wf.GetProfile().id == Instrument::Looper);
-    CHECK(r.wf.Status()->firmware == "0.6.0" && r.wf.CanShare() && r.wf.Name() == "Looper");
+    CHECK(r.wf.Status()->firmware == "0.6.0" && r.wf.CanShare() && r.wf.Name() == "FERRUM");
     Rig n;
     n.Run(1500);
     CHECK(n.wf.GetPhase() == Phase::Performance && n.wf.GetProfile().id == Instrument::Nebulae);
@@ -623,7 +623,7 @@ void TestSimLooperRejectsNeb() {
     r.Run(300);
     CHECK(r.dev.GetPersonality() == SimInstrument::Personality::Mgmt && r.dev.restarts == 0);
     CHECK(r.Logged("Firmware error: ERR c=NEB e=UNKNOWN"));
-    std::printf("PASS simulator: the looper rejects NEB, nothing restarts\n");
+    std::printf("PASS simulator: FERRUM rejects NEB, nothing restarts\n");
 }
 
 // ------------------------------------------------------------------ DDP session rules

@@ -3,6 +3,15 @@
 Versions come from `CMakeLists.txt` (standalone and VST3) and `web/version.js` (browser).
 Hardware results are recorded in the test sheets, never here.
 
+## 0.5.3 / browser 0.4.2 (2026-11-25, branch `claude/ferrum-app-names`, hardware NOT MEASURED)
+
+* **FERRUM display name.** The looper is shown as FERRUM (formerly Looper) on the SD card page, in its messages,
+  the update-mode log line and the simulator ports (`Simulator: FERRUM`, `Simulator: FERRUM MOD`). Display text
+  only: the SD share profile still matches `app=LooperOnDaisy`, `loopmgmt`, `LOOPER` and SysEx `LP`, the Mod on
+  Daisy key stays `looper`, and the SD paths stay `looper/loop.wav` / `looper/loops`.
+* The connection status, device info line (native and browser) and the patch-mismatch note show the instrument
+  key `looper` as FERRUM; the key itself (IDENTIFY, patch files, autosave names) is unchanged.
+
 ## 0.5.2 (2026-11-17, branch `claude/midi-stall-resilience`, hardware NOT MEASURED)
 
 * **A stalled kit no longer takes the app down** (P3 of the Nebulae first-contact test,

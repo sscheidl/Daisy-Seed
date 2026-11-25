@@ -393,7 +393,7 @@ inline Compatibility CheckCompatibility(const LoadedPatch& f, const Model& devic
     if(!f.instrument_key.empty() && f.instrument_key != d.key) {
         c.key_mismatch = true;
         c.affected = active;
-        c.notes.push_back("The file is for “" + f.instrument_key + "”, connected is “" + d.key + "”.");
+        c.notes.push_back("The file is for “" + InstrumentDisplayName(f.instrument_key) + "”, connected is “" + InstrumentDisplayName(d.key) + "”.");
     } else if(f.schema.empty() || f.schema != Hex32(d.schema)) {
         c.schema_unknown = f.schema.empty();
         c.schema_changed = !f.schema.empty();

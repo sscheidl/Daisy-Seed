@@ -527,7 +527,7 @@ class DeviceSession:
                     raise p.ProtocolError("LOOPER without advertised loopmgmt capability")
                 self.looper = p.parse_looper(msg)
                 if self.looper.action == "PERFORM":
-                    self._event("log", "Looper accepted the return to performance")
+                    self._event("log", "FERRUM accepted the return to performance")
                 self._event("looper", self.looper)
             elif msg.type == "PONG":
                 sent = self._ping_sent.pop(msg.int("n"), None)

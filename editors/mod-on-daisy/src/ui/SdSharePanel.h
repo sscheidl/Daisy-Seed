@@ -66,7 +66,7 @@ class SdSharePanel : public juce::Component {
         });
         share_.setColour(juce::TextButton::buttonColourId, colour::accent);
         share_.setTooltip(U("Stops audio, restarts the instrument into SD management and opens the card as a Windows drive (USB "
-                            "mass storage). The looper saves its loop to the card first."));
+                            "mass storage). FERRUM saves its loop to the card first."));
         button(confirm_, "Discard Live loop and share", [this] {
             if(request_share)
                 request_share(true);
@@ -84,7 +84,7 @@ class SdSharePanel : public juce::Component {
                 return_to_performance();
         });
         return_.setTooltip(U("Only after Windows ejected the card: the firmware returns it and restarts into performance "
-                             "(Nebulae rescans its banks, the looper reloads looper/loop.wav)."));
+                             "(Nebulae rescans its banks, FERRUM reloads looper/loop.wav)."));
         button(ack_, "Acknowledge interrupted access …", [this] {
             if(acknowledge)
                 acknowledge();
@@ -118,7 +118,7 @@ class SdSharePanel : public juce::Component {
         heading_.setText(U(sd::PhaseText(phase)) + (simulated_ ? U(" – SIMULATION") : U("")), juce::dontSendNotification);
         Row(0, found ? U(wf_.GetProfile().display_name) : U("–"));
         row_labels_[4].setText(looper ? U("Loop:") : U("Bank / sample:"), juce::dontSendNotification);
-        return_.setButtonText(looper ? U("Return to the Looper") : U("Return to Nebulae"));
+        return_.setButtonText(looper ? U("Return to FERRUM") : U("Return to Nebulae"));
         confirm_.setButtonText(looper ? U("Share without the unsaved changes") : U("Discard Live loop and share"));
         Row(1, st ? U(st->firmware) : dev ? U(dev->firmware) : U("–"));
         Row(2, st ? U("USB-MIDI ") + U(wf_.Port()) : mgmt ? U("USB CDC ") + U(session_.Port()) + U(" + mass storage") : U("–"));
@@ -170,7 +170,7 @@ class SdSharePanel : public juce::Component {
         error_.setText(U(wf_.Error()), juce::dontSendNotification);
         if(looper)
             warning_.setText(wf_.NeedsConfirmation() || (st && st->save_failed && st->unsaved)
-                                 ? U("The loop could not be saved to the card. Sharing restarts the looper and LOSES the unsaved "
+                                 ? U("The loop could not be saved to the card. Sharing restarts FERRUM and LOSES the unsaved "
                                      "changes; looper/loop.wav keeps the last saved loop.")
                                  : U(""),
                              juce::dontSendNotification);

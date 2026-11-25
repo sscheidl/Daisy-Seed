@@ -201,7 +201,7 @@ class Session {
                 state_ = LinkState::Connected;
                 health_ = Health::Ok;
                 last_frame_ms_ = last_live_ms_ = now_; // grace until the first monitor frame
-                SetStatus(device_info_.key + " " + device_info_.version + " · ID " + std::to_string(device_));
+                SetStatus(InstrumentDisplayName(device_info_.key) + " " + device_info_.version + " · ID " + std::to_string(device_));
                 last_monitor_ = now_ - kMonitorRenewMs; // start at once
                 last_crc_poll_ = now_;
                 Log(LogKind::Ok, "Connected. The device state has been loaded.");

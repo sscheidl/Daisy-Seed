@@ -7,8 +7,8 @@
 Technical identifiers stay for compatibility: the SD folder `0:/looper` (`looper/loop.wav`, `looper/loops`),
 the USB drive name `Looper SD`, the control identifiers `app=LooperOnDaisy`, `loopmgmt`, `LOOPER` and SysEx `LP`,
 the Mod on Daisy key `looper`, the registry component `looper`, the version markers `LOOPER-VERSION=` /
-`LOOPER-MOD-VERSION=` and the C++ names (`looper::`, `LOOPER_VERSION`). The control panel and the diagnostics
-app still show "Looper". The DCP SD test package for 0.6.1 keeps the old image names; rebuild it with
+`LOOPER-MOD-VERSION=` and the C++ names (`looper::`, `LOOPER_VERSION`). The control panel (0.5.3) and the
+diagnostics app (0.6.2) show FERRUM. The DCP SD test package for 0.6.1 keeps the old image names; rebuild it with
 `python scripts/dcp_sd_test_package.py --package --check-root "<path-to-11627e6-checkout>"`. Older reports keep the names that were
 valid at the time. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -237,7 +237,7 @@ back up `looper/loop.wav`:
 2. The looper fades out, stops audio and restarts into its **SD management** mode:
    no audio, the card appears as a USB drive (`Looper SD`). D2 shows SHARED, D16 and
    the Seed LED blink.
-3. Eject the drive in Windows. **Return to the Looper** in the panel, or S4 held alone
+3. Eject the drive in Windows. **Return to FERRUM** in the panel, or S4 held alone
    for 2 s on the kit, restarts the looper, which reloads `loop.wav`.
 
 Undo/redo, loop and seam mode and play/reverse start fresh after the return, as after a

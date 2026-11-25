@@ -57,8 +57,8 @@ struct Texts {
 // What differs between instruments that share their card the same way.
 struct Profile {
     Instrument id;
-    const char* name;            // shown in messages: "Nebulae", "Looper"
-    const char* display_name;    // "Nebulae on Daisy", "Looper"
+    const char* name;            // shown in messages: "Nebulae", "FERRUM"
+    const char* display_name;    // "Nebulae on Daisy", "FERRUM"
     const char* app;             // HELLO app= in SD management
     const char* capability;      // DDP capability of the status message
     const char* status_message;  // DDP message type: "NEB" / "LOOPER"
@@ -82,17 +82,17 @@ inline const Profile kNebulae{
      "Saving before the restart …"}};
 
 inline const Profile kLooper{
-    Instrument::Looper, "Looper", "Looper", "LooperOnDaisy", "loopmgmt", "LOOPER", "LOOPER a=PERFORM",
+    Instrument::Looper, "FERRUM", "FERRUM", "LooperOnDaisy", "loopmgmt", "LOOPER", "LOOPER a=PERFORM",
     {0x4C, 0x50}, kLooperStatusLength,
-    {"The looper is recording, overdubbing, resampling or importing a WAV file. Stop it and try again.",
-     "The loop could not be saved to the card (the last write failed). Sharing restarts the looper and LOSES the "
+    {"FERRUM is recording, overdubbing, resampling or importing a WAV file. Stop it and try again.",
+     "The loop could not be saved to the card (the last write failed). Sharing restarts FERRUM and LOSES the "
      "unsaved changes; looper/loop.wav keeps the last saved loop. Confirm to continue, or cancel and keep playing.",
      "Back in performance. The loop was reloaded from looper/loop.wav.",
-     "The looper restarts into performance and reloads looper/loop.wav …",
-     "Card is with the looper (not shared). Share it with Windows or return to performance.",
+     "FERRUM restarts into performance and reloads looper/loop.wav …",
+     "Card is with FERRUM (not shared). Share it with Windows or return to performance.",
      "Windows owns the card. Copy WAV files into looper/loops or back up looper/loop.wav, then use “Safely Remove "
      "Hardware” / Eject in Windows.",
-     "Windows ejected the card and all writes completed. You can return to the looper.",
+     "Windows ejected the card and all writes completed. You can return to FERRUM.",
      "Saving the current loop to looper/loop.wav before the restart …"}};
 
 inline const Profile* const kProfiles[] = {&kNebulae, &kLooper};
@@ -126,7 +126,7 @@ struct PerfStatus {
         return load_error >= 0 && load_error < 6 ? texts[load_error] : "code " + std::to_string(load_error);
     }
     std::string FaultText() const {
-        static const char* const texts[] = {"none", "card not ready", "write failed", "looper busy", "no WAV files", "file rejected"};
+        static const char* const texts[] = {"none", "card not ready", "write failed", "FERRUM busy", "no WAV files", "file rejected"};
         return fault >= 0 && fault < 6 ? texts[fault] : "code " + std::to_string(fault);
     }
 };

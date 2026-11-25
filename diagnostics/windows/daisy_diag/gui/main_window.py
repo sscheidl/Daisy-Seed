@@ -55,7 +55,7 @@ TAB_TOOLTIPS = {
     "CV / Gate": "CV inputs with rolling trace, gate inputs and the CV OUT test signal",
     "Audio": "Audio peak meters, test tone generator and input snapshot (firmware 0.4.0)",
     "SD card": "microSD read test and Windows card-reader ownership",
-    "SD share": "Nebulae on Daisy 0.2 and Looper 0.5: share the instrument's card with Windows "
+    "SD share": "Nebulae on Daisy 0.2 and FERRUM (formerly Looper) 0.5: share the instrument's card with Windows "
                 "and return to performance",
     "Log": "Event log",
 }
@@ -450,7 +450,7 @@ class MainWindow(QMainWindow):
         return box
 
     def _build_nebulae_group(self) -> QGroupBox:
-        box = QGroupBox("Instrument card – Nebulae on Daisy, Looper")
+        box = QGroupBox("Instrument card – Nebulae on Daisy, FERRUM")
         layout = QVBoxLayout(box)
         self.neb_phase = QLabel(Phase.NOT_FOUND.value)
         self.neb_phase.setWordWrap(True)
@@ -480,7 +480,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.neb_warning)
         self.neb_share = QPushButton("Share SD card with Windows")
         self.neb_share.setToolTip("Stops audio, restarts the instrument into SD management and opens "
-                                  "the card as a Windows drive (USB mass storage). The looper saves "
+                                  "the card as a Windows drive (USB mass storage). FERRUM saves "
                                   "its loop to the card first.")
         self.neb_share.clicked.connect(self._neb_share)
         layout.addWidget(self.neb_share)
@@ -497,7 +497,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.neb_eject_help)
         self.neb_return = QPushButton("Return to Nebulae")
         self.neb_return.setToolTip("Only after Windows ejected the card: the firmware returns it and "
-                                   "restarts into performance (Nebulae rescans its banks, the looper "
+                                   "restarts into performance (Nebulae rescans its banks, FERRUM "
                                    "reloads looper/loop.wav).")
         self.neb_return.clicked.connect(self._neb_return)
         layout.addWidget(self.neb_return)
@@ -522,9 +522,9 @@ class MainWindow(QMainWindow):
         looper = wf.profile is LOOPER
         found = bool(st or mgmt)
         self.neb_phase.setText(wf.phase.value + (" – SIMULATION" if self.neb_sim else ""))
-        self.neb_info["device"].setText(("Looper" if looper else "Nebulae on Daisy") if found else "–")
+        self.neb_info["device"].setText(("FERRUM" if looper else "Nebulae on Daisy") if found else "–")
         self.neb_row_labels["bank"].setText("Loop:" if looper else "Bank / sample:")
-        self.neb_return.setText("Return to the Looper" if looper else "Return to Nebulae")
+        self.neb_return.setText("Return to FERRUM" if looper else "Return to Nebulae")
         self.neb_confirm.setText("Share without the unsaved changes" if looper
                                  else "Discard Live loop and share")
         self.neb_info["fw"].setText(st.firmware if st else dev.firmware if dev else "–")
@@ -571,7 +571,7 @@ class MainWindow(QMainWindow):
         self.neb_error.setText(wf.error)
         if looper:
             self.neb_warning.setText(
-                "The loop could not be saved to the card. Sharing restarts the looper and LOSES the "
+                "The loop could not be saved to the card. Sharing restarts FERRUM and LOSES the "
                 "unsaved changes; looper/loop.wav keeps the last saved loop."
                 if wf.needs_confirmation or (st and st.save_failed and st.unsaved) else "")
         else:
@@ -857,7 +857,7 @@ class MainWindow(QMainWindow):
             self.cable = None
             self.session = DeviceSession(list_serial_ports, SerialLink, self._clock,
                                          port_override=self._port_override)
-            # Performance mode has no COM port: Nebulae and the looper are found on
+            # Performance mode has no COM port: Nebulae and FERRUM are found on
             # USB-MIDI (python-rtmidi). Every MIDI driver call runs off the GUI thread: a kit
             # whose firmware stalled must not freeze the panel (P3, 2026-11-08).
             self.nebulae = NebulaeWorkflow(self.session, BackgroundScan(list_midi_ports), open_rtmidi, self._clock,

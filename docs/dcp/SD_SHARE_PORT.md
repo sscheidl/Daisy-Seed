@@ -127,7 +127,7 @@ HELLO, PING, BYE, `READER a=SHARE`).
 
 | Phase | Heading text | Means |
 | --- | --- | --- |
-| NotFound | No Nebulae or Looper found | no MIDI link with a STATUS answer, no CDC session |
+| NotFound | No Nebulae or FERRUM found | no MIDI link with a STATUS answer, no CDC session |
 | Performance | Performance (USB-MIDI) | STATUS answered on the MIDI link; polled every 1 s |
 | Confirm | Confirmation required | SHARE answered CONFIRM_REQUIRED; waits for the user |
 | Requesting | Requesting SD management … | SHARE sent, reply awaited (2 s) |
@@ -252,7 +252,7 @@ Every timeout is driven by the injected clock and tested with a fake clock.
 | Element | Rule |
 | --- | --- |
 | Heading | phase text (section 3.1), with " – SIMULATION" for a simulated device |
-| Instrument | "Looper" / "Nebulae on Daisy" when found (status or management), else "–" |
+| Instrument | "FERRUM" (before 0.5.3: "Looper") / "Nebulae on Daisy" when found (status or management), else "–" |
 | Firmware | `status.firmware` or HELLO `fw`, else "–" |
 | Connection | "USB-MIDI <port>" in performance; "USB CDC <port> + mass storage" in management; else "–" |
 | SD card | performance: "card inserted" / "no card"; management: "card reader: <state or unknown>" |
@@ -266,7 +266,7 @@ Every timeout is driven by the injected clock and tested with a fake clock.
 | **Discard Live loop and share** / **Share without the unsaved changes** | visible only while `NeedsConfirmation()`; sends SHARE(confirm=1) |
 | **Cancel** | visible while `NeedsConfirmation()` or phase Saving |
 | **How to eject safely in Windows …** | enabled only while reader == SHARED; shows the three steps: close every file and program that uses the drive; “Safely Remove Hardware” in the taskbar or Eject in Explorer; wait until the page shows “Windows ejected the card”. "Only the firmware's EJECTED state counts; this button does not eject anything." |
-| **Return to Nebulae** / **Return to the Looper** | enabled: `CanReturn()`; tooltip "Only after Windows ejected the card: the firmware returns it and restarts into performance (Nebulae rescans its banks, the looper reloads looper/loop.wav)." |
+| **Return to Nebulae** / **Return to FERRUM** | enabled: `CanReturn()`; tooltip "Only after Windows ejected the card: the firmware returns it and restarts into performance (Nebulae rescans its banks, FERRUM reloads looper/loop.wav)." |
 | **Acknowledge interrupted access …** | enabled: `CanAcknowledge()`; confirmation dialog "Windows may have lost pending changes. Close all files using this card. Acknowledging does not recover data and is not a clean eject. Continue?" with Yes/No, default No |
 | Hint | "Performance mode uses USB-MIDI (no COM port); SD management uses USB CDC + mass storage. The card is never returned by closing this window or unplugging: only a Windows eject or an explicit acknowledgement. Power-cycling the kit always starts in performance." |
 | Text heights | Message, error and warning take the wrapped lines they need (JUCE `TextLayout`), capped at 5, 4 and 3 lines; the real texts above need at most three. The hint is shown only when the room left below the buttons holds all of its lines (never clipped). An absurd text is truncated with an ellipsis; the Python panel scrolls instead. |
