@@ -7,12 +7,10 @@
 *.wav
 __pycache__/
 .pytest_cache/
-# Local third-party analysis data: never commit (remove these lines only after the folders are gone)
+# FERRUM: firmware images and binary artifacts are never committed
 /instruments/ferrum/**/*.bin
 /instruments/ferrum/**/*.elf
 /instruments/ferrum/**/*.pkl
-/instruments/ferrum/work/
-/instruments/ferrum/stardust-work/
 # Local review exports that bundle third-party 3D models
 /hardware/desktop-case-review/
 # Local agent scratch space
