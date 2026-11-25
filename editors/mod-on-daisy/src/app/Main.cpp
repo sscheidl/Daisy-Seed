@@ -604,6 +604,11 @@ class SelfTest {
         ui::SdSharePanel& page = e_.GetSdPanel();
         e_.ConnectTo(PortIndex("Simulator: FERRUM MOD"));
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
+        // Display name, not the wire key: status shows FERRUM, IDENTIFY keeps "looper".
+        SELFTEST_CHECK(Wait([&] { return e_.GetSession().Connected()
+                                   && e_.GetSession().StatusText().rfind("FERRUM ", 0) == 0; }, 3000));
+        SELFTEST_CHECK(e_.GetSession().Device().key == "looper");
+        Say("PASS SD page FERRUM MOD: status shows FERRUM, IDENTIFY key stays looper");
         e_.GetSdSimulator()->unsaved = true;
         e_.ShowSdPage(true);
         e_.Step(1200);

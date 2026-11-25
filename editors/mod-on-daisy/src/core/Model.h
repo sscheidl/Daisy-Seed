@@ -17,6 +17,10 @@
 #include <vector>
 
 namespace editor {
+
+// Display name of an instrument key from IDENTIFY. The key itself is a wire ID and stays as reported
+// (patch files, autosave names, restore checks); only what the user reads is mapped.
+inline std::string InstrumentDisplayName(const std::string& key) { return key == "looper" ? "FERRUM" : key; }
 constexpr int kCells = int(mod::kCells);
 constexpr int kNoCell = -1;
 inline const char* const kSourceNames[mod::kSources] = {"LFO 1", "LFO 2", "Random", "CV 1",

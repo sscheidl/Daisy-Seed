@@ -1060,7 +1060,7 @@ void EditorComponent::RefreshAll() {
         name_.setText(U(model_.Name()), juce::dontSendNotification);
     if(session_.Connected()) {
         const DeviceInfo& d = session_.Device();
-        device_info_.setText(U(d.key) + " " + U(d.version) + ", Mod on Daisy " + juce::String(d.module_major) + "."
+        device_info_.setText(U(InstrumentDisplayName(d.key)) + " " + U(d.version) + ", Mod on Daisy " + juce::String(d.module_major) + "."
                                  + juce::String(d.module_minor) + "." + juce::String(d.module_patch) + ", protocol "
                                  + juce::String(d.protocol_major) + "." + juce::String(d.protocol_minor) + ", tick "
                                  + juce::String(d.tick_hz) + " Hz, schema " + U(Hex32(d.schema)) + U(".\nMemory slots on the device: ")
