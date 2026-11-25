@@ -24,7 +24,7 @@ Project `granular`, for the **Seed3 Desktop Development Kit**, using the officia
 independent. This adapts Qu-Bit's default Nebulae v2.1.2 Granular Looper, with the
 documented differences below. It does not host alternate instruments or claim
 bit-identical Csound output. This is the Nebulae granular project; the separate
-[Stardust tape looper](../ferrum/) has its own analysis and implementation path. [Validation](docs/VALIDATION.md) separates software
+[FERRUM tape looper](../ferrum/) has its own implementation path. [Validation](docs/VALIDATION.md) separates software
 checks from pending hardware checks. No board was flashed or sound auditioned.
 
 ## Build and binary

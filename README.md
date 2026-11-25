@@ -24,7 +24,7 @@ developed independently and reintegrated through their documented contracts.
 | [Composed Physical Modeling FX](docs/MODULAR_COMPONENTS.md) | `instruments/physical-modeling/` (`COMPOSED=1`) | Separate v0.2.0 pilot builds with Torus or Ambient Reverb adapters and Mod on Daisy; explicit component manifests; hardware validation pending |
 | [Nebulae on Daisy v0.3.0](instruments/granular/) | `instruments/granular/` | Stereo granular/vocoder, SD sample banks (FAT32/exFAT, 16- and 24-bit WAV), Live recording, three UI modes, J7 USB MIDI and Windows SD management via the control panel; software pass, hardware pending |
 | [Nebulae + Mod on Daisy](instruments/granular/docs/MODULATION.md) | `instruments/granular/` (`MOD=1`) | Separate build `make PROJECT=granular-mod`: Mod on Daisy matrix on Start, Speed, Size, Density, Pitch, Overlap, Blend and Window, with the Windows SD share unchanged; software tested, hardware NOT MEASURED |
-| [FERRUM v0.6.1](instruments/ferrum/) | `instruments/ferrum/` | Original tape looper (formerly Looper) modeled on the Qu-Bit Stardust (firmware analysis published); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import (48 or 44.1 kHz) on microSD (FAT32 or exFAT), MIDI CC control over USB, Windows SD management via the control panel (shared card reader, loop saved before the share); host tests and ARM build pass; hardware test pending |
+| [FERRUM v0.6.1](instruments/ferrum/) | `instruments/ferrum/` | Original tape looper (formerly Looper); Sound on Sound, Replace, Frippertronics, Resample, Slice/Skip, copy-on-write undo/redo, varispeed, inertia, reverse, loop persistence and WAV import (48 or 44.1 kHz) on microSD (FAT32 or exFAT), MIDI CC control over USB, Windows SD management via the control panel (shared card reader, loop saved before the share); host tests and ARM build pass; hardware test pending |
 | [FERRUM + Mod on Daisy](instruments/ferrum/docs/MODULATION.md) | `instruments/ferrum/` (`MOD=1`) | Separate build `make PROJECT=ferrum-mod`: Mod on Daisy matrix on Speed, Start, Size, Slice, Skip, Inertia, Frippertronics decay and Mix; regular image byte-identical, MOD build with empty matrix bit-identical in sound (golden test); hardware test pending |
 | [FOURIER v0.5.0](effects/fourier/) | `effects/fourier/` | Atmospheric reverb (formerly Ambient Reverb), shared stereo FX: 32–12 kHz wet Stretch, mode-specific pitch processing; host/sanitizer/ARM checks pass; standalone FX hardware acceptance precedes instrument acceptance |
 | [Tape FX v0.1.0](effects/tape-fx/) | `effects/tape-fx/` | Reusable stereo tape component ported from the drumlogue TapeVibe (bit-identical reference path) with optional MixForge stages, plus the standalone `tape-fx` stereo effect firmware; host/sanitizer/ARM checks pass, hardware untested ([report](effects/tape-fx/docs/REPORT.md)) |
@@ -57,7 +57,7 @@ Daisy-Seed/
 │   ├── physical-modeling/  # Torus DSP, hardware/MIDI, tests and firmware
 │   ├── granular/           # Nebulae on Daisy DSP, SD, UI, MIDI and tests
 │   ├── grain-cloud/        # new independent granular engine, host core
-│   └── looper/             # Stardust analysis and buildable engine core
+│   └── ferrum/             # FERRUM tape looper (formerly looper)
 ├── sequencers/             # step-seq core and contracts, acid-seq product
 ├── effects/
 │   ├── reverb/             # buildable original Ambient Reverb

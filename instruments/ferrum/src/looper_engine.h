@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-// Looper engine: an independent implementation of the tape-looper behavior
-// described in docs/STARDUST_ANALYSIS.md, sections 4 and 6 to 8. No hardware
+// Looper engine: an independent implementation of a stereo tape looper
+// (FERRUM, formerly Looper). No hardware
 // dependencies; buffer storage is injected by the caller.
 #pragma once
 #include <cstddef>

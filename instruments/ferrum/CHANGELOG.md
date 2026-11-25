@@ -2,6 +2,12 @@
 
 Earlier versions (up to 0.6.1, as *Looper*) are described in the [README](README.md) and the reports it links.
 
+## Third-party analysis removed — 2026-11-25 (version unchanged: 0.6.1)
+
+* The firmware analysis of a third-party reference device, its feasibility study and the analysis tools
+  (`docs/` and `tools/`) were removed from the repository; references in current docs were neutralized.
+  FERRUM's code is an independent implementation and does not depend on them. No code or sound change.
+
 ## Rename to FERRUM — 2026-11-25 (version unchanged: 0.6.1)
 
 * Public name FERRUM; directory `instruments/looper` -> `instruments/ferrum`, project IDs `looper` -> `ferrum` and

@@ -11,7 +11,7 @@ skipped one.
       artifact and a local build of the same commit must match.
 - [ ] Flash it through the external Daisy bootloader as in
       [docs/FLASHING.md](../../../docs/FLASHING.md) (`PROJECT=looper`). Do not
-      reinstall a working bootloader. **Never flash the Stardust binary.**
+      reinstall a working bootloader. **Never flash third-party firmware binaries.**
 - [ ] Use a line-level source (synth, phone, or an audio interface) into the
       **left** input, headphones or J3/J4 to monitor. Start at low volume.
 - [ ] Starting positions: pot 0 (Varispeed) at about **40 %** (unity), pot 1
