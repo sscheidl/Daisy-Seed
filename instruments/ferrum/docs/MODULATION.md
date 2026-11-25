@@ -1,8 +1,9 @@
-# Looper + Mod on Daisy (separate build)
+# FERRUM + Mod on Daisy (separate build)
 
-**Image:** `build/mod/LooperMod-v0.5.0.bin` (`make PROJECT=ferrum MOD=1`, or
-`make PROJECT=ferrum-mod`). Firmware marker: `LOOPER-MOD-VERSION=0.5.0`; IDENTIFY
-reports the key `looper` and the version `0.5.0`, the same version as image and marker.
+**Image:** `build/mod/FerrumMod-v<version>.bin` (`make PROJECT=ferrum MOD=1`, or
+`make PROJECT=ferrum-mod`; until the FERRUM rename `LooperMod-v<version>.bin` from `PROJECT=looper-mod`).
+Firmware marker: `LOOPER-MOD-VERSION=<version>`; IDENTIFY reports the key `looper` and the same version as image
+and marker. The text below was written for 0.5.0.
 v0.5 adds the [SD management](SD_MANAGEMENT.md) to both builds; the looper's control
 SysEx (`F0 7D 4C 50`) is handled before anything is forwarded to the matrix.
 **Status:** software tested, hardware test pending (NICHT GEMESSEN).
