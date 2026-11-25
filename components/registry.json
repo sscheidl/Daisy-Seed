@@ -30,10 +30,10 @@
     },
     "looper": {
       "kind": "instrument",
-      "source": "instruments/looper",
+      "source": "instruments/ferrum",
       "version": {
         "type": "macro",
-        "path": "instruments/looper/src/version.h",
+        "path": "instruments/ferrum/src/version.h",
         "name": "LOOPER_VERSION"
       }
     },
@@ -594,10 +594,10 @@
         "daisy-control-panel"
       ]
     },
-    "looper": {
+    "ferrum": {
       "version_component": "looper",
-      "directory": "instruments/looper/build",
-      "image": "Looper",
+      "directory": "instruments/ferrum/build",
+      "image": "Ferrum",
       "marker": "LOOPER-VERSION=",
       "components": [
         "looper",
@@ -610,10 +610,10 @@
         "daisy-control-panel"
       ]
     },
-    "looper-mod": {
+    "ferrum-mod": {
       "version_component": "looper",
-      "directory": "instruments/looper/build/mod",
-      "image": "LooperMod",
+      "directory": "instruments/ferrum/build/mod",
+      "image": "FerrumMod",
       "marker": "LOOPER-MOD-VERSION=",
       "components": [
         "looper",

@@ -14,7 +14,7 @@ from daisy_diag.session import DeviceSession
 PROFILES = (n.NEBULAE, lp.LOOPER)
 
 
-# ---- SysEx codec (byte layout of instruments/looper/src/control_sysex.h) --------------
+# ---- SysEx codec (byte layout of instruments/ferrum/src/control_sysex.h) --------------
 def test_requests_match_firmware_layout():
     assert lp.status_request() == bytes([0xF0, 0x7D, 0x4C, 0x50, 0x01, 0x01, 0xF7])
     assert lp.share_request(True, bytes([1, 2, 3, 4])) == bytes(

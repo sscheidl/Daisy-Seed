@@ -1,6 +1,6 @@
 """Simulated Looper 0.5.0: performance personality on a simulated USB-MIDI port, SD
 management personality on the simulated CDC cable. Mirrors the firmware rules
-(instruments/looper/src/control_sysex.h, sd_admin.cpp, loop_store SaveSoon); simulation
+(instruments/ferrum/src/control_sysex.h, sd_admin.cpp, loop_store SaveSoon); simulation
 only, no drive is created on Windows.
 """
 from __future__ import annotations
@@ -99,7 +99,7 @@ class SimulatedLooper(SimulatedNebulae):
     def saving(self) -> bool:
         return self.saving_until is not None
 
-    # ---- control SysEx, as instruments/looper/src/control_sysex.h -------------------------
+    # ---- control SysEx, as instruments/ferrum/src/control_sysex.h -------------------------
     def handle_sysex(self, msg: bytes) -> bytes | None:
         self.advance()
         if len(msg) < 7 or msg[:4] != SYSEX_PREFIX or msg[-1] != 0xF7:

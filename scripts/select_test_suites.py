@@ -62,7 +62,7 @@ def select_suites(changed):
         'granular': shared or touched('instruments/granular/', 'common/sd/', 'diagnostics/protocol/',
                                       'diagnostics/firmware/src/ring_buffer.h') or mod_api,
         # The looper links common/sd in its writable profile, the card reader and the DDP framing.
-        'looper': shared or touched('instruments/looper/', 'common/sd/', 'diagnostics/protocol/',
+        'ferrum': shared or touched('instruments/ferrum/', 'common/sd/', 'diagnostics/protocol/',
                                     'diagnostics/firmware/src/ring_buffer.h') or mod_api,
         'fourier': shared or touched('effects/fourier/'),
         'tape': shared or fx or dsp or touched('effects/tape-fx/'),
@@ -93,7 +93,7 @@ def select_suites(changed):
     }
     if '.github/workflows/quick.yml' in changed:
         suites = {key: True for key in suites}
-    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'looper', 'fourier', 'tape',
+    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'granular', 'ferrum', 'fourier', 'tape',
                                                     'stepseq', 'acid303', 'drive', 'delay', 'acidseq',
                                                     'streichwurst', 'cumulonimbus'))
     return suites

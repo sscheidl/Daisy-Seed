@@ -1,7 +1,7 @@
 // Host fake of the SDMMC1 card under common/sd's disk layer (ro_sd.c): an in-memory
 // image behind libDaisy's BSP/HAL calls, with fault injection. Header-only; include it
 // in exactly one translation unit of a test. Used by common/sd/tests/test_rw_sd.cpp and
-// instruments/looper/tests/test_card.cpp.
+// instruments/ferrum/tests/test_card.cpp.
 #pragma once
 #include <cstdint>
 #include <cstring>

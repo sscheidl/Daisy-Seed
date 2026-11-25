@@ -13,7 +13,7 @@ The driver's behaviour on the board is **NICHT GEMESSEN**; the card reader in
 Diagnostics image rebuilt byte-identical after the move).
 The Looper 0.6.0 links the writable profile for its own files and the card reader for its
 SD management personality
-([instruments/looper/docs/SD_MANAGEMENT.md](../../instruments/looper/docs/SD_MANAGEMENT.md)).
+([instruments/ferrum/docs/SD_MANAGEMENT.md](../../instruments/ferrum/docs/SD_MANAGEMENT.md)).
 The writable path on the board is **NOT MEASURED**.
 
 ## Files

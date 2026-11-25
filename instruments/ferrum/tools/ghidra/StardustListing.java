@@ -1,5 +1,5 @@
 // Ghidra script: writes the disassembly of an address range for checking decompiler output.
-// Output is proprietary-derived and must stay in instruments/looper/work/.
+// Output is proprietary-derived and must stay in instruments/ferrum/work/.
 //
 // Arguments: <outFile> <startHex> <endHex>
 //@category Stardust

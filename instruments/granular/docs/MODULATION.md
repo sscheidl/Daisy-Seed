@@ -11,7 +11,7 @@ MOD build with an empty matrix sounds bit-identical to the regular build.
 
 This is an **additional, separate build** of Nebulae with the
 [Mod on Daisy](../../../modules/mod-on-daisy/) modulation matrix, following the
-[Looper](../../looper/docs/MODULATION.md) pattern. The regular firmware stays as it is:
+[Looper](../../ferrum/docs/MODULATION.md) pattern. The regular firmware stays as it is:
 
 * On 0.2.1, `make PROJECT=granular` compiled exactly the code without the matrix; its
   image was **byte-identical** to `main`: 183,740 bytes, SHA-256

@@ -2,7 +2,7 @@
 
 > **Status 2026-11-06: historical.** This sheet tests Looper 0.5.1. `main` has moved on to Looper
 > 0.6.0; for the current steps see
-> [the Looper hardware test](../instruments/looper/docs/HARDWARE_TEST.md).
+> [the Looper hardware test](../instruments/ferrum/docs/HARDWARE_TEST.md).
 
 A run sheet for one day at the kit. It puts the SD card sharing tests of both instruments
 into one order and points to the detailed per-product checklists. **The human does every
@@ -157,9 +157,9 @@ Background: [V0_2_ARCHITECTURE.md](../instruments/granular/docs/V0_2_ARCHITECTUR
 
 ## 3. Block B: Looper 0.5.1 (about 2.5 h)
 
-Detailed steps: [instruments/looper/docs/HARDWARE_TEST.md](../instruments/looper/docs/HARDWARE_TEST.md)
+Detailed steps: [instruments/looper/docs/HARDWARE_TEST.md](../instruments/ferrum/docs/HARDWARE_TEST.md)
 (file names there still say `0.5.0`; use the `0.5.1` files). Behaviour and protocol:
-[SD_MANAGEMENT.md](../instruments/looper/docs/SD_MANAGEMENT.md); panel:
+[SD_MANAGEMENT.md](../instruments/ferrum/docs/SD_MANAGEMENT.md); panel:
 [LOOPER_PROFILE.md](../diagnostics/docs/LOOPER_PROFILE.md).
 **The Looper needs card F (FAT32) for its own files.**
 

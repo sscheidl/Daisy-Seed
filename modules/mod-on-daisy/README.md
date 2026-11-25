@@ -17,8 +17,8 @@ editor is developed separately under [`editors/mod-on-daisy/`](../../editors/mod
   * a separate build of
     [Physical Modeling (Rings/Torus)](../../instruments/physical-modeling/docs/MODULATION.md)
     with Poly AT per voice;
-  * a separate build of the [Looper](../../instruments/looper/docs/MODULATION.md)
-    (`make PROJECT=looper MOD=1`) with eight global columns: Speed, Start, Size, Slice,
+  * a separate build of the [FERRUM](../../instruments/ferrum/docs/MODULATION.md)
+    (`make PROJECT=ferrum MOD=1`) with eight global columns: Speed, Start, Size, Slice,
     Skip, Inertia, Frippertronics decay and Mix.
 * With an empty matrix, all of them are bit-identical to the previous sound (golden tests). The
   regular Physical Modeling and Looper firmwares have stayed byte-identical.

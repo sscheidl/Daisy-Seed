@@ -1,5 +1,5 @@
 // Ghidra post-analysis script: writes a function index and decompiled output for reading.
-// Output is proprietary-derived and must stay in instruments/looper/work/.
+// Output is proprietary-derived and must stay in instruments/ferrum/work/.
 //
 // Arguments: <outDir> [hexAddr ...]
 //   without addresses: funcs.tsv (entry, size, callers, callees) and all.c (every function)

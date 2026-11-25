@@ -140,7 +140,7 @@ controllers and modulation wheel. Order of a catalog:
 
 Sources: Streichfett reference manual, MIDI implementation and "Modulation wheel"
 (manualsdir.com, pages 18, 22, 23); Nebulae v2 firmware 2.1.2 cheat sheet
-(cheatography.com, a draft); Stardust: `instruments/looper/docs/STARDUST_ANALYSIS.md`,
+(cheatography.com, a draft); Stardust: `instruments/ferrum/docs/STARDUST_ANALYSIS.md`,
 Sound On Sound review, Perfect Circuit manual excerpt. Exact CV lists of Nebulae and
 Stardust are to be confirmed against the official manuals before those firmwares adopt
 their catalogs.

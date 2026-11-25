@@ -26,7 +26,7 @@ Changes beyond the PR:
 * `ro_sd_init` rejects a NULL `abort` in the writable build, because `HAL_SD_Abort` has
   unbounded waits. `fat_volume.cpp` refuses to compile against any other FatFs configuration.
 * `common/sd` and the reader are versioned and registered, kind `storage`.
-* [SD_PERSISTENCE.md](../instruments/looper/docs/SD_PERSISTENCE.md) with the failure
+* [SD_PERSISTENCE.md](../instruments/ferrum/docs/SD_PERSISTENCE.md) with the failure
   boundaries, and `TestRenameFailureGap` in `instruments/looper/tests/test_store.cpp`.
 
 ## Checklist part B
@@ -56,7 +56,7 @@ Changes beyond the PR:
 
 | Item | Evidence |
 | --- | --- |
-| Boundaries documented, no atomic claim | [SD_PERSISTENCE.md](../instruments/looper/docs/SD_PERSISTENCE.md). The claim in `SD_V0_5_PLAN.md` is gone (line 81 here, it was line 77 on the PR branch) |
+| Boundaries documented, no atomic claim | [SD_PERSISTENCE.md](../instruments/ferrum/docs/SD_PERSISTENCE.md). The claim in `SD_V0_5_PLAN.md` is gone (line 81 here, it was line 77 on the PR branch) |
 | Power-loss campaign | FAT32 143 cut points (136 old, 7 new), exFAT 137 (132 old, 5 new), never anything else, next save works every time; also under ASan/UBSan |
 | Save-before-share, unusable card | `main.cpp`, `loop_store.{h,cpp}`, `sd_admin.{h,cpp}`, `control_sysex.h` have no diff against `main`. `test_admin`, `test_callback` pass in both builds |
 
@@ -136,4 +136,4 @@ Actual stack use on the board is NOT MEASURED. SDRAM gains the 32 KB bounce buff
 4. **Part A** of the review order (share handoff race in `main.cpp`) is untouched here.
 5. PR #94 itself: close it or force-push this branch over it. The human's decision.
 
-Hardware checklist: [HARDWARE_TEST.md, section 7 and 7a](../instruments/looper/docs/HARDWARE_TEST.md#7-microsd).
+Hardware checklist: [HARDWARE_TEST.md, section 7 and 7a](../instruments/ferrum/docs/HARDWARE_TEST.md#7-microsd).

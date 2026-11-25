@@ -77,7 +77,7 @@ warrants the HOLD for patch preservation.
    [line 698](../../editors/mod-on-daisy/src/ui/EditorComponent.cpp#L698), the only device
    match is the product key. Two kits running Nebulae MOD both report
    [`nebulae`](../../instruments/granular/src/modulation.h#L38), and two Looper MOD kits
-   both report [`looper`](../../instruments/looper/src/modulation.h#L90). A silent A and
+   both report [`looper`](../../instruments/ferrum/src/modulation.h#L90). A silent A and
    a responding B with the same key can therefore lead to an upload over B's live
    matrix, including on the R1 fallback. The code also allows two identically named
    ports to resolve to the last matching entry. This is a code-path finding against

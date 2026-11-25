@@ -23,7 +23,7 @@ Supply `Stardust_v1_1_1.bin` locally; it is not part of this repository.
 Tested with Python 3.13, angr 10.0.4.post1, and Capstone 5.0.7 on Linux x86_64.
 
 ```bash
-cd instruments/looper
+cd instruments/ferrum
 mkdir -p work && cp /path/to/Stardust_v1_1_1.bin work/
 sha256sum work/Stardust_v1_1_1.bin   # e7556ffd3bbfa578b7061e4b06de6d010d4842115439121eea458e2e6cf1a48a
 python3 -m venv work/venv && work/venv/bin/pip install angr==10.0.4.post1

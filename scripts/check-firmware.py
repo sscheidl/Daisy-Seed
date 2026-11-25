@@ -6,7 +6,7 @@ Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
 Also accepts effects/fourier/build/Fourier-v<version>.bin,
 effects/tape-fx/build/TapeFx-v<version>.bin, build/tape/ToyPianoTape-v<version>.bin,
 PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
-instruments/looper/build/Looper-v<version>.bin, build/mod/LooperMod-v<version>.bin,
+instruments/ferrum/build/Ferrum-v<version>.bin, build/mod/FerrumMod-v<version>.bin,
 instruments/granular/build/mod/NebulaeMod-v<version>.bin and
 modules/mod-on-daisy/bench/build/ModBench-v<version>.bin and the composed images in
 ACID_SEQ (sequencers/step-seq/build/StepSeq-v<version>.bin, ...,
@@ -136,19 +136,19 @@ elif path.name.startswith('Fourier-v'):
     version = match.group(1)
     expected_name = f'Fourier-v{version}.bin'
     marker = rb'AMBIENT-REVERB-VERSION=([0-9.]+)\x00'
-elif path.name.startswith('Looper-v'):
-    looper = root / 'instruments' / 'looper'
+elif path.name.startswith('Ferrum-v'):
+    looper = root / 'instruments' / 'ferrum'
     match = re.search(r'LOOPER_VERSION\s+"([^"]+)"', (looper / 'src' / 'version.h').read_text())
-    assert match, "Could not read the Looper version"
+    assert match, "Could not read the FERRUM version"
     version = match.group(1)
-    expected_name = f'Looper-v{version}.bin'
+    expected_name = f'Ferrum-v{version}.bin'
     marker = rb'LOOPER-VERSION=([0-9.]+)\x00'
-elif path.name.startswith('LooperMod-v'):
-    looper = root / 'instruments' / 'looper'
+elif path.name.startswith('FerrumMod-v'):
+    looper = root / 'instruments' / 'ferrum'
     match = re.search(r'LOOPER_VERSION\s+"([^"]+)"', (looper / 'src' / 'version.h').read_text())
-    assert match, "Could not read the Looper version"
+    assert match, "Could not read the FERRUM version"
     version = match.group(1)
-    expected_name = f'LooperMod-v{version}.bin'
+    expected_name = f'FerrumMod-v{version}.bin'
     marker = rb'LOOPER-MOD-VERSION=([0-9.]+)\x00'
 elif path.name.startswith('ModBench-v'):
     bench = root / 'modules' / 'mod-on-daisy' / 'bench'

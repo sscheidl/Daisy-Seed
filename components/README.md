@@ -66,5 +66,5 @@ Audio contract and exact limits: [MODULAR_COMPONENTS.md](../docs/MODULAR_COMPONE
 
 **Daisy Control Panel** (2026-11-08): the JUCE standalone is registered as `daisy-control-panel`
 (kind `panel`, version from `editors/mod-on-daisy/CMakeLists.txt`, 0.5.0). `granular-mod` and
-`looper-mod` list it next to the editor panels; `granular` and `looper` list it as their only
+`ferrum-mod` list it next to the editor panels; `granular` and `ferrum` list it as their only
 panel, because its SD card page serves those images too (no matrix).
