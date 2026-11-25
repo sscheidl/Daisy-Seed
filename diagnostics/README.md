@@ -8,6 +8,12 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > Windows SD card reader, both CV channels and both gate inputs. Results are
 > real-board measurements, separate from software/simulation tests.
 
+## App 0.6.2: FERRUM display name (2026-11-25)
+
+The looper is shown as **FERRUM** (formerly Looper) in the SD share tab, its messages and the
+`--sim-looper` help. Display text only: the device profile still matches `app=LooperOnDaisy`, `loopmgmt`,
+`LOOPER` and SysEx `LP`, and the SD paths stay `looper/loop.wav` and `looper/loops`. Hardware NOT MEASURED.
+
 ## App 0.6.1: a stalled kit no longer freezes the panel
 
 App **0.6.1** keeps running when a kit's firmware stalls (P3 of the Nebulae first-contact

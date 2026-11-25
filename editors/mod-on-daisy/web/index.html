@@ -1201,7 +1201,7 @@ async function firmwareUpdate() {
     if (acked && state.link) disconnect(); // the port disappears with the reset
     else if (!link) closePorts(out, inp);
     // The reply confirms that the request was accepted, not the DFU entry itself.
-    if (acked) log('Request accepted: the kit restarts into update mode (all LEDs on; the Looper only after running card work). As soon as it appears as a DFU device, load the firmware with the Daisy Web Programmer or “make program-dfu”.', 'ok');
+    if (acked) log('Request accepted: the kit restarts into update mode (all LEDs on; FERRUM only after running card work). As soon as it appears as a DFU device, load the firmware with the Daisy Web Programmer or “make program-dfu”.', 'ok');
     else log('No answer from the kit. Older firmware does not know the command: then hold S9 and S16 for five seconds or use RESET and BOOT (docs/FLASHING.md).', 'warn');
   } finally {
     updating = false;

@@ -1,5 +1,5 @@
 #pragma once
-// The share/return workflow of the instruments' microSD (Nebulae on Daisy, Looper): finds
+// The share/return workflow of the instruments' microSD (Nebulae on Daisy, FERRUM): finds
 // the kit on USB-MIDI by its STATUS reply, asks for SD management, follows the kit to the
 // COM port, opens the card for Windows once, and brings the kit back after a Windows eject.
 // Port of diagnostics/windows/daisy_diag/nebulae.py (NebulaeWorkflow); every state,
@@ -43,7 +43,7 @@ enum class Phase { NotFound, Performance, Confirm, Requesting, Saving, Restartin
 
 inline const char* PhaseText(Phase p) {
     switch(p) {
-        case Phase::NotFound: return "No Nebulae or Looper found";
+        case Phase::NotFound: return "No Nebulae or FERRUM found";
         case Phase::Performance: return "Performance (USB-MIDI)";
         case Phase::Confirm: return "Confirmation required";
         case Phase::Requesting: return "Requesting SD management …";

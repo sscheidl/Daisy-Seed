@@ -371,7 +371,7 @@ class DdpSession {
                 return Invalid(error);
             mgmt_ = info;
             if(info.action == "PERFORM")
-                Log(std::string(nebulae ? "Nebulae" : "Looper") + " accepted the return to performance");
+                Log(std::string(nebulae ? "Nebulae" : "FERRUM") + " accepted the return to performance");
             Changed();
         } else if(msg.type == "ERR") {
             const std::string* c = msg.Get("c");

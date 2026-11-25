@@ -20,7 +20,7 @@ APP_NAME = "LooperOnDaisy"
 SYSEX_PREFIX = bytes([0xF0, 0x7D, 0x4C, 0x50])
 SHARE_RESULTS = {0: "ACCEPTED", 1: "CONFIRM_REQUIRED", 2: "BUSY", 3: "NO_CARD", 4: "BAD_REQUEST",
                  5: "SAVING"}
-FAULTS = {0: "none", 1: "card not ready", 2: "write failed", 3: "looper busy", 4: "no WAV files",
+FAULTS = {0: "none", 1: "card not ready", 2: "write failed", 3: "FERRUM busy", 4: "no WAV files",
           5: "file rejected"}
 STATUS_LENGTH = 13
 
@@ -94,7 +94,7 @@ def parse_reply(message: bytes) -> tuple[str, object]:
 
 
 LOOPER = DeviceProfile(
-    name="Looper",
+    name="FERRUM",
     app=APP_NAME,
     capability="loopmgmt",
     perform_command="LOOPER a=PERFORM",
@@ -102,18 +102,18 @@ LOOPER = DeviceProfile(
     share_request=share_request,
     parse_reply=parse_reply,
     texts={
-        "busy": "The looper is recording, overdubbing, resampling or importing a WAV file. "
+        "busy": "FERRUM is recording, overdubbing, resampling or importing a WAV file. "
                 "Stop it and try again.",
         "confirm": "The loop could not be saved to the card (the last write failed). Sharing "
-                   "restarts the looper and LOSES the unsaved changes; looper/loop.wav keeps the "
+                   "restarts FERRUM and LOSES the unsaved changes; looper/loop.wav keeps the "
                    "last saved loop. Confirm to continue, or cancel and keep playing.",
         "back": "Back in performance. The loop was reloaded from looper/loop.wav.",
-        "returning": "The looper restarts into performance and reloads looper/loop.wav …",
-        "local": "Card is with the looper (not shared). Share it with Windows or return to "
+        "returning": "FERRUM restarts into performance and reloads looper/loop.wav …",
+        "local": "Card is with FERRUM (not shared). Share it with Windows or return to "
                  "performance.",
         "shared": "Windows owns the card. Copy WAV files into looper/loops or back up "
                   "looper/loop.wav, then use „Safely Remove Hardware“ / Eject in Windows.",
-        "ejected": "Windows ejected the card and all writes completed. You can return to the looper.",
+        "ejected": "Windows ejected the card and all writes completed. You can return to FERRUM.",
         "saving": "Saving the current loop to looper/loop.wav before the restart …",
     },
 )

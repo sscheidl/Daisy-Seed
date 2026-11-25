@@ -55,11 +55,11 @@ def test_looper_profile_in_the_sd_share_tab(loop):
     assert window.control_tabs.tabText(window.control_tabs.currentIndex()) == "SD share"
     wf = window.nebulae
     assert wf.phase == Phase.PERFORMANCE and wf.profile is LOOPER
-    assert window.neb_info["device"].text() == "Looper"
+    assert window.neb_info["device"].text() == "FERRUM"
     assert window.neb_info["fw"].text() == "0.5.0"
     assert window.neb_row_labels["bank"].text() == "Loop:"
     assert "12.5 s, saved in looper/loop.wav" in window.neb_info["bank"].text()
-    assert window.neb_return.text() == "Return to the Looper"
+    assert window.neb_return.text() == "Return to FERRUM"
     assert window.neb_share.isEnabled() and not window.neb_return.isEnabled()
     assert window.neb_warning.text() == "" and not window.neb_cancel.isVisible()
 
@@ -109,6 +109,6 @@ def test_report_names_the_profile(loop, monkeypatch, tmp_path):
     monkeypatch.setattr(mw.QFileDialog, "getSaveFileName", lambda *a: (str(target), "JSON (*.json)"))
     window._save_report()
     report = json.loads(target.read_text())
-    assert report["nebulae_workflow"]["profile"] == "Looper"
+    assert report["nebulae_workflow"]["profile"] == "FERRUM"
     assert report["device"]["app"] == "LooperOnDaisy" and report["looper"]["mode"] == "SDMGMT"
-    assert report["app_version"] == "0.6.1"
+    assert report["app_version"] == "0.6.2"

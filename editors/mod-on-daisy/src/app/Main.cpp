@@ -53,9 +53,9 @@ class SelfTest {
         Streichwurst();
         SdNoInstrument();
         SdCycle("Simulator: Nebulae MOD", true, true, "dcp-nebulae-mod");
-        SdCycle("Simulator: Looper MOD", true, false, "dcp-looper-mod");
+        SdCycle("Simulator: FERRUM MOD", true, false, "dcp-looper-mod");
         SdCycle("Simulator: Nebulae", false, false, "dcp-nebulae");
-        SdCycle("Simulator: Looper", false, false, "dcp-looper");
+        SdCycle("Simulator: FERRUM", false, false, "dcp-looper");
         SdLooperSaving();
         SdInterruption();
         SdRestoreNotToWrongDevice();
@@ -483,7 +483,7 @@ class SelfTest {
         e_.ShowSdPage(true);
         e_.RefreshNow();
         ui::SdSharePanel& page = e_.GetSdPanel();
-        SELFTEST_CHECK(page.Heading().startsWith("No Nebulae or Looper found"));
+        SELFTEST_CHECK(page.Heading().startsWith("No Nebulae or FERRUM found"));
         SELFTEST_CHECK(!page.ShareButton().isEnabled() && !page.ReturnButton().isEnabled() && !page.AckButton().isEnabled());
         SELFTEST_CHECK(page.RowText(0) == juce::String::fromUTF8("–") && Visible(page));
         Shot("dcp-sd-page-idle.png");
@@ -532,7 +532,7 @@ class SelfTest {
         SELFTEST_CHECK(Visible(page));
         if(wf.GetProfile().id == sd::Instrument::Looper)
             SELFTEST_CHECK(page.RowLabel(4) == "Loop:" && page.RowText(4).contains("saved in looper/loop.wav")
-                           && page.ReturnButton().getButtonText() == "Return to the Looper");
+                           && page.ReturnButton().getButtonText() == "Return to FERRUM");
         else
             SELFTEST_CHECK(page.RowLabel(4) == "Bank / sample:" && page.RowText(4).contains("bank 1 of 3")
                            && page.ReturnButton().getButtonText() == "Return to Nebulae");
@@ -602,7 +602,7 @@ class SelfTest {
     void SdLooperSaving() {
         sd::SdShareWorkflow& wf = e_.GetSdShare();
         ui::SdSharePanel& page = e_.GetSdPanel();
-        e_.ConnectTo(PortIndex("Simulator: Looper MOD"));
+        e_.ConnectTo(PortIndex("Simulator: FERRUM MOD"));
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
         e_.GetSdSimulator()->unsaved = true;
         e_.ShowSdPage(true);
@@ -620,7 +620,7 @@ class SelfTest {
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance && e_.GetSession().Connected(); }, 25000));
         e_.ShowSdPage(false);
         e_.Disconnect();
-        Say("PASS SD page Looper MOD: unsaved loop saved before the share (SAVING), shared, back");
+        Say("PASS SD page FERRUM MOD: unsaved loop saved before the share (SAVING), shared, back");
     }
 
     // Windows access interrupted while SHARED: quarantined until acknowledged (no return,
@@ -684,7 +684,7 @@ class SelfTest {
         SELFTEST_CHECK(Settle() && e_.GetSession().Connected() && e_.GetModel().Depth(1) == 0 && InSync());
         e_.Disconnect();
         // Pending restore, then a manual connect to another device: abandoned with a warning.
-        e_.ConnectTo(PortIndex("Simulator: Looper MOD"));
+        e_.ConnectTo(PortIndex("Simulator: FERRUM MOD"));
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
         SELFTEST_CHECK(Settle() && e_.GetSession().Connected());
         e_.GetSession().EditDepth(0 * 8 + 2, 33, true);
@@ -836,7 +836,7 @@ class SelfTest {
     void SdLooperFailedSave() {
         sd::SdShareWorkflow& wf = e_.GetSdShare();
         ui::SdSharePanel& page = e_.GetSdPanel();
-        e_.ConnectTo(PortIndex("Simulator: Looper MOD"));
+        e_.ConnectTo(PortIndex("Simulator: FERRUM MOD"));
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000) && Settle());
         e_.GetSdSimulator()->unsaved = true;
         e_.GetSdSimulator()->save_fails = true;
@@ -857,7 +857,7 @@ class SelfTest {
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Management; }, 25000));
         e_.ShowSdPage(false);
         e_.Disconnect();
-        Say("PASS SD page Looper failed save: warning, confirm label, cancel keeps playing, confirm shares");
+        Say("PASS SD page FERRUM failed save: warning, confirm label, cancel keeps playing, confirm shares");
     }
 
     // The VST3 content (D2): the SD card page carries the note only.

@@ -36,7 +36,7 @@ Protocol: [instruments/ferrum/docs/SD_MANAGEMENT.md](../../instruments/ferrum/do
 | Card format | FAT32 or exFAT | FAT32 or exFAT (firmware 0.6.0 and later; 0.5.x: FAT32 only) |
 
 The saved report contains `looper` (LOOPER status line in SD management) and
-`nebulae_workflow` with `"profile": "Looper"` (the key keeps its 0.5.0 name).
+`nebulae_workflow` with `"profile": "FERRUM"` (app 0.6.2; "Looper" before) (the key keeps its 0.5.0 name).
 
 ## Simulation and tests
 

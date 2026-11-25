@@ -138,7 +138,7 @@ def parse_reply(message: bytes) -> tuple[str, object]:
 @dataclass(frozen=True)
 class DeviceProfile:
     """What differs between instruments that share their card the same way."""
-    name: str                     # shown in messages: "Nebulae", "Looper"
+    name: str                     # shown in messages: "Nebulae", "FERRUM"
     app: str                      # HELLO app= in SD management
     capability: str               # DDP capability of the status message
     perform_command: str          # DDP command back to performance
@@ -437,7 +437,7 @@ def open_rtmidi(port_name: str) -> MidiLink:
 
 
 class Phase(Enum):
-    NOT_FOUND = "No Nebulae or Looper found"
+    NOT_FOUND = "No Nebulae or FERRUM found"
     PERFORMANCE = "Performance (USB-MIDI)"
     CONFIRM = "Confirmation required"
     REQUESTING = "Requesting SD management …"

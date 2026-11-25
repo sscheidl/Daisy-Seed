@@ -237,7 +237,7 @@ bool EjectDrive(char drive) {
 #endif
 
 juce::String StatusText(const sd::PerfStatus& s) {
-    juce::String t = juce::String(s.instrument == sd::Instrument::Nebulae ? "Nebulae" : "Looper") + " " + s.firmware
+    juce::String t = juce::String(s.instrument == sd::Instrument::Nebulae ? "Nebulae" : "FERRUM") + " " + s.firmware
                      + (s.card ? " card" : " NO CARD");
     if(s.instrument == sd::Instrument::Nebulae)
         t << " live=" << int(s.live) << " rec=" << int(s.recording) << " load=" << int(s.loading) << " bank " << s.bank << "/" << s.banks

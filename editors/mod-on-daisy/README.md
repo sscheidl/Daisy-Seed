@@ -31,8 +31,8 @@ It has two pages, switched with **Matrix** and **SD card** in the header:
   I/O on an own thread; no driver, no admin rights). The core
   (`src/core/SdShare*.h`, `Ddp*.h`, `SerialTransport.h`) is platform-free and tested without
   JUCE; the self-test runs the complete cycle against simulated instruments
-  (`--simulators` lists "Simulator: Nebulae MOD", "Simulator: Looper MOD", "Simulator: Nebulae",
-  "Simulator: Looper").
+  (`--simulators` lists "Simulator: Nebulae MOD", "Simulator: FERRUM MOD", "Simulator: Nebulae",
+  "Simulator: FERRUM").
 * Hardware status: NOT MEASURED; the test package and sheet are built by
   `scripts/dcp_sd_test_package.py` ([docs/dcp/SD_PAGE_TEST_SHEET.md](../../docs/dcp/SD_PAGE_TEST_SHEET.md)).
   Local builds live in the `apps/` store (`apps/daisy-control-panel/<version>+<commit7>/`).
