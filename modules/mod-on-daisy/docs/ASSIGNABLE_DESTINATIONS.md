@@ -134,7 +134,7 @@ controllers and modulation wheel. Order of a catalog:
 | --- | --- | --- |
 | Physical Modeling | Mutable Instruments Rings | CV: V/Oct and FM (pitch), Structure, Brightness, Damping, Position. No CV for excitation level or the output mix |
 | Granular | Qu-Bit Nebulae v2 | CV (±5 V) for Start, Speed, Size, Density, Pitch, Overlap, Window, plus 1V/Oct; Blend CV not confirmed from a primary source |
-| Looper | — (own instrument, FERRUM) | Knob plus CV for Start, Size, Slice, Skip; 1V/Oct on speed; Start CV can drive the Frippertronics decay instead; per a review, every control except Loop Mode and Effect Type has a CV input (9 CV inputs, incl. Mix and In Level) |
+| Looper (FERRUM) | — (own instrument) | curated by us; FERRUM MOD routes the two Mod on Daisy CV sources (CV 1, CV 2) through its matrix |
 | Streichwurst | Waldorf Streichfett | No CV. MIDI CC 70–82 and 91–94: registration, octaves, release, crescendo, ensemble type, ensemble, solo tone, solo tremolo, split, solo sustain, solo attack, solo decay, balance, FX type, animate, phaser, reverb. Modulation wheel (CC 1): vibrato level and speed of strings and solo |
 | Toy Piano | — (own instrument) | curated by us |
 

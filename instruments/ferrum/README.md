@@ -22,8 +22,9 @@ shared raw-block reader.
 **Status: v0.6.1 with all four loop modes, Slice/Skip, loop persistence and WAV
 import on the microSD card, MIDI CC control over USB, and Windows access to the card
 through the control panel (SD management, new in v0.5); host tests pass, the ARM
-build last ran for 0.6.0; no hardware run yet.** Project ID: `looper`. The goal is an original
-stereo tape looper for the Seed3 Desktop Dev Kit. Validation details: [docs/VALIDATION.md](docs/VALIDATION.md); checklist for the
+build is verified for 0.6.1; no hardware run yet.** Project IDs: `ferrum`, `ferrum-mod`. The goal is an original
+stereo tape looper for the Seed3 Desktop Dev Kit. Some behavior follows a commercial tape looper used as a
+reference ("the reference looper" below); the code is an independent implementation. Validation details: [docs/VALIDATION.md](docs/VALIDATION.md); checklist for the
 first run on the kit: [docs/HARDWARE_TEST.md](docs/HARDWARE_TEST.md). A separate
 build with the Mod on Daisy modulation matrix: [docs/MODULATION.md](docs/MODULATION.md).
 Windows access to the card: [docs/SD_MANAGEMENT.md](docs/SD_MANAGEMENT.md).
@@ -56,10 +57,10 @@ implementation.
     knob with a one-pole of 0.005 per sample (about 4 ms) and fades in with the
     punch, so the old material never steps. The sum goes through a soft limit
     (transparent below 0.95, asymptote 1.0) that fades in with the punch as well,
-    so material above the knee does not step either; the original does not
+    so material above the knee does not step either; the reference looper does not
     limit here.
     While a Skip offset is active the layer adds like Sound on Sound, as in the
-    original.
+    reference looper.
   * *Resample* captures what is heard (loop playback plus input) into the other
     buffer from frame 0, with the first-take fade-in, its own length, an automatic
     stop at the capacity and a 960-frame post-roll. Then a 10 ms ramp switches to
@@ -74,7 +75,7 @@ implementation.
   count against the same budget, so a 48-frame callback copies at most 1,536
   frames unless its writes alone need more. Until it
   finishes, reads of uncopied blocks come from the buffer both states share, so
-  undo is immediate and never depends on storage (the original reloads the
+  undo is immediate and never depends on storage (the reference looper reloads the
   previous state from its SD card). A new layer or resample started right after
   such an undo waits until the copy is complete; the record LED blinks meanwhile.
 * **Playback head:** semitone target −24…+36, glide (one-pole 0.001 per sample
@@ -110,7 +111,7 @@ implementation.
   head loops in (Start/Size, a repeat starting or ending) that leaves the head
   outside it or on an edge of the old or new window, starts a 384-frame
   crossfade from a second head that keeps reading the old window.
-  `SeamMode::Window` (default) is the original 384-frame linear dip to zero at
+  `SeamMode::Window` (default) is the reference looper's 384-frame linear dip to zero at
   both sides of the window seam for windows of at least 1,152 frames.
   `SeamMode::Crossfade` adds the faded-out post-roll to the faded-in loop start
   (a 960-frame linear crossfade of the first take's seam) and blends window seams
@@ -135,7 +136,7 @@ implemented and tested:
 
 * **Knob direction:** fully left = no decay, fully right = strongest decay. The
   retention factor is therefore `k = 0.999 × (1 − knob)`, so fully right erases
-  old material on each pass. The original's default `k = 0.707` corresponds to
+  old material on each pass. The reference looper's default `k = 0.707` corresponds to
   knob ≈ 0.29, the engine's default.
 * **Undo lock:** undo and redo are ignored while the loop mode is Frippertronics,
   and the undo LED shows them as unavailable. They work again once another mode is
@@ -219,7 +220,7 @@ snapshot of the engine state (sequence lock) and answers import requests, so
 file I/O never runs in the callback. The SDMMC1 IDMA cannot reach DTCM, so it only
 ever sees a separate 32 KB bounce buffer in SDRAM; the 32 KB transfer buffer lives in
 SDRAM too, the FatFs objects in DTCM. Every card wait is bounded per transfer (250 ms
-read, 1 s write including programming). The SD interrupt runs below the audio DMA. The original fades audio out and pauses it
+read, 1 s write including programming). The SD interrupt runs below the audio DMA. The reference looper fades audio out and pauses it
 for imports and reloads its undo state from the card; this firmware does neither
 (analysis sections 3 and 9).
 
@@ -306,7 +307,7 @@ resources: [docs/MODULATION.md](docs/MODULATION.md).
 
 ## Milestones
 
-The steps follow the gates of the feasibility study, adapted to this repository:
+The project advances in these steps:
 
 1. **Hardware baseline:** stereo loopback at 48 kHz, SDRAM allocation of two
    87 s buffers, controls, and microSD on the kit, each tested separately.
@@ -320,7 +321,7 @@ The steps follow the gates of the feasibility study, adapted to this repository:
    buffer limit pass on the host.
 4. **Loop modes and effects:** Replace and varispeed since v0.1; Frippertronics,
    Resample and Slice/Skip in v0.2, each with deterministic host tests. Tape and
-   digital effects remain; their DSP in the original is not analyzed yet.
+   digital effects remain; their DSP is not designed yet.
 5. **microSD and controls:** file access outside the audio callback, WAV
    validation with bounds checks and power-cycle persistence in v0.3 (host-tested
    with an in-memory card; the card itself is untested). Windows access through the
