@@ -84,6 +84,9 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   Mod on Daisy runs at 1 kHz control rate. The protocol is `modules/mod-on-daisy/docs/PROTOCOL.md`
   (SysEx 0x7D); change it only together with firmware, `mod_probe.py`, both editors
   and their tests.
+* **Project renames** (directory, project ID, firmware prefix, public name) follow
+  [docs/PROJECT_RENAME_CHECKLIST.md](docs/PROJECT_RENAME_CHECKLIST.md): an approved rename map (gate A),
+  byte-identical images from fresh clones, the diff linter, and an independent review before the merge (gate B).
 * **Modular FX first**: develop and validate an effect in its own `effects/<id>/`
   component and standalone FX firmware before accepting it inside an instrument.
   Instrument hosts reuse that component and own only mapping, routing and mixing.
