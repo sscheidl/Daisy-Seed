@@ -15,7 +15,7 @@ editor is developed separately under [`editors/mod-on-daisy/`](../../editors/mod
   * [Toy Piano v0.3](../../instruments/toy-piano/README.md#modulation-v03) as the
     development environment;
   * a separate build of
-    [Physical Modeling (Rings/Torus)](../../instruments/physical-modeling/docs/MODULATION.md)
+    [KEKULÉ (Rings/Torus)](../../instruments/kekule/docs/MODULATION.md)
     with Poly AT per voice;
   * a separate build of the [FERRUM](../../instruments/ferrum/docs/MODULATION.md)
     (`make PROJECT=ferrum MOD=1`) with eight global columns: Speed, Start, Size, Slice,

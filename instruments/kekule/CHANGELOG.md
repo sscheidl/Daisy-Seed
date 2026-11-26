@@ -1,5 +1,15 @@
 # Changelog
 
+## Rename to KEKULÉ, 2026-11-26
+
+No code or sound change; versions stay 0.1.1 / composed 0.2.1. Directory `instruments/physical-modeling` ->
+`instruments/kekule`, projects `physical-modeling`, `-mod`, `-fx-torus`, `-fx-ambient` -> `kekule`, `kekule-mod`,
+`kekule-fx-torus`, `kekule-fx-ambient`, images `PhysicalModeling*` -> `Kekule*` (e.g. `KekuleMod-v0.1.1.bin`),
+CI suite key `physical` -> `kekule`. All four images and the Torus DSP consumers (Cumulonimbus FX, Toy Piano
+Cumulonimbus, Toy Piano, Toy Piano Ambient) are byte-identical to the build before the rename (MEASURED 2026-11-26,
+fresh clones of `77b257a` and the rename commit). Mod on Daisy key, firmware markers, the registry component and C++
+names stay ([README](README.md)). The entries below keep the names that were valid at the time.
+
 ## 0.1.1 / composed 0.2.1 - integration test images, not released
 
 * **Firmware updates without BOOT/RESET** ([common/bootloader](../../common/bootloader/README.md)):

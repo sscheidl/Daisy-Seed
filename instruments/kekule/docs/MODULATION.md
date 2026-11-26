@@ -1,14 +1,14 @@
-# Physical Modeling + Mod on Daisy (separate build)
+# KEKULÉ + Mod on Daisy (separate build)
 
-**Image:** `build/mod/PhysicalModelingMod-v0.1.1.bin` (IDENTIFY `0.1.1-mod4`; up to the integration branch `v0.1.0` / `0.1.0-mod4`)
-(`make PROJECT=physical-modeling-mod`). Firmware marker: `PHYSICAL-MODELING-MOD-VERSION`.
+**Image:** `build/mod/KekuleMod-v0.1.1.bin` (IDENTIFY `0.1.1-mod4`; up to the integration branch `v0.1.0` / `0.1.0-mod4`)
+(`make PROJECT=kekule-mod`). Firmware marker: `PHYSICAL-MODELING-MOD-VERSION`.
 **Status:** software tested, hardware test pending.
 
 This is an **additional, separate build** of the Rings/Torus instrument with the
 [Mod on Daisy](../../../modules/mod-on-daisy/) matrix. The regular firmware stays
 as it is:
 
-* `make PROJECT=physical-modeling` still compiles exactly the v0.1.0 sources. Its
+* `make PROJECT=kekule` still compiles exactly the v0.1.0 sources. Its
   image is **byte-identical** to the one built from `main` before this change
   (137,784 bytes, compared after a clean rebuild).
 * All matrix code sits behind `PHYSICAL_MODELING_MOD` and `TORUS_VOICE_MODULATION`.
@@ -109,5 +109,5 @@ the port disabled.
 | R6 | Poly AT keyboard: `P set-cell POLYAT 3 -80`, hold a chord, press one note | only that voice rings longer or shorter | |
 | R7 | `P set-cell POLYAT 0 20` | pressed note bends up to 2.4 semitones; others stay | |
 | R8 | `P source LFO1 sync 1` with MIDI clock from Studio One | LFO in tempo | |
-| R9 | CPU: `python instruments/physical-modeling/tools/cpu_probe.py` with an empty matrix and with 8 connections | difference is the matrix share; no overruns | |
+| R9 | CPU: `python instruments/kekule/tools/cpu_probe.py` with an empty matrix and with 8 connections | difference is the matrix share; no overruns | |
 | R10 | `P clear` | sound exactly as before | |

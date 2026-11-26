@@ -69,7 +69,7 @@ Image `ToyPiano-v0.3.bin`, checklist **T1–T15** in
 ## 3. Physical Modeling with matrix
 
 Image `PhysicalModelingMod-v0.1.0.bin`, checklist **R1–R10** in
-[instruments/physical-modeling/docs/MODULATION.md](../../../instruments/physical-modeling/docs/MODULATION.md).
+[instruments/physical-modeling/docs/MODULATION.md](../../../instruments/kekule/docs/MODULATION.md).
 For comparison in R1, briefly flash `PhysicalModeling-v0.1.0.bin`. This regular
 build is byte-identical to the previous state.
 

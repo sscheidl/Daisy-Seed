@@ -28,12 +28,12 @@ Ein zweites Editor-Protokoll oder eine zweite Modulationsmatrix wäre unnötig.
 | Zustandsvertrag | IDENTIFY, Fähigkeiten, Zielbeschreibungen, Schema-Hash, Patch-CRC, Wiederholungen und Monitor | Keine Beschreibung aller eingebundenen Komponenten, keine DSP-Anwendungsrevision im ACK |
 | Versionierung | Alle Quellen im Git; Instrumentheader, Mod-Version, Protokoll- und Dateiformatversion vorhanden | Unabhängige fachliche Versionen sind nicht durchgängig in UI, BIN und Release-Metadaten abgebildet |
 
-Belege: [Synth](../instruments/physical-modeling/src/physical_modeling.h),
-[Signalweg](../instruments/physical-modeling/src/physical_modeling.cpp),
+Belege: [Synth](../instruments/kekule/src/physical_modeling.h),
+[Signalweg](../instruments/kekule/src/physical_modeling.cpp),
 [Mod-Kern](../modules/mod-on-daisy/include/mod_on_daisy/module.h),
 [Desktop-Adapter](../modules/mod-on-daisy/adapters/mod_on_daisy_desktop.h),
-[Torus-Einbindung](../instruments/physical-modeling/src/modulation.h),
-[Buildvarianten](../instruments/physical-modeling/Makefile).
+[Torus-Einbindung](../instruments/kekule/src/modulation.h),
+[Buildvarianten](../instruments/kekule/Makefile).
 
 ## Befunde für die Weiterentwicklung
 
@@ -208,7 +208,7 @@ wurden dagegen bis **141,58 %** und 20 Fristüberschreitungen in 300.085
 erfassten Callbacks gemessen. Die Spitzen sind als Einschränkung des jetzigen
 Instruments akzeptiert, dürfen aber bei der Planung zusätzlicher FX nicht als
 freie Reserve übergangen werden. Siehe
-[Spiel-/Automationsmessung](../instruments/physical-modeling/docs/HARDWARE_PLAYING_2026-10-22.md).
+[Spiel-/Automationsmessung](../instruments/kekule/docs/HARDWARE_PLAYING_2026-10-22.md).
 Die vollständige Kombination aus aktuellem Mod4 und Ambient Reverb ist
 **NICHT GEMESSEN**.
 

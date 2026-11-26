@@ -17,8 +17,8 @@ version from `editors/mod-on-daisy/web/version.js`.
 make components                         # check the registry and version sources
 make test-components                    # test mapping, identity and dependencies
 python3 scripts/component_manifest.py   # show all component versions
-python3 scripts/component_manifest.py --project physical-modeling-fx-ambient
-make PROJECT=physical-modeling-fx-ambient manifest # check the built BIN, write COMPONENTS.json
+python3 scripts/component_manifest.py --project kekule-fx-ambient
+make PROJECT=kekule-fx-ambient manifest # check the built BIN, write COMPONENTS.json
 ```
 
 A manifest lists the product ID/version, component versions with their

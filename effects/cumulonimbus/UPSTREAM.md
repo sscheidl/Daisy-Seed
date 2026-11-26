@@ -12,7 +12,7 @@ references for the adaptation choices. None of their code was copied.
 | [pichenettes/eurorack `clouds/`](https://github.com/pichenettes/eurorack/tree/f4cfa7697095a28d292bff758beb51deb49b5a86/clouds) | `f4cfa7697095a28d292bff758beb51deb49b5a86` (already pinned in [docs/REFERENCES.md](../../docs/REFERENCES.md)) | **The DSP lineage.** Grain, grain player, audio buffer, granular-mode parameter mapping, table formulas |
 | [DaisyExamples `patch/Nimbus`](https://github.com/daisyaudio/DaisyExamples/tree/259ed82c7d4c0d7699f695945e6e111b7dc7cb27/patch/Nimbus) | `259ed82c7d4c0d7699f695945e6e111b7dc7cb27` (already pinned) | Reference: Daisy block limit, rate handling, memory |
 | [hfl1967/cumuloid](https://github.com/hfl1967/cumuloid/tree/610efa877dc9afa8c74220a7e6f69c88bc4b5a00) | `610efa877dc9afa8c74220a7e6f69c88bc4b5a00` (HEAD on 2026-11-09, committed 2026-10-17) | Reference: 32 kHz operation, SDRAM placement |
-| stmlib (as vendored for Torus) | `5dc8b89b9d166de5f47ba91ee9d25c8805c2bd86`, [provenance](../../instruments/physical-modeling/torus/UPSTREAM.md) | Used only by the reused Torus reverb; the grain code has its own small helpers |
+| stmlib (as vendored for Torus) | `5dc8b89b9d166de5f47ba91ee9d25c8805c2bd86`, [provenance](../../instruments/kekule/torus/UPSTREAM.md) | Used only by the reused Torus reverb; the grain code has its own small helpers |
 
 SHA-256 of the audited upstream files, fetched read-only from the pinned revisions:
 

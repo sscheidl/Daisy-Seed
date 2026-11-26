@@ -1,4 +1,18 @@
-# Daisy Physical Modeling v0.1.0
+# KEKULÉ v0.1.0 (formerly Daisy Physical Modeling)
+
+**KEKULÉ** is the Rings/Torus instrument of this repository. Project IDs: `kekule`, `kekule-mod`, `kekule-fx-torus`
+and `kekule-fx-ambient`; firmware `Kekule-v<version>.bin`, `KekuleMod-v<version>.bin`, `KekuleFxTorus-v<version>.bin`
+and `KekuleFxAmbient-v<version>.bin`. Until 2026-11-26 the project was called *Physical Modeling* (directory
+`instruments/physical-modeling`, projects `physical-modeling`, `physical-modeling-mod`, `physical-modeling-fx-torus`,
+`physical-modeling-fx-ambient`, images `PhysicalModeling*-v<version>.bin`); the rename changed no code or sound (all
+images are byte-identical). Technical identifiers stay for compatibility: the Mod on Daisy key `physical-modeling`
+(patch files), the firmware markers `PHYSICAL-MODELING-VERSION=`, `PHYSICAL-MODELING-MOD-VERSION=`,
+`PHYSICAL-MODELING-FX-TORUS-VERSION=` and `PHYSICAL-MODELING-FX-AMBIENT-VERSION=`, the registry component
+`physical-modeling`, the C++ names (`PHYSICAL_MODELING_*`, `TORUS_*`, namespace `physical_modeling`), the
+upstream names Rings/Torus and `scripts/check-physical-elf.py`. The shared Torus DSP (`torus/`, `third_party/`) moved
+with the directory; its consumers (`effects/torus-reverb`, `effects/cumulonimbus`, Toy Piano Cumulonimbus builds)
+only changed include paths. The editors still show "Physical Modeling". Older reports keep the names that were
+valid at the time. See [CHANGELOG.md](CHANGELOG.md).
 
 Four-voice Mutable Instruments Rings / Torus instrument for the **Electro-Smith
 Seed3 Desktop Development Kit**. Native C++17, pinned libDaisy, 48 kHz stereo.
@@ -17,12 +31,12 @@ the intended use. Running synthesis has headroom.
 
 **Mod on Daisy:** a separate build with the modulation matrix and Poly AT per
 voice is described in [docs/MODULATION.md](docs/MODULATION.md)
-(`make PROJECT=physical-modeling-mod`). The regular build is unchanged.
+(`make PROJECT=kekule-mod`). The regular build is unchanged.
 
 ## Additional composed FX products
 
 The [modular component pilot](../../docs/MODULAR_COMPONENTS.md) adds separate
-`physical-modeling-fx-torus` and `physical-modeling-fx-ambient` builds. Both keep
+`kekule-fx-torus` and `kekule-fx-ambient` builds. Both keep
 the existing keyboard/MIDI/Mod-on-Daisy host and choose the downstream wet effect
 at build time. They have product version 0.2.0 and explicit component manifests;
 the regular 0.1.0 and accepted Mod4 targets retain their prior identities.
@@ -70,12 +84,12 @@ Use the pinned dependencies and toolchain from [BUILD](../../docs/BUILD.md):
 ```sh
 git submodule update --init libDaisy DaisySP
 git -C libDaisy submodule update --init --recursive --jobs 4
-make PROJECT=physical-modeling -j4
-make PROJECT=physical-modeling test
-make PROJECT=physical-modeling test-sanitize
-make PROJECT=physical-modeling test-thread
-python3 scripts/check-firmware.py instruments/physical-modeling/build/PhysicalModeling-v0.1.1.bin
-python3 scripts/check-physical-elf.py instruments/physical-modeling/build/PhysicalModeling-v0.1.1.elf
+make PROJECT=kekule -j4
+make PROJECT=kekule test
+make PROJECT=kekule test-sanitize
+make PROJECT=kekule test-thread
+python3 scripts/check-firmware.py instruments/kekule/build/Kekule-v0.1.1.bin
+python3 scripts/check-physical-elf.py instruments/kekule/build/Kekule-v0.1.1.elf
 ```
 
 The Firmware CI matrix provides `PhysicalModeling-v0.1.0.bin`, `.elf`, `.map` and
