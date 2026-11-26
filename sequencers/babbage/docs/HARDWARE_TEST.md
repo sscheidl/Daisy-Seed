@@ -1,8 +1,13 @@
 # Hardwaretest BABBAGE 0.1.0 (ehemals Acid Seq)
 
-**Stand:** 27. Oktober 2026 · Firmware `sequencers/babbage/build/Babbage-v0.1.0.bin`
-(`make PROJECT=babbage`). Den Test führt der Benutzer am Kit durch. Alle Ergebnisse sind
-**NICHT GEMESSEN**, bis ein Eintrag mit Datum steht.
+**Stand:** 27. Oktober 2026 · Firmware `sequencers/acid-seq/build/AcidSeq-v0.1.0.bin`
+(`make PROJECT=acid-seq`, Name vor der Umbenennung). Den Test führt der Benutzer am Kit durch.
+Alle Ergebnisse sind **NICHT GEMESSEN**, bis ein Eintrag mit Datum steht.
+
+**Testkandidat seit der Umbenennung (2026-11-26):** `Babbage-v0.1.0.bin` (`make PROJECT=babbage`,
+196 900 Byte, SHA-256 `564e9ca941cccf42cc8a9f8f9bb38dd6a672e1de84ecc2281443b92215e7cee6`, Commit `cd2eb47`,
+Store `firmware/babbage/0.1.0+cd2eb47/`). Die offenen Prüfungen unten gelten für diesen Kandidaten. Die
+statischen Werte vom 27. Oktober gehören zum damaligen Acid-Seq-Build und nicht zu diesem Kandidaten.
 
 > **Sicherheit:** CV OUT 1/2 erst nach der Diagnose H14 und der Freigabe an einen externen
 > Synth anschließen ([Step-Seq-Hardwaretest](../../step-seq/docs/HARDWARE_TEST.md),
@@ -66,6 +71,7 @@ Drive 100 %, Delay mit Feedback 95 % und Sync 1/32, gleichzeitig Keyboard-Noten 
 | `note_on_dropped`, `midi_queue_overflow` | 0 | NICHT GEMESSEN |
 | Langzeitlauf 1 h im Stressfall ohne Aussetzer | bestanden | NICHT GEMESSEN |
 
-Statische Werte aus der ELF-Prüfung (GEMESSEN 2026-10-27 auf dem Build-Rechner, kein
-Hardwarewert): DTCM 113 160 / 131 072 Byte, statische Reserve 17 912 Byte. SRAM
-187 348 Byte. `delay_memory` 4 608 512 Byte im SDRAM bei `0xc0000000`. Image 193 292 Byte.
+Statische Werte aus der ELF-Prüfung des damaligen Acid-Seq-Builds `AcidSeq-v0.1.0.bin` (GEMESSEN
+2026-10-27 auf dem Build-Rechner, kein Hardwarewert): DTCM 113 160 / 131 072 Byte, statische Reserve
+17 912 Byte. SRAM 187 348 Byte. `delay_memory` 4 608 512 Byte im SDRAM bei `0xc0000000`. Image 193 292 Byte.
+Für den Kandidaten `Babbage-v0.1.0.bin` (196 900 Byte) sind diese Werte NICHT GEMESSEN.
