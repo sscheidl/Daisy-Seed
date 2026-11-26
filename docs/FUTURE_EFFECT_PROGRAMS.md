@@ -12,7 +12,7 @@ The existing Ambient Reverb is an own development with Slöer as
 a design reference. It is not an identified original Walrus algorithm.
 Since Acid Seq phase 4, the stereo delay exists as the component `stereo-delay` with its own
 firmware `delay-fx` ([effects/stereo-delay](../effects/stereo-delay/)): ping-pong and
-stereo L/R, sync up to 12 s in the SDRAM. The Acid Seq product places it after the Drive. Other
+stereo L/R, sync up to 12 s in the SDRAM. The BABBAGE product places it after the Drive. Other
 instrument firmwares do not integrate it yet.
 
 The expectation is that Seed3 performance and memory suffice. **CPU reserve,

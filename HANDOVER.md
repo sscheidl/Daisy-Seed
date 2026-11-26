@@ -265,7 +265,7 @@ Q1–Q4 decided (D16). After the merge to `main` @ `d2a3e1f`, MEASURED 2026-10-2
 ASan/UBSan and TSan PASS for all eleven targets, JUCE 9.0.4 self-test PASS, browser e2e
 green, goldens unchanged. There is no repeated Codex review of the fixes;
 the verdict in CODEX_FEHLERSUCHE.md refers to the state before the fixes.
-Open: hardware tests ([run sheet](sequencers/acid-seq/docs/HARDWARE_TEST.md), all
+Open: hardware tests ([run sheet](sequencers/babbage/docs/HARDWARE_TEST.md), all
 NOT MEASURED) and the release draft `acid-seq-v0.1.0-test1` (draft, not
 published). The user decides both.
 

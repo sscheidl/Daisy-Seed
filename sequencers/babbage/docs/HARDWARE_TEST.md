@@ -1,7 +1,7 @@
-# Hardwaretest Acid Seq 0.1.0
+# Hardwaretest BABBAGE 0.1.0 (ehemals Acid Seq)
 
-**Stand:** 27. Oktober 2026 · Firmware `sequencers/acid-seq/build/AcidSeq-v0.1.0.bin`
-(`make PROJECT=acid-seq`). Den Test führt der Benutzer am Kit durch. Alle Ergebnisse sind
+**Stand:** 27. Oktober 2026 · Firmware `sequencers/babbage/build/Babbage-v0.1.0.bin`
+(`make PROJECT=babbage`). Den Test führt der Benutzer am Kit durch. Alle Ergebnisse sind
 **NICHT GEMESSEN**, bis ein Eintrag mit Datum steht.
 
 > **Sicherheit:** CV OUT 1/2 erst nach der Diagnose H14 und der Freigabe an einen externen

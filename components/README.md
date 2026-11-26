@@ -43,12 +43,12 @@ Mod4 file names are kept; `legacy_device_version` points out the
 known deviating IDENTIFY string there. The manifest is a build artifact,
 not a new SysEx message. The composition is not yet shown live in the panel.
 
-**Acid Seq** (work order 3.1, R12): The components `step-seq` (kind
+**BABBAGE** (formerly Acid Seq; work order 3.1, R12): The components `step-seq` (kind
 `sequencer`), `acid-303`, `saturation` (kind `dsp`, version in the macro
 `SEED_SATURATION_VERSION` of `common/dsp/saturation.h`), `drive` and
 `stereo-delay` as well as `fast-math` (kind `dsp`, `common/dsp/fastmath.h`) are in the registry as soon as their
 version source exists. Their
-firmware products (`step-seq`, `acid-303`, `drive-fx`, `delay-fx`, `acid-seq`) are only
+firmware products (`step-seq`, `acid-303`, `drive-fx`, `delay-fx`, `babbage`) are only
 added with the first validated build, because the product list must match
 `BUILDABLE_PROJECTS` exactly. Valid kinds: `instrument`, `effect`,
 `control`, `panel`, `contract`, `sequencer`, `dsp`.

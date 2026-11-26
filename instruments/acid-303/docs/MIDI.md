@@ -1,6 +1,6 @@
 # MIDI Acid 303
 
-Gilt für die Firmware `acid-303` (omni) und für die Stimme im Produkt Acid Seq
+Gilt für die Firmware `acid-303` (omni) und für die Stimme im Produkt BABBAGE
 (Stimmen-Kanal, Standard 2). Quelle: [Parametervertrag](../../../sequencers/step-seq/docs/PARAMETERS.md).
 
 | CC | Parameter | Bereich | Abbildung |
