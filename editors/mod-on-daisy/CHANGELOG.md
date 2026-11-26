@@ -3,6 +3,13 @@
 Versions come from `CMakeLists.txt` (standalone and VST3) and `web/version.js` (browser).
 Hardware results are recorded in the test sheets, never here.
 
+## 0.5.4 / browser 0.4.3 (2026-11-26)
+
+* Daisy Control Panel shows **MESSIER** in the matrix connection status, device details,
+  patch compatibility messages, SD card page and simulator ports. The Mod on Daisy key
+  is `nebulae`. Patch files, autosave names and SD share retain their existing identifiers.
+* The browser editor shows **MESSIER** in the connection status and device details.
+
 ## 0.5.3 / browser 0.4.2 (2026-11-25, branch `claude/ferrum-app-names`, hardware NOT MEASURED)
 
 * **FERRUM display name.** The looper is shown as FERRUM (formerly Looper) on the SD card page, in its messages,

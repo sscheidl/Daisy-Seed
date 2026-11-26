@@ -55,7 +55,7 @@ TAB_TOOLTIPS = {
     "CV / Gate": "CV inputs with rolling trace, gate inputs and the CV OUT test signal",
     "Audio": "Audio peak meters, test tone generator and input snapshot (firmware 0.4.0)",
     "SD card": "microSD read test and Windows card-reader ownership",
-    "SD share": "Nebulae on Daisy 0.2 and FERRUM (formerly Looper) 0.5: share the instrument's card with Windows "
+    "SD share": "MESSIER and FERRUM (formerly Looper) 0.5: share the instrument's card with Windows "
                 "and return to performance",
     "Log": "Event log",
 }
@@ -450,7 +450,7 @@ class MainWindow(QMainWindow):
         return box
 
     def _build_nebulae_group(self) -> QGroupBox:
-        box = QGroupBox("Instrument card – Nebulae on Daisy, FERRUM")
+        box = QGroupBox("Instrument card – MESSIER, FERRUM")
         layout = QVBoxLayout(box)
         self.neb_phase = QLabel(Phase.NOT_FOUND.value)
         self.neb_phase.setWordWrap(True)
@@ -495,9 +495,9 @@ class MainWindow(QMainWindow):
         self.neb_eject_help = QPushButton("How to eject safely in Windows …")
         self.neb_eject_help.clicked.connect(self._neb_eject_help)
         layout.addWidget(self.neb_eject_help)
-        self.neb_return = QPushButton("Return to Nebulae")
+        self.neb_return = QPushButton("Return to MESSIER")
         self.neb_return.setToolTip("Only after Windows ejected the card: the firmware returns it and "
-                                   "restarts into performance (Nebulae rescans its banks, FERRUM "
+                                   "restarts into performance (MESSIER rescans its banks, FERRUM "
                                    "reloads looper/loop.wav).")
         self.neb_return.clicked.connect(self._neb_return)
         layout.addWidget(self.neb_return)
@@ -522,9 +522,9 @@ class MainWindow(QMainWindow):
         looper = wf.profile is LOOPER
         found = bool(st or mgmt)
         self.neb_phase.setText(wf.phase.value + (" – SIMULATION" if self.neb_sim else ""))
-        self.neb_info["device"].setText(("FERRUM" if looper else "Nebulae on Daisy") if found else "–")
+        self.neb_info["device"].setText(wf.name if found else "–")
         self.neb_row_labels["bank"].setText("Loop:" if looper else "Bank / sample:")
-        self.neb_return.setText("Return to FERRUM" if looper else "Return to Nebulae")
+        self.neb_return.setText(f"Return to {wf.name}")
         self.neb_confirm.setText("Share without the unsaved changes" if looper
                                  else "Discard Live loop and share")
         self.neb_info["fw"].setText(st.firmware if st else dev.firmware if dev else "–")
@@ -577,7 +577,7 @@ class MainWindow(QMainWindow):
         else:
             live = bool(st and st.live)
             self.neb_warning.setText(
-                "A Live loop exists only in RAM. Sharing restarts Nebulae and LOSES it; the SD samples "
+                "A Live loop exists only in RAM. Sharing restarts MESSIER and LOSES it; the SD samples "
                 "are reloaded from the card." if live or wf.needs_confirmation else "")
         self.neb_share.setEnabled(bool((wf.can_share and not wf.needs_confirmation)
                                        or wf.can_share_in_management))
@@ -1069,7 +1069,11 @@ class MainWindow(QMainWindow):
         self._update_status()
         dev = s.device if s.connected else None
         self.info["port"].setText(s.port if s.connected and s.port else "–")
-        self.info["fw"].setText(f"{dev.app} {dev.firmware}" if dev else "–")
+        firmware = "–"
+        if dev:
+            app_name = NEBULAE.name if dev.app == NEBULAE.app else dev.app
+            firmware = f"{app_name} {dev.firmware}"
+        self.info["fw"].setText(firmware)
         self.info["proto"].setText(f"DDP v{dev.protocol} (Host: v{p.PROTOCOL_VERSION})" if dev else
                                    f"– (Host: v{p.PROTOCOL_VERSION})")
         self.info["boot"].setText(f"{dev.boot} / {dev.bootloader}" if dev else "–")

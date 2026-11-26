@@ -56,6 +56,8 @@ def test_performance_profile_shows_status_and_only_supported_actions(neb):
     wf = window.nebulae
     assert wf.phase == Phase.PERFORMANCE
     assert "Performance" in window.neb_phase.text() and "SIMULATION" in window.neb_phase.text()
+    assert window.neb_info["device"].text() == "MESSIER"
+    assert window.neb_return.text() == "Return to MESSIER"
     assert window.neb_info["fw"].text() == "0.2.0"
     assert "USB-MIDI" in window.neb_info["link"].text()
     assert "bank 1 of 3" in window.neb_info["bank"].text()
@@ -73,6 +75,7 @@ def test_buttons_drive_share_eject_return(neb, monkeypatch):
     window.neb_share.click()
     assert until(lambda: window.nebulae.reader_state == "SHARED")
     assert "Windows owns the card" in window.neb_message.text()
+    assert window.info["fw"].text() == f"MESSIER {window.session.device.firmware}"
     assert window.neb_eject_help.isEnabled() and not window.neb_return.isEnabled()
     shown = []
     monkeypatch.setattr(mw.QMessageBox, "information", lambda *a: shown.append(a[2]))
@@ -83,7 +86,7 @@ def test_buttons_drive_share_eject_return(neb, monkeypatch):
     assert not window.led_buttons["FOLLOW"].isEnabled() and not window.sd_button.isEnabled()
     window.cable.device.reader_eject()
     assert until(lambda: window.neb_return.isEnabled())
-    assert "ejected" in window.neb_message.text()
+    assert "ejected" in window.neb_message.text() and "return to MESSIER" in window.neb_message.text()
     window.neb_return.click()
     assert until(lambda: window.nebulae.phase == Phase.PERFORMANCE)
     step(0.2)
@@ -94,7 +97,7 @@ def test_live_loop_warning_and_confirmation(neb):
     window, step, until = neb
     window.neb_sim.live = True
     step(1.5)
-    assert "LOSES it" in window.neb_warning.text()
+    assert "restarts MESSIER and LOSES it" in window.neb_warning.text()
     window.neb_share.click()
     assert until(lambda: window.neb_confirm.isVisible())
     assert window.neb_cancel.isVisible() and not window.neb_share.isEnabled()
@@ -153,6 +156,7 @@ def test_report_contains_workflow(neb, monkeypatch, tmp_path):
     window._save_report()
     report = json.loads(target.read_text())
     assert report["nebulae_workflow"]["phase"] == "MANAGEMENT"
+    assert report["nebulae_workflow"]["profile"] == "MESSIER"
     assert report["nebulae_workflow"]["reader"] == "SHARED"
     assert report["device"]["app"] == "NebulaeOnDaisy" and report["nebulae"]["mode"] == "SDMGMT"
 

@@ -8,6 +8,12 @@ through the carrier's **J7** connector. The GUI and documentation are in English
 > Windows SD card reader, both CV channels and both gate inputs. Results are
 > real-board measurements, separate from software/simulation tests.
 
+## App 0.6.3: MESSIER display name (2026-11-26)
+
+Daisy Diagnostic shows **MESSIER** in the SD share tab, workflow messages and simulation help.
+The `--sim-nebulae` option, device ID `app=NebulaeOnDaisy`, `nebmgmt`, DDP `NEB`, SysEx `NB`
+and the SD sample root `0:/NEBULAE/SAMPLES` retain their existing values. Hardware **NOT MEASURED**.
+
 ## App 0.6.2: FERRUM display name (2026-11-25)
 
 The looper is shown as **FERRUM** (formerly Looper) in the SD share tab, its messages and the

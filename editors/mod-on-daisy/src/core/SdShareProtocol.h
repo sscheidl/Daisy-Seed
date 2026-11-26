@@ -57,8 +57,8 @@ struct Texts {
 // What differs between instruments that share their card the same way.
 struct Profile {
     Instrument id;
-    const char* name;            // shown in messages: "Nebulae", "FERRUM"
-    const char* display_name;    // "Nebulae on Daisy", "FERRUM"
+    const char* name;            // shown in messages: "MESSIER", "FERRUM"
+    const char* display_name;    // shown in the instrument row
     const char* app;             // HELLO app= in SD management
     const char* capability;      // DDP capability of the status message
     const char* status_message;  // DDP message type: "NEB" / "LOOPER"
@@ -69,16 +69,16 @@ struct Profile {
 };
 
 inline const Profile kNebulae{
-    Instrument::Nebulae, "Nebulae", "Nebulae on Daisy", "NebulaeOnDaisy", "nebmgmt", "NEB", "NEB a=PERFORM",
+    Instrument::Nebulae, "MESSIER", "MESSIER", "NebulaeOnDaisy", "nebmgmt", "NEB", "NEB a=PERFORM",
     {0x4E, 0x42}, kNebulaeStatusLength,
-    {"Nebulae is recording or loading a sample. Stop it and try again.",
+    {"MESSIER is recording or loading a sample. Stop it and try again.",
      "A recorded Live loop exists only in RAM and will be LOST by the restart. Confirm to continue, or cancel and "
      "keep playing.",
      "Back in performance. Banks were rescanned from the card.",
-     "Nebulae restarts into performance and rescans the card …",
-     "Card is with Nebulae (not shared). Share it with Windows or return to performance.",
+     "MESSIER restarts into performance and rescans the card …",
+     "Card is with MESSIER (not shared). Share it with Windows or return to performance.",
      "Windows owns the card. Copy, rename or delete samples, then use “Safely Remove Hardware” / Eject in Windows.",
-     "Windows ejected the card and all writes completed. You can return to Nebulae.",
+     "Windows ejected the card and all writes completed. You can return to MESSIER.",
      "Saving before the restart …"}};
 
 inline const Profile kLooper{

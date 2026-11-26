@@ -79,12 +79,12 @@ class SdSharePanel : public juce::Component {
             if(eject_help)
                 eject_help();
         });
-        button(return_, "Return to Nebulae", [this] {
+        button(return_, "Return to MESSIER", [this] {
             if(return_to_performance)
                 return_to_performance();
         });
         return_.setTooltip(U("Only after Windows ejected the card: the firmware returns it and restarts into performance "
-                             "(Nebulae rescans its banks, FERRUM reloads looper/loop.wav)."));
+                             "(MESSIER rescans its banks, FERRUM reloads looper/loop.wav)."));
         button(ack_, "Acknowledge interrupted access …", [this] {
             if(acknowledge)
                 acknowledge();
@@ -118,7 +118,7 @@ class SdSharePanel : public juce::Component {
         heading_.setText(U(sd::PhaseText(phase)) + (simulated_ ? U(" – SIMULATION") : U("")), juce::dontSendNotification);
         Row(0, found ? U(wf_.GetProfile().display_name) : U("–"));
         row_labels_[4].setText(looper ? U("Loop:") : U("Bank / sample:"), juce::dontSendNotification);
-        return_.setButtonText(looper ? U("Return to FERRUM") : U("Return to Nebulae"));
+        return_.setButtonText(U("Return to ") + U(wf_.Name()));
         confirm_.setButtonText(looper ? U("Share without the unsaved changes") : U("Discard Live loop and share"));
         Row(1, st ? U(st->firmware) : dev ? U(dev->firmware) : U("–"));
         Row(2, st ? U("USB-MIDI ") + U(wf_.Port()) : mgmt ? U("USB CDC ") + U(session_.Port()) + U(" + mass storage") : U("–"));
@@ -176,7 +176,7 @@ class SdSharePanel : public juce::Component {
                              juce::dontSendNotification);
         else
             warning_.setText((st && st->live) || wf_.NeedsConfirmation()
-                                 ? U("A Live loop exists only in RAM. Sharing restarts Nebulae and LOSES it; the SD samples are "
+                                 ? U("A Live loop exists only in RAM. Sharing restarts MESSIER and LOSES it; the SD samples are "
                                      "reloaded from the card.")
                                  : U(""),
                              juce::dontSendNotification);

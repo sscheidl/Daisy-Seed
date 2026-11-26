@@ -8,6 +8,7 @@ pytest.importorskip("PySide6")
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from conftest import FakeClock  # noqa: E402
+from daisy_diag import __version__  # noqa: E402
 from daisy_diag.gui import main_window as mw  # noqa: E402
 from daisy_diag.gui import theme  # noqa: E402
 from daisy_diag.looper import LOOPER  # noqa: E402
@@ -111,4 +112,4 @@ def test_report_names_the_profile(loop, monkeypatch, tmp_path):
     report = json.loads(target.read_text())
     assert report["nebulae_workflow"]["profile"] == "FERRUM"
     assert report["device"]["app"] == "LooperOnDaisy" and report["looper"]["mode"] == "SDMGMT"
-    assert report["app_version"] == "0.6.2"
+    assert report["app_version"] == __version__

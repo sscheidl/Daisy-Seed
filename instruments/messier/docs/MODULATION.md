@@ -161,7 +161,7 @@ SD management restarts the kit, which empties the matrix and, after confirmation
 a Live loop. So save the patch before sharing and load it afterwards:
 
 1. In the editor: **Save file ...** writes a `.modpatch`.
-2. Share, copy samples, eject, **Return to Nebulae** in the panel.
+2. Share, copy samples, eject, then choose **Return to MESSIER** in the panel (**Return to Nebulae** in older apps).
 3. In the editor: it reconnects by itself; **Open file ...** sends the patch back.
 
 Since the Daisy Control Panel 0.5.0 (`editors/mod-on-daisy`, branch `claude/dcp-sd-page`)

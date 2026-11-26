@@ -10,8 +10,8 @@ the SD sample root `0:/NEBULAE/SAMPLES`, the USB drive name `Nebulae on Daisy SD
 `app=NebulaeOnDaisy`, `nebmgmt`, DDP `NEB` and SysEx `NB`, the Mod on Daisy key `nebulae`, the registry
 component `nebulae`, the version markers `NEBULAE-FW-VERSION=` / `NEBULAE-MOD-VERSION=` /
 `NEBULAE-PROFILE-BUILD=1`, the C++ names (`NEBULAE_VERSION`, `NEBULAE_MOD`) and the script names
-`scripts/check-granular-elf.py` and `scripts/nebulae_mod_test_package.py`. The control panel and the
-diagnostics app still show "Nebulae". The planned effect `granular-fx` (`effects/granular`) is a separate
+`scripts/check-granular-elf.py` and `scripts/nebulae_mod_test_package.py`. Daisy Control Panel 0.5.4
+and Daisy Diagnostic 0.6.3 display **MESSIER**. The planned effect `granular-fx` (`effects/granular`) is a separate
 project. Older reports keep the names that were valid at the time. See [CHANGELOG.md](CHANGELOG.md).
 
 The historical DCP SD test package requires the stored DCP app and all four original
@@ -266,8 +266,8 @@ Live loop. The SysEx path is unchanged.
 ## SD card management from Windows
 
 The same image has a second boot personality for copying, renaming and deleting
-samples from Windows with the card left in the kit. The Windows control panel
-(`diagnostics/windows`, tab **Nebulae**, app 0.5.0) drives it:
+samples from Windows with the card left in the kit. Use the **SD card** page in Daisy
+Control Panel or the **SD share** tab in Daisy Diagnostic.
 
 1. **Share SD card with Windows**: the panel sends the SHARE SysEx. With a Live loop in
    RAM the firmware asks for confirmation first (the loop is lost by the restart);
@@ -277,7 +277,7 @@ samples from Windows with the card left in the kit. The Windows control panel
 2. The panel shares the card; Windows shows a removable drive. Edit the samples.
 3. **Eject in Windows** ("Safely Remove Hardware"). Only the firmware's EJECTED state,
    reached by Windows' eject command after a completed sync, counts as clean.
-4. **Return to Nebulae**: the card returns, the kit restarts into performance,
+4. **Return to MESSIER** (**Return to Nebulae** in older apps): the card returns, the kit restarts into performance,
    remounts, rescans the banks and reloads the previous bank/slot if it still exists.
 
 USB reset, unplugging or card removal while shared quarantine the card (INTERRUPTED)

@@ -127,7 +127,7 @@ HELLO, PING, BYE, `READER a=SHARE`).
 
 | Phase | Heading text | Means |
 | --- | --- | --- |
-| NotFound | No Nebulae or FERRUM found | no MIDI link with a STATUS answer, no CDC session |
+| NotFound | No MESSIER or FERRUM found | no MIDI link with a STATUS answer, no CDC session |
 | Performance | Performance (USB-MIDI) | STATUS answered on the MIDI link; polled every 1 s |
 | Confirm | Confirmation required | SHARE answered CONFIRM_REQUIRED; waits for the user |
 | Requesting | Requesting SD management … | SHARE sent, reply awaited (2 s) |
@@ -238,13 +238,13 @@ Every timeout is driven by the injected clock and tested with a fake clock.
 
 | Key | Nebulae | Looper |
 | --- | --- | --- |
-| busy | Nebulae is recording or loading a sample. Stop it and try again. | The looper is recording, overdubbing, resampling or importing a WAV file. Stop it and try again. |
+| busy | MESSIER is recording or loading a sample. Stop it and try again. | The looper is recording, overdubbing, resampling or importing a WAV file. Stop it and try again. |
 | confirm | A recorded Live loop exists only in RAM and will be LOST by the restart. Confirm to continue, or cancel and keep playing. | The loop could not be saved to the card (the last write failed). Sharing restarts the looper and LOSES the unsaved changes; looper/loop.wav keeps the last saved loop. Confirm to continue, or cancel and keep playing. |
 | back | Back in performance. Banks were rescanned from the card. | Back in performance. The loop was reloaded from looper/loop.wav. |
-| returning | Nebulae restarts into performance and rescans the card … | The looper restarts into performance and reloads looper/loop.wav … |
-| local | Card is with Nebulae (not shared). Share it with Windows or return to performance. | Card is with the looper (not shared). Share it with Windows or return to performance. |
+| returning | MESSIER restarts into performance and rescans the card … | The looper restarts into performance and reloads looper/loop.wav … |
+| local | Card is with MESSIER (not shared). Share it with Windows or return to performance. | Card is with the looper (not shared). Share it with Windows or return to performance. |
 | shared | Windows owns the card. Copy, rename or delete samples, then use “Safely Remove Hardware” / Eject in Windows. | Windows owns the card. Copy WAV files into looper/loops or back up looper/loop.wav, then use “Safely Remove Hardware” / Eject in Windows. |
-| ejected | Windows ejected the card and all writes completed. You can return to Nebulae. | Windows ejected the card and all writes completed. You can return to the looper. |
+| ejected | Windows ejected the card and all writes completed. You can return to MESSIER. | Windows ejected the card and all writes completed. You can return to the looper. |
 | saving | Saving before the restart … | Saving the current loop to looper/loop.wav before the restart … |
 
 ### 6.2 Page layout and rules (from `_build_nebulae_group` / `_refresh_nebulae`)
@@ -252,7 +252,7 @@ Every timeout is driven by the injected clock and tested with a fake clock.
 | Element | Rule |
 | --- | --- |
 | Heading | phase text (section 3.1), with " – SIMULATION" for a simulated device |
-| Instrument | "FERRUM" (before 0.5.3: "Looper") / "Nebulae on Daisy" when found (status or management), else "–" |
+| Instrument | "FERRUM" (before 0.5.3: "Looper") / "MESSIER" (before 0.5.4: "Nebulae on Daisy") when found (status or management), else "–" |
 | Firmware | `status.firmware` or HELLO `fw`, else "–" |
 | Connection | "USB-MIDI <port>" in performance; "USB CDC <port> + mass storage" in management; else "–" |
 | SD card | performance: "card inserted" / "no card"; management: "card reader: <state or unknown>" |
@@ -261,12 +261,12 @@ Every timeout is driven by the injected clock and tested with a fake clock.
 | Audio deadline | "peak <p> % of the block, <n> overruns (firmware counters, not a bench measurement)" + " – OVERRUN LED latched"; management: "audio stopped (SD management)" |
 | Message | `workflow.message` |
 | Error (red) | `workflow.error` |
-| Warning (red, bold) | Nebulae: "A Live loop exists only in RAM. Sharing restarts Nebulae and LOSES it; the SD samples are reloaded from the card." while `status.live` or confirmation needed. Looper: "The loop could not be saved to the card. Sharing restarts the looper and LOSES the unsaved changes; looper/loop.wav keeps the last saved loop." while confirmation needed or (`save_failed` and `unsaved`) |
+| Warning (red, bold) | MESSIER: "A Live loop exists only in RAM. Sharing restarts MESSIER and LOSES it; the SD samples are reloaded from the card." while `status.live` or confirmation needed. Looper: "The loop could not be saved to the card. Sharing restarts the looper and LOSES the unsaved changes; looper/loop.wav keeps the last saved loop." while confirmation needed or (`save_failed` and `unsaved`) |
 | **Share SD card with Windows** | enabled: (`CanShare()` and not `NeedsConfirmation()`) or `CanShareInManagement()`; tooltip "Stops audio, restarts the instrument into SD management and opens the card as a Windows drive (USB mass storage). The looper saves its loop to the card first." |
 | **Discard Live loop and share** / **Share without the unsaved changes** | visible only while `NeedsConfirmation()`; sends SHARE(confirm=1) |
 | **Cancel** | visible while `NeedsConfirmation()` or phase Saving |
 | **How to eject safely in Windows …** | enabled only while reader == SHARED; shows the three steps: close every file and program that uses the drive; “Safely Remove Hardware” in the taskbar or Eject in Explorer; wait until the page shows “Windows ejected the card”. "Only the firmware's EJECTED state counts; this button does not eject anything." |
-| **Return to Nebulae** / **Return to FERRUM** | enabled: `CanReturn()`; tooltip "Only after Windows ejected the card: the firmware returns it and restarts into performance (Nebulae rescans its banks, FERRUM reloads looper/loop.wav)." |
+| **Return to MESSIER** / **Return to FERRUM** | enabled: `CanReturn()`; tooltip "Only after Windows ejected the card: the firmware returns it and restarts into performance (MESSIER rescans its banks, FERRUM reloads looper/loop.wav)." |
 | **Acknowledge interrupted access …** | enabled: `CanAcknowledge()`; confirmation dialog "Windows may have lost pending changes. Close all files using this card. Acknowledging does not recover data and is not a clean eject. Continue?" with Yes/No, default No |
 | Hint | "Performance mode uses USB-MIDI (no COM port); SD management uses USB CDC + mass storage. The card is never returned by closing this window or unplugging: only a Windows eject or an explicit acknowledgement. Power-cycling the kit always starts in performance." |
 | Text heights | Message, error and warning take the wrapped lines they need (JUCE `TextLayout`), capped at 5, 4 and 3 lines; the real texts above need at most three. The hint is shown only when the room left below the buttons holds all of its lines (never clipped). An absurd text is truncated with an ellipsis; the Python panel scrolls instead. |

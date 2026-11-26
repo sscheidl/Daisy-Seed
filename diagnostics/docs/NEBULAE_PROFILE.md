@@ -6,6 +6,9 @@ microSD that stays in the kit between Nebulae and Windows. All diagnostic functi
 0.4.0 are unchanged. Simulation-tested only; real Windows enumeration, drive letters,
 transfer speed and USB reconnect are **NICHT GEMESSEN**.
 
+Daisy Diagnostic 0.6.3 displays this profile as **MESSIER**. The protocol and
+`--sim-nebulae` flag retain their existing identifiers.
+
 ## How the device is found
 
 | Nebulae personality | Transport | How the panel finds it |
@@ -25,7 +28,7 @@ answering" and closes the link (a stalled firmware must not freeze the panel). P
 | Share SD card with Windows | performance, card present, not recording/loading; or SD management LOCAL | SHARE SysEx (restart), then `READER a=SHARE` once after the restart |
 | Discard Live loop and share / Cancel | the firmware answered CONFIRM_REQUIRED | resend with confirm / keep playing |
 | How to eject safely in Windows … | SHARED | explanation only; ejects nothing |
-| Return to Nebulae | firmware reports EJECTED (or LOCAL) | `READER a=RETURN` then `NEB a=PERFORM`; waits for USB-MIDI STATUS |
+| Return to MESSIER (Return to Nebulae through 0.6.2) | firmware reports EJECTED (or LOCAL) | `READER a=RETURN` then `NEB a=PERFORM`; waits for USB-MIDI STATUS |
 | Acknowledge interrupted access … | INTERRUPTED or ERROR | confirmation dialog, then `READER a=RETURN` |
 
 Rules: the panel shows "ejected" only for the firmware state EJECTED; a timeout means
@@ -39,8 +42,8 @@ firmware does not advertise them. The saved report contains `nebulae` (NEB statu
 
 ## Nebulae MOD
 
-The `messier-mod` image needs no panel change: STATUS, SHARE and HELLO are the same, so
-it appears as Nebulae. Only one application can hold the kit's MIDI port on Windows, so
+The `messier-mod` image uses the same STATUS, SHARE and HELLO messages. Only one application
+can hold the kit's MIDI port on Windows, so
 close the Mod on Daisy editor first; the
 [test package's entry point](../../instruments/messier/docs/MODULATION.md#sd-sharing-and-patches)
 does that. Monitor frames that may follow for up to 3 s are skipped.

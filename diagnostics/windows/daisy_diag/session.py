@@ -520,7 +520,7 @@ class DeviceSession:
                     raise p.ProtocolError("NEB without advertised nebmgmt capability")
                 self.neb = p.parse_neb(msg)
                 if self.neb.action == "PERFORM":
-                    self._event("log", "Nebulae accepted the return to performance")
+                    self._event("log", "MESSIER accepted the return to performance")
                 self._event("neb", self.neb)
             elif msg.type == "LOOPER":
                 if not (self.device and "loopmgmt" in self.device.capabilities):
