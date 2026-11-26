@@ -7,7 +7,7 @@
 #endif
 #include "../../../../instruments/messier/src/modulation.h"
 #include "../../../../instruments/ferrum/src/modulation.h"
-#include "../../../../instruments/physical-modeling/src/modulation.h"
+#include "../../../../instruments/kekule/src/modulation.h"
 #include "../../../../instruments/toy-piano/src/modulation.h"
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop

@@ -1,8 +1,8 @@
 .DEFAULT_GOAL := test
 CXX ?= g++
 FLAGS ?= -std=c++17 -O2 -Wall -Wextra -Werror -Wno-unused-local-typedefs -Wno-unused-parameter
-INCLUDES = -DTEST -I../../instruments/physical-modeling/torus -I../../instruments/physical-modeling/third_party
-SOURCES = test_fx.cpp ../../effects/fourier/src/ambient_reverb.cpp ../../effects/fourier/src/wet_path.cpp ../../instruments/physical-modeling/third_party/stmlib/utils/random.cc
+INCLUDES = -DTEST -I../../instruments/kekule/torus -I../../instruments/kekule/third_party
+SOURCES = test_fx.cpp ../../effects/fourier/src/ambient_reverb.cpp ../../effects/fourier/src/wet_path.cpp ../../instruments/kekule/third_party/stmlib/utils/random.cc
 .PHONY: test test-sanitize
 test:
 	mkdir -p build

@@ -27,10 +27,10 @@ VERSION := $(shell sed -n 's/.*PHYSICAL_MODELING_COMPOSED_VERSION "\(.*\)".*/\1/
 MOD_DEFS += -DPHYSICAL_MODELING_COMPOSED=1
 ifeq ($(FX),ambient)
 MOD_DEFS += -DPHYSICAL_MODELING_AMBIENT=1
-COMPOSED_IMAGE = PhysicalModelingFxAmbient
+COMPOSED_IMAGE = KekuleFxAmbient
 FX_SOURCES = ../../effects/fourier/src/ambient_reverb.cpp ../../effects/fourier/src/wet_path.cpp
 else
-COMPOSED_IMAGE = PhysicalModelingFxTorus
+COMPOSED_IMAGE = KekuleFxTorus
 endif
 endif
 ifeq ($(MOD),1)
@@ -38,13 +38,13 @@ ifeq ($(COMPOSED),1)
 TARGET = $(COMPOSED_IMAGE)-v$(VERSION)
 override BUILD_DIR = build/fx-$(FX)
 else
-TARGET = PhysicalModelingMod-v$(VERSION)
+TARGET = KekuleMod-v$(VERSION)
 override BUILD_DIR = build/mod
 endif
 C_DEFS = $(MOD_DEFS)
 C_INCLUDES += -I$(MOD_ON_DAISY)/include -I$(MOD_ON_DAISY)/adapters
 else
-TARGET = PhysicalModeling-v$(VERSION)
+TARGET = Kekule-v$(VERSION)
 endif
 DSP_SOURCES = torus/dsp/part.cpp torus/dsp/fm_voice.cpp torus/dsp/string.cpp torus/dsp/resonator.cpp torus/resources.cpp third_party/stmlib/dsp/units.cc third_party/stmlib/utils/random.cc
 CPP_SOURCES = src/main.cpp src/physical_modeling.cpp src/midi_parser.cpp $(filter %.cpp,$(DSP_SOURCES)) $(FX_SOURCES)

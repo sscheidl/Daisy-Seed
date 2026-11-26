@@ -191,7 +191,7 @@ class Meter {
     uint32_t max_ = 0, blocks_ = 0, overruns_ = 0, budget_ = 1;
 };
 
-// Twenty channel-16 CCs, CC100..119 (the CC-packet pattern of instruments/physical-modeling,
+// Twenty channel-16 CCs, CC100..119 (the CC-packet pattern of instruments/kekule,
 // own protocol id 2 so its decoder ignores this packet):
 // CC100 = 2, CC101-103 average load, CC104-106 peak load (both in 1/10000 of the block budget),
 // CC107-111 blocks, CC112-115 overruns, CC116-117 program index (0-based), CC118 flags, CC119 = 64.

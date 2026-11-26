@@ -36,14 +36,14 @@ def version(project):
 
 def images():
     """(source path, name in the package, purpose) of every image of the run sheet."""
-    tp, pm, mb = version('toy-piano'), version('physical-modeling'), version('mod-bench')
-    pm_dir = ROOT / 'instruments' / 'physical-modeling' / 'build'
+    tp, pm, mb = version('toy-piano'), version('kekule'), version('mod-bench')
+    pm_dir = ROOT / 'instruments' / 'kekule' / 'build'
     return [
         (ROOT / 'instruments' / 'toy-piano' / 'build' / f'ToyPiano-v{tp}.bin', f'ToyPiano-v{tp}.bin',
          'Toy Piano mit Mod on Daisy (Checkliste T1–T15)'),
-        (pm_dir / 'mod' / f'PhysicalModelingMod-v{pm}.bin', f'PhysicalModelingMod-v{pm}.bin',
+        (pm_dir / 'mod' / f'KekuleMod-v{pm}.bin', f'KekuleMod-v{pm}.bin',
          'Physical Modeling mit Matrix (Checkliste R1–R10)'),
-        (pm_dir / f'PhysicalModeling-v{pm}.bin', f'PhysicalModeling-v{pm}.bin',
+        (pm_dir / f'Kekule-v{pm}.bin', f'Kekule-v{pm}.bin',
          'reguläre Physical-Modeling-Fassung zum Vergleich'),
         (BENCH / 'build' / f'ModBench-v{mb}.bin', f'ModBench-v{mb}.bin', 'Messfirmware Block 48 (H1–H8, S0–S8)'),
         (BENCH / 'build' / 'b256-max8' / f'ModBench-v{mb}.bin', f'ModBench-v{mb}-block256.bin',
@@ -54,7 +54,7 @@ def images():
 
 
 def build():
-    for project in ('toy-piano', 'physical-modeling', 'physical-modeling-mod', 'mod-bench'):
+    for project in ('toy-piano', 'kekule', 'kekule-mod', 'mod-bench'):
         run('make', f'PROJECT={project}', '-j4')
     run('make', '-C', BENCH, 'BLOCK=256', '-j4')
     run('make', '-C', BENCH, 'MAX_ACTIVE=64', '-j4')

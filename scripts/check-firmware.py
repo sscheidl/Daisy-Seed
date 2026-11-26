@@ -5,7 +5,7 @@ Usage: check-firmware.py [image.bin]
 Default: instruments/toy-piano/build/ToyPiano-v<version>.bin.
 Also accepts effects/fourier/build/Fourier-v<version>.bin,
 effects/tape-fx/build/TapeFx-v<version>.bin, build/tape/ToyPianoTape-v<version>.bin,
-PhysicalModeling-v<version>.bin, build/mod/PhysicalModelingMod-v<version>.bin,
+Kekule-v<version>.bin, build/mod/KekuleMod-v<version>.bin,
 instruments/ferrum/build/Ferrum-v<version>.bin, build/mod/FerrumMod-v<version>.bin,
 instruments/messier/build/mod/MessierMod-v<version>.bin and
 modules/mod-on-daisy/bench/build/ModBench-v<version>.bin and the composed images in
@@ -105,29 +105,29 @@ elif re.match(r'^Messier(Mod)?(Profile|Common|Stagger|Pipeline)*-v', path.name):
     marker = rb'NEBULAE-MOD-VERSION=([0-9.]+)\x00' if mod else rb'NEBULAE-FW-VERSION=([0-9.]+)\x00'
     if 'Profile' in path.name:
         assert b'NEBULAE-PROFILE-BUILD=1\x00' in path.read_bytes(), 'Profile image without its marker'
-elif path.name.startswith(('PhysicalModelingFxTorus-v', 'PhysicalModelingFxAmbient-v')):
-    physical = root / 'instruments' / 'physical-modeling'
+elif path.name.startswith(('KekuleFxTorus-v', 'KekuleFxAmbient-v')):
+    physical = root / 'instruments' / 'kekule'
     match = re.search(r'PHYSICAL_MODELING_COMPOSED_VERSION\s+"([^"]+)"',
                       (physical / 'src' / 'composed_version.h').read_text())
     assert match, 'Could not read composed product version'
     version = match.group(1)
-    ambient = path.name.startswith('PhysicalModelingFxAmbient-')
-    expected_name = f"PhysicalModelingFx{'Ambient' if ambient else 'Torus'}-v{version}.bin"
+    ambient = path.name.startswith('KekuleFxAmbient-')
+    expected_name = f"KekuleFx{'Ambient' if ambient else 'Torus'}-v{version}.bin"
     marker = (rb'PHYSICAL-MODELING-FX-AMBIENT-VERSION=([0-9.]+)\x00' if ambient else
               rb'PHYSICAL-MODELING-FX-TORUS-VERSION=([0-9.]+)\x00')
-elif path.name.startswith('PhysicalModelingMod-v'):
-    physical = root / 'instruments' / 'physical-modeling'
+elif path.name.startswith('KekuleMod-v'):
+    physical = root / 'instruments' / 'kekule'
     match = re.search(r'PHYSICAL_MODELING_VERSION\s+"([^"]+)"', (physical / 'src' / 'version.h').read_text())
     assert match, "Could not read the Physical Modeling version"
     version = match.group(1)
-    expected_name = f'PhysicalModelingMod-v{version}.bin'
+    expected_name = f'KekuleMod-v{version}.bin'
     marker = rb'PHYSICAL-MODELING-MOD-VERSION=([0-9.]+)\x00'
-elif path.name.startswith('PhysicalModeling-v'):
-    physical = root / 'instruments' / 'physical-modeling'
+elif path.name.startswith('Kekule-v'):
+    physical = root / 'instruments' / 'kekule'
     match = re.search(r'PHYSICAL_MODELING_VERSION\s+"([^"]+)"', (physical / 'src' / 'version.h').read_text())
     assert match, "Could not read the Physical Modeling version"
     version = match.group(1)
-    expected_name = f'PhysicalModeling-v{version}.bin'
+    expected_name = f'Kekule-v{version}.bin'
     marker = rb'PHYSICAL-MODELING-VERSION=([0-9.]+)\x00'
 elif path.name.startswith('Fourier-v'):
     reverb = root / 'effects' / 'fourier'

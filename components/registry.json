@@ -12,10 +12,10 @@
     },
     "physical-modeling": {
       "kind": "instrument",
-      "source": "instruments/physical-modeling",
+      "source": "instruments/kekule",
       "version": {
         "type": "macro",
-        "path": "instruments/physical-modeling/src/version.h",
+        "path": "instruments/kekule/src/version.h",
         "name": "PHYSICAL_MODELING_VERSION"
       }
     },
@@ -67,7 +67,7 @@
         "path": "effects/torus-reverb/src/version.h",
         "name": "TORUS_REVERB_VERSION"
       },
-      "provenance": "instruments/physical-modeling/torus/UPSTREAM.md"
+      "provenance": "instruments/kekule/torus/UPSTREAM.md"
     },
     "tape-fx": {
       "kind": "effect",
@@ -487,10 +487,10 @@
         "mod-editor-vst3"
       ]
     },
-    "physical-modeling": {
+    "kekule": {
       "version_component": "physical-modeling",
-      "directory": "instruments/physical-modeling/build",
-      "image": "PhysicalModeling",
+      "directory": "instruments/kekule/build",
+      "image": "Kekule",
       "marker": "PHYSICAL-MODELING-VERSION=",
       "components": [
         "physical-modeling",
@@ -499,10 +499,10 @@
       ],
       "panels": []
     },
-    "physical-modeling-mod": {
+    "kekule-mod": {
       "version_component": "physical-modeling",
-      "directory": "instruments/physical-modeling/build/mod",
-      "image": "PhysicalModelingMod",
+      "directory": "instruments/kekule/build/mod",
+      "image": "KekuleMod",
       "marker": "PHYSICAL-MODELING-MOD-VERSION=",
       "legacy_device_version": true,
       "components": [
@@ -517,14 +517,14 @@
         "mod-editor-vst3"
       ]
     },
-    "physical-modeling-fx-torus": {
+    "kekule-fx-torus": {
       "version": {
         "type": "macro",
-        "path": "instruments/physical-modeling/src/composed_version.h",
+        "path": "instruments/kekule/src/composed_version.h",
         "name": "PHYSICAL_MODELING_COMPOSED_VERSION"
       },
-      "directory": "instruments/physical-modeling/build/fx-torus",
-      "image": "PhysicalModelingFxTorus",
+      "directory": "instruments/kekule/build/fx-torus",
+      "image": "KekuleFxTorus",
       "marker": "PHYSICAL-MODELING-FX-TORUS-VERSION=",
       "components": [
         "physical-modeling",
@@ -539,14 +539,14 @@
         "mod-editor-vst3"
       ]
     },
-    "physical-modeling-fx-ambient": {
+    "kekule-fx-ambient": {
       "version": {
         "type": "macro",
-        "path": "instruments/physical-modeling/src/composed_version.h",
+        "path": "instruments/kekule/src/composed_version.h",
         "name": "PHYSICAL_MODELING_COMPOSED_VERSION"
       },
-      "directory": "instruments/physical-modeling/build/fx-ambient",
-      "image": "PhysicalModelingFxAmbient",
+      "directory": "instruments/kekule/build/fx-ambient",
+      "image": "KekuleFxAmbient",
       "marker": "PHYSICAL-MODELING-FX-AMBIENT-VERSION=",
       "components": [
         "physical-modeling",

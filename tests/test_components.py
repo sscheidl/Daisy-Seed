@@ -55,7 +55,7 @@ class ComponentTests(unittest.TestCase):
 
     def test_composition_and_image_identity(self):
         for effect in ('torus', 'ambient'):
-            project = 'physical-modeling-fx-' + effect
+            project = 'kekule-fx-' + effect
             data = manifest.load_registry()['products'][project]
             version = manifest.read_version(data['version'])
             with tempfile.TemporaryDirectory() as folder:
@@ -90,7 +90,7 @@ class ComponentTests(unittest.TestCase):
 
     def test_shared_control_consumers(self):
         suites = selection.select_suites(['modules/mod-on-daisy/include/mod_on_daisy/engine.h'])
-        for key in ('toy', 'physical', 'messier', 'ferrum', 'mod', 'editor', 'submodules'):
+        for key in ('toy', 'kekule', 'messier', 'ferrum', 'mod', 'editor', 'submodules'):
             self.assertTrue(suites[key], key)
 
     def test_nebulae_columns_reach_their_readers(self):
@@ -100,20 +100,20 @@ class ComponentTests(unittest.TestCase):
 
     def test_fx_consumers(self):
         suites = selection.select_suites(['common/audio/fx_contract.h'])
-        self.assertTrue(suites['fx'] and suites['physical'])
+        self.assertTrue(suites['fx'] and suites['kekule'])
         self.assertTrue(suites['toy'])
         self.assertFalse(suites['ferrum'])
         suites = selection.select_suites(['effects/fourier/src/wet_path.cpp'])
-        self.assertTrue(suites['fx'] and suites['physical'] and suites['fourier'])
-        suites = selection.select_suites(['instruments/physical-modeling/torus/dsp/fx/reverb.h'])
-        self.assertTrue(suites['fx'] and suites['physical'])
+        self.assertTrue(suites['fx'] and suites['kekule'] and suites['fourier'])
+        suites = selection.select_suites(['instruments/kekule/torus/dsp/fx/reverb.h'])
+        self.assertTrue(suites['fx'] and suites['kekule'])
         # Tape FX DSP: its own suite, the shared FX contract test and its Toy Piano consumer.
         suites = selection.select_suites(['effects/tape-fx/src/tape_fx.h'])
         self.assertTrue(suites['tape'] and suites['fx'] and suites['toy'] and suites['submodules'])
         self.assertFalse(suites['ferrum'])
         suites = selection.select_suites(['effects/tape-fx/tests/test_tape_fx.cpp'])
         self.assertTrue(suites['tape'] and suites['submodules'])
-        self.assertFalse(suites['toy'] or suites['physical'] or suites['ferrum'])
+        self.assertFalse(suites['toy'] or suites['kekule'] or suites['ferrum'])
 
     def test_bootloader_entry(self):
         # Every firmware product embeds the shared bootloader entry with its own version;
@@ -126,7 +126,7 @@ class ComponentTests(unittest.TestCase):
         for panel in ('mod-editor-web', 'mod-editor-juce', 'mod-editor-vst3'):
             self.assertIn('bootloader-entry', data['components'][panel]['depends'])
         suites = selection.select_suites(['common/bootloader/bootloader_entry.h'])
-        for key in ('bootloader', 'toy', 'physical', 'messier', 'ferrum', 'fourier', 'tape', 'mod',
+        for key in ('bootloader', 'toy', 'kekule', 'messier', 'ferrum', 'fourier', 'tape', 'mod',
                     'diagnostics', 'submodules'):
             self.assertTrue(suites[key], key)
 
@@ -136,7 +136,7 @@ class ComponentTests(unittest.TestCase):
         # Nothing else runs.
         suites = selection.select_suites(['common/sd/ro_sd.c'])
         self.assertTrue(suites['sd'] and suites['messier'] and suites['ferrum'] and suites['submodules'])
-        for key in ('toy', 'physical', 'fourier', 'tape', 'bootloader', 'diagnostics'):
+        for key in ('toy', 'kekule', 'fourier', 'tape', 'bootloader', 'diagnostics'):
             self.assertFalse(suites[key], key)
         reader = selection.select_suites(['common/sd/reader/msc_bot.cpp'])
         self.assertTrue(reader['sd'] and reader['messier'] and reader['diagnostics'] and reader['ferrum'])
@@ -227,7 +227,7 @@ class ComponentTests(unittest.TestCase):
             # Shared saturation: its consumers only, no longer every suite.
             'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
             'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
-            'common/audio/fx_contract.h': ('toy', 'physical', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst',
+            'common/audio/fx_contract.h': ('toy', 'kekule', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst',
                                            'cumulonimbus'),
             # Cumulonimbus: its own suite; the Toy Piano product also runs the Toy Piano suite.
             'effects/cumulonimbus/src/clouds/grain.h': ('cumulonimbus',),

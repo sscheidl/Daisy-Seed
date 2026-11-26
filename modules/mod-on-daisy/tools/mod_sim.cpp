@@ -10,7 +10,7 @@
 //   stdout: "R <hex>"  each message the device sends, then "OK" after every command
 #include "mod_on_daisy/module.h"
 #include "../../../instruments/toy-piano/src/modulation.h"
-#include "../../../instruments/physical-modeling/src/modulation.h"
+#include "../../../instruments/kekule/src/modulation.h"
 #include "../../../instruments/ferrum/src/modulation.h"
 #include "../../../instruments/messier/src/modulation.h"
 #include "../bench/src/scenarios.h"
