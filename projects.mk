@@ -53,7 +53,7 @@ PROJECT_ARGS_toy-piano-tape := TAPE=1
 PROJECT_STATUS_toy-piano-tape := buildable
 # Acid Seq (docs/acid-seq/ARBEITSAUFTRAG.md): components with standalone test firmwares
 # and the composed product. Each joins BUILDABLE_PROJECTS with its first validated build.
-PROJECTS += step-seq acid-303 drive-fx delay-fx acid-seq
+PROJECTS += step-seq acid-303 drive-fx delay-fx babbage
 # Audrey 3: Audrey II port; also needs the DaisySP-LGPL submodule (instruments/audrey-3/README.md).
 PROJECTS += audrey-3
 BUILDABLE_PROJECTS += audrey-3
@@ -78,9 +78,9 @@ BUILDABLE_PROJECTS += drive-fx
 PROJECT_DIR_delay-fx := effects/stereo-delay
 PROJECT_STATUS_delay-fx := buildable
 BUILDABLE_PROJECTS += delay-fx
-PROJECT_DIR_acid-seq := sequencers/acid-seq
-PROJECT_STATUS_acid-seq := buildable
-BUILDABLE_PROJECTS += acid-seq
+PROJECT_DIR_babbage := sequencers/babbage
+PROJECT_STATUS_babbage := buildable
+BUILDABLE_PROJECTS += babbage
 
 # Streichwurst: instrument + separate FX + shared MIDI/control; ARM build verified 2026-11-01.
 PROJECTS += streichwurst

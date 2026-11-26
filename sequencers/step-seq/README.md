@@ -2,7 +2,7 @@
 
 16-step sequencer (2 × 8) modeled on the KORG SQ-1 for the Seed3 Desktop Dev Kit:
 CV/gate, MIDI over USB (J7) and DIN, three play modes on SW18, start/stop on SW17.
-Its own firmware `step-seq` without audio, core of the product [Acid Seq](../acid-seq/).
+Its own firmware `step-seq` without audio, core of the product [BABBAGE](../babbage/).
 
 | Status | |
 | --- | --- |

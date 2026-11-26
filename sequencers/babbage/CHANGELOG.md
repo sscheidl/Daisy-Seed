@@ -1,4 +1,12 @@
-# Changelog Acid Seq
+# Changelog BABBAGE
+
+## Rename to BABBAGE, 2026-11-26
+
+No code or sound change; the version stays 0.1.0 and the golden hash `0xBC3D9C4E`. Directory `sequencers/acid-seq` ->
+`sequencers/babbage`, project `acid-seq` -> `babbage`, image `AcidSeq-v0.1.0.bin` -> `Babbage-v0.1.0.bin`, CI suite key
+`acidseq` -> `babbage`. The image is byte-identical to the build before the rename (MEASURED 2026-11-26, fresh clones
+of `dd80631` and the rename commit). The SQ product `acid-seq`, the patch format, the marker and the C++ names stay
+([README](README.md)). The entries below keep the names that were valid at the time.
 
 ## 0.1.0 (2026-10-27), Phase 6
 

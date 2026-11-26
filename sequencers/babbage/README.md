@@ -1,4 +1,11 @@
-# Acid Seq
+# BABBAGE
+
+Until 2026-11-26 the product was called *Acid Seq* (directory `sequencers/acid-seq`, project `acid-seq`, image
+`AcidSeq-v<version>.bin`); the rename changed no code or sound (the image is byte-identical). Technical identifiers
+stay for compatibility: the SQ product `acid-seq` (IDENTIFY, editors), the patch format `acid-seq-patch`
+(`.acidpatch`), the firmware marker `ACID-SEQ-FW-VERSION=`, the macro `ACID_SEQ_VERSION`, the namespace and include
+directory `acid_seq`, the shared fixtures `tests/fixtures/acid-seq/` and the work order in `docs/acid-seq/`. The
+components Step Seq, Acid 303, Drive and Stereo Delay keep their names and test firmwares.
 
 Product made of [Step Seq](../step-seq/), [Acid 303](../../instruments/acid-303/),
 [Drive](../../effects/drive/) and [Stereo Delay](../../effects/stereo-delay/).
@@ -10,22 +17,22 @@ output. CV/gate and MIDI also run without a connected audio output.
 | Version | 0.1.0 (`src/composed_version.h`), components with their own versions |
 | Phase | 6 implemented, host tests and ARM build green |
 | Hardware | NOT MEASURED ([hardware test](docs/HARDWARE_TEST.md)) |
-| Release | none. The delivery path for `acid-seq` is still open (work order 4.10) |
+| Release | none. The delivery path for `babbage` is still open (work order 4.10) |
 
-Plan and rules: [Acid Seq work order](../../docs/acid-seq/ARBEITSAUFTRAG.md) 4.10.
+Plan and rules: [Work order (German, former name Acid Seq)](../../docs/acid-seq/ARBEITSAUFTRAG.md) 4.10.
 
 ## Build and test
 
 ```bash
-make PROJECT=acid-seq -j4
-make -C sequencers/acid-seq test
-make -C sequencers/acid-seq test-sanitize
-python scripts/check-firmware.py sequencers/acid-seq/build/AcidSeq-v0.1.0.bin
-python scripts/check-elf-placement.py sequencers/acid-seq/build/AcidSeq-v0.1.0.elf --sdram delay_memory:4608000
-make PROJECT=acid-seq manifest
+make PROJECT=babbage -j4
+make -C sequencers/babbage test
+make -C sequencers/babbage test-sanitize
+python scripts/check-firmware.py sequencers/babbage/build/Babbage-v0.1.0.bin
+python scripts/check-elf-placement.py sequencers/babbage/build/Babbage-v0.1.0.elf --sdram delay_memory:4608000
+make PROJECT=babbage manifest
 ```
 
-Image `sequencers/acid-seq/build/AcidSeq-v<version>.bin`, identifier in the image
+Image `sequencers/babbage/build/Babbage-v<version>.bin`, identifier in the image
 `ACID-SEQ-FW-VERSION=`, SQ product `acid-seq`.
 
 ## Controls on the kit

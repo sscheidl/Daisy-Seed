@@ -886,14 +886,14 @@
         "mod-editor-vst3"
       ]
     },
-    "acid-seq": {
+    "babbage": {
       "version": {
         "type": "macro",
-        "path": "sequencers/acid-seq/src/composed_version.h",
+        "path": "sequencers/babbage/src/composed_version.h",
         "name": "ACID_SEQ_VERSION"
       },
-      "directory": "sequencers/acid-seq/build",
-      "image": "AcidSeq",
+      "directory": "sequencers/babbage/build",
+      "image": "Babbage",
       "marker": "ACID-SEQ-FW-VERSION=",
       "device_id": "acid-seq",
       "components": [
