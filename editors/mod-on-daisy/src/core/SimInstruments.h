@@ -39,7 +39,7 @@ inline const SimInstrument kSimInstruments[] = {
 // simulator ports pair one of these with core/SdShareSim.h. Nebulae MOD enables the
 // extended monitor and LFO FM (its main.cpp), the Looper MOD all three incl. its modes.
 inline const SimInstrument kSdSimInstruments[] = {
-    {"Simulator: Nebulae MOD", neb::columns::MakeModInfo, {0.0f, 0.5f, 1.0f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f}, {true, true, false}, -1},
+    {"Simulator: MESSIER MOD", neb::columns::MakeModInfo, {0.0f, 0.5f, 1.0f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f}, {true, true, false}, -1},
     {"Simulator: FERRUM MOD", looper::columns::MakeModInfo,
      {looper::columns::SpeedToUnit(0.f), 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f, looper::columns::kMixBase}, {true, true, true}, 0},
 };

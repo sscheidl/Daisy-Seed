@@ -12,7 +12,7 @@ constexpr int kSwSimulator = -3; // Port::simulator of "Streichwurst (Sim)"
 // Instruments that share their SD card, simulated with both USB personalities
 // (core/SdShareSim.h); the MOD variants add the matrix of core/SimInstruments.h.
 constexpr int kSdNebulaeMod = -4, kSdLooperMod = -5, kSdNebulae = -6, kSdLooper = -7;
-constexpr const char* kSdNebulaeLabel = "Simulator: Nebulae", *kSdLooperLabel = "Simulator: FERRUM";
+constexpr const char* kSdNebulaeLabel = "Simulator: MESSIER", *kSdLooperLabel = "Simulator: FERRUM";
 bool IsSdSimulator(int id) { return id <= kSdNebulaeMod && id >= kSdLooper; }
 const sd::Profile& SdSimProfile(int id) { return id == kSdNebulaeMod || id == kSdNebulae ? sd::kNebulae : sd::kLooper; }
 int SdSimMatrix(int id) { return id == kSdNebulaeMod ? 0 : id == kSdLooperMod ? 1 : -1; } // index into kSdSimInstruments
@@ -61,7 +61,7 @@ EditorComponent::EditorComponent(bool with_simulators, bool sd_page)
         b->setClickingTogglesState(false);
     }
     page_matrix_.setTooltip(U("Modulation matrix of the connected instrument"));
-    page_sd_.setTooltip(U("Share the instrument's microSD card with Windows and bring it back (Nebulae on Daisy, FERRUM)"));
+    page_sd_.setTooltip(U("Share the instrument's microSD card with Windows and bring it back (MESSIER, FERRUM)"));
     page_matrix_.onClick = [this] { ShowSdPage(false); };
     page_sd_.onClick = [this] { ShowSdPage(true); };
     addChildComponent(no_matrix_);

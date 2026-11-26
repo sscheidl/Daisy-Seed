@@ -43,7 +43,7 @@ enum class Phase { NotFound, Performance, Confirm, Requesting, Saving, Restartin
 
 inline const char* PhaseText(Phase p) {
     switch(p) {
-        case Phase::NotFound: return "No Nebulae or FERRUM found";
+        case Phase::NotFound: return "No MESSIER or FERRUM found";
         case Phase::Performance: return "Performance (USB-MIDI)";
         case Phase::Confirm: return "Confirmation required";
         case Phase::Requesting: return "Requesting SD management …";

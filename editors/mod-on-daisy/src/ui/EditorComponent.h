@@ -88,7 +88,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     sd::SdShareWorkflow& GetSdShare() { return sd_; }
     ddp::DdpSession& GetDdpSession() { return ddp_session_; }
     SdSharePanel& GetSdPanel() { return sd_panel_; }
-    // The simulated instrument behind the "Simulator: Nebulae …" / "… Looper …" ports.
+    // The simulated instrument behind the MESSIER and FERRUM simulator ports.
     sd::SimInstrument* GetSdSimulator() { return sd_sim_.get(); }
     void ShowSdPage(bool on);
     bool SdPageShown() const { return show_sd_; }
@@ -264,7 +264,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     SdMidiPorts sd_midi_ports_{*this};
     sd::SdShareWorkflow sd_{ddp_session_, &sd_midi_ports_};
     SdLink* sd_link_ = nullptr;                     // the workflow's current link, owned by the workflow
-    std::unique_ptr<sd::SimInstrument> sd_sim_;     // "Simulator: Nebulae …" / "… Looper …"
+    std::unique_ptr<sd::SimInstrument> sd_sim_;     // MESSIER and FERRUM simulator ports
     std::unique_ptr<sd::SimSerialPorts> sd_sim_serial_;
     std::unique_ptr<sd::SimMidiLink> sd_sim_midi_;  // the simulated USB-MIDI side of sd_sim_, open like a port
     int sd_sim_port_ = -1;                          // Port::simulator id of the SD simulator in use

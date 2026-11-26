@@ -8,13 +8,13 @@ It has two pages, switched with **Matrix** and **SD card** in the header:
 
 * **Matrix**: the modulation matrix editor described below, unchanged.
 * **SD card**: shares the microSD that stays in the kit with Windows and brings it back, for
-  Nebulae on Daisy 0.2.x and the Looper 0.6.x with or without the Mod on Daisy matrix. It is
+  MESSIER (formerly Nebulae on Daisy) and FERRUM (formerly Looper) with or without the Mod on Daisy matrix. It is
   the "SD share" tab of Daisy Diagnostic 0.6.0 with the same texts, buttons and card-safety
   rules ([docs/dcp/SD_SHARE_PORT.md](../../docs/dcp/SD_SHARE_PORT.md)); Daisy Diagnostic
   stays the diagnostics tool. One app now holds J7 in both USB modes: it finds the kit on
   USB-MIDI by its STATUS reply, asks for SD management, follows the kit to its USB CDC port
   (DDP v1), opens the card for Windows once, and after a Windows eject and **Return** finds
-  the kit on USB-MIDI again. Instruments without a matrix (plain Nebulae, Looper) open on the
+  the kit on USB-MIDI again. Instruments without a matrix open on the
   SD card page; the matrix page then says so.
 * **The patch survives the share**: before SHARE the current patch is written to
   `%LOCALAPPDATA%\Daisy Control Panel\autosave\<instrument>-<date>.modpatch` and sent back
@@ -31,7 +31,7 @@ It has two pages, switched with **Matrix** and **SD card** in the header:
   I/O on an own thread; no driver, no admin rights). The core
   (`src/core/SdShare*.h`, `Ddp*.h`, `SerialTransport.h`) is platform-free and tested without
   JUCE; the self-test runs the complete cycle against simulated instruments
-  (`--simulators` lists "Simulator: Nebulae MOD", "Simulator: FERRUM MOD", "Simulator: Nebulae",
+  (`--simulators` lists "Simulator: MESSIER MOD", "Simulator: FERRUM MOD", "Simulator: MESSIER",
   "Simulator: FERRUM").
 * Hardware status: NOT MEASURED; the test package and sheet are built by
   `scripts/dcp_sd_test_package.py` ([docs/dcp/SD_PAGE_TEST_SHEET.md](../../docs/dcp/SD_PAGE_TEST_SHEET.md)).

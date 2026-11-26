@@ -138,7 +138,7 @@ def parse_reply(message: bytes) -> tuple[str, object]:
 @dataclass(frozen=True)
 class DeviceProfile:
     """What differs between instruments that share their card the same way."""
-    name: str                     # shown in messages: "Nebulae", "FERRUM"
+    name: str                     # display name used in the app and reports
     app: str                      # HELLO app= in SD management
     capability: str               # DDP capability of the status message
     perform_command: str          # DDP command back to performance
@@ -149,7 +149,7 @@ class DeviceProfile:
 
 
 NEBULAE = DeviceProfile(
-    name="Nebulae",
+    name="MESSIER",
     app=APP_NAME,
     capability="nebmgmt",
     perform_command="NEB a=PERFORM",
@@ -157,15 +157,15 @@ NEBULAE = DeviceProfile(
     share_request=share_request,
     parse_reply=parse_reply,
     texts={
-        "busy": "Nebulae is recording or loading a sample. Stop it and try again.",
+        "busy": "MESSIER is recording or loading a sample. Stop it and try again.",
         "confirm": "A recorded Live loop exists only in RAM and will be LOST by the restart. "
                    "Confirm to continue, or cancel and keep playing.",
         "back": "Back in performance. Banks were rescanned from the card.",
-        "returning": "Nebulae restarts into performance and rescans the card …",
-        "local": "Card is with Nebulae (not shared). Share it with Windows or return to performance.",
+        "returning": "MESSIER restarts into performance and rescans the card …",
+        "local": "Card is with MESSIER (not shared). Share it with Windows or return to performance.",
         "shared": "Windows owns the card. Copy, rename or delete samples, then use "
                   "„Safely Remove Hardware“ / Eject in Windows.",
-        "ejected": "Windows ejected the card and all writes completed. You can return to Nebulae.",
+        "ejected": "Windows ejected the card and all writes completed. You can return to MESSIER.",
         "saving": "Saving before the restart …",
     },
 )
@@ -437,7 +437,7 @@ def open_rtmidi(port_name: str) -> MidiLink:
 
 
 class Phase(Enum):
-    NOT_FOUND = "No Nebulae or FERRUM found"
+    NOT_FOUND = "No MESSIER or FERRUM found"
     PERFORMANCE = "Performance (USB-MIDI)"
     CONFIRM = "Confirmation required"
     REQUESTING = "Requesting SD management …"

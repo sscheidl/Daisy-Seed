@@ -34,7 +34,7 @@ editor inside a DAW, which can send MIDI on the same port; skip them if you do n
 
 | # | Step | Expected | Result |
 | --- | --- | --- | --- |
-| 1.1 | Click **Modulation** | Editor connects by itself; pill shows `nebulae 0.3.0`; tick 1000 Hz | NOT MEASURED |
+| 1.1 | Click **Modulation** | Editor connects by itself; Daisy Control Panel 0.5.4 shows `MESSIER 0.3.0` (older builds show `nebulae 0.3.0`); tick 1000 Hz | NOT MEASURED |
 | 1.2 | Click **Firmware update ...**, then cancel without confirming | Dialog opens; the kit keeps playing | NOT MEASURED |
 
 ## 2. Eight targets
@@ -106,7 +106,7 @@ Save the patch first. Create a Live loop so the confirmation appears.
 | 6.5 | Stop recording, Share again | Warning: the Live loop will be lost | NOT MEASURED |
 | 6.6 | Confirm | Fade, kit restarts, Windows shows a drive, D2 steady | NOT MEASURED |
 | 6.7 | Copy a new 16-bit and a new 24-bit WAV into a bank, then eject in Windows | Panel shows ejected, D4 steady | NOT MEASURED |
-| 6.8 | **Return to Nebulae** | Panel shows Performance; same bank and slot as 6.1 sound | NOT MEASURED |
+| 6.8 | **Return to MESSIER** (**Return to Nebulae** in older apps) | Panel shows Performance; same bank and slot as 6.1 sound | NOT MEASURED |
 | 6.9 | Play both new WAVs | Both load and play; no LED error pulses | NOT MEASURED |
 | 6.10 | Click **Modulation**, answer Yes | Panel closes first, editor reconnects, matrix empty | NOT MEASURED |
 | 6.11 | **Open file ...** with the saved patch | Routes work again | NOT MEASURED |

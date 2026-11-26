@@ -431,7 +431,9 @@ async function testNebulae(browser) {
   const sim = startSim('nebulae');
   const page = await openEditor(browser, sim);
   await page.click('#connect');
-  await page.waitForFunction(() => document.getElementById('status').textContent.includes('nebulae'));
+  await page.waitForFunction(() => document.getElementById('status').textContent.includes('MESSIER'));
+  assert((await page.locator('#deviceInfo').textContent()).startsWith('MESSIER '));
+  assert.strictEqual(await page.evaluate(() => JSON.parse(matrixPatchText()).instrument_key), 'nebulae');
   const headers = await page.$$eval('#grid thead th .name', (els) => els.map((e) => e.textContent));
   assert.deepStrictEqual(headers, ['Start', 'Speed', 'Size', 'Density', 'Pitch', 'Overlap', 'Blend', 'Window']);
   assert.strictEqual(await page.locator('td.cell.blocked').count(), 0, 'all 64 cells are allowed');

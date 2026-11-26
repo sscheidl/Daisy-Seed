@@ -52,9 +52,9 @@ class SelfTest {
         AcidSeq();
         Streichwurst();
         SdNoInstrument();
-        SdCycle("Simulator: Nebulae MOD", true, true, "dcp-nebulae-mod");
+        SdCycle("Simulator: MESSIER MOD", true, true, "dcp-nebulae-mod");
         SdCycle("Simulator: FERRUM MOD", true, false, "dcp-looper-mod");
-        SdCycle("Simulator: Nebulae", false, false, "dcp-nebulae");
+        SdCycle("Simulator: MESSIER", false, false, "dcp-nebulae");
         SdCycle("Simulator: FERRUM", false, false, "dcp-looper");
         SdLooperSaving();
         SdInterruption();
@@ -483,7 +483,7 @@ class SelfTest {
         e_.ShowSdPage(true);
         e_.RefreshNow();
         ui::SdSharePanel& page = e_.GetSdPanel();
-        SELFTEST_CHECK(page.Heading().startsWith("No Nebulae or FERRUM found"));
+        SELFTEST_CHECK(page.Heading().startsWith("No MESSIER or FERRUM found"));
         SELFTEST_CHECK(!page.ShareButton().isEnabled() && !page.ReturnButton().isEnabled() && !page.AckButton().isEnabled());
         SELFTEST_CHECK(page.RowText(0) == juce::String::fromUTF8("–") && Visible(page));
         Shot("dcp-sd-page-idle.png");
@@ -508,6 +508,17 @@ class SelfTest {
         uint32_t before = 0;
         if(matrix) {
             SELFTEST_CHECK(Settle() && e_.GetSession().Connected());
+            if(wf.GetProfile().id == sd::Instrument::Nebulae) {
+                const DeviceInfo& device = e_.GetSession().Device();
+                SELFTEST_CHECK(device.key == "nebulae" && e_.GetSession().StatusText().rfind("MESSIER ", 0) == 0);
+                const auto saved = LoadPatch(SavePatch(e_.GetModel(), &device), e_.GetModel());
+                SELFTEST_CHECK(saved.ok && saved.instrument_key == "nebulae");
+                DeviceInfo other = device;
+                other.key = "toy-piano";
+                const auto mismatch = CheckCompatibility(saved, e_.GetModel(), other);
+                SELFTEST_CHECK(mismatch.key_mismatch && !mismatch.notes.empty()
+                               && mismatch.notes.front().find("MESSIER") != std::string::npos);
+            }
             e_.GetSession().EditDepth(0 * 8 + 1, 40, true); // LFO 1 -> second column
             SELFTEST_CHECK(Settle() && InSync());
             before = e_.GetModel().Crc();
@@ -534,13 +545,15 @@ class SelfTest {
             SELFTEST_CHECK(page.RowLabel(4) == "Loop:" && page.RowText(4).contains("saved in looper/loop.wav")
                            && page.ReturnButton().getButtonText() == "Return to FERRUM");
         else
-            SELFTEST_CHECK(page.RowLabel(4) == "Bank / sample:" && page.RowText(4).contains("bank 1 of 3")
-                           && page.ReturnButton().getButtonText() == "Return to Nebulae");
+            SELFTEST_CHECK(page.RowText(0) == "MESSIER" && page.RowLabel(4) == "Bank / sample:"
+                           && page.RowText(4).contains("bank 1 of 3")
+                           && page.ReturnButton().getButtonText() == "Return to MESSIER");
         page.ShareButton().onClick();
         if(confirm_case) {
             SELFTEST_CHECK(Wait([&] { return wf.NeedsConfirmation(); }, 3000));
             SELFTEST_CHECK(page.ConfirmButton().isVisible() && page.CancelButton().isVisible() && !page.ShareButton().isEnabled());
-            SELFTEST_CHECK(page.WarningText().contains("LOSES") && page.ConfirmButton().getButtonText() == "Discard Live loop and share");
+            SELFTEST_CHECK(page.WarningText().contains("MESSIER and LOSES")
+                           && page.ConfirmButton().getButtonText() == "Discard Live loop and share");
             SELFTEST_CHECK(Visible(page));
             Shot((juce::String(shot) + "-confirm.png").toRawUTF8());
             page.CancelButton().onClick();
@@ -633,7 +646,7 @@ class SelfTest {
     void SdInterruption() {
         sd::SdShareWorkflow& wf = e_.GetSdShare();
         ui::SdSharePanel& page = e_.GetSdPanel();
-        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        e_.ConnectTo(PortIndex("Simulator: MESSIER MOD"));
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000) && Settle());
         e_.ShowSdPage(true);
         e_.RefreshNow();
@@ -670,7 +683,7 @@ class SelfTest {
     void SdRestoreNotToWrongDevice() {
         sd::SdShareWorkflow& wf = e_.GetSdShare();
         ui::SdSharePanel& page = e_.GetSdPanel();
-        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        e_.ConnectTo(PortIndex("Simulator: MESSIER MOD"));
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
         SELFTEST_CHECK(Settle() && e_.GetSession().Connected());
         e_.GetSession().EditDepth(0 * 8 + 1, 40, true);
@@ -712,7 +725,7 @@ class SelfTest {
     void SdShareGate() {
         sd::SdShareWorkflow& wf = e_.GetSdShare();
         ui::SdSharePanel& page = e_.GetSdPanel();
-        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        e_.ConnectTo(PortIndex("Simulator: MESSIER MOD"));
         e_.ShowSdPage(true);
         // The NB STATUS answers before the matrix is read: Share must still be blocked.
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000));
@@ -755,7 +768,7 @@ class SelfTest {
     void SdAckEpisode() {
         sd::SdShareWorkflow& wf = e_.GetSdShare();
         ui::SdSharePanel& page = e_.GetSdPanel();
-        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        e_.ConnectTo(PortIndex("Simulator: MESSIER MOD"));
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000) && Settle());
         e_.ShowSdPage(true);
         e_.RefreshNow();
@@ -799,7 +812,7 @@ class SelfTest {
     void SdNoCardAndLongTexts() {
         sd::SdShareWorkflow& wf = e_.GetSdShare();
         ui::SdSharePanel& page = e_.GetSdPanel();
-        e_.ConnectTo(PortIndex("Simulator: Nebulae MOD"));
+        e_.ConnectTo(PortIndex("Simulator: MESSIER MOD"));
         SELFTEST_CHECK(Wait([&] { return wf.GetPhase() == sd::Phase::Performance; }, 3000) && Settle());
         e_.GetSdSimulator()->card = false;
         e_.ShowSdPage(true);
