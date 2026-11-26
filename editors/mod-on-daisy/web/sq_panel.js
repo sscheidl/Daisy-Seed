@@ -115,7 +115,7 @@
     const patchInfo = el('div', { class: 'hint', id: 'sqPatchInfo' });
     const stats = el('table', { class: 'stats', id: 'sqStats' });
     const fileInput = el('input', { type: 'file', accept: '.acidpatch,.swpatch,.json', hidden: true, id: 'sqFile' });
-    const title = el('h2', { id: 'sqTitle' }, 'Acid Seq');
+    const title = el('h2', { id: 'sqTitle' }, 'BABBAGE');
     const wrap = (title, ...body) => el('section', { class: 'card' }, el('h2', {}, title), ...body);
     const run = (promise, ok) => Promise.resolve(promise).then(() => ok && log(ok, 'ok')).catch((e) => log(e.message, 'err'));
 
@@ -141,7 +141,7 @@
       const s = client.state, id = client.identity;
       const seq = client.component('step-seq'), sw = isStreichwurst(client);
       const pill = (text, kind = '') => el('span', { class: 'pill ' + kind }, text);
-      title.textContent = client.component('ambient-reverb') ? 'Ambient FX' : sw ? 'Streichwurst' : 'Acid Seq';
+      title.textContent = client.component('ambient-reverb') ? 'Ambient FX' : sw ? 'Streichwurst' : 'BABBAGE';
       patternCard.hidden = sw; // no sequencer, no CV outputs
       calCard.hidden = sw;
       status.replaceChildren(

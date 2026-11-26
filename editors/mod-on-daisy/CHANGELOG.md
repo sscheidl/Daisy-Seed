@@ -3,6 +3,15 @@
 Versions come from `CMakeLists.txt` (standalone and VST3) and `web/version.js` (browser).
 Hardware results are recorded in the test sheets, never here.
 
+## 0.5.6 / browser 0.4.5 (2026-11-26)
+
+* Daisy Control Panel and VST3 show **BABBAGE** (formerly Acid Seq) for the SQ product `acid-seq` in the
+  connection status, the SQ status line, the patch file dialogs, patch error messages and the simulator
+  port "BABBAGE (Sim)". The SQ product stays `acid-seq`; the patch format `acid-seq-patch` and the
+  `.acidpatch` extension are unchanged.
+* The browser editor shows **BABBAGE** in the connection status, the SQ page title, the offline button
+  "BABBAGE offline" and its messages.
+
 ## 0.5.5 / browser 0.4.4 (2026-11-26)
 
 * Daisy Control Panel shows **KEKULÉ** (formerly Physical Modeling) in the matrix connection status,

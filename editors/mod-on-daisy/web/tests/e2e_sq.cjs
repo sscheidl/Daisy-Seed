@@ -77,7 +77,8 @@ async function openEditor(browser, sim, sent) {
   await page.waitForFunction(() => document.querySelectorAll('#sqSteps .step').length === 16);
   assert.ok(await page.isHidden('#mdMain'));
   assert.ok(sent.every((h) => !h.startsWith('f07d4d44')), 'no Mod on Daisy request to an SQ device');
-  assert.match(await page.textContent('#status'), /acid-seq 0\.1\.0/);
+  assert.match(await page.textContent('#status'), /BABBAGE 0\.1\.0/);
+  assert.match(await page.textContent('#sqTitle'), /BABBAGE/);
   // Device first: nothing was written while reading.
   const writes = ['06', '11', '12', '20', '29', '2a'];
   assert.ok(sent.every((h) => !writes.includes(h.slice(10, 12))));
@@ -160,6 +161,6 @@ async function openEditor(browser, sim, sent) {
     await md.stop();
   }
   await browser.close();
-  console.log('PASS: browser Acid Seq and Streichwurst pages against the firmware SQ device (Acid Seq: no MD request, read-only connect, step, '
+  console.log('PASS: browser BABBAGE and Streichwurst pages against the firmware SQ device (BABBAGE: no MD request, read-only connect, step, '
     + 'parameter, transport, calibration/enable, stats; Streichwurst: SQ first, matrix alongside, pages, view switch) and MD devices unchanged');
 })().catch((e) => { console.error(e); process.exit(1); });

@@ -7,7 +7,7 @@
 namespace editor::ui {
 namespace {
 constexpr int kHeader = 56, kCellCard = 300, kSourcesHeight = 250, kFooter = 56, kPad = 14;
-constexpr int kSqSimulator = -2; // Port::simulator of "Acid Seq (Sim)"
+constexpr int kSqSimulator = -2; // Port::simulator of "BABBAGE (Sim)"
 constexpr int kSwSimulator = -3; // Port::simulator of "Streichwurst (Sim)"
 // Instruments that share their SD card, simulated with both USB personalities
 // (core/SdShareSim.h); the MOD variants add the matrix of core/SimInstruments.h.
@@ -213,7 +213,7 @@ void EditorComponent::RefreshPorts() {
     for(int i = 0; with_simulators_ && i < int(std::size(kSimInstruments)); ++i)
         ports.push_back({U(kSimInstruments[i].label), i, {}, {}});
     if(with_simulators_) {
-        ports.push_back({U("Acid Seq (Sim)"), kSqSimulator, {}, {}});
+        ports.push_back({U("BABBAGE (Sim)"), kSqSimulator, {}, {}});
         ports.push_back({U("Streichwurst (Sim)"), kSwSimulator, {}, {}});
         ports.push_back({U(kSdSimInstruments[0].label), kSdNebulaeMod, {}, {}});
         ports.push_back({U(kSdSimInstruments[1].label), kSdLooperMod, {}, {}});
@@ -997,7 +997,7 @@ void EditorComponent::RefreshAll() {
     sq_panel_.setVisible(sq_ready && !show_matrix_ && !show_sd_);
     if(sq_ready && !show_matrix_) {
         sq_panel_.Refresh();
-        status_.setText(U(sq_session_.Identity().product + " " + sq_session_.Identity().version + " · SQ" +
+        status_.setText(U(SqProductDisplayName(sq_session_.Identity().product) + " " + sq_session_.Identity().version + " · SQ" +
                           (matrix_available ? (session_.Connected() ? " + Matrix" : " · Matrix connecting …") : "")),
                         juce::dontSendNotification);
         status_.setColour(juce::Label::textColourId, colour::ok);

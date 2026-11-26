@@ -86,6 +86,8 @@ static void TestReadAndEdit() {
     for(const Frame& f : link.editor_sent)
         CHECK(f[5] < 0x06 || (f[5] >= 0x10 && f[5] != 0x11 && f[5] != 0x12 && f[5] != 0x20 && f[5] != 0x29 && f[5] != 0x2A));
     CHECK(s.Identity().product == "acid-seq" && s.Components().size() == 4);
+    CHECK(editor::SqProductDisplayName(s.Identity().product) == "BABBAGE"); // display name only
+    CHECK(editor::SqProductDisplayName("streichwurst") == "streichwurst" && editor::SqProductDisplayName("") == "");
     const int seq = s.ComponentIndex("step-seq"), voice = s.ComponentIndex("acid-303"),
               drive = s.ComponentIndex("drive"), delay = s.ComponentIndex("stereo-delay");
     CHECK(seq == 0 && voice == 1 && drive == 2 && delay == 3);
@@ -306,7 +308,7 @@ int main() {
         return 1;
     }
     std::printf("PASS: SQ client against the firmware device (read-only connect, descriptors, enum labels, "
-                "fragments, edits, transport, calibration/enable, monitor, retries, restart), Acid Seq patch "
+                "fragments, edits, transport, calibration/enable, monitor, retries, restart), BABBAGE patch "
                 "(round trip, offline, compatibility, explicit upload)\n");
     return 0;
 }

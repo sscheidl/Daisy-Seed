@@ -84,6 +84,8 @@ const timer = setInterval(() => {
     assert.deepStrictEqual(session.components.map((c) => c.id), ['step-seq', 'acid-303']);
     assert.deepStrictEqual(sent[0], sent[1]); // the retry repeats the same frame (request ID)
     assert.ok(sent.every((f) => f[5] === S.TYPE.identify || f[5] === S.TYPE.getComponent));
+    assert.strictEqual(S.productDisplayName('acid-seq'), 'BABBAGE'); // display name only
+    assert.strictEqual(S.productDisplayName('streichwurst'), 'streichwurst');
     console.log('PASS: browser SQ codec matches the shared vectors, dispatcher, handshake with retry');
   }
 }, 1);

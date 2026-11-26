@@ -132,7 +132,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     <button id="clearBtn" title="Sets every depth to 0 and switches every connection off. LFOs, Random and name stay.">Clear matrix</button>
     <button id="pullBtn" disabled>Load from device</button>
     <button id="demoBtn" title="Columns of Toy Piano v0.3 and an example patch, without a device">Demo (offline)</button>
-    <button id="sqDemoBtn" title="The Acid Seq pages with the parameters from the contract, without a device (also for editing and saving patches)">Acid Seq offline</button>
+    <button id="sqDemoBtn" title="The BABBAGE pages with the parameters from the contract, without a device (also for editing and saving patches)">BABBAGE offline</button>
     <button id="swDemoBtn" title="The Streichwurst pages with the parameters from the contract, without a device (also for editing and saving patches)">Streichwurst offline</button>
     <span id="log" role="status"></span>
     <span class="hint" id="panelBuild"></span>
@@ -849,11 +849,11 @@ async function connectSq(out, inp) {
     inp.onmidimessage = null;
     closePorts(out, inp);
     setStatus('error', 'err');
-    log('Acid Seq: ' + e.message, 'err');
+    log('BABBAGE: ' + e.message, 'err');
     return true;
   }
   state.sq = { client, out, inp };
-  state.statusBase = `${client.identity.product} ${client.identity.version} · SQ`;
+  state.statusBase = `${window.SqProtocol.productDisplayName(client.identity.product)} ${client.identity.version} · SQ`;
   setStatus(state.statusBase, 'ok');
   $('connect').textContent = 'Disconnect';
   showSq(client);
@@ -863,7 +863,7 @@ async function connectSq(out, inp) {
     await connectLink(out, inp, client);
     if (state.sq && state.link) {
       $('swViewBtn').hidden = false;
-      state.statusBase = `${client.identity.product} ${client.identity.version} · SQ + Matrix`;
+      state.statusBase = `${window.SqProtocol.productDisplayName(client.identity.product)} ${client.identity.version} · SQ + Matrix`;
       setStatus(state.statusBase, 'ok');
       showMatrixView(false);
     }
@@ -1225,7 +1225,7 @@ $('sqDemoBtn').addEventListener('click', () => {
   if (state.sq) return log('Disconnect first, then edit offline.', 'warn');
   if (!$('sqMain').hidden) return hideSq();
   showSq(new window.SqPanel.OfflineClient());
-  log('Acid Seq offline: values and pattern can be edited and saved as a patch.', 'ok');
+  log('BABBAGE offline: values and pattern can be edited and saved as a patch.', 'ok');
 });
 $('connect').addEventListener('click', connect);
 $('pullBtn').addEventListener('click', () => pull().then(() => log('Loaded from the device.', 'ok')).catch((e) => log(e.message, 'err')));

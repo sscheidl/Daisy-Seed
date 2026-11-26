@@ -100,7 +100,7 @@ class SqPanel : public juce::Component {
         const SqState& st = s_.State();
         const bool seq = s_.HasComponent("step-seq");
         const bool sw = Streichwurst();
-        juce::String text = U(s_.Identity().product) + " " + U(s_.Identity().version);
+        juce::String text = U(SqProductDisplayName(s_.Identity().product)) + " " + U(s_.Identity().version);
         if(sw) {
             for(const SqComponent& c : s_.Components())
                 if(c.kind != 4)
@@ -462,7 +462,7 @@ class SqPanel : public juce::Component {
   private:
     void SaveDialog() {
         const std::string ext = PatchExtension(s_.Identity().product);
-        chooser_ = std::make_unique<juce::FileChooser>(U(Streichwurst() ? "Save Streichwurst patch" : "Save Acid Seq patch"),
+        chooser_ = std::make_unique<juce::FileChooser>(U(Streichwurst() ? "Save Streichwurst patch" : "Save BABBAGE patch"),
                                                        juce::File(), U("*." + ext));
         chooser_->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [this, ext](const juce::FileChooser& c) {
@@ -472,7 +472,7 @@ class SqPanel : public juce::Component {
                               });
     }
     void LoadDialog() {
-        chooser_ = std::make_unique<juce::FileChooser>(U(Streichwurst() ? "Load Streichwurst patch" : "Load Acid Seq patch"),
+        chooser_ = std::make_unique<juce::FileChooser>(U(Streichwurst() ? "Load Streichwurst patch" : "Load BABBAGE patch"),
                                                        juce::File(), "*.acidpatch;*.swpatch;*.json");
         chooser_->launchAsync(juce::FileBrowserComponent::openMode, [this](const juce::FileChooser& c) {
             const juce::File f = c.getResult();
