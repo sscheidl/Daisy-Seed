@@ -53,7 +53,7 @@ $(BUILD_DIR)/$(TARGET).elf: $(LDSCRIPT)
 endif
 CPPFLAGS += -fstack-usage
 
-# The upstream .cc files, compiled with the firmware's flags (as in instruments/physical-modeling).
+# The upstream .cc files, compiled with the firmware's flags (as in instruments/kekule).
 CC_SOURCES = $(DSP_SOURCES)
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(CC_SOURCES:.cc=.o)))
 $(BUILD_DIR)/$(TARGET).elf: $(addprefix $(BUILD_DIR)/,$(notdir $(CC_SOURCES:.cc=.o)))

@@ -38,7 +38,7 @@ modulation matrix and no additional editor protocol.
 * **Tape FX** (`effects/tape-fx`, since 26.10.2026): own native DSP port of
   drumlogue TapeVibe/MixForge with a host-side `TapeMixer` (dry/wet, bypass,
   output protection); 16 KiB of memory from the host. Products `tape-fx` and `toy-piano-tape`.
-* **Application adapter:** `physical-modeling/src/composed_fx.h` connects the
+* **Application adapter:** `kekule/src/composed_fx.h` connects the
   existing Torus parameters with the selected effect. This keeps the
   control mapping outside the FX core.
 
@@ -50,10 +50,10 @@ as before. The host keeps the existing dry/wet mix and output protection.
 
 | Build target | Content | Product version |
 | --- | --- | --- |
-| `physical-modeling` | accepted regular version | unchanged `0.1.0` |
-| `physical-modeling-mod` | accepted Mod4 version | historical file name `0.1.0`, IDENTIFY `0.1.0-mod4` |
-| `physical-modeling-fx-torus` | Torus + Mod core + Torus FX adapter | `0.2.0` |
-| `physical-modeling-fx-ambient` | Torus + Mod core + Ambient FX adapter | `0.2.0` |
+| `kekule` | regular version (0.1.0 accepted; 0.1.1 adds the bootloader entry) | `0.1.1` |
+| `kekule-mod` | Mod4 version (0.1.0-mod4 accepted; 0.1.1 adds the bootloader entry) | `0.1.1`, IDENTIFY `0.1.1-mod4` |
+| `kekule-fx-torus` | Torus + Mod core + Torus FX adapter | `0.2.1` |
+| `kekule-fx-ambient` | Torus + Mod core + Ambient FX adapter | `0.2.1` |
 | `fourier-fx` (formerly `reverb-fx`) | FOURIER (formerly Ambient FX) with external audio inputs | unchanged `0.2` |
 | `messier-mod` | MESSIER + Mod core (`MOD=1`) | Nebulae component version, `0.3.0`, for firmware, IDENTIFY and manifest |
 | `ferrum-mod` | FERRUM + Mod core (`MOD=1`) | FERRUM version, e.g. `0.4.0`, for file name, marker `LOOPER-MOD-VERSION` and IDENTIFY |
@@ -87,15 +87,15 @@ They are not presented as already operable in the existing editor.
 
 ```bash
 make components test-components test-fx
-make PROJECT=physical-modeling test
-make PROJECT=physical-modeling-fx-torus test
-make PROJECT=physical-modeling-fx-ambient test
-make PROJECT=physical-modeling-fx-torus -j4
-make PROJECT=physical-modeling-fx-ambient -j4
-make PROJECT=physical-modeling-fx-torus manifest
-make PROJECT=physical-modeling-fx-ambient manifest
-python3 scripts/check-firmware.py instruments/physical-modeling/build/fx-torus/PhysicalModelingFxTorus-v0.2.1.bin
-python3 scripts/check-firmware.py instruments/physical-modeling/build/fx-ambient/PhysicalModelingFxAmbient-v0.2.1.bin
+make PROJECT=kekule test
+make PROJECT=kekule-fx-torus test
+make PROJECT=kekule-fx-ambient test
+make PROJECT=kekule-fx-torus -j4
+make PROJECT=kekule-fx-ambient -j4
+make PROJECT=kekule-fx-torus manifest
+make PROJECT=kekule-fx-ambient manifest
+python3 scripts/check-firmware.py instruments/kekule/build/fx-torus/KekuleFxTorus-v0.2.1.bin
+python3 scripts/check-firmware.py instruments/kekule/build/fx-ambient/KekuleFxAmbient-v0.2.1.bin
 ```
 
 The official Makefiles use flat object names and sorted VPATHs.

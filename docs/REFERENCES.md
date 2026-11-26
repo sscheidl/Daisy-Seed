@@ -34,8 +34,8 @@ resonator header. Research reports were consulted only as text references.
 
 **Implemented decision (v0.1.0):** The physical modeling project now vendors the
 pinned Torus Part DSP and matching stmlib to provide six models and four voices.
-See [project provenance](../instruments/physical-modeling/torus/UPSTREAM.md) and
-[validation](../instruments/physical-modeling/docs/VALIDATION.md). Elements and
+See [project provenance](../instruments/kekule/torus/UPSTREAM.md) and
+[validation](../instruments/kekule/docs/VALIDATION.md). Elements and
 DaisySP remain references; no additional engine is incorporated.
 
 ## Granular / freeze

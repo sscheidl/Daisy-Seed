@@ -493,7 +493,7 @@ python modules/mod-on-daisy/tools/mod_probe.py selftest
   [PROTOCOL](modules/mod-on-daisy/docs/PROTOCOL.md) (SysEx 0x7D, monitor 0x7E, base values § 3.3),
   [STORAGE](modules/mod-on-daisy/docs/STORAGE.md), [VALIDATION](modules/mod-on-daisy/docs/VALIDATION.md).
 * Instruments: [Toy Piano HARDWARE_TEST_V0.3](instruments/toy-piano/docs/HARDWARE_TEST_V0.3.md),
-  [Physical Modeling MODULATION](instruments/physical-modeling/docs/MODULATION.md).
+  [Physical Modeling MODULATION](instruments/kekule/docs/MODULATION.md).
 * Editors: [README](editors/mod-on-daisy/README.md) (incl. Studio One / Windows MIDI
   Services), [GUI.md](editors/mod-on-daisy/docs/GUI.md).
 

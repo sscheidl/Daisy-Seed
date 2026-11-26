@@ -1,16 +1,20 @@
-# Physical Modeling + Mod on Daisy (separate build)
+# KEKULÉ + Mod on Daisy (separate build)
 
-**Image:** `build/mod/PhysicalModelingMod-v0.1.1.bin` (IDENTIFY `0.1.1-mod4`; up to the integration branch `v0.1.0` / `0.1.0-mod4`)
-(`make PROJECT=physical-modeling-mod`). Firmware marker: `PHYSICAL-MODELING-MOD-VERSION`.
+**Image:** `build/mod/KekuleMod-v0.1.1.bin` (IDENTIFY `0.1.1-mod4`; up to the integration branch `v0.1.0` / `0.1.0-mod4`)
+(`make PROJECT=kekule-mod`). Firmware marker: `PHYSICAL-MODELING-MOD-VERSION`.
 **Status:** software tested, hardware test pending.
 
 This is an **additional, separate build** of the Rings/Torus instrument with the
 [Mod on Daisy](../../../modules/mod-on-daisy/) matrix. The regular firmware stays
 as it is:
 
-* `make PROJECT=physical-modeling` still compiles exactly the v0.1.0 sources. Its
-  image is **byte-identical** to the one built from `main` before this change
-  (137,784 bytes, compared after a clean rebuild).
+* `make PROJECT=kekule` builds the regular image `Kekule-v0.1.1.bin` (139,024 bytes)
+  without any Mod on Daisy code. Since 0.1.1 both builds carry the bootloader entry, so
+  this image is no longer byte-identical to v0.1.0 ([CHANGELOG](../CHANGELOG.md)). The
+  KEKULÉ rename left it byte-identical to the pre-rename v0.1.1 image (2026-11-26).
+* Historical (v0.1.0, when the MOD build was introduced): the regular image was
+  byte-identical to the one built from `main` before that change (137,784 bytes,
+  compared after a clean rebuild).
 * All matrix code sits behind `PHYSICAL_MODELING_MOD` and `TORUS_VOICE_MODULATION`.
   Only `MOD=1` sets them, and that build uses its own `build/mod/` directory.
 * With an empty matrix the MOD build sounds bit-identical to v0.1.0. A golden test
@@ -63,8 +67,8 @@ the reverb decay it replaced had little audible effect.
   models sounds and whether the last change came from SW17/SW18 or from CC28, and names the
   models with their switch positions (PROTOCOL.md § 3.6, `Extensions::modes`). The editors
   show it in the connection area. Nothing changes in the audio path.
-* IDENTIFY reports the version `0.1.0-mod4` (mod2: Level column and base values; mod3:
-  extensions; mod4: active model). The image name stays `PhysicalModelingMod-v0.1.0.bin`; the regular build
+* IDENTIFY reports the version `0.1.1-mod4` (`0.1.0-mod4` up to v0.1.0; mod2: Level column and base values; mod3:
+  extensions; mod4: active model). The image is `KekuleMod-v0.1.1.bin`; the regular build
   is unchanged.
 * `OFFEN`: In the chord models, Structure selects the chord for the whole part.
   A per-voice Structure there changes only the resonator settings, not the chord.
@@ -85,10 +89,16 @@ CC20–33, pitch bend, notes and the CPU telemetry on channel 16 CC119 are uncha
 
 ## Resources (measured, ARM build)
 
-| | Default | MOD=1 |
+Historical v0.1.0 / `0.1.0-mod3` results; they are not the sizes of the current
+images:
+
+| | Default (v0.1.0) | MOD=1 (`0.1.0-mod3`) |
 | --- | ---: | ---: |
-| BIN | 137,784 B | 170,312 B (mod3, 24.10.2026) |
-| DTCM static | 107,792 B (reserve 23,280) | 110,352 B (reserve 20,720, mod3) |
+| BIN | 137,784 B | 170,312 B (24.10.2026) |
+| DTCM static | 107,792 B (reserve 23,280) | 110,352 B (reserve 20,720) |
+
+Current 0.1.1 images (file sizes, 2026-11-26): `Kekule-v0.1.1.bin` 139,024 B,
+`KekuleMod-v0.1.1.bin` (`0.1.1-mod4`) 173,116 B. DTCM for 0.1.1 is not re-measured here.
 
 `scripts/check-physical-elf.py` passes for both (≥ 8 KiB DTCM reserve). Use the
 existing CPU telemetry (`tools/cpu_probe.py`, channel 16 CC119) to measure the
@@ -102,12 +112,12 @@ the port disabled.
 | Nr. | Step | Expected | Result |
 | --- | --- | --- | --- |
 | R1 | Flash, play keys, pots and model switches without a PC | exactly as v0.1.0 | |
-| R2 | `P identify`, `P matrix` | `physical-modeling`, `0.1.0-mod3`, caps `0x7A`; Poly AT under Excitation greyed | |
+| R2 | `P identify`, `P matrix` | `physical-modeling`, `0.1.1-mod4`, caps `0x7A`; Poly AT under Excitation greyed | |
 | R3 | `P lengths` | `frame lengths OK` | |
 | R4 | `P set-cell LFO1 2 40`, `P source LFO1 rate 9000` | brightness sweeps at about 0.9 Hz without zipper noise | |
 | R5 | `P set-cell MODWHEEL 7 100` | mod wheel opens Dry/Wet | |
 | R6 | Poly AT keyboard: `P set-cell POLYAT 3 -80`, hold a chord, press one note | only that voice rings longer or shorter | |
 | R7 | `P set-cell POLYAT 0 20` | pressed note bends up to 2.4 semitones; others stay | |
 | R8 | `P source LFO1 sync 1` with MIDI clock from Studio One | LFO in tempo | |
-| R9 | CPU: `python instruments/physical-modeling/tools/cpu_probe.py` with an empty matrix and with 8 connections | difference is the matrix share; no overruns | |
+| R9 | CPU: `python instruments/kekule/tools/cpu_probe.py` with an empty matrix and with 8 connections | difference is the matrix share; no overruns | |
 | R10 | `P clear` | sound exactly as before | |

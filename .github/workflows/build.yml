@@ -7,12 +7,12 @@ on:
         description: "Choose one firmware (all is substantially more expensive)"
         required: true
         type: choice
-        default: physical-modeling-mod
+        default: kekule-mod
         options:
-          - physical-modeling-mod
-          - physical-modeling-fx-torus
-          - physical-modeling-fx-ambient
-          - physical-modeling
+          - kekule-mod
+          - kekule-fx-torus
+          - kekule-fx-ambient
+          - kekule
           - toy-piano
           - toy-piano-ambient
           - toy-piano-tape
@@ -48,10 +48,10 @@ jobs:
               {"project":"toy-piano-tape","directory":"instruments/toy-piano","image":"ToyPianoTape","build":"build/tape"},
               {"project":"fourier-fx","directory":"effects/fourier","image":"Fourier","build":"build"},
               {"project":"tape-fx","directory":"effects/tape-fx","image":"TapeFx","build":"build"},
-              {"project":"physical-modeling","directory":"instruments/physical-modeling","image":"PhysicalModeling","build":"build"},
-              {"project":"physical-modeling-mod","directory":"instruments/physical-modeling","image":"PhysicalModelingMod","build":"build/mod"},
-              {"project":"physical-modeling-fx-torus","directory":"instruments/physical-modeling","image":"PhysicalModelingFxTorus","build":"build/fx-torus"},
-              {"project":"physical-modeling-fx-ambient","directory":"instruments/physical-modeling","image":"PhysicalModelingFxAmbient","build":"build/fx-ambient"},
+              {"project":"kekule","directory":"instruments/kekule","image":"Kekule","build":"build"},
+              {"project":"kekule-mod","directory":"instruments/kekule","image":"KekuleMod","build":"build/mod"},
+              {"project":"kekule-fx-torus","directory":"instruments/kekule","image":"KekuleFxTorus","build":"build/fx-torus"},
+              {"project":"kekule-fx-ambient","directory":"instruments/kekule","image":"KekuleFxAmbient","build":"build/fx-ambient"},
               {"project":"messier","directory":"instruments/messier","image":"Messier","build":"build"},
               {"project":"messier-mod","directory":"instruments/messier","image":"MessierMod","build":"build/mod"},
               {"project":"ferrum","directory":"instruments/ferrum","image":"Ferrum","build":"build"},
@@ -89,7 +89,7 @@ jobs:
       - name: Test DSP and callback with ASan and UBSan
         run: make PROJECT=${{ matrix.project }} test-sanitize
       - name: Test lock-free MIDI queues with ThreadSanitizer
-        if: matrix.project == 'toy-piano' || matrix.project == 'physical-modeling' || matrix.project == 'messier' || matrix.project == 'messier-mod' || matrix.project == 'mod-bench'
+        if: matrix.project == 'toy-piano' || matrix.project == 'kekule' || matrix.project == 'messier' || matrix.project == 'messier-mod' || matrix.project == 'mod-bench'
         run: make PROJECT=${{ matrix.project }} test-thread
       - name: Cross-compile firmware
         run: make PROJECT=${{ matrix.project }} -j4
@@ -99,7 +99,7 @@ jobs:
       - name: Check firmware image
         run: python3 scripts/check-firmware.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.bin
       - name: Check ARM ELF and static memory reserves
-        if: startsWith(matrix.project, 'physical-modeling') || matrix.project == 'toy-piano-ambient'
+        if: startsWith(matrix.project, 'kekule') || matrix.project == 'toy-piano-ambient'
         run: python3 scripts/check-physical-elf.py ${{ matrix.directory }}/${{ matrix.build }}/${{ matrix.image }}-v${{ steps.version.outputs.value }}.elf
       - name: Check Tape FX ELF, DTCM reserve and SDRAM placement of the delay lines
         if: matrix.project == 'tape-fx' || matrix.project == 'toy-piano-tape'

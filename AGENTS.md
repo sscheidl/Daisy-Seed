@@ -30,7 +30,7 @@ The GitHub Free Actions quota is shared across private repositories. Preserve it
 * **Artifacts**: self-test screenshots/logs are retained for 3 days, firmware
   and native app binaries for 14 days; published Releases are separate.
 * **Manual firmware**: `Actions -> Firmware -> Run workflow`, selecting one
-  project (default: `physical-modeling-mod`). The expensive `all` choice is
+  project (default: `kekule-mod`). The expensive `all` choice is
   explicitly opt-in. No full ARM matrix on push/PR.
 * **Manual editor/diagnostics**: `Actions -> Editor` and
   `Actions -> Hardware diagnostics` are dispatched only when native app or
@@ -73,9 +73,9 @@ Automatic CI intentionally uses only `quick.yml`. Full firmware, native editor a
   start a release. Only the human manually dispatches the release workflow;
   publish a draft only after hardware acceptance.
 * **Sound must not change by accident.** Golden tests (FNV-1a over the output) pin
-  Toy Piano and Physical Modeling: with an empty matrix, Toy Piano v0.3 must match the
-  v0.2 hash and the Physical Modeling `MOD=1` build the v0.1.0 hash. The Physical
-  Modeling integration stays behind `PHYSICAL_MODELING_MOD` / `TORUS_VOICE_MODULATION`,
+  Toy Piano and KEKULÉ (formerly Physical Modeling): with an empty matrix, Toy Piano v0.3 must match the
+  v0.2 hash and the KEKULÉ `MOD=1` build the v0.1.0 hash. The KEKULÉ
+  integration stays behind `PHYSICAL_MODELING_MOD` / `TORUS_VOICE_MODULATION`,
   so the regular image carries no Mod on Daisy code. Shared features every firmware
   must have (the bootloader entry in `common/bootloader`) go into both builds. A golden
   hash changes only on purpose,

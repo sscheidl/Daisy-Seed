@@ -7,8 +7,8 @@ VERSION := $(shell sed -n 's/.*CUMULONIMBUS_FX_FIRMWARE_VERSION "\(.*\)".*/\1/p'
 $(if $(VERSION),,$(error Could not read the version from src/version.h))
 TARGET = CumulonimbusFx$(RATE)-v$(VERSION)
 override BUILD_DIR = build/fx$(RATE)
-TORUS_INCLUDES = -I../../instruments/physical-modeling/torus -I../../instruments/physical-modeling/third_party
-HOST_TORUS = -DTEST -isystem ../../instruments/physical-modeling/torus -isystem ../../instruments/physical-modeling/third_party
+TORUS_INCLUDES = -I../../instruments/kekule/torus -I../../instruments/kekule/third_party
+HOST_TORUS = -DTEST -isystem ../../instruments/kekule/torus -isystem ../../instruments/kekule/third_party
 C_DEFS = -DCUMULONIMBUS_INTERNAL_RATE=$(RATE)000
 C_INCLUDES = $(TORUS_INCLUDES)
 CPP_SOURCES = src/main.cpp

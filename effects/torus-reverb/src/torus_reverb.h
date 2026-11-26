@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // Adapter only. The MIT-licensed Torus DSP remains at its single provenance path.
 #include "../../../common/audio/fx_contract.h"
-#include "../../../instruments/physical-modeling/torus/dsp/fx/reverb.h"
+#include "../../../instruments/kekule/torus/dsp/fx/reverb.h"
 #include <array>
 #include <cmath>
 

@@ -10,7 +10,7 @@ SysEx (`F0 7D 4C 50`) is handled before anything is forwarded to the matrix.
 
 This is an **additional, separate build** of the looper with the
 [Mod on Daisy](../../../modules/mod-on-daisy/) modulation matrix, following the
-[Physical Modeling](../../physical-modeling/docs/MODULATION.md) pattern. The regular
+[Physical Modeling](../../kekule/docs/MODULATION.md) pattern. The regular
 firmware stays as it is:
 
 * v0.4.0 evidence (before the FERRUM rename): `make PROJECT=looper` still compiled exactly the v0.4.0 sources. Its image was

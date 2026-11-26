@@ -3,7 +3,7 @@
 The versioned component `torus-reverb` provides the existing MIT-licensed
 Torus reverb through the [shared audio contract](../../common/audio/fx_contract.h).
 The DSP source stays in one place at the
-[existing provenance path](../../instruments/physical-modeling/torus/UPSTREAM.md).
+[existing provenance path](../../instruments/kekule/torus/UPSTREAM.md).
 No manufacturer binaries or further DSP copies were taken over.
 
 `seed::fx::TorusReverb` owns no board, MIDI or editor code.
@@ -21,8 +21,8 @@ existing golden hash must also match.
 
 ```bash
 make test-fx
-make PROJECT=physical-modeling-fx-torus test
-make PROJECT=physical-modeling-fx-torus -j4
+make PROJECT=kekule-fx-torus test
+make PROJECT=kekule-fx-torus -j4
 ```
 
 This is a reusable FX core. A dedicated board firmware only for

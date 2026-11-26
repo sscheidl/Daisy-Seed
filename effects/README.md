@@ -20,7 +20,7 @@ Ambient Reverb has its own source, host tests, README, and build directory.
 Other effects will get the same structure when implemented. DSP actually shared
 by an instrument and effect can then move to `common/` instead of maintaining
 two engine copies. There is no combined effect chain. Resonators remain models and
-excitation variants within [Physical Modeling](../instruments/physical-modeling/).
+excitation variants within [KEKULÉ](../instruments/kekule/).
 
 New developments follow the mandatory
 [modular development policy](../docs/MODULAR_DEVELOPMENT_POLICY.md): compatible

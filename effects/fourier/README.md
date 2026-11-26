@@ -101,7 +101,7 @@ the shared core is versioned 0.5.0 and its adapter 0.2.0. The wet-clock cap and
 pitch policy live in the FX component, so all consumers compile the same behavior.
 Existing instrument integrations are regression-tested consumers; their device
 CPU and listening acceptance is a later, separate step. The first composed firmware is
-`make PROJECT=physical-modeling-fx-ambient`; see
+`make PROJECT=kekule-fx-ambient`; see
 [modular components](../../docs/MODULAR_COMPONENTS.md) for its limited pilot
 parameter mapping and hardware-test boundary.
 

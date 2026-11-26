@@ -85,12 +85,12 @@ jobs:
       - name: Filter core host tests
         if: steps.changes.outputs.filter == 'true'
         run: make -C modules/filter-core test
-      - name: Physical Modeling host tests (base and MOD)
-        if: steps.changes.outputs.physical == 'true'
+      - name: KEKULÉ host tests (base and MOD)
+        if: steps.changes.outputs.kekule == 'true'
         run: |
-          make PROJECT=physical-modeling test
-          make PROJECT=physical-modeling-fx-torus test
-          make PROJECT=physical-modeling-fx-ambient test
+          make PROJECT=kekule test
+          make PROJECT=kekule-fx-torus test
+          make PROJECT=kekule-fx-ambient test
       - name: MESSIER host tests
         if: steps.changes.outputs.messier == 'true'
         run: make PROJECT=messier test

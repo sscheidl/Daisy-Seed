@@ -23,7 +23,7 @@ VERSION := $(shell sed -n 's/.*TOY_PIANO_CUMULONIMBUS_VERSION "\(.*\)".*/\1/p' s
 CUMULO_SUFFIX := $(if $(filter 1,$(CUMULO_PROFILE)),Profile,)
 TARGET = ToyPianoCumulonimbus$(CUMULO_RATE)$(CUMULO_SUFFIX)-v$(VERSION)
 override BUILD_DIR = build/cumulonimbus$(CUMULO_RATE)$(if $(filter 1,$(CUMULO_PROFILE)),-profile,)
-CUMULO_INCLUDES = -I../../instruments/physical-modeling/torus -I../../instruments/physical-modeling/third_party
+CUMULO_INCLUDES = -I../../instruments/kekule/torus -I../../instruments/kekule/third_party
 FX_DEFS = -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=$(CUMULO_PROFILE) \
           -DCUMULONIMBUS_INTERNAL_RATE=$(CUMULO_RATE)000 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1
 C_DEFS = $(FX_DEFS)
@@ -126,7 +126,7 @@ HOST_INCLUDES += -I../../sequencers/step-seq/include
 endif
 ifeq ($(CUMULO),1)
 # Both internal rates and both image kinds share these host tests; the golden dry check runs on each.
-CUMULO_HOST = -DTEST -isystem ../../instruments/physical-modeling/torus -isystem ../../instruments/physical-modeling/third_party -D_USE_MATH_DEFINES
+CUMULO_HOST = -DTEST -isystem ../../instruments/kekule/torus -isystem ../../instruments/kekule/third_party -D_USE_MATH_DEFINES
 test:
 	mkdir -p build/host/cumulonimbus
 	$(HOST_CXX) $(HOST_FLAGS) -Itests/fakes $(HOST_INCLUDES) $(CUMULO_HOST) -DTOY_PIANO_CUMULONIMBUS=1 -DTOY_PIANO_CUMULONIMBUS_PROFILE=0 -DMOD_ON_DAISY_EXTENSIONS=1 -DMOD_ON_DAISY_LOCAL_EDITS=1 -DCUMULONIMBUS_INTERNAL_RATE=48000 tests/test_cumulonimbus.cpp src/toy_piano.cpp -o build/host/cumulonimbus/test48

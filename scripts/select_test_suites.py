@@ -17,8 +17,8 @@ def select_suites(changed):
                  for p in changed)
     mod_api = touched('modules/mod-on-daisy/include/', 'modules/mod-on-daisy/adapters/')
     fx = touched('common/audio/', 'effects/torus-reverb/', 'effects/fourier/src/', 'effects/tape-fx/src/', 'tests/fx/',
-                 'instruments/physical-modeling/torus/dsp/fx/',
-                 'instruments/physical-modeling/third_party/stmlib/')
+                 'instruments/kekule/torus/dsp/fx/',
+                 'instruments/kekule/third_party/stmlib/')
     # Shared saturation curves (common/dsp/): Tape FX, its Toy Piano build and Drive.
     dsp = touched('common/dsp/')
     # Acid Seq effects: their wet-only cores and adapters run in the shared FX test.
@@ -57,7 +57,7 @@ def select_suites(changed):
     suites = {
         'bootloader': shared or touched('common/bootloader/'),
         'toy': shared or touched('instruments/toy-piano/', 'modules/filter-core/') or mod_api or fx or dsp,
-        'physical': shared or touched('instruments/physical-modeling/') or mod_api or fx,
+        'kekule': shared or touched('instruments/kekule/') or mod_api or fx,
         # Nebulae 0.2 links common/sd (read-only FatFs, card reader) and the DDP framing.
         'messier': shared or touched('instruments/messier/', 'common/sd/', 'diagnostics/protocol/',
                                       'diagnostics/firmware/src/ring_buffer.h') or mod_api,
@@ -93,7 +93,7 @@ def select_suites(changed):
     }
     if '.github/workflows/quick.yml' in changed:
         suites = {key: True for key in suites}
-    suites['submodules'] = any(suites[k] for k in ('toy', 'physical', 'messier', 'ferrum', 'fourier', 'tape',
+    suites['submodules'] = any(suites[k] for k in ('toy', 'kekule', 'messier', 'ferrum', 'fourier', 'tape',
                                                     'stepseq', 'acid303', 'drive', 'delay', 'acidseq',
                                                     'streichwurst', 'cumulonimbus'))
     return suites

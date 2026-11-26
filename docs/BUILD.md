@@ -85,7 +85,7 @@ a temporary Git repository and a fake API without creating releases.
 Actions are divided into cost-controlled stages:
 
 * **Automatic** `quick.yml`: one Linux job for the release guard plus only host
-  tests of affected instruments/modules (Toy Piano, Physical Modeling including
+  tests of affected instruments/modules (Toy Piano, KEKULÉ including
   MOD, Nebulae, Looper, Reverb, Mod on Daisy, editor core and diagnostics).
   Runs on code PRs and pushes to `main`, not docs-only commits (`docs/`, `*.md`).
   No ARM toolchain, sanitizer sweep, Windows builds or full firmware matrix.

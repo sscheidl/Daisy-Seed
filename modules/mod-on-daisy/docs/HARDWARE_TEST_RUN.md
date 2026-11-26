@@ -66,11 +66,11 @@ Image `ToyPiano-v0.3.bin`, checklist **T1–T15** in
 * **Release:** a draft v0.3 is under GitHub → Releases. Publish only when T1–T15 have
   passed. The human decides.
 
-## 3. Physical Modeling with matrix
+## 3. KEKULÉ (formerly Physical Modeling) with matrix
 
-Image `PhysicalModelingMod-v0.1.0.bin`, checklist **R1–R10** in
-[instruments/physical-modeling/docs/MODULATION.md](../../../instruments/physical-modeling/docs/MODULATION.md).
-For comparison in R1, briefly flash `PhysicalModeling-v0.1.0.bin`. This regular
+Image `KekuleMod-v0.1.1.bin`, checklist **R1–R10** in
+[instruments/kekule/docs/MODULATION.md](../../../instruments/kekule/docs/MODULATION.md).
+For comparison in R1, briefly flash `Kekule-v0.1.1.bin`. This regular
 build is byte-identical to the previous state.
 
 * [A]: R2, R3, R9 (`cpu_probe.py`) and the `P` commands.
@@ -78,7 +78,7 @@ build is byte-identical to the previous state.
 
 ## 4. Editors on the device
 
-With `ToyPiano-v0.3.bin`, for E9 with `PhysicalModelingMod-v0.1.0.bin`. Close `P` and
+With `ToyPiano-v0.3.bin`, for E9 with `KekuleMod-v0.1.1.bin`. Close `P` and
 other MIDI programs beforehand, because the port belongs to only one application.
 
 | No. | Role | Step | Expected |
@@ -91,8 +91,8 @@ other MIDI programs beforehand, because the port belongs to only one application
 | E6 | M | Save file, Clear matrix, Open file | sound as before clearing; the same file also loads in the browser editor |
 | E7 | M | Open Studio One with the Daisy port active, then **Connect** in the editor | clear message "… held by another application (e.g. Studio One) …", no crash |
 | E8 | M | While connected, pull the USB cable at J7, plug it back in, **Connect** | "Device disconnected", still editable offline; afterwards state loaded from the device |
-| E9 | M | Physical Modeling: connect, Poly AT → Brightness +70, hold a chord, press one key | Poly AT × Excitation hatched; only the pressed voice changes |
-| E9b | M | Physical Modeling (`0.1.0-mod4`), **"Daisy Seed External"** selected in the editor (no simulator): turn the pots, Modwheel → Level −100 | Column headers show a white line at the base value that follows the pot, and above it the current value (e.g. "63 %", Pitch in semitones); for Level it stays fixed at 0.5 ("+0 %"). Column 7 is called "Level", the modwheel fades out to silence |
+| E9 | M | KEKULÉ: connect, Poly AT → Brightness +70, hold a chord, press one key | Poly AT × Excitation hatched; only the pressed voice changes |
+| E9b | M | KEKULÉ (`0.1.1-mod4`), **"Daisy Seed External"** selected in the editor (no simulator): turn the pots, Modwheel → Level −100 | Column headers show a white line at the base value that follows the pot, and above it the current value (e.g. "63 %", Pitch in semitones); for Level it stays fixed at 0.5 ("+0 %"). Column 7 is called "Level", the modwheel fades out to silence |
 | E7b | M | Check several programs per port (Windows MIDI Services), see [editor README](../../../editors/mod-on-daisy/README.md#studio-one-and-the-editor-at-the-same-time). **Both orders**: (a) Studio One first, then the editor; (b) the editor first, then Studio One | Note the result for each order: do both work at the same time? For (b): does Studio One get notes, does the editor stay green? |
 | E11 | M | Physical Modeling, LFO 1 → Structure +50, LFO 1 free at 20 Hz, then MIDI clock 150 BPM 1/32 from Studio One | LFO 1 bar shows a wide band (not a stationary value); column header Structure shows the range around the base value, red ends when it hits 0 or 1. Stop the clock: the "Clock" row reports "No MIDI clock – LFO stopped", the band shrinks |
 | E12 | M | Structure pots at approx. 10 %, 50 %, 90 %, each with LFO ±50 | range roughly 0…0.6 / 0…1 / 0.4…1, clamped ends red; sound matches the display |
@@ -101,7 +101,7 @@ other MIDI programs beforehand, because the port belongs to only one application
 | E15 | M | Open the file `legacy-reverb.modpatch` (from `editors/mod-on-daisy/web/tests/`) in the connected editor | Question "The patch does not exactly fit this device" names "Reverb → Level"; "Cancel" changes nothing; "Load without affected" leaves Modwheel → Level switched off |
 | E16 | M | Studio One holds the port, then **Connect** in the editor; then close Studio One and **Connect** again (both editors) | First attempt: clear message, port is released; second attempt connects without restarting the editor |
 | E17 | M | Connected, then enable the Daisy input in Studio One (if possible) or pull the cable | After approx. 1.5 s the status turns yellow "no live data", after 5 s red "no answer", one message in the log; after recovery green and "reloading its state" |
-| E18 | M | Physical Modeling (`0.1.0-mod4`): SW17/SW18 through all six positions, then CC28 from Studio One or from the keyboard | At the top next to the status, "Model: …" matching the switch position (tooltip: bank/SW18); after CC28 "… (MIDI)". Both editors the same |
+| E18 | M | KEKULÉ (`0.1.1-mod4`): SW17/SW18 through all six positions, then CC28 from Studio One or from the keyboard | At the top next to the status, "Model: …" matching the switch position (tooltip: bank/SW18); after CC28 "… (MIDI)". Both editors the same |
 | E19 | M | Connect Toy Piano v0.3 | No model display; column headers keep showing the excursion (Toy Piano reports no base values) |
 | E10 | M | `editor/ModOnDaisyEditor.html` in Chrome/Edge, allow SysEx, connect, change a cell | Confirmation with patch CRC as in the JUCE editor |
 | P1 | M | VST3: copy `Mod on Daisy.vst3` to `C:\Program Files\Common Files\VST3\`, rescan in Studio One, put "Mod on Daisy" as an effect on a track (kit with mod4 on J7, Daisy active in Studio One) | Plug-in appears under Daisy-Seed; it connects without opening the window (open the window: status green, model shown); sound of the track unchanged |
