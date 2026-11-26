@@ -63,8 +63,8 @@ the reverb decay it replaced had little audible effect.
   models sounds and whether the last change came from SW17/SW18 or from CC28, and names the
   models with their switch positions (PROTOCOL.md § 3.6, `Extensions::modes`). The editors
   show it in the connection area. Nothing changes in the audio path.
-* IDENTIFY reports the version `0.1.0-mod4` (mod2: Level column and base values; mod3:
-  extensions; mod4: active model). The image name stays `PhysicalModelingMod-v0.1.0.bin`; the regular build
+* IDENTIFY reports the version `0.1.1-mod4` (`0.1.0-mod4` up to v0.1.0; mod2: Level column and base values; mod3:
+  extensions; mod4: active model). The image is `KekuleMod-v0.1.1.bin`; the regular build
   is unchanged.
 * `OFFEN`: In the chord models, Structure selects the chord for the whole part.
   A per-voice Structure there changes only the resonator settings, not the chord.
@@ -102,7 +102,7 @@ the port disabled.
 | Nr. | Step | Expected | Result |
 | --- | --- | --- | --- |
 | R1 | Flash, play keys, pots and model switches without a PC | exactly as v0.1.0 | |
-| R2 | `P identify`, `P matrix` | `physical-modeling`, `0.1.0-mod3`, caps `0x7A`; Poly AT under Excitation greyed | |
+| R2 | `P identify`, `P matrix` | `physical-modeling`, `0.1.1-mod4`, caps `0x7A`; Poly AT under Excitation greyed | |
 | R3 | `P lengths` | `frame lengths OK` | |
 | R4 | `P set-cell LFO1 2 40`, `P source LFO1 rate 9000` | brightness sweeps at about 0.9 Hz without zipper noise | |
 | R5 | `P set-cell MODWHEEL 7 100` | mod wheel opens Dry/Wet | |

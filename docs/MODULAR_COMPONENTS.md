@@ -50,10 +50,10 @@ as before. The host keeps the existing dry/wet mix and output protection.
 
 | Build target | Content | Product version |
 | --- | --- | --- |
-| `kekule` | accepted regular version | unchanged `0.1.0` |
-| `kekule-mod` | accepted Mod4 version | historical file name `0.1.0`, IDENTIFY `0.1.0-mod4` |
-| `kekule-fx-torus` | Torus + Mod core + Torus FX adapter | `0.2.0` |
-| `kekule-fx-ambient` | Torus + Mod core + Ambient FX adapter | `0.2.0` |
+| `kekule` | regular version (0.1.0 accepted; 0.1.1 adds the bootloader entry) | `0.1.1` |
+| `kekule-mod` | Mod4 version (0.1.0-mod4 accepted; 0.1.1 adds the bootloader entry) | `0.1.1`, IDENTIFY `0.1.1-mod4` |
+| `kekule-fx-torus` | Torus + Mod core + Torus FX adapter | `0.2.1` |
+| `kekule-fx-ambient` | Torus + Mod core + Ambient FX adapter | `0.2.1` |
 | `fourier-fx` (formerly `reverb-fx`) | FOURIER (formerly Ambient FX) with external audio inputs | unchanged `0.2` |
 | `messier-mod` | MESSIER + Mod core (`MOD=1`) | Nebulae component version, `0.3.0`, for firmware, IDENTIFY and manifest |
 | `ferrum-mod` | FERRUM + Mod core (`MOD=1`) | FERRUM version, e.g. `0.4.0`, for file name, marker `LOOPER-MOD-VERSION` and IDENTIFY |

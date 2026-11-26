@@ -1,4 +1,4 @@
-# KEKULÉ v0.1.0 (formerly Daisy Physical Modeling)
+# KEKULÉ v0.1.1 (formerly Daisy Physical Modeling)
 
 **KEKULÉ** is the Rings/Torus instrument of this repository. Project IDs: `kekule`, `kekule-mod`, `kekule-fx-torus`
 and `kekule-fx-ambient`; firmware `Kekule-v<version>.bin`, `KekuleMod-v<version>.bin`, `KekuleFxTorus-v<version>.bin`
@@ -38,8 +38,8 @@ voice is described in [docs/MODULATION.md](docs/MODULATION.md)
 The [modular component pilot](../../docs/MODULAR_COMPONENTS.md) adds separate
 `kekule-fx-torus` and `kekule-fx-ambient` builds. Both keep
 the existing keyboard/MIDI/Mod-on-Daisy host and choose the downstream wet effect
-at build time. They have product version 0.2.0 and explicit component manifests;
-the regular 0.1.0 and accepted Mod4 targets retain their prior identities.
+at build time. They have product version 0.2.1 and explicit component manifests;
+the regular and Mod4 targets (0.1.1) retain their own identities.
 These combinations still need hardware CPU and listening tests.
 
 ## Models and controls
@@ -92,7 +92,7 @@ python3 scripts/check-firmware.py instruments/kekule/build/Kekule-v0.1.1.bin
 python3 scripts/check-physical-elf.py instruments/kekule/build/Kekule-v0.1.1.elf
 ```
 
-The Firmware CI matrix provides `PhysicalModeling-v0.1.0.bin`, `.elf`, `.map` and
+The Firmware CI matrix provides `Kekule-v0.1.1.bin`, `.elf`, `.map` and
 `SHA256SUMS` as an Actions artifact. Generated outputs are ignored by Git.
 `APP_TYPE=BOOT_SRAM`; application load address 0x24000000, maximum 480 KiB.
 
