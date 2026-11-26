@@ -8,9 +8,13 @@ This is an **additional, separate build** of the Rings/Torus instrument with the
 [Mod on Daisy](../../../modules/mod-on-daisy/) matrix. The regular firmware stays
 as it is:
 
-* `make PROJECT=kekule` still compiles exactly the v0.1.0 sources. Its
-  image is **byte-identical** to the one built from `main` before this change
-  (137,784 bytes, compared after a clean rebuild).
+* `make PROJECT=kekule` builds the regular image `Kekule-v0.1.1.bin` (139,024 bytes)
+  without any Mod on Daisy code. Since 0.1.1 both builds carry the bootloader entry, so
+  this image is no longer byte-identical to v0.1.0 ([CHANGELOG](../CHANGELOG.md)). The
+  KEKULÉ rename left it byte-identical to the pre-rename v0.1.1 image (2026-11-26).
+* Historical (v0.1.0, when the MOD build was introduced): the regular image was
+  byte-identical to the one built from `main` before that change (137,784 bytes,
+  compared after a clean rebuild).
 * All matrix code sits behind `PHYSICAL_MODELING_MOD` and `TORUS_VOICE_MODULATION`.
   Only `MOD=1` sets them, and that build uses its own `build/mod/` directory.
 * With an empty matrix the MOD build sounds bit-identical to v0.1.0. A golden test
@@ -85,10 +89,16 @@ CC20–33, pitch bend, notes and the CPU telemetry on channel 16 CC119 are uncha
 
 ## Resources (measured, ARM build)
 
-| | Default | MOD=1 |
+Historical v0.1.0 / `0.1.0-mod3` results; they are not the sizes of the current
+images:
+
+| | Default (v0.1.0) | MOD=1 (`0.1.0-mod3`) |
 | --- | ---: | ---: |
-| BIN | 137,784 B | 170,312 B (mod3, 24.10.2026) |
-| DTCM static | 107,792 B (reserve 23,280) | 110,352 B (reserve 20,720, mod3) |
+| BIN | 137,784 B | 170,312 B (24.10.2026) |
+| DTCM static | 107,792 B (reserve 23,280) | 110,352 B (reserve 20,720) |
+
+Current 0.1.1 images (file sizes, 2026-11-26): `Kekule-v0.1.1.bin` 139,024 B,
+`KekuleMod-v0.1.1.bin` (`0.1.1-mod4`) 173,116 B. DTCM for 0.1.1 is not re-measured here.
 
 `scripts/check-physical-elf.py` passes for both (≥ 8 KiB DTCM reserve). Use the
 existing CPU telemetry (`tools/cpu_probe.py`, channel 16 CC119) to measure the
