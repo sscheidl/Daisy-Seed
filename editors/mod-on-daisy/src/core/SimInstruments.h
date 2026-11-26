@@ -26,12 +26,12 @@ struct SimInstrument {
 };
 // "Simulator: Toy Piano" plays Toy Piano v0.3, which reports no base values and has no
 // extensions: it keeps the editor's fallback for such devices tested (v0.4 firmware has
-// the extensions; tested on the firmware itself). Physical Modeling MOD=1
+// the extensions; tested on the firmware itself). KEKULÉ MOD=1
 // (mod4) has all: here its power-on pot defaults (ParameterManager), Level at unity and
 // the model of bank A, SW18 up (Modal Resonator).
 inline const SimInstrument kSimInstruments[] = {
     {"Simulator: Toy Piano", toy_piano::MakeModInfo, {-1, -1, -1, -1, -1, -1, -1, -1}, {false, false, false}, -1},
-    {"Simulator: Physical Modeling", physical_modeling::MakeModInfo,
+    {"Simulator: KEKULÉ", physical_modeling::MakeModInfo,
      {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.8f, physical_modeling::kLevelBase, 0.25f}, {true, true, true}, 0},
 };
 

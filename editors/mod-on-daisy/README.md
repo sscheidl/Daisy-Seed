@@ -175,7 +175,7 @@ firmware does not know the command yet: then hold S9 and S16 for five seconds or
 BOOT. With a simulator the button is disabled.
 
 **Without a Daisy:** The list contains only MIDI ports; without a device you can edit offline.
-The simulators ("Simulator: Toy Piano", "Simulator: Physical Modeling", the Acid Seq and
+The simulators ("Simulator: Toy Piano", "Simulator: KEKULÉ", the Acid Seq and
 Streichwurst simulators and the four SD card simulators) only appear with
 `"Daisy Control Panel" --simulators` and in the self-test. They are the firmware's controller and
 engine code, compiled on the PC, and identify themselves like the device

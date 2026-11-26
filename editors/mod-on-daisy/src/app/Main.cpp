@@ -219,8 +219,9 @@ class SelfTest {
     }
 
     void PhysicalModeling() {
-        e_.ConnectTo(PortIndex("Simulator: Physical Modeling"));
+        e_.ConnectTo(PortIndex("Simulator: KEKULÉ"));
         SELFTEST_CHECK(Settle() && e_.GetSession().Device().key == "physical-modeling");
+        SELFTEST_CHECK(InstrumentDisplayName(e_.GetSession().Device().key) == "KEKULÉ");
         Model& m = e_.GetModel();
         SELFTEST_CHECK(m.columns[5].name == "Excitation" && !m.Allowed(7 * 8 + 5));
         SELFTEST_CHECK(m.columns[6].name == "Level"); // replaced the reverb decay (mod2)
@@ -235,13 +236,13 @@ class SelfTest {
         SELFTEST_CHECK(Settle() && InSync());
         grid.Select(7 * 8 + 2);
         Shot("juce-editor-physical-modeling.png");
-        Say("PASS physical-modeling: columns, Poly AT per voice, Excitation greyed out");
+        Say("PASS KEKULÉ (physical-modeling): columns, Poly AT per voice, Excitation greyed out");
     }
 
     // Correction order 2026-10-24 in the real window: FM, ranges, aftertouch, health,
     // compatibility question, port release.
     void Corrections() {
-        e_.ConnectTo(PortIndex("Simulator: Physical Modeling"));
+        e_.ConnectTo(PortIndex("Simulator: KEKULÉ"));
         SELFTEST_CHECK(Settle() && e_.GetSession().Device().LfoFm());
         Model& m = e_.GetModel();
         Simulator& sim = *e_.GetSimulator();
@@ -281,7 +282,7 @@ class SelfTest {
         SELFTEST_CHECK(Settle() && e_.GetSession().LinkHealth() == Health::Ok && InSync());
         Say("PASS corrections: health no live data / no replies / recovered");
 
-        // Compatibility: a Toy Piano file on Physical Modeling asks; cancel changes nothing,
+        // Compatibility: a Toy Piano file on KEKULÉ asks; cancel changes nothing,
         // safe load switches the affected connections off.
         Model toy;
         toy.columns[0].name = "Pitch";
@@ -306,7 +307,7 @@ class SelfTest {
         Say("PASS corrections: compatibility question (cancel, safe load)");
 
         // A session that gives up releases the port at once (review F2).
-        e_.ConnectTo(PortIndex("Simulator: Physical Modeling"));
+        e_.ConnectTo(PortIndex("Simulator: KEKULÉ"));
         e_.GetSimulator()->drop_replies = 1;
         for(int i = 0; i < 3000 && e_.GetSession().State() != LinkState::Offline; ++i)
             e_.Step(1);
@@ -336,7 +337,7 @@ class SelfTest {
         e_.LoadProjectPatch(project);
         e_.RefreshNow();
         SELFTEST_CHECK(m.Depth(1) == 40 && reported.find("40") != std::string::npos);
-        e_.ConnectTo(PortIndex("Simulator: Physical Modeling")); // a fresh device: empty matrix
+        e_.ConnectTo(PortIndex("Simulator: KEKULÉ")); // a fresh device: empty matrix
         SELFTEST_CHECK(Settle());
         e_.RefreshNow();
         // The fresh device had an empty matrix: now it holds the project patch.
@@ -891,7 +892,7 @@ class SelfTest {
     // P3 of the Nebulae first-contact test (2026-11-08): the kit's firmware stalls and its
     // USB-MIDI stops completing sends. The window keeps running, reports that the device is not
     // answering, closes the port in bounded time and connects again once the kit answers. The
-    // "kit" is the Physical Modeling simulator behind a fake driver on the sender thread.
+    // "kit" is the KEKULÉ simulator behind a fake driver on the sender thread.
     struct FakeKit {
         std::mutex mutex;
         std::condition_variable cv;

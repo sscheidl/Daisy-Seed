@@ -21,6 +21,8 @@ namespace editor {
 // Display name of an instrument key from IDENTIFY. The key itself is a wire ID and stays as reported
 // (patch files, autosave names, restore checks); only what the user reads is mapped.
 inline std::string InstrumentDisplayName(const std::string& key) {
+    if(key == "physical-modeling")
+        return "KEKULÉ";
 #if defined(MOD_EDITOR_SD_PAGE)
     if(key == "nebulae")
         return "MESSIER";
