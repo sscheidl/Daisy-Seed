@@ -254,7 +254,7 @@ class SqPanel : public juce::Component {
     void SetPendingPatch(const AcidPatch& p) {
         pending_ = p;
         const AcidCompat c = CheckAcidPatch(p, s_);
-        juce::String text = U("Loaded: ") + U(p.product) + ", " + juce::String(int(p.components.size())) + U(" components. ");
+        juce::String text = U("Loaded: ") + U(SqProductDisplayName(p.product)) + ", " + juce::String(int(p.components.size())) + U(" components. ");
         if(c.Clean())
             text << U("Fits completely.");
         else
@@ -280,6 +280,7 @@ class SqPanel : public juce::Component {
         return n;
     }
     int ParamRows() const { return int(rows_.size()); }
+    juce::String PatchInfoText() const { return patch_info_.getText(); } // self-test
     juce::Slider* ParamSlider(const std::string& key) {
         for(auto& r : rows_)
             if(r.key == key && r.slider)

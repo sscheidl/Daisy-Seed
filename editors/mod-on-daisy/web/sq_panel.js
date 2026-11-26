@@ -145,7 +145,7 @@
       patternCard.hidden = sw; // no sequencer, no CV outputs
       calCard.hidden = sw;
       status.replaceChildren(
-        pill(`${id.product} ${id.version}`, client.offline ? 'warn' : 'ok'),
+        pill(`${S.productDisplayName(id.product)} ${id.version}`, client.offline ? 'warn' : 'ok'),
         ...(sw ? [
           ...client.components.filter((c) => c.kind !== 4).map((c) => pill(`${c.id} ${c.version}`)),
           pill(`Revision ${s.applied}/${s.accepted}`, s.applied === s.accepted ? '' : 'warn'),
@@ -283,7 +283,7 @@
       if (compat.incompatible.length) notes.push('other schema version: ' + compat.incompatible.join(', '));
       if (compat.unknown.length) notes.push('unknown parameters: ' + compat.unknown.join(', '));
       if (compat.patternSkipped) notes.push('pattern skipped (no sequencer)');
-      patchInfo.textContent = `Loaded: ${loadedPatch.product}, ${loadedPatch.components.length} components. ` +
+      patchInfo.textContent = `Loaded: ${S.productDisplayName(loadedPatch.product)}, ${loadedPatch.components.length} components. ` +
         (notes.length ? 'Skipped: ' + notes.join('; ') + '.' : 'Fits completely.') +
         ' Only “Send to device” sends it.';
       container.querySelector('#sqUpload').disabled = false;

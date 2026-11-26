@@ -382,6 +382,8 @@ class SelfTest {
         e_.LoadProjectPatch(project);
         e_.Step(50);
         SELFTEST_CHECK(asked == 1 && e_.GetSqSimulator()->Value(1, 4) == 500000);
+        // The summary shows the display name; the patch itself keeps the product acid-seq.
+        SELFTEST_CHECK(e_.GetSqPanel().PatchInfoText().startsWith("Loaded: BABBAGE, 4 components."));
         e_.sq_upload_decision = [&](const AcidCompat&) {
             ++asked;
             return 2; // "Always send"

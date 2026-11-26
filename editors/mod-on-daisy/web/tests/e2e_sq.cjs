@@ -79,6 +79,8 @@ async function openEditor(browser, sim, sent) {
   assert.ok(sent.every((h) => !h.startsWith('f07d4d44')), 'no Mod on Daisy request to an SQ device');
   assert.match(await page.textContent('#status'), /BABBAGE 0\.1\.0/);
   assert.match(await page.textContent('#sqTitle'), /BABBAGE/);
+  assert.match(await page.innerText('#sqStatus'), /BABBAGE 0\.1\.0/);
+  assert.ok(!(await page.innerText('#sqStatus')).includes('acid-seq'));
   // Device first: nothing was written while reading.
   const writes = ['06', '11', '12', '20', '29', '2a'];
   assert.ok(sent.every((h) => !writes.includes(h.slice(10, 12))));
@@ -107,8 +109,19 @@ async function openEditor(browser, sim, sent) {
   await page.waitForFunction(() => document.querySelector('#sqStatus').innerText.includes('CV enabled'));
   await page.click('#sqStatsBtn');
   await page.waitForFunction(() => document.querySelectorAll('#sqStats tr').length === 17);
+  // A loaded patch is summarised with the display name; the file keeps the product acid-seq.
+  const patchText = await page.evaluate(() => window.SqProtocol.serializePatch(window.SqProtocol.patchFromClient(sqPanel.client())));
+  assert.ok(patchText.includes('"product": "acid-seq"'));
+  await page.setInputFiles('#sqFile', { name: 'song.acidpatch', mimeType: 'application/json', buffer: Buffer.from(patchText) });
+  await page.waitForFunction(() => document.querySelector('#sqPatchInfo').textContent.startsWith('Loaded: BABBAGE, 4 components.'));
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'acid-seq-panel.png'), fullPage: true });
   await page.click('#connect'); // disconnect
+  assert.ok(await page.isHidden('#sqMain'));
+  // Offline pages (the button is in the matrix page footer, not shown at this point; its handler is what counts): the same display name.
+  await page.evaluate(() => document.getElementById('sqDemoBtn').click());
+  assert.match(await page.innerText('#sqStatus'), /BABBAGE/);
+  assert.ok(!(await page.innerText('#sqStatus')).includes('acid-seq'));
+  await page.evaluate(() => document.getElementById('sqDemoBtn').click());
   assert.ok(await page.isHidden('#sqMain'));
   await sq.stop();
   // ---- Streichwurst (SQ 1.1): SQ pages first, then Mod on Daisy alongside on the same port

@@ -849,7 +849,8 @@ async function connectSq(out, inp) {
     inp.onmidimessage = null;
     closePorts(out, inp);
     setStatus('error', 'err');
-    log('BABBAGE: ' + e.message, 'err');
+    const sqName = client.identity && client.identity.product ? window.SqProtocol.productDisplayName(client.identity.product) : 'SQ';
+    log(sqName + ': ' + e.message, 'err');
     return true;
   }
   state.sq = { client, out, inp };
