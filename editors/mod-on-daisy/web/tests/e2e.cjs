@@ -263,7 +263,9 @@ async function testPhysicalModeling(browser) {
   const sim = startSim('physical-modeling');
   const page = await openEditor(browser, sim);
   await page.click('#connect');
-  await page.waitForFunction(() => document.getElementById('status').textContent.includes('physical-modeling'));
+  await page.waitForFunction(() => document.getElementById('status').textContent.includes('KEKULÉ'));
+  assert((await page.locator('#deviceInfo').textContent()).startsWith('KEKULÉ '));
+  assert.strictEqual(await page.evaluate(() => JSON.parse(matrixPatchText()).instrument_key), 'physical-modeling');
   const headers = await page.$$eval('#grid thead th .name', (els) => els.map((e) => e.textContent));
   assert.deepStrictEqual(headers, ['Pitch', 'Structure', 'Brightness', 'Damping', 'Position', 'Excitation', 'Level', 'Dry/Wet']);
   assert(await cell(page, 7, 5).evaluate((e) => e.classList.contains('blocked')), 'Poly AT × Excitation greyed out');

@@ -11,7 +11,7 @@ images are byte-identical). Technical identifiers stay for compatibility: the Mo
 `physical-modeling`, the C++ names (`PHYSICAL_MODELING_*`, `TORUS_*`, namespace `physical_modeling`), the
 upstream names Rings/Torus and `scripts/check-physical-elf.py`. The shared Torus DSP (`torus/`, `third_party/`) moved
 with the directory; its consumers (`effects/torus-reverb`, `effects/cumulonimbus`, Toy Piano Cumulonimbus builds)
-only changed include paths. The editors still show "Physical Modeling". Older reports keep the names that were
+only changed include paths. Daisy Control Panel 0.5.5 and the browser editor 0.4.4 display **KEKULÉ**. Older reports keep the names that were
 valid at the time. See [CHANGELOG.md](CHANGELOG.md).
 
 Four-voice Mutable Instruments Rings / Torus instrument for the **Electro-Smith

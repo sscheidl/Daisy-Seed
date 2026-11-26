@@ -3,6 +3,13 @@
 Versions come from `CMakeLists.txt` (standalone and VST3) and `web/version.js` (browser).
 Hardware results are recorded in the test sheets, never here.
 
+## 0.5.5 / browser 0.4.4 (2026-11-26)
+
+* Daisy Control Panel shows **KEKULÉ** (formerly Physical Modeling) in the matrix connection status,
+  device details, patch compatibility messages and the simulator port "Simulator: KEKULÉ". The Mod on
+  Daisy key stays `physical-modeling`; patch files and autosave names keep it.
+* The browser editor shows **KEKULÉ** in the connection status and device details.
+
 ## 0.5.4 / browser 0.4.3 (2026-11-26)
 
 * Daisy Control Panel shows **MESSIER** in the matrix connection status, device details,

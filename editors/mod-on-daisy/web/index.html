@@ -909,7 +909,7 @@ async function connectLink(out, inp, sqClient = null) {
     const f = await link.request(P.CMD.identify, [], P.BROADCAST);
     const r = new P.Reader(f.payload);
     // Display name only; info.key stays the wire key (patch files, checks).
-    const instrumentDisplayName = k => k === 'nebulae' ? 'MESSIER' : k === 'looper' ? 'FERRUM' : k;
+    const instrumentDisplayName = k => k === 'physical-modeling' ? 'KEKULÉ' : k === 'nebulae' ? 'MESSIER' : k === 'looper' ? 'FERRUM' : k;
     const info = { protocol: `${r.u7()}.${r.u7()}`, module: `${r.u7()}.${r.u7()}.${r.u7()}`, key: r.str(), version: r.str(),
       maxActive: r.u7(), tickHz: r.u14(), slots: r.u7(), schema: r.u32(), caps: r.u7(),
       caps2: r.pos < f.payload.length ? r.u7() : 0, device: f.device, modes: [] }; // caps2: newer firmware

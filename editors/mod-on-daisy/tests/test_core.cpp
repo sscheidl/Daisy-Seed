@@ -313,6 +313,7 @@ void TestPhysicalModeling() {
     rig.sim.bases[1] = 0.9f; // Structure pot near the top
     CHECK(rig.Connect());
     CHECK(rig.session.Device().key == "physical-modeling");
+    CHECK(InstrumentDisplayName(rig.session.Device().key) == "KEKULÉ"); // display name only
     CHECK(rig.model.columns[5].name == "Excitation" && rig.model.columns[5].latched);
     CHECK(!rig.model.Allowed(Cell(mod::PolyAt, 5)) && rig.model.Allowed(Cell(mod::PolyAt, 2)));
     rig.session.EditDepth(Cell(mod::PolyAt, 2), 10);
