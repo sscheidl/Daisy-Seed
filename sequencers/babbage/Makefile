@@ -2,7 +2,7 @@
 # Product version (src/composed_version.h); the components keep their own versions.
 VERSION := $(shell sed -n 's/.*ACID_SEQ_VERSION "\(.*\)".*/\1/p' src/composed_version.h | head -n 1)
 $(if $(VERSION),,$(error Could not read the version from src/composed_version.h))
-TARGET = AcidSeq-v$(VERSION)
+TARGET = Babbage-v$(VERSION)
 CPP_SOURCES = src/main.cpp
 STEP_SEQ = ../step-seq
 ACID_303 = ../../instruments/acid-303

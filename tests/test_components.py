@@ -37,7 +37,7 @@ def copy_version_sources(data, root):
     return registry
 
 
-ACID_SEQ_SUITES = ('stepseq', 'acid303', 'drive', 'delay', 'acidseq')
+ACID_SEQ_SUITES = ('stepseq', 'acid303', 'drive', 'delay', 'babbage')
 
 
 class ComponentTests(unittest.TestCase):
@@ -173,7 +173,7 @@ class ComponentTests(unittest.TestCase):
         self.assertIn('filter-core', data['products']['toy-piano-filter']['components'])
         self.assertEqual(data['components']['saturation']['version']['path'], 'common/dsp/saturation.h')
         mk = (ROOT / 'projects.mk').read_text()
-        for project in ('step-seq', 'acid-303', 'drive-fx', 'delay-fx', 'acid-seq'):
+        for project in ('step-seq', 'acid-303', 'drive-fx', 'delay-fx', 'babbage'):
             self.assertRegex(mk, r'PROJECT_STATUS_' + re.escape(project) + r'\s*:=\s*(planned|buildable)')
         # Registered products name the device ID their firmware reports in IDENTIFY (D9).
         for name, product in data['products'].items():
@@ -214,35 +214,35 @@ class ComponentTests(unittest.TestCase):
             'sequencers/step-seq/include/step_seq/device.h': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             'sequencers/step-seq/include/step_seq/sq_protocol.h': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             # Step Seq's own parts.
-            'sequencers/step-seq/include/step_seq/midi_out.h': ('stepseq', 'acidseq'),
-            'sequencers/step-seq/include/step_seq/params.h': ('stepseq', 'acidseq'),
-            'sequencers/step-seq/src/main.cpp': ('stepseq', 'acidseq'),
-            'instruments/acid-303/include/acid303/voice.h': ('acid303', 'acidseq'),
+            'sequencers/step-seq/include/step_seq/midi_out.h': ('stepseq', 'babbage'),
+            'sequencers/step-seq/include/step_seq/params.h': ('stepseq', 'babbage'),
+            'sequencers/step-seq/src/main.cpp': ('stepseq', 'babbage'),
+            'instruments/acid-303/include/acid303/voice.h': ('acid303', 'babbage'),
             # New effect cores and adapters also run the shared FX contract test.
-            'effects/drive/include/drive/drive.h': ('drive', 'fx', 'acidseq'),
-            'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'acidseq', 'streichwurst'),
-            'sequencers/acid-seq/src/main.cpp': ('acidseq',),
+            'effects/drive/include/drive/drive.h': ('drive', 'fx', 'babbage'),
+            'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'babbage', 'streichwurst'),
+            'sequencers/babbage/src/main.cpp': ('babbage',),
             # The filter core and its test product.
             'modules/filter-core/include/filter_core/ladder.h': ('filter', 'toy'),
             # Shared saturation: its consumers only, no longer every suite.
-            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
-            'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'acidseq', 'filter'),
-            'common/audio/fx_contract.h': ('toy', 'kekule', 'tape', 'fx', 'drive', 'delay', 'acidseq', 'streichwurst',
+            'common/dsp/saturation.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'babbage', 'filter'),
+            'common/dsp/fastmath.h': ('tape', 'toy', 'drive', 'delay', 'fx', 'babbage', 'filter'),
+            'common/audio/fx_contract.h': ('toy', 'kekule', 'tape', 'fx', 'drive', 'delay', 'babbage', 'streichwurst',
                                            'cumulonimbus'),
             # Cumulonimbus: its own suite; the Toy Piano product also runs the Toy Piano suite.
             'effects/cumulonimbus/src/clouds/grain.h': ('cumulonimbus',),
             'instruments/toy-piano/src/cumulonimbus_host.h': ('toy', 'cumulonimbus'),
             'sequencers/step-seq/contracts/parameters.json': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
             'sequencers/step-seq/docs/PROTOCOL.md': ACID_SEQ_SUITES + ('editor', 'streichwurst'),
-            'tests/fixtures/acid-seq/manifest.json': ('acid303', 'drive', 'delay', 'acidseq'),
+            'tests/fixtures/acid-seq/manifest.json': ('acid303', 'drive', 'delay', 'babbage'),
             'sequencers/README.md': (),
-            'sequencers/step-seq/README.md': ('stepseq', 'acidseq'),
+            'sequencers/step-seq/README.md': ('stepseq', 'babbage'),
             # Streichwurst: its own suite; the contract also regenerates the editor labels.
             'instruments/streichwurst/include/streichwurst/instrument.h': ('streichwurst',),
             'effects/streichwurst-fx/include/streichwurst_fx/ensemble.h': ('streichwurst',),
             'instruments/streichwurst/contracts/parameters.json': ('streichwurst', 'editor'),
             'instruments/streichwurst/src/register.h': ('streichwurst', 'editor'),
-            'sequencers/step-seq/tools/gen_params.py': ('stepseq', 'acidseq', 'streichwurst', 'editor'),
+            'sequencers/step-seq/tools/gen_params.py': ('stepseq', 'babbage', 'streichwurst', 'editor'),
         }
         for path, selected in cases.items():
             suites = selection.select_suites([path])
