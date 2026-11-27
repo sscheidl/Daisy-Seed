@@ -1,6 +1,6 @@
 # Changelog: fv1-vm
 
-## FV-1-FX-Suite 0.1.0, fv1-vm-fx 0.4.2 (2026-11-22, unreleased)
+## FV-1 FX Suite 0.1.0, fv1-vm-fx 0.4.2 (2026-11-22, unreleased)
 
 * New product `fv1-fx-suite` (owner decision 2026-11-22): this firmware with `PROGRAMS=otherworld`, the committed MIT
   bank `fv1-bank-otherworld` 0.1.0 (effects/fv1-banks/otherworld). Own version `FV1_FX_SUITE_VERSION`, image

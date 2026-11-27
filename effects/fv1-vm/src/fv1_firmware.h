@@ -171,7 +171,7 @@ struct Snapshot {
     uint16_t program = 0;
     uint8_t flags = 0;
 };
-// kOpenBank: an openly licensed, committed bank (FV-1-FX-Suite); kLocalPrograms: the git-ignored local table.
+// kOpenBank: an openly licensed, committed bank (FV-1 FX Suite); kLocalPrograms: the git-ignored local table.
 enum Flag : uint8_t { kDouble = 1, kFastMemory = 2, kBypass = 4, kNoise = 8, kLocalPrograms = 16, kOpenBank = 32 };
 class Meter {
   public:

@@ -110,7 +110,7 @@ BUILDABLE_PROJECTS += toy-piano-fv1
 PROJECT_DIR_toy-piano-fv1 := instruments/toy-piano
 PROJECT_ARGS_toy-piano-fv1 := FV1=1
 PROJECT_STATUS_toy-piano-fv1 := buildable
-# FV-1-FX-Suite: fv1-vm-fx with the MIT bank effects/fv1-banks/otherworld (owner decision 2026-11-22);
+# FV-1 FX Suite: fv1-vm-fx with the MIT bank effects/fv1-banks/otherworld (owner decision 2026-11-22);
 # ARM build verified 2026-11-22.
 PROJECTS += fv1-fx-suite
 BUILDABLE_PROJECTS += fv1-fx-suite

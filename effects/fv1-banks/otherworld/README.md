@@ -5,7 +5,7 @@
 
 Thirty-two FV-1 programs by Andreas Jansson, [Otherworld vol. 1](https://github.com/andreasjansson/otherworld),
 **MIT licence** ([upstream/LICENSE](upstream/LICENSE)). They were written for a Eurorack module's FV-1; here they run
-on the [FV-1 interpreter](../../fv1-vm/README.md) inside the FV-1-FX-Suite firmware (`make PROJECT=fv1-fx-suite`).
+on the [FV-1 interpreter](../../fv1-vm/README.md) inside the FV-1 FX Suite firmware (`make PROJECT=fv1-fx-suite`).
 Pinned upstream state and the changes made for assembly: [UPSTREAM.md](UPSTREAM.md).
 
 ## Contents

@@ -21,7 +21,7 @@
 #define FV1VM_LOCAL_PROGRAMS 0 // PROGRAMS=local
 #endif
 #ifndef FV1VM_BANK_OTHERWORLD
-#define FV1VM_BANK_OTHERWORLD 0 // PROGRAMS=otherworld: the FV-1-FX-Suite product
+#define FV1VM_BANK_OTHERWORLD 0 // PROGRAMS=otherworld: the FV-1 FX Suite product
 #endif
 #if FV1VM_LOCAL_PROGRAMS && FV1VM_BANK_OTHERWORLD
 #error "PROGRAMS selects one program table"

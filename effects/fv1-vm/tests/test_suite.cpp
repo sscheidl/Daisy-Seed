@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Product test for the FV-1-FX-Suite (PROGRAMS=otherworld): the firmware program bank with the committed
+// Product test for the FV-1 FX Suite (PROGRAMS=otherworld): the firmware program bank with the committed
 // Otherworld table, its MIDI bank mapping and panel group stepping, and a short run of every program through
 // the same Vm<float> block path as the firmware. Program behaviour is tested in effects/fv1-banks/otherworld.
 #include "fv1_firmware.h"
