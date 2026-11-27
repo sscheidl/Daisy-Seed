@@ -1,7 +1,7 @@
 # FV-1 interpreter FX component (`fv1-vm`)
 
-**Status: firmware 0.4.2, FV-1-FX-Suite 0.1.0 (component 0.2.0), 2026-11-22, research / feasibility study.**
-* Component, standalone firmware `fv1-vm-fx`, the FV-1-FX-Suite `fv1-fx-suite` and the composed `toy-piano-fv1`
+**Status: firmware 0.4.2, FV-1 FX Suite 0.1.0 (component 0.2.0), 2026-11-22, research / feasibility study.**
+* Component, standalone firmware `fv1-vm-fx`, the FV-1 FX Suite `fv1-fx-suite` and the composed `toy-piano-fv1`
   are built and host-tested.
 * Hardware: CPU sweeps over all 240 programs, standalone (`float`/SDRAM) and inside `toy-piano-fv1`, MEASURED
   2026-11-05 without an overrun (see [Hardware results](#hardware-results)); `double`, AXI and sound NOT MEASURED.
@@ -46,7 +46,7 @@ Delay-RAM compression, MULX truncation and silicon LFO details are **not** model
 
 **This component contains no FV-1 program data except the two own demo programs.** Openly licensed banks are
 separate components in [effects/fv1-banks](../fv1-banks/README.md) (pinned upstream, licence, generator, tests);
-the FV-1-FX-Suite builds one of them in. Programs that are not openly licensed are used for research only (no
+the FV-1 FX Suite builds one of them in. Programs that are not openly licensed are used for research only (no
 products, releases or redistribution). They enter a build only as a local, git-ignored table:
 
 ```bash
@@ -58,7 +58,7 @@ make -C instruments/toy-piano FV1=1 FV1_PROGRAMS=local   # ToyPianoFv1Local-v0.1
 Local tables and images built from them must never be committed, released or uploaded as CI artifacts. Openly
 licensed FV-1 programs (Spin free programs with attribution, Otherworld MIT) may be used for public test material.
 
-## FV-1-FX-Suite (`fv1-fx-suite`)
+## FV-1 FX Suite (`fv1-fx-suite`)
 
 `make PROJECT=fv1-fx-suite` builds this firmware with `PROGRAMS=otherworld`: the program table is the committed
 bank component `fv1-bank-otherworld` ([README](../fv1-banks/otherworld/README.md), MIT). Everything else is the

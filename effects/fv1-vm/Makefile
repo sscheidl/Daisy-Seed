@@ -3,7 +3,7 @@
 #   PRECISION=double  MEMORY=axi      measurement variants, each with its own build directory
 #   PROGRAMS=local                    program table from generated/fv1vm_programs.local.h
 #                                     (tools/gen_programs.py); such images are LOCAL ONLY
-#   PROGRAMS=otherworld               the FV-1-FX-Suite product (make PROJECT=fv1-fx-suite): the MIT bank
+#   PROGRAMS=otherworld               the FV-1 FX Suite product (make PROJECT=fv1-fx-suite): the MIT bank
 #                                     effects/fv1-banks/otherworld, own version FV1_FX_SUITE_VERSION
 .DEFAULT_GOAL := all
 PRECISION ?= float
