@@ -10,7 +10,7 @@ Store `firmware/babbage/0.1.0+cd2eb47/`). Die offenen Prüfungen unten gelten f�
 statischen Werte vom 27. Oktober gehören zum damaligen Acid-Seq-Build und nicht zu diesem Kandidaten.
 
 > **Sicherheit:** CV OUT 1/2 erst nach der Diagnose H14 und der Freigabe an einen externen
-> Synth anschließen ([Step-Seq-Hardwaretest](../../step-seq/docs/HARDWARE_TEST.md),
+> Synth anschließen ([Step-Seq-Hardwaretest](../../../sequencers/step-seq/docs/HARDWARE_TEST.md),
 > Schritte 1 und 2). Kopfhörer und Lautsprecher leise beginnen: Bei Resonanz 100 % schwingt
 > das Filter selbst, bei Feedback 95 % klingt das Delay lange nach.
 

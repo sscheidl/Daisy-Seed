@@ -221,7 +221,7 @@ class ComponentTests(unittest.TestCase):
             # New effect cores and adapters also run the shared FX contract test.
             'effects/drive/include/drive/drive.h': ('drive', 'fx', 'babbage'),
             'effects/stereo-delay/include/stereo_delay/delay.h': ('delay', 'fx', 'babbage', 'streichwurst'),
-            'sequencers/babbage/src/main.cpp': ('babbage',),
+            'instruments/babbage/src/main.cpp': ('babbage',),
             # The filter core and its test product.
             'modules/filter-core/include/filter_core/ladder.h': ('filter', 'toy'),
             # Shared saturation: its consumers only, no longer every suite.

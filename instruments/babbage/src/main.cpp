@@ -6,7 +6,7 @@
 // the sequencer, the audio chain and the DAC; main owns USB/DIN MIDI, the SQ protocol, the
 // LEDs and the bootloader entry. Hand-over only through SPSC queues and snapshots.
 #include "composed_version.h"
-#include "../../step-seq/src/version.h"
+#include "../../../sequencers/step-seq/src/version.h"
 #include "../../../instruments/acid-303/src/version.h"
 #include "../../../effects/drive/src/version.h"
 #include "../../../effects/stereo-delay/src/version.h"

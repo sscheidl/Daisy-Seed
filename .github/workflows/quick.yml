@@ -137,7 +137,7 @@ jobs:
         run: make -C effects/stereo-delay test
       - name: BABBAGE product host tests (end-to-end golden, firmware on fakes)
         if: steps.changes.outputs.babbage == 'true'
-        run: make -C sequencers/babbage test
+        run: make -C instruments/babbage test
       - name: Streichwurst host tests (FX component, instrument, product, firmware on fakes)
         if: steps.changes.outputs.streichwurst == 'true'
         run: |

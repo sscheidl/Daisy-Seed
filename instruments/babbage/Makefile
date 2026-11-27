@@ -4,7 +4,7 @@ VERSION := $(shell sed -n 's/.*ACID_SEQ_VERSION "\(.*\)".*/\1/p' src/composed_ve
 $(if $(VERSION),,$(error Could not read the version from src/composed_version.h))
 TARGET = Babbage-v$(VERSION)
 CPP_SOURCES = src/main.cpp
-STEP_SEQ = ../step-seq
+STEP_SEQ = ../../sequencers/step-seq
 ACID_303 = ../../instruments/acid-303
 DRIVE = ../../effects/drive
 DELAY = ../../effects/stereo-delay

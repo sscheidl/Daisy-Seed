@@ -18,7 +18,7 @@ IMAGES = [
     ('DelayFx-v', 'effects/stereo-delay/src/version.h', 'STEREO_DELAY_FIRMWARE_VERSION', 'DELAY-FX-VERSION='),
     ('EchoDelayFx-v', 'effects/echo-delay/src/version.h', 'ECHO_DELAY_FIRMWARE_VERSION', 'ECHO-DELAY-FX-VERSION='),
     ('ScReverbFx-v', 'effects/sc-reverb/src/version.h', 'SC_REVERB_FIRMWARE_VERSION', 'SC-REVERB-FX-VERSION='),
-    ('Babbage-v', 'sequencers/babbage/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
+    ('Babbage-v', 'instruments/babbage/src/composed_version.h', 'ACID_SEQ_VERSION', 'ACID-SEQ-FW-VERSION='),
     ('Streichwurst-v', 'instruments/streichwurst/src/version.h', 'STREICHWURST_VERSION', 'STREICHWURST-FW-VERSION='),
     ('StreichwurstFx-v', 'effects/streichwurst-fx/src/version.h', 'STREICHWURST_FX_FIRMWARE_VERSION',
      'STREICHWURST-FX-VERSION='),
