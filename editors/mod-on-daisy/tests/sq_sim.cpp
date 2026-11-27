@@ -18,7 +18,7 @@
 #include <vector>
 
 // After a frame: the Streichwurst main loop serves Mod on Daisy at once (one reply per
-// millisecond), so its replies follow without a "T" command. Acid Seq is unchanged.
+// millisecond), so its replies follow without a "T" command. BABBAGE is unchanged.
 static void Settle(editor::SqSimulator&, uint32_t&) {}
 static void Settle(AmbientControlSim& sim, uint32_t& now) { sim.Advance(++now); }
 static void Settle(editor::StreichwurstSim& sim, uint32_t& now) {

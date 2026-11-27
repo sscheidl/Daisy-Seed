@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SQ probe: command-line client for the SQ firmwares, Acid Seq and Streichwurst (docs/PROTOCOL.md).
+"""SQ probe: command-line client for the SQ firmwares, BABBAGE and Streichwurst (docs/PROTOCOL.md).
 
 Not the editor. Calibration, CV enable and diagnostics already in phase 1 (4.5).
 

@@ -169,7 +169,7 @@ function connect(sim, { drop = 0 } = {}) {
   assert.ok(S.checkPatch(swPatch, swc.client).clean);
   assert.throws(() => S.parsePatch(swText.replace('"product": "streichwurst"', '"product": "acid-seq"')));
   assert.throws(() => S.parsePatch(swText.replace(/"matrix": .*\n/, '"matrix": [1]\n')));
-  // An Acid Seq patch keeps its format and has no matrix.
+  // An BABBAGE patch keeps its format and has no matrix.
   assert.ok(!text.includes('"matrix"') && text.includes('"acid-seq-patch"'));
   // The standalone Streichwurst FX firmware: one effect component, no matrix.
   const swfx = startSim('streichwurst-fx');

@@ -1,7 +1,7 @@
 #pragma once
-// SQ pages of the JUCE editor and the VST3 (Acid Seq Phase 5, Streichwurst Phase 4): status
+// SQ pages of the JUCE editor and the VST3 (BABBAGE, formerly BABBAGE, Phase 5; Streichwurst Phase 4): status
 // and transport, 16-step pattern grid with note names and play position, step editor,
-// parameter pages from the device's descriptors (Acid Seq: Sequencer, Voice, Drive,
+// parameter pages from the device's descriptors (BABBAGE: Sequencer, Voice, Drive,
 // Delay, MIDI; Streichwurst: Strings, Solo, Keyboard, FX, Global by the contract's pages),
 // calibration with the separate CV enable, product patch save/load/upload, counters.
 // Streichwurst patches (.swpatch) embed the Mod on Daisy matrix through the two hooks.

@@ -31,7 +31,7 @@ test: $(HEADERS) tests/test_core.cpp tests/test_sd_share.cpp tests/test_serial_t
 	node web/tests/sq_client.test.cjs build/host/sq_sim
 	python3 ../../sequencers/step-seq/tools/gen_params.py --check
 
-# Browser e2e of the Acid Seq pages (Playwright with Chromium); MOD_SIM: mod_sim for the MD check.
+# Browser e2e of the BABBAGE pages (Playwright with Chromium); MOD_SIM: mod_sim for the MD check.
 test-editor-sq: test
 	PLAYWRIGHT_MODULE=$(PLAYWRIGHT_MODULE) node web/tests/e2e_sq.cjs build/host/sq_sim $(MOD_SIM) build/host
 

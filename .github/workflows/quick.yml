@@ -120,7 +120,7 @@ jobs:
       - name: Shared SD driver host tests (FAT32/exFAT images)
         if: steps.changes.outputs.sd == 'true'
         run: make -C common/sd test
-      - name: Acid Seq contracts (SQ vectors, parameter IDs, reference fixtures)
+      - name: BABBAGE contracts (SQ vectors, parameter IDs, reference fixtures)
         if: steps.changes.outputs.babbage == 'true'
         run: python3 -m unittest discover -s tests -p test_acid_seq_contracts.py -v
       - name: Step Seq host tests

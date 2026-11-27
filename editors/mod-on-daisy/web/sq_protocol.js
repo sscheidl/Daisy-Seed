@@ -1,4 +1,4 @@
-// SQ SysEx protocol v1.0 for Acid Seq firmwares (sequencers/step-seq/docs/PROTOCOL.md).
+// SQ SysEx protocol v1.0 for BABBAGE firmwares (sequencers/step-seq/docs/PROTOCOL.md).
 // JavaScript mirror of step_seq/sq_protocol.h and tools/sq_codec.py, plus the dispatcher
 // between Mod on Daisy (7D 4D 44), SQ (7D 53 51) and the bootloader reply (7D 42 4C), and
 // the SQ handshake. Works as a browser global (window.SqProtocol) and as a Node module.
@@ -212,7 +212,7 @@
   };
   const writeStep = (w, s) => w.u7(s.note).u7(s.gateLength).u7((s.gate ? 1 : 0) | (s.accent ? 2 : 0) | (s.slide ? 4 : 0));
 
-  // The Acid Seq panel client (mirror of src/core/SqSession.h): reads the device first
+  // The BABBAGE panel client (mirror of src/core/SqSession.h): reads the device first
   // (D13), one request at a time with 200 ms timeout and three retries (same request ID),
   // explicit edits only. send(frame) transmits; feed every received SysEx into onMessage().
   class Client {

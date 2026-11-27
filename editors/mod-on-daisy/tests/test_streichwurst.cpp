@@ -7,7 +7,7 @@
 // the monitor, stale and duplicate replies, lost replies with an idempotent retry,
 // reconnect after a restart, the MD session alongside on the same link, matrix edits that
 // leave the register untouched, the .swpatch with embedded matrix, compatibility, and
-// unchanged Acid Seq behaviour.
+// unchanged BABBAGE behaviour.
 #include "../src/core/AcidPatch.h"
 #include "../src/core/PatchFile.h"
 #include "../src/core/SqSimulator.h"
@@ -232,7 +232,7 @@ static void TestProductPatch(Rig& r) {
 }
 
 static void TestAcidSeqUnchanged() {
-    // An Acid Seq device: no matrix capability, the pattern is read as before, and its
+    // An BABBAGE device: no matrix capability, the pattern is read as before, and its
     // patch keeps the acid-seq-patch format without a matrix.
     struct AcidPort : Transport {
         SqSimulator sim{"acid-seq"};

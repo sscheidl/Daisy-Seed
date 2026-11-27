@@ -16,7 +16,7 @@ set(MOD_EDITOR_JUCE_DIR "" CACHE PATH "Local JUCE checkout (default: fetch JUCE 
 set(MOD_MODULE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../../modules/mod-on-daisy/include")
 # Shared bootloader request (common/bootloader), header-only like the module.
 set(BOOTLOADER_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../../common/bootloader")
-# Acid Seq: the firmware's SQ codec, device and parameter table (shared with the panel).
+# BABBAGE: the firmware's SQ codec, device and parameter table (shared with the panel).
 set(SQ_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../../sequencers/step-seq/include"
     # Streichwurst: parameter register, tables and Mod on Daisy columns (simulator, patch).
     "${CMAKE_CURRENT_SOURCE_DIR}/../../instruments/streichwurst/include"

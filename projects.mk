@@ -51,7 +51,7 @@ PROJECT_STATUS_tape-fx := buildable
 PROJECT_DIR_toy-piano-tape := instruments/toy-piano
 PROJECT_ARGS_toy-piano-tape := TAPE=1
 PROJECT_STATUS_toy-piano-tape := buildable
-# Acid Seq (docs/acid-seq/ARBEITSAUFTRAG.md): components with standalone test firmwares
+# BABBAGE, formerly BABBAGE (docs/acid-seq/ARBEITSAUFTRAG.md): components with standalone test firmwares
 # and the composed product. Each joins BUILDABLE_PROJECTS with its first validated build.
 PROJECTS += step-seq acid-303 drive-fx delay-fx babbage
 # Audrey 3: Audrey II port; also needs the DaisySP-LGPL submodule (instruments/audrey-3/README.md).
