@@ -1,4 +1,4 @@
-/* Option B of the texture load spike (../README.md), derived from libDaisy
+/* Option B of the PLANCK load spike (../README.md), derived from libDaisy
  * core/STM32H750IB_qspi.lds at the pinned libDaisy f715e48. Changes: .data, .bss and
  * .heap in DTCM instead of AXI SRAM, so the whole AXI SRAM holds 512 KiB of the
  * buffer; sections .spike_d1/.spike_d2/.spike_d3 (not ".text...":
@@ -266,7 +266,7 @@ SECTIONS
 		PROVIDE(__reserved_for_stack_end__ = .);
 	} > DTCMRAM
 
-	/* Texture load spike, option B: the Beads buffer layout (beads/beads.cc). */
+	/* PLANCK load spike, option B: the Beads buffer layout (beads/beads.cc). */
 	.spike_d1 (NOLOAD) : ALIGN(32) { *(.spike_d1) } > SRAM
 	.spike_d2 (NOLOAD) : ALIGN(32) { *(.spike_d2) } > RAM_D2
 	.spike_d3 (NOLOAD) : ALIGN(32) { *(.spike_d3) } > RAM_D3

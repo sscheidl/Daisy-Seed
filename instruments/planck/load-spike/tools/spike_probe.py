@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Readout of the texture load spike over USB-MIDI (../README.md).
+"""Readout of the PLANCK load spike over USB-MIDI (../README.md).
 
     pip install mido python-rtmidi
     python spike_probe.py identify               # variant, clock, block, budget, product load

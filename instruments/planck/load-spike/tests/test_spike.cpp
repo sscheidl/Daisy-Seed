@@ -278,6 +278,6 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "%d check(s) failed\n", failures);
         return 1;
     }
-    std::fprintf(stderr, "PASS: texture load spike host test (%u blocks per point)\n", unsigned(point_blocks));
+    std::fprintf(stderr, "PASS: PLANCK load spike host test (%u blocks per point)\n", unsigned(point_blocks));
     return 0;
 }

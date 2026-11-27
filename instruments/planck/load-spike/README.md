@@ -1,4 +1,4 @@
-# Texture load spike (S1)
+# PLANCK load spike (S1)
 
 Measurement firmware for one decision of the Beads port study: where the 768 KB audio buffer can live on the Seed3
 Desktop Kit (decision D8 of the port concept). **Not an instrument and not the port.** The port itself is not ordered.
@@ -84,11 +84,11 @@ pool reaches 32 grains and that case b is in delay mode for the whole sweep.
 ## Build (Claude, done 2026-11-15)
 
 ```
-make -C instruments/texture/load-spike MEM=A -j8
-make -C instruments/texture/load-spike MEM=B -j8
-make -C instruments/texture/load-spike test HOST_CXX=clang++          # host test, full length
-make -C instruments/texture/load-spike test-sanitize HOST_CXX=clang++
-python instruments/texture/load-spike/tools/check_images.py instruments/texture/load-spike/build   # vectors, buffer placement
+make -C instruments/planck/load-spike MEM=A -j8
+make -C instruments/planck/load-spike MEM=B -j8
+make -C instruments/planck/load-spike test HOST_CXX=clang++          # host test, full length
+make -C instruments/planck/load-spike test-sanitize HOST_CXX=clang++
+python instruments/planck/load-spike/tools/check_images.py instruments/planck/load-spike/build   # vectors, buffer placement
 ```
 
 On 2026-11-15 the check printed for both images: 306 484 bytes, reset vector in AXI SRAM (A) or QSPI (B), engine and
@@ -103,25 +103,25 @@ Needs `pip install mido python-rtmidi` and USB on J7. Studio One or another DAW 
 1. **Volume down.** The output is muted unless **SW17** is on; then it plays at −18 dB (granular noise, loud at high
    density). Leave SW17 off for the measurement.
 2. Put the kit into the bootloader (S9 + S16 held for 5 s, or the editor's *Firmware update*), then flash A:
-   `make -C instruments/texture/load-spike MEM=A program-dfu`.
-3. After the restart: `python instruments/texture/load-spike/tools/spike_probe.py identify` must print variant `A`,
+   `make -C instruments/planck/load-spike MEM=A program-dfu`.
+3. After the restart: `python instruments/planck/load-spike/tools/spike_probe.py identify` must print variant `A`,
    480 MHz, block 12.
-4. `python instruments/texture/load-spike/tools/spike_probe.py run-all --md spike-A.md`. Do not touch the kit for about
+4. `python instruments/planck/load-spike/tools/spike_probe.py run-all --md spike-A.md`. Do not touch the kit for about
    4.5 minutes; the script waits and prints the table.
 5. Optional: `spike_probe.py profile 1` (to 4) lists every sweep point of a case by peak load.
 6. Flash your usual firmware back.
 
 **0.2.0 series** (A and AI, B is ruled out): flash the image, then
-`python instruments/texture/load-spike/tools/spike_probe.py series --md spike-<image>-0.2.md`. It runs all four cases
+`python instruments/planck/load-spike/tools/spike_probe.py series --md spike-<image>-0.2.md`. It runs all four cases
 four times, block 12 and 48, each without and with product load and MIDI stream, about 19 minutes, and leaves the kit at
-block 12 without product load. Image A first, then AI (`make -C instruments/texture/load-spike ITCM=1 program-dfu`).
-0.3.0 and 0.4.0: the same series with BI (`make -C instruments/texture/load-spike MEM=B ITCM=1 program-dfu`).
+block 12 without product load. Image A first, then AI (`make -C instruments/planck/load-spike ITCM=1 program-dfu`).
+0.3.0 and 0.4.0: the same series with BI (`make -C instruments/planck/load-spike MEM=B ITCM=1 program-dfu`).
 
 **Image B only if A is too slow** (owner decision 2026-11-15). A is the preferred option of the concept and uses the boot
 type of every product here. If A stays below the limit in all four cases without overruns (proposal: peak below about 80 %;
 the owner sets the limit), D8 is decided for A and B is not needed. Only if A fails:
 
-1. Bootloader, `make -C instruments/texture/load-spike MEM=B program-dfu`. The command writes to the same QSPI address as
+1. Bootloader, `make -C instruments/planck/load-spike MEM=B program-dfu`. The command writes to the same QSPI address as
    for A; only the start differs: the Daisy bootloader runs B directly from QSPI instead of copying it to SRAM.
 2. `identify` must print `B`, then `run-all --md spike-B.md`, then flash your usual firmware back.
 

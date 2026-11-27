@@ -1,4 +1,4 @@
-# Third-party code of the texture study
+# Third-party code of the PLANCK study
 
 ## `eurorack/`
 
@@ -27,5 +27,5 @@ case `beads`. `../SHA256SUMS.upstream` holds the hashes of the upstream files (`
 `<cstdio>`. No file is changed for that.
 
 **Naming.** The upstream README, section *Guidelines for derivative works*: "Mutable Instruments" is a registered trademark
-and must not be used on derivative works, and keeping the module's name is not recommended. So the folder uses the working
-name `texture`; the final name is the owner's decision (port concept D1).
+and must not be used on derivative works, and keeping the module's name is not recommended. So the folder used the working
+name `texture`; the owner chose PLANCK on 2026-11-27 (port concept D1).
