@@ -115,7 +115,7 @@
     const patchInfo = el('div', { class: 'hint', id: 'sqPatchInfo' });
     const stats = el('table', { class: 'stats', id: 'sqStats' });
     const fileInput = el('input', { type: 'file', accept: '.acidpatch,.swpatch,.json', hidden: true, id: 'sqFile' });
-    const title = el('h2', { id: 'sqTitle' }, 'Acid Seq');
+    const title = el('h2', { id: 'sqTitle' }, 'BABBAGE');
     const wrap = (title, ...body) => el('section', { class: 'card' }, el('h2', {}, title), ...body);
     const run = (promise, ok) => Promise.resolve(promise).then(() => ok && log(ok, 'ok')).catch((e) => log(e.message, 'err'));
 
@@ -141,11 +141,11 @@
       const s = client.state, id = client.identity;
       const seq = client.component('step-seq'), sw = isStreichwurst(client);
       const pill = (text, kind = '') => el('span', { class: 'pill ' + kind }, text);
-      title.textContent = client.component('ambient-reverb') ? 'Ambient FX' : sw ? 'Streichwurst' : 'Acid Seq';
+      title.textContent = client.component('ambient-reverb') ? 'Ambient FX' : sw ? 'Streichwurst' : 'BABBAGE';
       patternCard.hidden = sw; // no sequencer, no CV outputs
       calCard.hidden = sw;
       status.replaceChildren(
-        pill(`${id.product} ${id.version}`, client.offline ? 'warn' : 'ok'),
+        pill(`${S.productDisplayName(id.product)} ${id.version}`, client.offline ? 'warn' : 'ok'),
         ...(sw ? [
           ...client.components.filter((c) => c.kind !== 4).map((c) => pill(`${c.id} ${c.version}`)),
           pill(`Revision ${s.applied}/${s.accepted}`, s.applied === s.accepted ? '' : 'warn'),
@@ -283,7 +283,7 @@
       if (compat.incompatible.length) notes.push('other schema version: ' + compat.incompatible.join(', '));
       if (compat.unknown.length) notes.push('unknown parameters: ' + compat.unknown.join(', '));
       if (compat.patternSkipped) notes.push('pattern skipped (no sequencer)');
-      patchInfo.textContent = `Loaded: ${loadedPatch.product}, ${loadedPatch.components.length} components. ` +
+      patchInfo.textContent = `Loaded: ${S.productDisplayName(loadedPatch.product)}, ${loadedPatch.components.length} components. ` +
         (notes.length ? 'Skipped: ' + notes.join('; ') + '.' : 'Fits completely.') +
         ' Only “Send to device” sends it.';
       container.querySelector('#sqUpload').disabled = false;

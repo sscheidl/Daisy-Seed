@@ -434,6 +434,8 @@
     return s === '-0' ? '0' : s;
   };
   // File format by product: Streichwurst has its own name and may embed the matrix.
+  // Display name of an SQ product (IDENTIFY); the product stays the wire ID (patch files, checks).
+  const productDisplayName = (product) => (product === 'acid-seq' ? 'BABBAGE' : product);
   const patchFormat = (product) => (product === 'streichwurst' ? 'streichwurst-patch' : 'acid-seq-patch');
   const patchExtension = (product) => (product === 'streichwurst' ? 'swpatch' : 'acidpatch');
   function patchFromClient(client, matrix = null) {
@@ -469,7 +471,7 @@
     try { root = JSON.parse(text); } catch (e) { throw new Error('not a valid JSON file'); }
     if (!root || typeof root !== 'object' || !['acid-seq-patch', 'streichwurst-patch'].includes(root.format) ||
         !isInt(root.format_version, 1, 1e6)) {
-      throw new Error('not an Acid Seq or Streichwurst patch');
+      throw new Error('not a BABBAGE or Streichwurst patch');
     }
     if (root.format === 'streichwurst-patch' && root.product !== 'streichwurst') {
       throw new Error('Streichwurst patch for another product');
@@ -486,7 +488,7 @@
       if (!s || typeof s !== 'object' || !isInt(note, 0, 59) || !isInt(gateLength, 5, 100)) throw new Error('invalid step ' + (i + 1));
       return { note, gateLength, gate: !!s.gate, accent: !!s.accent, slide: !!s.slide };
     }) : null;
-    if (root.components !== undefined && !Array.isArray(root.components)) throw new Error('not an Acid Seq patch');
+    if (root.components !== undefined && !Array.isArray(root.components)) throw new Error('not a BABBAGE patch');
     const components = (root.components || []).map((c) => {
       if (!c || typeof c.id !== 'string' || !c.id) throw new Error('component without ID');
       if (c.schema !== undefined && !isInt(c.schema, 0, 127)) throw new Error('invalid schema version');
@@ -535,6 +537,6 @@
     HEADER, VERSION, VERSION_MINOR, MAX_FRAME, OVERHEAD, MAX_PAYLOAD, RESPONSE, MONITOR_EVENT, NAK,
     TYPE, ERROR, ERROR_TEXT, TIMEOUT_MS, RETRIES, STATE_NAMES, SOURCE_NAMES, UNIT_TEXT, MONITOR,
     crc8, Writer, Reader, encode, assemble, classify, parseReply, protocolOf, Session, Client, noteName,
-    patchFromClient, serializePatch, parsePatch, checkPatch, uploadPatch, patchFormat, patchExtension, CAP, KIND, KIND_NAMES,
+    patchFromClient, serializePatch, parsePatch, checkPatch, uploadPatch, patchFormat, patchExtension, productDisplayName, CAP, KIND, KIND_NAMES,
   };
 });

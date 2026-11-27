@@ -37,6 +37,12 @@ struct AcidPatch {
     std::string matrix; // embedded .modpatch JSON (Streichwurst), empty = none
 };
 
+// Display name of an SQ product from IDENTIFY. The product stays the wire ID (patch files, checks);
+// only what the user reads is mapped (acid-seq is shown as BABBAGE since 2026-11-26).
+inline std::string SqProductDisplayName(const std::string& product) {
+    return product == "acid-seq" ? "BABBAGE" : product;
+}
+
 // File format name and extension by product.
 inline const char* PatchFormat(const std::string& product) {
     return product == "streichwurst" ? "streichwurst-patch" : "acid-seq-patch";
@@ -310,7 +316,7 @@ inline std::optional<AcidPatch> ParseAcidPatch(const std::string& text, std::str
     int format_version = 0;
     if(!format || (format->s != "acid-seq-patch" && format->s != "streichwurst-patch") ||
        !AcidInt(version, 1, 1e6, format_version)) {
-        error = "not an Acid Seq or Streichwurst patch";
+        error = "not a BABBAGE or Streichwurst patch";
         return std::nullopt;
     }
     if(format_version > kAcidPatchFormat) {

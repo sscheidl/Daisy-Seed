@@ -351,12 +351,13 @@ class SelfTest {
     // Acid Seq (SQ protocol): pages from the device's descriptors, edits, project patch with
     // the confirmation of the device-first rule (D13).
     void AcidSeq() {
-        e_.ConnectTo(PortIndex("Acid Seq (Sim)"));
+        e_.ConnectTo(PortIndex("BABBAGE (Sim)"));
         SqSession& s = e_.GetSqSession();
         for(int i = 0; i < 2000 && !s.Ready(); ++i)
             e_.Step(1);
         e_.RefreshNow();
         SELFTEST_CHECK(s.Ready() && s.Components().size() == 4 && e_.GetSqPanel().isVisible());
+        SELFTEST_CHECK(s.Identity().product == "acid-seq" && SqProductDisplayName(s.Identity().product) == "BABBAGE");
         SELFTEST_CHECK(e_.GetSqSimulator() && e_.GetSqSimulator()->Writes() == 0); // reading wrote nothing
         SELFTEST_CHECK(e_.GetSqPanel().ParamRows() >= 10);
         Shot("acid-seq-sequencer.png");
@@ -381,6 +382,8 @@ class SelfTest {
         e_.LoadProjectPatch(project);
         e_.Step(50);
         SELFTEST_CHECK(asked == 1 && e_.GetSqSimulator()->Value(1, 4) == 500000);
+        // The summary shows the display name; the patch itself keeps the product acid-seq.
+        SELFTEST_CHECK(e_.GetSqPanel().PatchInfoText().startsWith("Loaded: BABBAGE, 4 components."));
         e_.sq_upload_decision = [&](const AcidCompat&) {
             ++asked;
             return 2; // "Always send"
@@ -396,7 +399,7 @@ class SelfTest {
         e_.Disconnect();
         e_.RefreshNow();
         SELFTEST_CHECK(!e_.GetSqPanel().isVisible() && !e_.SqActive());
-        Say("PASS Acid Seq: SQ pages from descriptors, edits confirmed, song patch asks first (no / always)");
+        Say("PASS BABBAGE (acid-seq): SQ pages from descriptors, edits confirmed, song patch asks first (no / always)");
     }
 
     // Streichwurst (SQ 1.1 + Mod on Daisy on one port): pages by contract page, the matrix

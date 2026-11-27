@@ -60,14 +60,14 @@ connection to the Daisy runs over USB MIDI.
 
 Both versions read and write the same `.modpatch` files.
 
-## Acid Seq (SQ protocol)
+## BABBAGE (SQ protocol)
 
-Since Acid Seq phase 5, all three versions also operate the Acid Seq firmwares (`acid-seq`,
-`step-seq`, `acid-303`, `drive-fx`, `delay-fx`) via the
+Since Acid Seq phase 5, all three versions also operate the BABBAGE firmware (formerly Acid Seq, SQ product
+`acid-seq`) and its component firmwares (`step-seq`, `acid-303`, `drive-fx`, `delay-fx`) via the
 [SQ protocol](../../sequencers/step-seq/docs/PROTOCOL.md) (`F0 7D 53 51`).
 
 * **Detection:** When connecting, the editor queries SQ first. If the device answers,
-  the Acid Seq pages appear and no matrix is read. Without an answer (about 0.4 s) the
+  the BABBAGE pages appear and no matrix is read. Without an answer (about 0.4 s) the
   existing Mod on Daisy connection runs; Mod on Daisy v1 stays unchanged.
 * **The device takes precedence:** Connecting only reads (components, parameters,
   pattern, state, calibration). Writing only happens on a change or with
@@ -83,14 +83,14 @@ Since Acid Seq phase 5, all three versions also operate the Acid Seq firmwares (
     stored. The browser remembers calibration data per kit UID.
   * Error counters.
 * **Patch** (`.acidpatch`, JSON): pattern and all parameters of all components, each with
-  component and schema version. It can be loaded without a device (browser: "Acid Seq
+  component and schema version. It can be loaded without a device (browser: "BABBAGE
   offline"). Missing or incompatible components are shown and skipped.
   Calibration belongs to the kit and is not in the patch. `.modpatch` stays
   readable unchanged.
-* **VST3:** With an Acid Seq device, the song state is the `.acidpatch`. When a
+* **VST3:** With a BABBAGE device, the song state is the `.acidpatch`. When a
   song is loaded, the plugin asks whether the patch should be sent: "Send", "Always
   send" (for this plugin instance) or "Don't send".
-* **Simulator:** With `--simulators` there is the port "Acid Seq (Sim)", the
+* **Simulator:** With `--simulators` there is the port "BABBAGE (Sim)", the
   firmware's SQ device side running on the PC.
 * **Fixes after the Codex bug hunt** (2026-10-27,
   [report](../../docs/acid-seq/CODEX_FEHLERSUCHE.md)):
@@ -112,7 +112,7 @@ over one port: sound parameters via SQ 1.1, the modulation matrix via Mod on Dai
 * **Detection:** If an SQ device reports capability bit 6, the editor additionally starts
   its Mod on Daisy session on the same port after reading the SQ state. Both read
   first; writing only happens on a change or an explicit send. The
-  status line shows "streichwurst 0.1.0 · SQ + Matrix". Acid Seq devices (SQ 1.0) and
+  status line shows "streichwurst 0.1.0 · SQ + Matrix". BABBAGE devices (SQ 1.0) and
   pure Mod on Daisy devices behave as before.
 * **Pages:** Strings, Solo, Keyboard, FX and Global, built from the device's descriptors
   and the parameter contract's pages; status line with product, instrument and
@@ -124,7 +124,7 @@ over one port: sound parameters via SQ 1.1, the modulation matrix via Mod on Dai
   of instrument, FX and product with component and schema version, plus the matrix as an
   embedded `.modpatch` object. When sending, missing or incompatible
   parts are skipped; the matrix goes through the familiar column check. In the VST3 the
-  `.swpatch` is the song state, with the same prompt as for Acid Seq. `.modpatch` and
+  `.swpatch` is the song state, with the same prompt as for BABBAGE. `.modpatch` and
   `.acidpatch` stay unchanged.
 * **Offline:** Browser "Streichwurst offline" shows the pages from the contract.
 * **Standalone FX** (`StreichwurstFx-v0.1.0`, SQ 1.0, one component): only the FX page, no
@@ -175,7 +175,7 @@ firmware does not know the command yet: then hold S9 and S16 for five seconds or
 BOOT. With a simulator the button is disabled.
 
 **Without a Daisy:** The list contains only MIDI ports; without a device you can edit offline.
-The simulators ("Simulator: Toy Piano", "Simulator: KEKULÉ", the Acid Seq and
+The simulators ("Simulator: Toy Piano", "Simulator: KEKULÉ", the BABBAGE and
 Streichwurst simulators and the four SD card simulators) only appear with
 `"Daisy Control Panel" --simulators` and in the self-test. They are the firmware's controller and
 engine code, compiled on the PC, and identify themselves like the device

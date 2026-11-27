@@ -5,7 +5,8 @@ Until 2026-11-26 the product was called *Acid Seq* (directory `sequencers/acid-s
 stay for compatibility: the SQ product `acid-seq` (IDENTIFY, editors), the patch format `acid-seq-patch`
 (`.acidpatch`), the firmware marker `ACID-SEQ-FW-VERSION=`, the macro `ACID_SEQ_VERSION`, the namespace and include
 directory `acid_seq`, the shared fixtures `tests/fixtures/acid-seq/` and the work order in `docs/acid-seq/`. The
-components Step Seq, Acid 303, Drive and Stereo Delay keep their names and test firmwares.
+components Step Seq, Acid 303, Drive and Stereo Delay keep their names and test firmwares. Daisy Control Panel/VST3
+0.5.6 and the browser editor 0.4.5 display **BABBAGE** for the SQ product `acid-seq`.
 
 Product made of [Step Seq](../step-seq/), [Acid 303](../../instruments/acid-303/),
 [Drive](../../effects/drive/) and [Stereo Delay](../../effects/stereo-delay/).
