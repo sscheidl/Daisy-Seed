@@ -1,7 +1,7 @@
 # SC Reverb
 
 The Sean Costello reverb from DaisySP-LGPL (`ReverbSc`) as a component: stereo, eight delay lines, wet-only under FX contract
-1.0, with its own firmware `sc-reverb-fx`. Used by [Audrey 3](../../instruments/audrey-3/), inside its feedback loop.
+1.0, with its own firmware `sc-reverb-fx`. Used by [MOREAU](../../instruments/moreau/), inside its feedback loop.
 
 | Status | |
 | --- | --- |

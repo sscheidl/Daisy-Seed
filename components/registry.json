@@ -357,12 +357,12 @@
         "name": "AMBIENT_CONTROL_VERSION"
       }
     },
-    "audrey-3": {
+    "moreau": {
       "kind": "instrument",
-      "source": "instruments/audrey-3",
+      "source": "instruments/moreau",
       "version": {
         "type": "macro",
-        "path": "instruments/audrey-3/src/version.h",
+        "path": "instruments/moreau/src/version.h",
         "name": "AUDREY_3_VERSION"
       },
       "depends": [
@@ -958,17 +958,17 @@
         "mod-editor-vst3"
       ]
     },
-    "audrey-3": {
+    "moreau": {
       "version": {
         "type": "macro",
-        "path": "instruments/audrey-3/src/version.h",
+        "path": "instruments/moreau/src/version.h",
         "name": "AUDREY_3_FIRMWARE_VERSION"
       },
-      "directory": "instruments/audrey-3/build",
-      "image": "Audrey3",
+      "directory": "instruments/moreau/build",
+      "image": "Moreau",
       "marker": "AUDREY-3-FW-VERSION=",
       "components": [
-        "audrey-3",
+        "moreau",
         "echo-delay",
         "sc-reverb",
         "audrey-dsp",
