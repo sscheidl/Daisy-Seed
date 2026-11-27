@@ -21,7 +21,7 @@ def select_suites(changed):
                  'instruments/kekule/third_party/stmlib/')
     # Shared saturation curves (common/dsp/): Tape FX, its Toy Piano build and Drive.
     dsp = touched('common/dsp/')
-    # Acid Seq effects: their wet-only cores and adapters run in the shared FX test.
+    # BABBAGE effects: their wet-only cores and adapters run in the shared FX test.
     acid_fx = touched('effects/drive/', 'effects/stereo-delay/')
     fx_contract = touched('common/audio/', 'tests/fx/')
     # The SQ protocol contract (vectors, parameter IDs) is shared by the firmware cores,

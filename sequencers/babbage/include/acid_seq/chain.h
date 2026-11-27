@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Acid Seq signal path (ARBEITSAUFTRAG 4.10): sequencer events -> Acid 303 voice -> Drive
+// BABBAGE signal path (ARBEITSAUFTRAG 4.10): sequencer events -> Acid 303 voice -> Drive
 // (10 ms on/off fade) -> Stereo Delay (feed, tail, dry/wet in the host) -> soft limiter ->
 // output. Header-only, no hardware; the firmware (src/main.cpp) and the end-to-end golden
 // test run exactly this code. One Process() per 48-frame block after the sequencer tick.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Memory placement of an ARM ELF (Acid Seq, R15): load regions, BIN identity, static DTCM
+"""Memory placement of an ARM ELF (BABBAGE, R15): load regions, BIN identity, static DTCM
 stack reserve and, optionally, symbols that must live in SDRAM.
 
 Usage: check-elf-placement.py <image.elf> [--dtcm-reserve BYTES] [--sdram SYMBOL:MIN_BYTES ...]

@@ -25,7 +25,7 @@ assert match, "Could not read the version from src/version.h"
 version = match.group(1)
 
 path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else project / 'build' / f'ToyPiano-v{version}.bin'
-# Acid Seq firmwares (docs/acid-seq/ARBEITSAUFTRAG.md 3.1): image prefix -> version source, marker.
+# BABBAGE firmwares (formerly BABBAGE, docs/acid-seq/ARBEITSAUFTRAG.md 3.1): image prefix -> version source, marker.
 ACID_SEQ = {
     'StepSeq-v': ('sequencers/step-seq/src/version.h', 'STEP_SEQ_FIRMWARE_VERSION', 'STEP-SEQ-FW-VERSION='),
     'Acid303-v': ('instruments/acid-303/src/version.h', 'ACID_303_FIRMWARE_VERSION', 'ACID-303-FW-VERSION='),

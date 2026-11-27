@@ -348,7 +348,7 @@ class SelfTest {
         Say("PASS plugin: project patch shown offline, sent to the device on connecting");
     }
 
-    // Acid Seq (SQ protocol): pages from the device's descriptors, edits, project patch with
+    // BABBAGE (SQ protocol): pages from the device's descriptors, edits, project patch with
     // the confirmation of the device-first rule (D13).
     void AcidSeq() {
         e_.ConnectTo(PortIndex("BABBAGE (Sim)"));
@@ -369,7 +369,7 @@ class SelfTest {
         SELFTEST_CHECK(e_.GetSqSimulator()->Value(1, 4) == 3000000);
         SELFTEST_CHECK(e_.GetSqPanel().ParamSlider("cutoff")->getValue() == 3000.0);
         Shot("acid-seq-voice.png");
-        // Song state: the patch text is the Acid Seq patch; a project load asks first.
+        // Song state: the patch text is the BABBAGE patch; a project load asks first.
         const std::string project = e_.PatchText();
         SELFTEST_CHECK(project.find("acid-seq-patch") != std::string::npos);
         s.SetParam(1, "cutoff", 500);
@@ -454,7 +454,7 @@ class SelfTest {
         e_.LoadProjectPatch(project);
         for(int i = 0; i < 1500; ++i)
             e_.Step(1);
-        // "Always send" from the Acid Seq part still holds for this instance: no question.
+        // "Always send" from the BABBAGE part still holds for this instance: no question.
         SELFTEST_CHECK(asked <= 1 && e_.GetStreichwurstSimulator()->Value(1, 7) == 60000);
         SELFTEST_CHECK(e_.GetStreichwurstSimulator()->Matrix().CurrentPatch().depth[0][0] == 50);
         e_.sq_upload_decision = nullptr;

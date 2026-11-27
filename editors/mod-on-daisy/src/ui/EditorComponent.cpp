@@ -186,7 +186,7 @@ EditorComponent::EditorComponent(bool with_simulators, bool sd_page)
     };
     addAndMakeVisible(log_);
     log_.setFont(juce::FontOptions(13.0f));
-    addChildComponent(sq_panel_); // over the matrix pages while an Acid Seq device is connected
+    addChildComponent(sq_panel_); // over the matrix pages while an BABBAGE device is connected
     addChildComponent(sd_panel_); // over everything while the SD card page is shown (added last: on top)
 
     RefreshPorts();
@@ -361,7 +361,7 @@ void EditorComponent::ConnectTo(int index) {
 
 void EditorComponent::AttachMidi(std::unique_ptr<MidiPort> port) {
     midi_ = std::move(port);
-    // SQ first (Acid Seq firmwares); without an answer Mod on Daisy follows (R09).
+    // SQ first (BABBAGE firmwares); without an answer Mod on Daisy follows (R09).
     sq_link_.send = [this](const uint8_t* b, std::size_t n) { return midi_ && midi_->Send(b, n); };
     sq_session_.Connect(now_, 1);
     md_pending_ = true;

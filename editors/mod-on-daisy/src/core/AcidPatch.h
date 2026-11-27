@@ -1,5 +1,5 @@
 #pragma once
-// Product patch of Acid Seq (ARBEITSAUFTRAG 4.9, R16): one versioned JSON file (.acidpatch)
+// Product patch of BABBAGE (ARBEITSAUFTRAG 4.9, R16): one versioned JSON file (.acidpatch)
 // with the pattern and every parameter of every component (sequencer incl. mode, transport,
 // clock and MIDI settings; voice; drive; delay), each with its component and schema
 // version. Calibration belongs to the kit and is not part of a song (stored per UID by
@@ -9,7 +9,7 @@
 //
 // The same structure serves every SQ product: Streichwurst writes "streichwurst-patch"
 // (.swpatch) with its instrument, FX and product parameters and, optionally, the Mod on
-// Daisy matrix as an embedded .modpatch object ("matrix"). Acid Seq files are unchanged.
+// Daisy matrix as an embedded .modpatch object ("matrix"). BABBAGE files are unchanged.
 #include "SqSession.h"
 #include <cmath>
 #include <cstdio>

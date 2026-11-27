@@ -1,4 +1,4 @@
-"""Acid Seq contracts: SQ vectors, stable parameter IDs, transport vectors, fixtures."""
+"""BABBAGE contracts: SQ vectors, stable parameter IDs, transport vectors, fixtures."""
 import hashlib
 import importlib.util
 import json

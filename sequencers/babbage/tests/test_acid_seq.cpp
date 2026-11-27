@@ -1,4 +1,4 @@
-// Host tests of the Acid Seq product chain (ARBEITSAUFTRAG Phase 6, 4.10): the end-to-end
+// Host tests of the BABBAGE product chain (ARBEITSAUFTRAG Phase 6, 4.10): the end-to-end
 // golden (pattern -> sequencer -> voice -> Drive -> Delay -> limiter), voice ownership
 // between sequencer and MIDI (R16), the tempo hand-over to the delay, the soft limiter, and
 // switching both effects off down to the exact dry voice. The component goldens are pinned
@@ -10,7 +10,7 @@
 #include <memory>
 #include <vector>
 
-// Golden hash of Acid Seq 0.1.0 (4 s, both channels). It changes only on purpose, with the
+// Golden hash of BABBAGE 0.1.0 (4 s, both channels). It changes only on purpose, with the
 // reason in CHANGELOG.md; a component change that moves it also moves that component's golden.
 constexpr uint32_t kGolden = 0xBC3D9C4Eu;
 
@@ -113,7 +113,7 @@ static void TestGolden() {
         CHECK(right > 1.f);
         hashes[run] = Fnv(rig->out);
     }
-    std::printf("Acid Seq golden: 0x%08X\n", unsigned(hashes[0]));
+    std::printf("BABBAGE golden: 0x%08X\n", unsigned(hashes[0]));
     CHECK(hashes[0] == hashes[1]);
     CHECK(hashes[0] == kGolden);
 }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // SQ device side (PROTOCOL.md): answers requests in the main loop, hands changes to the
 // audio callback through a Host and sends event-based monitor frames (<= 50 per second).
-// Shared by every Acid Seq firmware; the components and their values come from the host.
+// Shared by every BABBAGE firmware; the components and their values come from the host.
 #include "cv.h"
 #include "param_table.h"
 #include "pattern.h"

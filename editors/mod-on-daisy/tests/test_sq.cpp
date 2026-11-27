@@ -1,4 +1,4 @@
-// Host test of the editor's SQ client and Acid Seq patch (ARBEITSAUFTRAG Phase 5) against
+// Host test of the editor's SQ client and BABBAGE patch (ARBEITSAUFTRAG Phase 5) against
 // the firmware's own SQ device (SqSimulator wraps sequencers/step-seq/.../device.h).
 // No JUCE. make -C editors/mod-on-daisy test
 #include "../src/core/AcidPatch.h"

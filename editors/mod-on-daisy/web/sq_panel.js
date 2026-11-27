@@ -1,4 +1,4 @@
-// SQ panel pages of the browser editor (Acid Seq Phase 5, Streichwurst Phase 4): pattern
+// SQ panel pages of the browser editor (BABBAGE, formerly BABBAGE, Phase 5; Streichwurst Phase 4): pattern
 // grid with note names and play position, transport and switch states, clock and tempo,
 // parameter pages built from the device's descriptors (labels and Streichwurst pages from
 // sq_contract.js), calibration with the separate CV enable (stored per kit UID in this
@@ -56,7 +56,7 @@
       const ambient = product === 'ambient-reverb';
       this.identity = { product, version: 'offline', uid: [0, 0, 0], capabilities: sw || ambient ? 16 : 63, bootId: 0 };
       const types = ['float', 'int', 'enum', 'bool'], units = ['none', 'percent', 'hz', 'ms', 'db', 'semitones', 'cents', 'bpm', 'channel', 'velocity'];
-      // Only the components of this product (the contract lists Acid Seq and Streichwurst).
+      // Only the components of this product (the contract lists BABBAGE and Streichwurst).
       this.components = Object.entries(CONTRACT).filter(([id]) => productOf(id) === (ambient ? 'ambient-reverb' : sw ? 'streichwurst' : 'acid-seq')).map(([id, c]) => ({
         id, version: '0.1.0', schema: c.schema, kind: id === 'streichwurst' ? 4 : 0,
         parameters: c.parameters.map((p) => ({ id: p.id, key: p.key, type: types.indexOf(p.type), unit: units.indexOf(p.unit),

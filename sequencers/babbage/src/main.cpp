@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Acid Seq firmware for the Seed3 Desktop Dev Kit (ARBEITSAUFTRAG Phase 6, 4.10): the Step
+// BABBAGE firmware for the Seed3 Desktop Dev Kit (ARBEITSAUFTRAG Phase 6, 4.10): the Step
 // Seq sequencer (controls, CV/Gate, MIDI out) playing the Acid 303 voice through Drive and
 // Stereo Delay to the audio outputs (acid_seq/chain.h). External MIDI notes and CCs on the
 // voice channel share the voice (R16). The audio callback (1 kHz blocks) owns the controls,

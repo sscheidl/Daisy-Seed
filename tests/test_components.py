@@ -255,7 +255,7 @@ class ComponentTests(unittest.TestCase):
             suites = selection.select_suites([path])
             for key in ACID_SEQ_SUITES:
                 self.assertTrue(suites[key], f'{path}: {key}')
-        # Changes elsewhere leave the Acid Seq suites alone.
+        # Changes elsewhere leave the BABBAGE suites alone.
         for path in ('instruments/toy-piano/src/toy_piano.cpp', 'effects/tape-fx/src/tape_fx.h',
                      'editors/mod-on-daisy/web/mod_protocol.js', 'common/sd/ro_sd.c'):
             suites = selection.select_suites([path])

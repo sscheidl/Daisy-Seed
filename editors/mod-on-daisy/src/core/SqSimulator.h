@@ -1,9 +1,9 @@
 #pragma once
-// Simulated SQ device for the Acid Seq panel: the firmware's own SQ device side
+// Simulated SQ device for the BABBAGE panel: the firmware's own SQ device side
 // (sequencers/step-seq/include/step_seq/device.h) with a host that applies changes at
 // once instead of handing them to an audio callback. Products: "acid-seq" (all four
 // components), "step-seq" or an effect alone. Used by the core tests, the JUCE self-test,
-// the "Acid Seq (Sim)" port and tools/sq_sim.cpp (browser tests). Opt-in like the MD
+// the "BABBAGE (Sim)" port and tools/sq_sim.cpp (browser tests). Opt-in like the MD
 // simulators. No timing: Advance() plays the sequencer's step position for the monitor.
 #include "step_seq/device.h"
 #include "step_seq/param_table.h"

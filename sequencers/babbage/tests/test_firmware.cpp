@@ -1,4 +1,4 @@
-// MIT. The production Acid Seq firmware (src/main.cpp) on the Step Seq host fakes: power-up
+// MIT. The production BABBAGE firmware (src/main.cpp) on the Step Seq host fakes: power-up
 // on Run with audio, CV locked and MIDI out, IDENTIFY with four components, SQ parameters
 // of every component, notes and CCs on the voice channel (USB and DIN), voice ownership
 // with the sequencer (R16), tempo hand-over to the delay, USB loss, the bootloader after

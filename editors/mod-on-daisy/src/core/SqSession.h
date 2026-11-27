@@ -1,7 +1,7 @@
 #pragma once
 // SQ protocol on the editor side (sequencers/step-seq/docs/PROTOCOL.md, ARBEITSAUFTRAG
 // 4.9, R09/R10/R16): a dispatcher that keeps Mod on Daisy (7D 4D 44), SQ (7D 53 51) and the
-// bootloader reply (7D 42 4C) apart, and the SQ client of the Acid Seq panel pages.
+// bootloader reply (7D 42 4C) apart, and the SQ client of the BABBAGE panel pages.
 //
 // Connect() reads the device first (D13: the device has priority): IDENTIFY, components,
 // parameter descriptors and enum labels, values, pattern (capability bit 3), state,

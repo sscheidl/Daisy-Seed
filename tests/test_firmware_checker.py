@@ -1,4 +1,4 @@
-"""scripts/check-firmware.py for the Acid Seq and Streichwurst images: positive and negative cases."""
+"""scripts/check-firmware.py for the BABBAGE and Streichwurst images: positive and negative cases."""
 from pathlib import Path
 import re
 import struct

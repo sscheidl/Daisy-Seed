@@ -8,7 +8,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
-# 'sequencer' (sequencers/) and 'dsp' (shared header-only DSP in common/dsp) came with Acid Seq,
+# 'sequencer' (sequencers/) and 'dsp' (shared header-only DSP in common/dsp) came with BABBAGE (now BABBAGE),
 # 'storage' (common/sd: disk layer, filesystem profiles, card reader) with Looper 0.6.
 KINDS = ('instrument', 'effect', 'control', 'panel', 'contract', 'sequencer', 'dsp', 'storage')
 

@@ -48,7 +48,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     bool SaveFile(const juce::File& file);
     Model& GetModel() { return model_; }
     Session& GetSession() { return session_; }
-    // Acid Seq (SQ protocol): the session and its pages; active while an SQ device is read or connected.
+    // BABBAGE (SQ protocol): the session and its pages; active while an SQ device is read or connected.
     SqSession& GetSqSession() { return sq_session_; }
     SqPanel& GetSqPanel() { return sq_panel_; }
     SqSimulator* GetSqSimulator() { return sq_sim_.get(); }
@@ -59,7 +59,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     bool SqActive() const {
         return sq_session_.GetPhase() == SqSession::Phase::Reading || sq_session_.GetPhase() == SqSession::Phase::Ready;
     }
-    // Answer to "send the project's Acid Seq patch?" (VST3 song state): 0 no, 1 yes, 2 always.
+    // Answer to "send the project's BABBAGE patch?" (VST3 song state): 0 no, 1 yes, 2 always.
     // Set by the self-test; otherwise a dialog asks.
     std::function<int(const AcidCompat&)> sq_upload_decision;
     Simulator* GetSimulator() { return simulator_.get(); }
@@ -240,7 +240,7 @@ class EditorComponent : public juce::Component, private juce::Timer, private juc
     bool md_pending_ = false;        // real port: Mod on Daisy is tried once SQ did not answer
     bool sq_was_ready_ = false;
     bool sq_always_upload_ = false;  // VST3: "Always send" chosen for this plugin instance
-    std::optional<AcidPatch> sq_project_; // Acid Seq song state waiting for a device and a decision
+    std::optional<AcidPatch> sq_project_; // BABBAGE song state waiting for a device and a decision
     std::unique_ptr<MidiPort> midi_;
     BootRequest boot_;
     std::unique_ptr<MidiPort> boot_port_; // opened only for the request while offline

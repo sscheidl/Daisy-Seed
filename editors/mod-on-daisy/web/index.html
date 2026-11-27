@@ -805,7 +805,7 @@ async function connect() {
   }
 }
 
-// ------------------------------------------------------------------ SQ devices (Acid Seq, Streichwurst)
+// ------------------------------------------------------------------ SQ devices (BABBAGE, Streichwurst)
 // A device answering SQ IDENTIFY gets the SQ pages; no MD matrix is read from it (R09),
 // unless it reports SQ 1.1 capability bit 6 (Streichwurst): then the Mod on Daisy session
 // runs alongside on the same port, and "Matrix" switches between both views. The device
@@ -1215,7 +1215,7 @@ async function firmwareUpdate() {
 // ------------------------------------------------------------------ wiring
 $('updateBtn').addEventListener('click', firmwareUpdate);
 $('demoBtn').addEventListener('click', loadDemo);
-// Acid Seq pages without a device: the contract's parameters, patches edit and save offline.
+// BABBAGE pages without a device: the contract's parameters, patches edit and save offline.
 $('swViewBtn').addEventListener('click', () => showMatrixView($('mdMain').hidden));
 $('swDemoBtn').addEventListener('click', () => {
   if (state.sq) return log('Disconnect first, then edit offline.', 'warn');

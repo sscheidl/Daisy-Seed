@@ -1,4 +1,4 @@
-// End-to-end test of the browser editor's Acid Seq pages against the firmware's SQ device
+// End-to-end test of the browser editor's BABBAGE pages against the firmware's SQ device
 // (tests/sq_sim.cpp). Chromium (Playwright) gets a fake Web MIDI port whose traffic goes
 // to sq_sim, as e2e.cjs does with mod_sim. Also checks that an MD device still gets the
 // matrix (with mod_sim) and an SQ device never gets an MD request.
@@ -68,7 +68,7 @@ async function openEditor(browser, sim, sent) {
 
 (async () => {
   const browser = await chromium.launch();
-  // ---- an SQ device: Acid Seq pages, no MD request
+  // ---- an SQ device: BABBAGE pages, no MD request
   const sq = startSim(SQ_SIM, 'acid-seq');
   const sent = [];
   const page = await openEditor(browser, sq, sent);

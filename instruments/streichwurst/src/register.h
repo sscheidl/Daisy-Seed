@@ -197,7 +197,7 @@ inline int32_t FromNormalized(const sq::ParamDesc& d, float n) {
     return sq::Constrain(d, int32_t(std::lround(v)));
 }
 
-// CC plan (PARAMETERS.md rule shared with Acid Seq): continuous linear/log over the
+// CC plan (PARAMETERS.md rule shared with BABBAGE): continuous linear/log over the
 // range, enum/int index = floor(cc * count / 128), bool cc >= 64.
 inline int32_t FromCc(const sq::ParamDesc& d, uint8_t cc) {
     if(d.type == sq::TypeBool)
