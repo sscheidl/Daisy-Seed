@@ -1,4 +1,9 @@
-# Audrey 3
+# MOREAU
+
+Until 2026-11-27 the product was called *Audrey 3* (directory `instruments/audrey-3`, project `audrey-3`, image
+`Audrey3-v<version>.bin`); the rename changed no code or sound. Kept for compatibility: the firmware marker
+`AUDREY-3-FW-VERSION=`, the macros `AUDREY_3_VERSION` and `AUDREY_3_FIRMWARE_VERSION`, the namespace and include
+directory `audrey`, and every name of the upstream Synthux Academy Audrey II code.
 
 The [Synthux Academy Audrey II](https://github.com/Synthux-Academy/Audrey-II) feedback synth on the Seed3 Desktop Dev Kit:
 a Karplus string, overdrive, filters and reverb in one feedback loop, with an echo after it. This is a faithful port with two
@@ -69,7 +74,7 @@ echo in the reverb slot. The sink maps Reverb Decay to the stage's `feedback` pa
 there too.
 
 Effects are accepted on their own first: their hardware tests are in their folders, and all are NOT MEASURED yet. The CPU load
-and sound of Audrey 3 are a separate acceptance.
+and sound of MOREAU are a separate acceptance.
 
 Not included yet: a control panel page, the Mod on Daisy matrix, and the CV and gate inputs.
 
@@ -89,8 +94,8 @@ are in SDRAM, as on the Audrey II. The engine and everything in SDRAM are constr
 
 ```bash
 git -C DaisySP submodule update --init DaisySP-LGPL
-make PROJECT=audrey-3 -j4
-make PROJECT=audrey-3 test
+make PROJECT=moreau -j4
+make PROJECT=moreau test
 ```
 
 **Licence.** Our code is MIT and the port is MIT (`third_party/audrey-ii/LICENSE`). A build also links ReverbSc and Tone from

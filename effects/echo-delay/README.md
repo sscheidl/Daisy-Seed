@@ -3,7 +3,7 @@
 The tape-like echo of the [Audrey II](https://github.com/Synthux-Academy/Audrey-II) as a component of its own: two independent
 lines of up to 5 s, with a band-pass at 800 Hz and a soft clip in the feedback. Repeats get narrower, and feedback above 1
 saturates instead of growing. Wet-only under FX contract 1.0, with its own firmware `echo-delay-fx`. Used by
-[Audrey 3](../../instruments/audrey-3/).
+[MOREAU](../../instruments/moreau/).
 
 | Status | |
 | --- | --- |

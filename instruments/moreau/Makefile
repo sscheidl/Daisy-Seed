@@ -2,7 +2,7 @@
 # Component version (engine and controls) and standalone firmware version are separate.
 VERSION := $(shell sed -n 's/.*AUDREY_3_FIRMWARE_VERSION "\(.*\)".*/\1/p' src/version.h | head -n 1)
 $(if $(VERSION),,$(error Could not read the version from src/version.h))
-TARGET = Audrey3-v$(VERSION)
+TARGET = Moreau-v$(VERSION)
 AUDREY_II = third_party/audrey-ii
 AUDREY_DSP = ../../common/dsp/audrey-ii
 ECHO_DELAY = ../../effects/echo-delay

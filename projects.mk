@@ -54,11 +54,11 @@ PROJECT_STATUS_toy-piano-tape := buildable
 # BABBAGE, formerly BABBAGE (docs/acid-seq/ARBEITSAUFTRAG.md): components with standalone test firmwares
 # and the composed product. Each joins BUILDABLE_PROJECTS with its first validated build.
 PROJECTS += step-seq acid-303 drive-fx delay-fx babbage
-# Audrey 3: Audrey II port; also needs the DaisySP-LGPL submodule (instruments/audrey-3/README.md).
-PROJECTS += audrey-3
-BUILDABLE_PROJECTS += audrey-3
-PROJECT_DIR_audrey-3 := instruments/audrey-3
-PROJECT_STATUS_audrey-3 := buildable
+# Audrey 3: Audrey II port; also needs the DaisySP-LGPL submodule (instruments/moreau/README.md).
+PROJECTS += moreau
+BUILDABLE_PROJECTS += moreau
+PROJECT_DIR_moreau := instruments/moreau
+PROJECT_STATUS_moreau := buildable
 # The two effects of Audrey 3 as components with standalone firmwares.
 PROJECTS += echo-delay-fx sc-reverb-fx
 BUILDABLE_PROJECTS += echo-delay-fx sc-reverb-fx

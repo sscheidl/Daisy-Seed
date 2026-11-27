@@ -496,6 +496,6 @@ int main() {
         std::printf("%d failure(s)\n", failures);
         return 1;
     }
-    std::printf("audrey-3 host tests passed\n");
+    std::printf("moreau host tests passed\n");
     return 0;
 }
