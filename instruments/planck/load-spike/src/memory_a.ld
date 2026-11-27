@@ -1,4 +1,4 @@
-/* Option A of the texture load spike: supplements the unchanged official BOOT_SRAM script.
+/* Option A of the PLANCK load spike: supplements the unchanged official BOOT_SRAM script.
  * The buffer itself lives in SDRAM (DSY_SDRAM_BSS); only the reverb buffer needs a section. */
 SECTIONS
 {
