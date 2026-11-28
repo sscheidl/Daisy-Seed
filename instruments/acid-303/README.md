@@ -3,7 +3,7 @@
 Monophonic voice modeled on the TB-303 for the Seed3 Desktop Dev Kit: saw or
 square (DaisySP PolyBLEP), DaisySP `LadderFilter` (LP24, internally 4× oversampled)
 with self-oscillation (D4), filter envelope with Env Mod and Decay, accent and slide.
-Header-only core for the product [BABBAGE](../../sequencers/babbage/) and its own
+Header-only core for the product [BABBAGE](../babbage/) and its own
 firmware `acid-303` for testing and playing.
 
 | Status | |

@@ -889,10 +889,10 @@
     "babbage": {
       "version": {
         "type": "macro",
-        "path": "sequencers/babbage/src/composed_version.h",
+        "path": "instruments/babbage/src/composed_version.h",
         "name": "ACID_SEQ_VERSION"
       },
-      "directory": "sequencers/babbage/build",
+      "directory": "instruments/babbage/build",
       "image": "Babbage",
       "marker": "ACID-SEQ-FW-VERSION=",
       "device_id": "acid-seq",

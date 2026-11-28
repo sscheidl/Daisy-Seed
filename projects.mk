@@ -78,7 +78,7 @@ BUILDABLE_PROJECTS += drive-fx
 PROJECT_DIR_delay-fx := effects/stereo-delay
 PROJECT_STATUS_delay-fx := buildable
 BUILDABLE_PROJECTS += delay-fx
-PROJECT_DIR_babbage := sequencers/babbage
+PROJECT_DIR_babbage := instruments/babbage
 PROJECT_STATUS_babbage := buildable
 BUILDABLE_PROJECTS += babbage
 

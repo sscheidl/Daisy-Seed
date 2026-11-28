@@ -6,9 +6,11 @@ stay for compatibility: the SQ product `acid-seq` (IDENTIFY, editors), the patch
 (`.acidpatch`), the firmware marker `ACID-SEQ-FW-VERSION=`, the macro `ACID_SEQ_VERSION`, the namespace and include
 directory `acid_seq`, the shared fixtures `tests/fixtures/acid-seq/` and the work order in `docs/acid-seq/`. The
 components Step Seq, Acid 303, Drive and Stereo Delay keep their names and test firmwares. Daisy Control Panel/VST3
-0.5.6 and the browser editor 0.4.5 display **BABBAGE** for the SQ product `acid-seq`.
+0.5.6 and the browser editor 0.4.5 display **BABBAGE** for the SQ product `acid-seq`. On
+2026-11-27 the directory moved from `sequencers/babbage` to `instruments/babbage`: the product makes sound itself,
+and `sequencers/` keeps the pure sequencer Step Seq. Project ID, image and identifiers did not change.
 
-Product made of [Step Seq](../step-seq/), [Acid 303](../../instruments/acid-303/),
+Product made of [Step Seq](../../sequencers/step-seq/), [Acid 303](../../instruments/acid-303/),
 [Drive](../../effects/drive/) and [Stereo Delay](../../effects/stereo-delay/).
 Signal path: sequencer → voice → Drive → Delay → host mixer → soft limiter →
 output. CV/gate and MIDI also run without a connected audio output.
@@ -26,19 +28,19 @@ Plan and rules: [Work order (German, former name Acid Seq)](../../docs/acid-seq/
 
 ```bash
 make PROJECT=babbage -j4
-make -C sequencers/babbage test
-make -C sequencers/babbage test-sanitize
-python scripts/check-firmware.py sequencers/babbage/build/Babbage-v0.1.0.bin
-python scripts/check-elf-placement.py sequencers/babbage/build/Babbage-v0.1.0.elf --sdram delay_memory:4608000
+make -C instruments/babbage test
+make -C instruments/babbage test-sanitize
+python scripts/check-firmware.py instruments/babbage/build/Babbage-v0.1.0.bin
+python scripts/check-elf-placement.py instruments/babbage/build/Babbage-v0.1.0.elf --sdram delay_memory:4608000
 make PROJECT=babbage manifest
 ```
 
-Image `sequencers/babbage/build/Babbage-v<version>.bin`, identifier in the image
+Image `instruments/babbage/build/Babbage-v<version>.bin`, identifier in the image
 `ACID-SEQ-FW-VERSION=`, SQ product `acid-seq`.
 
 ## Controls on the kit
 
-As in [Step Seq](../step-seq/README.md) (work order 4.1): S1–S16 steps, VR1–VR4 the
+As in [Step Seq](../../sequencers/step-seq/README.md) (work order 4.1): S1–S16 steps, VR1–VR4 the
 selected step, VR5 tempo, VR6 swing, VR7 length, VR8 transpose, SW17 start/stop,
 SW18 mode. The voice and the effects have no knobs of their own on the kit. They are set via
 the panel (editor, pages "Voice", "Drive", "Delay") or via MIDI CC.
@@ -59,7 +61,7 @@ the panel (editor, pages "Voice", "Drive", "Delay") or via MIDI CC.
   sequencer and preview notes. USB loss and a change of the voice channel end the
   MIDI notes. Before the bootloader the voice is fully muted.
 * Received notes are not passed on to the MIDI outputs.
-* **CCs on the voice channel** (USB and DIN) per [PARAMETERS.md](../step-seq/docs/PARAMETERS.md):
+* **CCs on the voice channel** (USB and DIN) per [PARAMETERS.md](../../sequencers/step-seq/docs/PARAMETERS.md):
   voice CC 5, 7, 70, 71, 74–79, Drive CC 20–27, Delay CC 102–109.
   Velocity above 100 plays an accent.
 * **Tempo hand-over:** In sync mode the delay follows the sequencer's tempo. The

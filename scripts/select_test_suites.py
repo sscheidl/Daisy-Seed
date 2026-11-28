@@ -84,7 +84,7 @@ def select_suites(changed):
         'drive': drive,
         'delay': delay,
         # Any change to one of its cores also tests the composed product.
-        'babbage': stepseq or acid303 or drive or delay or touched('sequencers/babbage/'),
+        'babbage': stepseq or acid303 or drive or delay or touched('instruments/babbage/'),
         'streichwurst': streichwurst,
         # Cumulonimbus (Clouds granular FX) and its Toy Piano product: the component, the Torus reverb
         # and FX contract it composes, the Toy Piano sources and the Mod on Daisy API.
