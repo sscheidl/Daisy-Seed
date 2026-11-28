@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Host tests of Audrey 3: the parameter table, pots with pick-up, MIDI notes and CCs, and
+// Host tests of MOREAU: the parameter table, pots with pick-up, MIDI notes and CCs, and
 // the engine: stable, replaceable stages, and the note gate leaving the Audrey II path alone.
 #include "audrey/composition.h"
 #include "audrey/control.h"

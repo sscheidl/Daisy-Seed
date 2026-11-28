@@ -1,4 +1,4 @@
-# Third-party code of Audrey 3
+# Third-party code of MOREAU
 
 ## `audrey-ii/`
 
