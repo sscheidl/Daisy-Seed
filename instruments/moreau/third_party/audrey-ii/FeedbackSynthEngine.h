@@ -40,7 +40,7 @@ class Engine {
 
         void SetOutputLevel(const float level);
 
-        // Audrey 3: the played note's gate, 0-1, before the echo send. At 1 the output
+        // MOREAU: the played note's gate, 0-1, before the echo send. At 1 the output
         // is exactly the Audrey II output. The feedback loop never stops.
         void SetGate(const float gate) { gate_target_ = gate; }
 
@@ -206,7 +206,7 @@ void Engine<Stages>::Process(float in, float &outL, float &outR) {
   fb_delayline_[0].Write(sampL * fb_gain_);
   fb_delayline_[1].Write(sampR * fb_gain_);
 
-  // ---> Note gate (Audrey 3)
+  // ---> Note gate (MOREAU)
 
   fonepole(gate_, gate_target_,
            gate_target_ > gate_ ? gate_attack_coef_ : gate_release_coef_);

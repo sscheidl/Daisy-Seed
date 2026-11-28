@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// The Audrey 3 product composition: which stages the feedback engine runs with, and how
+// The MOREAU product composition: which stages the feedback engine runs with, and how
 // parameter values reach them. Replacing a stage means changing `Stages` here only.
 #include "FeedbackSynthEngine.h"
 #include "audrey/params.h"

@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Panel and MIDI control of Audrey 3 (README.md): eight pots with a second page on SW17,
+// Panel and MIDI control of MOREAU (README.md): eight pots with a second page on SW17,
 // play modes on SW18, S1 for the echo warp, notes and CCs from MIDI. No hardware access;
 // runs at the 1 kHz control rate in the audio callback.
 #include "audrey/params.h"

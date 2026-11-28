@@ -1,4 +1,13 @@
-# Changelog Audrey 3
+# Changelog MOREAU
+
+## Rename to MOREAU, 2026-11-27
+
+No code or sound change; the version stays 0.1.1. Directory `instruments/audrey-3` -> `instruments/moreau`, project
+`audrey-3` -> `moreau`, image `Audrey3-v0.1.1.bin` -> `Moreau-v0.1.1.bin`. The images (MOREAU, Echo Delay FX,
+SC Reverb FX) are byte-identical to the builds before the rename (MEASURED 2026-11-27, fresh clones of `254de6d` and
+`df48a41`). The marker `AUDREY-3-FW-VERSION=`, the `AUDREY_3_*` macros and the C++ names stay
+([README](README.md)). Code comments say MOREAU since 2026-11-28. The entries below keep the names that were valid at
+the time.
 
 ## 0.1.1 (2026-11-18)
 

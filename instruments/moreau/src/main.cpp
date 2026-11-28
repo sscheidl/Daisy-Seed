@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Audrey 3 firmware for the Seed3 Desktop Dev Kit: the Audrey II feedback synth, ported
+// MOREAU firmware for the Seed3 Desktop Dev Kit: the Audrey II feedback synth, ported
 // faithfully (block size 4, 48 kHz, limiter gain 0.7), with a second pot page and MIDI.
 // The callback owns the engine and controls; main owns MIDI, LEDs and the bootloader.
 // Hand-over only through an SPSC queue and atomics.
